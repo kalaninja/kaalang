@@ -1,0 +1,5 @@
+error: input must reference a function parameter or an earlier block output
+ --> tests/ui/unknown_input.rs:6:6
+  |
+6 |     |future| -> output { future };
+  |      ^^^^^^

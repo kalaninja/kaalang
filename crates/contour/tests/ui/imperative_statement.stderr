@@ -1,0 +1,5 @@
+error: a Contour body may contain only attributed closure statements
+ --> tests/ui/imperative_statement.rs:6:5
+  |
+6 |     let output = input;
+  |     ^^^^^^^^^^^^^^^^^^^

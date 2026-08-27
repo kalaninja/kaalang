@@ -1,0 +1,5 @@
+error: a question must declare exactly two outputs
+ --> tests/ui/question_output_count.rs:6:14
+  |
+6 |     |&input| -> yes { true };
+  |              ^^^^^^

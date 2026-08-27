@@ -1,0 +1,5 @@
+error: cannot find attribute `action` in this scope
+ --> tests/ui/block_outside_flow.rs:3:7
+  |
+3 |     #[action("Copy the input.")]
+  |       ^^^^^^

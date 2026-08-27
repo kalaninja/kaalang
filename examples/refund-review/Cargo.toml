@@ -1,0 +1,12 @@
+[package]
+name = "contour-refund-review"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+contour = { path = "../../crates/contour" }
+
+[lints]
+workspace = true

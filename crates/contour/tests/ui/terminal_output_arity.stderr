@@ -1,0 +1,5 @@
+error: a terminal action must have exactly one output
+ --> tests/ui/terminal_output_arity.rs:6:18
+  |
+6 |     |&input| -> (left, right) { (*input, *input + 1) };
+  |                  ^^^^

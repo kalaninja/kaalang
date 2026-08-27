@@ -1,0 +1,13 @@
+error[E0308]: mismatched types
+ --> tests/ui/terminal_return_type.rs:6:17
+  |
+4 | fn invalid(input: u32) -> String {
+  |                           ------ expected `String` because of return type
+5 |     #[action("Return a number from a string flow.")]
+6 |     |&input| -> output { *input };
+  |                 ^^^^^^ expected `String`, found `u32`
+  |
+help: try using a conversion method
+  |
+6 |     |&input| -> output.to_string() { *input };
+  |                       ++++++++++++

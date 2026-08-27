@@ -1,0 +1,5 @@
+error[E0308]: mismatched types
+ --> tests/ui/non_boolean_condition.rs:6:29
+  |
+6 |     |&input| -> (yes, no) { *input };
+  |                             ^^^^^^ expected `bool`, found `u32`

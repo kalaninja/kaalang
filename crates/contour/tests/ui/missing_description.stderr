@@ -1,0 +1,5 @@
+error: a Contour block attribute requires a parenthesized description
+ --> tests/ui/missing_description.rs:4:5
+  |
+4 |     #[action]
+  |     ^^^^^^^^^
