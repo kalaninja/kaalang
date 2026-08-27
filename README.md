@@ -89,8 +89,9 @@ separate definition.
 
 Block IDs, descriptors, scheduling, rendering, loops, merges, and subflows are
 deliberately deferred. See
-[RFC 0001](docs/rfcs/0001-core-model.md) for the draft contract and
-[`refund-review`](examples/refund-review) for the canonical example.
+[RFC 0001](docs/rfcs/0001-core-model.md) for the draft contract and the
+[`playground`](examples/playground) for executable examples. Its current
+canonical graph is the refund review.
 
 ## Run
 

@@ -5,7 +5,7 @@ use crate::types::{
     RejectionReason, RejectionStage,
 };
 
-/// Describe the refund-review graph.
+/// Review a refund request with a Contour graph.
 ///
 /// `#[contour]` lowers the flat graph to executable Rust control flow.
 #[contour]

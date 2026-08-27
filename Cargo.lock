@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "contour-refund-review"
+name = "contour-playground"
 version = "0.1.0"
 dependencies = [
  "contour",

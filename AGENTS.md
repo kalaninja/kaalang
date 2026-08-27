@@ -10,7 +10,7 @@ Read these files before conceptual or syntax changes:
 
 - `README.md` for the current prototype;
 - `docs/rfcs/0001-core-model.md` for semantic decisions;
-- `examples/refund-review/src/flow.rs` for the canonical example.
+- `examples/playground/src/refund_review.rs` for the canonical example.
 
 ## Repository language
 
@@ -78,7 +78,7 @@ files.
 When changing syntax or semantics:
 
 1. State the design problem and chosen tradeoff.
-2. Update RFC 0001 and the refund example together.
+2. Update RFC 0001 and the relevant playground example together.
 3. Keep README, tests, and this guide synchronized.
 4. Add positive and compile-fail coverage for the changed grammar.
 5. Run formatting, checks, Clippy, and all workspace tests.

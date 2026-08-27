@@ -1,13 +1,13 @@
-# Refund review example
+# Contour playground
 
-This example tests executable Contour lowering against a realistic flat graph.
-It is intentionally a small policy example rather than a production refund
-service.
+This crate is a testing ground for small executable Contour functions. Add each
+scenario as a focused module rather than turning the playground into a
+production application.
 
-The canonical graph is [`src/flow.rs`](src/flow.rs). It is an ordinary
-`#[contour]` Rust function: parameters introduce `request` and `policy`, block
-arrows declare outputs, and every control and data dependency is listed
-explicitly.
+The current scenario is [`review_refund`](src/refund_review.rs). It is an
+ordinary `#[contour]` Rust function: parameters introduce `request` and
+`policy`, block arrows declare outputs, and every control and data dependency
+is listed explicitly.
 Every block has required natural-language intent as a nonempty Rust string in
 its marker attribute. The descriptions, inputs, arrow outputs, and bodies form
 the graph an author can hand to an implementation agent. Ordinary source
