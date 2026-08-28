@@ -21,8 +21,8 @@ examples, fixtures, tests, commit messages, and pull request content.
 
 Version `0.1` is an executable discussion draft. `#[contour]` parses the flat
 graph, validates its supported invariants, and lowers it directly to nested Rust
-`if` and `let` expressions. Local action and question attributes contain block
-descriptions and are consumed by `#[contour]`.
+`if`, `match`, and `let` expressions. Local action, question, choice, and case
+attributes contain block descriptions and are consumed by `#[contour]`.
 
 Prefer small, reversible changes that test one language hypothesis at a time.
 A `todo!()` block body marks a supported author skeleton and panics only if
@@ -34,8 +34,9 @@ execution reaches it.
 - Its parameters are source wires and its return type is the terminal contract.
 - The body uses closure-shaped Rust expression statements.
 - Every block shows inputs before `->` and output identifiers after it.
-- Every block has exactly one local `#[action("description")]` or
-  `#[question("description")]` attribute with a nonempty Rust string literal.
+- Every block has exactly one local `#[action("description")]`,
+  `#[question("description")]`, or `#[choice("description")]` attribute with a
+  nonempty Rust string literal.
 - Source comments remain non-semantic and never replace the attribute
   description.
 - `#[contour]` consumes the closure syntax without generating or calling a
@@ -48,9 +49,13 @@ execution reaches it.
   result types remain inferred by Rust.
 - A question has exactly two outputs: yes/true first and no/false second; its
   body must evaluate to `bool`.
+- A choice has at least two ordered `#[case("description")]` attributes and the
+  same number of tuple outputs. Its body returns one output marker; case text is
+  semantic description, not a Rust pattern.
 - `todo!()` means that an agent has not implemented the block yet; it never
   supplies implicit behavior.
-- Yes/no are control dependencies and never carry input data implicitly.
+- Question and choice outputs are control dependencies and never carry input
+  data implicitly.
 - Every reachable path ends at an action with exactly one unconsumed output.
 - Terminal action outputs must match the function return type; generated Rust
   performs that concrete type check.
@@ -64,14 +69,13 @@ execution reaches it.
 
 The prototype includes required attribute descriptions, local block markers,
 closure-shaped block statements, explicit consuming and borrowing inputs and
-declared outputs, direct question/action lowering, and Rust-checked return
-types. A graph whose bodies are `todo!()` remains a supported author-written
-skeleton.
+declared outputs, direct question/action/choice lowering, and Rust-checked
+return types. A graph whose bodies are `todo!()` remains a supported
+author-written skeleton.
 
 It excludes a runtime scheduler, a `Wire` wrapper, descriptors, stable block
-IDs, hidden-capture validation, loops, match/select blocks, joins, merges,
-parallel paths, subflows, rendering, layout, serialization, and external graph
-files.
+IDs, hidden-capture validation, loops, joins, merges, parallel paths, subflows,
+rendering, layout, serialization, and external graph files.
 
 ## Change workflow
 
@@ -91,11 +95,12 @@ The attribute rejects missing, non-string, or empty block descriptions,
 imperative body statements, malformed or duplicate block markers, non-closure
 block statements, invalid input or output declarations, empty or duplicate
 captures, unknown or later inputs, duplicate wires, wrong question output
-arity, unconsumed question branches, unreachable blocks, ambiguous next blocks,
-non-action terminal paths, and invalid terminal output arity. Rust rejects
-non-boolean conditions, ownership errors for non-`Copy` wires, incompatible
-action destructuring, and terminal outputs incompatible with the function
-return type.
+arity, malformed or mismatched choice cases and outputs, unconsumed question or
+choice branches, unreachable blocks, ambiguous next blocks, non-action terminal
+paths, and invalid terminal output arity. Rust rejects non-boolean conditions,
+choice bodies that do not return a branch marker, ownership errors for
+non-`Copy` wires, incompatible action destructuring, and terminal outputs
+incompatible with the function return type.
 
 The attribute does not yet detect hidden inline captures and does not support
 parallelism, joins, merges, or loops.

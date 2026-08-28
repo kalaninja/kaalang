@@ -67,6 +67,7 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
 enum NodeKind {
     Action,
     Question,
+    Choice,
 }
 
 struct Node {
@@ -131,14 +132,35 @@ fn parse_node(statement: &Stmt) -> Result<Node> {
         ));
     }
 
-    let (kind, marker) = block_marker(&closure.attrs, closure.inputs_begin.span())?;
+    let (kind, marker, case_count) = block_marker(&closure.attrs, closure.inputs_begin.span())?;
     let (inputs, body) = block_closure(closure)?;
     let (pattern, outputs, tuple_output) = block_outputs(closure)?;
-    if kind == NodeKind::Question && (!tuple_output || outputs.len() != 2) {
-        return Err(Error::new_spanned(
-            &closure.output,
-            "a question must declare exactly two outputs",
-        ));
+    match kind {
+        NodeKind::Question if !tuple_output || outputs.len() != 2 => {
+            return Err(Error::new_spanned(
+                &closure.output,
+                "a question must declare exactly two outputs",
+            ));
+        }
+        NodeKind::Choice if !tuple_output => {
+            return Err(Error::new_spanned(
+                &closure.output,
+                "a choice must declare its outputs as a tuple",
+            ));
+        }
+        NodeKind::Choice if case_count < 2 => {
+            return Err(Error::new_spanned(
+                marker,
+                "a choice requires at least two `#[case(\"description\")]` attributes",
+            ));
+        }
+        NodeKind::Choice if case_count != outputs.len() => {
+            return Err(Error::new_spanned(
+                &closure.output,
+                "a choice must declare exactly one output for each case",
+            ));
+        }
+        _ => {}
     }
 
     Ok(Node {
@@ -255,20 +277,35 @@ fn output_ident(output: &Type) -> Result<Ident> {
     Ok(segment.ident.clone())
 }
 
-fn block_marker(attributes: &[Attribute], fallback_span: Span) -> Result<(NodeKind, &Attribute)> {
+fn block_marker(
+    attributes: &[Attribute],
+    fallback_span: Span,
+) -> Result<(NodeKind, &Attribute, usize)> {
     let mut marker = None;
+    let mut cases = Vec::new();
 
     for attribute in attributes {
         let kind = if attribute.path().is_ident("action") {
             Some(NodeKind::Action)
         } else if attribute.path().is_ident("question") {
             Some(NodeKind::Question)
+        } else if attribute.path().is_ident("choice") {
+            Some(NodeKind::Choice)
+        } else if attribute.path().is_ident("case") {
+            if marker.is_none() {
+                return Err(Error::new_spanned(
+                    attribute,
+                    "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
+                ));
+            }
+            cases.push(attribute);
+            continue;
         } else if attribute.path().is_ident("doc") {
             None
         } else {
             return Err(Error::new_spanned(
                 attribute,
-                "Contour blocks support only comments, `#[action(\"description\")]`, and `#[question(\"description\")]`",
+                "Contour blocks support only comments and action, question, choice, or case attributes",
             ));
         };
 
@@ -278,7 +315,7 @@ fn block_marker(attributes: &[Attribute], fallback_span: Span) -> Result<(NodeKi
         if marker.replace((kind, attribute)).is_some() {
             return Err(Error::new_spanned(
                 attribute,
-                "a Contour block requires exactly one action or question attribute",
+                "a Contour block requires exactly one action, question, or choice attribute",
             ));
         }
     }
@@ -286,35 +323,54 @@ fn block_marker(attributes: &[Attribute], fallback_span: Span) -> Result<(NodeKi
     let Some((kind, attribute)) = marker else {
         return Err(Error::new(
             fallback_span,
-            "a Contour block requires an `#[action(\"description\")]` or `#[question(\"description\")]` attribute",
+            "a Contour block requires an action, question, or choice attribute",
         ));
     };
+    block_description(attribute, "Contour block")?;
+
+    if kind != NodeKind::Choice {
+        if let Some(case) = cases.first() {
+            return Err(Error::new_spanned(
+                case,
+                "`#[case(\"description\")]` is valid only on a choice block",
+            ));
+        }
+    } else {
+        for case in &cases {
+            block_description(case, "choice case")?;
+        }
+    }
+
+    Ok((kind, attribute, cases.len()))
+}
+
+fn block_description(attribute: &Attribute, role: &str) -> Result<LitStr> {
     let Meta::List(description) = &attribute.meta else {
         return Err(Error::new_spanned(
             attribute,
-            "a Contour block attribute requires a parenthesized description",
+            format!("a {role} attribute requires a parenthesized description"),
         ));
     };
     if !matches!(description.delimiter, MacroDelimiter::Paren(_)) {
         return Err(Error::new_spanned(
             attribute,
-            "a Contour block description must use parentheses",
+            format!("a {role} description must use parentheses"),
         ));
     }
     let description = attribute.parse_args::<LitStr>().map_err(|_| {
         Error::new_spanned(
             attribute,
-            "a Contour block description must be a string literal",
+            format!("a {role} description must be a string literal"),
         )
     })?;
     if description.value().trim().is_empty() {
         return Err(Error::new_spanned(
             description,
-            "a Contour block requires a non-empty description",
+            format!("a {role} requires a non-empty description"),
         ));
     }
 
-    Ok((kind, attribute))
+    Ok(description)
 }
 
 fn simple_binding(pattern: &Pat, role: &str) -> Result<Ident> {
@@ -389,6 +445,12 @@ fn validate_graph(sources: &[Ident], nodes: &mut [Node]) -> Result<()> {
                     "every question branch must have a consumer",
                 ));
             }
+            NodeKind::Choice if !unconsumed.is_empty() => {
+                return Err(Error::new(
+                    unconsumed[0].span(),
+                    "every choice case must have a consumer",
+                ));
+            }
             NodeKind::Action if unconsumed.is_empty() => {}
             NodeKind::Action if node.outputs.len() == 1 => node.terminal = true,
             NodeKind::Action => {
@@ -397,7 +459,7 @@ fn validate_graph(sources: &[Ident], nodes: &mut [Node]) -> Result<()> {
                     "a terminal action must have exactly one output",
                 ));
             }
-            NodeKind::Question => {}
+            NodeKind::Question | NodeKind::Choice => {}
         }
     }
 
@@ -488,6 +550,49 @@ fn lower_path(
                 } else {
                     let #no = ();
                     #no_path
+                }
+            })
+        }
+        NodeKind::Choice => {
+            let choice_type = Ident::new(&format!("__ContourChoice{index}"), Span::mixed_site());
+            let selected = Ident::new(
+                &format!("__contour_selected_choice_{index}"),
+                Span::mixed_site(),
+            );
+            let variants = (0..node.outputs.len())
+                .map(|case| Ident::new(&format!("Case{case}"), Span::mixed_site()))
+                .collect::<Vec<_>>();
+            let mut paths = Vec::with_capacity(node.outputs.len());
+            for output in &node.outputs {
+                let mut branch_state = next.clone();
+                branch_state.available.insert(output.to_string());
+                paths.push(lower_path(nodes, branch_state, visited)?);
+            }
+            let outputs = &node.outputs;
+
+            Ok(quote_spanned! {node.span=>
+                #[allow(dead_code)]
+                #[derive(Clone, Copy)]
+                enum #choice_type {
+                    #(#variants,)*
+                }
+
+                let #selected: #choice_type = {
+                    #bindings
+                    #(
+                        #[allow(unused_variables)]
+                        let #outputs = #choice_type::#variants;
+                    )*
+                    #body
+                };
+
+                match #selected {
+                    #(
+                        #choice_type::#variants => {
+                            let #outputs = ();
+                            #paths
+                        }
+                    ),*
                 }
             })
         }

@@ -47,17 +47,18 @@ replaces `todo!()` bodies without changing the graph contract.
 `#[contour]` is a procedural attribute because it inspects the whole function
 and validates graph-wide invariants. It parses the current flat
 subset into one graph AST, validates it, and replaces the source statements with
-nested Rust `if` and `let` expressions. Executable behavior and validation thus
-come from the same graph.
+nested Rust `if`, `match`, and `let` expressions. Executable behavior and
+validation thus come from the same graph.
 
 The attribute lives in a separate `proc-macro` crate, uses `syn` and `quote`, and
 is re-exported by `contour`.
 
-Local `#[action("description")]` and `#[question("description")]` attributes
-mark closure-shaped statements for the surrounding procedural attribute. Their
-nonempty Rust string literal is the exact natural-language description. A
-nearby source comment remains non-semantic and is never substituted for that
-description.
+Local `#[action("description")]`, `#[question("description")]`, and
+`#[choice("description")]` attributes mark closure-shaped statements for the
+surrounding procedural attribute. Their nonempty Rust string literal is the
+exact natural-language description. A choice additionally has ordered
+`#[case("description")]` attributes. A nearby source comment remains
+non-semantic and is never substituted for a description.
 
 Parameters before `->` list separate inputs. Identifiers after `->` declare
 outputs, and the block expression is the implementation body. Rust parses the
@@ -182,7 +183,51 @@ data wire explicitly. Successor blocks remain outside the question.
 `#[contour]` requires exactly two output names and lowers the condition to a
 Rust `if`. It binds only the selected unit-valued control output in each branch.
 
-## 7. Flow termination
+## 7. Choice block
+
+A choice exposes two or more exhaustive semantic routes without embedding Rust
+patterns in the graph topology:
+
+```rust
+#[choice("What is the sign of the value?")]
+#[case("The value is negative.")]
+#[case("The value is zero.")]
+#[case("The value is positive.")]
+|value| -> (negative, zero, positive) { todo!() };
+```
+
+Each case description maps positionally to one output name. Case descriptions
+state domain meaning; they are not Rust patterns and are not parsed as matching
+rules. The implementation body may use any ordinary Rust expression, including
+`if` or `match`, but it must return exactly one of the output marker values:
+
+```rust
+#[choice("What is the sign of the value?")]
+#[case("The value is negative.")]
+#[case("The value is zero.")]
+#[case("The value is positive.")]
+|value| -> (negative, zero, positive) {
+    if value < 0 {
+        negative
+    } else if value == 0 {
+        zero
+    } else {
+        positive
+    }
+};
+```
+
+The choice question and every case description must be a nonempty string
+literal. A choice requires a tuple of outputs, at least two cases, and exactly
+one output per case. `todo!()` remains a valid skeleton body.
+
+Lowering creates private marker values, evaluates the body once, and dispatches
+on the selected marker with a Rust `match`. Only that branch receives its
+unit-valued control output and continues. Choice outputs carry no input data
+implicitly and obey the same consumer and terminal-path rules as question
+outputs.
+
+## 8. Flow termination
 
 There is no public `end!` block. The closing function boundary and its return
 type already express the single logical end of the algorithm:
@@ -210,7 +255,7 @@ the function boundary and connect every mutually exclusive terminal result to
 it. This structural node needs no user-authored description or extra merge
 syntax.
 
-## 8. Grammar
+## 9. Grammar
 
 The outer syntax is ordinary Rust:
 
@@ -226,27 +271,38 @@ question_statement :=
     "|" capture_list "|" "->"
         "(" identifier "," identifier ")" rust_block ";"
 
+choice_statement :=
+    "#[choice(" block_description ")]"
+    case_attribute case_attribute+
+    "|" capture_list "|" "->"
+        "(" identifier "," identifier ("," identifier)* ")"
+        rust_block ";"
+
+case_attribute := "#[case(" block_description ")]"
+
 block_description := nonempty_rust_string_literal
 output_declaration := identifier | rust_tuple_of_identifiers
 capture_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-The attribute description and capture list are nonempty. Comments may surround
-a block but have no graph meaning. The closure body is required by Rust grammar.
-`todo!()` is the canonical body for an unimplemented block; no separate status
-flag exists.
+The attribute descriptions and capture list are nonempty. Choice case order
+matches output order. Comments may surround a block but have no graph meaning.
+The closure body is required by Rust grammar. `todo!()` is the canonical body
+for an unimplemented block; no separate status flag exists.
 
-## 9. Validation and lowering
+## 10. Validation and lowering
 
 The attribute resolves every closure parameter to a function parameter or an
 earlier block output, then follows the available wires from the unique starting
 block. It converts the arrow's identifiers into a Rust `let` pattern and
 extracts the closure body rather than constructing or calling a closure. At a
 question it generates one Rust `if`, evaluates the condition once, and
-continues separately with the yes or no control output. At an action it binds
-the body result to the declared output pattern. Each terminal action output is
-the result of its generated branch.
+continues separately with the yes or no control output. At a choice it gives
+the body private marker values, requires the result to be one of them through
+Rust type checking, and generates one Rust `match`. At an action it binds the
+body result to the declared output pattern. Each terminal action output is the
+result of its generated branch.
 
 Bare captures are consumed and disappear from that compile-time path state;
 borrowed captures remain available. Exactly one block must be ready at each
@@ -256,12 +312,12 @@ instead of adding a runtime scheduler.
 An author-written `todo!()` remains in the lowered body. The skeleton therefore
 compiles, but execution fails if it reaches an unimplemented block.
 
-## 10. Deferred work
+## 11. Deferred work
 
 Version `0.1` does not define graph descriptors, IDs, hidden-capture validation,
-implementation-status descriptors, runtime scheduling, match/select, joins,
-merges, parallel paths, loops, subflows, async behavior, visualization, layout,
-or serialization.
+implementation-status descriptors, runtime scheduling, joins, merges, parallel
+paths, loops, subflows, async behavior, visualization, layout, or
+serialization.
 
 `rust-analyzer` provides diagnostics, completion, and control-wire rename through
 the expanded macro. A single Rename does not currently span both graph-level
@@ -272,7 +328,7 @@ remain deferred editor tooling.
 The surface Rust syntax should remain unchanged unless a separate design
 decision revises it.
 
-## 11. Success criteria
+## 12. Success criteria
 
 The draft succeeds when:
 
@@ -281,5 +337,6 @@ The draft succeeds when:
 3. an author-only refund graph with `todo!()` bodies compiles;
 4. missing block intent, name-resolution, ownership, destructuring, and
    condition errors have compile-fail coverage;
-5. implemented question branches execute exactly one terminal action;
-6. flow termination requires no redundant public block syntax.
+5. implemented question and choice blocks execute exactly one terminal action;
+6. choice topology shows semantic cases without exposing Rust patterns;
+7. flow termination requires no redundant public block syntax.
