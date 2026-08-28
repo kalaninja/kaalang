@@ -1,5 +1,0 @@
-error: `#[case("description")]` is valid only on a choice block
- --> tests/ui/case_without_choice.rs:6:5
-  |
-6 |     #[case("The action has no cases.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,0 @@
-error: every choice case must have a consumer
- --> tests/ui/unconsumed_choice_case.rs:8:27
-  |
-8 |     |input| -> (negative, nonnegative) {
-  |                           ^^^^^^^^^^^

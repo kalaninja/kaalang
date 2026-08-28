@@ -1,5 +1,0 @@
-error: every question branch must have a consumer
- --> tests/ui/unconsumed_question_branch.rs:6:25
-  |
-6 |     |&input| -> (large, small) { *input > 10 };
-  |                         ^^^^^

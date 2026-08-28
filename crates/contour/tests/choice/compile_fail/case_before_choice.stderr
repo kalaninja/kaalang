@@ -1,0 +1,5 @@
+error: a `#[case("description")]` attribute must follow `#[choice("description")]`
+ --> tests/choice/compile_fail/case_before_choice.rs:5:5
+  |
+5 |     #[case("The input is negative.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,0 @@
-error[E0308]: mismatched types
- --> tests/ui/choice_body_type.rs:8:42
-  |
-8 |     |input| -> (negative, nonnegative) { true };
-  |                                          ^^^^ expected `__ContourChoice0`, found `bool`

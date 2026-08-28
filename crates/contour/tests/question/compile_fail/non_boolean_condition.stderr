@@ -1,0 +1,5 @@
+error[E0308]: mismatched types
+ --> tests/question/compile_fail/non_boolean_condition.rs:6:29
+  |
+6 |     |&input| -> (yes, no) { *input };
+  |                             ^^^^^^ expected `bool`, found `u32`

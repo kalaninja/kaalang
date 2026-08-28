@@ -1,5 +1,0 @@
-error: duplicate wire name
- --> tests/ui/duplicate_wire.rs:9:17
-  |
-9 |     |shared| -> shared { shared };
-  |                 ^^^^^^

@@ -1,0 +1,5 @@
+error: a choice must declare exactly one output for each case
+ --> tests/choice/compile_fail/choice_case_output_mismatch.rs:8:13
+  |
+8 |     |input| -> (negative, zero, positive) { negative };
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

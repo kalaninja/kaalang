@@ -1,5 +1,0 @@
-error: a choice case requires a non-empty description
- --> tests/ui/empty_case_description.rs:6:12
-  |
-6 |     #[case("")]
-  |            ^^
