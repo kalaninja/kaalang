@@ -1,0 +1,23 @@
+error[E0382]: use of moved value
+ --> tests/choice/compile_fail/hidden_continuation.rs:3:1
+  |
+3 | #[contour]
+  | ^^^^^^^^^^
+  | |
+  | value moved here
+  | value used here after move
+  | move occurs because value has type `__ContourContinuationCapability0`, which does not implement the `Copy` trait
+  |
+note: if `__ContourContinuationCapability0` implemented `Clone`, you could clone the value
+ --> tests/choice/compile_fail/hidden_continuation.rs:5:5
+  |
+3 | #[contour]
+  | ---------- you could clone this value
+4 | fn invalid(input: i32) -> &'static str {
+5 |     #[choice("Is the input negative?")]
+  |     ^ consider implementing `Clone` for this type
+  = note: this error originates in the macro `__contour_continue_0_0` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: borrow this binding in the pattern to avoid moving the value
+  |
+3 | ref #[contour]
+  | +++

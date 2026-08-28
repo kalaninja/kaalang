@@ -1,0 +1,11 @@
+error[E0425]: cannot find value `copied` in this scope
+  --> tests/graph/compile_fail/hidden_output_capture.rs:12:45
+   |
+12 |     |incremented| -> output { incremented + copied };
+   |                                             ^^^^^^
+   |
+help: the binding `copied` is available in a different scope in the same function
+  --> tests/graph/compile_fail/hidden_output_capture.rs:9:6
+   |
+ 9 |     |copied| -> incremented { copied + 1 };
+   |      ^^^^^^

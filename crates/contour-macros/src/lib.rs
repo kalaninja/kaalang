@@ -5,7 +5,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::{
     Attribute, Error, Expr, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat, PathArguments,
-    Result, ReturnType, Stmt, Type, parse::Parser, parse_macro_input, spanned::Spanned,
+    Result, ReturnType, Stmt, Type, parse_macro_input, spanned::Spanned,
 };
 
 /// Parses and lowers an ordinary Rust function containing a Contour graph.
@@ -28,6 +28,8 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let sources = source_wires(function)?;
     let mut nodes = parse_nodes(&function.block.stmts)?;
     validate_graph(&sources, &mut nodes)?;
+    let wires = internal_wires(&sources, &nodes);
+    rename_source_bindings(function, &sources, &wires);
 
     let mut visited = HashSet::new();
     let body = lower_path(
@@ -41,6 +43,7 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
             last: None,
         },
         &mut visited,
+        &wires,
     )?;
 
     if let Some(unreachable) = nodes
@@ -72,8 +75,9 @@ enum NodeKind {
 
 struct Node {
     kind: NodeKind,
-    pattern: Pat,
     outputs: Vec<Ident>,
+    tuple_output: bool,
+    output_span: Span,
     inputs: Vec<Capture>,
     body: Expr,
     terminal: bool,
@@ -134,7 +138,7 @@ fn parse_node(statement: &Stmt) -> Result<Node> {
 
     let (kind, marker, case_count) = block_marker(&closure.attrs, closure.inputs_begin.span())?;
     let (inputs, body) = block_closure(closure)?;
-    let (pattern, outputs, tuple_output) = block_outputs(closure)?;
+    let (outputs, tuple_output, output_span) = block_outputs(closure)?;
     match kind {
         NodeKind::Question if !tuple_output || outputs.len() != 2 => {
             return Err(Error::new_spanned(
@@ -162,11 +166,15 @@ fn parse_node(statement: &Stmt) -> Result<Node> {
         }
         _ => {}
     }
+    if kind == NodeKind::Choice {
+        validate_choice_body(&body, &outputs)?;
+    }
 
     Ok(Node {
         kind,
-        pattern,
         outputs,
+        tuple_output,
+        output_span,
         inputs,
         body,
         terminal: false,
@@ -221,7 +229,7 @@ fn block_capture(pattern: &Pat) -> Result<Capture> {
     }
 }
 
-fn block_outputs(closure: &syn::ExprClosure) -> Result<(Pat, Vec<Ident>, bool)> {
+fn block_outputs(closure: &syn::ExprClosure) -> Result<(Vec<Ident>, bool, Span)> {
     let ReturnType::Type(_, output) = &closure.output else {
         return Err(Error::new(
             closure.inputs_end.span(),
@@ -240,14 +248,7 @@ fn block_outputs(closure: &syn::ExprClosure) -> Result<(Pat, Vec<Ident>, bool)> 
         ),
         output => (vec![output_ident(output)?], false),
     };
-    let pattern = if tuple {
-        Pat::parse_single.parse2(quote_spanned!(output.span()=> (#(#outputs,)*)))?
-    } else {
-        let output = &outputs[0];
-        Pat::parse_single.parse2(quote!(#output))?
-    };
-
-    Ok((pattern, outputs, tuple))
+    Ok((outputs, tuple, output.span()))
 }
 
 fn output_ident(output: &Type) -> Result<Ident> {
@@ -466,6 +467,107 @@ fn validate_graph(sources: &[Ident], nodes: &mut [Node]) -> Result<()> {
     Ok(())
 }
 
+fn internal_wires(sources: &[Ident], nodes: &[Node]) -> HashMap<String, Ident> {
+    // Source spellings are reserved for aliases inside the blocks that capture them.
+    sources
+        .iter()
+        .chain(nodes.iter().flat_map(|node| &node.outputs))
+        .enumerate()
+        .map(|(index, wire)| {
+            (
+                wire.to_string(),
+                Ident::new(
+                    &format!("__contour_wire_{index}"),
+                    Span::mixed_site().located_at(wire.span()),
+                ),
+            )
+        })
+        .collect()
+}
+
+fn rename_source_bindings(
+    function: &mut ItemFn,
+    sources: &[Ident],
+    wires: &HashMap<String, Ident>,
+) {
+    for (argument, source) in function.sig.inputs.iter_mut().zip(sources) {
+        let FnArg::Typed(argument) = argument else {
+            unreachable!("source_wires rejects method receivers")
+        };
+        let Pat::Ident(binding) = argument.pat.as_mut() else {
+            unreachable!("source_wires accepts only simple parameter bindings")
+        };
+        binding.ident = wire_binding(wires, source).clone();
+    }
+}
+
+fn validate_choice_body(body: &Expr, outputs: &[Ident]) -> Result<()> {
+    if is_todo_body(body) {
+        return Ok(());
+    }
+    let Some(choice) = choice_match(body) else {
+        return Err(Error::new_spanned(
+            body,
+            "a choice body must contain exactly one `match` expression or `todo!()`",
+        ));
+    };
+    if choice.arms.len() != outputs.len() {
+        return Err(Error::new_spanned(
+            choice,
+            "a choice match must contain exactly one arm for each output",
+        ));
+    }
+    if let Some(arm) = choice
+        .arms
+        .iter()
+        .find(|arm| is_todo_macro(&arm.body) || is_todo_body(&arm.body))
+    {
+        return Err(Error::new_spanned(
+            &arm.body,
+            "`todo!()` is supported only as the whole choice body",
+        ));
+    }
+
+    Ok(())
+}
+
+fn choice_match(body: &Expr) -> Option<&syn::ExprMatch> {
+    let expression = single_body_expression(body)?;
+    let Expr::Match(choice) = expression else {
+        return None;
+    };
+    Some(choice)
+}
+
+fn is_todo_body(body: &Expr) -> bool {
+    let Some(expression) = single_body_expression(body) else {
+        return false;
+    };
+    is_todo_macro(expression)
+}
+
+fn is_todo_macro(expression: &Expr) -> bool {
+    let Expr::Macro(expression) = expression else {
+        return false;
+    };
+    expression.attrs.is_empty()
+        && expression.mac.path.is_ident("todo")
+        && expression.mac.tokens.is_empty()
+}
+
+fn single_body_expression(body: &Expr) -> Option<&Expr> {
+    let Expr::Block(block) = body else {
+        return None;
+    };
+    if !block.attrs.is_empty() || block.label.is_some() {
+        return None;
+    }
+    let [Stmt::Expr(expression, None)] = block.block.stmts.as_slice() else {
+        return None;
+    };
+    Some(expression)
+}
+
 #[derive(Clone)]
 struct PathState {
     available: HashSet<String>,
@@ -477,6 +579,7 @@ fn lower_path(
     nodes: &[Node],
     state: PathState,
     visited: &mut HashSet<usize>,
+    wires: &HashMap<String, Ident>,
 ) -> Result<TokenStream2> {
     let ready = nodes
         .iter()
@@ -498,7 +601,7 @@ fn lower_path(
         ));
     }
     let Some(index) = ready.first().copied() else {
-        return finish_path(nodes, &state);
+        return finish_path(nodes, &state, wires);
     };
 
     visited.insert(index);
@@ -512,7 +615,7 @@ fn lower_path(
         }
     }
 
-    let bindings = capture_bindings(&node.inputs);
+    let bindings = capture_bindings(&node.inputs, wires);
     let body = block_body(&node.body);
 
     match node.kind {
@@ -520,8 +623,18 @@ fn lower_path(
             for output in &node.outputs {
                 next.available.insert(output.to_string());
             }
-            let continuation = lower_path(nodes, next, visited)?;
-            let pattern = &node.pattern;
+            let continuation = lower_path(nodes, next, visited, wires)?;
+            let output_wires = node
+                .outputs
+                .iter()
+                .map(|output| wire_binding(wires, output))
+                .collect::<Vec<_>>();
+            let pattern = if node.tuple_output {
+                quote_spanned!(node.output_span=> (#(#output_wires,)*))
+            } else {
+                let output = output_wires[0];
+                quote_spanned!(node.output_span=> #output)
+            };
             Ok(quote_spanned! {node.span=>
                 let #pattern = {
                     #bindings
@@ -537,69 +650,131 @@ fn lower_path(
             yes_state.available.insert(yes.to_string());
             let mut no_state = next;
             no_state.available.insert(no.to_string());
-            let yes_path = lower_path(nodes, yes_state, visited)?;
-            let no_path = lower_path(nodes, no_state, visited)?;
+            let yes_path = lower_path(nodes, yes_state, visited, wires)?;
+            let no_path = lower_path(nodes, no_state, visited, wires)?;
+            let yes_wire = wire_binding(wires, yes);
+            let no_wire = wire_binding(wires, no);
 
             Ok(quote_spanned! {node.span=>
                 if {
                     #bindings
                     #body
                 } {
-                    let #yes = ();
+                    let #yes_wire = ();
                     #yes_path
                 } else {
-                    let #no = ();
+                    let #no_wire = ();
                     #no_path
                 }
             })
         }
         NodeKind::Choice => {
-            let choice_type = Ident::new(&format!("__ContourChoice{index}"), Span::mixed_site());
-            let selected = Ident::new(
-                &format!("__contour_selected_choice_{index}"),
-                Span::mixed_site(),
-            );
-            let variants = (0..node.outputs.len())
-                .map(|case| Ident::new(&format!("Case{case}"), Span::mixed_site()))
-                .collect::<Vec<_>>();
             let mut paths = Vec::with_capacity(node.outputs.len());
             for output in &node.outputs {
                 let mut branch_state = next.clone();
                 branch_state.available.insert(output.to_string());
-                paths.push(lower_path(nodes, branch_state, visited)?);
+                paths.push(lower_path(nodes, branch_state, visited, wires)?);
             }
-            let outputs = &node.outputs;
+            let continuations = node
+                .outputs
+                .iter()
+                .enumerate()
+                .map(|(case, _)| {
+                    Ident::new(
+                        &format!("__contour_continue_{index}_{case}"),
+                        Span::mixed_site(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            let capability_type = Ident::new(
+                &format!("__ContourContinuationCapability{index}"),
+                Span::mixed_site(),
+            );
+            let capability = Ident::new(
+                &format!("__contour_continuation_capability_{index}"),
+                Span::mixed_site(),
+            );
+            let consumed_capability = Ident::new(
+                &format!("__contour_consumed_capability_{index}"),
+                Span::mixed_site(),
+            );
+            // Definition-site hygiene keeps match bindings out of downstream blocks.
+            let definitions = node.outputs.iter().zip(&paths).zip(&continuations).map(
+                |((output, path), continuation)| {
+                    let output_wire = wire_binding(wires, output);
+                    quote! {
+                        macro_rules! #continuation {
+                            ($value:expr) => {{
+                                let #consumed_capability: #capability_type = #capability;
+                                let #output_wire = $value;
+                                #path
+                            }};
+                        }
+                    }
+                },
+            );
+
+            let dispatch = if is_todo_body(&node.body) {
+                let numbered = continuations[..continuations.len() - 1]
+                    .iter()
+                    .enumerate()
+                    .map(|(case, continuation)| quote!(#case => #continuation!(todo!()),));
+                let last = continuations
+                    .last()
+                    .expect("a choice has at least two cases");
+                quote! {
+                    #[allow(clippy::diverging_sub_expression)]
+                    match {
+                        #bindings
+                        #body
+                    } {
+                        #(#numbered)*
+                        _ => #last!(todo!()),
+                    }
+                }
+            } else {
+                let choice = choice_match(&node.body).expect("choice bodies are validated");
+                let match_attrs = &choice.attrs;
+                let scrutinee = &choice.expr;
+                let arms = choice
+                    .arms
+                    .iter()
+                    .zip(&continuations)
+                    .map(|(arm, continuation)| {
+                        let attrs = &arm.attrs;
+                        let pattern = &arm.pat;
+                        let value = &arm.body;
+                        quote! {
+                            #(#attrs)*
+                            #pattern => #continuation!(#value),
+                        }
+                    });
+                quote! {
+                    {
+                        #bindings
+                        #(#match_attrs)*
+                        match #scrutinee {
+                            #(#arms)*
+                        }
+                    }
+                }
+            };
 
             Ok(quote_spanned! {node.span=>
-                #[allow(dead_code)]
-                #[derive(Clone, Copy)]
-                enum #choice_type {
-                    #(#variants,)*
-                }
-
-                let #selected: #choice_type = {
-                    #bindings
-                    #(
-                        #[allow(unused_variables)]
-                        let #outputs = #choice_type::#variants;
-                    )*
-                    #body
-                };
-
-                match #selected {
-                    #(
-                        #choice_type::#variants => {
-                            let #outputs = ();
-                            #paths
-                        }
-                    ),*
-                }
+                struct #capability_type;
+                let #capability = #capability_type;
+                #(#definitions)*
+                #dispatch
             })
         }
     }
 }
 
-fn finish_path(nodes: &[Node], state: &PathState) -> Result<TokenStream2> {
+fn finish_path(
+    nodes: &[Node],
+    state: &PathState,
+    wires: &HashMap<String, Ident>,
+) -> Result<TokenStream2> {
     let last = state
         .last
         .expect("the first block is always ready, so a finished path executed one");
@@ -612,26 +787,34 @@ fn finish_path(nodes: &[Node], state: &PathState) -> Result<TokenStream2> {
     }
 
     let output = &node.outputs[0];
-    Ok(quote_spanned!(output.span()=> #output))
+    let output_wire = wire_binding(wires, output);
+    Ok(quote_spanned!(output.span()=> #output_wire))
 }
 
-fn capture_bindings(inputs: &[Capture]) -> TokenStream2 {
+fn capture_bindings(inputs: &[Capture], wires: &HashMap<String, Ident>) -> TokenStream2 {
     let bindings = inputs.iter().map(|input| {
         let ident = &input.ident;
+        let wire = wire_binding(wires, ident);
         if input.borrowed {
             quote_spanned!(ident.span()=>
                 #[allow(unused_variables)]
-                let #ident = &#ident;
+                let #ident = &#wire;
             )
         } else {
             quote_spanned!(ident.span()=>
-                #[allow(unused_variables, clippy::let_unit_value, clippy::redundant_locals)]
-                let #ident = #ident;
+                #[allow(unused_variables, clippy::let_unit_value)]
+                let #ident = #wire;
             )
         }
     });
 
     quote!(#(#bindings)*)
+}
+
+fn wire_binding<'a>(wires: &'a HashMap<String, Ident>, wire: &Ident) -> &'a Ident {
+    wires
+        .get(&wire.to_string())
+        .expect("validated wires have internal bindings")
 }
 
 /// Splices the statements of a block body so lowering adds no extra braces.

@@ -52,20 +52,21 @@ the topology:
 #[case("The value is zero.")]
 #[case("The value is positive.")]
 |value| -> (negative, zero, positive) {
-    if value < 0 {
-        negative
-    } else if value == 0 {
-        zero
-    } else {
-        positive
+    match value {
+        ..0 => (),
+        0 => (),
+        _ => (),
     }
 };
 ```
 
-Case descriptions map positionally to the output names. The body returns
-exactly one of those local marker values; ordinary Rust patterns may still be
-used inside the body. A choice has at least two cases, and each selected output
-is a unit-valued control wire.
+Case descriptions map positionally to the output names. An implemented choice
+body is exactly one Rust `match` with the same number of arms. Cases, outputs,
+and arms correspond by position. The selected arm expression becomes the value
+of its output wire, so `Some(value) => value` carries `value`, while `None => ()`
+creates a unit-valued control wire. Different arms may produce different
+payload types because they feed different output wires. Only exact whole-body
+`todo!()` is accepted as an unimplemented choice.
 
 A nonempty string literal inside every marker attribute is the block's exact
 natural-language intent. An adjacent `//` comment remains an ordinary source
@@ -79,10 +80,10 @@ declare an identifier or tuple.
 `todo!()` means "not implemented" and panics only if execution reaches that
 block.
 
-Consumption is a graph rule that Rust enforces only for non-`Copy` values.
-Lowering keeps every wire as an ordinary `let` in one scope, so a `Copy` wire
-survives the block that consumed it, and a body can read a wire it never
-declared. Detecting those hidden captures is deferred work.
+Consumption is a graph rule independent of Rust's `Copy` trait. Lowering stores
+wires under internal bindings and exposes a wire's source-level name only as a
+local alias for an input listed by that block. Rust scoping therefore rejects
+hidden reads of omitted or already consumed wires, including `Copy` values.
 
 This is valid Rust syntax and is formatted by `rustfmt`. `#[contour]` consumes
 the closure-shaped expression as graph syntax, reinterpreting Rust's return-type
@@ -91,7 +92,7 @@ closure: it creates ordinary `let` bindings, and later blocks explicitly name
 every incoming connection:
 
 - the first question output is yes/true and the second is no/false;
-- choice cases correspond positionally to its output control wires;
+- choice cases, outputs, and match arms correspond positionally;
 - control outputs carry no hidden data;
 - every reachable path ends at an action with one unconsumed output;
 - the function return type is the contract for all terminal outputs.
@@ -107,6 +108,9 @@ uniqueness, declaration order, question arity, reachability, and terminal paths,
 then lowers the graph to ordinary nested Rust `if`, `match`, and `let`
 expressions. Rust checks body types, ownership, and the function return type. A
 question or choice body is evaluated once and only its selected branch runs.
+Choice lowering keeps the authored `match` and passes the selected arm value to
+the corresponding continuation; it creates no selection enum or second
+dispatch.
 There is no runtime scheduler or wire wrapper.
 
 The current subset requires exactly one next block to be ready at every point;

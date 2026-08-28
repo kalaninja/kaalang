@@ -1,5 +1,5 @@
-error[E0308]: mismatched types
- --> tests/choice/compile_fail/choice_body_type.rs:8:42
+error: a choice body must contain exactly one `match` expression or `todo!()`
+ --> tests/choice/compile_fail/choice_body_type.rs:8:40
   |
 8 |     |input| -> (negative, nonnegative) { true };
-  |                                          ^^^^ expected `__ContourChoice0`, found `bool`
+  |                                        ^^^^^^^^

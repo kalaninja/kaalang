@@ -103,14 +103,14 @@ several later blocks by borrowing it each time. There is no `Bundle` or implicit
 grouping of inputs.
 
 Consumption is a graph rule before it is a Rust move. `#[contour]` drops a bare
-capture from its compile-time path state, but lowering keeps every wire as an
-ordinary `let` in one scope, so Rust rejects a second use only for non-`Copy`
-values. A `Copy` wire stays readable after the block that consumed it.
+capture from its compile-time path state and stores every source and output wire
+under an internal Rust binding. A block receives source-level local aliases
+only for its declared captures. Omitted and consumed wire names are therefore
+out of scope even when their values implement `Copy`.
 
-Inline Rust is normatively forbidden from reading function locals omitted from
-the parameter list. Body capture analysis is not implemented yet, so a block
-body can read any earlier wire and nothing reports it. A future validation pass
-must enforce this rule and close the `Copy` gap above.
+Inline Rust cannot read graph wires omitted from the block's capture list.
+Ordinary locals declared inside a block remain scoped to that block and may use
+the same spelling as a wire without changing graph resolution.
 
 ## 5. Action block
 
@@ -196,10 +196,10 @@ patterns in the graph topology:
 |value| -> (negative, zero, positive) { todo!() };
 ```
 
-Each case description maps positionally to one output name. Case descriptions
-state domain meaning; they are not Rust patterns and are not parsed as matching
-rules. The implementation body may use any ordinary Rust expression, including
-`if` or `match`, but it must return exactly one of the output marker values:
+Each case description maps positionally to one output name and one match arm.
+Case descriptions state domain meaning; they are not Rust patterns and are not
+parsed as matching rules. An implemented choice body contains exactly one Rust
+`match`. Each arm expression becomes the value of its corresponding output:
 
 ```rust
 #[choice("What is the sign of the value?")]
@@ -207,25 +207,34 @@ rules. The implementation body may use any ordinary Rust expression, including
 #[case("The value is zero.")]
 #[case("The value is positive.")]
 |value| -> (negative, zero, positive) {
-    if value < 0 {
-        negative
-    } else if value == 0 {
-        zero
-    } else {
-        positive
+    match value {
+        ..0 => (),
+        0 => (),
+        _ => (),
     }
 };
 ```
 
+Payloads remain explicit. For outputs `(value, absent)`, `Some(value) => value`
+passes the pattern binding through `value`, while `None => ()` gives `absent` a
+unit value.
+
 The choice question and every case description must be a nonempty string
 literal. A choice requires a tuple of outputs, at least two cases, and exactly
-one output per case. `todo!()` remains a valid skeleton body.
+one output and match arm per case. Case, output, and arm order correspond.
+Patterns, bindings, including `@` bindings, and guards retain ordinary Rust
+semantics. Each arm expression is type-checked in its own output path, so the
+payload types of different arms need not match. Exact `todo!()` remains a valid
+whole-body skeleton; partial placeholder arms are not supported.
 
-Lowering creates private marker values, evaluates the body once, and dispatches
-on the selected marker with a Rust `match`. Only that branch receives its
-unit-valued control output and continues. Choice outputs carry no input data
-implicitly and obey the same consumer and terminal-path rules as question
-outputs.
+Lowering evaluates the authored match scrutinee once and passes each arm value
+to its positional graph continuation. It creates neither a private choice enum
+nor a second dispatch. Continuations are defined as local hygienic macros before
+the match, so pattern bindings and block locals cannot shadow wires or leak into
+downstream blocks. Each invocation consumes an internal hygienic capability, so
+an extra authored invocation is rejected by Rust's ownership checking. Only the
+selected branch binds its explicit value and continues. Choice outputs obey the
+same consumer and terminal-path rules as other wires.
 
 ## 8. Flow termination
 
@@ -276,7 +285,10 @@ choice_statement :=
     case_attribute case_attribute+
     "|" capture_list "|" "->"
         "(" identifier "," identifier ("," identifier)* ")"
-        rust_block ";"
+        choice_body ";"
+
+choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
+choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"
 
@@ -286,38 +298,40 @@ capture_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-The attribute descriptions and capture list are nonempty. Choice case order
-matches output order. Comments may surround a block but have no graph meaning.
-The closure body is required by Rust grammar. `todo!()` is the canonical body
-for an unimplemented block; no separate status flag exists.
+The attribute descriptions and capture list are nonempty. Choice cases, outputs,
+and match arms correspond positionally and have equal counts. Comments may
+surround a block but have no graph meaning. The closure body is required by Rust
+grammar. `todo!()` is the canonical whole body for an unimplemented block; no
+separate status flag exists.
 
 ## 10. Validation and lowering
 
 The attribute resolves every closure parameter to a function parameter or an
-earlier block output, then follows the available wires from the unique starting
-block. It converts the arrow's identifiers into a Rust `let` pattern and
-extracts the closure body rather than constructing or calling a closure. At a
-question it generates one Rust `if`, evaluates the condition once, and
-continues separately with the yes or no control output. At a choice it gives
-the body private marker values, requires the result to be one of them through
-Rust type checking, and generates one Rust `match`. At an action it binds the
-body result to the declared output pattern. Each terminal action output is the
-result of its generated branch.
+earlier block output, assigns every wire an internal Rust binding, and follows
+the available wires from the unique starting block. Each block locally aliases
+only its declared inputs and extracts the closure body rather than constructing
+or calling a closure. At a question it generates one Rust `if`, evaluates the
+condition once, and continues separately with the yes or no control output. At
+a choice it keeps the authored `match` and passes each arm expression to its
+positional hygienic continuation. At an action it binds the body result to
+internal output bindings matching the declared output shape. Each terminal
+action output is the result of its generated branch.
 
 Bare captures are consumed and disappear from that compile-time path state;
 borrowed captures remain available. Exactly one block must be ready at each
 step. This deliberately rejects parallel execution, joins, and implicit routing
 instead of adding a runtime scheduler.
 
-An author-written `todo!()` remains in the lowered body. The skeleton therefore
-compiles, but execution fails if it reaches an unimplemented block.
+An author-written `todo!()` remains in the lowered body. For a choice, lowering
+surrounds it with a never-reached exhaustive synthetic match so every downstream
+path is still type-checked without creating a choice enum. The skeleton
+therefore compiles, but execution fails if it reaches an unimplemented block.
 
 ## 11. Deferred work
 
-Version `0.1` does not define graph descriptors, IDs, hidden-capture validation,
-implementation-status descriptors, runtime scheduling, joins, merges, parallel
-paths, loops, subflows, async behavior, visualization, layout, or
-serialization.
+Version `0.1` does not define graph descriptors, IDs, implementation-status
+descriptors, runtime scheduling, joins, merges, parallel paths, loops, subflows,
+async behavior, visualization, layout, or serialization.
 
 `rust-analyzer` provides diagnostics, completion, and control-wire rename through
 the expanded macro. A single Rename does not currently span both graph-level
@@ -339,4 +353,6 @@ The draft succeeds when:
    condition errors have compile-fail coverage;
 5. implemented question and choice blocks execute exactly one terminal action;
 6. choice topology shows semantic cases without exposing Rust patterns;
-7. flow termination requires no redundant public block syntax.
+7. choice lowers directly without a private selection enum or second dispatch;
+8. block bodies cannot read graph wires omitted from their capture lists;
+9. flow termination requires no redundant public block syntax.

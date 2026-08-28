@@ -1,29 +1,36 @@
 use contour::contour;
 
 #[contour]
-fn run_choice(value: i32) -> &'static str {
+fn run_choice(value: i32, terminal_count: &mut usize) -> &'static str {
     #[choice("What is the sign of the value?")]
     #[case("The value is negative.")]
     #[case("The value is zero.")]
     #[case("The value is positive.")]
     |value| -> (negative, zero, positive) {
-        if value < 0 {
-            negative
-        } else if value == 0 {
-            zero
-        } else {
-            positive
+        match value {
+            ..0 => (),
+            0 => (),
+            _ => (),
         }
     };
 
     #[action("Return the negative result.")]
-    |negative| -> negative_result { "negative" };
+    |negative, terminal_count| -> negative_result {
+        *terminal_count += 1;
+        "negative"
+    };
 
     #[action("Return the zero result.")]
-    |zero| -> zero_result { "zero" };
+    |zero, terminal_count| -> zero_result {
+        *terminal_count += 1;
+        "zero"
+    };
 
     #[action("Return the positive result.")]
-    |positive| -> positive_result { "positive" };
+    |positive, terminal_count| -> positive_result {
+        *terminal_count += 1;
+        "positive"
+    };
 }
 
 #[contour]
@@ -40,11 +47,69 @@ fn run_choice_skeleton(value: i32) -> &'static str {
     |nonnegative| -> nonnegative_result { todo!() };
 }
 
+#[contour]
+fn run_choice_with_shadowing(value: i32, selected: Option<i32>) -> (i32, i32) {
+    #[choice("Was a value selected?")]
+    #[case("A value was selected.")]
+    #[case("No value was selected.")]
+    |&value, selected| -> (selected_value, absent) {
+        match selected {
+            Some(value) => value,
+            None => (),
+        }
+    };
+
+    #[action("Return the original value after a selection.")]
+    |selected_value, value| -> present_result { (value, selected_value) };
+
+    #[action("Return the original value without a selection.")]
+    |absent, value| -> absent_result { (value, 0) };
+}
+
+#[contour]
+fn run_choice_with_guard(value: i32) -> i32 {
+    #[choice("Is the value a positive even number?")]
+    #[case("The value is positive and even.")]
+    #[case("The value is not positive and even.")]
+    |value| -> (positive_even, other) {
+        match value {
+            captured @ 1.. if captured % 2 == 0 => captured,
+            _ => (),
+        }
+    };
+
+    #[action("Return the positive-even result.")]
+    |positive_even| -> positive_even_result { positive_even };
+
+    #[action("Return the other result.")]
+    |other| -> other_result { 0 };
+}
+
 #[test]
 fn choice_block_routes_each_case() {
-    assert_eq!(run_choice(-1), "negative");
-    assert_eq!(run_choice(0), "zero");
-    assert_eq!(run_choice(1), "positive");
+    let mut terminal_count = 0;
+
+    assert_eq!(run_choice(-1, &mut terminal_count), "negative");
+    assert_eq!(terminal_count, 1);
+    assert_eq!(run_choice(0, &mut terminal_count), "zero");
+    assert_eq!(terminal_count, 2);
+    assert_eq!(run_choice(1, &mut terminal_count), "positive");
+    assert_eq!(terminal_count, 3);
+    assert_eq!(run_choice(2, &mut terminal_count), "positive");
+    assert_eq!(terminal_count, 4);
+}
+
+#[test]
+fn choice_pattern_bindings_do_not_shadow_wires() {
+    assert_eq!(run_choice_with_shadowing(7, Some(99)), (7, 99));
+    assert_eq!(run_choice_with_shadowing(7, None), (7, 0));
+}
+
+#[test]
+fn choice_preserves_at_patterns_and_guards() {
+    assert_eq!(run_choice_with_guard(2), 2);
+    assert_eq!(run_choice_with_guard(1), 0);
+    assert_eq!(run_choice_with_guard(-2), 0);
 }
 
 #[test]
