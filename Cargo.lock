@@ -20,13 +20,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "contour-playground"
-version = "0.1.0"
-dependencies = [
- "contour",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

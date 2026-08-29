@@ -2,7 +2,6 @@
 members = [
     "crates/contour",
     "crates/contour-macros",
-    "examples/playground",
 ]
 resolver = "3"
 
