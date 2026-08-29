@@ -1,0 +1,5 @@
+error: a merge body must be empty
+  --> tests/merge/compile_fail/merge_body.rs:15:39
+   |
+15 |     |yes_value, no_value| -> selected { yes_value };
+   |                                       ^^^^^^^^^^^^^

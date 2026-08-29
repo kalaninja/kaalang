@@ -21,8 +21,8 @@ examples, fixtures, tests, commit messages, and pull request content.
 
 Version `0.1` is an executable discussion draft. `#[contour]` parses the flat
 graph, validates its supported invariants, and lowers it directly to nested Rust
-`if`, `match`, and `let` expressions. Local action, question, choice, and case
-attributes contain block descriptions and are consumed by `#[contour]`.
+`if`, `match`, and `let` expressions. Local action, question, choice, case, and
+structural merge attributes are consumed by `#[contour]`.
 
 Prefer small, reversible changes that test one language hypothesis at a time.
 A `todo!()` block body marks a supported author skeleton and panics only if
@@ -34,9 +34,9 @@ execution reaches it.
 - Its parameters are source wires and its return type is the terminal contract.
 - The body uses closure-shaped Rust expression statements.
 - Every block shows inputs before `->` and output identifiers after it.
-- Every block has exactly one local `#[action("description")]`,
+- Every computational block has exactly one local `#[action("description")]`,
   `#[question("description")]`, or `#[choice("description")]` attribute with a
-  nonempty Rust string literal.
+  nonempty Rust string literal. A structural merge uses bare `#[merge]`.
 - Source comments remain non-semantic and never replace the attribute
   description.
 - `#[contour]` consumes the closure syntax without generating or calling a
@@ -60,6 +60,12 @@ execution reaches it.
   supplies implicit behavior.
 - Question outputs are unit-valued control dependencies. Choice outputs carry
   only the value explicitly returned by their corresponding match arm.
+- A merge has at least two alternative bare inputs, exactly one output, no
+  description, and an empty body. Exactly one input reaches it on each
+  continuing path, and Rust checks the common output type through the generated
+  `if` or `match` expression.
+- Branches of one question or choice may terminate or reach one common merge;
+  continuing branches may not target different merges.
 - Every reachable path ends at an action with exactly one unconsumed output.
 - Terminal action outputs must match the function return type; generated Rust
   performs that concrete type check.
@@ -74,11 +80,12 @@ execution reaches it.
 The prototype includes required attribute descriptions, local block markers,
 closure-shaped block statements, explicit consuming and borrowing inputs and
 declared outputs, hidden-capture isolation, direct question/action/choice
-lowering, and Rust-checked return types. A graph whose bodies are `todo!()`
-remains a supported author-written skeleton.
+lowering, structural merges for mutually exclusive branches, and Rust-checked
+return types. A graph whose computational bodies are `todo!()` remains a
+supported author-written skeleton.
 
 It excludes a runtime scheduler, a `Wire` wrapper, descriptors, stable block
-IDs, loops, joins, merges, parallel paths, subflows, rendering, layout,
+IDs, loops, joins, parallel paths, subflows, rendering, layout,
 serialization, and external graph files.
 
 ## Change workflow
@@ -102,10 +109,12 @@ captures, unknown or later inputs, duplicate wires, wrong question output
 arity, malformed or mismatched choice cases and outputs, choice bodies other
 than one `match` or exact `todo!()`, mismatched choice arm and output counts,
 unconsumed question or choice branches, unreachable blocks, ambiguous next
-blocks, non-action terminal paths, and invalid terminal output arity. Rust
-rejects non-boolean conditions, non-exhaustive choice matches, incompatible
+blocks, malformed merges, non-action terminal paths, and invalid terminal
+output arity. Rust rejects non-boolean conditions, non-exhaustive choice
+matches, incompatible
 scrutinee patterns, invalid downstream uses of choice payloads, hidden wire
 captures, ownership errors, incompatible action destructuring, and terminal
 outputs incompatible with the function return type.
 
-The attribute does not support parallelism, joins, merges, or loops.
+The attribute does not support parallelism, joins, different merge targets for
+one branch point, or loops.

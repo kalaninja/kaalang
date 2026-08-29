@@ -54,11 +54,12 @@ The attribute lives in a separate `proc-macro` crate, uses `syn` and `quote`, an
 is re-exported by `contour`.
 
 Local `#[action("description")]`, `#[question("description")]`, and
-`#[choice("description")]` attributes mark closure-shaped statements for the
-surrounding procedural attribute. Their nonempty Rust string literal is the
-exact natural-language description. A choice additionally has ordered
-`#[case("description")]` attributes. A nearby source comment remains
-non-semantic and is never substituted for a description.
+`#[choice("description")]` attributes mark computational closure-shaped
+statements for the surrounding procedural attribute. Their nonempty Rust string
+literal is the exact natural-language description. A choice additionally has
+ordered `#[case("description")]` attributes. Structural merge statements use
+bare `#[merge]` because they add no domain behavior to describe. A nearby source
+comment remains non-semantic and is never substituted for a description.
 
 Parameters before `->` list separate inputs. Identifiers after `->` declare
 outputs, and the block expression is the implementation body. Rust parses the
@@ -73,7 +74,8 @@ marker used outside a `#[contour]` function is rejected by Rust.
 
 Rust requires every closure expression to have a body. The canonical author
 skeleton therefore uses `todo!()` as an explicit implementation placeholder;
-an incomplete `|inputs|;` expression would not be valid Rust.
+an incomplete `|inputs|;` expression would not be valid Rust. A merge instead
+uses an empty body because lowering supplies its complete structural behavior.
 
 ## 4. Wires and inputs
 
@@ -236,7 +238,38 @@ an extra authored invocation is rejected by Rust's ownership checking. Only the
 selected branch binds its explicit value and continues. Choice outputs obey the
 same consumer and terminal-path rules as other wires.
 
-## 8. Flow termination
+## 8. Merge block
+
+A merge joins two or more mutually exclusive paths into one continuation:
+
+```rust
+#[merge]
+|negative_value, zero_value, positive_value| -> value {};
+
+#[action("Return the selected value.")]
+|value| -> result { value };
+```
+
+Its inputs are alternatives rather than simultaneous captures. Every input is
+a bare identifier, exactly one is available on each path that reaches the
+merge, and consuming that input produces the single output wire. A merge has no
+description or implementation body: `#[merge]` accepts no arguments and its
+closure body must be empty. It cannot be terminal.
+
+All continuing branches of one question or choice must reach the same merge.
+Other branches may end at terminal actions; lowering emits an early Rust
+`return` for those branches. Different merge targets from one branch point,
+multiple merge inputs available on one path, borrowed inputs, and joins that
+wait for simultaneous paths are rejected.
+
+Lowering makes the generated `if` or authored `match` the value assigned to the
+merge output. Rust therefore checks that the paths which reach the merge
+produce one common type. Only wires available on every continuing path remain
+available after the merge; the new merge output is added to that shared state.
+The shared continuation is lowered once and no runtime merge object or
+scheduler is created.
+
+## 9. Flow termination
 
 There is no public `end!` block. The closing function boundary and its return
 type already express the single logical end of the algorithm:
@@ -261,10 +294,9 @@ enforces compatibility with `Decision`.
 
 Descriptors and renderers should derive exactly one synthetic DRAKON End from
 the function boundary and connect every mutually exclusive terminal result to
-it. This structural node needs no user-authored description or extra merge
-syntax.
+it. This structural node needs no user-authored description.
 
-## 9. Grammar
+## 10. Grammar
 
 The outer syntax is ordinary Rust:
 
@@ -290,6 +322,11 @@ choice_statement :=
 choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
+merge_statement :=
+    "#[merge]"
+    "|" identifier "," identifier ("," identifier)* "|" "->"
+        identifier "{" "}" ";"
+
 case_attribute := "#[case(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
@@ -298,13 +335,14 @@ capture_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-The attribute descriptions and capture list are nonempty. Choice cases, outputs,
-and match arms correspond positionally and have equal counts. Comments may
-surround a block but have no graph meaning. The closure body is required by Rust
-grammar. `todo!()` is the canonical whole body for an unimplemented block; no
-separate status flag exists.
+The computational attribute descriptions and every capture list are nonempty.
+Choice cases, outputs, and match arms correspond positionally and have equal
+counts. Merge inputs are alternative bare identifiers, and a merge's empty body
+is structural syntax. Comments may surround a block but have no graph meaning.
+The closure body is required by Rust grammar. `todo!()` is the canonical whole body
+for an unimplemented computational block; no separate status flag exists.
 
-## 10. Validation and lowering
+## 11. Validation and lowering
 
 The attribute resolves every closure parameter to a function parameter or an
 earlier block output, assigns every wire an internal Rust binding, and follows
@@ -317,20 +355,28 @@ positional hygienic continuation. At an action it binds the body result to
 internal output bindings matching the declared output shape. Each terminal
 action output is the result of its generated branch.
 
+Path lowering reports either a terminal result or arrival at a merge. When two
+or more paths from one question or choice arrive at the same merge, their
+generated expressions become arms of the enclosing `if` or `match`, whose value
+is bound to the merge output. Terminal siblings return directly. The shared
+continuation uses the intersection of wires available on continuing paths and
+is generated once.
+
 Bare captures are consumed and disappear from that compile-time path state;
 borrowed captures remain available. Exactly one block must be ready at each
-step. This deliberately rejects parallel execution, joins, and implicit routing
-instead of adding a runtime scheduler.
+step. A merge becomes ready when exactly one of its alternative inputs is
+available. This deliberately rejects parallel execution, joins, different
+merge targets, and implicit routing instead of adding a runtime scheduler.
 
 An author-written `todo!()` remains in the lowered body. For a choice, lowering
 surrounds it with a never-reached exhaustive synthetic match so every downstream
 path is still type-checked without creating a choice enum. The skeleton
 therefore compiles, but execution fails if it reaches an unimplemented block.
 
-## 11. Deferred work
+## 12. Deferred work
 
 Version `0.1` does not define graph descriptors, IDs, implementation-status
-descriptors, runtime scheduling, joins, merges, parallel paths, loops, subflows,
+descriptors, runtime scheduling, joins, parallel paths, loops, subflows,
 async behavior, visualization, layout, or serialization.
 
 `rust-analyzer` provides diagnostics, completion, and control-wire rename through
@@ -342,7 +388,7 @@ remain deferred editor tooling.
 The surface Rust syntax should remain unchanged unless a separate design
 decision revises it.
 
-## 12. Success criteria
+## 13. Success criteria
 
 The draft succeeds when:
 
@@ -355,4 +401,5 @@ The draft succeeds when:
 6. choice topology shows semantic cases without exposing Rust patterns;
 7. choice lowers directly without a private selection enum or second dispatch;
 8. block bodies cannot read graph wires omitted from their capture lists;
-9. flow termination requires no redundant public block syntax.
+9. question and choice branches can merge into one typed middle continuation;
+10. flow termination requires no redundant public block syntax.

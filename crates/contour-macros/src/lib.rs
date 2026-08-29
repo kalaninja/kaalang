@@ -32,7 +32,7 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     rename_source_bindings(function, &sources, &wires);
 
     let mut visited = HashSet::new();
-    let body = lower_path(
+    let lowered = lower_path(
         &nodes,
         PathState {
             available: sources
@@ -45,6 +45,13 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
         &mut visited,
         &wires,
     )?;
+    if let PathExit::Merge { index, .. } = lowered.exit {
+        return Err(Error::new(
+            nodes[index].span,
+            "a merge must combine branches of a question or choice",
+        ));
+    }
+    let body = lowered.tokens;
 
     if let Some(unreachable) = nodes
         .iter()
@@ -71,6 +78,7 @@ enum NodeKind {
     Action,
     Question,
     Choice,
+    Merge,
 }
 
 struct Node {
@@ -164,10 +172,34 @@ fn parse_node(statement: &Stmt) -> Result<Node> {
                 "a choice must declare exactly one output for each case",
             ));
         }
+        NodeKind::Merge if inputs.len() < 2 => {
+            return Err(Error::new_spanned(
+                closure,
+                "a merge requires at least two alternative inputs",
+            ));
+        }
+        NodeKind::Merge if inputs.iter().any(|input| input.borrowed) => {
+            let borrowed = inputs
+                .iter()
+                .find(|input| input.borrowed)
+                .expect("a borrowed merge input exists");
+            return Err(Error::new(
+                borrowed.ident.span(),
+                "merge inputs must be bare identifiers",
+            ));
+        }
+        NodeKind::Merge if tuple_output => {
+            return Err(Error::new_spanned(
+                &closure.output,
+                "a merge must declare exactly one output identifier",
+            ));
+        }
         _ => {}
     }
     if kind == NodeKind::Choice {
         validate_choice_body(&body, &outputs)?;
+    } else if kind == NodeKind::Merge {
+        validate_merge_body(&body)?;
     }
 
     Ok(Node {
@@ -292,6 +324,8 @@ fn block_marker(
             Some(NodeKind::Question)
         } else if attribute.path().is_ident("choice") {
             Some(NodeKind::Choice)
+        } else if attribute.path().is_ident("merge") {
+            Some(NodeKind::Merge)
         } else if attribute.path().is_ident("case") {
             if marker.is_none() {
                 return Err(Error::new_spanned(
@@ -306,7 +340,7 @@ fn block_marker(
         } else {
             return Err(Error::new_spanned(
                 attribute,
-                "Contour blocks support only comments and action, question, choice, or case attributes",
+                "Contour blocks support only comments and action, question, choice, merge, or case attributes",
             ));
         };
 
@@ -316,7 +350,7 @@ fn block_marker(
         if marker.replace((kind, attribute)).is_some() {
             return Err(Error::new_spanned(
                 attribute,
-                "a Contour block requires exactly one action, question, or choice attribute",
+                "a Contour block requires exactly one action, question, choice, or merge attribute",
             ));
         }
     }
@@ -324,10 +358,19 @@ fn block_marker(
     let Some((kind, attribute)) = marker else {
         return Err(Error::new(
             fallback_span,
-            "a Contour block requires an action, question, or choice attribute",
+            "a Contour block requires an action, question, choice, or merge attribute",
         ));
     };
-    block_description(attribute, "Contour block")?;
+    if kind == NodeKind::Merge {
+        if !matches!(&attribute.meta, Meta::Path(_)) {
+            return Err(Error::new_spanned(
+                attribute,
+                "`#[merge]` does not accept arguments",
+            ));
+        }
+    } else {
+        block_description(attribute, "Contour block")?;
+    }
 
     if kind != NodeKind::Choice {
         if let Some(case) = cases.first() {
@@ -460,7 +503,13 @@ fn validate_graph(sources: &[Ident], nodes: &mut [Node]) -> Result<()> {
                     "a terminal action must have exactly one output",
                 ));
             }
-            NodeKind::Question | NodeKind::Choice => {}
+            NodeKind::Merge if !unconsumed.is_empty() => {
+                return Err(Error::new(
+                    unconsumed[0].span(),
+                    "a merge output must have a consumer",
+                ));
+            }
+            NodeKind::Question | NodeKind::Choice | NodeKind::Merge => {}
         }
     }
 
@@ -531,6 +580,17 @@ fn validate_choice_body(body: &Expr, outputs: &[Ident]) -> Result<()> {
     Ok(())
 }
 
+fn validate_merge_body(body: &Expr) -> Result<()> {
+    let Expr::Block(block) = body else {
+        return Err(Error::new_spanned(body, "a merge body must be empty"));
+    };
+    if !block.attrs.is_empty() || block.label.is_some() || !block.block.stmts.is_empty() {
+        return Err(Error::new_spanned(body, "a merge body must be empty"));
+    }
+
+    Ok(())
+}
+
 fn choice_match(body: &Expr) -> Option<&syn::ExprMatch> {
     let expression = single_body_expression(body)?;
     let Expr::Match(choice) = expression else {
@@ -575,21 +635,53 @@ struct PathState {
     last: Option<usize>,
 }
 
+struct LoweredPath {
+    tokens: TokenStream2,
+    exit: PathExit,
+}
+
+enum PathExit {
+    Terminal(PathState),
+    Merge {
+        index: usize,
+        input: Ident,
+        state: PathState,
+    },
+}
+
+impl PathExit {
+    fn state(&self) -> &PathState {
+        match self {
+            Self::Terminal(state) | Self::Merge { state, .. } => state,
+        }
+    }
+}
+
+struct MergePlan {
+    index: usize,
+    state: PathState,
+}
+
 fn lower_path(
     nodes: &[Node],
     state: PathState,
     visited: &mut HashSet<usize>,
     wires: &HashMap<String, Ident>,
-) -> Result<TokenStream2> {
+) -> Result<LoweredPath> {
     let ready = nodes
         .iter()
         .enumerate()
         .filter(|(index, node)| {
             !state.executed.contains(index)
-                && node
-                    .inputs
-                    .iter()
-                    .all(|input| state.available.contains(&input.ident.to_string()))
+                && if node.kind == NodeKind::Merge {
+                    node.inputs
+                        .iter()
+                        .any(|input| state.available.contains(&input.ident.to_string()))
+                } else {
+                    node.inputs
+                        .iter()
+                        .all(|input| state.available.contains(&input.ident.to_string()))
+                }
         })
         .map(|(index, _)| index)
         .collect::<Vec<_>>();
@@ -604,8 +696,35 @@ fn lower_path(
         return finish_path(nodes, &state, wires);
     };
 
-    visited.insert(index);
     let node = &nodes[index];
+    if node.kind == NodeKind::Merge {
+        let available = node
+            .inputs
+            .iter()
+            .filter(|input| state.available.contains(&input.ident.to_string()))
+            .collect::<Vec<_>>();
+        if available.len() != 1 {
+            return Err(Error::new(
+                available[1].ident.span(),
+                "exactly one merge input must be available on each path",
+            ));
+        }
+
+        let input = available[0].ident.clone();
+        let input_wire = wire_binding(wires, &input);
+        let mut state = state;
+        state.available.remove(&input.to_string());
+        return Ok(LoweredPath {
+            tokens: quote_spanned!(input.span()=> #input_wire),
+            exit: PathExit::Merge {
+                index,
+                input,
+                state,
+            },
+        });
+    }
+
+    visited.insert(index);
     let mut next = state;
     next.executed.insert(index);
     next.last = Some(index);
@@ -624,6 +743,7 @@ fn lower_path(
                 next.available.insert(output.to_string());
             }
             let continuation = lower_path(nodes, next, visited, wires)?;
+            let continuation_tokens = &continuation.tokens;
             let output_wires = node
                 .outputs
                 .iter()
@@ -635,12 +755,15 @@ fn lower_path(
                 let output = output_wires[0];
                 quote_spanned!(node.output_span=> #output)
             };
-            Ok(quote_spanned! {node.span=>
-                let #pattern = {
-                    #bindings
-                    #body
-                };
-                #continuation
+            Ok(LoweredPath {
+                tokens: quote_spanned! {node.span=>
+                    let #pattern = {
+                        #bindings
+                        #body
+                    };
+                    #continuation_tokens
+                },
+                exit: continuation.exit,
             })
         }
         NodeKind::Question => {
@@ -650,12 +773,16 @@ fn lower_path(
             yes_state.available.insert(yes.to_string());
             let mut no_state = next;
             no_state.available.insert(no.to_string());
-            let yes_path = lower_path(nodes, yes_state, visited, wires)?;
-            let no_path = lower_path(nodes, no_state, visited, wires)?;
+            let paths = vec![
+                lower_path(nodes, yes_state, visited, wires)?,
+                lower_path(nodes, no_state, visited, wires)?,
+            ];
+            let merge = merge_plan(nodes, &paths, visited)?;
             let yes_wire = wire_binding(wires, yes);
             let no_wire = wire_binding(wires, no);
-
-            Ok(quote_spanned! {node.span=>
+            let yes_path = branch_expression(&paths[0], merge.is_some());
+            let no_path = branch_expression(&paths[1], merge.is_some());
+            let branch = quote_spanned! {node.span=>
                 if {
                     #bindings
                     #body
@@ -666,7 +793,30 @@ fn lower_path(
                     let #no_wire = ();
                     #no_path
                 }
-            })
+            };
+
+            if let Some(merge) = merge {
+                let output = &nodes[merge.index].outputs[0];
+                let output_wire = wire_binding(wires, output);
+                let continuation = lower_path(nodes, merge.state, visited, wires)?;
+                let continuation_tokens = &continuation.tokens;
+                Ok(LoweredPath {
+                    tokens: quote_spanned! {nodes[merge.index].span=>
+                        let #output_wire = #branch;
+                        #continuation_tokens
+                    },
+                    exit: continuation.exit,
+                })
+            } else {
+                let states = paths
+                    .iter()
+                    .map(|path| path.exit.state())
+                    .collect::<Vec<_>>();
+                Ok(LoweredPath {
+                    tokens: branch,
+                    exit: PathExit::Terminal(combine_states(&states)),
+                })
+            }
         }
         NodeKind::Choice => {
             let mut paths = Vec::with_capacity(node.outputs.len());
@@ -675,6 +825,8 @@ fn lower_path(
                 branch_state.available.insert(output.to_string());
                 paths.push(lower_path(nodes, branch_state, visited, wires)?);
             }
+            let merge = merge_plan(nodes, &paths, visited)?;
+            let early_returns = merge.is_some();
             let continuations = node
                 .outputs
                 .iter()
@@ -699,9 +851,14 @@ fn lower_path(
                 Span::mixed_site(),
             );
             // Definition-site hygiene keeps match bindings out of downstream blocks.
-            let definitions = node.outputs.iter().zip(&paths).zip(&continuations).map(
-                |((output, path), continuation)| {
+            let definitions = node
+                .outputs
+                .iter()
+                .zip(&paths)
+                .zip(&continuations)
+                .map(|((output, path), continuation)| {
                     let output_wire = wire_binding(wires, output);
+                    let path = branch_expression(path, early_returns);
                     quote! {
                         macro_rules! #continuation {
                             ($value:expr) => {{
@@ -711,8 +868,8 @@ fn lower_path(
                             }};
                         }
                     }
-                },
-            );
+                })
+                .collect::<Vec<_>>();
 
             let dispatch = if is_todo_body(&node.body) {
                 let numbered = continuations[..continuations.len() - 1]
@@ -760,21 +917,138 @@ fn lower_path(
                 }
             };
 
-            Ok(quote_spanned! {node.span=>
-                struct #capability_type;
-                let #capability = #capability_type;
-                #(#definitions)*
-                #dispatch
-            })
+            if let Some(merge) = merge {
+                let output = &nodes[merge.index].outputs[0];
+                let output_wire = wire_binding(wires, output);
+                let continuation = lower_path(nodes, merge.state, visited, wires)?;
+                let continuation_tokens = &continuation.tokens;
+                Ok(LoweredPath {
+                    tokens: quote_spanned! {node.span=>
+                        struct #capability_type;
+                        let #capability = #capability_type;
+                        #(#definitions)*
+                        let #output_wire = #dispatch;
+                        #continuation_tokens
+                    },
+                    exit: continuation.exit,
+                })
+            } else {
+                let states = paths
+                    .iter()
+                    .map(|path| path.exit.state())
+                    .collect::<Vec<_>>();
+                Ok(LoweredPath {
+                    tokens: quote_spanned! {node.span=>
+                        struct #capability_type;
+                        let #capability = #capability_type;
+                        #(#definitions)*
+                        #dispatch
+                    },
+                    exit: PathExit::Terminal(combine_states(&states)),
+                })
+            }
+        }
+        NodeKind::Merge => unreachable!("merge nodes return before ordinary lowering"),
+    }
+}
+
+fn branch_expression(path: &LoweredPath, early_returns: bool) -> TokenStream2 {
+    let tokens = &path.tokens;
+    if early_returns && matches!(path.exit, PathExit::Terminal(_)) {
+        quote!(return { #tokens })
+    } else {
+        tokens.clone()
+    }
+}
+
+fn merge_plan(
+    nodes: &[Node],
+    paths: &[LoweredPath],
+    visited: &mut HashSet<usize>,
+) -> Result<Option<MergePlan>> {
+    let arrivals = paths
+        .iter()
+        .filter_map(|path| match &path.exit {
+            PathExit::Merge {
+                index,
+                input,
+                state,
+            } => Some((*index, input, state)),
+            PathExit::Terminal(_) => None,
+        })
+        .collect::<Vec<_>>();
+    let Some((index, _, _)) = arrivals.first().copied() else {
+        return Ok(None);
+    };
+    if let Some((other, _, _)) = arrivals.iter().find(|(other, _, _)| *other != index) {
+        return Err(Error::new(
+            nodes[*other].span,
+            "continuing branches must reach the same merge",
+        ));
+    }
+
+    let merge = &nodes[index];
+    let mut arrived = HashSet::new();
+    for (_, input, _) in &arrivals {
+        if !arrived.insert(input.to_string()) {
+            return Err(Error::new(
+                input.span(),
+                "each merge input must be reached by exactly one branch",
+            ));
         }
     }
+    let declared = merge
+        .inputs
+        .iter()
+        .map(|input| input.ident.to_string())
+        .collect::<HashSet<_>>();
+    if arrived != declared {
+        return Err(Error::new(
+            merge.span,
+            "every merge input must be reached by exactly one branch",
+        ));
+    }
+
+    let states = arrivals
+        .iter()
+        .map(|(_, _, state)| *state)
+        .collect::<Vec<_>>();
+    let mut state = combine_states(&states);
+    for path in paths {
+        state
+            .executed
+            .extend(path.exit.state().executed.iter().copied());
+    }
+    for input in &merge.inputs {
+        state.available.remove(&input.ident.to_string());
+    }
+    state.available.insert(merge.outputs[0].to_string());
+    state.executed.insert(index);
+    state.last = Some(index);
+    visited.insert(index);
+
+    Ok(Some(MergePlan { index, state }))
+}
+
+fn combine_states(states: &[&PathState]) -> PathState {
+    let mut combined = (*states
+        .first()
+        .expect("a question or choice has at least two paths"))
+    .clone();
+    for state in &states[1..] {
+        combined
+            .available
+            .retain(|wire| state.available.contains(wire));
+        combined.executed.extend(state.executed.iter().copied());
+    }
+    combined
 }
 
 fn finish_path(
     nodes: &[Node],
     state: &PathState,
     wires: &HashMap<String, Ident>,
-) -> Result<TokenStream2> {
+) -> Result<LoweredPath> {
     let last = state
         .last
         .expect("the first block is always ready, so a finished path executed one");
@@ -788,7 +1062,10 @@ fn finish_path(
 
     let output = &node.outputs[0];
     let output_wire = wire_binding(wires, output);
-    Ok(quote_spanned!(output.span()=> #output_wire))
+    Ok(LoweredPath {
+        tokens: quote_spanned!(output.span()=> #output_wire),
+        exit: PathExit::Terminal(state.clone()),
+    })
 }
 
 fn capture_bindings(inputs: &[Capture], wires: &HashMap<String, Ident>) -> TokenStream2 {

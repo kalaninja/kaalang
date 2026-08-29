@@ -1,0 +1,5 @@
+error: continuing branches must reach the same merge
+  --> tests/merge/compile_fail/different_merges.rs:22:5
+   |
+22 |     #[merge]
+   |     ^

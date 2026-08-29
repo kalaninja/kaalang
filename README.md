@@ -11,7 +11,7 @@ documentation, examples, tests, and commit messages.
 
 An ordinary Rust function is the graph boundary. `#[contour]` owns flow-wide
 checks and lowering. Local action, question, and choice attributes contain each
-block's required natural-language description:
+computational block's required natural-language description:
 
 ```rust
 use contour::contour;
@@ -68,15 +68,33 @@ creates a unit-valued control wire. Different arms may produce different
 payload types because they feed different output wires. Only exact whole-body
 `todo!()` is accepted as an unimplemented choice.
 
-A nonempty string literal inside every marker attribute is the block's exact
-natural-language intent. An adjacent `//` comment remains an ordinary source
-comment and does not affect the graph.
+A structural merge names the common value produced by mutually exclusive
+branches:
+
+```rust
+#[merge]
+|negative_value, zero_value, positive_value| -> value {};
+
+#[action("Return the selected value.")]
+|value| -> result { value };
+```
+
+Merge inputs are alternative bare wires: exactly one is available on each
+continuing path. A merge has at least two inputs, one output, no description,
+and an empty body. Lowering makes its output the value of the surrounding Rust
+`match` or `if`, so Rust checks that the merged branch values have one type.
+Other branches of the same choice may terminate the function instead.
+
+A nonempty string literal inside every action, question, choice, and case
+attribute is the block's exact natural-language intent. A merge is a structural
+connector and has no description. An adjacent `//` comment remains an ordinary
+source comment and does not affect the graph.
 
 The closure-shaped statement lists inputs before `->`, outputs after it, and
 contains the leaf implementation. `name` consumes a wire and `&name` borrows
 it. Every name is one wire, never a bundle. A question has exactly two
 positional outputs; a choice has a tuple with one output per case; an action may
-declare an identifier or tuple.
+declare an identifier or tuple; and a merge declares one identifier.
 `todo!()` means "not implemented" and panics only if execution reaches that
 block.
 
@@ -93,6 +111,7 @@ every incoming connection:
 
 - the first question output is yes/true and the second is no/false;
 - choice cases, outputs, and match arms correspond positionally;
+- merge inputs are mutually exclusive and become one output wire;
 - control outputs carry no hidden data;
 - every reachable path ends at an action with one unconsumed output;
 - the function return type is the contract for all terminal outputs.
@@ -110,15 +129,18 @@ expressions. Rust checks body types, ownership, and the function return type. A
 question or choice body is evaluated once and only its selected branch runs.
 Choice lowering keeps the authored `match` and passes the selected arm value to
 the corresponding continuation; it creates no selection enum or second
-dispatch.
+dispatch. A merge binds that `match`, or a question's `if`, to one output and
+lowers the shared continuation once. Terminal siblings use ordinary early
+returns and still satisfy the function return contract.
 There is no runtime scheduler or wire wrapper.
 
 The current subset requires exactly one next block to be ready at every point;
-parallel paths, joins, and merges remain unsupported. The local marker
-attributes are valid only inside a `#[contour]` function and need no import or
-separate definition.
+explicit merges combine only mutually exclusive branches. Parallel paths,
+joins, and branches that continue to different merges remain unsupported. The
+local marker attributes are valid only inside a `#[contour]` function and need
+no import or separate definition.
 
-Block IDs, descriptors, scheduling, rendering, loops, merges, and subflows are
+Block IDs, descriptors, scheduling, rendering, loops, joins, and subflows are
 deliberately deferred. See
 [RFC 0001](docs/rfcs/0001-core-model.md) for the draft contract and the
 [`playground`](examples/playground) for executable examples. Its current

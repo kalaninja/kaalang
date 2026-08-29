@@ -1,0 +1,13 @@
+error[E0308]: `if` and `else` have incompatible types
+  --> tests/merge/compile_fail/merge_type_mismatch.rs:12:13
+   |
+ 3 | #[contour]
+   | ---------- in this attribute macro expansion
+...
+ 9 |     |yes| -> number { 1_u32 };
+   |              ------ expected because of this
+...
+12 |     |no| -> text { "no" };
+   |             ^^^^ expected `u32`, found `&str`
+   |
+   = note: this error originates in the attribute macro `contour` (in Nightly builds, run with -Z macro-backtrace for more info)
