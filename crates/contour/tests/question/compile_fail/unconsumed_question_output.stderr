@@ -1,0 +1,5 @@
+error: every Contour question output must have a consumer
+ --> tests/question/compile_fail/unconsumed_question_output.rs:6:25
+  |
+6 |     |&input| -> (large, small) { *input > 10 };
+  |                         ^^^^^

@@ -1,5 +1,5 @@
 error: duplicate Contour wire name
- --> tests/graph/compile_fail/duplicate_wire.rs:9:17
+ --> tests/flow/compile_fail/duplicate_wire.rs:9:17
   |
 9 |     |shared| -> shared { shared };
   |                 ^^^^^^

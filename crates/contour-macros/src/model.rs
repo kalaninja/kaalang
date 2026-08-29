@@ -1,4 +1,4 @@
-//! The flow as its author declared it, and the plan the compiler derived.
+//! The authored and resolved flow models, plus the compiler's execution plan.
 
 use std::collections::HashMap;
 
@@ -18,14 +18,14 @@ pub(crate) struct Block {
     pub(crate) outputs: Vec<Ident>,
     pub(crate) tuple_output: bool,
     pub(crate) output_span: Span,
-    pub(crate) inputs: Vec<Capture>,
+    pub(crate) inputs: Vec<Input>,
     pub(crate) body: Expr,
     pub(crate) terminal: bool,
     pub(crate) span: Span,
 }
 
 #[derive(Clone)]
-pub(crate) struct Capture {
+pub(crate) struct Input {
     pub(crate) borrowed: bool,
     pub(crate) ident: Ident,
 }
@@ -35,15 +35,15 @@ pub(crate) struct ParsedFlow {
     pub(crate) blocks: Vec<Block>,
 }
 
-/// Resolved flow: every wire name has a producer and an internal binding.
-pub(crate) struct Graph {
+/// A resolved flow where every wire has a producer and an internal binding.
+pub(crate) struct Flow {
     pub(crate) sources: Vec<Ident>,
     pub(crate) blocks: Vec<Block>,
     wires: HashMap<String, Ident>,
 }
 
-impl Graph {
-    /// Creates a graph from resolved blocks and their internal wire bindings.
+impl Flow {
+    /// Creates a flow from resolved blocks and their internal wire bindings.
     pub(crate) fn new(
         sources: Vec<Ident>,
         blocks: Vec<Block>,
@@ -65,7 +65,7 @@ impl Graph {
 }
 
 /// A verified execution plan. Every Contour invariant already holds, so code
-/// generation reads this instead of walking the graph a second time.
+/// generation reads this instead of walking the flow a second time.
 pub(crate) enum Plan {
     Action {
         index: usize,

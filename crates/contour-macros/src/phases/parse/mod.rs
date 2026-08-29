@@ -1,4 +1,4 @@
-//! Parses a Contour function and validates each block's local syntax.
+//! Parses a Contour flow and validates each block's local syntax.
 
 use proc_macro2::{Ident, Span};
 use syn::{
@@ -6,14 +6,14 @@ use syn::{
     PathArguments, Result, ReturnType, Stmt, Type, spanned::Spanned,
 };
 
-use crate::model::{Block, BlockKind, Capture, ParsedFlow};
+use crate::model::{Block, BlockKind, Input, ParsedFlow};
 
 mod action;
 mod choice;
 mod merge;
 mod question;
 
-/// Parses a function into its source wires and closure-shaped graph blocks.
+/// Parses a flow function into its source wires and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<ParsedFlow> {
     Ok(ParsedFlow {
         sources: source_wires(function)?,
@@ -21,14 +21,14 @@ pub(crate) fn flow(function: &ItemFn) -> Result<ParsedFlow> {
     })
 }
 
-/// Extracts simple function parameters as source wire names.
+/// Extracts simple flow parameters as source wire names.
 fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
     function
         .sig
         .inputs
         .iter()
         .map(|argument| match argument {
-            FnArg::Typed(argument) => simple_binding(&argument.pat, "Contour function parameters"),
+            FnArg::Typed(argument) => simple_binding(&argument.pat, "Contour flow parameters"),
             FnArg::Receiver(receiver) => Err(Error::new(
                 receiver.span(),
                 "#[contour] is supported only on free functions",
@@ -82,7 +82,7 @@ pub(crate) struct BlockSyntax<'a> {
     pub(crate) kind_attribute: &'a Attribute,
     /// Attributes that accompany the one declaring the kind, such as `#[case]`.
     pub(crate) companions: Vec<&'a Attribute>,
-    pub(crate) inputs: Vec<Capture>,
+    pub(crate) inputs: Vec<Input>,
     pub(crate) outputs: Vec<Ident>,
     pub(crate) tuple_output: bool,
     pub(crate) output_span: Span,
@@ -112,7 +112,7 @@ impl<'a> BlockSyntax<'a> {
         }
     }
 
-    /// Turns syntax its own kind has accepted into a graph block.
+    /// Turns syntax its own kind has accepted into a flow block.
     pub(crate) fn into_block(self) -> Block {
         Block {
             kind: self.kind,
@@ -147,7 +147,7 @@ fn block_statement(statement: &Stmt) -> Result<&ExprClosure> {
     let Stmt::Expr(expression, _) = statement else {
         return Err(Error::new_spanned(
             statement,
-            "a Contour body may contain only attributed closure statements",
+            "a Contour flow body may contain only attributed block statements",
         ));
     };
     let Expr::Closure(closure) = expression else {
@@ -229,8 +229,8 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
     })
 }
 
-/// Extracts graph captures and the authored body from a block closure.
-fn block_closure(closure: &ExprClosure) -> Result<(Vec<Capture>, Expr)> {
+/// Extracts inputs and the authored body from a block's closure-shaped syntax.
+fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
     if closure.lifetimes.is_some()
         || closure.constness.is_some()
         || closure.asyncness.is_some()
@@ -238,7 +238,7 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Capture>, Expr)> {
     {
         return Err(Error::new_spanned(
             closure,
-            "Contour block closures do not support `move`, `async`, `const`, or lifetime modifiers",
+            "Contour block statements do not support `move`, `async`, `const`, or lifetime modifiers",
         ));
     }
     if closure.inputs.is_empty() {
@@ -251,22 +251,22 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Capture>, Expr)> {
     let inputs = closure
         .inputs
         .iter()
-        .map(block_capture)
+        .map(block_input)
         .collect::<Result<_>>()?;
     Ok((inputs, closure.body.as_ref().clone()))
 }
 
-/// Parses one consuming or borrowing input capture.
-fn block_capture(pattern: &Pat) -> Result<Capture> {
+/// Parses one consuming or borrowing block input.
+fn block_input(pattern: &Pat) -> Result<Input> {
     match pattern {
-        Pat::Ident(_) => Ok(Capture {
+        Pat::Ident(_) => Ok(Input {
             borrowed: false,
             ident: simple_binding(pattern, "Contour block inputs")?,
         }),
         Pat::Reference(reference)
             if reference.attrs.is_empty() && reference.mutability.is_none() =>
         {
-            Ok(Capture {
+            Ok(Input {
                 borrowed: true,
                 ident: simple_binding(&reference.pat, "Contour block inputs")?,
             })

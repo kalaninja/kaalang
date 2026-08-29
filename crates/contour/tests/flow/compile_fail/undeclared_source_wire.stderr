@@ -1,5 +1,5 @@
 error[E0425]: cannot find value `input` in this scope
- --> tests/graph/compile_fail/hidden_source_capture.rs:6:27
+ --> tests/flow/compile_fail/undeclared_source_wire.rs:6:27
   |
 6 |     |trigger| -> output { input };
   |                           ^^^^^ not found in this scope

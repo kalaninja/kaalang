@@ -1,14 +1,14 @@
-//! Validates parsed wires and builds the semantic graph.
+//! Resolves parsed wires and builds the flow model.
 
 use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span};
 use syn::{Error, Result};
 
-use crate::model::{Block, BlockKind, Graph, ParsedFlow};
+use crate::model::{Block, BlockKind, Flow, ParsedFlow};
 
-/// Validates wire names, settles terminality, and assigns internal bindings.
-pub(crate) fn build(parsed: ParsedFlow) -> Result<Graph> {
+/// Resolves a parsed flow, settles terminality, and assigns internal bindings.
+pub(crate) fn flow(parsed: ParsedFlow) -> Result<Flow> {
     let ParsedFlow {
         sources,
         mut blocks,
@@ -17,7 +17,7 @@ pub(crate) fn build(parsed: ParsedFlow) -> Result<Graph> {
     mark_terminals(&mut blocks)?;
     let wires = internal_wires(&sources, &blocks);
 
-    Ok(Graph::new(sources, blocks, wires))
+    Ok(Flow::new(sources, blocks, wires))
 }
 
 /// Checks that every input names an earlier producer and that wire names are unique.
@@ -30,10 +30,10 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
     }
 
     for block in blocks {
-        let mut captured = HashSet::new();
+        let mut seen_inputs = HashSet::new();
         for input in &block.inputs {
             let name = input.ident.to_string();
-            if !captured.insert(name.clone()) {
+            if !seen_inputs.insert(name.clone()) {
                 return Err(Error::new(
                     input.ident.span(),
                     "duplicate Contour block input",
@@ -42,7 +42,7 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
             if !producers.contains(&name) {
                 return Err(Error::new(
                     input.ident.span(),
-                    "a Contour input must reference a function parameter or an earlier block output",
+                    "a Contour block input must name a source wire or an earlier block output",
                 ));
             }
         }
@@ -73,13 +73,13 @@ fn mark_terminals(blocks: &mut [Block]) -> Result<()> {
             BlockKind::Question if !unconsumed.is_empty() => {
                 return Err(Error::new(
                     unconsumed[0].span(),
-                    "every Contour question branch must have a consumer",
+                    "every Contour question output must have a consumer",
                 ));
             }
             BlockKind::Choice if !unconsumed.is_empty() => {
                 return Err(Error::new(
                     unconsumed[0].span(),
-                    "every Contour choice case must have a consumer",
+                    "every Contour choice output must have a consumer",
                 ));
             }
             BlockKind::Action if unconsumed.is_empty() => {}
@@ -114,7 +114,7 @@ fn consumed_wires(blocks: &[Block]) -> HashSet<String> {
 
 /// Assigns each source and output wire a hygienic Rust binding.
 fn internal_wires(sources: &[Ident], blocks: &[Block]) -> HashMap<String, Ident> {
-    // Source spellings are reserved for aliases inside the blocks that capture them.
+    // Source spellings are reserved for aliases inside blocks that list them as inputs.
     sources
         .iter()
         .chain(blocks.iter().flat_map(|block| &block.outputs))

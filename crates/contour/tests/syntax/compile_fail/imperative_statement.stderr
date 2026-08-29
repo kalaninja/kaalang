@@ -1,4 +1,4 @@
-error: a Contour body may contain only attributed closure statements
+error: a Contour flow body may contain only attributed block statements
  --> tests/syntax/compile_fail/imperative_statement.rs:6:5
   |
 6 |     let output = input;

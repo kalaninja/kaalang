@@ -37,16 +37,16 @@ fn skeleton(seed: u32) -> u32 {
 }
 
 #[test]
-fn graph_is_an_ordinary_rust_function() {
-    fn accepts_graph(_: fn(u32, u32) -> u32) {}
+fn flow_is_an_ordinary_rust_function() {
+    fn accepts_flow(_: fn(u32, u32) -> u32) {}
     fn accepts_skeleton(_: fn(u32) -> u32) {}
 
-    accepts_graph(classify);
+    accepts_flow(classify);
     accepts_skeleton(skeleton);
 }
 
 #[test]
-fn generated_graph_executes() {
+fn generated_flow_executes() {
     assert_eq!(classify(1, 2), 5);
 }
 

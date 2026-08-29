@@ -1,5 +1,0 @@
-error: a Contour input must reference a function parameter or an earlier block output
- --> tests/graph/compile_fail/unknown_input.rs:6:6
-  |
-6 |     |future| -> output { future };
-  |      ^^^^^^

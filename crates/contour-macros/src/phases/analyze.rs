@@ -1,31 +1,31 @@
-//! Validates path-dependent graph invariants and builds an execution plan.
+//! Validates path-dependent flow invariants and builds an execution plan.
 
 use std::collections::HashSet;
 
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Branch, Graph, Merge, Plan};
+use crate::model::{BlockKind, Branch, Flow, Merge, Plan};
 
 /// Walks every path through the flow exactly once, proving the invariants that
 /// need path state and recording what code generation has to emit.
-pub(crate) fn flow(graph: &Graph) -> Result<Plan> {
+pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
     let mut analysis = Analysis {
-        graph,
+        flow,
         visited: HashSet::new(),
     };
     let walked = analysis.walk(PathState {
-        available: graph.sources.iter().map(ToString::to_string).collect(),
+        available: flow.sources.iter().map(ToString::to_string).collect(),
         executed: HashSet::new(),
         last: None,
     })?;
     if let Exit::Merge { index, .. } = walked.exit {
         return Err(Error::new(
-            graph.blocks[index].span,
+            flow.blocks[index].span,
             "a Contour merge must combine branches of a question or choice",
         ));
     }
-    if let Some(unreachable) = graph
+    if let Some(unreachable) = flow
         .blocks
         .iter()
         .enumerate()
@@ -42,7 +42,7 @@ pub(crate) fn flow(graph: &Graph) -> Result<Plan> {
 }
 
 struct Analysis<'a> {
-    graph: &'a Graph,
+    flow: &'a Flow,
     visited: HashSet<usize>,
 }
 
@@ -89,7 +89,7 @@ struct MergePlan {
 impl Analysis<'_> {
     /// Analyzes the next ready block from one path state.
     fn walk(&mut self, state: PathState) -> Result<Walked> {
-        let blocks = &self.graph.blocks;
+        let blocks = &self.flow.blocks;
         let ready = blocks
             .iter()
             .enumerate()
@@ -169,7 +169,7 @@ impl Analysis<'_> {
 
     /// Adds an action's outputs and analyzes its continuation.
     fn action(&mut self, index: usize, mut next: PathState) -> Result<Walked> {
-        for output in &self.graph.blocks[index].outputs {
+        for output in &self.flow.blocks[index].outputs {
             next.available.insert(output.to_string());
         }
         let continuation = self.walk(next)?;
@@ -185,7 +185,7 @@ impl Analysis<'_> {
 
     /// Analyzes both positional branches of a question.
     fn question(&mut self, index: usize, next: PathState) -> Result<Walked> {
-        let outputs = &self.graph.blocks[index].outputs;
+        let outputs = &self.flow.blocks[index].outputs;
         let mut yes_state = next.clone();
         yes_state.available.insert(outputs[0].to_string());
         let mut no_state = next;
@@ -209,7 +209,7 @@ impl Analysis<'_> {
 
     /// Analyzes every ordered case branch of a choice.
     fn choice(&mut self, index: usize, next: PathState) -> Result<Walked> {
-        let outputs = &self.graph.blocks[index].outputs;
+        let outputs = &self.flow.blocks[index].outputs;
         let mut walked = Vec::with_capacity(outputs.len());
         for output in outputs {
             let mut branch_state = next.clone();
@@ -276,7 +276,7 @@ impl Analysis<'_> {
 
     /// Validates branch convergence and computes the post-merge state.
     fn merge_plan(&mut self, paths: &[Walked]) -> Result<Option<MergePlan>> {
-        let blocks = &self.graph.blocks;
+        let blocks = &self.flow.blocks;
         let arrivals = paths
             .iter()
             .filter_map(|path| match &path.exit {
@@ -346,7 +346,7 @@ impl Analysis<'_> {
         let last = state
             .last
             .expect("the first block is always ready, so a finished path executed one");
-        let block = &self.graph.blocks[last];
+        let block = &self.flow.blocks[last];
         if !block.terminal {
             return Err(Error::new(
                 block.span,

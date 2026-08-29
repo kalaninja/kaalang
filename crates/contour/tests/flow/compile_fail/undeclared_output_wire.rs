@@ -8,7 +8,7 @@ fn invalid(input: u32) -> u32 {
     #[action("Increment the copied value.")]
     |copied| -> incremented { copied + 1 };
 
-    #[action("Read the consumed output without declaring it.")]
+    #[action("Read an output wire omitted from the inputs.")]
     |incremented| -> output { incremented + copied };
 }
 

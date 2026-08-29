@@ -1,11 +1,11 @@
 error[E0425]: cannot find value `__contour_wire_0` in this scope
- --> tests/graph/compile_fail/hidden_internal_capture.rs:6:27
+ --> tests/flow/compile_fail/hidden_internal_wire.rs:6:27
   |
 6 |     |trigger| -> output { __contour_wire_0 };
   |                           ^^^^^^^^^^^^^^^^ not found in this scope
   |
 help: an identifier with the same name is defined here, but is not accessible due to macro hygiene
- --> tests/graph/compile_fail/hidden_internal_capture.rs:4:12
+ --> tests/flow/compile_fail/hidden_internal_wire.rs:4:12
   |
 3 | #[contour]
   | ---------- in this attribute macro expansion

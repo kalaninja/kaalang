@@ -3,18 +3,18 @@
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Merged, capture_bindings};
+use super::{Merged, input_bindings};
 use crate::body::{block_body, choice_match, is_todo_body};
-use crate::model::Graph;
+use crate::model::Flow;
 
 pub(crate) fn emit(
-    graph: &Graph,
+    flow: &Flow,
     index: usize,
     branches: &[TokenStream2],
     merged: Option<Merged>,
 ) -> TokenStream2 {
-    let block = &graph.blocks[index];
-    let bindings = capture_bindings(&block.inputs, graph);
+    let block = &flow.blocks[index];
+    let bindings = input_bindings(&block.inputs, flow);
     let body = block_body(&block.body);
     let continuations = block
         .outputs
@@ -46,7 +46,7 @@ pub(crate) fn emit(
         .zip(branches)
         .zip(&continuations)
         .map(|((output, path), continuation)| {
-            let output_wire = graph.wire(output);
+            let output_wire = flow.wire(output);
             quote! {
                 macro_rules! #continuation {
                     ($value:expr) => {{
@@ -113,7 +113,7 @@ pub(crate) fn emit(
             #dispatch
         };
     };
-    let output_wire = graph.wire(&graph.blocks[merged.index].outputs[0]);
+    let output_wire = flow.wire(&flow.blocks[merged.index].outputs[0]);
     let continuation = merged.continuation;
 
     quote_spanned! {block.span=>

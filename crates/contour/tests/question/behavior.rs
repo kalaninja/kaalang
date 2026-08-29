@@ -13,7 +13,7 @@ fn run_question(condition: bool) -> &'static str {
 }
 
 #[test]
-fn question_block_routes_both_outputs() {
+fn question_executes_each_branch() {
     assert_eq!(run_question(true), "yes");
     assert_eq!(run_question(false), "no");
 }

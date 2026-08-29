@@ -1,5 +1,5 @@
 error[E0308]: mismatched types
- --> tests/graph/compile_fail/terminal_return_type.rs:6:17
+ --> tests/flow/compile_fail/terminal_return_type.rs:6:17
   |
 3 | #[contour]
   | ---------- in this attribute macro expansion

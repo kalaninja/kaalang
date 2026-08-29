@@ -1,5 +1,5 @@
 error: a terminal Contour action must have exactly one output
- --> tests/graph/compile_fail/terminal_output_arity.rs:6:18
+ --> tests/flow/compile_fail/terminal_output_arity.rs:6:18
   |
 6 |     |&input| -> (left, right) { (*input, *input + 1) };
   |                  ^^^^

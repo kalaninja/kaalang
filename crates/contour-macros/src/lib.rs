@@ -11,9 +11,9 @@ mod phases;
 mod body;
 mod model;
 
-use crate::phases::{analyze, codegen, graph, parse};
+use crate::phases::{analyze, codegen, parse, resolve};
 
-/// Parses and lowers an ordinary Rust function containing a Contour graph.
+/// Parses and lowers an ordinary Rust function containing a Contour flow.
 #[proc_macro_attribute]
 pub fn contour(attributes: TokenStream, item: TokenStream) -> TokenStream {
     if !attributes.is_empty() {
@@ -31,11 +31,11 @@ pub fn contour(attributes: TokenStream, item: TokenStream) -> TokenStream {
 
 fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let parsed = parse::flow(function)?;
-    let graph = graph::build(parsed)?;
-    let plan = analyze::flow(&graph)?;
-    let body = codegen::flow(&graph, &plan);
+    let flow = resolve::flow(parsed)?;
+    let plan = analyze::flow(&flow)?;
+    let body = codegen::flow(&flow, &plan);
 
-    codegen::rename_source_bindings(function, &graph);
+    codegen::rename_source_bindings(function, &flow);
     *function.block = syn::parse2(quote!({ #body }))?;
 
     Ok(quote! {

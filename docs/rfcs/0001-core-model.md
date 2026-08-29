@@ -1,19 +1,36 @@
-# RFC 0001: Contour Syntax Model
+# RFC 0001: Contour Core Model
 
 - Status: executable discussion draft
 - Model version: `0.1`
 - Implementation target: Rust
 
-## 1. Problem
+## 1. Overview
 
-Contour needs a readable textual graph whose execution agrees with its visible
-topology. This revision keeps the graph body valid Rust and implements the
-smallest useful executor: compile-time validation followed by direct lowering
-to ordinary Rust control flow.
+Contour is a language for writing flows as valid Rust. It is inspired by DRAKON
+but defines its own syntax and semantics.
 
-## 2. Canonical source
+A Contour flow is an ordinary Rust function marked with `#[contour]`. The
+attribute validates the flow and lowers it to ordinary Rust control flow. A flow
+contains blocks connected by named wires, and its visible dependencies determine
+which block executes next.
 
-The graph lives in an ordinary Rust function marked with `#[contour]`:
+Contour uses these terms consistently:
+
+- a **flow** is one function marked with `#[contour]`;
+- a **block** is an action, question, choice, or merge statement;
+- a **wire** is a named connection between the flow boundary and blocks;
+- an **input** names a wire before `->`, and an **output** declares a wire after
+  `->`;
+- a **branch** is one continuation selected by a question or choice;
+- a choice **case** describes one branch, while the corresponding Rust `match`
+  **arm** implements it;
+- a **path** is the sequence of blocks executed through selected branches;
+- a **terminal action** is the last block on a path.
+
+## 2. Flow boundary
+
+Function parameters declare source wires. The function return type is the
+contract for every terminal action output.
 
 ```rust
 use contour::contour;
@@ -31,109 +48,67 @@ fn decide(request: Request) -> Decision {
 }
 ```
 
-Function parameters are initial wires, the names after each block arrow declare
-outputs, and the function return type is the contract for terminal action
-outputs. Lowering turns those output declarations into ordinary Rust `let`
-patterns. There is no outer graph macro, explicit end block, custom `<-`
-operator, external compiler, `build.rs`, generated source file, YAML
-representation, or external graph file.
+The function body contains closure-shaped Rust expression statements. Each
+statement declares one block. The final statement may omit its semicolon as a
+Rust tail expression may.
 
-The example is intentionally complete as a graph but incomplete as an
-implementation. The author supplies intent and topology first. An agent later
-replaces `todo!()` bodies without changing the graph contract.
+The example is a complete flow whose computational bodies are placeholders.
+`todo!()` retains its Rust behavior and panics if execution reaches it.
 
-## 3. Attribute boundary
+## 3. Block statements
 
-`#[contour]` is a procedural attribute because it inspects the whole function
-and validates graph-wide invariants. It parses the current flat
-subset into one graph AST, validates it, and replaces the source statements with
-nested Rust `if`, `match`, and `let` expressions. Executable behavior and
-validation thus come from the same graph.
+A computational block has this common shape:
 
-The attribute lives in a separate `proc-macro` crate, uses `syn` and `quote`, and
-is re-exported by `contour`.
+```rust
+#[action("Description of the block.")]
+|input, &borrowed| -> output {
+    rust_expression
+};
+```
 
-Local `#[action("description")]`, `#[question("description")]`, and
-`#[choice("description")]` attributes mark computational closure-shaped
-statements for the surrounding procedural attribute. Their nonempty Rust string
-literal is the exact natural-language description. A choice additionally has
-ordered `#[case("description")]` attributes. Structural merge statements use
-bare `#[merge]` because they add no domain behavior to describe. A nearby source
-comment remains non-semantic and is never substituted for a description.
+`#[action]`, `#[question]`, and `#[choice]` each carry one nonempty Rust string
+literal. The string is the block description. A choice also carries two or more
+ordered `#[case("description")]` attributes. A merge uses the bare `#[merge]`
+attribute because its behavior is fully structural.
 
-Parameters before `->` list separate inputs. Identifiers after `->` declare
-outputs, and the block expression is the implementation body. Rust parses the
-output position as a closure return type; `#[contour]` deliberately reinterprets
-its simple identifiers as output names before type checking.
+Source comments remain ordinary Rust comments. Block and case descriptions come
+from their attributes.
 
-The local kind attributes are consumed by `#[contour]`; they are not
-independently exported attribute macros. The closure syntax is parsed but reinterpreted by
-`#[contour]`, so lowering creates no runtime closure. This keeps one parser and
-makes block bodies ordinary Rust expressions that `rustfmt` formats normally. A kind
-attribute used outside a `#[contour]` function is rejected by Rust.
-
-Rust requires every closure expression to have a body. The canonical author
-skeleton therefore uses `todo!()` as an explicit implementation placeholder;
-an incomplete `|inputs|;` expression would not be valid Rust. A merge instead
-uses an empty body because lowering supplies its complete structural behavior.
+`#[contour]` consumes the closure-shaped syntax and executes it through ordinary
+Rust bindings and expressions.
 
 ## 4. Wires and inputs
 
-A wire is the graph role of an ordinary Rust binding, not a runtime wrapper.
-Function parameters introduce source wires and block arrows introduce later
-wires. Lowering represents them as ordinary Rust bindings.
+A wire is represented by an ordinary Rust binding. Source wires come from
+function parameters, and block outputs declare later wires. Every wire name is
+unique within a flow.
 
-Each block lists every incoming connection separately:
+Each block lists every wire available to its body:
 
 ```rust
 |&request, policy, yes| -> decision { /* body */ };
 ```
 
-The closure parameters have graph-capture semantics. They identify existing
-wires; they are not runtime closure parameters.
+Inputs have two forms:
 
-- `&request` borrows the existing binding and exposes the same name inside the
-  block;
-- `policy` consumes the existing binding and exposes the same name inside the
-  block;
-- aliases and arbitrary input expressions are not accepted;
-- every block currently requires at least one input.
+- `name` consumes the wire on the current path;
+- `&name` borrows the wire and leaves it available to later blocks on that path.
 
-`#[contour]` checks graph name resolution and declaration order. Generated Rust
-checks concrete types, moves, borrows, and output destructuring. A value can feed
-several later blocks by borrowing it each time. There is no `Bundle` or implicit
-grouping of inputs.
+Every input names a source wire or an output declared by an earlier block. Each
+block has at least one input, and duplicate inputs are invalid.
 
-Consumption is a graph rule before it is a Rust move. `#[contour]` drops a bare
-capture from its compile-time path state and stores every source and output wire
-under an internal Rust binding. A block receives source-level local aliases
-only for its declared captures. Omitted and consumed wire names are therefore
-out of scope even when their values implement `Copy`.
+Consumption is a Contour rule independent of Rust's `Copy` trait. A block body
+receives local bindings only for its listed inputs, so omitted and consumed
+wires are out of scope. Rust locals declared inside a block remain local to that
+body and may reuse a wire's spelling without changing wire resolution.
 
-Inline Rust cannot read graph wires omitted from the block's capture list.
-Ordinary locals declared inside a block remain scoped to that block and may use
-the same spelling as a wire without changing graph resolution.
+Rust checks the concrete wire types, moves, borrows, and output destructuring.
+Contour keeps types out of wire declarations and relies on Rust inference.
 
-## 5. Action block
+## 5. Action
 
-An action is an attributed closure-shaped statement. An author can declare it
-without implementation code:
-
-```rust
-#[action("Build the decision.")]
-|yes, &request| -> decision { todo!() };
-```
-
-An implementation agent replaces the placeholder body:
-
-```rust
-#[action("Build the decision.")]
-|yes, &request| -> decision {
-    Decision::approved(request)
-};
-```
-
-An identifier or a tuple of identifiers may appear after the arrow:
+An action evaluates a Rust expression and binds its value to one output or a
+tuple of outputs:
 
 ```rust
 #[action("Split the value.")]
@@ -142,30 +117,17 @@ An identifier or a tuple of identifiers may appear after the arrow:
 };
 ```
 
-The body owns leaf computation but not graph routing. It may call ordinary Rust
-functions or be a Rust block expression and must not invoke subsequent graph
-blocks. The arrow declares output names rather than duplicating their Rust
-types; concrete types are inferred from the body and checked by Rust. `todo!()`
-means explicitly unimplemented; it never means a no-op, unit result, or default
-value.
+The output declaration becomes a Rust binding pattern, so Rust checks that the
+body value has the declared shape. An action with consumed outputs continues to
+their downstream blocks.
 
-An action is terminal when its output has no consumer. Every reachable graph
-path ends at a terminal action, and each terminal action exposes exactly one
-output. During lowering, that output becomes the result of its control-flow
-branch. Rust checks it against the function return type without Contour
-duplicating the concrete type in graph syntax.
+An action is terminal when its single output has no consumer. That output
+becomes the result of the current path and must satisfy the flow's return type.
 
-## 6. Question block
+## 6. Question
 
-A question is a DRAKON question with two positional control results. Like an
-action, it may first be declared using only intent and connections:
-
-```rust
-#[question("Is the request eligible?")]
-|valid, &request, &policy| -> (eligible, ineligible) { todo!() };
-```
-
-The implementation agent replaces the placeholder with a boolean expression:
+A question evaluates a boolean expression and selects one of two positional
+branches:
 
 ```rust
 #[question("Is the request eligible?")]
@@ -174,34 +136,16 @@ The implementation agent replaces the placeholder with a boolean expression:
 };
 ```
 
-The first result means yes/true and the second means no/false. Their names are
-arbitrary. The body must evaluate to `bool` and is evaluated exactly once after
-all inputs are available. A `todo!()` body has no default result.
+The first output selects the yes/true branch, and the second selects the
+no/false branch. The question body is evaluated exactly once and must produce
+`bool`.
 
-Yes/no are control wires only. They never contain copies of `request`, `policy`,
-or other inputs. Downstream blocks list the selected control and every required
-data wire explicitly. Successor blocks remain outside the question.
+Question outputs are unit-valued control wires. Downstream blocks list the
+selected control wire and every data wire they need as separate inputs.
 
-`#[contour]` requires exactly two output names and lowers the condition to a
-Rust `if`. It binds only the selected unit-valued control output in each branch.
+## 7. Choice
 
-## 7. Choice block
-
-A choice exposes two or more exhaustive semantic routes without embedding Rust
-patterns in the graph topology:
-
-```rust
-#[choice("What is the sign of the value?")]
-#[case("The value is negative.")]
-#[case("The value is zero.")]
-#[case("The value is positive.")]
-|value| -> (negative, zero, positive) { todo!() };
-```
-
-Each case description maps positionally to one output name and one match arm.
-Case descriptions state domain meaning; they are not Rust patterns and are not
-parsed as matching rules. An implemented choice body contains exactly one Rust
-`match`. Each arm expression becomes the value of its corresponding output:
+A choice selects one of two or more ordered branches:
 
 ```rust
 #[choice("What is the sign of the value?")]
@@ -217,30 +161,26 @@ parsed as matching rules. An implemented choice body contains exactly one Rust
 };
 ```
 
-Payloads remain explicit. For outputs `(value, absent)`, `Some(value) => value`
-passes the pattern binding through `value`, while `None => ()` gives `absent` a
-unit value.
+Cases, outputs, and match arms correspond by position and have equal counts.
+Each case describes its branch in domain language. Its Rust pattern, optional
+guard, bindings, and value remain in the corresponding match arm.
 
-The choice question and every case description must be a nonempty string
-literal. A choice requires a tuple of outputs, at least two cases, and exactly
-one output and match arm per case. Case, output, and arm order correspond.
-Patterns, bindings, including `@` bindings, and guards retain ordinary Rust
-semantics. Each arm expression is type-checked in its own output path, so the
-payload types of different arms need not match. Exact `todo!()` remains a valid
-whole-body skeleton; partial placeholder arms are not supported.
+The match scrutinee is evaluated exactly once. The selected arm value becomes
+the value of its output wire. Different choice outputs may therefore carry
+different Rust types. For example, `Some(value) => value` carries the selected
+value, while `None => ()` produces a unit-valued control wire.
 
-Lowering evaluates the authored match scrutinee once and passes each arm value
-to its positional graph continuation. It creates neither a private choice enum
-nor a second dispatch. Continuations are defined as local hygienic macros before
-the match, so pattern bindings and block locals cannot shadow wires or leak into
-downstream blocks. Each invocation consumes an internal hygienic capability, so
-an extra authored invocation is rejected by Rust's ownership checking. Only the
-selected branch binds its explicit value and continues. Choice outputs obey the
-same consumer and terminal-path rules as other wires.
+An implemented choice body contains exactly one `match` expression. An exact
+whole-body `todo!()` is also a valid placeholder. Match bindings and block
+locals remain scoped to the selected arm and are unavailable to downstream
+blocks; downstream code receives only declared wires.
 
-## 8. Merge block
+Each choice branch continuation is entered at most once. Rust ownership rejects
+any extra invocation of a generated continuation.
 
-A merge joins two or more mutually exclusive paths into one continuation:
+## 8. Merge
+
+A merge combines two or more alternative branch outputs into one wire:
 
 ```rust
 #[merge]
@@ -250,72 +190,51 @@ A merge joins two or more mutually exclusive paths into one continuation:
 |value| -> result { value };
 ```
 
-Its inputs are alternatives rather than simultaneous captures. Every input is
-a bare identifier, exactly one is available on each path that reaches the
-merge, and consuming that input produces the single output wire. A merge has no
-description or implementation body: `#[merge]` accepts no arguments and its
-closure body must be empty. It cannot be terminal.
+Merge inputs are bare, consuming identifiers. Exactly one input is available on
+each path that reaches the merge. The merge has one output and an empty body.
 
-All continuing branches of one question or choice must reach the same merge.
-Other branches may end at terminal actions; lowering emits an early Rust
-`return` for those branches. Different merge targets from one branch point,
-multiple merge inputs available on one path, borrowed inputs, and joins that
-wait for simultaneous paths are rejected.
+Continuing branches of one question or choice converge at the same merge.
+Sibling branches may instead end at terminal actions. The enclosing Rust `if`
+or `match` produces the merge output, so Rust checks that all merged values have
+one type.
 
-Lowering makes the generated `if` or authored `match` the value assigned to the
-merge output. Rust therefore checks that the paths which reach the merge
-produce one common type. Only wires available on every continuing path remain
-available after the merge; the new merge output is added to that shared state.
-The shared continuation is lowered once and no runtime merge object or
-scheduler is created.
+Only wires available on every continuing branch remain available after the
+merge. The merge output is added to that shared set and its continuation is
+lowered once.
 
-## 9. Flow termination
+## 9. Paths and flow result
 
-There is no public `end!` block. The closing function boundary and its return
-type already express the single logical end of the algorithm:
+A valid flow has exactly one ready block at each execution step. A regular
+block is ready when all its inputs are available. A merge is ready when one of
+its alternative inputs is available.
 
-```rust
-#[contour]
-fn decide(request: Request) -> Decision {
-    // Questions and actions omitted.
-    #[action("Approve the request.")]
-    |yes, &request| -> approved { todo!() };
+Every block is reachable from the source wires. At a question or choice,
+validation follows each branch independently. A branch either reaches the
+common merge selected by its siblings or ends at a terminal action.
 
-    #[action("Reject the request.")]
-    |no, &request| -> rejected { todo!() };
-}
-```
-
-"Terminal" is a graph property, not source position: `approved` and `rejected`
-are terminal because they are reachable and have no downstream consumer. The
-attribute requires every path to finish at such an action with exactly one
-output. Lowered Rust branches return their respective output values, so Rust
-enforces compatibility with `Decision`.
-
-A renderer should derive exactly one synthetic DRAKON End from the function
-boundary and connect every mutually exclusive terminal result to it. This
-structural node needs no user-authored description.
+Every path ends at a terminal action with one output. Lowered Rust returns that
+output from its branch and checks it against the function return type.
 
 ## 10. Grammar
 
 The outer syntax is ordinary Rust:
 
 ```text
-contour_function := "#[contour]" rust_function
+flow := "#[contour]" rust_function
 
 action_statement :=
     "#[action(" block_description ")]"
-    "|" capture_list "|" "->" output_declaration rust_block ";"
+    "|" input_list "|" "->" output_declaration rust_block ";"
 
 question_statement :=
     "#[question(" block_description ")]"
-    "|" capture_list "|" "->"
+    "|" input_list "|" "->"
         "(" identifier "," identifier ")" rust_block ";"
 
 choice_statement :=
     "#[choice(" block_description ")]"
     case_attribute case_attribute+
-    "|" capture_list "|" "->"
+    "|" input_list "|" "->"
         "(" identifier "," identifier ("," identifier)* ")"
         choice_body ";"
 
@@ -331,78 +250,31 @@ case_attribute := "#[case(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
 output_declaration := identifier | rust_tuple_of_identifiers
-capture_list := input ("," input)* ","?
+input_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-A block statement carries the semicolon its Rust grammar requires. The last
-statement in the body may omit it, exactly as any Rust tail expression may,
-because `#[contour]` replaces the whole body and never evaluates the closure.
+The final block statement may omit the semicolon. Computational descriptions
+and input lists are nonempty. Choice cases, outputs, and match arms have equal
+counts. A merge has at least two inputs.
 
-The computational attribute descriptions and every capture list are nonempty.
-Choice cases, outputs, and match arms correspond positionally and have equal
-counts. Merge inputs are alternative bare identifiers, and a merge's empty body
-is structural syntax. Comments may surround a block but have no graph meaning.
-The closure body is required by Rust grammar. `todo!()` is the canonical whole body
-for an unimplemented computational block; no separate status flag exists.
+## 11. Validation and execution
 
-## 11. Validation and lowering
+`#[contour]` parses block syntax, resolves every input to its producing wire,
+validates block-local and path-dependent invariants, and lowers the flow to
+nested Rust `let`, `if`, and `match` expressions.
 
-The attribute resolves every closure parameter to a function parameter or an
-earlier block output, assigns every wire an internal Rust binding, and follows
-the available wires from the unique starting block. Each block locally aliases
-only its declared inputs and extracts the closure body rather than constructing
-or calling a closure. At a question it generates one Rust `if`, evaluates the
-condition once, and continues separately with the yes or no control output. At
-a choice it keeps the authored `match` and passes each arm expression to its
-positional hygienic continuation. At an action it binds the body result to
-internal output bindings matching the declared output shape. Each terminal
-action output is the result of its generated branch.
+An action binds its body value to its outputs. A question evaluates its body
+once and executes the selected branch. A choice preserves the authored match
+and passes the selected arm value to the corresponding branch. A merge binds
+the enclosing branch expression to its output before executing the shared
+continuation.
 
-Path lowering reports either a terminal result or arrival at a merge. When two
-or more paths from one question or choice arrive at the same merge, their
-generated expressions become arms of the enclosing `if` or `match`, whose value
-is bound to the merge output. Terminal siblings return directly. The shared
-continuation uses the intersection of wires available on continuing paths and
-is generated once.
+Rust checks body types, match exhaustiveness, ownership, borrows, output
+patterns, merged value types, and terminal outputs. Contour's generated scopes
+keep omitted wires, consumed wires, match bindings, and block locals outside
+downstream block bodies.
 
-Bare captures are consumed and disappear from that compile-time path state;
-borrowed captures remain available. Exactly one block must be ready at each
-step. A merge becomes ready when exactly one of its alternative inputs is
-available. This deliberately rejects parallel execution, joins, different
-merge targets, and implicit routing instead of adding a runtime scheduler.
-
-An author-written `todo!()` remains in the lowered body. For a choice, lowering
-surrounds it with a never-reached exhaustive synthetic match so every downstream
-path is still type-checked without creating a choice enum. The skeleton
-therefore compiles, but execution fails if it reaches an unimplemented block.
-
-## 12. Deferred work
-
-Version `0.1` does not define runtime scheduling, joins, parallel paths, loops,
-subflows, async behavior, visualization, layout, or serialization.
-
-`rust-analyzer` provides diagnostics, completion, and control-wire rename through
-the expanded macro. A single Rename does not currently span both graph-level
-data-wire captures and their block-local body bindings, and Go to Definition may
-offer both the capture and its producer. Graph-aware navigation and refactoring
-remain deferred editor tooling.
-
-The surface Rust syntax should remain unchanged unless a separate design
-decision revises it.
-
-## 13. Success criteria
-
-The draft succeeds when:
-
-1. a realistic flat graph is valid and readable Rust;
-2. each block shows its inputs and outputs around one arrow;
-3. an author-only refund graph with `todo!()` bodies compiles;
-4. missing block intent, name-resolution, ownership, destructuring, and
-   condition errors have compile-fail coverage;
-5. implemented question and choice blocks execute exactly one terminal action;
-6. choice topology shows semantic cases without exposing Rust patterns;
-7. choice lowers directly without a private selection enum or second dispatch;
-8. block bodies cannot read graph wires omitted from their capture lists;
-9. question and choice branches can merge into one typed middle continuation;
-10. flow termination requires no redundant public block syntax.
+An authored `todo!()` remains in the lowered body. A choice placeholder still
+type-checks every downstream branch, and execution panics if it reaches the
+placeholder.

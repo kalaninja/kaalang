@@ -73,7 +73,7 @@ fn run_choice_with_guard(value: i32) -> i32 {
     #[case("The value is not positive and even.")]
     |value| -> (positive_even, other) {
         match value {
-            captured @ 1.. if captured % 2 == 0 => captured,
+            matched @ 1.. if matched % 2 == 0 => matched,
             _ => (),
         }
     };
@@ -86,7 +86,7 @@ fn run_choice_with_guard(value: i32) -> i32 {
 }
 
 #[test]
-fn choice_block_routes_each_case() {
+fn choice_executes_each_branch() {
     let mut terminal_count = 0;
 
     assert_eq!(run_choice(-1, &mut terminal_count), "negative");

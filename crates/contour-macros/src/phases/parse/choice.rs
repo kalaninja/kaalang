@@ -7,7 +7,7 @@ use super::{BlockSyntax, validate_description};
 use crate::body::{choice_match, is_todo_body, is_todo_macro};
 use crate::model::Block;
 
-/// A choice owns the `#[case("...")]` attributes that enumerate its routes.
+/// A choice owns the `#[case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     validate_description(syntax.kind_attribute, "Contour block")?;
     if !syntax.tuple_output {
