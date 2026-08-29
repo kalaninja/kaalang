@@ -1,4 +1,4 @@
-error: block inputs must contain only `name` or `&name`
+error: Contour block inputs must contain only `name` or `&name`
  --> tests/syntax/compile_fail/bracketed_inputs.rs:6:6
   |
 6 |     |[input]| -> output { input };

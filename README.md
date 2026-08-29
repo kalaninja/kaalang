@@ -117,8 +117,8 @@ every incoming connection:
 - the function return type is the contract for all terminal outputs.
 
 There is no public End block. The function boundary already supplies one
-logical end, which a future descriptor or renderer can represent as a synthetic
-DRAKON End icon.
+logical end, which a future renderer can represent as a synthetic DRAKON End
+icon.
 
 ## Execution
 
@@ -137,11 +137,10 @@ There is no runtime scheduler or wire wrapper.
 The current subset requires exactly one next block to be ready at every point;
 explicit merges combine only mutually exclusive branches. Parallel paths,
 joins, and branches that continue to different merges remain unsupported. The
-local marker attributes are valid only inside a `#[contour]` function and need
-no import or separate definition.
+local attributes that declare a block's kind are valid only inside a
+`#[contour]` function and need no import or separate definition.
 
-Block IDs, descriptors, scheduling, rendering, loops, joins, and subflows are
-deliberately deferred. See
+Scheduling, rendering, loops, joins, and subflows are deliberately deferred. See
 [RFC 0001](docs/rfcs/0001-core-model.md) for the draft contract and the
 [`playground`](examples/playground) for executable examples. Its current
 canonical graph is the refund review.

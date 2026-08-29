@@ -1,0 +1,6 @@
+error: Contour block closures do not support `move`, `async`, `const`, or lifetime modifiers
+ --> tests/syntax/compile_fail/move_closure.rs:5:5
+  |
+5 | /     #[action("Double the value.")]
+6 | |     move |value| -> doubled { value * 2 };
+  | |_________________________________________^

@@ -1,4 +1,4 @@
-error: every question branch must have a consumer
+error: every Contour question branch must have a consumer
  --> tests/question/compile_fail/unconsumed_question_branch.rs:6:25
   |
 6 |     |&input| -> (large, small) { *input > 10 };

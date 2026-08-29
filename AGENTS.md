@@ -32,7 +32,8 @@ execution reaches it.
 
 - An ordinary `#[contour]` Rust function is the graph boundary.
 - Its parameters are source wires and its return type is the terminal contract.
-- The body uses closure-shaped Rust expression statements.
+- The body uses closure-shaped Rust expression statements. The last one may
+  omit its semicolon, as any Rust tail expression may.
 - Every block shows inputs before `->` and output identifiers after it.
 - Every computational block has exactly one local `#[action("description")]`,
   `#[question("description")]`, or `#[choice("description")]` attribute with a
@@ -69,7 +70,7 @@ execution reaches it.
 - Every reachable path ends at an action with exactly one unconsumed output.
 - Terminal action outputs must match the function return type; generated Rust
   performs that concrete type check.
-- The function boundary becomes one synthetic End in descriptors and diagrams.
+- The function boundary becomes one synthetic End in diagrams.
 - Inline Rust cannot read graph wires omitted from the closure parameter list.
   Lowering stores wires under internal names and creates source-spelled aliases
   only inside the block that captured them. Hygienic choice continuations keep
@@ -77,16 +78,15 @@ execution reaches it.
 
 ## Current scope
 
-The prototype includes required attribute descriptions, local block markers,
+The prototype includes required attribute descriptions, local block kinds,
 closure-shaped block statements, explicit consuming and borrowing inputs and
 declared outputs, hidden-capture isolation, direct question/action/choice
 lowering, structural merges for mutually exclusive branches, and Rust-checked
 return types. A graph whose computational bodies are `todo!()` remains a
 supported author-written skeleton.
 
-It excludes a runtime scheduler, a `Wire` wrapper, descriptors, stable block
-IDs, loops, joins, parallel paths, subflows, rendering, layout,
-serialization, and external graph files.
+It excludes a runtime scheduler, a `Wire` wrapper, loops, joins, parallel
+paths, subflows, rendering, layout, serialization, and external graph files.
 
 ## Change workflow
 
@@ -103,7 +103,7 @@ Preserve unrelated user changes and do not add speculative syntax.
 ## Validation baseline
 
 The attribute rejects missing, non-string, or empty block descriptions,
-imperative body statements, malformed or duplicate block markers, non-closure
+imperative body statements, malformed or duplicate block kinds, non-closure
 block statements, invalid input or output declarations, empty or duplicate
 captures, unknown or later inputs, duplicate wires, wrong question output
 arity, malformed or mismatched choice cases and outputs, choice bodies other

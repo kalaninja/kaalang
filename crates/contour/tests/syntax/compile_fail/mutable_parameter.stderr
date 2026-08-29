@@ -1,0 +1,5 @@
+error: Contour function parameters must use simple identifiers
+ --> tests/syntax/compile_fail/mutable_parameter.rs:4:22
+  |
+4 | fn mutable_parameter(mut value: i32) -> i32 {
+  |                      ^^^^^^^^^

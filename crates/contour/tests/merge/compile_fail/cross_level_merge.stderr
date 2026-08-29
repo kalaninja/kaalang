@@ -1,0 +1,5 @@
+error: every Contour merge input must be reached by exactly one branch
+  --> tests/merge/compile_fail/cross_level_merge.rs:20:5
+   |
+20 |     #[merge]
+   |     ^

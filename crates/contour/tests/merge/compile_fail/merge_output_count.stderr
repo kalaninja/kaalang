@@ -1,4 +1,4 @@
-error: a merge must declare exactly one output identifier
+error: a Contour merge must declare exactly one output identifier
   --> tests/merge/compile_fail/merge_output_count.rs:15:27
    |
 15 |     |yes_value, no_value| -> (selected,) {};

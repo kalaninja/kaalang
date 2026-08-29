@@ -1,4 +1,4 @@
-error: this path does not terminate in an action
+error: this Contour path does not terminate in an action
  --> tests/graph/compile_fail/non_terminal_path.rs:8:5
   |
 8 |     #[action("Handle the large input.")]

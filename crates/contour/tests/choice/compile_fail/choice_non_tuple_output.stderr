@@ -1,4 +1,4 @@
-error: a choice must declare its outputs as a tuple
+error: a Contour choice must declare its outputs as a tuple
  --> tests/choice/compile_fail/choice_non_tuple_output.rs:8:13
   |
 8 |     |input| -> negative {

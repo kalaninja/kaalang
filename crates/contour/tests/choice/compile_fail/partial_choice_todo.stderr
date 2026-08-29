@@ -1,4 +1,4 @@
-error: `todo!()` is supported only as the whole choice body
+error: `todo!()` is supported only as the whole Contour choice body
   --> tests/choice/compile_fail/partial_choice_todo.rs:10:20
    |
 10 |               ..0 => {

@@ -1,0 +1,382 @@
+//! Parses a Contour function and validates each block's local syntax.
+
+use proc_macro2::{Ident, Span};
+use syn::{
+    Attribute, Error, Expr, ExprClosure, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat,
+    PathArguments, Result, ReturnType, Stmt, Type, spanned::Spanned,
+};
+
+use crate::model::{Block, BlockKind, Capture, ParsedFlow};
+
+mod action;
+mod choice;
+mod merge;
+mod question;
+
+/// Parses a function into its source wires and closure-shaped graph blocks.
+pub(crate) fn flow(function: &ItemFn) -> Result<ParsedFlow> {
+    Ok(ParsedFlow {
+        sources: source_wires(function)?,
+        blocks: blocks(&function.block.stmts)?,
+    })
+}
+
+/// Extracts simple function parameters as source wire names.
+fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
+    function
+        .sig
+        .inputs
+        .iter()
+        .map(|argument| match argument {
+            FnArg::Typed(argument) => simple_binding(&argument.pat, "Contour function parameters"),
+            FnArg::Receiver(receiver) => Err(Error::new(
+                receiver.span(),
+                "#[contour] is supported only on free functions",
+            )),
+        })
+        .collect()
+}
+
+/// Parses every function-body statement as one Contour block.
+fn blocks(statements: &[Stmt]) -> Result<Vec<Block>> {
+    if statements.is_empty() {
+        return Err(Error::new(
+            Span::call_site(),
+            "a Contour flow requires at least one block",
+        ));
+    }
+
+    statements.iter().map(parse_block).collect()
+}
+
+/// Parses one closure-shaped statement and hands it to its kind's parser.
+fn parse_block(statement: &Stmt) -> Result<Block> {
+    let closure = block_statement(statement)?;
+    let (kind, kind_attribute) = block_kind(&closure.attrs, closure.inputs_begin.span())?;
+    let (inputs, body) = block_closure(closure)?;
+    let (outputs, tuple_output, output_span) = block_outputs(closure)?;
+    let syntax = BlockSyntax {
+        kind,
+        closure,
+        kind_attribute,
+        companions: companion_attributes(&closure.attrs),
+        inputs,
+        outputs,
+        tuple_output,
+        output_span,
+        body,
+    };
+
+    match kind {
+        BlockKind::Action => action::parse(syntax),
+        BlockKind::Question => question::parse(syntax),
+        BlockKind::Choice => choice::parse(syntax),
+        BlockKind::Merge => merge::parse(syntax),
+    }
+}
+
+/// One block's closure parts, before its kind decides which rules apply.
+pub(crate) struct BlockSyntax<'a> {
+    pub(crate) kind: BlockKind,
+    pub(crate) closure: &'a ExprClosure,
+    pub(crate) kind_attribute: &'a Attribute,
+    /// Attributes that accompany the one declaring the kind, such as `#[case]`.
+    pub(crate) companions: Vec<&'a Attribute>,
+    pub(crate) inputs: Vec<Capture>,
+    pub(crate) outputs: Vec<Ident>,
+    pub(crate) tuple_output: bool,
+    pub(crate) output_span: Span,
+    pub(crate) body: Expr,
+}
+
+impl<'a> BlockSyntax<'a> {
+    /// Returns the companion attributes this kind accepts, rejecting any other.
+    pub(crate) fn accept_companions(&self, accepted: &str) -> Result<Vec<&'a Attribute>> {
+        self.companions
+            .iter()
+            .map(|companion| {
+                if companion.path().is_ident(accepted) {
+                    Ok(*companion)
+                } else {
+                    Err(unexpected_companion(companion))
+                }
+            })
+            .collect()
+    }
+
+    /// Rejects every companion attribute, for a kind that accepts none.
+    pub(crate) fn reject_companions(&self) -> Result<()> {
+        match self.companions.first() {
+            Some(companion) => Err(unexpected_companion(companion)),
+            None => Ok(()),
+        }
+    }
+
+    /// Turns syntax its own kind has accepted into a graph block.
+    pub(crate) fn into_block(self) -> Block {
+        Block {
+            kind: self.kind,
+            outputs: self.outputs,
+            tuple_output: self.tuple_output,
+            output_span: self.output_span,
+            inputs: self.inputs,
+            body: self.body,
+            terminal: false,
+            span: self.kind_attribute.span(),
+        }
+    }
+}
+
+fn unexpected_companion(companion: &Attribute) -> Error {
+    let name = companion
+        .path()
+        .get_ident()
+        .expect("companion attributes are single identifiers");
+
+    Error::new_spanned(
+        companion,
+        format!("`#[{name}]` is not valid on this kind of Contour block"),
+    )
+}
+
+/// Unwraps the closure expression every Contour block must be written as.
+///
+/// Rust already requires the semicolon on every block but the last, where it is
+/// optional exactly as it is for any tail expression.
+fn block_statement(statement: &Stmt) -> Result<&ExprClosure> {
+    let Stmt::Expr(expression, _) = statement else {
+        return Err(Error::new_spanned(
+            statement,
+            "a Contour body may contain only attributed closure statements",
+        ));
+    };
+    let Expr::Closure(closure) = expression else {
+        return Err(Error::new_spanned(
+            expression,
+            "a Contour block must have the form `|inputs| -> outputs { body }`",
+        ));
+    };
+    Ok(closure)
+}
+
+/// Determines which kind a block declares, and that it declares exactly one.
+fn block_kind(attributes: &[Attribute], fallback_span: Span) -> Result<(BlockKind, &Attribute)> {
+    let mut declared = None;
+
+    for attribute in attributes {
+        match attribute_role(attribute)? {
+            Role::Kind(_) if declared.is_some() => {
+                return Err(Error::new_spanned(
+                    attribute,
+                    "a Contour block must declare exactly one kind",
+                ));
+            }
+            Role::Kind(kind) => declared = Some((kind, attribute)),
+            Role::Companion if declared.is_none() => {
+                return Err(Error::new_spanned(
+                    attribute,
+                    "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
+                ));
+            }
+            Role::Companion => {}
+            Role::Comment => {}
+        }
+    }
+
+    let Some((kind, attribute)) = declared else {
+        return Err(Error::new(
+            fallback_span,
+            "a Contour block must declare its kind, such as `#[action(\"description\")]`",
+        ));
+    };
+
+    Ok((kind, attribute))
+}
+
+/// Collects the attributes that accompany the one declaring the block's kind.
+fn companion_attributes(attributes: &[Attribute]) -> Vec<&Attribute> {
+    attributes
+        .iter()
+        .filter(|attribute| matches!(attribute_role(attribute), Ok(Role::Companion)))
+        .collect()
+}
+
+/// Collects the `#[case("...")]` attributes written on a block.
+/// What one attribute written on a Contour block means.
+enum Role {
+    Kind(BlockKind),
+    Companion,
+    Comment,
+}
+
+/// Classifies one attribute written on a Contour block.
+fn attribute_role(attribute: &Attribute) -> Result<Role> {
+    let name = attribute.path().get_ident().map(|ident| ident.to_string());
+
+    Ok(match name.as_deref() {
+        Some("action") => Role::Kind(BlockKind::Action),
+        Some("question") => Role::Kind(BlockKind::Question),
+        Some("choice") => Role::Kind(BlockKind::Choice),
+        Some("merge") => Role::Kind(BlockKind::Merge),
+        Some("case") => Role::Companion,
+        Some("doc") => Role::Comment,
+        _ => {
+            return Err(Error::new_spanned(
+                attribute,
+                "Contour blocks support only comments and Contour attributes",
+            ));
+        }
+    })
+}
+
+/// Extracts graph captures and the authored body from a block closure.
+fn block_closure(closure: &ExprClosure) -> Result<(Vec<Capture>, Expr)> {
+    if closure.lifetimes.is_some()
+        || closure.constness.is_some()
+        || closure.asyncness.is_some()
+        || closure.capture.is_some()
+    {
+        return Err(Error::new_spanned(
+            closure,
+            "Contour block closures do not support `move`, `async`, `const`, or lifetime modifiers",
+        ));
+    }
+    if closure.inputs.is_empty() {
+        return Err(Error::new(
+            closure.inputs_end.span(),
+            "a Contour block requires at least one input",
+        ));
+    }
+
+    let inputs = closure
+        .inputs
+        .iter()
+        .map(block_capture)
+        .collect::<Result<_>>()?;
+    Ok((inputs, closure.body.as_ref().clone()))
+}
+
+/// Parses one consuming or borrowing input capture.
+fn block_capture(pattern: &Pat) -> Result<Capture> {
+    match pattern {
+        Pat::Ident(_) => Ok(Capture {
+            borrowed: false,
+            ident: simple_binding(pattern, "Contour block inputs")?,
+        }),
+        Pat::Reference(reference)
+            if reference.attrs.is_empty() && reference.mutability.is_none() =>
+        {
+            Ok(Capture {
+                borrowed: true,
+                ident: simple_binding(&reference.pat, "Contour block inputs")?,
+            })
+        }
+        _ => Err(Error::new_spanned(
+            pattern,
+            "Contour block inputs must contain only `name` or `&name`",
+        )),
+    }
+}
+
+/// Parses output wire declarations from the closure return position.
+fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, bool, Span)> {
+    let ReturnType::Type(_, output) = &closure.output else {
+        return Err(Error::new(
+            closure.inputs_end.span(),
+            "a Contour block must declare its outputs after `->`",
+        ));
+    };
+
+    let (outputs, tuple) = match output.as_ref() {
+        Type::Tuple(tuple) if !tuple.elems.is_empty() => (
+            tuple
+                .elems
+                .iter()
+                .map(output_ident)
+                .collect::<Result<Vec<_>>>()?,
+            true,
+        ),
+        output => (vec![output_ident(output)?], false),
+    };
+    Ok((outputs, tuple, output.span()))
+}
+
+/// Reinterprets a simple Rust type path as an output wire name.
+fn output_ident(output: &Type) -> Result<Ident> {
+    let Type::Path(path) = output else {
+        return Err(Error::new_spanned(
+            output,
+            "Contour block outputs must contain only identifiers",
+        ));
+    };
+    let Some(segment) = path.path.segments.first() else {
+        return Err(Error::new_spanned(
+            output,
+            "Contour block outputs must contain only identifiers",
+        ));
+    };
+    if path.qself.is_some()
+        || path.path.leading_colon.is_some()
+        || path.path.segments.len() != 1
+        || !matches!(segment.arguments, PathArguments::None)
+    {
+        return Err(Error::new_spanned(
+            output,
+            "Contour block outputs must contain only identifiers",
+        ));
+    }
+
+    Ok(segment.ident.clone())
+}
+
+/// Checks that an attribute carries a parenthesized, nonempty description.
+pub(crate) fn validate_description(attribute: &Attribute, subject: &str) -> Result<()> {
+    let Meta::List(description) = &attribute.meta else {
+        return Err(Error::new_spanned(
+            attribute,
+            format!("a {subject} attribute requires a parenthesized description"),
+        ));
+    };
+    if !matches!(description.delimiter, MacroDelimiter::Paren(_)) {
+        return Err(Error::new_spanned(
+            attribute,
+            format!("a {subject} description must use parentheses"),
+        ));
+    }
+    let description = attribute.parse_args::<LitStr>().map_err(|_| {
+        Error::new_spanned(
+            attribute,
+            format!("a {subject} description must be a string literal"),
+        )
+    })?;
+    if description.value().trim().is_empty() {
+        return Err(Error::new_spanned(
+            description,
+            format!("a {subject} requires a non-empty description"),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Extracts an unmodified identifier binding from a Rust pattern.
+fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
+    let Pat::Ident(binding) = pattern else {
+        return Err(Error::new_spanned(
+            pattern,
+            format!("{subject} must use simple identifiers"),
+        ));
+    };
+    if !binding.attrs.is_empty()
+        || binding.by_ref.is_some()
+        || binding.mutability.is_some()
+        || binding.subpat.is_some()
+    {
+        return Err(Error::new_spanned(
+            pattern,
+            format!("{subject} must use simple identifiers"),
+        ));
+    }
+
+    Ok(binding.ident.clone())
+}

@@ -1,4 +1,4 @@
-error: a merge output must have a consumer
+error: a Contour merge output must have a consumer
   --> tests/merge/compile_fail/unconsumed_merge_output.rs:15:30
    |
 15 |     |yes_value, no_value| -> selected {};

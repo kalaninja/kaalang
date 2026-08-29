@@ -1,4 +1,4 @@
-error: exactly one merge input must be available on each path
+error: exactly one Contour merge input must be available on each path
   --> tests/merge/compile_fail/simultaneous_merge_inputs.rs:15:12
    |
 15 |     |left, right| -> selected {};

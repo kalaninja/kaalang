@@ -1,4 +1,4 @@
-error: a choice requires at least two `#[case("description")]` attributes
+error: a Contour choice requires at least two `#[case("description")]` attributes
  --> tests/choice/compile_fail/choice_case_count.rs:5:5
   |
 5 |     #[choice("What is the sign of the input?")]

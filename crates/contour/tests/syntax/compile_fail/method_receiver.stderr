@@ -1,0 +1,5 @@
+error: #[contour] is supported only on free functions
+ --> tests/syntax/compile_fail/method_receiver.rs:7:15
+  |
+7 |     fn method(&self, value: i32) -> i32 {
+  |               ^

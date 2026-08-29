@@ -66,11 +66,11 @@ outputs, and the block expression is the implementation body. Rust parses the
 output position as a closure return type; `#[contour]` deliberately reinterprets
 its simple identifiers as output names before type checking.
 
-The local markers are consumed by `#[contour]`; they are not independently
-exported attribute macros. The closure syntax is parsed but reinterpreted by
+The local kind attributes are consumed by `#[contour]`; they are not
+independently exported attribute macros. The closure syntax is parsed but reinterpreted by
 `#[contour]`, so lowering creates no runtime closure. This keeps one parser and
-makes block bodies ordinary Rust expressions that `rustfmt` formats normally. A
-marker used outside a `#[contour]` function is rejected by Rust.
+makes block bodies ordinary Rust expressions that `rustfmt` formats normally. A kind
+attribute used outside a `#[contour]` function is rejected by Rust.
 
 Rust requires every closure expression to have a body. The canonical author
 skeleton therefore uses `todo!()` as an explicit implementation placeholder;
@@ -292,9 +292,9 @@ attribute requires every path to finish at such an action with exactly one
 output. Lowered Rust branches return their respective output values, so Rust
 enforces compatibility with `Decision`.
 
-Descriptors and renderers should derive exactly one synthetic DRAKON End from
-the function boundary and connect every mutually exclusive terminal result to
-it. This structural node needs no user-authored description.
+A renderer should derive exactly one synthetic DRAKON End from the function
+boundary and connect every mutually exclusive terminal result to it. This
+structural node needs no user-authored description.
 
 ## 10. Grammar
 
@@ -334,6 +334,10 @@ output_declaration := identifier | rust_tuple_of_identifiers
 capture_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
+
+A block statement carries the semicolon its Rust grammar requires. The last
+statement in the body may omit it, exactly as any Rust tail expression may,
+because `#[contour]` replaces the whole body and never evaluates the closure.
 
 The computational attribute descriptions and every capture list are nonempty.
 Choice cases, outputs, and match arms correspond positionally and have equal
@@ -375,9 +379,8 @@ therefore compiles, but execution fails if it reaches an unimplemented block.
 
 ## 12. Deferred work
 
-Version `0.1` does not define graph descriptors, IDs, implementation-status
-descriptors, runtime scheduling, joins, parallel paths, loops, subflows,
-async behavior, visualization, layout, or serialization.
+Version `0.1` does not define runtime scheduling, joins, parallel paths, loops,
+subflows, async behavior, visualization, layout, or serialization.
 
 `rust-analyzer` provides diagnostics, completion, and control-wire rename through
 the expanded macro. A single Rename does not currently span both graph-level

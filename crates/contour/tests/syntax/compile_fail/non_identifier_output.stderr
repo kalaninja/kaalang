@@ -1,0 +1,5 @@
+error: Contour block outputs must contain only identifiers
+ --> tests/syntax/compile_fail/non_identifier_output.rs:6:16
+  |
+6 |     |value| -> Vec<i32> { vec![value] };
+  |                ^^^^^^^^
