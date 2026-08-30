@@ -19,6 +19,20 @@ other documentation.
 Behavior tests are executable examples of accepted programs. Compile-fail tests
 document rejected programs and their diagnostics.
 
+## Dependencies
+
+Every dependency is declared once, in `[workspace.dependencies]` in the root
+`Cargo.toml`. The table holds two groups separated by a blank line: local
+workspace crates (declared by `path`) first, then external crates. Entries
+within each group are alphabetical.
+
+Member crates inherit with `{ workspace = true }` and never state a version or a
+path of their own. A member may add features on top of an inherited dependency
+(`{ workspace = true, features = [...] }`) when only that crate needs them.
+
+Adding a dependency means adding it to the root table first, in its group and in
+alphabetical position.
+
 ## Change workflow
 
 For syntax or semantic changes:

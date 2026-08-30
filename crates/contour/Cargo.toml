@@ -6,10 +6,10 @@ license.workspace = true
 publish = false
 
 [dependencies]
-contour-macros = { path = "../contour-macros" }
+contour-macros = { workspace = true }
 
 [dev-dependencies]
-trybuild = "1"
+trybuild = { workspace = true }
 
 [lints]
 workspace = true
