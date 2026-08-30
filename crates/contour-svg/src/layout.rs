@@ -1,21 +1,35 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use contour_model::{BlockKind, Graph, Merge, Plan};
+use contour_model::{BlockKind, Branch, Graph, Merge, Plan};
 
-const MARGIN: i32 = 48;
-const CELL_WIDTH: i32 = 360;
-const ROW_GAP: i32 = 100;
+const MARGIN: i32 = 32;
+const SKEWER_WIDTH: i32 = 360;
+const VERTICAL_GAP: i32 = 72;
+const TERMINAL_STUB: i32 = 24;
+const RETURN_LANE_GAP: i32 = 52;
 const NODE_WIDTH: i32 = 280;
-/// Horizontal inset of a choice's slanted sides, shared with the SVG shape.
-pub(crate) const CHOICE_SKEW: i32 = 28;
-/// Font size of a node label, matching the stylesheet.
-const LABEL_FONT: i32 = 14;
-/// Font size of an edge label, matching the stylesheet.
+const CASE_WIDTH: i32 = 240;
+pub(crate) const CASE_TIP_HEIGHT: i32 = 18;
+pub(crate) const QUESTION_POINT: i32 = 28;
+pub(crate) const SELECT_SKEW: i32 = 24;
+/// Font size of a node label. The serializer writes the stylesheet from this,
+/// so measurement and rendering cannot disagree.
+pub(crate) const LABEL_FONT: i32 = 14;
+/// Font size of an edge label, written into the stylesheet the same way.
 pub(crate) const EDGE_LABEL_FONT: i32 = 12;
+/// Baseline-to-baseline distance between the lines of a node label.
+pub(crate) const LINE_HEIGHT: i32 = 18;
+/// Baseline-to-baseline distance between the lines of an edge label.
+pub(crate) const EDGE_LINE_HEIGHT: i32 = 14;
+/// Width of the halo an edge label paints behind itself to stay readable where
+/// it crosses a connection. Also written into the stylesheet.
+pub(crate) const EDGE_LABEL_HALO: i32 = 5;
 /// Text budget inside a rectangular node.
 const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 32;
-/// A diamond or hexagon narrows toward its points, so its text budget is smaller.
-const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 96;
+/// Branch icons lose horizontal space to their slanted sides.
+const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
+/// Text budget inside a case icon.
+const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 /// Text budget for an edge label, which floats free of any node.
 pub(crate) const EDGE_LABEL_WIDTH: i32 = 240;
 
@@ -30,6 +44,7 @@ pub(crate) struct Scene {
 pub(crate) enum NodeId {
     Start,
     Block(usize),
+    Case { choice: usize, branch: usize },
     End,
 }
 
@@ -39,6 +54,7 @@ pub(crate) enum NodeKind {
     Action,
     Question,
     Choice,
+    Case,
     Merge,
     End,
 }
@@ -54,16 +70,21 @@ pub(crate) struct Node {
     pub(crate) lines: Vec<String>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Point {
+    pub(crate) x: i32,
+    pub(crate) y: i32,
+}
+
 pub(crate) struct Edge {
     pub(crate) from: NodeId,
     pub(crate) to: NodeId,
+    /// The exact authored wire name this connection carries.
     pub(crate) label: Option<String>,
-    pub(crate) start_x: i32,
-    pub(crate) start_y: i32,
-    pub(crate) middle_y: i32,
-    pub(crate) side_x: Option<i32>,
-    pub(crate) end_x: i32,
-    pub(crate) end_y: i32,
+    /// `label` wrapped to its budget, so its size is known during layout.
+    pub(crate) lines: Vec<String>,
+    pub(crate) points: Vec<Point>,
+    pub(crate) label_at: Option<Point>,
 }
 
 pub(crate) fn layout(graph: &Graph) -> Scene {
@@ -74,264 +95,752 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
         .map(ToString::to_string)
         .collect::<Vec<_>>()
         .join(", ");
+    let skewer_count = plan_span(&graph.plan);
     let mut builder = Builder {
         graph,
         scene: Scene {
             width: 0,
             height: 0,
-            nodes: vec![node(
-                NodeId::Start,
-                NodeKind::Start,
-                format!("{}({parameters})", graph.name),
-            )],
+            nodes: Vec::new(),
             edges: Vec::new(),
         },
-        seen: HashSet::from([NodeId::Start]),
+        indexes: HashMap::new(),
+        terminals: Vec::new(),
+        skewer_count,
     };
-    builder.walk(&graph.plan, NodeId::Start, None);
-    debug_assert_eq!(builder.scene.nodes.len(), graph.flow.blocks.len() + 2);
-    position(&mut builder.scene);
 
+    let start = builder.add_node(
+        NodeId::Start,
+        NodeKind::Start,
+        format!("{}({parameters})", graph.name),
+        0,
+        MARGIN,
+    );
+    let first_top = builder.node_bottom(start) + VERTICAL_GAP;
+    let placed = builder.place(
+        &graph.plan,
+        0,
+        first_top,
+        Incoming {
+            origin: Origin::bottom(start),
+            label: None,
+            skewer: 0,
+        },
+    );
+    let end = builder.add_node(
+        NodeId::End,
+        NodeKind::End,
+        String::new(),
+        0,
+        placed.bottom + VERTICAL_GAP,
+    );
+    builder.connect_terminals(end);
+
+    let case_count = graph
+        .flow
+        .blocks
+        .iter()
+        .map(|block| block.case_descriptions.len())
+        .sum::<usize>();
+    debug_assert_eq!(
+        builder.scene.nodes.len(),
+        graph.flow.blocks.len() + case_count + 2
+    );
+
+    builder.fit_scene();
     builder.scene
 }
 
 struct Builder<'a> {
     graph: &'a Graph,
     scene: Scene,
-    seen: HashSet<NodeId>,
+    indexes: HashMap<NodeId, usize>,
+    terminals: Vec<Tail>,
+    skewer_count: usize,
 }
 
 impl Builder<'_> {
-    fn walk(&mut self, plan: &Plan, from: NodeId, incoming_label: Option<String>) {
+    fn place(&mut self, plan: &Plan, skewer: usize, top: i32, incoming: Incoming) -> Placed {
         match plan {
             Plan::Action { index, next } => {
-                let node = NodeId::Block(*index);
-                self.connect(from, node, incoming_label);
-                self.walk(next, node, None);
+                let node = self.add_authored_node(*index, skewer, top);
+                self.connect_to_node(incoming, node);
+                self.place(
+                    next,
+                    skewer,
+                    self.node_bottom(node) + VERTICAL_GAP,
+                    Incoming {
+                        origin: Origin::bottom(node),
+                        label: None,
+                        skewer,
+                    },
+                )
             }
             Plan::Question {
                 index,
                 branches,
                 merge,
-            } => {
-                let node = NodeId::Block(*index);
-                self.connect(from, node, incoming_label);
-                let block = &self.graph.flow.blocks[*index];
-                for (branch_index, branch) in branches.iter().enumerate() {
-                    let answer = if branch_index == 0 { "yes" } else { "no" };
-                    let label = format!("{} / {answer}", block.outputs[branch_index]);
-                    self.walk(&branch.plan, node, Some(label));
-                }
-                self.walk_merge(merge.as_ref());
-            }
+            } => self.place_question(*index, branches, merge.as_ref(), skewer, top, incoming),
             Plan::Choice {
                 index,
                 branches,
                 merge,
-            } => {
-                let node = NodeId::Block(*index);
-                self.connect(from, node, incoming_label);
-                let block = &self.graph.flow.blocks[*index];
-                for (branch_index, branch) in branches.iter().enumerate() {
-                    let label = format!(
-                        "{} / {}",
-                        block.outputs[branch_index], block.case_descriptions[branch_index]
-                    );
-                    self.walk(&branch.plan, node, Some(label));
-                }
-                self.walk_merge(merge.as_ref());
-            }
+            } => self.place_choice(*index, branches, merge.as_ref(), skewer, top, incoming),
             Plan::Terminal { output } => {
-                // A terminal always follows its action, which passes no label down.
-                debug_assert!(incoming_label.is_none());
-                self.connect(from, NodeId::End, Some(output.to_string()));
+                self.terminals.push(Tail {
+                    origin: incoming.origin,
+                    label: output.to_string(),
+                    skewer: incoming.skewer,
+                    merge: None,
+                });
+                Placed {
+                    bottom: self.anchor(incoming.origin).y,
+                    arrival: None,
+                }
             }
-            Plan::Arrival { input, merge } => {
-                let label = incoming_label.unwrap_or_else(|| input.to_string());
-                self.connect(from, NodeId::Block(*merge), Some(label));
-            }
+            Plan::Arrival { input, merge } => Placed {
+                bottom: self.anchor(incoming.origin).y,
+                arrival: Some(Tail {
+                    origin: incoming.origin,
+                    label: incoming.label.unwrap_or_else(|| input.to_string()),
+                    skewer: incoming.skewer,
+                    merge: Some(*merge),
+                }),
+            },
         }
     }
 
-    fn walk_merge(&mut self, merge: Option<&Merge>) {
-        let Some(merge) = merge else {
-            return;
-        };
-        let node = NodeId::Block(merge.index);
-        self.ensure_node(node);
-        let output = self.graph.flow.blocks[merge.index].outputs[0].to_string();
-        self.walk(&merge.next, node, Some(output));
+    fn place_question(
+        &mut self,
+        index: usize,
+        branches: &[Branch; 2],
+        merge: Option<&Merge>,
+        skewer: usize,
+        top: i32,
+        incoming: Incoming,
+    ) -> Placed {
+        let node = self.add_authored_node(index, skewer, top);
+        self.connect_to_node(incoming, node);
+        let branch_top = self.node_bottom(node) + VERTICAL_GAP;
+        let outputs = &self.graph.flow.blocks[index].outputs;
+        let spans = branches
+            .iter()
+            .map(|branch| plan_span(&branch.plan))
+            .collect::<Vec<_>>();
+        let mut branch_skewer = skewer;
+        let mut placed = Vec::with_capacity(branches.len());
+        for (branch_index, branch) in branches.iter().enumerate() {
+            let origin = if branch_index == 0 {
+                Origin::bottom(node)
+            } else {
+                Origin::right(node)
+            };
+            placed.push(self.place(
+                &branch.plan,
+                branch_skewer,
+                branch_top,
+                Incoming {
+                    origin,
+                    label: Some(outputs[branch_index].to_string()),
+                    skewer: branch_skewer,
+                },
+            ));
+            branch_skewer += spans[branch_index];
+        }
+
+        self.finish_branches(placed, merge, skewer)
     }
 
-    fn connect(&mut self, from: NodeId, to: NodeId, label: Option<String>) {
-        self.ensure_node(to);
+    fn place_choice(
+        &mut self,
+        index: usize,
+        branches: &[Branch],
+        merge: Option<&Merge>,
+        skewer: usize,
+        top: i32,
+        incoming: Incoming,
+    ) -> Placed {
+        let select = self.add_authored_node(index, skewer, top);
+        self.connect_to_node(incoming, select);
+        let block = &self.graph.flow.blocks[index];
+        let spans = branches
+            .iter()
+            .map(|branch| plan_span(&branch.plan))
+            .collect::<Vec<_>>();
+        let mut branch_skewer = skewer;
+        let mut cases = Vec::with_capacity(branches.len());
+        for (branch_index, description) in block.case_descriptions.iter().enumerate() {
+            let case = self.add_node(
+                NodeId::Case {
+                    choice: index,
+                    branch: branch_index,
+                },
+                NodeKind::Case,
+                description.clone(),
+                branch_skewer,
+                self.node_bottom(select) + VERTICAL_GAP,
+            );
+            cases.push((case, branch_skewer));
+            branch_skewer += spans[branch_index];
+        }
+        self.align_case_row(&cases);
+
+        let case_top = self.node_top(cases[0].0);
+        for (case, _) in &cases {
+            self.connect_points(
+                select,
+                *case,
+                None,
+                self.distributor_points(select, *case, case_top),
+                None,
+            );
+        }
+
+        let branch_top = cases
+            .iter()
+            .map(|(case, _)| self.node_bottom(*case))
+            .max()
+            .unwrap_or(self.node_bottom(select))
+            + VERTICAL_GAP;
+        let mut placed = Vec::with_capacity(branches.len());
+        for (branch_index, branch) in branches.iter().enumerate() {
+            let (case, branch_skewer) = cases[branch_index];
+            placed.push(self.place(
+                &branch.plan,
+                branch_skewer,
+                branch_top,
+                Incoming {
+                    origin: Origin::bottom(case),
+                    label: Some(block.outputs[branch_index].to_string()),
+                    skewer: branch_skewer,
+                },
+            ));
+        }
+
+        self.finish_branches(placed, merge, skewer)
+    }
+
+    fn finish_branches(
+        &mut self,
+        placed: Vec<Placed>,
+        merge: Option<&Merge>,
+        skewer: usize,
+    ) -> Placed {
+        let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
+        let Some(merge) = merge else {
+            debug_assert!(placed.iter().all(|branch| branch.arrival.is_none()));
+            return Placed {
+                bottom,
+                arrival: None,
+            };
+        };
+
+        let node = self.add_authored_node(merge.index, skewer, bottom + VERTICAL_GAP);
+        for arrival in placed.into_iter().filter_map(|branch| branch.arrival) {
+            debug_assert_eq!(arrival.merge, Some(merge.index));
+            self.connect_to_merge(arrival, node, skewer);
+        }
+        let output = self.graph.flow.blocks[merge.index].outputs[0].to_string();
+        self.place(
+            &merge.next,
+            skewer,
+            self.node_bottom(node) + VERTICAL_GAP,
+            Incoming {
+                origin: Origin::bottom(node),
+                label: Some(output),
+                skewer,
+            },
+        )
+    }
+
+    fn add_authored_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
+        let block = &self.graph.flow.blocks[index];
+        self.add_node(
+            NodeId::Block(index),
+            match block.kind {
+                BlockKind::Action => NodeKind::Action,
+                BlockKind::Question => NodeKind::Question,
+                BlockKind::Choice => NodeKind::Choice,
+                BlockKind::Merge => NodeKind::Merge,
+            },
+            block.description.clone().unwrap_or_default(),
+            skewer,
+            top,
+        )
+    }
+
+    fn add_node(
+        &mut self,
+        id: NodeId,
+        kind: NodeKind,
+        label: String,
+        skewer: usize,
+        top: i32,
+    ) -> NodeId {
+        debug_assert!(!self.indexes.contains_key(&id));
+        let (width, height, lines) = node_dimensions(kind, &label);
+        let index = self.scene.nodes.len();
+        self.scene.nodes.push(Node {
+            id,
+            kind,
+            label,
+            x: skewer_x(skewer),
+            y: top + height / 2,
+            width,
+            height,
+            lines,
+        });
+        self.indexes.insert(id, index);
+        id
+    }
+
+    fn align_case_row(&mut self, cases: &[(NodeId, usize)]) {
+        let height = cases
+            .iter()
+            .map(|(case, _)| self.node(*case).height)
+            .max()
+            .unwrap_or(0);
+        for (case, _) in cases {
+            let top = self.node_top(*case);
+            let index = self.indexes[case];
+            self.scene.nodes[index].height = height;
+            self.scene.nodes[index].y = top + height / 2;
+        }
+    }
+
+    fn connect_to_node(&mut self, incoming: Incoming, to: NodeId) {
+        let start = self.anchor(incoming.origin);
+        let end = self.top_anchor(to);
+        let (points, label_at) = match incoming.origin.side {
+            Side::Right => {
+                let bend = Point {
+                    x: end.x,
+                    y: start.y,
+                };
+                (
+                    compact_points([start, bend, end]),
+                    incoming.label.as_ref().map(|_| Point {
+                        x: i32::midpoint(start.x, bend.x),
+                        y: start.y - 8,
+                    }),
+                )
+            }
+            Side::Bottom if start.x == end.x => (
+                vec![start, end],
+                incoming.label.as_ref().map(|_| Point {
+                    x: start.x + 42,
+                    y: i32::midpoint(start.y, end.y) - 5,
+                }),
+            ),
+            Side::Bottom => {
+                let middle_y = i32::midpoint(start.y, end.y);
+                (
+                    compact_points([
+                        start,
+                        Point {
+                            x: start.x,
+                            y: middle_y,
+                        },
+                        Point {
+                            x: end.x,
+                            y: middle_y,
+                        },
+                        end,
+                    ]),
+                    incoming.label.as_ref().map(|_| Point {
+                        x: i32::midpoint(start.x, end.x),
+                        y: middle_y - 8,
+                    }),
+                )
+            }
+        };
+        self.connect_points(incoming.origin.node, to, incoming.label, points, label_at);
+    }
+
+    fn connect_to_merge(&mut self, arrival: Tail, merge: NodeId, merge_skewer: usize) {
+        let start = self.anchor(arrival.origin);
+        let points = if arrival.skewer == merge_skewer && start.x == skewer_x(merge_skewer) {
+            vec![start, self.top_anchor(merge)]
+        } else {
+            let end = self.right_anchor(merge);
+            let lane_x = skewer_x(arrival.skewer);
+            compact_points([
+                start,
+                Point {
+                    x: lane_x,
+                    y: start.y,
+                },
+                Point {
+                    x: lane_x,
+                    y: end.y,
+                },
+                end,
+            ])
+        };
+        let label_at = Some(match arrival.origin.side {
+            Side::Right => Point {
+                x: i32::midpoint(start.x, skewer_x(arrival.skewer)),
+                y: start.y - 8,
+            },
+            Side::Bottom => Point {
+                x: start.x + 42,
+                y: start.y + 18,
+            },
+        });
+        self.connect_points(
+            arrival.origin.node,
+            merge,
+            Some(arrival.label),
+            points,
+            label_at,
+        );
+    }
+
+    // ponytail: every obstructed terminal shares one return lane and each
+    // routed connection becomes an obstacle for the next, so the result depends
+    // on walk order. Per-terminal lanes need a real router.
+    fn connect_terminals(&mut self, end: NodeId) {
+        let end_top = self.top_anchor(end);
+        let join_y = end_top.y - 32;
+        let return_lane = self.return_lane_x();
+        let terminals = std::mem::take(&mut self.terminals);
+        for terminal in terminals {
+            let start = self.anchor(terminal.origin);
+            let blocked_by_node = self.scene.nodes.iter().any(|node| {
+                node.id != terminal.origin.node
+                    && node.id != end
+                    && node.x == start.x
+                    && self.node_top(node.id) > start.y
+                    && self.node_top(node.id) < end_top.y
+            });
+            let blocked_by_edge = self.scene.edges.iter().any(|edge| {
+                edge.points
+                    .windows(2)
+                    .any(|segment| vertical_route_hits(segment, start.x, start.y, join_y))
+            });
+            let clear_below = !blocked_by_node && !blocked_by_edge;
+            let points = if clear_below && start.x == end_top.x {
+                vec![start, end_top]
+            } else if clear_below {
+                compact_points([
+                    start,
+                    Point {
+                        x: start.x,
+                        y: join_y,
+                    },
+                    Point {
+                        x: end_top.x,
+                        y: join_y,
+                    },
+                    end_top,
+                ])
+            } else {
+                compact_points([
+                    start,
+                    Point {
+                        x: start.x,
+                        y: start.y + TERMINAL_STUB,
+                    },
+                    Point {
+                        x: return_lane,
+                        y: start.y + TERMINAL_STUB,
+                    },
+                    Point {
+                        x: return_lane,
+                        y: join_y,
+                    },
+                    Point {
+                        x: end_top.x,
+                        y: join_y,
+                    },
+                    end_top,
+                ])
+            };
+            self.connect_points(
+                terminal.origin.node,
+                end,
+                Some(terminal.label),
+                points,
+                Some(Point {
+                    x: start.x + 42,
+                    y: start.y + 18,
+                }),
+            );
+        }
+    }
+
+    fn distributor_points(&self, from: NodeId, to: NodeId, case_top: i32) -> Vec<Point> {
+        let start = self.bottom_anchor(from);
+        let end = self.top_anchor(to);
+        if start.x == end.x {
+            return vec![start, end];
+        }
+        let distributor_y = i32::midpoint(start.y, case_top);
+        compact_points([
+            start,
+            Point {
+                x: start.x,
+                y: distributor_y,
+            },
+            Point {
+                x: end.x,
+                y: distributor_y,
+            },
+            end,
+        ])
+    }
+
+    fn connect_points(
+        &mut self,
+        from: NodeId,
+        to: NodeId,
+        label: Option<String>,
+        points: Vec<Point>,
+        label_at: Option<Point>,
+    ) {
+        debug_assert!(points.len() >= 2);
+        debug_assert_eq!(label.is_some(), label_at.is_some());
+        let lines = label
+            .as_deref()
+            .map(|label| wrap_text(label, EDGE_LABEL_WIDTH, EDGE_LABEL_FONT))
+            .unwrap_or_default();
         self.scene.edges.push(Edge {
             from,
             to,
             label,
-            start_x: 0,
-            start_y: 0,
-            middle_y: 0,
-            side_x: None,
-            end_x: 0,
-            end_y: 0,
+            lines,
+            points,
+            label_at,
         });
     }
 
-    fn ensure_node(&mut self, id: NodeId) {
-        if !self.seen.insert(id) {
-            return;
-        }
-        let layout_node = match id {
-            NodeId::Start => unreachable!("the start node is created first"),
-            NodeId::End => node(id, NodeKind::End, String::new()),
-            NodeId::Block(index) => {
-                let block = &self.graph.flow.blocks[index];
-                node(
-                    id,
-                    match block.kind {
-                        BlockKind::Action => NodeKind::Action,
-                        BlockKind::Question => NodeKind::Question,
-                        BlockKind::Choice => NodeKind::Choice,
-                        BlockKind::Merge => NodeKind::Merge,
-                    },
-                    // A merge has no authored description and no drawn label.
-                    block.description.clone().unwrap_or_default(),
-                )
-            }
-        };
-        self.scene.nodes.push(layout_node);
-    }
-}
-
-fn node(id: NodeId, kind: NodeKind, label: String) -> Node {
-    let (width, height, lines) = node_dimensions(kind, &label);
-    Node {
-        id,
-        kind,
-        label,
-        x: 0,
-        y: 0,
-        width,
-        height,
-        lines,
-    }
-}
-
-fn position(scene: &mut Scene) {
-    let indexes = scene
-        .nodes
-        .iter()
-        .enumerate()
-        .map(|(index, node)| (node.id, index))
-        .collect::<HashMap<_, _>>();
-    let ranks = ranks(scene, &indexes);
-    let rank_count = ranks.iter().copied().max().unwrap_or(0) + 1;
-    let mut rows = vec![Vec::new(); rank_count];
-    for (index, rank) in ranks.iter().copied().enumerate() {
-        rows[rank].push(index);
-    }
-
-    let widest_row = rows.iter().map(Vec::len).max().unwrap_or(1) as i32;
-    let width = MARGIN * 2 + widest_row * CELL_WIDTH;
-    let row_heights = rows
-        .iter()
-        .map(|row| {
-            row.iter()
-                .map(|index| scene.nodes[*index].height)
-                .max()
-                .unwrap_or(0)
-        })
-        .collect::<Vec<_>>();
-    let mut row_centers = Vec::with_capacity(rows.len());
-    let mut cursor = MARGIN;
-    for height in &row_heights {
-        row_centers.push(cursor + height / 2);
-        cursor += height + ROW_GAP;
-    }
-    let height = cursor - ROW_GAP + MARGIN;
-
-    for (rank, row) in rows.iter().enumerate() {
-        let span = row.len() as i32 * CELL_WIDTH;
-        let left = (width - span) / 2;
-        for (column, index) in row.iter().copied().enumerate() {
-            scene.nodes[index].x = left + column as i32 * CELL_WIDTH + CELL_WIDTH / 2;
-            scene.nodes[index].y = row_centers[rank];
+    fn anchor(&self, origin: Origin) -> Point {
+        match origin.side {
+            Side::Bottom => self.bottom_anchor(origin.node),
+            Side::Right => self.right_anchor(origin.node),
         }
     }
 
-    let outgoing = edge_ordinals(&scene.edges, |edge| edge.from);
-    let incoming = edge_ordinals(&scene.edges, |edge| edge.to);
-    for (edge_index, edge) in scene.edges.iter_mut().enumerate() {
-        let from_index = indexes[&edge.from];
-        let to_index = indexes[&edge.to];
-        let from = &scene.nodes[from_index];
-        let to = &scene.nodes[to_index];
-        let (out_index, out_count) = outgoing[edge_index];
-        let (in_index, in_count) = incoming[edge_index];
-        (edge.start_x, edge.start_y) = vertical_anchor(from, out_index, out_count, 1);
-        (edge.end_x, edge.end_y) = vertical_anchor(to, in_index, in_count, -1);
-        edge.middle_y = edge.start_y + (edge.end_y - edge.start_y) / 2;
-        edge.side_x = (ranks[to_index] > ranks[from_index] + 1).then(|| {
-            if from.x < width / 2 {
-                MARGIN
-            } else {
-                width - MARGIN
-            }
-        });
+    fn top_anchor(&self, id: NodeId) -> Point {
+        let node = self.node(id);
+        Point {
+            x: node.x,
+            y: node.y - node.height / 2,
+        }
     }
 
-    scene.width = width;
-    scene.height = height;
-}
-
-fn ranks(scene: &Scene, indexes: &HashMap<NodeId, usize>) -> Vec<usize> {
-    let mut ranks = vec![0; scene.nodes.len()];
-    let mut incoming = vec![0; scene.nodes.len()];
-    for edge in &scene.edges {
-        incoming[indexes[&edge.to]] += 1;
+    fn bottom_anchor(&self, id: NodeId) -> Point {
+        let node = self.node(id);
+        Point {
+            x: node.x,
+            y: node.y + node.height / 2,
+        }
     }
-    let mut ready = vec![indexes[&NodeId::Start]];
-    let mut cursor = 0;
-    while cursor < ready.len() {
-        let from = ready[cursor];
-        cursor += 1;
-        for edge in scene
+
+    fn right_anchor(&self, id: NodeId) -> Point {
+        let node = self.node(id);
+        Point {
+            x: node.x + node.width / 2,
+            y: node.y,
+        }
+    }
+
+    fn node_top(&self, id: NodeId) -> i32 {
+        self.top_anchor(id).y
+    }
+
+    fn node_bottom(&self, id: NodeId) -> i32 {
+        self.bottom_anchor(id).y
+    }
+
+    fn node(&self, id: NodeId) -> &Node {
+        &self.scene.nodes[self.indexes[&id]]
+    }
+
+    fn return_lane_x(&self) -> i32 {
+        skewer_x(self.skewer_count - 1) + NODE_WIDTH / 2 + RETURN_LANE_GAP
+    }
+
+    fn fit_scene(&mut self) {
+        let node_right = self.scene.nodes.iter().map(|node| node.x + node.width / 2);
+        let edge_right = self
+            .scene
             .edges
             .iter()
-            .filter(|edge| indexes[&edge.from] == from)
-        {
-            let to = indexes[&edge.to];
-            ranks[to] = ranks[to].max(ranks[from] + 1);
-            incoming[to] -= 1;
-            if incoming[to] == 0 {
-                ready.push(to);
-            }
+            .flat_map(|edge| edge.points.iter().map(|point| point.x));
+        let label_right = self
+            .scene
+            .edges
+            .iter()
+            .filter_map(|edge| label_bounds(edge).map(|(right, _)| right));
+        let node_bottom = self.scene.nodes.iter().map(|node| node.y + node.height / 2);
+        let edge_bottom = self
+            .scene
+            .edges
+            .iter()
+            .flat_map(|edge| edge.points.iter().map(|point| point.y));
+        let label_bottom = self
+            .scene
+            .edges
+            .iter()
+            .filter_map(|edge| label_bounds(edge).map(|(_, bottom)| bottom));
+
+        self.scene.width = node_right
+            .chain(edge_right)
+            .chain(label_right)
+            .max()
+            .unwrap_or(0)
+            + MARGIN;
+        self.scene.height = node_bottom
+            .chain(edge_bottom)
+            .chain(label_bottom)
+            .max()
+            .unwrap_or(0)
+            + MARGIN;
+    }
+}
+
+struct Incoming {
+    origin: Origin,
+    label: Option<String>,
+    skewer: usize,
+}
+
+struct Placed {
+    bottom: i32,
+    arrival: Option<Tail>,
+}
+
+struct Tail {
+    origin: Origin,
+    label: String,
+    skewer: usize,
+    merge: Option<usize>,
+}
+
+#[derive(Clone, Copy)]
+struct Origin {
+    node: NodeId,
+    side: Side,
+}
+
+impl Origin {
+    const fn bottom(node: NodeId) -> Self {
+        Self {
+            node,
+            side: Side::Bottom,
         }
     }
-    debug_assert_eq!(ready.len(), scene.nodes.len());
 
-    ranks
+    const fn right(node: NodeId) -> Self {
+        Self {
+            node,
+            side: Side::Right,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Side {
+    Bottom,
+    Right,
+}
+
+fn plan_span(plan: &Plan) -> usize {
+    match plan {
+        Plan::Action { next, .. } => plan_span(next),
+        Plan::Question {
+            branches, merge, ..
+        } => branch_span(branches, merge.as_ref()),
+        Plan::Choice {
+            branches, merge, ..
+        } => branch_span(branches, merge.as_ref()),
+        Plan::Terminal { .. } | Plan::Arrival { .. } => 1,
+    }
+}
+
+fn branch_span(branches: &[Branch], merge: Option<&Merge>) -> usize {
+    let branches = branches
+        .iter()
+        .map(|branch| plan_span(&branch.plan))
+        .sum::<usize>();
+    let continuation = merge.map_or(1, |merge| plan_span(&merge.next));
+    branches.max(continuation)
+}
+
+/// Right and bottom extent of an edge label, matching how the serializer places
+/// it: centred on `label_at`, with the block of lines centred on that baseline.
+fn label_bounds(edge: &Edge) -> Option<(i32, i32)> {
+    let at = edge.label_at?;
+    let width = edge
+        .lines
+        .iter()
+        .map(|line| text_width(&line.chars().collect::<Vec<_>>(), EDGE_LABEL_FONT))
+        .max()?;
+    let last_baseline = at.y + (edge.lines.len() as i32 - 1) * EDGE_LINE_HEIGHT / 2;
+
+    Some((
+        at.x + width / 2 + EDGE_LABEL_HALO,
+        last_baseline + EDGE_LABEL_FONT / 2 + EDGE_LABEL_HALO,
+    ))
+}
+
+fn skewer_x(skewer: usize) -> i32 {
+    MARGIN + NODE_WIDTH / 2 + skewer as i32 * SKEWER_WIDTH
+}
+
+fn compact_points(points: impl IntoIterator<Item = Point>) -> Vec<Point> {
+    let mut compact = Vec::new();
+    for point in points {
+        if compact.last() != Some(&point) {
+            compact.push(point);
+        }
+    }
+    compact
+}
+
+fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool {
+    let [from, to] = segment else {
+        return false;
+    };
+    if from.x == to.x {
+        from.x == x && from.y.max(to.y) > top && from.y.min(to.y) <= bottom
+    } else {
+        debug_assert_eq!(from.y, to.y);
+        from.y > top && from.y <= bottom && from.x.min(to.x) <= x && x <= from.x.max(to.x)
+    }
 }
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
-        NodeKind::Merge => (38, 38, vec!["M".to_owned()]),
+        NodeKind::Merge => (38, 38, Vec::new()),
         NodeKind::End => (180, 58, Vec::new()),
         NodeKind::Start => {
             let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
-            let height = 58.max(42 + lines.len() as i32 * 18);
+            let height = 58.max(30 + lines.len() as i32 * LINE_HEIGHT);
             (NODE_WIDTH, height, lines)
         }
-        NodeKind::Action => block_dimensions(label, NODE_LABEL_WIDTH, 78),
-        NodeKind::Question | NodeKind::Choice => block_dimensions(label, BRANCH_LABEL_WIDTH, 112),
+        NodeKind::Action => block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 64),
+        NodeKind::Question | NodeKind::Choice => {
+            block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
+        }
+        NodeKind::Case => {
+            let lines = wrap_text(label, CASE_LABEL_WIDTH, LABEL_FONT);
+            let body_height = 52.max(28 + lines.len() as i32 * LINE_HEIGHT);
+            (CASE_WIDTH, body_height + CASE_TIP_HEIGHT, lines)
+        }
     }
 }
 
-fn block_dimensions(label: &str, budget: i32, minimum_height: i32) -> (i32, i32, Vec<String>) {
+fn block_dimensions(
+    label: &str,
+    width: i32,
+    budget: i32,
+    minimum_height: i32,
+) -> (i32, i32, Vec<String>) {
     let lines = wrap_text(label, budget, LABEL_FONT);
-    let height = minimum_height.max(48 + lines.len() as i32 * 18);
-    (NODE_WIDTH, height, lines)
+    let height = minimum_height.max(30 + lines.len() as i32 * LINE_HEIGHT);
+    (width, height, lines)
 }
 
 /// Approximate advance width of one character, in hundredths of an em, for the
@@ -414,60 +923,16 @@ pub(crate) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> 
     lines
 }
 
-fn edge_ordinals(edges: &[Edge], endpoint: impl Fn(&Edge) -> NodeId) -> Vec<(usize, usize)> {
-    let mut totals = HashMap::new();
-    for edge in edges {
-        *totals.entry(endpoint(edge)).or_insert(0) += 1;
-    }
-    let mut seen = HashMap::new();
-    edges
-        .iter()
-        .map(|edge| {
-            let endpoint = endpoint(edge);
-            let index = seen.entry(endpoint).or_insert(0);
-            let ordinal = *index;
-            *index += 1;
-            (ordinal, totals[&endpoint])
-        })
-        .collect()
-}
-
-fn anchor_x(center: i32, width: i32, ordinal: usize, count: usize) -> i32 {
-    if count == 1 || width < 80 {
-        center
-    } else {
-        center - width / 2 + width * (ordinal as i32 + 1) / (count as i32 + 1)
-    }
-}
-
-fn vertical_anchor(node: &Node, ordinal: usize, count: usize, direction: i32) -> (i32, i32) {
-    let anchor_width = match node.kind {
-        NodeKind::Question => node.width,
-        NodeKind::Choice => node.width - 2 * CHOICE_SKEW,
-        NodeKind::Start | NodeKind::End => node.width - node.height,
-        NodeKind::Action => node.width - 16,
-        NodeKind::Merge => 0,
-    };
-    let x = anchor_x(node.x, anchor_width, ordinal, count);
-    let half_height = node.height / 2;
-    let y_offset = if node.kind == NodeKind::Question {
-        let half_width = node.width / 2;
-        half_height * (half_width - (x - node.x).abs()) / half_width
-    } else {
-        half_height
-    };
-
-    (x, node.y + direction * y_offset)
-}
-
 #[cfg(test)]
 mod tests {
     use syn::{ItemFn, parse_quote};
 
-    use super::{LABEL_FONT, NODE_LABEL_WIDTH, NodeId, NodeKind, layout, text_width, wrap_text};
+    use super::{
+        LABEL_FONT, MARGIN, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds,
+        layout, text_width, wrap_text,
+    };
 
-    /// The control-flow connections a diagram draws, in walk order.
-    fn connections(source: &str, flow: &str) -> Vec<(NodeId, NodeId)> {
+    fn scene(source: &str, flow: &str) -> Scene {
         let file = syn::parse_file(source).expect("the fixture parses");
         let syn::Item::Fn(function) = file
             .items
@@ -480,16 +945,107 @@ mod tests {
         let graph = contour_model::build(function).expect("the flow is valid");
 
         layout(&graph)
-            .edges
+    }
+
+    fn node(scene: &Scene, id: NodeId) -> &Node {
+        scene
+            .nodes
             .iter()
-            .map(|edge| (edge.from, edge.to))
-            .collect()
+            .find(|node| node.id == id)
+            .expect("the node is drawn")
     }
 
     #[test]
     fn wrapping_does_not_split_unspaced_unicode_text() {
         assert_eq!(wrap_text("драконоподобный", 20, 14), ["драконоподобный"]);
         assert_eq!(wrap_text("👩‍💻👩‍💻", 8, 14), ["👩‍💻👩‍💻"]);
+    }
+
+    #[test]
+    fn canvas_follows_the_actual_scene_bounds() {
+        let scene = scene(include_str!("../tests/fixtures/all_blocks.rs"), "route");
+        let content_right = scene
+            .nodes
+            .iter()
+            .map(|node| node.x + node.width / 2)
+            .chain(
+                scene
+                    .edges
+                    .iter()
+                    .flat_map(|edge| edge.points.iter().map(|point| point.x)),
+            )
+            .chain(
+                scene
+                    .edges
+                    .iter()
+                    .filter_map(|edge| label_bounds(edge).map(|(right, _)| right)),
+            )
+            .max()
+            .expect("the scene is not empty");
+        let content_bottom = scene
+            .nodes
+            .iter()
+            .map(|node| node.y + node.height / 2)
+            .chain(
+                scene
+                    .edges
+                    .iter()
+                    .flat_map(|edge| edge.points.iter().map(|point| point.y)),
+            )
+            .chain(
+                scene
+                    .edges
+                    .iter()
+                    .filter_map(|edge| label_bounds(edge).map(|(_, bottom)| bottom)),
+            )
+            .max()
+            .expect("the scene is not empty");
+
+        assert_eq!(scene.width, content_right + MARGIN);
+        assert_eq!(scene.height, content_bottom + MARGIN);
+    }
+
+    /// Node geometry dominates the canvas at the current spacing constants, so
+    /// this does not reproduce a past clipping bug. It pins the invariant that a
+    /// wrapped connection label stays drawable, which the spacing constants
+    /// currently satisfy only by a few pixels.
+    #[test]
+    fn a_wrapped_connection_label_stays_inside_the_canvas() {
+        let source = r#"
+            #[contour]
+            fn wide(condition: bool) -> u8 {
+                #[question("Choose a path")]
+                |condition| -> (accepted, rejected) { condition };
+
+                #[action("Take the accepted path")]
+                |accepted| -> accepted_result { 1 };
+
+                #[action("Take the rejected path")]
+                |rejected| -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines {
+                    0
+                };
+            }
+        "#;
+
+        let scene = scene(source, "wide");
+        let labelled = scene
+            .edges
+            .iter()
+            .filter_map(label_bounds)
+            .collect::<Vec<_>>();
+
+        assert!(!labelled.is_empty());
+        assert!(
+            scene.edges.iter().any(|edge| edge.lines.len() > 1),
+            "the fixture must wrap at least one connection label"
+        );
+        for (right, bottom) in labelled {
+            assert!(right <= scene.width, "a label leaves the canvas: {right}");
+            assert!(
+                bottom <= scene.height,
+                "a label leaves the canvas: {bottom}"
+            );
+        }
     }
 
     #[test]
@@ -501,8 +1057,6 @@ mod tests {
 
     #[test]
     fn wrapped_lines_fit_the_label_budget() {
-        // Wide uppercase overflowed a fixed character limit; every line must now
-        // fit the node, and the authored text must survive the wrap unchanged.
         let label = "REJECT THE WWWWIDE APPLICATION IMMEDIATELY AND WITHOUT DELAY";
         let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
 
@@ -565,28 +1119,109 @@ mod tests {
             }
         "#;
 
+        let scene = scene(source, "nested");
         assert_eq!(
-            connections(source, "nested"),
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to))
+                .collect::<Vec<_>>(),
             [
                 (Start, Block(0)),
                 (Block(0), Block(1)),
                 (Block(1), Block(2)),
-                (Block(2), Block(4)),
                 (Block(1), Block(3)),
+                (Block(2), Block(4)),
                 (Block(3), Block(4)),
                 (Block(4), Block(5)),
-                (Block(5), Block(7)),
                 (Block(0), Block(6)),
+                (Block(5), Block(7)),
                 (Block(6), Block(7)),
                 (Block(7), Block(8)),
                 (Block(8), End),
             ]
         );
+        assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(1)).x);
+        assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(4)).x);
+        assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(7)).x);
+        assert!(node(&scene, Block(3)).x < node(&scene, Block(6)).x);
+    }
+
+    #[test]
+    fn choice_uses_ordered_case_nodes_and_output_only_labels() {
+        use NodeId::{Block, Case};
+
+        let source = r#"
+            #[contour]
+            fn choose(input: u8) -> u8 {
+                #[choice("Choose a path")]
+                #[case("Left")]
+                #[case("Middle")]
+                #[case("Right")]
+                |input| -> (left, middle, right) {
+                    match input { 0 => (), 1 => (), _ => () }
+                };
+
+                #[action("Build left")]
+                |left| -> left_result { 0 };
+
+                #[action("Build middle")]
+                |middle| -> middle_result { 1 };
+
+                #[action("Build right")]
+                |right| -> right_result { 2 };
+            }
+        "#;
+        let scene = scene(source, "choose");
+        let select_edges = scene
+            .edges
+            .iter()
+            .filter(|edge| edge.from == Block(0))
+            .collect::<Vec<_>>();
+
+        assert_eq!(select_edges.len(), 3);
+        assert!(select_edges.iter().all(|edge| edge.label.is_none()));
+        assert_eq!(
+            select_edges.iter().map(|edge| edge.to).collect::<Vec<_>>(),
+            [
+                Case {
+                    choice: 0,
+                    branch: 0
+                },
+                Case {
+                    choice: 0,
+                    branch: 1
+                },
+                Case {
+                    choice: 0,
+                    branch: 2
+                },
+            ]
+        );
+        let case_edges = scene
+            .edges
+            .iter()
+            .filter(|edge| matches!(edge.from, Case { .. }))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            case_edges
+                .iter()
+                .map(|edge| edge.label.as_deref())
+                .collect::<Vec<_>>(),
+            [Some("left"), Some("middle"), Some("right")]
+        );
+        let case_x = scene
+            .nodes
+            .iter()
+            .filter(|node| node.kind == NodeKind::Case)
+            .map(|node| node.x)
+            .collect::<Vec<_>>();
+        assert!(case_x.windows(2).all(|pair| pair[0] < pair[1]));
     }
 
     #[test]
     fn a_terminal_sibling_reaches_the_end_beside_a_merge() {
-        use NodeId::{Block, End, Start};
+        use NodeId::{Block, Case, End, Start};
 
         let source = r#"
             #[contour]
@@ -596,11 +1231,7 @@ mod tests {
                 #[case("Right")]
                 #[case("Finish now")]
                 |input| -> (left, right, done) {
-                    match input {
-                        0 => (),
-                        1 => (),
-                        _ => (),
-                    }
+                    match input { 0 => (), 1 => (), _ => () }
                 };
 
                 #[action("Build left")]
@@ -620,43 +1251,149 @@ mod tests {
             }
         "#;
 
+        let scene = scene(source, "partial");
         assert_eq!(
-            connections(source, "partial"),
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to))
+                .collect::<Vec<_>>(),
             [
                 (Start, Block(0)),
-                (Block(0), Block(1)),
+                (
+                    Block(0),
+                    Case {
+                        choice: 0,
+                        branch: 0
+                    }
+                ),
+                (
+                    Block(0),
+                    Case {
+                        choice: 0,
+                        branch: 1
+                    }
+                ),
+                (
+                    Block(0),
+                    Case {
+                        choice: 0,
+                        branch: 2
+                    }
+                ),
+                (
+                    Case {
+                        choice: 0,
+                        branch: 0
+                    },
+                    Block(1)
+                ),
+                (
+                    Case {
+                        choice: 0,
+                        branch: 1
+                    },
+                    Block(2)
+                ),
+                (
+                    Case {
+                        choice: 0,
+                        branch: 2
+                    },
+                    Block(3)
+                ),
                 (Block(1), Block(4)),
-                (Block(0), Block(2)),
                 (Block(2), Block(4)),
-                (Block(0), Block(3)),
-                (Block(3), End),
                 (Block(4), Block(5)),
+                (Block(3), End),
                 (Block(5), End),
             ]
+        );
+        let early_terminal = scene
+            .edges
+            .iter()
+            .find(|edge| edge.from == Block(3) && edge.to == End)
+            .expect("the early terminal reaches End");
+        assert_eq!(early_terminal.points.len(), 4);
+        assert_eq!(early_terminal.points[0].x, early_terminal.points[1].x);
+        assert_eq!(early_terminal.points[1].x, node(&scene, Block(3)).x);
+        assert_eq!(early_terminal.points[2].x, node(&scene, End).x);
+    }
+
+    #[test]
+    fn a_terminal_skewer_crossing_a_merge_edge_uses_the_outer_lane() {
+        use NodeId::{Block, End};
+
+        let source = r#"
+            #[contour]
+            fn partial(input: u8) -> u8 {
+                #[choice("Choose a path")]
+                #[case("Left")]
+                #[case("Finish now")]
+                #[case("Right")]
+                |input| -> (left, done, right) {
+                    match input { 0 => (), 1 => (), _ => () }
+                };
+
+                #[action("Build left")]
+                |left| -> left_value { 1 };
+
+                #[action("Finish immediately")]
+                |done| -> immediate_result { 2 };
+
+                #[action("Build right")]
+                |right| -> right_value { 3 };
+
+                #[merge]
+                |left_value, right_value| -> selected {};
+
+                #[action("Finish after merge")]
+                |selected| -> merged_result { selected };
+            }
+        "#;
+
+        let scene = scene(source, "partial");
+        let rightmost_node = scene
+            .nodes
+            .iter()
+            .map(|node| node.x + node.width / 2)
+            .max()
+            .expect("the scene is not empty");
+        let early_terminal = scene
+            .edges
+            .iter()
+            .find(|edge| edge.from == Block(2) && edge.to == End)
+            .expect("the early terminal reaches End");
+
+        assert!(
+            early_terminal
+                .points
+                .iter()
+                .any(|point| point.x > rightmost_node)
         );
     }
 
     #[test]
-    fn question_edges_start_on_the_diamond_perimeter() {
+    fn question_keeps_the_first_output_vertical_and_the_second_to_the_right() {
         let function: ItemFn = parse_quote! {
             fn decide(condition: bool) -> u8 {
                 #[question("Choose a path")]
-                |condition| -> (yes, no) { condition };
+                |condition| -> (accepted, rejected) { condition };
 
-                #[action("Return yes")]
-                |yes| -> yes_result { 1 };
+                #[action("Return accepted")]
+                |accepted| -> accepted_result { 1 };
 
-                #[action("Return no")]
-                |no| -> no_result { 0 };
+                #[action("Return rejected")]
+                |rejected| -> rejected_result { 0 };
             }
         };
-        let graph = contour_model::build(&function).unwrap();
+        let graph = contour_model::build(&function).expect("the flow is valid");
         let scene = layout(&graph);
         let question = scene
             .nodes
             .iter()
             .find(|node| node.kind == NodeKind::Question)
-            .unwrap();
+            .expect("the question is drawn");
         let edges = scene
             .edges
             .iter()
@@ -664,11 +1401,62 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(edges.len(), 2);
-        for edge in edges {
-            let horizontal = (edge.start_x - question.x).abs();
-            let expected_vertical =
-                (question.height / 2) * (question.width / 2 - horizontal) / (question.width / 2);
-            assert_eq!(edge.start_y - question.y, expected_vertical);
+        assert_eq!(edges[0].label.as_deref(), Some("accepted"));
+        assert_eq!(edges[0].points[0].x, question.x);
+        assert_eq!(edges[0].points[0].y, question.y + question.height / 2);
+        assert_eq!(edges[1].label.as_deref(), Some("rejected"));
+        assert_eq!(edges[1].points[0].x, question.x + question.width / 2);
+        assert_eq!(edges[1].points[0].y, question.y);
+        assert!(edges[1].points[1].x > question.x);
+    }
+
+    /// `segments_cross` compares a vertical run against a horizontal one, so
+    /// collinear overlap is out of scope. Two overlaps are deliberate: the
+    /// connections from a Select share their first vertical run, and obstructed
+    /// terminal branches share one return lane.
+    #[test]
+    fn fixture_connections_are_orthogonal_and_free_of_perpendicular_crossings() {
+        let scene = scene(include_str!("../tests/fixtures/all_blocks.rs"), "route");
+        for edge in &scene.edges {
+            assert!(
+                edge.points
+                    .windows(2)
+                    .all(|points| points[0].x == points[1].x || points[0].y == points[1].y)
+            );
         }
+
+        for (index, left) in scene.edges.iter().enumerate() {
+            for right in &scene.edges[index + 1..] {
+                if left.from == right.from || left.to == right.to {
+                    continue;
+                }
+                assert!(!left.points.windows(2).any(|left| {
+                    right
+                        .points
+                        .windows(2)
+                        .any(|right| segments_cross(left[0], left[1], right[0], right[1]))
+                }));
+            }
+        }
+    }
+
+    fn segments_cross(first: Point, second: Point, third: Point, fourth: Point) -> bool {
+        let (vertical_start, vertical_end, horizontal_start, horizontal_end) =
+            if first.x == second.x && third.y == fourth.y {
+                (first, second, third, fourth)
+            } else if first.y == second.y && third.x == fourth.x {
+                (third, fourth, first, second)
+            } else {
+                return false;
+            };
+        let horizontal_min = horizontal_start.x.min(horizontal_end.x);
+        let horizontal_max = horizontal_start.x.max(horizontal_end.x);
+        let vertical_min = vertical_start.y.min(vertical_end.y);
+        let vertical_max = vertical_start.y.max(vertical_end.y);
+
+        horizontal_min < vertical_start.x
+            && vertical_start.x < horizontal_max
+            && vertical_min < horizontal_start.y
+            && horizontal_start.y < vertical_max
     }
 }

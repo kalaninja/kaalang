@@ -1,7 +1,8 @@
 use std::fmt::Write;
 
 use crate::layout::{
-    CHOICE_SKEW, EDGE_LABEL_FONT, EDGE_LABEL_WIDTH, Edge, Node, NodeId, NodeKind, Scene, wrap_text,
+    CASE_TIP_HEIGHT, EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, Edge, LABEL_FONT,
+    LINE_HEIGHT, Node, NodeId, NodeKind, QUESTION_POINT, SELECT_SKEW, Scene,
 };
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
@@ -40,28 +41,23 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
         "  <desc id=\"contour-description\">{}</desc>",
         escape(&describe(scene))
     );
-    svg.push_str(
+    emit_inline!(
+        svg,
         r##"  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
-      <path d="M 0 0 L 8 4 L 0 8 z" fill="#334155"/>
-    </marker>
     <style>
-      .edge { fill: none; stroke: #334155; stroke-width: 2; }
-      .edge-label { fill: #334155; font: 12px ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #f8fafc; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
-      .node-shape { stroke: #334155; stroke-width: 2; }
-      .start .node-shape, .end .node-shape { fill: #dbeafe; }
-      .action .node-shape { fill: #f8fafc; }
-      .question .node-shape { fill: #fef3c7; }
-      .choice .node-shape { fill: #ede9fe; }
-      .merge .node-shape { fill: #cbd5e1; }
-      .kind { fill: #64748b; font: 600 11px ui-sans-serif, system-ui, sans-serif; letter-spacing: 1px; text-anchor: middle; }
-      .label { fill: #0f172a; font: 14px ui-sans-serif, system-ui, sans-serif; text-anchor: middle; }
-      .merge .label { font-weight: 700; }
+      svg {{ color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }}
+      .edge {{ fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }}
+      .edge-label {{ fill: currentColor; font-size: {EDGE_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {EDGE_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
+      .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
+      .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
+      .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
+      .action .label {{ font-weight: 400; text-anchor: start; }}
+      .merge .label {{ font-weight: 700; }}
     </style>
   </defs>
-  <rect width="100%" height="100%" fill="#f8fafc"/>
+  <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-"##,
+"##
     );
     for edge in &scene.edges {
         write_edge(&mut svg, edge);
@@ -76,43 +72,37 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
 }
 
 fn write_edge(svg: &mut String, edge: &Edge) {
-    if let Some(side_x) = edge.side_x {
-        emit!(
-            svg,
-            "    <path class=\"edge\" d=\"M {} {} V {} H {side_x} V {} H {} V {}\" marker-end=\"url(#arrow)\"/>",
-            edge.start_x,
-            edge.start_y,
-            edge.start_y + 30,
-            edge.end_y - 30,
-            edge.end_x,
-            edge.end_y
-        );
-    } else {
-        emit!(
-            svg,
-            "    <path class=\"edge\" d=\"M {} {} V {} H {} V {}\" marker-end=\"url(#arrow)\"/>",
-            edge.start_x,
-            edge.start_y,
-            edge.middle_y,
-            edge.end_x,
-            edge.end_y
-        );
-    }
-    let Some(label) = &edge.label else {
-        return;
-    };
-    let lines = wrap_text(label, EDGE_LABEL_WIDTH, EDGE_LABEL_FONT);
-    let (x, label_y) = edge.side_x.map_or_else(
-        || (i32::midpoint(edge.start_x, edge.end_x), edge.middle_y),
-        |side_x| (i32::midpoint(edge.start_x, side_x), edge.start_y + 30),
+    let first = edge
+        .points
+        .first()
+        .expect("a positioned edge has at least two points");
+    emit_inline!(
+        svg,
+        "    <path class=\"edge\" d=\"M {} {}",
+        first.x,
+        first.y
     );
-    let first_y = label_y - (lines.len() as i32 - 1) * 7 - 5;
+    for point in &edge.points[1..] {
+        emit_inline!(svg, " L {} {}", point.x, point.y);
+    }
+    emit!(svg, "\"/>");
+    // Empty exactly when the connection carries no label: layout wraps every
+    // label it sets, and a wrapped label always has at least one line.
+    if edge.lines.is_empty() {
+        return;
+    }
+    let lines = &edge.lines;
+    let label_at = edge
+        .label_at
+        .expect("a labelled edge has a positioned label");
+    let x = label_at.x;
+    let first_y = label_at.y - (lines.len() as i32 - 1) * EDGE_LINE_HEIGHT / 2;
     emit_inline!(
         svg,
         "    <text class=\"edge-label\" x=\"{x}\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
     for (index, line) in lines.iter().enumerate() {
-        let dy = if index == 0 { 0 } else { 14 };
+        let dy = if index == 0 { 0 } else { EDGE_LINE_HEIGHT };
         emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
     }
     emit!(svg, "</text>");
@@ -158,9 +148,12 @@ fn node_name(scene: &Scene, node: &Node) -> String {
         NodeKind::Action => format!("Action: {}", node.label),
         NodeKind::Question => format!("Question: {}", node.label),
         NodeKind::Choice => format!("Choice: {}", node.label),
+        NodeKind::Case => format!("Case: {}", node.label),
         NodeKind::Merge => match node.id {
             NodeId::Block(index) => format!("Merge {}", merge_ordinal(scene, index)),
-            NodeId::Start | NodeId::End => unreachable!("merge nodes are authored blocks"),
+            NodeId::Start | NodeId::Case { .. } | NodeId::End => {
+                unreachable!("merge nodes are authored blocks")
+            }
         },
         NodeKind::End => "End".to_owned(),
     }
@@ -187,7 +180,7 @@ fn write_node(svg: &mut String, node: &Node) {
     );
     if matches!(
         node.kind,
-        NodeKind::Action | NodeKind::Question | NodeKind::Choice
+        NodeKind::Action | NodeKind::Question | NodeKind::Choice | NodeKind::Case
     ) {
         emit!(
             svg,
@@ -203,28 +196,30 @@ fn write_node(svg: &mut String, node: &Node) {
         NodeKind::End => {
             svg.push_str("      <text class=\"label\" y=\"5\">End</text>\n");
         }
-        kind => {
-            let caption = match kind {
-                NodeKind::Start => "START",
-                NodeKind::Action => "ACTION",
-                NodeKind::Question => "QUESTION",
-                NodeKind::Choice => "CHOICE",
-                NodeKind::Merge | NodeKind::End => unreachable!(),
+        NodeKind::Start
+        | NodeKind::Action
+        | NodeKind::Question
+        | NodeKind::Choice
+        | NodeKind::Case => {
+            let block_height = node.lines.len() as i32 * LINE_HEIGHT;
+            let center_y = if node.kind == NodeKind::Case {
+                -CASE_TIP_HEIGHT / 2
+            } else {
+                0
             };
-            let block_height = node.lines.len() as i32 * 18;
-            let first_y = -block_height / 2 + 15;
-            emit!(
-                svg,
-                "      <text class=\"kind\" y=\"{}\">{caption}</text>",
-                first_y - 18
-            );
+            let first_y = center_y - block_height / 2 + 15;
+            let x = if node.kind == NodeKind::Action {
+                -node.width / 2 + 16
+            } else {
+                0
+            };
             emit_inline!(
                 svg,
                 "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
             );
             for (index, line) in node.lines.iter().enumerate() {
-                let dy = if index == 0 { 0 } else { 18 };
-                emit_inline!(svg, "<tspan x=\"0\" dy=\"{dy}\">{}</tspan>", escape(line));
+                let dy = if index == 0 { 0 } else { LINE_HEIGHT };
+                emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
             }
             emit!(svg, "</text>");
         }
@@ -250,7 +245,7 @@ fn write_shape(svg: &mut String, node: &Node) {
         NodeKind::Action => {
             emit!(
                 svg,
-                "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\" rx=\"8\"/>",
+                "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\"/>",
                 half_width,
                 half_height,
                 node.width,
@@ -258,16 +253,24 @@ fn write_shape(svg: &mut String, node: &Node) {
             );
         }
         NodeKind::Question => {
-            emit!(
-                svg,
-                "      <polygon class=\"node-shape\" points=\"0,-{half_height} {half_width},0 0,{half_height} -{half_width},0\"/>"
-            );
-        }
-        NodeKind::Choice => {
-            let inner = half_width - CHOICE_SKEW;
+            let inner = half_width - QUESTION_POINT;
             emit!(
                 svg,
                 "      <polygon class=\"node-shape\" points=\"-{inner},-{half_height} {inner},-{half_height} {half_width},0 {inner},{half_height} -{inner},{half_height} -{half_width},0\"/>"
+            );
+        }
+        NodeKind::Choice => {
+            let inner = half_width - SELECT_SKEW;
+            emit!(
+                svg,
+                "      <polygon class=\"node-shape\" points=\"-{inner},-{half_height} {half_width},-{half_height} {inner},{half_height} -{half_width},{half_height}\"/>"
+            );
+        }
+        NodeKind::Case => {
+            let body_bottom = half_height - CASE_TIP_HEIGHT;
+            emit!(
+                svg,
+                "      <polygon class=\"node-shape\" points=\"-{half_width},-{half_height} {half_width},-{half_height} {half_width},{body_bottom} 0,{half_height} -{half_width},{body_bottom}\"/>"
             );
         }
         NodeKind::Merge => {
@@ -284,7 +287,8 @@ fn kind_class(kind: NodeKind) -> &'static str {
         NodeKind::Start => "start",
         NodeKind::Action => "action",
         NodeKind::Question => "question",
-        NodeKind::Choice => "choice",
+        NodeKind::Choice => "choice select",
+        NodeKind::Case => "case",
         NodeKind::Merge => "merge",
         NodeKind::End => "end",
     }

@@ -9,15 +9,42 @@ fn renders_the_golden_diagram() {
     assert_eq!(svg, include_str!("fixtures/all_blocks.svg"));
 }
 
-/// The golden diagram pins the rest of the rendering; this covers only the two
-/// claims it cannot state on its own.
 #[test]
-fn output_is_deterministic_and_escapes_authored_text() {
+fn output_is_deterministic() {
     let first = render_source(SOURCE, "route").unwrap();
     let second = render_source(SOURCE, "route").unwrap();
 
     assert_eq!(first, second);
-    assert!(first.contains("Есть &lt;заявка&gt; &amp; она подходит?"));
+}
+
+#[test]
+fn escapes_authored_text() {
+    let source = r#"
+        #[contour]
+        fn escaping(input: u8) -> u8 {
+            #[action("<tag> & value")]
+            |input| -> output { input };
+        }
+    "#;
+
+    let svg = render_source(source, "escaping").unwrap();
+
+    assert!(svg.contains("<title xml:space=\"preserve\">&lt;tag&gt; &amp; value</title>"));
+}
+
+#[test]
+fn uses_contour_icons_without_type_captions_or_arrows() {
+    let svg = render_source(SOURCE, "route").unwrap();
+
+    assert!(svg.contains("class=\"node question\""));
+    assert!(svg.contains("class=\"node choice select\""));
+    assert!(svg.contains("class=\"node case\""));
+    assert!(svg.contains(">accepted</tspan>"));
+    assert!(svg.contains(">rejected</tspan>"));
+    assert!(!svg.contains(" / yes"));
+    assert!(!svg.contains(" / no"));
+    assert!(!svg.contains("class=\"kind\""));
+    assert!(!svg.contains("marker-end"));
 }
 
 /// Under `xml:space="preserve"` the whitespace between a `<text>` element and
@@ -73,7 +100,8 @@ fn preserves_whitespace_in_block_and_case_labels() {
     let svg = render_source(source, "spacing").unwrap();
 
     assert!(svg.contains("<title xml:space=\"preserve\">  exact\tchoice  </title>"));
-    assert!(svg.contains("first /   first  case  "));
+    assert!(svg.contains("<title xml:space=\"preserve\">  first  case  </title>"));
+    assert!(svg.contains(">first</tspan>"));
     assert!(svg.contains("aria-describedby=\"contour-description\""));
     assert!(svg.contains("<desc id=\"contour-description\">"));
 }

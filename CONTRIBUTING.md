@@ -56,6 +56,16 @@ cargo test --workspace
 git diff --check
 ```
 
+A change to the SVG renderer also changes the golden diagram, which is compared
+byte for byte. Regenerate it with the CLI the crate ships, then open the result
+and confirm the diagram still reads correctly before committing it:
+
+```sh
+cargo run -p contour-svg --bin cargo-contour -- diagram \
+  crates/contour-svg/tests/fixtures/all_blocks.rs --flow route \
+  -o crates/contour-svg/tests/fixtures/all_blocks.svg
+```
+
 ## Commits
 
 Use Conventional Commits:

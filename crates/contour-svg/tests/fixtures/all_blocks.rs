@@ -1,11 +1,11 @@
 #[contour]
 fn route(request: u8) -> u8 {
-    #[question("Есть <заявка> & она подходит?")]
+    #[question("Is there an application, and is it eligible?")]
     |&request| -> (accepted, rejected) { request > 0 };
 
-    #[choice("Какой путь выбрать для этой заявки?")]
-    #[case("Короткий путь")]
-    #[case("Длинный путь с дополнительной проверкой")]
+    #[choice("Which path should process this application?")]
+    #[case("Short path")]
+    #[case("Long path with an additional check")]
     |accepted, &request| -> (short, long) {
         match request {
             1 => (),
@@ -13,18 +13,18 @@ fn route(request: u8) -> u8 {
         }
     };
 
-    #[action("Подготовить короткий результат.")]
+    #[action("Prepare the short result.")]
     |short, &request| -> short_value { request };
 
-    #[action("Подготовить длинный результат, сохранив все важные детали заявки.")]
+    #[action("Prepare the long result while preserving every important application detail.")]
     |long, &request| -> long_value { request };
 
     #[merge]
     |short_value, long_value| -> selected {};
 
-    #[action("Вернуть выбранный результат.")]
+    #[action("Return the selected result.")]
     |selected| -> result { selected };
 
-    #[action("Отклонить заявку.")]
+    #[action("Reject the application.")]
     |rejected, request| -> declined { request };
 }

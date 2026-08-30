@@ -1,95 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="816" height="1256" viewBox="0 0 816 1256" role="img" aria-labelledby="contour-title" aria-describedby="contour-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1096" viewBox="0 0 1064 1096" role="img" aria-labelledby="contour-title" aria-describedby="contour-description">
   <title id="contour-title">Contour diagram for route</title>
-  <desc id="contour-description">Nodes: Start: route(request); Question: Есть &lt;заявка&gt; &amp; она подходит?; Choice: Какой путь выбрать для этой заявки?; Action: Подготовить короткий результат.; Merge 1; Action: Подготовить длинный результат, сохранив все важные детали заявки.; Action: Вернуть выбранный результат.; End; Action: Отклонить заявку.. Connections: Start: route(request) to Question: Есть &lt;заявка&gt; &amp; она подходит?; Question: Есть &lt;заявка&gt; &amp; она подходит? to Choice: Какой путь выбрать для этой заявки? via accepted / yes; Choice: Какой путь выбрать для этой заявки? to Action: Подготовить короткий результат. via short / Короткий путь; Action: Подготовить короткий результат. to Merge 1 via short_value; Choice: Какой путь выбрать для этой заявки? to Action: Подготовить длинный результат, сохранив все важные детали заявки. via long / Длинный путь с дополнительной проверкой; Action: Подготовить длинный результат, сохранив все важные детали заявки. to Merge 1 via long_value; Merge 1 to Action: Вернуть выбранный результат. via selected; Action: Вернуть выбранный результат. to End via result; Question: Есть &lt;заявка&gt; &amp; она подходит? to Action: Отклонить заявку. via rejected / no; Action: Отклонить заявку. to End via declined.</desc>
+  <desc id="contour-description">Nodes: Start: route(request); Question: Is there an application, and is it eligible?; Choice: Which path should process this application?; Case: Short path; Case: Long path with an additional check; Action: Prepare the short result.; Action: Prepare the long result while preserving every important application detail.; Merge 1; Action: Return the selected result.; Action: Reject the application.; End. Connections: Start: route(request) to Question: Is there an application, and is it eligible?; Question: Is there an application, and is it eligible? to Choice: Which path should process this application? via accepted; Choice: Which path should process this application? to Case: Short path; Choice: Which path should process this application? to Case: Long path with an additional check; Case: Short path to Action: Prepare the short result. via short; Case: Long path with an additional check to Action: Prepare the long result while preserving every important application detail. via long; Action: Prepare the short result. to Merge 1 via short_value; Action: Prepare the long result while preserving every important application detail. to Merge 1 via long_value; Merge 1 to Action: Return the selected result. via selected; Question: Is there an application, and is it eligible? to Action: Reject the application. via rejected; Action: Return the selected result. to End via result; Action: Reject the application. to End via declined.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
-      <path d="M 0 0 L 8 4 L 0 8 z" fill="#334155"/>
-    </marker>
     <style>
-      .edge { fill: none; stroke: #334155; stroke-width: 2; }
-      .edge-label { fill: #334155; font: 12px ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #f8fafc; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
-      .node-shape { stroke: #334155; stroke-width: 2; }
-      .start .node-shape, .end .node-shape { fill: #dbeafe; }
-      .action .node-shape { fill: #f8fafc; }
-      .question .node-shape { fill: #fef3c7; }
-      .choice .node-shape { fill: #ede9fe; }
-      .merge .node-shape { fill: #cbd5e1; }
-      .kind { fill: #64748b; font: 600 11px ui-sans-serif, system-ui, sans-serif; letter-spacing: 1px; text-anchor: middle; }
-      .label { fill: #0f172a; font: 14px ui-sans-serif, system-ui, sans-serif; text-anchor: middle; }
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
       .merge .label { font-weight: 700; }
     </style>
   </defs>
-  <rect width="100%" height="100%" fill="#f8fafc"/>
+  <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-    <path class="edge" d="M 408 108 V 158 H 408 V 208" marker-end="url(#arrow)"/>
-    <path class="edge" d="M 361 301 V 360 H 228 V 420" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="294" y="355" xml:space="preserve"><tspan x="294" dy="0">accepted / yes</tspan></text>
-    <path class="edge" d="M 190 532 V 588 H 228 V 644" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="209" y="583" xml:space="preserve"><tspan x="209" dy="0">short / Короткий путь</tspan></text>
-    <path class="edge" d="M 228 722 V 778 H 408 V 834" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="318" y="773" xml:space="preserve"><tspan x="318" dy="0">short_value</tspan></text>
-    <path class="edge" d="M 265 532 V 582 H 588 V 632" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="426" y="570" xml:space="preserve"><tspan x="426" dy="0">long / Длинный путь с дополнительной </tspan><tspan x="426" dy="14">проверкой</tspan></text>
-    <path class="edge" d="M 588 734 V 784 H 408 V 834" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="498" y="779" xml:space="preserve"><tspan x="498" dy="0">long_value</tspan></text>
-    <path class="edge" d="M 408 872 V 922 H 408 V 972" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="408" y="917" xml:space="preserve"><tspan x="408" dy="0">selected</tspan></text>
-    <path class="edge" d="M 408 1050 V 1100 H 387 V 1150" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="397" y="1095" xml:space="preserve"><tspan x="397" dy="0">result</tspan></text>
-    <path class="edge" d="M 454 301 V 369 H 588 V 437" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="521" y="364" xml:space="preserve"><tspan x="521" dy="0">rejected / no</tspan></text>
-    <path class="edge" d="M 588 515 V 545 H 768 V 1120 H 428 V 1150" marker-end="url(#arrow)"/>
-    <text class="edge-label" x="678" y="540" xml:space="preserve"><tspan x="678" dy="0">declined</tspan></text>
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 234 L 172 306"/>
+    <text class="edge-label" x="214" y="265" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
+    <path class="edge" d="M 172 378 L 172 450"/>
+    <path class="edge" d="M 172 378 L 172 414 L 532 414 L 532 450"/>
+    <path class="edge" d="M 172 532 L 172 604"/>
+    <text class="edge-label" x="214" y="563" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
+    <path class="edge" d="M 532 532 L 532 604"/>
+    <text class="edge-label" x="574" y="563" xml:space="preserve"><tspan x="574" dy="0">long</tspan></text>
+    <path class="edge" d="M 172 668 L 172 760"/>
+    <text class="edge-label" x="214" y="686" xml:space="preserve"><tspan x="214" dy="0">short_value</tspan></text>
+    <path class="edge" d="M 532 688 L 532 779 L 191 779"/>
+    <text class="edge-label" x="574" y="706" xml:space="preserve"><tspan x="574" dy="0">long_value</tspan></text>
+    <path class="edge" d="M 172 798 L 172 870"/>
+    <text class="edge-label" x="214" y="829" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <path class="edge" d="M 312 198 L 892 198 L 892 306"/>
+    <text class="edge-label" x="602" y="190" xml:space="preserve"><tspan x="602" dy="0">rejected</tspan></text>
+    <path class="edge" d="M 172 934 L 172 1006"/>
+    <text class="edge-label" x="214" y="952" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <path class="edge" d="M 892 370 L 892 974 L 172 974 L 172 1006"/>
+    <text class="edge-label" x="934" y="388" xml:space="preserve"><tspan x="934" dy="0">declined</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(408 78)">
-      <rect class="node-shape" x="-140" y="-30" width="280" height="60" rx="30"/>
-      <text class="kind" y="-12">START</text>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">route(request)</tspan></text>
     </g>
-    <g class="node question" transform="translate(408 264)">
-      <title xml:space="preserve">Есть &lt;заявка&gt; &amp; она подходит?</title>
-      <polygon class="node-shape" points="0,-56 140,0 0,56 -140,0"/>
-      <text class="kind" y="-21">QUESTION</text>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Есть &lt;заявка&gt; &amp; она </tspan><tspan x="0" dy="18">подходит?</tspan></text>
+    <g class="node question" transform="translate(172 198)">
+      <title xml:space="preserve">Is there an application, and is it eligible?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is there an application, and </tspan><tspan x="0" dy="18">is it eligible?</tspan></text>
     </g>
-    <g class="node choice" transform="translate(228 476)">
-      <title xml:space="preserve">Какой путь выбрать для этой заявки?</title>
-      <polygon class="node-shape" points="-112,-56 112,-56 140,0 112,56 -112,56 -140,0"/>
-      <text class="kind" y="-21">CHOICE</text>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Какой путь выбрать для </tspan><tspan x="0" dy="18">этой заявки?</tspan></text>
+    <g class="node choice select" transform="translate(172 342)">
+      <title xml:space="preserve">Which path should process this application?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which path should process </tspan><tspan x="0" dy="18">this application?</tspan></text>
     </g>
-    <g class="node action" transform="translate(228 683)">
-      <title xml:space="preserve">Подготовить короткий результат.</title>
-      <rect class="node-shape" x="-140" y="-39" width="280" height="78" rx="8"/>
-      <text class="kind" y="-12">ACTION</text>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Подготовить короткий результат.</tspan></text>
+    <g class="node case" transform="translate(172 491)">
+      <title xml:space="preserve">Short path</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Short path</tspan></text>
     </g>
-    <g class="node merge" transform="translate(408 853)">
+    <g class="node case" transform="translate(532 491)">
+      <title xml:space="preserve">Long path with an additional check</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Long path with an additional </tspan><tspan x="0" dy="18">check</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 636)">
+      <title xml:space="preserve">Prepare the short result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the short result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 646)">
+      <title xml:space="preserve">Prepare the long result while preserving every important application detail.</title>
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">Prepare the long result while </tspan><tspan x="-124" dy="18">preserving every important </tspan><tspan x="-124" dy="18">application detail.</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 779)">
       <circle class="node-shape" r="19"/>
       <text class="label" y="5">M</text>
     </g>
-    <g class="node action" transform="translate(588 683)">
-      <title xml:space="preserve">Подготовить длинный результат, сохранив все важные детали заявки.</title>
-      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="8"/>
-      <text class="kind" y="-30">ACTION</text>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Подготовить длинный результат, </tspan><tspan x="0" dy="18">сохранив все важные детали </tspan><tspan x="0" dy="18">заявки.</tspan></text>
+    <g class="node action" transform="translate(172 902)">
+      <title xml:space="preserve">Return the selected result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the selected result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(408 1011)">
-      <title xml:space="preserve">Вернуть выбранный результат.</title>
-      <rect class="node-shape" x="-140" y="-39" width="280" height="78" rx="8"/>
-      <text class="kind" y="-12">ACTION</text>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Вернуть выбранный результат.</tspan></text>
+    <g class="node action" transform="translate(892 338)">
+      <title xml:space="preserve">Reject the application.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Reject the application.</tspan></text>
     </g>
-    <g class="node end" transform="translate(408 1179)">
+    <g class="node end" transform="translate(172 1035)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
-    </g>
-    <g class="node action" transform="translate(588 476)">
-      <title xml:space="preserve">Отклонить заявку.</title>
-      <rect class="node-shape" x="-140" y="-39" width="280" height="78" rx="8"/>
-      <text class="kind" y="-12">ACTION</text>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Отклонить заявку.</tspan></text>
     </g>
   </g>
 </svg>

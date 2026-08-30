@@ -18,8 +18,10 @@ that Contour lowers for execution.
 ## 2. Visual graph
 
 A visual graph contains one node for each authored block. An action, question,
-choice, and merge retain distinct visual roles. No authored block is duplicated
-to simplify layout.
+choice, and merge retain distinct visual roles. A choice is drawn as a Select
+node followed by one derived Case node for each authored `#[case]` attribute.
+Case nodes are visual projections, not additional semantic blocks. No authored
+block is duplicated to simplify layout.
 
 The renderer adds two synthetic nodes:
 
@@ -40,28 +42,39 @@ text; output-format escaping and line wrapping do not change its value. A merge
 has no authored description and is identified by its visual role.
 
 Question branches preserve their positional meaning from RFC 0001: the first
-output is yes/true and the second is no/false. A diagram labels those branches
-as `yes` and `no` and may also include their wire names.
+output is yes/true and the second is no/false. A diagram labels each branch with
+only its exact output wire name; it does not add `yes` or `no`.
 
-Choice branches preserve authored case order. Each branch uses the exact text
-value of the corresponding case description and may also include its wire name.
-The visual graph must not reorder cases according to their Rust patterns or
-layout position.
+Choice branches preserve authored case order. The Select node uses the choice
+description. Each Case node uses the exact text value of its corresponding case
+description. A Select-to-Case connection is unlabeled, and the connection from
+the Case node into its branch uses only the exact output wire name. The visual
+graph must not reorder cases according to their Rust patterns or layout
+position.
 
 Merge connections preserve the validated convergence of sibling branches.
 Terminal action outputs connect to the synthetic End node.
 
 ## 4. Layout and style
 
-The version 0.1 renderer uses a deterministic layered layout. Nodes are placed
-in control-flow order and connections are routed orthogonally. Repeated renders
-of the same graph produce the same SVG.
+The version 0.1 renderer uses a deterministic primitive skewer layout.
+The first question output and the first choice case continue down the current
+vertical skewer. Remaining branches occupy successive skewers to the right in
+authored order. Nested branches receive non-overlapping groups of skewers, and
+a continuation after a merge returns to the skewer where the branching block
+started. Terminal branches converge at the synthetic End node. A clear
+terminal skewer continues vertically to the End convergence line; an obstructed
+terminal branch is routed outside continuing branches.
 
-Node geometry, colors, typography, spacing, routing details, and the layered
-layout algorithm are provisional. They are rendering choices, not part of the
-Contour language contract, and do not define the final DRAKON-inspired layout.
-The stable contract is the visual graph's nodes, roles, labels, branch order,
-and connections.
+Connections use horizontal and vertical segments without arrowheads. Action
+nodes are rectangles, question nodes are elongated hexagons, choice nodes are
+skewed Select parallelograms, Case nodes have a lower triangular point, Start
+and End are capsules, and merge nodes remain circles marked `M`. The renderer
+uses one monochrome style and does not print block-kind captions inside nodes.
+
+Exact dimensions, colors, typography, spacing, and routing offsets remain
+rendering choices. The stable contract is the visual graph's nodes, roles,
+labels, branch order, connections, and skewer ordering.
 
 ## 5. SVG renderer
 
