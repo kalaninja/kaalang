@@ -26,7 +26,7 @@ block is duplicated to simplify layout.
 The renderer adds two synthetic nodes:
 
 - **Start** represents the flow boundary and its source wires;
-- **End** receives the result of every path that ends at a terminal action.
+- **Return** receives the result of every path that ends at a terminal action.
 
 These nodes have no corresponding block statements. Connections between nodes
 come from the validated plan. Rust bodies, source comments, and data-wire
@@ -53,7 +53,7 @@ graph must not reorder cases according to their Rust patterns or layout
 position.
 
 Merge connections preserve the validated convergence of sibling branches.
-Terminal action outputs connect to the synthetic End node.
+Terminal action outputs connect to the synthetic Return node.
 
 ## 4. Layout and style
 
@@ -62,14 +62,14 @@ The first question output and the first choice case continue down the current
 vertical skewer. Remaining branches occupy successive skewers to the right in
 authored order. Nested branches receive non-overlapping groups of skewers, and
 a continuation after a merge returns to the skewer where the branching block
-started. Terminal branches converge at the synthetic End node. A clear
-terminal skewer continues vertically to the End convergence line; an obstructed
+started. Terminal branches converge at the synthetic Return node. A clear
+terminal skewer continues vertically to the Return convergence line; an obstructed
 terminal branch is routed outside continuing branches.
 
 Connections use horizontal and vertical segments without arrowheads. Action
 nodes are rectangles, question nodes are elongated hexagons, choice nodes are
 skewed Select parallelograms, Case nodes have a lower triangular point, Start
-and End are capsules, and merge nodes remain circles marked `M`. The renderer
+and Return are capsules, and merge nodes remain circles marked `M`. The renderer
 uses one monochrome style and does not print block-kind captions inside nodes.
 
 Exact dimensions, colors, typography, spacing, and routing offsets remain

@@ -50,7 +50,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .edge-label {{ fill: currentColor; font-size: {EDGE_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {EDGE_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
-      .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
+      .start .label, .question .label, .select .label, .case .label, .return .label {{ font-weight: 600; }}
       .action .label {{ font-weight: 400; text-anchor: start; }}
       .merge .label {{ font-weight: 700; }}
     </style>
@@ -151,11 +151,11 @@ fn node_name(scene: &Scene, node: &Node) -> String {
         NodeKind::Case => format!("Case: {}", node.label),
         NodeKind::Merge => match node.id {
             NodeId::Block(index) => format!("Merge {}", merge_ordinal(scene, index)),
-            NodeId::Start | NodeId::Case { .. } | NodeId::End => {
+            NodeId::Start | NodeId::Case { .. } | NodeId::Return => {
                 unreachable!("merge nodes are authored blocks")
             }
         },
-        NodeKind::End => "End".to_owned(),
+        NodeKind::Return => "return".to_owned(),
     }
 }
 
@@ -193,8 +193,8 @@ fn write_node(svg: &mut String, node: &Node) {
         NodeKind::Merge => {
             svg.push_str("      <text class=\"label\" y=\"5\">M</text>\n");
         }
-        NodeKind::End => {
-            svg.push_str("      <text class=\"label\" y=\"5\">End</text>\n");
+        NodeKind::Return => {
+            svg.push_str("      <text class=\"label\" y=\"5\">return</text>\n");
         }
         NodeKind::Start
         | NodeKind::Action
@@ -231,7 +231,7 @@ fn write_shape(svg: &mut String, node: &Node) {
     let half_width = node.width / 2;
     let half_height = node.height / 2;
     match node.kind {
-        NodeKind::Start | NodeKind::End => {
+        NodeKind::Start | NodeKind::Return => {
             emit!(
                 svg,
                 "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\" rx=\"{}\"/>",
@@ -290,7 +290,7 @@ fn kind_class(kind: NodeKind) -> &'static str {
         NodeKind::Choice => "choice select",
         NodeKind::Case => "case",
         NodeKind::Merge => "merge",
-        NodeKind::End => "end",
+        NodeKind::Return => "return",
     }
 }
 

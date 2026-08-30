@@ -45,7 +45,7 @@ pub(crate) enum NodeId {
     Start,
     Block(usize),
     Case { choice: usize, branch: usize },
-    End,
+    Return,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -56,7 +56,7 @@ pub(crate) enum NodeKind {
     Choice,
     Case,
     Merge,
-    End,
+    Return,
 }
 
 pub(crate) struct Node {
@@ -128,8 +128,8 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
         },
     );
     let end = builder.add_node(
-        NodeId::End,
-        NodeKind::End,
+        NodeId::Return,
+        NodeKind::Return,
         String::new(),
         0,
         placed.bottom + VERTICAL_GAP,
@@ -814,7 +814,7 @@ fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
         NodeKind::Merge => (38, 38, Vec::new()),
-        NodeKind::End => (180, 58, Vec::new()),
+        NodeKind::Return => (180, 58, Vec::new()),
         NodeKind::Start => {
             let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
             let height = 58.max(30 + lines.len() as i32 * LINE_HEIGHT);
@@ -1085,7 +1085,7 @@ mod tests {
 
     #[test]
     fn nested_branches_converge_at_their_own_merge() {
-        use NodeId::{Block, End, Start};
+        use NodeId::{Block, Return, Start};
 
         let source = r#"
             #[contour]
@@ -1138,7 +1138,7 @@ mod tests {
                 (Block(5), Block(7)),
                 (Block(6), Block(7)),
                 (Block(7), Block(8)),
-                (Block(8), End),
+                (Block(8), Return),
             ]
         );
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(1)).x);
@@ -1221,7 +1221,7 @@ mod tests {
 
     #[test]
     fn a_terminal_sibling_reaches_the_end_beside_a_merge() {
-        use NodeId::{Block, Case, End, Start};
+        use NodeId::{Block, Case, Return, Start};
 
         let source = r#"
             #[contour]
@@ -1305,24 +1305,24 @@ mod tests {
                 (Block(1), Block(4)),
                 (Block(2), Block(4)),
                 (Block(4), Block(5)),
-                (Block(3), End),
-                (Block(5), End),
+                (Block(3), Return),
+                (Block(5), Return),
             ]
         );
         let early_terminal = scene
             .edges
             .iter()
-            .find(|edge| edge.from == Block(3) && edge.to == End)
-            .expect("the early terminal reaches End");
+            .find(|edge| edge.from == Block(3) && edge.to == Return)
+            .expect("the early terminal reaches Return");
         assert_eq!(early_terminal.points.len(), 4);
         assert_eq!(early_terminal.points[0].x, early_terminal.points[1].x);
         assert_eq!(early_terminal.points[1].x, node(&scene, Block(3)).x);
-        assert_eq!(early_terminal.points[2].x, node(&scene, End).x);
+        assert_eq!(early_terminal.points[2].x, node(&scene, Return).x);
     }
 
     #[test]
     fn a_terminal_skewer_crossing_a_merge_edge_uses_the_outer_lane() {
-        use NodeId::{Block, End};
+        use NodeId::{Block, Return};
 
         let source = r#"
             #[contour]
@@ -1362,8 +1362,8 @@ mod tests {
         let early_terminal = scene
             .edges
             .iter()
-            .find(|edge| edge.from == Block(2) && edge.to == End)
-            .expect("the early terminal reaches End");
+            .find(|edge| edge.from == Block(2) && edge.to == Return)
+            .expect("the early terminal reaches Return");
 
         assert!(
             early_terminal
