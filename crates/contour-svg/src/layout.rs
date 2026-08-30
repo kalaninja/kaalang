@@ -396,7 +396,7 @@ pub(crate) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> 
                 .map(|offset| hard_end + offset + 1);
             let ascii_break = characters[start..hard_end]
                 .iter()
-                .all(|character| character.is_ascii())
+                .all(char::is_ascii)
                 .then_some(hard_end);
             let Some(end) = preferred_break.or(next_break).or(ascii_break) else {
                 // ponytail: unspaced non-ASCII stays intact until layout gains
@@ -531,6 +531,8 @@ mod tests {
 
     #[test]
     fn nested_branches_converge_at_their_own_merge() {
+        use NodeId::{Block, End, Start};
+
         let source = r#"
             #[contour]
             fn nested(outer: bool, inner: bool) -> u8 {
@@ -563,7 +565,6 @@ mod tests {
             }
         "#;
 
-        use NodeId::{Block, End, Start};
         assert_eq!(
             connections(source, "nested"),
             [
@@ -585,6 +586,8 @@ mod tests {
 
     #[test]
     fn a_terminal_sibling_reaches_the_end_beside_a_merge() {
+        use NodeId::{Block, End, Start};
+
         let source = r#"
             #[contour]
             fn partial(input: u8) -> u8 {
@@ -617,7 +620,6 @@ mod tests {
             }
         "#;
 
-        use NodeId::{Block, End, Start};
         assert_eq!(
             connections(source, "partial"),
             [

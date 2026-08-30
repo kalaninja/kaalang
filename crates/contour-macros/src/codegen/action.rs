@@ -10,7 +10,7 @@ pub(crate) fn emit(
     flow: &Flow,
     bindings: &Bindings,
     index: usize,
-    continuation: TokenStream2,
+    continuation: &TokenStream2,
 ) -> TokenStream2 {
     let block = &flow.blocks[index];
     let input_bindings = input_bindings(&block.inputs, bindings);

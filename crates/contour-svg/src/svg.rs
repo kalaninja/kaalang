@@ -103,8 +103,8 @@ fn write_edge(svg: &mut String, edge: &Edge) {
     };
     let lines = wrap_text(label, EDGE_LABEL_WIDTH, EDGE_LABEL_FONT);
     let (x, label_y) = edge.side_x.map_or_else(
-        || ((edge.start_x + edge.end_x) / 2, edge.middle_y),
-        |side_x| ((edge.start_x + side_x) / 2, edge.start_y + 30),
+        || (i32::midpoint(edge.start_x, edge.end_x), edge.middle_y),
+        |side_x| (i32::midpoint(edge.start_x, side_x), edge.start_y + 30),
     );
     let first_y = label_y - (lines.len() as i32 - 1) * 7 - 5;
     emit_inline!(

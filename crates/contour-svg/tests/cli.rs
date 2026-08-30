@@ -74,7 +74,7 @@ fn writes_default_and_explicit_outputs_only_after_success() {
 }
 
 fn render_source() -> String {
-    contour_svg::render_source(SOURCE, "route").unwrap()
+    contour_svg::render_source(SOURCE, "route").expect("the fixture flow renders")
 }
 
 struct TempDirectory {
@@ -85,11 +85,11 @@ impl TempDirectory {
     fn new() -> Self {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .expect("the system clock is after the Unix epoch")
             .as_nanos();
         let path =
             std::env::temp_dir().join(format!("contour-svg-{}-{unique}", std::process::id()));
-        fs::create_dir(&path).unwrap();
+        fs::create_dir(&path).expect("the temporary directory name is unique");
         Self { path }
     }
 }

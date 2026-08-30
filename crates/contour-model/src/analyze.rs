@@ -163,7 +163,7 @@ impl Analysis<'_> {
         match block.kind {
             BlockKind::Action => self.action(index, next),
             BlockKind::Question => self.question(index, next),
-            BlockKind::Choice => self.choice(index, next),
+            BlockKind::Choice => self.choice(index, &next),
             BlockKind::Merge => unreachable!("merge blocks return before ordinary analysis"),
         }
     }
@@ -209,7 +209,7 @@ impl Analysis<'_> {
     }
 
     /// Analyzes every ordered case branch of a choice.
-    fn choice(&mut self, index: usize, next: PathState) -> Result<Walked> {
+    fn choice(&mut self, index: usize, next: &PathState) -> Result<Walked> {
         let outputs = &self.flow.blocks[index].outputs;
         let mut walked = Vec::with_capacity(outputs.len());
         for output in outputs {

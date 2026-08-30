@@ -51,7 +51,7 @@ impl Bindings {
 pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream2 {
     match plan {
         Plan::Action { index, next } => {
-            action::emit(flow, bindings, *index, self::flow(flow, next, bindings))
+            action::emit(flow, bindings, *index, &self::flow(flow, next, bindings))
         }
         Plan::Question {
             index,

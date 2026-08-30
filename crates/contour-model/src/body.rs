@@ -3,6 +3,7 @@
 use syn::{Expr, ExprMatch, Stmt};
 
 /// Returns the sole match expression from a valid choice body.
+#[must_use]
 pub fn choice_match(body: &Expr) -> Option<&ExprMatch> {
     let expression = single_body_expression(body)?;
     let Expr::Match(choice) = expression else {
@@ -12,6 +13,7 @@ pub fn choice_match(body: &Expr) -> Option<&ExprMatch> {
 }
 
 /// Reports whether a block body is exactly an argument-free `todo!()` call.
+#[must_use]
 pub fn is_todo_body(body: &Expr) -> bool {
     let Some(expression) = single_body_expression(body) else {
         return false;

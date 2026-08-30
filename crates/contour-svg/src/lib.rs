@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn requires_an_exact_top_level_contour_attribute() {
-        let source = r#"
+        let source = r"
             #[other::contour]
             fn nested_attribute(input: u8) -> u8 {}
 
@@ -219,7 +219,7 @@ mod tests {
                 #[contour]
                 fn nested(input: u8) -> u8 {}
             }
-        "#;
+        ";
 
         assert_eq!(
             render_source(source, "nested_attribute"),

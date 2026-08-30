@@ -184,8 +184,7 @@ fn block_kind(attributes: &[Attribute], fallback_span: Span) -> Result<(BlockKin
                     "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
                 ));
             }
-            Role::Companion => {}
-            Role::Comment => {}
+            Role::Companion | Role::Comment => {}
         }
     }
 
@@ -216,7 +215,7 @@ enum Role {
 
 /// Classifies one attribute written on a Contour block.
 fn attribute_role(attribute: &Attribute) -> Result<Role> {
-    let name = attribute.path().get_ident().map(|ident| ident.to_string());
+    let name = attribute.path().get_ident().map(ToString::to_string);
 
     Ok(match name.as_deref() {
         Some("action") => Role::Kind(BlockKind::Action),
