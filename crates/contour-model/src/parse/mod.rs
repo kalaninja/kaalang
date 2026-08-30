@@ -52,14 +52,15 @@ fn blocks(statements: &[Stmt]) -> Result<Vec<Block>> {
 /// Parses one closure-shaped statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
     let closure = block_statement(statement)?;
-    let (kind, kind_attribute) = block_kind(&closure.attrs, closure.inputs_begin.span())?;
+    let (kind, kind_attribute, companions) =
+        block_kind(&closure.attrs, closure.inputs_begin.span())?;
     let (inputs, body) = block_closure(closure)?;
     let (outputs, tuple_output, output_span) = block_outputs(closure)?;
     let syntax = BlockSyntax {
         kind,
         closure,
         kind_attribute,
-        companions: companion_attributes(&closure.attrs),
+        companions,
         inputs,
         outputs,
         tuple_output,
@@ -165,9 +166,14 @@ fn block_statement(statement: &Stmt) -> Result<&ExprClosure> {
     Ok(closure)
 }
 
-/// Determines which kind a block declares, and that it declares exactly one.
-fn block_kind(attributes: &[Attribute], fallback_span: Span) -> Result<(BlockKind, &Attribute)> {
+/// Determines which kind a block declares, that it declares exactly one, and
+/// which attributes accompany it.
+fn block_kind(
+    attributes: &[Attribute],
+    fallback_span: Span,
+) -> Result<(BlockKind, &Attribute, Vec<&Attribute>)> {
     let mut declared = None;
+    let mut companions = Vec::new();
 
     for attribute in attributes {
         match attribute_role(attribute)? {
@@ -184,7 +190,8 @@ fn block_kind(attributes: &[Attribute], fallback_span: Span) -> Result<(BlockKin
                     "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
                 ));
             }
-            Role::Companion | Role::Comment => {}
+            Role::Companion => companions.push(attribute),
+            Role::Comment => {}
         }
     }
 
@@ -195,15 +202,7 @@ fn block_kind(attributes: &[Attribute], fallback_span: Span) -> Result<(BlockKin
         ));
     };
 
-    Ok((kind, attribute))
-}
-
-/// Collects the attributes that accompany the one declaring the block's kind.
-fn companion_attributes(attributes: &[Attribute]) -> Vec<&Attribute> {
-    attributes
-        .iter()
-        .filter(|attribute| matches!(attribute_role(attribute), Ok(Role::Companion)))
-        .collect()
+    Ok((kind, attribute, companions))
 }
 
 /// What one attribute written on a Contour block means.
@@ -308,29 +307,24 @@ fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, bool, Span)> {
 /// Reinterprets a simple Rust type path as an output wire name.
 fn output_ident(output: &Type) -> Result<Ident> {
     let Type::Path(path) = output else {
-        return Err(Error::new_spanned(
-            output,
-            "Contour block outputs must contain only identifiers",
-        ));
+        return Err(unexpected_output(output));
     };
-    let Some(segment) = path.path.segments.first() else {
-        return Err(Error::new_spanned(
-            output,
-            "Contour block outputs must contain only identifiers",
-        ));
-    };
-    if path.qself.is_some()
-        || path.path.leading_colon.is_some()
-        || path.path.segments.len() != 1
-        || !matches!(segment.arguments, PathArguments::None)
-    {
-        return Err(Error::new_spanned(
-            output,
-            "Contour block outputs must contain only identifiers",
-        ));
+    if path.qself.is_some() || path.path.leading_colon.is_some() || path.path.segments.len() != 1 {
+        return Err(unexpected_output(output));
+    }
+    let segment = &path.path.segments[0];
+    if !matches!(segment.arguments, PathArguments::None) {
+        return Err(unexpected_output(output));
     }
 
     Ok(segment.ident.clone())
+}
+
+fn unexpected_output(output: &Type) -> Error {
+    Error::new_spanned(
+        output,
+        "Contour block outputs must contain only identifiers",
+    )
 }
 
 /// Extracts a parenthesized, nonempty description.

@@ -23,7 +23,7 @@ pub(crate) fn flow(parsed: ParsedFlow) -> Result<Flow> {
 fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
     let mut producers = HashSet::new();
     for source in sources {
-        if !producers.insert(source.to_string()) {
+        if !producers.insert(source.clone()) {
             return Err(Error::new(source.span(), "duplicate Contour source wire"));
         }
     }
@@ -31,14 +31,13 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
     for block in blocks {
         let mut seen_inputs = HashSet::new();
         for input in &block.inputs {
-            let name = input.ident.to_string();
-            if !seen_inputs.insert(name.clone()) {
+            if !seen_inputs.insert(input.ident.clone()) {
                 return Err(Error::new(
                     input.ident.span(),
                     "duplicate Contour block input",
                 ));
             }
-            if !producers.contains(&name) {
+            if !producers.contains(&input.ident) {
                 return Err(Error::new(
                     input.ident.span(),
                     "a Contour block input must name a source wire or an earlier block output",
@@ -47,7 +46,7 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
         }
 
         for output in &block.outputs {
-            if !producers.insert(output.to_string()) {
+            if !producers.insert(output.clone()) {
                 return Err(Error::new(output.span(), "duplicate Contour wire name"));
             }
         }
@@ -65,7 +64,7 @@ fn mark_terminals(blocks: &mut [Block]) -> Result<()> {
         let unconsumed = block
             .outputs
             .iter()
-            .filter(|output| !consumed.contains(&output.to_string()))
+            .filter(|output| !consumed.contains(*output))
             .collect::<Vec<_>>();
 
         match block.kind {
@@ -103,10 +102,10 @@ fn mark_terminals(blocks: &mut [Block]) -> Result<()> {
 }
 
 /// Collects every wire name that some block reads.
-fn consumed_wires(blocks: &[Block]) -> HashSet<String> {
+fn consumed_wires(blocks: &[Block]) -> HashSet<Ident> {
     blocks
         .iter()
         .flat_map(|block| &block.inputs)
-        .map(|input| input.ident.to_string())
+        .map(|input| input.ident.clone())
         .collect()
 }

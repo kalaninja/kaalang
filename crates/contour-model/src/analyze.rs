@@ -15,7 +15,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
         visited: HashSet::new(),
     };
     let walked = analysis.walk(PathState {
-        available: flow.sources.iter().map(ToString::to_string).collect(),
+        available: flow.sources.iter().cloned().collect(),
         executed: HashSet::new(),
         last: None,
     })?;
@@ -48,7 +48,7 @@ struct Analysis<'a> {
 
 #[derive(Clone)]
 struct PathState {
-    available: HashSet<String>,
+    available: HashSet<Ident>,
     executed: HashSet<usize>,
     last: Option<usize>,
 }
@@ -99,12 +99,12 @@ impl Analysis<'_> {
                         block
                             .inputs
                             .iter()
-                            .any(|input| state.available.contains(&input.ident.to_string()))
+                            .any(|input| state.available.contains(&input.ident))
                     } else {
                         block
                             .inputs
                             .iter()
-                            .all(|input| state.available.contains(&input.ident.to_string()))
+                            .all(|input| state.available.contains(&input.ident))
                     }
             })
             .map(|(index, _)| index)
@@ -125,8 +125,9 @@ impl Analysis<'_> {
             let available = block
                 .inputs
                 .iter()
-                .filter(|input| state.available.contains(&input.ident.to_string()))
+                .filter(|input| state.available.contains(&input.ident))
                 .collect::<Vec<_>>();
+            debug_assert!(!available.is_empty(), "a ready merge has an input");
             if available.len() != 1 {
                 return Err(Error::new(
                     available[1].ident.span(),
@@ -136,7 +137,7 @@ impl Analysis<'_> {
 
             let input = available[0].ident.clone();
             let mut state = state;
-            state.available.remove(&input.to_string());
+            state.available.remove(&input);
             return Ok(Walked {
                 plan: Plan::Arrival {
                     input: input.clone(),
@@ -156,7 +157,7 @@ impl Analysis<'_> {
         next.last = Some(index);
         for input in &block.inputs {
             if !input.borrowed {
-                next.available.remove(&input.ident.to_string());
+                next.available.remove(&input.ident);
             }
         }
 
@@ -171,7 +172,7 @@ impl Analysis<'_> {
     /// Adds an action's outputs and analyzes its continuation.
     fn action(&mut self, index: usize, mut next: PathState) -> Result<Walked> {
         for output in &self.flow.blocks[index].outputs {
-            next.available.insert(output.to_string());
+            next.available.insert(output.clone());
         }
         let continuation = self.walk(next)?;
 
@@ -188,9 +189,9 @@ impl Analysis<'_> {
     fn question(&mut self, index: usize, next: PathState) -> Result<Walked> {
         let outputs = &self.flow.blocks[index].outputs;
         let mut yes_state = next.clone();
-        yes_state.available.insert(outputs[0].to_string());
+        yes_state.available.insert(outputs[0].clone());
         let mut no_state = next;
-        no_state.available.insert(outputs[1].to_string());
+        no_state.available.insert(outputs[1].clone());
         let walked = vec![self.walk(yes_state)?, self.walk(no_state)?];
         let merge = self.merge_plan(&walked)?;
         let (branches, merge, exit) = self.branches(walked, merge)?;
@@ -214,7 +215,7 @@ impl Analysis<'_> {
         let mut walked = Vec::with_capacity(outputs.len());
         for output in outputs {
             let mut branch_state = next.clone();
-            branch_state.available.insert(output.to_string());
+            branch_state.available.insert(output.clone());
             walked.push(self.walk(branch_state)?);
         }
         let merge = self.merge_plan(&walked)?;
@@ -302,7 +303,7 @@ impl Analysis<'_> {
         let merge = &blocks[index];
         let mut arrived = HashSet::new();
         for (_, input, _) in &arrivals {
-            if !arrived.insert(input.to_string()) {
+            if !arrived.insert((*input).clone()) {
                 return Err(Error::new(
                     input.span(),
                     "two branches reach the same Contour merge input",
@@ -312,7 +313,7 @@ impl Analysis<'_> {
         let declared = merge
             .inputs
             .iter()
-            .map(|input| input.ident.to_string())
+            .map(|input| input.ident.clone())
             .collect::<HashSet<_>>();
         if arrived != declared {
             return Err(Error::new(
@@ -332,9 +333,9 @@ impl Analysis<'_> {
                 .extend(path.exit.state().executed.iter().copied());
         }
         for input in &merge.inputs {
-            state.available.remove(&input.ident.to_string());
+            state.available.remove(&input.ident);
         }
-        state.available.insert(merge.outputs[0].to_string());
+        state.available.insert(merge.outputs[0].clone());
         state.executed.insert(index);
         state.last = Some(index);
         self.visited.insert(index);

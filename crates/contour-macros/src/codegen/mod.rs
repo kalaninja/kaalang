@@ -15,7 +15,7 @@ mod question;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
-    wires: HashMap<String, Ident>,
+    wires: HashMap<Ident, Ident>,
 }
 
 impl Bindings {
@@ -28,7 +28,7 @@ impl Bindings {
             .enumerate()
             .map(|(index, wire)| {
                 (
-                    wire.to_string(),
+                    wire.clone(),
                     Ident::new(
                         &format!("__contour_wire_{index}"),
                         Span::mixed_site().located_at(wire.span()),
@@ -41,7 +41,7 @@ impl Bindings {
 
     pub(crate) fn wire(&self, name: &Ident) -> &Ident {
         self.wires
-            .get(&name.to_string())
+            .get(name)
             .expect("validated wires have lowering bindings")
     }
 }
