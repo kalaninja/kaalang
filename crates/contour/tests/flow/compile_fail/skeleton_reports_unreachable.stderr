@@ -1,0 +1,14 @@
+error: unreachable statement
+  --> tests/flow/compile_fail/skeleton_reports_unreachable.rs:10:5
+   |
+ 8 |     |&seed| -> started { todo!() };
+   |                          ------- any code following this expression is unreachable
+ 9 |
+10 |     #[action("Finish the flow.")]
+   |     ^ unreachable statement
+   |
+note: the lint level is defined here
+  --> tests/flow/compile_fail/skeleton_reports_unreachable.rs:1:9
+   |
+ 1 | #![deny(unreachable_code)]
+   |         ^^^^^^^^^^^^^^^^

@@ -31,12 +31,5 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     codegen::rename_source_bindings(function, &graph.flow, &bindings);
     *function.block = syn::parse2(quote!({ #body }))?;
 
-    // ponytail: a branch that returns while its siblings continue past a merge
-    // leaves the rest of its arm unreachable, so the allow covers the whole
-    // function and also silences the lint inside authored bodies. Narrowing it
-    // means attaching the allow to each generated `return` site.
-    Ok(quote! {
-        #[allow(unreachable_code)]
-        #function
-    })
+    Ok(quote!(#function))
 }

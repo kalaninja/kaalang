@@ -278,3 +278,10 @@ downstream block bodies.
 An authored `todo!()` remains in the lowered body. A choice placeholder still
 type-checks every downstream branch, and execution panics if it reaches the
 placeholder.
+
+A placeholder diverges, so Rust reports every block lowered after it as
+unreachable code. `#[contour]` does not suppress this: an unfinished flow is
+meant to be visible, and a workspace that denies warnings rejects one until its
+placeholders are written. An author who wants the flow quiet while filling it in
+writes `#[allow(unreachable_code)]` on the function, which `#[contour]` re-emits
+with the function's other attributes.

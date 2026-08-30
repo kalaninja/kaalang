@@ -33,6 +33,7 @@ fn run_choice(value: i32, terminal_count: &mut usize) -> &'static str {
     };
 }
 
+#[allow(unreachable_code)]
 #[contour]
 fn run_choice_skeleton(value: i32) -> &'static str {
     #[choice("What is the sign of the value?")]

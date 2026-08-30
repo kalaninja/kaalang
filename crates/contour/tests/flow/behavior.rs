@@ -24,6 +24,7 @@ fn classify(seed: u32, limit: u32) -> u32 {
     |rejected, total| -> rejected_total { total };
 }
 
+#[allow(unreachable_code)]
 #[contour]
 fn skeleton(seed: u32) -> u32 {
     #[question("Accept the seed?")]
