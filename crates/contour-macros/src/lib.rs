@@ -5,13 +5,7 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
 use syn::{Error, ItemFn, Result, parse_macro_input};
 
-mod phases;
-
-// The data the phases hand over, and the helpers they share.
-mod body;
-mod model;
-
-use crate::phases::{analyze, codegen, parse, resolve};
+mod codegen;
 
 /// Parses and lowers an ordinary Rust function containing a Contour flow.
 #[proc_macro_attribute]
@@ -30,12 +24,11 @@ pub fn contour(attributes: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
-    let parsed = parse::flow(function)?;
-    let flow = resolve::flow(parsed)?;
-    let plan = analyze::flow(&flow)?;
-    let body = codegen::flow(&flow, &plan);
+    let graph = contour_model::build(function)?;
+    let bindings = codegen::Bindings::new(&graph.flow);
+    let body = codegen::flow(&graph.flow, &graph.plan, &bindings);
 
-    codegen::rename_source_bindings(function, &flow);
+    codegen::rename_source_bindings(function, &graph.flow, &bindings);
     *function.block = syn::parse2(quote!({ #body }))?;
 
     Ok(quote! {

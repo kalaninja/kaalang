@@ -2,13 +2,13 @@
 
 use syn::Result;
 
-use super::{BlockSyntax, validate_description};
+use super::{BlockSyntax, description};
 use crate::model::Block;
 
 /// An action needs only a description; flow resolution checks its outputs.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    validate_description(syntax.kind_attribute, "Contour block")?;
+    let description = description(syntax.kind_attribute, "Contour block")?;
     syntax.reject_companions()?;
 
-    Ok(syntax.into_block())
+    Ok(syntax.into_block(Some(description), Vec::new()))
 }

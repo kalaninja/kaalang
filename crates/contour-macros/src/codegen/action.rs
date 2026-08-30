@@ -3,18 +3,22 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote_spanned;
 
-use super::input_bindings;
-use crate::body::block_body;
-use crate::model::Flow;
+use super::{Bindings, body::block_body, input_bindings};
+use contour_model::Flow;
 
-pub(crate) fn emit(flow: &Flow, index: usize, continuation: TokenStream2) -> TokenStream2 {
+pub(crate) fn emit(
+    flow: &Flow,
+    bindings: &Bindings,
+    index: usize,
+    continuation: TokenStream2,
+) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let bindings = input_bindings(&block.inputs, flow);
+    let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let output_wires = block
         .outputs
         .iter()
-        .map(|output| flow.wire(output))
+        .map(|output| bindings.wire(output))
         .collect::<Vec<_>>();
     let pattern = if block.tuple_output {
         quote_spanned!(block.output_span=> (#(#output_wires,)*))
@@ -25,7 +29,7 @@ pub(crate) fn emit(flow: &Flow, index: usize, continuation: TokenStream2) -> Tok
 
     quote_spanned! {block.span=>
         let #pattern = {
-            #bindings
+            #input_bindings
             #body
         };
         #continuation

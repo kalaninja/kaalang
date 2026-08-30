@@ -1,13 +1,13 @@
 //! Resolves parsed wires and builds the flow model.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use proc_macro2::{Ident, Span};
+use proc_macro2::Ident;
 use syn::{Error, Result};
 
 use crate::model::{Block, BlockKind, Flow, ParsedFlow};
 
-/// Resolves a parsed flow, settles terminality, and assigns internal bindings.
+/// Resolves a parsed flow and settles terminality.
 pub(crate) fn flow(parsed: ParsedFlow) -> Result<Flow> {
     let ParsedFlow {
         sources,
@@ -15,9 +15,8 @@ pub(crate) fn flow(parsed: ParsedFlow) -> Result<Flow> {
     } = parsed;
     validate_wires(&sources, &blocks)?;
     mark_terminals(&mut blocks)?;
-    let wires = internal_wires(&sources, &blocks);
 
-    Ok(Flow::new(sources, blocks, wires))
+    Ok(Flow::new(sources, blocks))
 }
 
 /// Checks that every input names an earlier producer and that wire names are unique.
@@ -109,24 +108,5 @@ fn consumed_wires(blocks: &[Block]) -> HashSet<String> {
         .iter()
         .flat_map(|block| &block.inputs)
         .map(|input| input.ident.to_string())
-        .collect()
-}
-
-/// Assigns each source and output wire a hygienic Rust binding.
-fn internal_wires(sources: &[Ident], blocks: &[Block]) -> HashMap<String, Ident> {
-    // Source spellings are reserved for aliases inside blocks that list them as inputs.
-    sources
-        .iter()
-        .chain(blocks.iter().flat_map(|block| &block.outputs))
-        .enumerate()
-        .map(|(index, wire)| {
-            (
-                wire.to_string(),
-                Ident::new(
-                    &format!("__contour_wire_{index}"),
-                    Span::mixed_site().located_at(wire.span()),
-                ),
-            )
-        })
         .collect()
 }

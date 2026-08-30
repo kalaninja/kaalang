@@ -12,8 +12,12 @@ tests, commit messages, and pull request content.
   committing changes.
 - `docs/rfcs/` is the source of truth for Contour syntax, semantics, scope, and
   design decisions. Read the relevant RFCs before conceptual or syntax changes.
-- `crates/contour-macros/` implements the procedural macro compilation pipeline:
-  parsing, flow resolution, analysis, and code generation.
+- `crates/contour-model/` parses, resolves, and analyzes flows into the shared
+  validated semantic model.
+- `crates/contour-macros/` owns the procedural macro entry point and Rust code
+  generation.
+- `crates/contour-svg/` lays out validated models and renders standalone SVG,
+  including the `cargo-contour` CLI.
 - `crates/contour/` exports the public macro and owns its test suite. Behavior
   tests are executable examples; compile-fail tests document rejected forms.
 

@@ -2,6 +2,8 @@
 members = [
     "crates/contour",
     "crates/contour-macros",
+    "crates/contour-model",
+    "crates/contour-svg",
 ]
 resolver = "3"
 

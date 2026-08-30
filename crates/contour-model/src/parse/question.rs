@@ -2,12 +2,12 @@
 
 use syn::{Error, Result};
 
-use super::{BlockSyntax, validate_description};
+use super::{BlockSyntax, description};
 use crate::model::Block;
 
 /// A question branches on a boolean, so it declares a yes and a no output.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    validate_description(syntax.kind_attribute, "Contour block")?;
+    let description = description(syntax.kind_attribute, "Contour block")?;
     syntax.reject_companions()?;
     if !syntax.tuple_output || syntax.outputs.len() != 2 {
         return Err(Error::new_spanned(
@@ -16,5 +16,5 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
         ));
     }
 
-    Ok(syntax.into_block())
+    Ok(syntax.into_block(Some(description), Vec::new()))
 }

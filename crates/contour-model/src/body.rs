@@ -1,11 +1,9 @@
-//! Inspects and emits the authored Rust expressions used as block bodies.
+//! Inspects the authored Rust expressions used as block bodies.
 
-use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
 use syn::{Expr, ExprMatch, Stmt};
 
 /// Returns the sole match expression from a valid choice body.
-pub(crate) fn choice_match(body: &Expr) -> Option<&ExprMatch> {
+pub fn choice_match(body: &Expr) -> Option<&ExprMatch> {
     let expression = single_body_expression(body)?;
     let Expr::Match(choice) = expression else {
         return None;
@@ -14,7 +12,7 @@ pub(crate) fn choice_match(body: &Expr) -> Option<&ExprMatch> {
 }
 
 /// Reports whether a block body is exactly an argument-free `todo!()` call.
-pub(crate) fn is_todo_body(body: &Expr) -> bool {
+pub fn is_todo_body(body: &Expr) -> bool {
     let Some(expression) = single_body_expression(body) else {
         return false;
     };
@@ -43,15 +41,4 @@ fn single_body_expression(body: &Expr) -> Option<&Expr> {
         return None;
     };
     Some(expression)
-}
-
-/// Splices the statements of a block body so lowering adds no extra braces.
-pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
-    match body {
-        Expr::Block(block) if block.attrs.is_empty() && block.label.is_none() => {
-            let statements = &block.block.stmts;
-            quote!(#(#statements)*)
-        }
-        body => quote!(#body),
-    }
 }

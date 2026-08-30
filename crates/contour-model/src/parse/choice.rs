@@ -3,13 +3,13 @@
 use proc_macro2::Ident;
 use syn::{Error, Expr, Result};
 
-use super::{BlockSyntax, validate_description};
+use super::{BlockSyntax, description};
 use crate::body::{choice_match, is_todo_body, is_todo_macro};
 use crate::model::Block;
 
 /// A choice owns the `#[case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    validate_description(syntax.kind_attribute, "Contour block")?;
+    let block_description = description(syntax.kind_attribute, "Contour block")?;
     if !syntax.tuple_output {
         return Err(Error::new_spanned(
             &syntax.closure.output,
@@ -18,9 +18,10 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     }
 
     let cases = syntax.accept_companions("case")?;
-    for case in &cases {
-        validate_description(case, "Contour choice case")?;
-    }
+    let case_descriptions = cases
+        .iter()
+        .map(|case| description(case, "Contour choice case"))
+        .collect::<Result<Vec<_>>>()?;
     if cases.len() < 2 {
         return Err(Error::new_spanned(
             syntax.kind_attribute,
@@ -36,7 +37,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
 
     validate_body(&syntax.body, &syntax.outputs)?;
 
-    Ok(syntax.into_block())
+    Ok(syntax.into_block(Some(block_description), case_descriptions))
 }
 
 /// Checks the restricted whole-body syntax accepted for choices.

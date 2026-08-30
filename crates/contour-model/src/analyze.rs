@@ -8,7 +8,7 @@ use syn::{Error, Result};
 use crate::model::{BlockKind, Branch, Flow, Merge, Plan};
 
 /// Walks every path through the flow exactly once, proving the invariants that
-/// need path state and recording what code generation has to emit.
+/// need path state and recording what model consumers can rely on.
 pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
     let mut analysis = Analysis {
         flow,
@@ -140,6 +140,7 @@ impl Analysis<'_> {
             return Ok(Walked {
                 plan: Plan::Arrival {
                     input: input.clone(),
+                    merge: index,
                 },
                 exit: Exit::Merge {
                     index,

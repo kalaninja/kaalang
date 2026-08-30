@@ -36,7 +36,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
 
     validate_body(&syntax.body)?;
 
-    Ok(syntax.into_block())
+    Ok(syntax.into_block(None, Vec::new()))
 }
 
 /// Ensures a structural merge has an empty body.

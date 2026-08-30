@@ -3,18 +3,18 @@
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Merged, input_bindings};
-use crate::body::{block_body, choice_match, is_todo_body};
-use crate::model::Flow;
+use super::{Bindings, Merged, body::block_body, input_bindings};
+use contour_model::{Flow, choice_match, is_todo_body};
 
 pub(crate) fn emit(
     flow: &Flow,
+    bindings: &Bindings,
     index: usize,
     branches: &[TokenStream2],
     merged: Option<Merged>,
 ) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let bindings = input_bindings(&block.inputs, flow);
+    let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let continuations = block
         .outputs
@@ -46,7 +46,7 @@ pub(crate) fn emit(
         .zip(branches)
         .zip(&continuations)
         .map(|((output, path), continuation)| {
-            let output_wire = flow.wire(output);
+            let output_wire = bindings.wire(output);
             quote! {
                 macro_rules! #continuation {
                     ($value:expr) => {{
@@ -70,7 +70,7 @@ pub(crate) fn emit(
         quote! {
             #[allow(clippy::diverging_sub_expression)]
             match {
-                #bindings
+                #input_bindings
                 #body
             } {
                 #(#numbered)*
@@ -96,7 +96,7 @@ pub(crate) fn emit(
             });
         quote! {
             {
-                #bindings
+                #input_bindings
                 #(#match_attrs)*
                 match #scrutinee {
                     #(#arms)*
@@ -113,7 +113,7 @@ pub(crate) fn emit(
             #dispatch
         };
     };
-    let output_wire = flow.wire(&flow.blocks[merged.index].outputs[0]);
+    let output_wire = bindings.wire(&flow.blocks[merged.index].outputs[0]);
     let continuation = merged.continuation;
 
     quote_spanned! {block.span=>

@@ -113,9 +113,15 @@ impl<'a> BlockSyntax<'a> {
     }
 
     /// Turns syntax its own kind has accepted into a flow block.
-    pub(crate) fn into_block(self) -> Block {
+    pub(crate) fn into_block(
+        self,
+        description: Option<String>,
+        case_descriptions: Vec<String>,
+    ) -> Block {
         Block {
             kind: self.kind,
+            description,
+            case_descriptions,
             outputs: self.outputs,
             tuple_output: self.tuple_output,
             output_span: self.output_span,
@@ -201,7 +207,6 @@ fn companion_attributes(attributes: &[Attribute]) -> Vec<&Attribute> {
         .collect()
 }
 
-/// Collects the `#[case("...")]` attributes written on a block.
 /// What one attribute written on a Contour block means.
 enum Role {
     Kind(BlockKind),
@@ -329,8 +334,8 @@ fn output_ident(output: &Type) -> Result<Ident> {
     Ok(segment.ident.clone())
 }
 
-/// Checks that an attribute carries a parenthesized, nonempty description.
-pub(crate) fn validate_description(attribute: &Attribute, subject: &str) -> Result<()> {
+/// Extracts a parenthesized, nonempty description.
+pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String> {
     let Meta::List(description) = &attribute.meta else {
         return Err(Error::new_spanned(
             attribute,
@@ -356,7 +361,7 @@ pub(crate) fn validate_description(attribute: &Attribute, subject: &str) -> Resu
         ));
     }
 
-    Ok(())
+    Ok(description.value())
 }
 
 /// Extracts an unmodified identifier binding from a Rust pattern.
