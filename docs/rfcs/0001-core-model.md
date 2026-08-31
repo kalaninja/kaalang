@@ -107,8 +107,8 @@ Contour keeps types out of wire declarations and relies on Rust inference.
 
 ## 5. Action
 
-An action evaluates a Rust expression and binds its value to one output or a
-tuple of outputs:
+An action evaluates a Rust expression and binds its value to one or more
+outputs:
 
 ```rust
 #[action("Split the value.")]
@@ -117,9 +117,11 @@ tuple of outputs:
 };
 ```
 
-The output declaration becomes a Rust binding pattern, so Rust checks that the
-body value has the declared shape. An action with consumed outputs continues to
-their downstream blocks.
+With one declared output, the complete body value is bound to that wire. The
+bare `output` and singleton tuple `(output,)` declarations are equivalent. With
+two or more outputs, the body's outer tuple is destructured positionally. Rust
+checks that the body value has the required shape. An action with consumed
+outputs continues to their downstream blocks.
 
 An action is terminal when its single output has no consumer. That output
 becomes the result of the current path and must satisfy the flow's return type.
@@ -251,12 +253,13 @@ choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 merge_statement :=
     "#[merge]"
     "|" identifier "," identifier ("," identifier)* "|" "->"
-        identifier "{" "}" ";"
+        single_output_declaration "{" "}" ";"
 
 case_attribute := "#[case(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
-output_declaration := identifier | rust_tuple_of_identifiers
+single_output_declaration := identifier | "(" identifier "," ")"
+output_declaration := single_output_declaration | rust_tuple_of_two_or_more_identifiers
 input_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```

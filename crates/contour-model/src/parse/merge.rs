@@ -27,7 +27,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
             "Contour merge inputs must be bare identifiers",
         ));
     }
-    if syntax.tuple_output {
+    if syntax.outputs.len() != 1 {
         return Err(Error::new_spanned(
             &syntax.closure.output,
             "a Contour merge must declare exactly one output identifier",

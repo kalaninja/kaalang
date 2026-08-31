@@ -55,7 +55,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let (kind, kind_attribute, companions) =
         block_kind(&closure.attrs, closure.inputs_begin.span())?;
     let (inputs, body) = block_closure(closure)?;
-    let (outputs, tuple_output, output_span) = block_outputs(closure)?;
+    let (outputs, output_span) = block_outputs(closure)?;
     let syntax = BlockSyntax {
         kind,
         closure,
@@ -63,7 +63,6 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         companions,
         inputs,
         outputs,
-        tuple_output,
         output_span,
         body,
     };
@@ -85,7 +84,6 @@ pub(crate) struct BlockSyntax<'a> {
     pub(crate) companions: Vec<&'a Attribute>,
     pub(crate) inputs: Vec<Input>,
     pub(crate) outputs: Vec<Ident>,
-    pub(crate) tuple_output: bool,
     pub(crate) output_span: Span,
     pub(crate) body: Expr,
 }
@@ -124,7 +122,6 @@ impl<'a> BlockSyntax<'a> {
             description,
             case_descriptions,
             outputs: self.outputs,
-            tuple_output: self.tuple_output,
             output_span: self.output_span,
             inputs: self.inputs,
             body: self.body,
@@ -279,7 +276,7 @@ fn block_input(pattern: &Pat) -> Result<Input> {
 }
 
 /// Parses output wire declarations from the closure return position.
-fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, bool, Span)> {
+fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, Span)> {
     let ReturnType::Type(_, output) = &closure.output else {
         return Err(Error::new(
             closure.inputs_end.span(),
@@ -287,18 +284,15 @@ fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, bool, Span)> {
         ));
     };
 
-    let (outputs, tuple) = match output.as_ref() {
-        Type::Tuple(tuple) if !tuple.elems.is_empty() => (
-            tuple
-                .elems
-                .iter()
-                .map(output_ident)
-                .collect::<Result<Vec<_>>>()?,
-            true,
-        ),
-        output => (vec![output_ident(output)?], false),
+    let outputs = match output.as_ref() {
+        Type::Tuple(tuple) if !tuple.elems.is_empty() => tuple
+            .elems
+            .iter()
+            .map(output_ident)
+            .collect::<Result<Vec<_>>>()?,
+        output => vec![output_ident(output)?],
     };
-    Ok((outputs, tuple, output.span()))
+    Ok((outputs, output.span()))
 }
 
 /// Reinterprets a simple Rust type path as an output wire name.

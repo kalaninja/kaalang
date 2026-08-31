@@ -18,13 +18,6 @@ pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
 /// A choice owns the `#[case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let block_description = description(syntax.kind_attribute, "Contour block")?;
-    if !syntax.tuple_output {
-        return Err(Error::new_spanned(
-            &syntax.closure.output,
-            "a Contour choice must declare its outputs as a tuple",
-        ));
-    }
-
     let cases = syntax.accept_companions("case")?;
     let case_descriptions = cases
         .iter()

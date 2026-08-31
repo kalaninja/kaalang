@@ -3,7 +3,7 @@ use contour::contour;
 #[contour]
 fn classify(seed: u32, limit: u32) -> u32 {
     #[action("Normalize the seed.")]
-    |&seed| -> (normalized,) { (*seed,) };
+    |&seed| -> (normalized,) { *seed };
 
     #[action("Split the seed.")]
     |normalized| -> (left, right) { (normalized, normalized + 1) };

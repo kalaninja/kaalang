@@ -12,7 +12,7 @@ fn merge_question(condition: bool) -> String {
     |no| -> no_value { "no" };
 
     #[merge]
-    |yes_value, no_value| -> selected {};
+    |yes_value, no_value| -> (selected,) {};
 
     #[action("Uppercase the selected result.")]
     |selected| -> result { selected.to_uppercase() };

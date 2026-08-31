@@ -12,7 +12,7 @@ fn invalid(condition: bool) -> bool {
     |no| -> no_value { false };
 
     #[merge]
-    |yes_value, no_value| -> (selected,) {};
+    |yes_value, no_value| -> (selected, other) {};
 
     #[action("Return the value.")]
     |selected| -> result { selected };

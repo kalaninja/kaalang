@@ -34,7 +34,6 @@ pub struct Block {
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
     pub outputs: Vec<Ident>,
-    pub tuple_output: bool,
     pub output_span: Span,
     pub inputs: Vec<Input>,
     pub body: Expr,

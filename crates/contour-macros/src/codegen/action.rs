@@ -16,11 +16,11 @@ pub(crate) fn emit(flow: &Flow, bindings: &Bindings, index: usize, next: &Plan) 
         .iter()
         .map(|output| bindings.wire(output))
         .collect::<Vec<_>>();
-    let pattern = if block.tuple_output {
-        quote_spanned!(block.output_span=> (#(#output_wires,)*))
-    } else {
+    let pattern = if output_wires.len() == 1 {
         let output = output_wires[0];
         quote_spanned!(block.output_span=> #output)
+    } else {
+        quote_spanned!(block.output_span=> (#(#output_wires,)*))
     };
 
     quote_spanned! {block.span=>
