@@ -185,10 +185,7 @@ fn block_kind(
             }
             Role::Kind(kind) => declared = Some((kind, attribute)),
             Role::Companion if declared.is_none() => {
-                return Err(Error::new_spanned(
-                    attribute,
-                    "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
-                ));
+                return Err(choice::case_before_choice(attribute));
             }
             Role::Companion => companions.push(attribute),
             Role::Comment => {}

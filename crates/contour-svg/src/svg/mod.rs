@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
 use crate::layout::{
-    CASE_TIP_HEIGHT, EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, Edge, LABEL_FONT,
-    LINE_HEIGHT, Node, NodeId, NodeKind, QUESTION_POINT, SELECT_SKEW, Scene,
+    EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, Edge, LABEL_FONT, LINE_HEIGHT, Node,
+    NodeId, NodeKind, Scene,
 };
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
@@ -20,6 +20,11 @@ macro_rules! emit_inline {
         write!($svg, $($argument)*).expect("writing to a String cannot fail")
     };
 }
+
+mod action;
+mod choice;
+mod merge;
+mod question;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     let mut svg = String::new();
@@ -145,33 +150,17 @@ fn node_name_by_id(scene: &Scene, id: NodeId) -> String {
 fn node_name(scene: &Scene, node: &Node) -> String {
     match node.kind {
         NodeKind::Start => format!("Start: {}", node.label),
-        NodeKind::Action => format!("Action: {}", node.label),
-        NodeKind::Question => format!("Question: {}", node.label),
-        NodeKind::Choice => format!("Choice: {}", node.label),
-        NodeKind::Case => format!("Case: {}", node.label),
-        NodeKind::Merge => match node.id {
-            NodeId::Block(index) => format!("Merge {}", merge_ordinal(scene, index)),
-            NodeId::Start | NodeId::Case { .. } | NodeId::Return => {
-                unreachable!("merge nodes are authored blocks")
-            }
-        },
+        NodeKind::Action => action::name(node),
+        NodeKind::Question => question::name(node),
+        NodeKind::Choice => choice::select_name(node),
+        NodeKind::Case => choice::case_name(node),
+        NodeKind::Merge => merge::name(scene, node),
         NodeKind::Return => "return".to_owned(),
     }
 }
 
-/// Numbers a merge by its position among the flow's merges. A block index would
-/// name a count the reader cannot see: the node itself is drawn only as "M".
-fn merge_ordinal(scene: &Scene, index: usize) -> usize {
-    scene
-        .nodes
-        .iter()
-        .filter(|node| node.kind == NodeKind::Merge)
-        .filter(|node| matches!(node.id, NodeId::Block(other) if other <= index))
-        .count()
-}
-
 fn write_node(svg: &mut String, node: &Node) {
-    let class = kind_class(node.kind);
+    let class = node_class(node.kind);
     emit!(
         svg,
         "    <g class=\"node {class}\" transform=\"translate({} {})\">",
@@ -182,107 +171,67 @@ fn write_node(svg: &mut String, node: &Node) {
         node.kind,
         NodeKind::Action | NodeKind::Question | NodeKind::Choice | NodeKind::Case
     ) {
-        emit!(
-            svg,
-            "      <title xml:space=\"preserve\">{}</title>",
-            escape(&node.label)
-        );
+        write_title(svg, &node.label);
     }
-    write_shape(svg, node);
     match node.kind {
-        NodeKind::Merge => {
-            svg.push_str("      <text class=\"label\" y=\"5\">M</text>\n");
-        }
-        NodeKind::Return => {
-            svg.push_str("      <text class=\"label\" y=\"5\">return</text>\n");
-        }
-        NodeKind::Start
-        | NodeKind::Action
-        | NodeKind::Question
-        | NodeKind::Choice
-        | NodeKind::Case => {
-            let block_height = node.lines.len() as i32 * LINE_HEIGHT;
-            let center_y = if node.kind == NodeKind::Case {
-                -CASE_TIP_HEIGHT / 2
-            } else {
-                0
-            };
-            let first_y = center_y - block_height / 2 + 15;
-            let x = if node.kind == NodeKind::Action {
-                -node.width / 2 + 16
-            } else {
-                0
-            };
-            emit_inline!(
-                svg,
-                "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
-            );
-            for (index, line) in node.lines.iter().enumerate() {
-                let dy = if index == 0 { 0 } else { LINE_HEIGHT };
-                emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
-            }
-            emit!(svg, "</text>");
-        }
+        NodeKind::Start => write_start(svg, node),
+        NodeKind::Action => action::write(svg, node),
+        NodeKind::Question => question::write(svg, node),
+        NodeKind::Choice => choice::write_select(svg, node),
+        NodeKind::Case => choice::write_case(svg, node),
+        NodeKind::Merge => merge::write(svg, node),
+        NodeKind::Return => write_return(svg, node),
     }
     svg.push_str("    </g>\n");
 }
 
-fn write_shape(svg: &mut String, node: &Node) {
-    let half_width = node.width / 2;
-    let half_height = node.height / 2;
-    match node.kind {
-        NodeKind::Start | NodeKind::Return => {
-            emit!(
-                svg,
-                "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\" rx=\"{}\"/>",
-                half_width,
-                half_height,
-                node.width,
-                node.height,
-                half_height
-            );
-        }
-        NodeKind::Action => {
-            emit!(
-                svg,
-                "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\"/>",
-                half_width,
-                half_height,
-                node.width,
-                node.height
-            );
-        }
-        NodeKind::Question => {
-            let inner = half_width - QUESTION_POINT;
-            emit!(
-                svg,
-                "      <polygon class=\"node-shape\" points=\"-{inner},-{half_height} {inner},-{half_height} {half_width},0 {inner},{half_height} -{inner},{half_height} -{half_width},0\"/>"
-            );
-        }
-        NodeKind::Choice => {
-            let inner = half_width - SELECT_SKEW;
-            emit!(
-                svg,
-                "      <polygon class=\"node-shape\" points=\"-{inner},-{half_height} {half_width},-{half_height} {inner},{half_height} -{half_width},{half_height}\"/>"
-            );
-        }
-        NodeKind::Case => {
-            let body_bottom = half_height - CASE_TIP_HEIGHT;
-            emit!(
-                svg,
-                "      <polygon class=\"node-shape\" points=\"-{half_width},-{half_height} {half_width},-{half_height} {half_width},{body_bottom} 0,{half_height} -{half_width},{body_bottom}\"/>"
-            );
-        }
-        NodeKind::Merge => {
-            emit!(
-                svg,
-                "      <circle class=\"node-shape\" r=\"{half_width}\"/>"
-            );
-        }
-    }
+fn write_start(svg: &mut String, node: &Node) {
+    write_boundary_shape(svg, node);
+    write_label(svg, node, 0, 0);
 }
 
-fn kind_class(kind: NodeKind) -> &'static str {
+fn write_return(svg: &mut String, node: &Node) {
+    write_boundary_shape(svg, node);
+    svg.push_str("      <text class=\"label\" y=\"5\">return</text>\n");
+}
+
+fn write_boundary_shape(svg: &mut String, node: &Node) {
+    let half_width = node.width / 2;
+    let half_height = node.height / 2;
+    emit!(
+        svg,
+        "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\" rx=\"{}\"/>",
+        half_width,
+        half_height,
+        node.width,
+        node.height,
+        half_height
+    );
+}
+
+fn write_title(svg: &mut String, label: &str) {
+    emit!(
+        svg,
+        "      <title xml:space=\"preserve\">{}</title>",
+        escape(label)
+    );
+}
+
+fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32) {
+    let block_height = node.lines.len() as i32 * LINE_HEIGHT;
+    let first_y = center_y - block_height / 2 + 15;
+    emit_inline!(
+        svg,
+        "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
+    );
+    for (index, line) in node.lines.iter().enumerate() {
+        let dy = if index == 0 { 0 } else { LINE_HEIGHT };
+        emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
+    }
+    emit!(svg, "</text>");
+}
+
+fn node_class(kind: NodeKind) -> &'static str {
     match kind {
         NodeKind::Start => "start",
         NodeKind::Action => "action",

@@ -3,8 +3,8 @@
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Bindings, Merged, block_body, input_bindings};
-use contour_model::{Block, Flow, choice_match, is_todo_body};
+use super::{Bindings, block_body, input_bindings, merge};
+use contour_model::{Block, Branch, Flow, Merge, choice_match, is_todo_body};
 
 /// The identifiers one choice mints for itself. Every one is created at the
 /// mixed site, so authored code can neither name them nor collide with them.
@@ -132,12 +132,16 @@ pub(crate) fn emit(
     flow: &Flow,
     bindings: &Bindings,
     index: usize,
-    branches: &[TokenStream2],
-    merged: Option<Merged>,
+    branches: &[Branch],
+    merged: Option<&Merge>,
 ) -> TokenStream2 {
+    let branches = branches
+        .iter()
+        .map(|branch| super::continuation(flow, branch, bindings))
+        .collect::<Vec<_>>();
     let block = &flow.blocks[index];
     let names = Names::new(block, index);
-    let definitions = definitions(block, bindings, branches, &names);
+    let definitions = definitions(block, bindings, &branches, &names);
     let dispatch = dispatch(block, bindings, &names);
     let Names {
         capability_type,
@@ -145,14 +149,7 @@ pub(crate) fn emit(
         ..
     } = &names;
 
-    let tail = match merged {
-        None => dispatch,
-        Some(merged) => {
-            let output_wire = bindings.wire(&flow.blocks[merged.index].outputs[0]);
-            let continuation = merged.continuation;
-            quote_spanned!(block.span=> let #output_wire = #dispatch; #continuation)
-        }
-    };
+    let tail = merge::emit(flow, bindings, dispatch, merged, Some(block.span));
 
     quote_spanned! {block.span=>
         struct #capability_type;

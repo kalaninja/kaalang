@@ -6,10 +6,11 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::{Expr, FnArg, ItemFn, Pat};
 
-use contour_model::{Branch, Flow, Input, Merge, Plan};
+use contour_model::{Branch, Flow, Input, Plan};
 
 mod action;
 mod choice;
+mod merge;
 mod question;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
@@ -49,43 +50,17 @@ impl Bindings {
 /// Contour invariant, so nothing here reports an error to the author.
 pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream2 {
     match plan {
-        Plan::Action { index, next } => {
-            action::emit(flow, bindings, *index, &self::flow(flow, next, bindings))
-        }
+        Plan::Action { index, next } => action::emit(flow, bindings, *index, next),
         Plan::Question {
             index,
             branches,
             merge,
-        } => {
-            let branches = [
-                continuation(flow, &branches[0], bindings),
-                continuation(flow, &branches[1], bindings),
-            ];
-            question::emit(
-                flow,
-                bindings,
-                *index,
-                branches,
-                merged(flow, merge.as_ref(), bindings),
-            )
-        }
+        } => question::emit(flow, bindings, *index, branches, merge.as_ref()),
         Plan::Choice {
             index,
             branches,
             merge,
-        } => {
-            let branches = branches
-                .iter()
-                .map(|branch| continuation(flow, branch, bindings))
-                .collect::<Vec<_>>();
-            choice::emit(
-                flow,
-                bindings,
-                *index,
-                &branches,
-                merged(flow, merge.as_ref(), bindings),
-            )
-        }
+        } => choice::emit(flow, bindings, *index, branches, merge.as_ref()),
         Plan::Terminal { output } => {
             let wire = bindings.wire(output);
             quote_spanned!(output.span()=> #wire)
@@ -99,6 +74,8 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
 
 /// A branch that ends the flow returns outright when its siblings continue past
 /// a merge, because the enclosing expression then carries the merged value.
+/// Branch plans must be lowered through this function, never through `flow`,
+/// which would drop that early return.
 fn continuation(flow: &Flow, branch: &Branch, bindings: &Bindings) -> TokenStream2 {
     let tokens = self::flow(flow, &branch.plan, bindings);
     if branch.early_return {
@@ -106,20 +83,6 @@ fn continuation(flow: &Flow, branch: &Branch, bindings: &Bindings) -> TokenStrea
     } else {
         tokens
     }
-}
-
-/// Emits the continuation branches share once they converge at a merge.
-fn merged(flow: &Flow, merge: Option<&Merge>, bindings: &Bindings) -> Option<Merged> {
-    merge.map(|merge| Merged {
-        index: merge.index,
-        continuation: self::flow(flow, &merge.next, bindings),
-    })
-}
-
-/// The continuation a branch point's branches share beyond their merge.
-pub(crate) struct Merged {
-    pub(crate) index: usize,
-    pub(crate) continuation: TokenStream2,
 }
 
 /// Splices the statements of a block body so lowering adds no extra braces.

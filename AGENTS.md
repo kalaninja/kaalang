@@ -7,9 +7,9 @@ tests, commit messages, and pull request content.
 
 ## Repository map
 
-- `CONTRIBUTING.md` defines the development workflow, terminology policy,
-  validation baseline, and commit convention. Read it before making or
-  committing changes.
+- `CONTRIBUTING.md` defines the development workflow, code organization
+  conventions, terminology policy, validation baseline, and commit convention.
+  Read it before making or committing changes.
 - `docs/rfcs/` is the source of truth for Contour syntax, semantics, scope, and
   design decisions. Read the relevant RFCs before conceptual or syntax changes.
 - `crates/contour-model/` parses, resolves, and analyzes flows into the shared

@@ -1,11 +1,19 @@
 //! A choice pairs each declared case with one output and one match arm.
 
 use proc_macro2::Ident;
-use syn::{Error, Expr, Result};
+use syn::{Attribute, Error, Expr, Result};
 
 use super::{BlockSyntax, description};
-use crate::body::{choice_match, is_todo_body, is_todo_macro};
+use crate::choice::{choice_match, is_todo_body, is_todo_macro};
 use crate::model::Block;
+
+/// Reports a case attribute that appears before its choice declaration.
+pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
+    Error::new_spanned(
+        attribute,
+        "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
+    )
+}
 
 /// A choice owns the `#[case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {

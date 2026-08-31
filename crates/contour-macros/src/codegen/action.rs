@@ -4,14 +4,10 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote_spanned;
 
 use super::{Bindings, block_body, input_bindings};
-use contour_model::Flow;
+use contour_model::{Flow, Plan};
 
-pub(crate) fn emit(
-    flow: &Flow,
-    bindings: &Bindings,
-    index: usize,
-    continuation: &TokenStream2,
-) -> TokenStream2 {
+pub(crate) fn emit(flow: &Flow, bindings: &Bindings, index: usize, next: &Plan) -> TokenStream2 {
+    let continuation = super::flow(flow, next, bindings);
     let block = &flow.blocks[index];
     let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);

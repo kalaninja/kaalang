@@ -1,7 +1,12 @@
 use std::collections::HashMap;
 
-use contour_model::{BlockKind, Branch, Graph, Merge, Plan};
+use contour_model::{BlockKind, Branch, Graph, Plan};
 use unicode_segmentation::UnicodeSegmentation;
+
+mod action;
+mod choice;
+mod merge;
+mod question;
 
 const MARGIN: i32 = 32;
 const SKEWER_WIDTH: i32 = 360;
@@ -166,20 +171,7 @@ struct Builder<'a> {
 impl Builder<'_> {
     fn place(&mut self, plan: &Plan, skewer: usize, top: i32, incoming: Incoming) -> Placed {
         match plan {
-            Plan::Action { index, next } => {
-                let node = self.add_authored_node(*index, skewer, top);
-                self.connect_to_node(incoming, node);
-                self.place(
-                    next,
-                    skewer,
-                    self.node_bottom(node) + VERTICAL_GAP,
-                    Incoming {
-                        origin: Origin::bottom(node),
-                        label: None,
-                        skewer,
-                    },
-                )
-            }
+            Plan::Action { index, next } => self.place_action(*index, next, skewer, top, incoming),
             Plan::Question {
                 index,
                 branches,
@@ -214,120 +206,10 @@ impl Builder<'_> {
         }
     }
 
-    fn place_question(
-        &mut self,
-        index: usize,
-        branches: &[Branch; 2],
-        merge: Option<&Merge>,
-        skewer: usize,
-        top: i32,
-        incoming: Incoming,
-    ) -> Placed {
-        let node = self.add_authored_node(index, skewer, top);
-        self.connect_to_node(incoming, node);
-        let branch_top = self.node_bottom(node) + VERTICAL_GAP;
-        let outputs = &self.graph.flow.blocks[index].outputs;
-        let spans = branches
-            .iter()
-            .map(|branch| plan_span(&branch.plan))
-            .collect::<Vec<_>>();
-        let mut branch_skewer = skewer;
-        let mut placed = Vec::with_capacity(branches.len());
-        for (branch_index, branch) in branches.iter().enumerate() {
-            let origin = if branch_index == 0 {
-                Origin::bottom(node)
-            } else {
-                Origin::right(node)
-            };
-            placed.push(self.place(
-                &branch.plan,
-                branch_skewer,
-                branch_top,
-                Incoming {
-                    origin,
-                    label: Some(outputs[branch_index].to_string()),
-                    skewer: branch_skewer,
-                },
-            ));
-            branch_skewer += spans[branch_index];
-        }
-
-        self.finish_branches(placed, merge, skewer)
-    }
-
-    fn place_choice(
-        &mut self,
-        index: usize,
-        branches: &[Branch],
-        merge: Option<&Merge>,
-        skewer: usize,
-        top: i32,
-        incoming: Incoming,
-    ) -> Placed {
-        let select = self.add_authored_node(index, skewer, top);
-        self.connect_to_node(incoming, select);
-        let block = &self.graph.flow.blocks[index];
-        let spans = branches
-            .iter()
-            .map(|branch| plan_span(&branch.plan))
-            .collect::<Vec<_>>();
-        let mut branch_skewer = skewer;
-        let mut cases = Vec::with_capacity(branches.len());
-        for (branch_index, description) in block.case_descriptions.iter().enumerate() {
-            let case = self.add_node(
-                NodeId::Case {
-                    choice: index,
-                    branch: branch_index,
-                },
-                NodeKind::Case,
-                description.clone(),
-                branch_skewer,
-                self.node_bottom(select) + VERTICAL_GAP,
-            );
-            cases.push((case, branch_skewer));
-            branch_skewer += spans[branch_index];
-        }
-        self.align_case_row(&cases);
-
-        let case_top = self.node_top(cases[0].0);
-        for (case, _) in &cases {
-            self.connect_points(
-                select,
-                *case,
-                None,
-                self.distributor_points(select, *case, case_top),
-                None,
-            );
-        }
-
-        let branch_top = cases
-            .iter()
-            .map(|(case, _)| self.node_bottom(*case))
-            .max()
-            .unwrap_or(self.node_bottom(select))
-            + VERTICAL_GAP;
-        let mut placed = Vec::with_capacity(branches.len());
-        for (branch_index, branch) in branches.iter().enumerate() {
-            let (case, branch_skewer) = cases[branch_index];
-            placed.push(self.place(
-                &branch.plan,
-                branch_skewer,
-                branch_top,
-                Incoming {
-                    origin: Origin::bottom(case),
-                    label: Some(block.outputs[branch_index].to_string()),
-                    skewer: branch_skewer,
-                },
-            ));
-        }
-
-        self.finish_branches(placed, merge, skewer)
-    }
-
     fn finish_branches(
         &mut self,
         placed: Vec<Placed>,
-        merge: Option<&Merge>,
+        merge: Option<&contour_model::Merge>,
         skewer: usize,
     ) -> Placed {
         let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
@@ -339,29 +221,7 @@ impl Builder<'_> {
             };
         };
 
-        // Branches that end the flow may lead the ones that reach the merge, and
-        // the leading skewers belong to them. The merge and its continuation
-        // take the first continuing branch's skewer instead.
-        let merge_skewer = placed
-            .iter()
-            .find_map(|branch| branch.arrival.as_ref())
-            .map_or(skewer, |arrival| arrival.skewer);
-        let node = self.add_authored_node(merge.index, merge_skewer, bottom + VERTICAL_GAP);
-        for arrival in placed.into_iter().filter_map(|branch| branch.arrival) {
-            debug_assert_eq!(arrival.merge, Some(merge.index));
-            self.connect_to_merge(arrival, node, merge_skewer);
-        }
-        let output = self.graph.flow.blocks[merge.index].outputs[0].to_string();
-        self.place(
-            &merge.next,
-            merge_skewer,
-            self.node_bottom(node) + VERTICAL_GAP,
-            Incoming {
-                origin: Origin::bottom(node),
-                label: Some(output),
-                skewer: merge_skewer,
-            },
-        )
+        self.place_merge(placed, merge, skewer, bottom)
     }
 
     fn add_authored_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
@@ -403,20 +263,6 @@ impl Builder<'_> {
         });
         self.indexes.insert(id, index);
         id
-    }
-
-    fn align_case_row(&mut self, cases: &[(NodeId, usize)]) {
-        let height = cases
-            .iter()
-            .map(|(case, _)| self.node(*case).height)
-            .max()
-            .unwrap_or(0);
-        for (case, _) in cases {
-            let top = self.node_top(*case);
-            let index = self.indexes[case];
-            self.scene.nodes[index].height = height;
-            self.scene.nodes[index].y = top + height / 2;
-        }
     }
 
     fn connect_to_node(&mut self, incoming: Incoming, to: NodeId) {
@@ -466,45 +312,6 @@ impl Builder<'_> {
             }
         };
         self.connect_points(incoming.origin.node, to, incoming.label, points, label_at);
-    }
-
-    fn connect_to_merge(&mut self, arrival: Tail, merge: NodeId, merge_skewer: usize) {
-        let start = self.anchor(arrival.origin);
-        let points = if arrival.skewer == merge_skewer && start.x == skewer_x(merge_skewer) {
-            vec![start, self.top_anchor(merge)]
-        } else {
-            let end = self.right_anchor(merge);
-            let lane_x = skewer_x(arrival.skewer);
-            compact_points([
-                start,
-                Point {
-                    x: lane_x,
-                    y: start.y,
-                },
-                Point {
-                    x: lane_x,
-                    y: end.y,
-                },
-                end,
-            ])
-        };
-        let label_at = Some(match arrival.origin.side {
-            Side::Right => Point {
-                x: i32::midpoint(start.x, skewer_x(arrival.skewer)),
-                y: start.y - 8,
-            },
-            Side::Bottom => Point {
-                x: start.x + 42,
-                y: start.y + 18,
-            },
-        });
-        self.connect_points(
-            arrival.origin.node,
-            merge,
-            Some(arrival.label),
-            points,
-            label_at,
-        );
     }
 
     /// Reports whether a terminal can drop straight down its own column, which
@@ -613,27 +420,6 @@ impl Builder<'_> {
                 }),
             );
         }
-    }
-
-    fn distributor_points(&self, from: NodeId, to: NodeId, case_top: i32) -> Vec<Point> {
-        let start = self.bottom_anchor(from);
-        let end = self.top_anchor(to);
-        if start.x == end.x {
-            return vec![start, end];
-        }
-        let distributor_y = i32::midpoint(start.y, case_top);
-        compact_points([
-            start,
-            Point {
-                x: start.x,
-                y: distributor_y,
-            },
-            Point {
-                x: end.x,
-                y: distributor_y,
-            },
-            end,
-        ])
     }
 
     fn connect_points(
@@ -805,7 +591,7 @@ fn plan_span(plan: &Plan) -> usize {
     }
 }
 
-fn branch_span(branches: &[Branch], merge: Option<&Merge>) -> usize {
+fn branch_span(branches: &[Branch], merge: Option<&contour_model::Merge>) -> usize {
     let spans = branches
         .iter()
         .map(|branch| plan_span(&branch.plan))
@@ -872,22 +658,18 @@ fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
-        NodeKind::Merge => (38, 38, Vec::new()),
+        NodeKind::Merge => merge::dimensions(),
         NodeKind::Return => (180, 58, Vec::new()),
         NodeKind::Start => {
             let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
             let height = 58.max(30 + lines.len() as i32 * LINE_HEIGHT);
             (NODE_WIDTH, height, lines)
         }
-        NodeKind::Action => block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 64),
+        NodeKind::Action => action::dimensions(label),
         NodeKind::Question | NodeKind::Choice => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
         }
-        NodeKind::Case => {
-            let lines = wrap_text(label, CASE_LABEL_WIDTH, LABEL_FONT);
-            let body_height = 52.max(28 + lines.len() as i32 * LINE_HEIGHT);
-            (CASE_WIDTH, body_height + CASE_TIP_HEIGHT, lines)
-        }
+        NodeKind::Case => choice::case_dimensions(label),
     }
 }
 
@@ -1046,7 +828,7 @@ mod tests {
 
     #[test]
     fn canvas_follows_the_actual_scene_bounds() {
-        let scene = scene(include_str!("../tests/fixtures/all_blocks.rs"), "route");
+        let scene = scene(include_str!("../../tests/fixtures/all_blocks.rs"), "route");
         let content_right = scene
             .nodes
             .iter()
@@ -1666,7 +1448,7 @@ mod tests {
     /// into the return node share the collector row and its descent.
     #[test]
     fn fixture_connections_are_orthogonal_and_free_of_perpendicular_crossings() {
-        let scene = scene(include_str!("../tests/fixtures/all_blocks.rs"), "route");
+        let scene = scene(include_str!("../../tests/fixtures/all_blocks.rs"), "route");
         for edge in &scene.edges {
             assert!(
                 edge.points

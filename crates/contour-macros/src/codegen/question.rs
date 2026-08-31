@@ -3,16 +3,20 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote_spanned;
 
-use super::{Bindings, Merged, block_body, input_bindings};
-use contour_model::Flow;
+use super::{Bindings, block_body, input_bindings, merge};
+use contour_model::{Branch, Flow, Merge};
 
 pub(crate) fn emit(
     flow: &Flow,
     bindings: &Bindings,
     index: usize,
-    branches: [TokenStream2; 2],
-    merged: Option<Merged>,
+    branches: &[Branch; 2],
+    merged: Option<&Merge>,
 ) -> TokenStream2 {
+    let branches = [
+        super::continuation(flow, &branches[0], bindings),
+        super::continuation(flow, &branches[1], bindings),
+    ];
     let block = &flow.blocks[index];
     let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
@@ -32,15 +36,5 @@ pub(crate) fn emit(
         }
     };
 
-    let Some(merged) = merged else {
-        return question;
-    };
-    let merge = &flow.blocks[merged.index];
-    let output_wire = bindings.wire(&merge.outputs[0]);
-    let continuation = merged.continuation;
-
-    quote_spanned! {merge.span=>
-        let #output_wire = #question;
-        #continuation
-    }
+    merge::emit(flow, bindings, question, merged, None)
 }

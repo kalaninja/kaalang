@@ -19,6 +19,29 @@ other documentation.
 Behavior tests are executable examples of accepted programs. Compile-fail tests
 document rejected programs and their diagnostics.
 
+## Code organization
+
+### Module layout
+
+Use the classic directory layout for non-root Rust modules with children: put
+the parent in `name/mod.rs` and its children in `name/*.rs`. Reserve `name.rs`
+for leaf modules; crate roots remain `lib.rs` or `main.rs`.
+
+### Block kind modules
+
+Put behavior that is specific to one block kind in a module named for that kind
+within each implementation phase that needs it, such as `parse/action.rs`,
+`analyze/question.rs`, or `codegen/choice.rs`. Parent phase modules own shared
+data flow, structural traversal, cross-kind invariants, and thin exhaustive
+dispatch only. An exhaustive dispatch delegates authored block variants to
+their corresponding modules. Structural plan variants remain in the parent;
+no match arm accumulates a block kind's parsing, validation, layout, or
+generation logic.
+
+When adding a block kind, add its module to every phase that needs kind-specific
+behavior. Keep genuinely shared algorithms in the parent phase instead of
+duplicating them across kind modules.
+
 ## Dependencies
 
 Every dependency is declared once, in `[workspace.dependencies]` in the root

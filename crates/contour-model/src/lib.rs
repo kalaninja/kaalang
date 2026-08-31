@@ -3,12 +3,12 @@
 use syn::{ItemFn, Result};
 
 mod analyze;
-mod body;
+mod choice;
 mod model;
 mod parse;
 mod resolve;
 
-pub use body::{choice_match, is_todo_body};
+pub use choice::{choice_match, is_todo_body};
 pub use model::{Block, BlockKind, Branch, Flow, Graph, Input, Merge, Plan};
 
 /// Builds the validated semantic model for one Contour flow function.

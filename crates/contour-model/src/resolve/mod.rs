@@ -7,6 +7,11 @@ use syn::{Error, Result};
 
 use crate::model::{Block, BlockKind, Flow};
 
+mod action;
+mod choice;
+mod merge;
+mod question;
+
 /// Resolves a parsed flow's wires and settles terminality.
 pub(crate) fn flow(flow: &mut Flow) -> Result<()> {
     validate_wires(&flow.sources, &flow.blocks)?;
@@ -61,35 +66,13 @@ fn mark_terminals(blocks: &mut [Block]) -> Result<()> {
             .filter(|output| !consumed.contains(*output))
             .collect::<Vec<_>>();
 
-        match block.kind {
-            BlockKind::Question if !unconsumed.is_empty() => {
-                return Err(Error::new(
-                    unconsumed[0].span(),
-                    "every Contour question output must have a consumer",
-                ));
-            }
-            BlockKind::Choice if !unconsumed.is_empty() => {
-                return Err(Error::new(
-                    unconsumed[0].span(),
-                    "every Contour choice output must have a consumer",
-                ));
-            }
-            BlockKind::Action if unconsumed.is_empty() => {}
-            BlockKind::Action if block.outputs.len() == 1 => block.terminal = true,
-            BlockKind::Action => {
-                return Err(Error::new(
-                    unconsumed[0].span(),
-                    "a terminal Contour action must have exactly one output",
-                ));
-            }
-            BlockKind::Merge if !unconsumed.is_empty() => {
-                return Err(Error::new(
-                    unconsumed[0].span(),
-                    "a Contour merge output must have a consumer",
-                ));
-            }
-            BlockKind::Question | BlockKind::Choice | BlockKind::Merge => {}
-        }
+        let terminal = match block.kind {
+            BlockKind::Action => action::terminal(&block.outputs, &unconsumed),
+            BlockKind::Question => question::terminal(&unconsumed),
+            BlockKind::Choice => choice::terminal(&unconsumed),
+            BlockKind::Merge => merge::terminal(&unconsumed),
+        }?;
+        block.terminal = terminal;
     }
 
     Ok(())

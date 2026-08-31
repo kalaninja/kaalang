@@ -1,4 +1,8 @@
-//! Inspects the authored Rust expressions used as block bodies.
+//! Inspects the authored Rust expressions used as choice bodies.
+//!
+//! The module sits at the crate root rather than in one phase: parse validates
+//! these shapes and codegen in contour-macros splices them through the crate's
+//! public re-exports.
 
 use syn::{Expr, ExprMatch, Stmt};
 
