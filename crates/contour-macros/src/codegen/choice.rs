@@ -3,7 +3,7 @@
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Bindings, Merged, body::block_body, input_bindings};
+use super::{Bindings, Merged, block_body, input_bindings};
 use contour_model::{Block, Flow, choice_match, is_todo_body};
 
 /// The identifiers one choice mints for itself. Every one is created at the
@@ -145,22 +145,19 @@ pub(crate) fn emit(
         ..
     } = &names;
 
-    let Some(merged) = merged else {
-        return quote_spanned! {block.span=>
-            struct #capability_type;
-            let #capability = #capability_type;
-            #(#definitions)*
-            #dispatch
-        };
+    let tail = match merged {
+        None => dispatch,
+        Some(merged) => {
+            let output_wire = bindings.wire(&flow.blocks[merged.index].outputs[0]);
+            let continuation = merged.continuation;
+            quote_spanned!(block.span=> let #output_wire = #dispatch; #continuation)
+        }
     };
-    let output_wire = bindings.wire(&flow.blocks[merged.index].outputs[0]);
-    let continuation = merged.continuation;
 
     quote_spanned! {block.span=>
         struct #capability_type;
         let #capability = #capability_type;
         #(#definitions)*
-        let #output_wire = #dispatch;
-        #continuation
+        #tail
     }
 }

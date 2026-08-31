@@ -4,12 +4,11 @@ use std::collections::HashMap;
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
-use syn::{FnArg, ItemFn, Pat};
+use syn::{Expr, FnArg, ItemFn, Pat};
 
 use contour_model::{Branch, Flow, Input, Merge, Plan};
 
 mod action;
-mod body;
 mod choice;
 mod question;
 
@@ -121,6 +120,17 @@ fn merged(flow: &Flow, merge: Option<&Merge>, bindings: &Bindings) -> Option<Mer
 pub(crate) struct Merged {
     pub(crate) index: usize,
     pub(crate) continuation: TokenStream2,
+}
+
+/// Splices the statements of a block body so lowering adds no extra braces.
+pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
+    match body {
+        Expr::Block(block) if block.attrs.is_empty() && block.label.is_none() => {
+            let statements = &block.block.stmts;
+            quote!(#(#statements)*)
+        }
+        body => quote!(#body),
+    }
 }
 
 /// Emits block-local aliases for explicitly listed input wires.

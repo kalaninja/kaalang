@@ -3,7 +3,7 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote_spanned;
 
-use super::{Bindings, body::block_body, input_bindings};
+use super::{Bindings, block_body, input_bindings};
 use contour_model::Flow;
 
 pub(crate) fn emit(
