@@ -509,7 +509,7 @@ impl Builder<'_> {
 
     /// Reports whether a terminal can drop straight down its own column, which
     /// it cannot when a node or an earlier connection stands in the way.
-    fn terminal_is_clear(&self, terminal: &Tail, end: NodeId, join_y: i32, placed: usize) -> bool {
+    fn terminal_is_clear(&self, terminal: &Tail, end: NodeId, join_y: i32) -> bool {
         let start = self.anchor(terminal.origin);
         let end_top = self.top_anchor(end);
         let blocked_by_node = self.scene.nodes.iter().any(|node| {
@@ -519,9 +519,9 @@ impl Builder<'_> {
                 && self.node_top(node.id) > start.y
                 && self.node_top(node.id) < end_top.y
         });
-        // Terminals all converge on the same anchor, so a terminal connection is
-        // not an obstacle for the next one. Only earlier placement is.
-        let blocked_by_edge = self.scene.edges[..placed].iter().any(|edge| {
+        // Every lane is chosen before the first terminal connection is drawn,
+        // so the scene holds no terminal edges yet and none obstructs another.
+        let blocked_by_edge = self.scene.edges.iter().any(|edge| {
             edge.points
                 .windows(2)
                 .any(|segment| vertical_route_hits(segment, start.x, start.y, join_y))
@@ -540,7 +540,6 @@ impl Builder<'_> {
         let collector_y = end_top.y - COLLECTOR_GAP;
         let return_lane = self.return_lane_x();
         let terminals = std::mem::take(&mut self.terminals);
-        let placed = self.scene.edges.len();
 
         // The column each terminal drops down: its own when nothing blocks it,
         // an outer lane when something does. A detour needs its own lane, or
@@ -549,7 +548,7 @@ impl Builder<'_> {
         let lanes = terminals
             .iter()
             .map(|terminal| {
-                if self.terminal_is_clear(terminal, end, collector_y, placed) {
+                if self.terminal_is_clear(terminal, end, collector_y) {
                     return self.anchor(terminal.origin).x;
                 }
                 let lane = return_lane + detour * RETURN_LANE_GAP;
@@ -854,13 +853,9 @@ fn skewer_x(skewer: usize) -> i32 {
 }
 
 fn compact_points(points: impl IntoIterator<Item = Point>) -> Vec<Point> {
-    let mut compact = Vec::new();
-    for point in points {
-        if compact.last() != Some(&point) {
-            compact.push(point);
-        }
-    }
-    compact
+    let mut points = Vec::from_iter(points);
+    points.dedup();
+    points
 }
 
 fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool {
