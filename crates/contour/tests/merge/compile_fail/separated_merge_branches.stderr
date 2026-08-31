@@ -1,0 +1,5 @@
+error: a Contour case that ends the flow must not separate cases that continue to a merge
+ --> tests/merge/compile_fail/separated_merge_branches.rs:9:24
+  |
+9 |     |value| -> (first, done, second) {
+  |                        ^^^^

@@ -1,12 +1,22 @@
 use contour_svg::{RenderError, render_source};
 
 const SOURCE: &str = include_str!("fixtures/all_blocks.rs");
+const TWO_EXITS: &str = include_str!("fixtures/two_exits.rs");
 
 #[test]
 fn renders_the_golden_diagram() {
     let svg = render_source(SOURCE, "route").unwrap();
 
     assert_eq!(svg, include_str!("fixtures/all_blocks.svg"));
+}
+
+/// Two exits detour around the same obstruction. Each takes its own stub row,
+/// lane and turn row, so neither is drawn under the other.
+#[test]
+fn renders_the_golden_two_exit_diagram() {
+    let svg = render_source(TWO_EXITS, "route").unwrap();
+
+    assert_eq!(svg, include_str!("fixtures/two_exits.svg"));
 }
 
 #[test]

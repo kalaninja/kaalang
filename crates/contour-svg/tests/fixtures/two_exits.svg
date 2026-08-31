@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="922" viewBox="0 0 1424 922" role="img" aria-labelledby="contour-title" aria-describedby="contour-description">
+  <title id="contour-title">Contour diagram for route</title>
+  <desc id="contour-description">Nodes: Start: route(input); Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Finish at the first exit.; Case: Finish at the second exit.; Action: Build the left value.; Action: Build the right value.; Action: Finish immediately at the first exit.; Action: Finish immediately at the second exit.; Merge 1; Action: Finish after the merge.; return. Connections: Start: route(input) to Choice: Which path does the input take?; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Finish at the first exit.; Choice: Which path does the input take? to Case: Finish at the second exit.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Finish at the first exit. to Action: Finish immediately at the first exit. via first_exit; Case: Finish at the second exit. to Action: Finish immediately at the second exit. via second_exit; Action: Build the left value. to Merge 1 via left_value; Action: Build the right value. to Merge 1 via right_value; Merge 1 to Action: Finish after the merge. via selected; Action: Finish immediately at the first exit. to return via first_result; Action: Finish immediately at the second exit. to return via second_result; Action: Finish after the merge. to return via merged_result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .return .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+      .merge .label { font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 234 L 172 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 532 270 L 532 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 892 270 L 892 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 1252 270 L 1252 306"/>
+    <path class="edge" d="M 172 376 L 172 448"/>
+    <text class="edge-label" x="214" y="407" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
+    <path class="edge" d="M 532 376 L 532 448"/>
+    <text class="edge-label" x="574" y="407" xml:space="preserve"><tspan x="574" dy="0">right</tspan></text>
+    <path class="edge" d="M 892 376 L 892 448"/>
+    <text class="edge-label" x="934" y="407" xml:space="preserve"><tspan x="934" dy="0">first_exit</tspan></text>
+    <path class="edge" d="M 1252 376 L 1252 448"/>
+    <text class="edge-label" x="1294" y="407" xml:space="preserve"><tspan x="1294" dy="0">second_exit</tspan></text>
+    <path class="edge" d="M 172 512 L 172 586"/>
+    <text class="edge-label" x="214" y="530" xml:space="preserve"><tspan x="214" dy="0">left_value</tspan></text>
+    <path class="edge" d="M 532 512 L 532 605 L 191 605"/>
+    <text class="edge-label" x="574" y="530" xml:space="preserve"><tspan x="574" dy="0">right_value</tspan></text>
+    <path class="edge" d="M 172 624 L 172 696"/>
+    <text class="edge-label" x="214" y="655" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <path class="edge" d="M 892 514 L 892 800 L 172 800 L 172 832"/>
+    <text class="edge-label" x="934" y="532" xml:space="preserve"><tspan x="934" dy="0">first_result</tspan></text>
+    <path class="edge" d="M 1252 514 L 1252 800 L 172 800 L 172 832"/>
+    <text class="edge-label" x="1294" y="532" xml:space="preserve"><tspan x="1294" dy="0">second_result</tspan></text>
+    <path class="edge" d="M 172 760 L 172 832"/>
+    <text class="edge-label" x="214" y="778" xml:space="preserve"><tspan x="214" dy="0">merged_result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">route(input)</tspan></text>
+    </g>
+    <g class="node choice select" transform="translate(172 198)">
+      <title xml:space="preserve">Which path does the input take?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which path does the input </tspan><tspan x="0" dy="18">take?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 341)">
+      <title xml:space="preserve">Take the left path.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the left path.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 341)">
+      <title xml:space="preserve">Take the right path.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the right path.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 341)">
+      <title xml:space="preserve">Finish at the first exit.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish at the first exit.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 341)">
+      <title xml:space="preserve">Finish at the second exit.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish at the second exit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 480)">
+      <title xml:space="preserve">Build the left value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the left value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 480)">
+      <title xml:space="preserve">Build the right value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the right value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 481)">
+      <title xml:space="preserve">Finish immediately at the first exit.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish immediately at the first </tspan><tspan x="-124" dy="18">exit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 481)">
+      <title xml:space="preserve">Finish immediately at the second exit.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish immediately at the second </tspan><tspan x="-124" dy="18">exit.</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 605)">
+      <circle class="node-shape" r="19"/>
+      <text class="label" y="5">M</text>
+    </g>
+    <g class="node action" transform="translate(172 728)">
+      <title xml:space="preserve">Finish after the merge.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish after the merge.</tspan></text>
+    </g>
+    <g class="node return" transform="translate(172 861)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">return</text>
+    </g>
+  </g>
+</svg>

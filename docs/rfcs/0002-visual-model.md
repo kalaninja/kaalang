@@ -61,10 +61,23 @@ The version 0.1 renderer uses a deterministic primitive skewer layout.
 The first question output and the first choice case continue down the current
 vertical skewer. Remaining branches occupy successive skewers to the right in
 authored order. Nested branches receive non-overlapping groups of skewers, and
-a continuation after a merge returns to the skewer where the branching block
-started. Terminal branches converge at the synthetic Return node. A clear
-terminal skewer continues vertically to the Return convergence line; an obstructed
-terminal branch is routed outside continuing branches.
+a merge, with the continuation after it, takes the skewer of the first branch
+that reaches it. That is the branching block's own skewer unless a branch which
+ends the flow leads the continuing ones and already holds it.
+
+Terminal branches converge on one horizontal collector above the Return node,
+the mirror of the distributor that fans a Select out to its cases. Each terminal
+skewer descends onto the collector, and the collector makes the one vertical
+descent into the node; a terminal skewer already in the Return column descends
+straight through it. Terminal connections therefore share the collector and that
+descent, and the shared run is deliberate: it draws one common path, not
+connections hidden behind one another.
+
+A clear terminal skewer descends in its own column. An obstructed one is routed
+outside the continuing branches and joins the same collector at the bottom. A
+terminal skewer is obstructed only by a continuation wider than the branches
+beside it, never by a sibling branch: the branch adjacency RFC 0001 requires
+leaves no connection crossing another.
 
 Connections use horizontal and vertical segments without arrowheads. Action
 nodes are rectangles, question nodes are elongated hexagons, choice nodes are

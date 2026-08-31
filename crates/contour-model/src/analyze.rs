@@ -218,6 +218,7 @@ impl Analysis<'_> {
             branch_state.available.insert(output.clone());
             walked.push(self.walk(branch_state)?);
         }
+        adjacent_branches(&walked, outputs)?;
         let merge = self.merge_plan(&walked)?;
         let (branches, merge, exit) = self.branches(walked, merge)?;
 
@@ -363,6 +364,32 @@ impl Analysis<'_> {
             exit: Exit::Terminal(state.clone()),
         })
     }
+}
+
+/// Rejects a case that ends the flow between two cases that continue, which no
+/// skewer order can draw: the later continuing branch reaches its merge by
+/// crossing the ending branch. A question cannot reach this, because a merge it
+/// feeds is reached by both of its branches or by neither.
+fn adjacent_branches(walked: &[Walked], outputs: &[Ident]) -> Result<()> {
+    let continuing = |path: &Walked| !path.exit.terminates();
+    let Some(first) = walked.iter().position(continuing) else {
+        return Ok(());
+    };
+    let last = walked
+        .iter()
+        .rposition(continuing)
+        .expect("a continuing branch was just found");
+    let Some(offset) = walked[first..last]
+        .iter()
+        .position(|path| !continuing(path))
+    else {
+        return Ok(());
+    };
+
+    Err(Error::new(
+        outputs[first + offset].span(),
+        "a Contour case that ends the flow must not separate cases that continue to a merge",
+    ))
 }
 
 /// Intersects available wires and unions executed blocks across paths.

@@ -198,6 +198,13 @@ Sibling branches may instead end at terminal actions. The enclosing Rust `if`
 or `match` produces the merge output, so Rust checks that all merged values have
 one type.
 
+Read in branch order, the continuing branches are adjacent: zero or more
+branches that end the flow, then the branches that reach the merge, then zero or
+more that end the flow. A branch that ends the flow between two continuing ones
+is rejected, because the later continuing branch can only reach the merge by
+crossing it. A question cannot state this arrangement, since a merge it feeds is
+reached by both of its branches or by neither.
+
 Only wires available on every continuing branch remain available after the
 merge. The merge output is added to that shared set and its continuation is
 lowered once.

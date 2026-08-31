@@ -6,6 +6,9 @@ const MARGIN: i32 = 32;
 const SKEWER_WIDTH: i32 = 360;
 const VERTICAL_GAP: i32 = 72;
 const TERMINAL_STUB: i32 = 24;
+/// Height of the collector every terminal branch enters, measured up from the
+/// top edge of the return node.
+const COLLECTOR_GAP: i32 = 32;
 const RETURN_LANE_GAP: i32 = 52;
 const NODE_WIDTH: i32 = 280;
 const CASE_WIDTH: i32 = 240;
@@ -335,20 +338,27 @@ impl Builder<'_> {
             };
         };
 
-        let node = self.add_authored_node(merge.index, skewer, bottom + VERTICAL_GAP);
+        // Branches that end the flow may lead the ones that reach the merge, and
+        // the leading skewers belong to them. The merge and its continuation
+        // take the first continuing branch's skewer instead.
+        let merge_skewer = placed
+            .iter()
+            .find_map(|branch| branch.arrival.as_ref())
+            .map_or(skewer, |arrival| arrival.skewer);
+        let node = self.add_authored_node(merge.index, merge_skewer, bottom + VERTICAL_GAP);
         for arrival in placed.into_iter().filter_map(|branch| branch.arrival) {
             debug_assert_eq!(arrival.merge, Some(merge.index));
-            self.connect_to_merge(arrival, node, skewer);
+            self.connect_to_merge(arrival, node, merge_skewer);
         }
         let output = self.graph.flow.blocks[merge.index].outputs[0].to_string();
         self.place(
             &merge.next,
-            skewer,
+            merge_skewer,
             self.node_bottom(node) + VERTICAL_GAP,
             Incoming {
                 origin: Origin::bottom(node),
                 label: Some(output),
-                skewer,
+                skewer: merge_skewer,
             },
         )
     }
@@ -496,62 +506,98 @@ impl Builder<'_> {
         );
     }
 
-    // ponytail: every obstructed terminal shares one return lane and each
-    // routed connection becomes an obstacle for the next, so the result depends
-    // on walk order. Per-terminal lanes need a real router.
+    /// Reports whether a terminal can drop straight down its own column, which
+    /// it cannot when a node or an earlier connection stands in the way.
+    fn terminal_is_clear(&self, terminal: &Tail, end: NodeId, join_y: i32, placed: usize) -> bool {
+        let start = self.anchor(terminal.origin);
+        let end_top = self.top_anchor(end);
+        let blocked_by_node = self.scene.nodes.iter().any(|node| {
+            node.id != terminal.origin.node
+                && node.id != end
+                && node.x == start.x
+                && self.node_top(node.id) > start.y
+                && self.node_top(node.id) < end_top.y
+        });
+        // Terminals all converge on the same anchor, so a terminal connection is
+        // not an obstacle for the next one. Only earlier placement is.
+        let blocked_by_edge = self.scene.edges[..placed].iter().any(|edge| {
+            edge.points
+                .windows(2)
+                .any(|segment| vertical_route_hits(segment, start.x, start.y, join_y))
+        });
+
+        !blocked_by_node && !blocked_by_edge
+    }
+
+    /// Draws every terminal into one horizontal collector above the return
+    /// node, mirroring the distributor that fans a Select out to its cases.
+    /// Each branch drops vertically onto the collector and the collector makes
+    /// the single descent into the node, so the runs terminals share are one
+    /// path rather than connections hidden behind each other.
     fn connect_terminals(&mut self, end: NodeId) {
         let end_top = self.top_anchor(end);
-        let join_y = end_top.y - 32;
+        let collector_y = end_top.y - COLLECTOR_GAP;
         let return_lane = self.return_lane_x();
         let terminals = std::mem::take(&mut self.terminals);
-        for terminal in terminals {
+        let placed = self.scene.edges.len();
+
+        // The column each terminal drops down: its own when nothing blocks it,
+        // an outer lane when something does. A detour needs its own lane, or
+        // two of them trace the same one and hide each other on the way down.
+        let mut detour = 0;
+        let lanes = terminals
+            .iter()
+            .map(|terminal| {
+                if self.terminal_is_clear(terminal, end, collector_y, placed) {
+                    return self.anchor(terminal.origin).x;
+                }
+                let lane = return_lane + detour * RETURN_LANE_GAP;
+                detour += 1;
+                lane
+            })
+            .collect::<Vec<_>>();
+
+        for (terminal, lane_x) in terminals.into_iter().zip(lanes) {
             let start = self.anchor(terminal.origin);
-            let blocked_by_node = self.scene.nodes.iter().any(|node| {
-                node.id != terminal.origin.node
-                    && node.id != end
-                    && node.x == start.x
-                    && self.node_top(node.id) > start.y
-                    && self.node_top(node.id) < end_top.y
-            });
-            let blocked_by_edge = self.scene.edges.iter().any(|edge| {
-                edge.points
-                    .windows(2)
-                    .any(|segment| vertical_route_hits(segment, start.x, start.y, join_y))
-            });
-            let clear_below = !blocked_by_node && !blocked_by_edge;
-            let points = if clear_below && start.x == end_top.x {
+            let points = if lane_x == start.x && start.x == end_top.x {
+                // The collector is degenerate for a branch already above the
+                // node, exactly as the distributor is for a case below a Select.
                 vec![start, end_top]
-            } else if clear_below {
+            } else if lane_x == start.x {
                 compact_points([
                     start,
                     Point {
                         x: start.x,
-                        y: join_y,
+                        y: collector_y,
                     },
                     Point {
                         x: end_top.x,
-                        y: join_y,
+                        y: collector_y,
                     },
                     end_top,
                 ])
             } else {
+                // Detours leave on stepped rows, so an inner one crosses under
+                // the next instead of running along it out to the lanes.
+                let lane = (lane_x - return_lane) / RETURN_LANE_GAP;
+                let stub_y = start.y + TERMINAL_STUB * (detour - lane);
                 compact_points([
                     start,
                     Point {
                         x: start.x,
-                        y: start.y + TERMINAL_STUB,
+                        y: stub_y,
                     },
                     Point {
-                        x: return_lane,
-                        y: start.y + TERMINAL_STUB,
+                        x: lane_x,
+                        y: stub_y,
                     },
                     Point {
-                        x: return_lane,
-                        y: join_y,
+                        x: lane_x,
+                        y: collector_y,
                     },
                     Point {
                         x: end_top.x,
-                        y: join_y,
+                        y: collector_y,
                     },
                     end_top,
                 ])
@@ -760,12 +806,29 @@ fn plan_span(plan: &Plan) -> usize {
 }
 
 fn branch_span(branches: &[Branch], merge: Option<&Merge>) -> usize {
-    let branches = branches
+    let spans = branches
         .iter()
         .map(|branch| plan_span(&branch.plan))
-        .sum::<usize>();
-    let continuation = merge.map_or(1, |merge| plan_span(&merge.next));
-    branches.max(continuation)
+        .collect::<Vec<_>>();
+    let total = spans.iter().sum::<usize>();
+    let Some(merge) = merge else {
+        return total;
+    };
+
+    // The merge and everything after it sit on the first continuing branch's
+    // skewer, so the continuation reaches beyond any branch that leads it.
+    total.max(merge_offset(branches, &spans) + plan_span(&merge.next))
+}
+
+/// Skewers between a branching block and the first of its branches that reaches
+/// the merge, which is where the merge is drawn.
+fn merge_offset(branches: &[Branch], spans: &[usize]) -> usize {
+    let continuing = branches
+        .iter()
+        .position(|branch| !branch.early_return)
+        .unwrap_or(0);
+
+    spans[..continuing].iter().sum()
 }
 
 /// Right and bottom extent of an edge label, matching how the serializer places
@@ -929,7 +992,7 @@ mod tests {
 
     use super::{
         LABEL_FONT, MARGIN, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds,
-        layout, text_width, wrap_text,
+        layout, skewer_x, text_width, wrap_text,
     };
 
     fn scene(source: &str, flow: &str) -> Scene {
@@ -1320,26 +1383,126 @@ mod tests {
         assert_eq!(early_terminal.points[2].x, node(&scene, Return).x);
     }
 
+    /// Terminal branches meet in one collector above the return node: each
+    /// drops onto its shared row, and the collector makes the single descent
+    /// into the node.
     #[test]
-    fn a_terminal_skewer_crossing_a_merge_edge_uses_the_outer_lane() {
-        use NodeId::{Block, Return};
-
+    fn terminal_branches_share_one_collector_into_the_return_node() {
         let source = r#"
             #[contour]
             fn partial(input: u8) -> u8 {
                 #[choice("Choose a path")]
-                #[case("Left")]
+                #[case("Finish first")]
+                #[case("Finish second")]
+                #[case("Finish third")]
+                #[case("Finish fourth")]
+                |input| -> (first, second, third, fourth) {
+                    match input { 0 => (), 1 => (), 2 => (), _ => () }
+                };
+
+                #[action("Build first")]
+                |first| -> first_result { 1 };
+
+                #[action("Build second")]
+                |second| -> second_result { 2 };
+
+                #[action("Build third")]
+                |third| -> third_result { 3 };
+
+                #[action("Build fourth")]
+                |fourth| -> fourth_result { 4 };
+            }
+        "#;
+
+        let scene = scene(source, "partial");
+        let return_top = node(&scene, NodeId::Return);
+        let return_top = Point {
+            x: return_top.x,
+            y: return_top.y - return_top.height / 2,
+        };
+        let terminals = scene
+            .edges
+            .iter()
+            .filter(|edge| edge.to == NodeId::Return)
+            .collect::<Vec<_>>();
+
+        assert_eq!(terminals.len(), 4);
+
+        // Every branch away from the column turns onto the collector, and the
+        // collector makes one descent that the branch already in the column
+        // drops straight through.
+        let turning = terminals
+            .iter()
+            .filter(|edge| edge.points.len() > 2)
+            .collect::<Vec<_>>();
+        let straight = terminals
+            .iter()
+            .find(|edge| edge.points.len() == 2)
+            .expect("the branch above the return node drops straight in");
+
+        assert_eq!(turning.len(), 3);
+        let collector_y = turning[0].points[turning[0].points.len() - 2].y;
+        let descent = [
+            Point {
+                x: return_top.x,
+                y: collector_y,
+            },
+            return_top,
+        ];
+        for edge in &turning {
+            let corner = edge.points[edge.points.len() - 2];
+            assert_eq!(
+                corner.y, collector_y,
+                "{:?} leaves the collector",
+                edge.from
+            );
+            assert_eq!(
+                [corner, edge.points[edge.points.len() - 1]],
+                descent,
+                "{:?} makes its own descent",
+                edge.from
+            );
+        }
+        assert_eq!(straight.points[1], return_top);
+        assert_eq!(straight.points[0].x, return_top.x);
+        assert!(straight.points[0].y <= collector_y);
+
+        for edge in terminals {
+            for segment in edge.points.windows(2) {
+                for node in &scene.nodes {
+                    assert!(
+                        !enters_node(segment, node),
+                        "{:?} crosses {:?}: {:?}",
+                        edge.from,
+                        node.id,
+                        edge.points
+                    );
+                }
+            }
+        }
+    }
+
+    /// A branch that ends the flow may lead the ones that merge, and it keeps
+    /// the branching block's own skewer. The merge cannot also sit there, so it
+    /// and its continuation take the first continuing branch's skewer.
+    #[test]
+    fn a_leading_terminal_case_keeps_the_merge_off_its_skewer() {
+        let source = r#"
+            #[contour]
+            fn partial(input: u8) -> u8 {
+                #[choice("Choose a path")]
                 #[case("Finish now")]
+                #[case("Left")]
                 #[case("Right")]
-                |input| -> (left, done, right) {
+                |input| -> (done, left, right) {
                     match input { 0 => (), 1 => (), _ => () }
                 };
 
-                #[action("Build left")]
-                |left| -> left_value { 1 };
-
                 #[action("Finish immediately")]
-                |done| -> immediate_result { 2 };
+                |done| -> immediate_result { 1 };
+
+                #[action("Build left")]
+                |left| -> left_value { 2 };
 
                 #[action("Build right")]
                 |right| -> right_value { 3 };
@@ -1353,6 +1516,67 @@ mod tests {
         "#;
 
         let scene = scene(source, "partial");
+        let merge = scene
+            .nodes
+            .iter()
+            .find(|node| node.kind == NodeKind::Merge)
+            .expect("the merge is drawn");
+
+        assert_eq!(merge.x, skewer_x(1));
+        assert_eq!(node(&scene, NodeId::Block(1)).x, skewer_x(0));
+        assert_eq!(node(&scene, NodeId::Block(5)).x, skewer_x(1));
+    }
+
+    /// Branch order alone cannot free every terminal column. A continuation
+    /// wider than the branches beside it reaches past them, and the terminal it
+    /// covers is routed outside the continuing branches instead.
+    #[test]
+    fn a_terminal_under_a_wide_continuation_uses_the_outer_lane() {
+        use NodeId::{Block, Return};
+
+        let source = r#"
+            #[contour]
+            fn partial(input: u8) -> u8 {
+                #[choice("Choose a path")]
+                #[case("Left")]
+                #[case("Right")]
+                #[case("Finish now")]
+                |input| -> (left, right, done) {
+                    match input { 0 => (), 1 => (), _ => () }
+                };
+
+                #[action("Build left")]
+                |left| -> left_value { 1 };
+
+                #[action("Build right")]
+                |right| -> right_value { 2 };
+
+                #[action("Finish immediately")]
+                |done| -> immediate_result { 3 };
+
+                #[merge]
+                |left_value, right_value| -> selected {};
+
+                #[choice("Widen the continuation")]
+                #[case("Wide left")]
+                #[case("Wide middle")]
+                #[case("Wide right")]
+                |selected| -> (wide_left, wide_middle, wide_right) {
+                    match selected { 0 => (), 1 => (), _ => () }
+                };
+
+                #[action("Build wide left")]
+                |wide_left| -> wide_left_result { 4 };
+
+                #[action("Build wide middle")]
+                |wide_middle| -> wide_middle_result { 5 };
+
+                #[action("Build wide right")]
+                |wide_right| -> wide_right_result { 6 };
+            }
+        "#;
+
+        let scene = scene(source, "partial");
         let rightmost_node = scene
             .nodes
             .iter()
@@ -1362,7 +1586,7 @@ mod tests {
         let early_terminal = scene
             .edges
             .iter()
-            .find(|edge| edge.from == Block(2) && edge.to == Return)
+            .find(|edge| edge.from == Block(3) && edge.to == Return)
             .expect("the early terminal reaches Return");
 
         assert!(
@@ -1412,8 +1636,8 @@ mod tests {
 
     /// `segments_cross` compares a vertical run against a horizontal one, so
     /// collinear overlap is out of scope. Two overlaps are deliberate: the
-    /// connections from a Select share their first vertical run, and obstructed
-    /// terminal branches share one return lane.
+    /// connections from a Select share the distributor row, and the connections
+    /// into the return node share the collector row and its descent.
     #[test]
     fn fixture_connections_are_orthogonal_and_free_of_perpendicular_crossings() {
         let scene = scene(include_str!("../tests/fixtures/all_blocks.rs"), "route");
@@ -1437,6 +1661,27 @@ mod tests {
                         .any(|right| segments_cross(left[0], left[1], right[0], right[1]))
                 }));
             }
+        }
+    }
+
+    /// Reports whether an axis-aligned segment passes through a node's interior.
+    /// Anchors sit on the boundary, so only a strict crossing counts.
+    fn enters_node(segment: &[Point], node: &Node) -> bool {
+        let (left, right) = (node.x - node.width / 2, node.x + node.width / 2);
+        let (top, bottom) = (node.y - node.height / 2, node.y + node.height / 2);
+        let ([first, second], ..) = (segment,) else {
+            return false;
+        };
+        if first.x == second.x {
+            left < first.x
+                && first.x < right
+                && first.y.min(second.y) < bottom
+                && top < first.y.max(second.y)
+        } else {
+            top < first.y
+                && first.y < bottom
+                && first.x.min(second.x) < right
+                && left < first.x.max(second.x)
         }
     }
 
