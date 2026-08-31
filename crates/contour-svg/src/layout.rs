@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use contour_model::{BlockKind, Branch, Graph, Merge, Plan};
+use unicode_segmentation::UnicodeSegmentation;
 
 const MARGIN: i32 = 32;
 const SKEWER_WIDTH: i32 = 360;
@@ -838,7 +839,7 @@ fn label_bounds(edge: &Edge) -> Option<(i32, i32)> {
     let width = edge
         .lines
         .iter()
-        .map(|line| text_width(&line.chars().collect::<Vec<_>>(), EDGE_LABEL_FONT))
+        .map(|line| text_width(&line.graphemes(true).collect::<Vec<_>>(), EDGE_LABEL_FONT))
         .max()?;
     let last_baseline = at.y + (edge.lines.len() as i32 - 1) * EDGE_LINE_HEIGHT / 2;
 
@@ -924,62 +925,68 @@ fn advance(character: char) -> i32 {
     }
 }
 
-/// Estimated rendered width of `characters` at `font_size`.
-fn text_width(characters: &[char], font_size: i32) -> i32 {
-    characters.iter().copied().map(advance).sum::<i32>() * font_size / 100
+/// Estimated rendered width of one grapheme cluster. A cluster draws as a
+/// single glyph however many code points spell it, so its base character
+/// carries the estimate and the marks joined to it add nothing.
+fn cluster_advance(cluster: &str) -> i32 {
+    advance(
+        cluster
+            .chars()
+            .next()
+            .expect("a grapheme cluster has at least one character"),
+    )
 }
 
-/// Returns how many leading characters fit within `budget`, at least one so
-/// that wrapping always makes progress.
-fn fitting_count(characters: &[char], budget: i32, font_size: i32) -> usize {
+/// Estimated rendered width of `clusters` at `font_size`.
+fn text_width(clusters: &[&str], font_size: i32) -> i32 {
+    clusters.iter().copied().map(cluster_advance).sum::<i32>() * font_size / 100
+}
+
+/// Returns how many leading clusters fit within `budget`, at least one so that
+/// wrapping always makes progress.
+fn fitting_count(clusters: &[&str], budget: i32, font_size: i32) -> usize {
     let mut used = 0;
-    for (count, character) in characters.iter().enumerate() {
-        used += advance(*character);
+    for (count, cluster) in clusters.iter().enumerate() {
+        used += cluster_advance(cluster);
         if used * font_size / 100 > budget {
             return count.max(1);
         }
     }
 
-    characters.len()
+    clusters.len()
 }
 
 /// Breaks a label into lines that fit `budget` pixels at `font_size`, without
-/// changing the authored text.
+/// changing the authored text. A line breaks at the last space that fits, or
+/// between grapheme clusters when no space does, so a word too long for the
+/// budget is split rather than left to run outside its node. An authored line
+/// break starts a new line and belongs to none of them, so concatenating the
+/// result reproduces only a label that had no line breaks of its own.
 pub(crate) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> {
     let mut lines = Vec::new();
     for paragraph in text.split('\n') {
-        let characters = paragraph.chars().collect::<Vec<_>>();
-        if characters.is_empty() {
+        let clusters = paragraph.graphemes(true).collect::<Vec<_>>();
+        if clusters.is_empty() {
             lines.push(String::new());
             continue;
         }
 
         let mut start = 0;
-        while text_width(&characters[start..], font_size) > budget {
-            let hard_end = start + fitting_count(&characters[start..], budget, font_size);
-            let preferred_break = characters[start..hard_end]
+        while text_width(&clusters[start..], font_size) > budget {
+            let hard_end = start + fitting_count(&clusters[start..], budget, font_size);
+            let preferred_break = clusters[start..hard_end]
                 .iter()
-                .rposition(|character| character.is_whitespace())
+                .rposition(|cluster| cluster.starts_with(char::is_whitespace))
                 .map(|offset| start + offset + 1)
                 .filter(|end| *end > start + 1);
-            let next_break = characters[hard_end..]
-                .iter()
-                .position(|character| character.is_whitespace())
-                .map(|offset| hard_end + offset + 1);
-            let ascii_break = characters[start..hard_end]
-                .iter()
-                .all(char::is_ascii)
-                .then_some(hard_end);
-            let Some(end) = preferred_break.or(next_break).or(ascii_break) else {
-                // ponytail: unspaced non-ASCII stays intact until layout gains
-                // real grapheme segmentation and font metrics.
-                break;
-            };
-            lines.push(characters[start..end].iter().collect());
+            // A space past the budget is no break at all: taking it would draw
+            // the line outside the node the budget measures.
+            let end = preferred_break.unwrap_or(hard_end);
+            lines.push(clusters[start..end].concat());
             start = end;
         }
-        if start < characters.len() {
-            lines.push(characters[start..].iter().collect());
+        if start < clusters.len() {
+            lines.push(clusters[start..].concat());
         }
     }
 
@@ -989,6 +996,7 @@ pub(crate) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> 
 #[cfg(test)]
 mod tests {
     use syn::{ItemFn, parse_quote};
+    use unicode_segmentation::UnicodeSegmentation;
 
     use super::{
         LABEL_FONT, MARGIN, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds,
@@ -1018,10 +1026,27 @@ mod tests {
             .expect("the node is drawn")
     }
 
+    /// A word with no break opportunity is split rather than left to run
+    /// outside its node, but never inside a grapheme cluster: a cluster draws
+    /// as one glyph, and splitting it would render different text.
     #[test]
-    fn wrapping_does_not_split_unspaced_unicode_text() {
-        assert_eq!(wrap_text("драконоподобный", 20, 14), ["драконоподобный"]);
-        assert_eq!(wrap_text("👩‍💻👩‍💻", 8, 14), ["👩‍💻👩‍💻"]);
+    fn wrapping_splits_between_graphemes_and_never_inside_one() {
+        let word = "драконоподобный";
+        let lines = wrap_text(word, 20, 14);
+
+        assert!(lines.len() > 1);
+        assert_eq!(lines.concat(), word);
+        for line in &lines {
+            let clusters = line.graphemes(true).collect::<Vec<_>>();
+            assert!(text_width(&clusters, 14) <= 20, "line exceeds: {line}");
+        }
+
+        // Narrower than one cluster, so only the cluster boundary can break.
+        assert_eq!(wrap_text("👩‍💻👩‍💻", 8, 14), ["👩‍💻", "👩‍💻"]);
+        assert_eq!(
+            wrap_text("e\u{301}e\u{301}", 8, 14),
+            ["e\u{301}", "e\u{301}"]
+        );
     }
 
     #[test]
@@ -1125,25 +1150,31 @@ mod tests {
 
         assert!(lines.len() > 1);
         for line in &lines {
-            let characters = line.chars().collect::<Vec<_>>();
+            let clusters = line.graphemes(true).collect::<Vec<_>>();
             assert!(
-                text_width(&characters, LABEL_FONT) <= NODE_LABEL_WIDTH,
+                text_width(&clusters, LABEL_FONT) <= NODE_LABEL_WIDTH,
                 "line exceeds the budget: {line}"
             );
         }
         assert_eq!(lines.concat(), label);
     }
 
+    /// The space after a long word sits past the budget, so breaking there
+    /// would draw the word and the space outside the node.
     #[test]
-    fn wrapping_splits_an_unspaced_wide_ascii_label() {
-        let label = "W".repeat(32);
-        let lines = wrap_text(&label, NODE_LABEL_WIDTH, LABEL_FONT);
+    fn wrapping_splits_a_long_word_rather_than_reaching_the_space_after_it() {
+        let text = format!("{} tail", "W".repeat(32));
+        let lines = wrap_text(&text, NODE_LABEL_WIDTH, LABEL_FONT);
 
         assert!(lines.len() > 1);
-        assert!(lines.iter().all(|line| {
-            text_width(&line.chars().collect::<Vec<_>>(), LABEL_FONT) <= NODE_LABEL_WIDTH
-        }));
-        assert_eq!(lines.concat(), label);
+        assert_eq!(lines.concat(), text);
+        for line in &lines {
+            let clusters = line.graphemes(true).collect::<Vec<_>>();
+            assert!(
+                text_width(&clusters, LABEL_FONT) <= NODE_LABEL_WIDTH,
+                "line exceeds the budget: {line}"
+            );
+        }
     }
 
     #[test]

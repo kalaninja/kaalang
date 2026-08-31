@@ -20,6 +20,7 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "3", features = ["full"] }
 trybuild = "1"
+unicode-segmentation = "1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

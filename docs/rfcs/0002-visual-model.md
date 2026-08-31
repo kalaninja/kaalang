@@ -38,8 +38,11 @@ graph.
 
 Action, question, and choice nodes use the exact text value of their block
 description. The renderer does not paraphrase, normalize, or synthesize that
-text; output-format escaping and line wrapping do not change its value. A merge
-has no authored description and is identified by its visual role.
+text; output-format escaping and line wrapping do not change its value. Wrapping
+breaks between grapheme clusters, so a cluster spelled with several code points
+stays on one line and a word with no other break opportunity is still divided
+rather than drawn outside its node. A merge has no authored description and is
+identified by its visual role.
 
 Question branches preserve their positional meaning from RFC 0001: the first
 output is yes/true and the second is no/false. A diagram labels each branch with
