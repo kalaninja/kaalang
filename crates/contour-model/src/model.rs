@@ -43,28 +43,15 @@ pub struct Block {
 }
 
 /// One consuming or borrowing block input.
-#[derive(Clone)]
 pub struct Input {
     pub borrowed: bool,
     pub ident: Ident,
 }
 
-pub(crate) struct ParsedFlow {
-    pub(crate) sources: Vec<Ident>,
-    pub(crate) blocks: Vec<Block>,
-}
-
-/// A resolved flow whose wire relationships have been validated.
+/// A flow's source wires and blocks, wire-validated by the time consumers see it.
 pub struct Flow {
     pub sources: Vec<Ident>,
     pub blocks: Vec<Block>,
-}
-
-impl Flow {
-    /// Creates a flow from resolved sources and blocks.
-    pub(crate) fn new(sources: Vec<Ident>, blocks: Vec<Block>) -> Self {
-        Self { sources, blocks }
-    }
 }
 
 /// A verified execution plan. Every Contour invariant already holds, so

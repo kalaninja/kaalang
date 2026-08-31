@@ -2,11 +2,11 @@
 
 use proc_macro2::{Ident, Span};
 use syn::{
-    Attribute, Error, Expr, ExprClosure, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat,
-    PathArguments, Result, ReturnType, Stmt, Type, spanned::Spanned,
+    Attribute, Error, Expr, ExprClosure, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Result,
+    ReturnType, Stmt, Type, spanned::Spanned,
 };
 
-use crate::model::{Block, BlockKind, Input, ParsedFlow};
+use crate::model::{Block, BlockKind, Flow, Input};
 
 mod action;
 mod choice;
@@ -14,8 +14,8 @@ mod merge;
 mod question;
 
 /// Parses a flow function into its source wires and closure-shaped blocks.
-pub(crate) fn flow(function: &ItemFn) -> Result<ParsedFlow> {
-    Ok(ParsedFlow {
+pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
+    Ok(Flow {
         sources: source_wires(function)?,
         blocks: blocks(&function.block.stmts)?,
     })
@@ -309,15 +309,14 @@ fn output_ident(output: &Type) -> Result<Ident> {
     let Type::Path(path) = output else {
         return Err(unexpected_output(output));
     };
-    if path.qself.is_some() || path.path.leading_colon.is_some() || path.path.segments.len() != 1 {
-        return Err(unexpected_output(output));
-    }
-    let segment = &path.path.segments[0];
-    if !matches!(segment.arguments, PathArguments::None) {
+    if path.qself.is_some() {
         return Err(unexpected_output(output));
     }
 
-    Ok(segment.ident.clone())
+    path.path
+        .get_ident()
+        .cloned()
+        .ok_or_else(|| unexpected_output(output))
 }
 
 fn unexpected_output(output: &Type) -> Error {

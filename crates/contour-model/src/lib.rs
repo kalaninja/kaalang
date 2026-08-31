@@ -1,6 +1,6 @@
 //! Parses and validates Contour flows into the semantic model.
 
-use syn::{FnArg, ItemFn, Result};
+use syn::{ItemFn, Result};
 
 mod analyze;
 mod body;
@@ -19,13 +19,13 @@ pub use model::{Block, BlockKind, Branch, Flow, Graph, Input, Merge, Plan};
 /// wires to their producers, or walking every path, spanned at the offending
 /// token so callers can report it against the authored source.
 pub fn build(function: &ItemFn) -> Result<Graph> {
-    let parsed = parse::flow(function)?;
-    let flow = resolve::flow(parsed)?;
+    let mut flow = parse::flow(function)?;
+    resolve::flow(&mut flow)?;
     let plan = analyze::flow(&flow)?;
 
     Ok(Graph {
         name: function.sig.ident.clone(),
-        parameters: function.sig.inputs.iter().cloned().collect::<Vec<FnArg>>(),
+        parameters: function.sig.inputs.iter().cloned().collect(),
         return_type: function.sig.output.clone(),
         flow,
         plan,

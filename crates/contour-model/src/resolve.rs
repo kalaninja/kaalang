@@ -5,18 +5,12 @@ use std::collections::HashSet;
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{Block, BlockKind, Flow, ParsedFlow};
+use crate::model::{Block, BlockKind, Flow};
 
-/// Resolves a parsed flow and settles terminality.
-pub(crate) fn flow(parsed: ParsedFlow) -> Result<Flow> {
-    let ParsedFlow {
-        sources,
-        mut blocks,
-    } = parsed;
-    validate_wires(&sources, &blocks)?;
-    mark_terminals(&mut blocks)?;
-
-    Ok(Flow::new(sources, blocks))
+/// Resolves a parsed flow's wires and settles terminality.
+pub(crate) fn flow(flow: &mut Flow) -> Result<()> {
+    validate_wires(&flow.sources, &flow.blocks)?;
+    mark_terminals(&mut flow.blocks)
 }
 
 /// Checks that every input names an earlier producer and that wire names are unique.
