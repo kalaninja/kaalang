@@ -14,13 +14,10 @@ fn route(request: u8) -> u8 {
     };
 
     #[action("Prepare the short result.")]
-    |short, &request| -> short_value { request };
+    |short, &request| -> selected { request };
 
     #[action("Prepare the long result while preserving every important application detail.")]
-    |long, &request| -> long_value { request };
-
-    #[merge]
-    |short_value, long_value| -> selected {};
+    |long, &request| -> selected { request };
 
     #[action("Return the selected result.")]
     |selected| -> result { selected };

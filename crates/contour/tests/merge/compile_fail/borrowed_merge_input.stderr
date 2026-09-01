@@ -1,5 +1,0 @@
-error: Contour merge inputs must be bare identifiers
-  --> tests/merge/compile_fail/borrowed_merge_input.rs:15:7
-   |
-15 |     |&yes_value, no_value| -> selected {};
-   |       ^^^^^^^^^

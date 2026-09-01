@@ -23,7 +23,6 @@ macro_rules! emit_inline {
 
 mod action;
 mod choice;
-mod merge;
 mod question;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
@@ -57,7 +56,6 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .return .label {{ font-weight: 600; }}
       .action .label {{ font-weight: 400; text-anchor: start; }}
-      .merge .label {{ font-weight: 700; }}
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -119,7 +117,7 @@ fn describe(scene: &Scene) -> String {
         if index != 0 {
             description.push_str("; ");
         }
-        description.push_str(&node_name(scene, node));
+        description.push_str(&node_name(node));
     }
     description.push_str(". Connections: ");
     for (index, edge) in scene.edges.iter().enumerate() {
@@ -144,17 +142,16 @@ fn node_name_by_id(scene: &Scene, id: NodeId) -> String {
         .iter()
         .find(|node| node.id == id)
         .expect("positioned edges reference positioned nodes");
-    node_name(scene, node)
+    node_name(node)
 }
 
-fn node_name(scene: &Scene, node: &Node) -> String {
+fn node_name(node: &Node) -> String {
     match node.kind {
         NodeKind::Start => format!("Start: {}", node.label),
         NodeKind::Action => action::name(node),
         NodeKind::Question => question::name(node),
         NodeKind::Choice => choice::select_name(node),
         NodeKind::Case => choice::case_name(node),
-        NodeKind::Merge => merge::name(scene, node),
         NodeKind::Return => "return".to_owned(),
     }
 }
@@ -179,7 +176,6 @@ fn write_node(svg: &mut String, node: &Node) {
         NodeKind::Question => question::write(svg, node),
         NodeKind::Choice => choice::write_select(svg, node),
         NodeKind::Case => choice::write_case(svg, node),
-        NodeKind::Merge => merge::write(svg, node),
         NodeKind::Return => write_return(svg, node),
     }
     svg.push_str("    </g>\n");
@@ -238,7 +234,6 @@ fn node_class(kind: NodeKind) -> &'static str {
         NodeKind::Question => "question",
         NodeKind::Choice => "choice select",
         NodeKind::Case => "case",
-        NodeKind::Merge => "merge",
         NodeKind::Return => "return",
     }
 }

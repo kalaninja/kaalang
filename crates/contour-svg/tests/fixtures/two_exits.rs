@@ -15,7 +15,7 @@ fn route(input: u8) -> u8 {
     };
 
     #[action("Build the left value.")]
-    |left| -> left_value { 1 };
+    |left| -> selected { 1 };
 
     #[action("Finish immediately at the first exit.")]
     |first_exit| -> result { 2 };
@@ -24,12 +24,9 @@ fn route(input: u8) -> u8 {
     |second_exit| -> result { 3 };
 
     #[action("Build the right value.")]
-    |right| -> right_value { 4 };
+    |right| -> selected { 4 };
 
-    #[merge]
-    |left_value, right_value| -> selected {};
-
-    #[action("Finish after the merge.")]
+    #[action("Finish after convergence.")]
     |selected| -> result { selected };
 
     #[end]

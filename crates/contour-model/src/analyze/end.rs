@@ -3,7 +3,7 @@
 use syn::{Error, Result};
 
 use super::{
-    Analysis, Exit, PathState,
+    Analysis, PathState,
     frontier::{WorkKind, WorkPlan},
 };
 
@@ -46,6 +46,6 @@ pub(super) fn arrive(
 
     Ok(WorkPlan {
         kind: WorkKind::EndArrival { inputs },
-        exit: Some(Exit::End(state)),
+        exit: Some(state),
     })
 }

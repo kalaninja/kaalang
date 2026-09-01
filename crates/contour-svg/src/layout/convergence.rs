@@ -75,7 +75,7 @@ fn plan_root(plan: &Plan) -> Option<NodeId> {
             Some(NodeId::Block(*index))
         }
         Plan::Yield { .. } => None,
-        Plan::EndArrival { .. } | Plan::Arrival { .. } => {
+        Plan::EndArrival { .. } => {
             unreachable!("a convergence continuation is a shared consumer or a yield")
         }
     }

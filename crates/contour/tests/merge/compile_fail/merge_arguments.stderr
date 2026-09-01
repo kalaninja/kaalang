@@ -1,5 +1,0 @@
-error: `#[merge]` does not accept arguments
-  --> tests/merge/compile_fail/merge_arguments.rs:14:5
-   |
-14 |     #[merge("Join the values.")]
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

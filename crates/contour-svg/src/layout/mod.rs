@@ -6,7 +6,6 @@ use unicode_segmentation::UnicodeSegmentation;
 mod action;
 mod choice;
 mod convergence;
-mod merge;
 mod question;
 
 const MARGIN: i32 = 32;
@@ -65,7 +64,6 @@ pub(crate) enum NodeKind {
     Question,
     Choice,
     Case,
-    Merge,
     Return,
 }
 
@@ -177,15 +175,11 @@ impl Builder<'_> {
             Plan::Question {
                 index,
                 branches,
-                merge,
                 convergence,
             } => self.place_question(
                 *index,
                 branches,
-                Join {
-                    merge: merge.as_ref(),
-                    convergence: convergence.as_ref(),
-                },
+                convergence.as_ref(),
                 skewer,
                 top,
                 incoming,
@@ -193,15 +187,11 @@ impl Builder<'_> {
             Plan::Choice {
                 index,
                 branches,
-                merge,
                 convergence,
             } => self.place_choice(
                 *index,
                 branches,
-                Join {
-                    merge: merge.as_ref(),
-                    convergence: convergence.as_ref(),
-                },
+                convergence.as_ref(),
                 skewer,
                 top,
                 incoming,
@@ -217,22 +207,12 @@ impl Builder<'_> {
                             .join(", ")
                     }),
                     skewer: incoming.skewer,
-                    merge: None,
                 });
                 Placed {
                     bottom: self.anchor(incoming.origin).y,
                     arrivals: Vec::new(),
                 }
             }
-            Plan::Arrival { input, merge } => Placed {
-                bottom: self.anchor(incoming.origin).y,
-                arrivals: vec![Tail {
-                    origin: incoming.origin,
-                    label: Some(incoming.label.unwrap_or_else(|| input.to_string())),
-                    skewer: incoming.skewer,
-                    merge: Some(*merge),
-                }],
-            },
             Plan::Yield { wires } => Placed {
                 bottom: self.anchor(incoming.origin).y,
                 arrivals: vec![Tail {
@@ -245,13 +225,16 @@ impl Builder<'_> {
                             .join(", ")
                     }),
                     skewer: incoming.skewer,
-                    merge: None,
                 }],
             },
         }
     }
 
-    fn finish_branches(&mut self, placed: Vec<Placed>, join: Join<'_>, skewer: usize) -> Placed {
+    fn finish_branches(
+        &mut self,
+        placed: Vec<Placed>,
+        convergence: Option<&Convergence>,
+    ) -> Placed {
         let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
         // Branch order decides which skewer a shared continuation takes, and a
         // nested branch point hands its own tails up in that same order.
@@ -259,10 +242,7 @@ impl Builder<'_> {
             .into_iter()
             .flat_map(|branch| branch.arrivals)
             .collect::<Vec<_>>();
-        if let Some(merge) = join.merge {
-            return self.place_merge(arrivals, merge, skewer, bottom);
-        }
-        if let Some(convergence) = join.convergence {
+        if let Some(convergence) = convergence {
             return self.place_convergence(arrivals, convergence, bottom);
         }
         // Every branch ended the flow, or they all converge further out.
@@ -277,7 +257,6 @@ impl Builder<'_> {
                 BlockKind::Action => NodeKind::Action,
                 BlockKind::Question => NodeKind::Question,
                 BlockKind::Choice => NodeKind::Choice,
-                BlockKind::Merge => NodeKind::Merge,
                 BlockKind::End => unreachable!("End remains the transitional Return node"),
             },
             block.description.clone().unwrap_or_default(),
@@ -584,12 +563,6 @@ struct Incoming {
     skewer: usize,
 }
 
-#[derive(Clone, Copy)]
-struct Join<'a> {
-    merge: Option<&'a contour_model::Merge>,
-    convergence: Option<&'a Convergence>,
-}
-
 struct Placed {
     bottom: i32,
     /// Tails still looking for the shared continuation they enter. A branch
@@ -601,7 +574,6 @@ struct Tail {
     origin: Origin,
     label: Option<String>,
     skewer: usize,
-    merge: Option<usize>,
 }
 
 #[derive(Clone, Copy)]
@@ -638,33 +610,25 @@ fn plan_span(plan: &Plan) -> usize {
         Plan::Action { next, .. } => plan_span(next),
         Plan::Question {
             branches,
-            merge,
             convergence,
             ..
-        } => branch_span(branches, merge.as_ref(), convergence.as_ref()),
+        } => branch_span(branches, convergence.as_ref()),
         Plan::Choice {
             branches,
-            merge,
             convergence,
             ..
-        } => branch_span(branches, merge.as_ref(), convergence.as_ref()),
-        Plan::EndArrival { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 1,
+        } => branch_span(branches, convergence.as_ref()),
+        Plan::EndArrival { .. } | Plan::Yield { .. } => 1,
     }
 }
 
-fn branch_span(
-    branches: &[Branch],
-    merge: Option<&contour_model::Merge>,
-    convergence: Option<&Convergence>,
-) -> usize {
+fn branch_span(branches: &[Branch], convergence: Option<&Convergence>) -> usize {
     let spans = branches
         .iter()
         .map(|branch| plan_span(&branch.plan))
         .collect::<Vec<_>>();
     let total = spans.iter().sum::<usize>();
-    let continuation = merge
-        .map(|merge| merge.next.as_ref())
-        .or_else(|| convergence.map(|convergence| convergence.next.as_ref()));
+    let continuation = convergence.map(|convergence| convergence.next.as_ref());
     let Some(continuation) = continuation else {
         return total;
     };
@@ -726,7 +690,6 @@ fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
-        NodeKind::Merge => merge::dimensions(),
         NodeKind::Return => (180, 58, Vec::new()),
         NodeKind::Start => {
             let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
@@ -1026,7 +989,7 @@ mod tests {
     }
 
     #[test]
-    fn nested_branches_converge_at_their_own_merge() {
+    fn nested_branches_converge_at_their_own_consumers() {
         use NodeId::{Block, Return, Start};
 
         let source = r#"
@@ -1039,22 +1002,16 @@ mod tests {
                 |outer_yes, inner| -> (inner_yes, inner_no) { inner };
 
                 #[action("Build the inner yes value")]
-                |inner_yes| -> inner_yes_value { 1 };
+                |inner_yes| -> inner_value { 1 };
 
                 #[action("Build the inner no value")]
-                |inner_no| -> inner_no_value { 2 };
-
-                #[merge]
-                |inner_yes_value, inner_no_value| -> inner_value {};
+                |inner_no| -> inner_value { 2 };
 
                 #[action("Finish the inner path")]
-                |inner_value| -> outer_yes_value { inner_value };
+                |inner_value| -> outer_value { inner_value };
 
                 #[action("Build the outer no value")]
-                |outer_no| -> outer_no_value { 0 };
-
-                #[merge]
-                |outer_yes_value, outer_no_value| -> outer_value {};
+                |outer_no| -> outer_value { 0 };
 
                 #[action("Return the result")]
                 |outer_value| -> result { outer_value };
@@ -1078,18 +1035,16 @@ mod tests {
                 (Block(1), Block(3)),
                 (Block(2), Block(4)),
                 (Block(3), Block(4)),
-                (Block(4), Block(5)),
-                (Block(0), Block(6)),
-                (Block(5), Block(7)),
-                (Block(6), Block(7)),
-                (Block(7), Block(8)),
-                (Block(8), Return),
+                (Block(0), Block(5)),
+                (Block(4), Block(6)),
+                (Block(5), Block(6)),
+                (Block(6), Return),
             ]
         );
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(1)).x);
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(4)).x);
-        assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(7)).x);
-        assert!(node(&scene, Block(3)).x < node(&scene, Block(6)).x);
+        assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(6)).x);
+        assert!(node(&scene, Block(3)).x < node(&scene, Block(5)).x);
     }
 
     #[test]
@@ -1346,7 +1301,7 @@ mod tests {
     }
 
     #[test]
-    fn a_terminal_sibling_reaches_the_end_beside_a_merge() {
+    fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
         use NodeId::{Block, Case, Return, Start};
 
         let source = r#"
@@ -1361,18 +1316,15 @@ mod tests {
                 };
 
                 #[action("Build left")]
-                |left| -> left_value { 1 };
+                |left| -> selected { 1 };
 
                 #[action("Build right")]
-                |right| -> right_value { 2 };
+                |right| -> selected { 2 };
 
                 #[action("Finish immediately")]
                 |done| -> result { 3 };
 
-                #[merge]
-                |left_value, right_value| -> selected {};
-
-                #[action("Finish after merge")]
+                #[action("Finish after convergence")]
                 |selected| -> result { selected };
 
                 #[end]
@@ -1433,9 +1385,8 @@ mod tests {
                 ),
                 (Block(1), Block(4)),
                 (Block(2), Block(4)),
-                (Block(4), Block(5)),
                 (Block(3), Return),
-                (Block(5), Return),
+                (Block(4), Return),
             ]
         );
         let early_terminal = scene
@@ -1551,11 +1502,11 @@ mod tests {
         }
     }
 
-    /// A branch that ends the flow may lead the ones that merge, and it keeps
-    /// the branching block's own skewer. The merge cannot also sit there, so it
-    /// and its continuation take the first continuing branch's skewer.
+    /// A branch that ends the flow may lead the ones that converge, and it keeps
+    /// the branching block's own skewer. The shared continuation takes the
+    /// first continuing branch's skewer.
     #[test]
-    fn a_leading_terminal_case_keeps_the_merge_off_its_skewer() {
+    fn a_leading_terminal_case_keeps_the_shared_continuation_off_its_skewer() {
         let source = r#"
             #[contour]
             fn partial(input: u8) -> u8 {
@@ -1571,15 +1522,12 @@ mod tests {
                 |done| -> result { 1 };
 
                 #[action("Build left")]
-                |left| -> left_value { 2 };
+                |left| -> selected { 2 };
 
                 #[action("Build right")]
-                |right| -> right_value { 3 };
+                |right| -> selected { 3 };
 
-                #[merge]
-                |left_value, right_value| -> selected {};
-
-                #[action("Finish after merge")]
+                #[action("Finish after convergence")]
                 |selected| -> result { selected };
 
                 #[end]
@@ -1588,15 +1536,8 @@ mod tests {
         "#;
 
         let scene = scene(source, "partial");
-        let merge = scene
-            .nodes
-            .iter()
-            .find(|node| node.kind == NodeKind::Merge)
-            .expect("the merge is drawn");
-
-        assert_eq!(merge.x, skewer_x(1));
         assert_eq!(node(&scene, NodeId::Block(1)).x, skewer_x(0));
-        assert_eq!(node(&scene, NodeId::Block(5)).x, skewer_x(1));
+        assert_eq!(node(&scene, NodeId::Block(4)).x, skewer_x(1));
     }
 
     /// Branch order alone cannot free every terminal column. A continuation
@@ -1618,16 +1559,13 @@ mod tests {
                 };
 
                 #[action("Build left")]
-                |left| -> left_value { 1 };
+                |left| -> selected { 1 };
 
                 #[action("Build right")]
-                |right| -> right_value { 2 };
+                |right| -> selected { 2 };
 
                 #[action("Finish immediately")]
                 |done| -> result { 3 };
-
-                #[merge]
-                |left_value, right_value| -> selected {};
 
                 #[choice("Widen the continuation")]
                 #[case("Wide left")]

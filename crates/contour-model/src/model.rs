@@ -23,7 +23,6 @@ pub enum BlockKind {
     Action,
     Question,
     Choice,
-    Merge,
     End,
 }
 
@@ -63,13 +62,11 @@ pub enum Plan {
     Question {
         index: usize,
         branches: [Branch; 2],
-        merge: Option<Merge>,
         convergence: Option<Convergence>,
     },
     Choice {
         index: usize,
         branches: Vec<Branch>,
-        merge: Option<Merge>,
         convergence: Option<Convergence>,
     },
     /// The one authored End block and the execution that feeds it.
@@ -80,12 +77,6 @@ pub enum Plan {
     /// One path yields its ordered values to End.
     EndArrival {
         inputs: Vec<Ident>,
-    },
-    /// The branch reaches a merge and hands over this input.
-    Arrival {
-        input: Ident,
-        /// The index of the merge block this branch arrives at.
-        merge: usize,
     },
     /// The branch yields path-exclusive producer values to an implicit
     /// convergence.
@@ -100,12 +91,6 @@ pub struct Branch {
     /// Set when siblings enter a shared continuation, which forces this path
     /// to return its End value rather than yield it to the enclosing expression.
     pub early_return: bool,
-}
-
-/// One verified merge and its shared continuation.
-pub struct Merge {
-    pub index: usize,
-    pub next: Box<Plan>,
 }
 
 /// Logical wire bindings and the continuation shared by sibling paths.

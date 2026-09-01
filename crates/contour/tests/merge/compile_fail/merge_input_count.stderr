@@ -1,6 +1,0 @@
-error: a Contour merge requires at least two alternative inputs
- --> tests/merge/compile_fail/merge_input_count.rs:8:5
-  |
-8 | /     #[merge]
-9 | |     |value| -> selected {};
-  | |__________________________^

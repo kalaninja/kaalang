@@ -11,7 +11,6 @@ mod action;
 mod choice;
 mod end;
 mod frontier;
-mod merge;
 mod question;
 
 use frontier::{Candidate, WorkJoin, WorkKind, WorkPlan};
@@ -55,12 +54,6 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
     });
     analysis.run(&mut work)?;
 
-    if let Some(Exit::Merge { index, .. }) = &work.exit {
-        return Err(Error::new(
-            flow.blocks[*index].span,
-            "a Contour merge must combine branches of a question or choice",
-        ));
-    }
     if let Some(unreachable) = flow
         .blocks
         .iter()
@@ -131,34 +124,6 @@ impl PathState {
     }
 }
 
-#[derive(Clone)]
-enum Exit {
-    End(PathState),
-    Merge {
-        index: usize,
-        input: Ident,
-        state: PathState,
-    },
-}
-
-impl Exit {
-    /// Returns the path state carried by either exit kind.
-    fn state(&self) -> &PathState {
-        match self {
-            Self::End(state) | Self::Merge { state, .. } => state,
-        }
-    }
-
-    fn terminates(&self) -> bool {
-        matches!(self, Self::End(_))
-    }
-}
-
-struct MergePlan {
-    index: usize,
-    state: PathState,
-}
-
 impl Analysis<'_> {
     fn run(&mut self, work: &mut WorkPlan) -> Result<()> {
         loop {
@@ -212,7 +177,6 @@ impl Analysis<'_> {
                         BlockKind::Action | BlockKind::Question | BlockKind::Choice => {
                             regular_ready(block, state)
                         }
-                        BlockKind::Merge => merge::ready(block, state),
                         BlockKind::End => false,
                     }
             })
@@ -246,7 +210,6 @@ impl Analysis<'_> {
             BlockKind::Action => action::enter(self, index, state),
             BlockKind::Question => question::enter(self, index, state),
             BlockKind::Choice => choice::enter(self, index, state),
-            BlockKind::Merge => self.arrive(index, state),
             BlockKind::End => unreachable!("End is entered only after a path is exhausted"),
         }
     }
@@ -264,61 +227,21 @@ impl Analysis<'_> {
         state
     }
 
-    fn arrive(&self, index: usize, mut state: PathState) -> Result<WorkPlan> {
-        let block = &self.flow.blocks[index];
-        let available = block
-            .inputs
-            .iter()
-            .filter(|input| state.available.contains_key(&input.ident))
-            .collect::<Vec<_>>();
-        debug_assert!(!available.is_empty(), "a ready merge has an input");
-        if available.len() != 1 {
-            return Err(Error::new(
-                available[1].ident.span(),
-                "exactly one Contour merge input must be available on each path",
-            ));
-        }
-
-        let input = available[0].ident.clone();
-        state.available.remove(&input);
-        state.unconsumed.remove(&input);
-        Ok(WorkPlan {
-            kind: WorkKind::Arrival {
-                input: input.clone(),
-                merge: index,
-            },
-            exit: Some(Exit::Merge {
-                index,
-                input,
-                state,
-            }),
-        })
-    }
-
     fn finish(&mut self, state: PathState) -> Result<WorkPlan> {
         end::arrive(self, self.flow.blocks.len() - 1, state)
     }
 
-    /// Propagates completed exits and opens legacy merge continuations.
+    /// Propagates completed paths through shared continuations.
     fn settle(&mut self, plan: &mut WorkPlan) -> Result<()> {
         let exit = match &mut plan.kind {
-            WorkKind::Open { .. }
-            | WorkKind::EndArrival { .. }
-            | WorkKind::Arrival { .. }
-            | WorkKind::Yield { .. } => None,
+            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => None,
             WorkKind::Action { next, .. } => {
                 self.settle(next)?;
                 next.exit.clone()
             }
-            WorkKind::Question { branches, join, .. } => {
-                self.settle_branches(branches, join, None)?
+            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
+                self.settle_branches(branches, join)?
             }
-            WorkKind::Choice {
-                index,
-                branches,
-                join,
-                ..
-            } => self.settle_branches(branches, join, Some(*index))?,
         };
         if plan.exit.is_none() {
             plan.exit = exit;
@@ -330,10 +253,9 @@ impl Analysis<'_> {
         &mut self,
         branches: &mut [WorkPlan],
         join: &mut WorkJoin,
-        choice: Option<usize>,
-    ) -> Result<Option<Exit>> {
+    ) -> Result<Option<PathState>> {
         match join {
-            WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
+            WorkJoin::Convergence { next, .. } => {
                 self.settle(next)?;
                 return Ok(next.exit.clone());
             }
@@ -343,30 +265,14 @@ impl Analysis<'_> {
         for branch in branches.iter_mut() {
             self.settle(branch)?;
         }
-        let Some(exits) = branches
-            .iter()
-            .map(|branch| branch.exit.clone())
-            .collect::<Option<Vec<_>>>()
-        else {
-            return Ok(None);
-        };
-
-        let Some(merged) = merge::plan(self, &exits)? else {
-            let states = exits.iter().map(Exit::state).collect::<Vec<_>>();
-            return Ok(Some(Exit::End(combine_states(&states))));
-        };
-        if let Some(index) = choice {
-            let continuing = exits
-                .iter()
-                .map(|exit| !exit.terminates())
-                .collect::<Vec<_>>();
-            choice::adjacent_branches(&continuing, &self.flow.blocks[index].outputs)?;
+        let mut states = Vec::with_capacity(branches.len());
+        for branch in branches.iter() {
+            let Some(state) = &branch.exit else {
+                return Ok(None);
+            };
+            states.push(state);
         }
-        *join = WorkJoin::Merge {
-            index: merged.index,
-            next: Box::new(self.open(merged.state)),
-        };
-        Ok(None)
+        Ok(Some(combine_states(&states)))
     }
 
     fn converge(&mut self, work: &mut WorkPlan, candidate: Candidate) {

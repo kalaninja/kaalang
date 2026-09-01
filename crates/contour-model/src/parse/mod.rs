@@ -11,7 +11,6 @@ use crate::model::{Block, BlockKind, Flow, Input};
 mod action;
 mod choice;
 mod end;
-mod merge;
 mod question;
 
 /// Parses a flow function into its source wires and closure-shaped blocks.
@@ -92,7 +91,6 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::Merge => merge::parse(syntax),
         BlockKind::End => end::parse(syntax),
     }
 }
@@ -235,7 +233,6 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("action") => Role::Kind(BlockKind::Action),
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
-        Some("merge") => Role::Kind(BlockKind::Merge),
         Some("end") => Role::Kind(BlockKind::End),
         Some("case") => Role::Companion,
         Some("doc") => Role::Comment,

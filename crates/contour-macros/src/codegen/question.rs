@@ -3,15 +3,14 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote_spanned;
 
-use super::{Bindings, block_body, convergence, input_bindings, merge};
-use contour_model::{Branch, Convergence, Flow, Merge};
+use super::{Bindings, block_body, convergence, input_bindings};
+use contour_model::{Branch, Convergence, Flow};
 
 pub(crate) fn emit(
     flow: &Flow,
     bindings: &Bindings,
     index: usize,
     branches: &[Branch; 2],
-    merged: Option<&Merge>,
     converged: Option<&Convergence>,
 ) -> TokenStream2 {
     let branches = [
@@ -37,6 +36,5 @@ pub(crate) fn emit(
         }
     };
 
-    let question = merge::emit(flow, bindings, question, merged, None);
     convergence::emit(flow, bindings, question, converged, None)
 }

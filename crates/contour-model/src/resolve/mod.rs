@@ -9,7 +9,6 @@ use crate::model::{Block, BlockKind, Flow};
 
 mod action;
 mod choice;
-mod merge;
 mod question;
 
 /// Resolves a parsed flow's wires and output-consumption invariants.
@@ -78,7 +77,6 @@ fn validate_outputs(blocks: &[Block]) -> Result<()> {
             BlockKind::Action => action::validate(&unconsumed),
             BlockKind::Question => question::validate(&unconsumed),
             BlockKind::Choice => choice::validate(&unconsumed),
-            BlockKind::Merge => merge::validate(&unconsumed),
             BlockKind::End => Ok(()),
         }?;
     }

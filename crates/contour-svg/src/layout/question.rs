@@ -1,15 +1,15 @@
 //! Places a question and its two ordered branches.
 
-use contour_model::Branch;
+use contour_model::{Branch, Convergence};
 
-use super::{Builder, Incoming, Join, Origin, Placed, VERTICAL_GAP, plan_span};
+use super::{Builder, Incoming, Origin, Placed, VERTICAL_GAP, plan_span};
 
 impl Builder<'_> {
     pub(super) fn place_question(
         &mut self,
         index: usize,
         branches: &[Branch; 2],
-        join: Join<'_>,
+        convergence: Option<&Convergence>,
         skewer: usize,
         top: i32,
         incoming: Incoming,
@@ -43,6 +43,6 @@ impl Builder<'_> {
             branch_skewer += spans[branch_index];
         }
 
-        self.finish_branches(placed, join, skewer)
+        self.finish_branches(placed, convergence)
     }
 }

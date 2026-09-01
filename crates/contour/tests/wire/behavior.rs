@@ -162,6 +162,36 @@ fn uneven_depth(condition: bool) -> u32 {
     |result| {};
 }
 
+#[contour]
+fn leading_terminal_convergence(value: i8) -> &'static str {
+    #[choice("Choose a path.")]
+    #[case("Finish immediately")]
+    #[case("Build the left value")]
+    #[case("Build the right value")]
+    |value| -> (done, left, right) {
+        match value {
+            ..0 => (),
+            0 => (),
+            _ => (),
+        }
+    };
+
+    #[action("Finish the leading path.")]
+    |done| -> result { "done" };
+
+    #[action("Build the left value.")]
+    |left| -> selected { "left" };
+
+    #[action("Build the right value.")]
+    |right| -> selected { "right" };
+
+    #[action("Use the selected value.")]
+    |selected| -> result { selected };
+
+    #[end]
+    |result| {};
+}
+
 #[test]
 fn question_converges_two_producers_into_one_consumer() {
     let mut shared_runs = 0;
@@ -208,4 +238,11 @@ fn nested_paths_converge_once() {
 fn branches_may_reach_convergence_at_different_depths() {
     assert_eq!(uneven_depth(true), 10);
     assert_eq!(uneven_depth(false), 16);
+}
+
+#[test]
+fn two_choice_branches_converge_after_a_leading_terminal_branch() {
+    assert_eq!(leading_terminal_convergence(-1), "done");
+    assert_eq!(leading_terminal_convergence(0), "left");
+    assert_eq!(leading_terminal_convergence(1), "right");
 }

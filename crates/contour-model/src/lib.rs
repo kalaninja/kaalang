@@ -9,7 +9,7 @@ mod parse;
 mod resolve;
 
 pub use choice::{choice_match, is_todo_body};
-pub use model::{Block, BlockKind, Branch, Convergence, Flow, Graph, Input, Merge, Plan};
+pub use model::{Block, BlockKind, Branch, Convergence, Flow, Graph, Input, Plan};
 
 /// Builds the validated semantic model for one Contour flow function.
 ///
@@ -46,7 +46,6 @@ mod tests {
             Plan::Question {
                 index,
                 branches,
-                merge,
                 convergence,
             } => {
                 usize::from(*index == target)
@@ -54,9 +53,6 @@ mod tests {
                         .iter()
                         .map(|branch| count_block(&branch.plan, target))
                         .sum::<usize>()
-                    + merge
-                        .as_ref()
-                        .map_or(0, |merge| count_block(&merge.next, target))
                     + convergence
                         .as_ref()
                         .map_or(0, |convergence| count_block(&convergence.next, target))
@@ -64,7 +60,6 @@ mod tests {
             Plan::Choice {
                 index,
                 branches,
-                merge,
                 convergence,
             } => {
                 usize::from(*index == target)
@@ -72,15 +67,12 @@ mod tests {
                         .iter()
                         .map(|branch| count_block(&branch.plan, target))
                         .sum::<usize>()
-                    + merge
-                        .as_ref()
-                        .map_or(0, |merge| count_block(&merge.next, target))
                     + convergence
                         .as_ref()
                         .map_or(0, |convergence| count_block(&convergence.next, target))
             }
             Plan::End { index, body } => usize::from(*index == target) + count_block(body, target),
-            Plan::EndArrival { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 0,
+            Plan::EndArrival { .. } | Plan::Yield { .. } => 0,
         }
     }
 
@@ -182,7 +174,6 @@ mod tests {
             end_body(&graph.plan),
             Plan::Choice {
                 branches: paths,
-                merge: None,
                 ..
             } if paths.len() == 2
         ));
@@ -258,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn records_nested_branch_merge_and_early_end_topology() {
+    fn records_nested_convergence_and_early_end_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
                 #[question("Take the branching path?")]
@@ -277,18 +268,15 @@ mod tests {
                 };
 
                 #[action("Build the first value")]
-                |first| -> first_value { 1 };
+                |first| -> selected { 1 };
 
                 #[action("Build the second value")]
-                |second| -> second_value { 2 };
+                |second| -> selected { 2 };
 
                 #[action("Finish the early End path")]
                 |third| -> result { 3 };
 
-                #[merge]
-                |first_value, second_value| -> selected {};
-
-                #[action("Return the merged value")]
+                #[action("Return the selected value")]
                 |selected| -> result { selected };
 
                 #[action("Return from the no branch")]
@@ -303,21 +291,18 @@ mod tests {
         let Plan::Question {
             index,
             branches: [yes, no],
-            merge,
             ..
         } = end_body(&graph.plan)
         else {
             panic!("the root must be a question")
         };
         assert_eq!(*index, 0);
-        assert!(merge.is_none());
-        assert!(matches!(no.plan.as_ref(), Plan::Action { index: 7, .. }));
+        assert!(matches!(no.plan.as_ref(), Plan::Action { index: 6, .. }));
 
         let Plan::Choice {
             index,
             branches,
-            merge: Some(merge),
-            ..
+            convergence: Some(convergence),
         } = yes.plan.as_ref()
         else {
             panic!("the yes branch must contain the choice")
@@ -330,24 +315,24 @@ mod tests {
         assert!(matches!(
             branches[0].plan.as_ref(),
             Plan::Action { index: 2, next }
-                if matches!(next.as_ref(), Plan::Arrival { input, merge: 5 } if input == "first_value")
+                if matches!(next.as_ref(), Plan::Yield { wires } if wires == &["selected"])
         ));
         assert!(matches!(
             branches[1].plan.as_ref(),
             Plan::Action { index: 3, next }
-                if matches!(next.as_ref(), Plan::Arrival { input, merge: 5 } if input == "second_value")
+                if matches!(next.as_ref(), Plan::Yield { wires } if wires == &["selected"])
         ));
         assert!(matches!(
             branches[2].plan.as_ref(),
             Plan::Action { index: 4, next }
                 if matches!(next.as_ref(), Plan::EndArrival { .. })
         ));
-        assert_eq!(merge.index, 5);
+        assert_eq!(convergence.wires, ["selected"]);
         assert!(matches!(
-            merge.next.as_ref(),
-            Plan::Action { index: 6, next }
+            convergence.next.as_ref(),
+            Plan::Action { index: 5, next }
                 if matches!(next.as_ref(), Plan::EndArrival { .. })
         ));
-        assert_eq!(count_block(&graph.plan, 8), 1);
+        assert_eq!(count_block(&graph.plan, 7), 1);
     }
 }

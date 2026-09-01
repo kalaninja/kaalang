@@ -3,14 +3,14 @@
 use proc_macro2::Ident;
 use syn::Result;
 
-use super::{Analysis, Exit, PathState, choice};
-use crate::model::{BlockKind, Branch, Convergence, Merge, Plan};
+use super::{Analysis, PathState, choice};
+use crate::model::{Branch, Convergence, Plan};
 
 pub(super) struct WorkPlan {
     pub(super) kind: WorkKind,
-    /// Present only when this complete subtree exits the flow or reaches an
-    /// authored merge. Yield leaves close into an ancestor convergence instead.
-    pub(super) exit: Option<Exit>,
+    /// Present when this complete subtree reaches End. Yield leaves close into
+    /// an ancestor convergence instead.
+    pub(super) exit: Option<PathState>,
 }
 
 pub(super) enum WorkKind {
@@ -37,10 +37,6 @@ pub(super) enum WorkKind {
     EndArrival {
         inputs: Vec<Ident>,
     },
-    Arrival {
-        input: Ident,
-        merge: usize,
-    },
     Yield {
         wires: Vec<Ident>,
     },
@@ -48,10 +44,6 @@ pub(super) enum WorkKind {
 
 pub(super) enum WorkJoin {
     None,
-    Merge {
-        index: usize,
-        next: Box<WorkPlan>,
-    },
     Convergence {
         wires: Vec<Ident>,
         next: Box<WorkPlan>,
@@ -61,7 +53,6 @@ pub(super) enum WorkJoin {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Outcome {
     End,
-    Arrival,
     Yield,
 }
 
@@ -83,12 +74,10 @@ impl WorkPlan {
                             branch.collect_frontiers(frontiers);
                         }
                     }
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                        next.collect_frontiers(frontiers);
-                    }
+                    WorkJoin::Convergence { next, .. } => next.collect_frontiers(frontiers),
                 }
             }
-            WorkKind::EndArrival { .. } | WorkKind::Arrival { .. } | WorkKind::Yield { .. } => {}
+            WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => {}
         }
     }
 
@@ -99,9 +88,7 @@ impl WorkPlan {
             WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
                 match join {
                     WorkJoin::None => branches.iter().find_map(|branch| branch.frontier(target)),
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                        next.frontier(target)
-                    }
+                    WorkJoin::Convergence { next, .. } => next.frontier(target),
                 }
             }
             _ => None,
@@ -125,7 +112,7 @@ impl WorkPlan {
                         }
                         false
                     }
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
+                    WorkJoin::Convergence { next, .. } => {
                         next.replace_frontier(target, replacement)
                     }
                 }
@@ -149,10 +136,9 @@ impl WorkPlan {
                 branches,
                 join,
             } => branch_candidate(analysis, *id, branches, join, Some(*index)),
-            WorkKind::Open { .. }
-            | WorkKind::EndArrival { .. }
-            | WorkKind::Arrival { .. }
-            | WorkKind::Yield { .. } => Ok(None),
+            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => {
+                Ok(None)
+            }
         }
     }
 
@@ -176,7 +162,7 @@ impl WorkPlan {
                         }
                         false
                     }
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
+                    WorkJoin::Convergence { next, .. } => {
                         next.install_convergence(target, convergence)
                     }
                 }
@@ -199,9 +185,7 @@ impl WorkPlan {
                         WorkJoin::None => {
                             branches.iter().any(|branch| branch.contains_branch(target))
                         }
-                        WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                            next.contains_branch(target)
-                        }
+                        WorkJoin::Convergence { next, .. } => next.contains_branch(target),
                     }
             }
             _ => false,
@@ -231,7 +215,7 @@ impl WorkPlan {
                         WorkJoin::None => branches
                             .iter()
                             .any(|branch| branch.collect_end_states(target, visit)),
-                        WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
+                        WorkJoin::Convergence { next, .. } => {
                             next.collect_end_states(target, visit)
                         }
                     }
@@ -242,7 +226,7 @@ impl WorkPlan {
     }
 
     fn visit_end_states(&self, visit: &mut impl FnMut(&PathState)) {
-        if let Some(Exit::End(state)) = &self.exit {
+        if let Some(state) = &self.exit {
             visit(state);
             return;
         }
@@ -255,9 +239,7 @@ impl WorkPlan {
                             branch.visit_end_states(visit);
                         }
                     }
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                        next.visit_end_states(visit);
-                    }
+                    WorkJoin::Convergence { next, .. } => next.visit_end_states(visit),
                 }
             }
             _ => {}
@@ -269,23 +251,20 @@ impl WorkPlan {
             WorkKind::Action { next, .. } => next.outcome(),
             WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
                 match join {
-                    WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                        next.outcome()
-                    }
+                    WorkJoin::Convergence { next, .. } => next.outcome(),
                     WorkJoin::None => {
-                        let outcomes = branches.iter().map(WorkPlan::outcome).collect::<Vec<_>>();
-                        if outcomes.iter().all(|outcome| *outcome == Outcome::End) {
-                            Outcome::End
-                        } else if outcomes.contains(&Outcome::Yield) {
+                        if branches
+                            .iter()
+                            .any(|branch| branch.outcome() == Outcome::Yield)
+                        {
                             Outcome::Yield
                         } else {
-                            Outcome::Arrival
+                            Outcome::End
                         }
                     }
                 }
             }
             WorkKind::EndArrival { .. } => Outcome::End,
-            WorkKind::Arrival { .. } => Outcome::Arrival,
             WorkKind::Yield { .. } => Outcome::Yield,
             WorkKind::Open { .. } => panic!("an open frontier has no completed outcome"),
         }
@@ -304,15 +283,14 @@ impl WorkPlan {
                 join,
                 ..
             } => {
-                let (merge, convergence) = join.into_public();
-                let branches = public_branches(branches, merge.is_some() || convergence.is_some());
+                let convergence = join.into_public();
+                let branches = public_branches(branches, convergence.is_some());
                 let Ok(branches) = <[Branch; 2]>::try_from(branches) else {
                     unreachable!("a question declares exactly two outputs")
                 };
                 Plan::Question {
                     index,
                     branches,
-                    merge,
                     convergence,
                 }
             }
@@ -322,16 +300,14 @@ impl WorkPlan {
                 join,
                 ..
             } => {
-                let (merge, convergence) = join.into_public();
+                let convergence = join.into_public();
                 Plan::Choice {
                     index,
-                    branches: public_branches(branches, merge.is_some() || convergence.is_some()),
-                    merge,
+                    branches: public_branches(branches, convergence.is_some()),
                     convergence,
                 }
             }
             WorkKind::EndArrival { inputs } => Plan::EndArrival { inputs },
-            WorkKind::Arrival { input, merge } => Plan::Arrival { input, merge },
             WorkKind::Yield { wires } => Plan::Yield { wires },
         }
     }
@@ -347,7 +323,7 @@ fn branch_candidate(
     join: &WorkJoin,
     choice: Option<usize>,
 ) -> Result<Option<Candidate>> {
-    if let WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } = join {
+    if let WorkJoin::Convergence { next, .. } = join {
         return next.convergence_candidate(analysis);
     }
 
@@ -365,7 +341,6 @@ fn branch_candidate(
             .collect::<Result<Vec<_>>>()?;
         if let Some(Some(shared)) = ready.first()
             && ready.iter().all(|candidate| candidate == &Some(*shared))
-            && analysis.flow.blocks[*shared].kind != BlockKind::Merge
         {
             if let Some(index) = choice {
                 choice::adjacent_branches(&continuing, &analysis.flow.blocks[index].outputs)?;
@@ -398,23 +373,13 @@ fn branch_candidate(
 }
 
 impl WorkJoin {
-    fn into_public(self) -> (Option<Merge>, Option<Convergence>) {
+    fn into_public(self) -> Option<Convergence> {
         match self {
-            Self::None => (None, None),
-            Self::Merge { index, next } => (
-                Some(Merge {
-                    index,
-                    next: Box::new(next.into_plan()),
-                }),
-                None,
-            ),
-            Self::Convergence { wires, next } => (
-                None,
-                Some(Convergence {
-                    wires,
-                    next: Box::new(next.into_plan()),
-                }),
-            ),
+            Self::None => None,
+            Self::Convergence { wires, next } => Some(Convergence {
+                wires,
+                next: Box::new(next.into_plan()),
+            }),
         }
     }
 }

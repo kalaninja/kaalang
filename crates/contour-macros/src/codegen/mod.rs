@@ -12,7 +12,6 @@ mod action;
 mod choice;
 mod convergence;
 mod end;
-mod merge;
 mod question;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
@@ -62,35 +61,15 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
         Plan::Question {
             index,
             branches,
-            merge,
             convergence,
-        } => question::emit(
-            flow,
-            bindings,
-            *index,
-            branches,
-            merge.as_ref(),
-            convergence.as_ref(),
-        ),
+        } => question::emit(flow, bindings, *index, branches, convergence.as_ref()),
         Plan::Choice {
             index,
             branches,
-            merge,
             convergence,
-        } => choice::emit(
-            flow,
-            bindings,
-            *index,
-            branches,
-            merge.as_ref(),
-            convergence.as_ref(),
-        ),
+        } => choice::emit(flow, bindings, *index, branches, convergence.as_ref()),
         Plan::End { body, .. } => end::emit(flow, bindings, body),
         Plan::EndArrival { inputs } => end::arrival(bindings, inputs),
-        Plan::Arrival { input, .. } => {
-            let wire = bindings.wire(input);
-            quote_spanned!(input.span()=> #wire)
-        }
         Plan::Yield { wires } => convergence::value(bindings, wires),
     }
 }

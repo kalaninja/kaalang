@@ -3,8 +3,8 @@
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Bindings, block_body, convergence, input_bindings, merge};
-use contour_model::{Block, Branch, Convergence, Flow, Merge, choice_match, is_todo_body};
+use super::{Bindings, block_body, convergence, input_bindings};
+use contour_model::{Block, Branch, Convergence, Flow, choice_match, is_todo_body};
 
 /// The identifiers one choice mints for itself. Every one is created at the
 /// mixed site, so authored code can neither name them nor collide with them.
@@ -133,7 +133,6 @@ pub(crate) fn emit(
     bindings: &Bindings,
     index: usize,
     branches: &[Branch],
-    merged: Option<&Merge>,
     converged: Option<&Convergence>,
 ) -> TokenStream2 {
     let branches = branches
@@ -150,8 +149,7 @@ pub(crate) fn emit(
         ..
     } = &names;
 
-    let tail = merge::emit(flow, bindings, dispatch, merged, Some(block.span));
-    let tail = convergence::emit(flow, bindings, tail, converged, Some(block.span));
+    let tail = convergence::emit(flow, bindings, dispatch, converged, Some(block.span));
 
     quote_spanned! {block.span=>
         struct #capability_type;
