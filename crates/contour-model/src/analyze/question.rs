@@ -10,9 +10,9 @@ pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) 
     let next = analysis.enter(index, state);
     let outputs = &analysis.flow.blocks[index].outputs;
     let mut yes_state = next.clone();
-    yes_state.available.insert(outputs[0].clone());
+    yes_state.produce(&outputs[0])?;
     let mut no_state = next;
-    no_state.available.insert(outputs[1].clone());
+    no_state.produce(&outputs[1])?;
     let walked = vec![analysis.walk(yes_state)?, analysis.walk(no_state)?];
     let (branches, merge, exit) = analysis.branches(walked)?;
     let Ok(branches) = <[Branch; 2]>::try_from(branches) else {

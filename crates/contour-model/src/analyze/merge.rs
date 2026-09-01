@@ -106,7 +106,7 @@ pub(super) fn plan(analysis: &mut Analysis<'_>, paths: &[Walked]) -> Result<Opti
     for input in &merge.inputs {
         state.available.remove(&input.ident);
     }
-    state.available.insert(merge.outputs[0].clone());
+    state.produce(&merge.outputs[0])?;
     state.executed.insert(index);
     state.last = Some(index);
     analysis.visited.insert(index);

@@ -13,7 +13,7 @@ pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) 
     let mut walked = Vec::with_capacity(outputs.len());
     for output in outputs {
         let mut branch_state = next.clone();
-        branch_state.available.insert(output.clone());
+        branch_state.produce(output)?;
         walked.push(analysis.walk(branch_state)?);
     }
     adjacent_branches(&walked, outputs)?;

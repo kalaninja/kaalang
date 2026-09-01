@@ -18,14 +18,15 @@ pub(crate) fn flow(flow: &mut Flow) -> Result<()> {
     mark_terminals(&mut flow.blocks)
 }
 
-/// Checks that every input names an earlier producer and that wire names are unique.
+/// Checks that every input names an earlier producer and settles local name conflicts.
 fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
-    let mut producers = HashSet::new();
+    let mut source_names = HashSet::new();
     for source in sources {
-        if !producers.insert(source.clone()) {
+        if !source_names.insert(source.clone()) {
             return Err(Error::new(source.span(), "duplicate Contour source wire"));
         }
     }
+    let mut producers = source_names.clone();
 
     for block in blocks {
         let mut seen_inputs = HashSet::new();
@@ -44,10 +45,18 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
             }
         }
 
+        let mut seen_outputs = HashSet::new();
         for output in &block.outputs {
-            if !producers.insert(output.clone()) {
-                return Err(Error::new(output.span(), "duplicate Contour wire name"));
+            if !seen_outputs.insert(output.clone()) {
+                return Err(Error::new(output.span(), "duplicate Contour block output"));
             }
+            if source_names.contains(output) {
+                return Err(Error::new(
+                    output.span(),
+                    "a Contour block output must not reuse a source wire name",
+                ));
+            }
+            producers.insert(output.clone());
         }
     }
 

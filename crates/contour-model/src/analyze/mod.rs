@@ -19,8 +19,10 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
         flow,
         visited: HashSet::new(),
     };
+    let sources = flow.sources.iter().cloned().collect::<HashSet<_>>();
     let walked = analysis.walk(PathState {
-        available: flow.sources.iter().cloned().collect(),
+        available: sources.clone(),
+        produced: sources,
         executed: HashSet::new(),
         last: None,
     })?;
@@ -54,8 +56,23 @@ struct Analysis<'a> {
 #[derive(Clone)]
 struct PathState {
     available: HashSet<Ident>,
+    produced: HashSet<Ident>,
     executed: HashSet<usize>,
     last: Option<usize>,
+}
+
+impl PathState {
+    /// Makes one output available unless this path already produced its name.
+    fn produce(&mut self, output: &Ident) -> Result<()> {
+        if !self.produced.insert(output.clone()) {
+            return Err(Error::new(
+                output.span(),
+                "a Contour wire must not be produced more than once on the same path",
+            ));
+        }
+        self.available.insert(output.clone());
+        Ok(())
+    }
 }
 
 struct Walked {
@@ -212,7 +229,7 @@ fn regular_ready(block: &Block, state: &PathState) -> bool {
         .all(|input| state.available.contains(&input.ident))
 }
 
-/// Intersects available wires and unions executed blocks across paths.
+/// Intersects available wires and unions path history across paths.
 fn combine_states(states: &[&PathState]) -> PathState {
     let mut combined = (*states
         .first()
@@ -222,6 +239,7 @@ fn combine_states(states: &[&PathState]) -> PathState {
         combined
             .available
             .retain(|wire| state.available.contains(wire));
+        combined.produced.extend(state.produced.iter().cloned());
         combined.executed.extend(state.executed.iter().copied());
     }
     combined

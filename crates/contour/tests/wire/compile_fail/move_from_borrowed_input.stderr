@@ -1,5 +1,5 @@
 error[E0507]: cannot move out of `*input` which is behind a shared reference
- --> tests/action/compile_fail/move_from_borrowed_input.rs:6:26
+ --> tests/wire/compile_fail/move_from_borrowed_input.rs:6:26
   |
 6 |     |&input| -> output { input.into_bytes().len() };
   |                          ^^^^^ ------------ `*input` moved due to this method call

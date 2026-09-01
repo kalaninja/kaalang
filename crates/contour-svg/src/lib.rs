@@ -279,7 +279,7 @@ mod tests {
                 name: "invalid".into(),
                 line: 4,
                 column: 16,
-                message: "duplicate Contour wire name".into(),
+                message: "a Contour block output must not reuse a source wire name".into(),
             })
         );
     }

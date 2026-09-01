@@ -9,7 +9,7 @@ use crate::model::Plan;
 pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) -> Result<Walked> {
     let mut next = analysis.enter(index, state);
     for output in &analysis.flow.blocks[index].outputs {
-        next.available.insert(output.clone());
+        next.produce(output)?;
     }
     let continuation = analysis.walk(next)?;
 

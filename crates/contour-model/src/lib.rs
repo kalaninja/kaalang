@@ -93,6 +93,30 @@ mod tests {
     }
 
     #[test]
+    fn preserves_path_exclusive_producer_occurrences() {
+        let function: ItemFn = parse_quote! {
+            fn choose(condition: bool) -> u32 {
+                #[question("Choose a value")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build the yes value")]
+                |yes| -> selected { 1 };
+
+                #[action("Build the no value")]
+                |no| -> selected { 2 };
+
+                #[action("Use the selected value")]
+                |selected| -> result { selected };
+            }
+        };
+
+        let graph = build(&function).expect("the path-exclusive producers are valid");
+        assert_eq!(graph.flow.blocks[1].outputs[0], "selected");
+        assert_eq!(graph.flow.blocks[2].outputs[0], "selected");
+        assert_eq!(graph.flow.blocks[3].inputs[0].ident, "selected");
+    }
+
+    #[test]
     fn records_nested_branch_merge_and_terminal_sibling_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
