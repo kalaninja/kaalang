@@ -1,6 +1,6 @@
 # RFC 0002: Contour Visual Model
 
-- Status: implementation draft
+- Status: accepted design draft
 - Model version: `0.1`
 - Artifact target: SVG
 
@@ -11,28 +11,29 @@ visual graph is a projection of a validated semantic `Graph`; it does not parse
 or reinterpret the authored Rust syntax independently.
 
 The graph builder remains the source of truth for blocks, wires, branches,
-paths, and their order. Rust lowering and visual rendering are separate
-consumers of that graph. A diagram therefore represents the same validated flow
-that Contour lowers for execution.
+paths, implicit convergence, and their order. Rust lowering and visual rendering
+are separate consumers of that graph. A diagram therefore represents the same
+validated flow that Contour lowers for execution.
 
 ## 2. Visual graph
 
-A visual graph contains one node for each authored block. An action, question,
-choice, and merge retain distinct visual roles. A choice is drawn as a Select
-node followed by one derived Case node for each authored `#[case]` attribute.
-Case nodes are visual projections, not additional semantic blocks. No authored
-block is duplicated to simplify layout.
+A visual graph contains one node for each authored block. Actions, questions,
+choices, and the unique End retain distinct visual roles. A choice is drawn as
+a Select node followed by one derived Case node for each authored `#[case]`
+attribute. Case nodes are visual projections, not additional semantic blocks.
+No authored block is duplicated to simplify layout.
 
-The renderer adds two synthetic nodes:
+The renderer adds one synthetic **Start** node representing the flow boundary
+and its source wires. End comes from the mandatory authored `#[end]` statement;
+the renderer does not add a separate Return node.
 
-- **Start** represents the flow boundary and its source wires;
-- **Return** receives the result of every path that ends at a terminal action.
+Connections between nodes come from the validated plan. Rust bodies, source
+comments, and data-wire dependencies do not add or change control topology. A
+wire name may label a connection, but data dependencies are not drawn as a
+separate graph.
 
-These nodes have no corresponding block statements. Connections between nodes
-come from the validated plan. Rust bodies, source comments, and data-wire
-dependencies do not add or change control topology in version 0.1. A wire name
-may label a connection, but data dependencies are not drawn as a separate
-graph.
+Contour has no merge node. Path-exclusive producers of the same logical wire
+converge directly at their first shared consumer or at End.
 
 ## 3. Labels and branches
 
@@ -41,7 +42,7 @@ description. The renderer does not paraphrase, normalize, or synthesize that
 text; output-format escaping and line wrapping do not change its value. Wrapping
 breaks between grapheme clusters, so a cluster spelled with several code points
 stays on one line and a word with no other break opportunity is still divided
-rather than drawn outside its node. A merge has no authored description and is
+rather than drawn outside its node. End has no authored description and is
 identified by its visual role.
 
 Question branches preserve their positional meaning from RFC 0001: the first
@@ -55,42 +56,45 @@ the Case node into its branch uses only the exact output wire name. The visual
 graph must not reorder cases according to their Rust patterns or layout
 position.
 
-Merge connections preserve the validated convergence of sibling branches.
-Terminal action outputs connect to the synthetic Return node.
+When sibling paths produce the same logical wire, each incoming connection keeps
+that shared wire name. The paths meet at the one downstream consumer that
+captures the name. No synthetic node is inserted between them.
+
+A zero-computation flow contains Start and the authored End. With zero source
+and result wires, it contains no connection between those nodes; Rust's unit
+result does not appear as a wire.
 
 ## 4. Layout and style
 
-The version 0.1 renderer uses a deterministic primitive skewer layout.
-The first question output and the first choice case continue down the current
-vertical skewer. Remaining branches occupy successive skewers to the right in
-authored order. Nested branches receive non-overlapping groups of skewers, and
-a merge, with the continuation after it, takes the skewer of the first branch
-that reaches it. That is the branching block's own skewer unless a branch which
-ends the flow leads the continuing ones and already holds it.
+The renderer uses a deterministic primitive skewer layout. The first
+question output and the first choice case continue down the current vertical
+skewer. Remaining branches occupy successive skewers to the right in authored
+order. Nested branches receive non-overlapping groups of skewers.
 
-Terminal branches converge on one horizontal collector above the Return node,
-the mirror of the distributor that fans a Select out to its cases. Each terminal
-skewer descends onto the collector, and the collector makes the one vertical
-descent into the node; a terminal skewer already in the Return column descends
-straight through it. Terminal connections therefore share the collector and that
-descent, and the shared run is deliberate: it draws one common path, not
-connections hidden behind one another.
+When several branches continue into one shared consumer, that consumer occupies
+the skewer of the first continuing branch. Other continuing branches route into
+it directly. A branch that reaches End instead routes to the unique End node;
+branches may do so after different numbers of computational blocks.
+
+Paths into End converge on one horizontal collector above the node, the mirror
+of the distributor that fans a Select out to its cases. Each terminal skewer
+descends onto the collector, and the collector makes the one vertical descent
+into End; a terminal skewer already in the End column descends straight through
+it. Shared runs are deliberate common paths, not connections hidden behind one
+another.
 
 A clear terminal skewer descends in its own column. An obstructed one is routed
-outside the continuing branches and joins the same collector at the bottom. A
-terminal skewer is obstructed only by a continuation wider than the branches
-beside it, never by a sibling branch: the branch adjacency RFC 0001 requires
-leaves no connection crossing another.
+outside continuing branches and joins the same collector at the bottom.
+Connections use horizontal and vertical segments without arrowheads.
 
-Connections use horizontal and vertical segments without arrowheads. Action
-nodes are rectangles, question nodes are elongated hexagons, choice nodes are
-skewed Select parallelograms, Case nodes have a lower triangular point, Start
-and Return are capsules, and merge nodes remain circles marked `M`. The renderer
-uses one monochrome style and does not print block-kind captions inside nodes.
+Action nodes are rectangles, question nodes are elongated hexagons, choice
+nodes are skewed Select parallelograms, Case nodes have a lower triangular
+point, and Start and End are capsules. The renderer uses one monochrome style
+and does not print block-kind captions inside nodes. There is no merge icon.
 
 Exact dimensions, colors, typography, spacing, and routing offsets remain
 rendering choices. The stable contract is the visual graph's nodes, roles,
-labels, branch order, connections, and skewer ordering.
+labels, branch order, implicit convergence, connections, and skewer ordering.
 
 ## 5. SVG renderer
 
@@ -118,12 +122,12 @@ cargo contour diagram <source.rs> --flow <name> [-o <path>]
 Without `-o`, the command writes `./<name>.svg`. It creates or replaces the
 output only after the complete source has been validated and rendered.
 
-## 6. Version 0.1 limits
+## 6. Renderer limits
 
 The renderer does not search an entire crate or resolve external modules,
 conditional compilation, or macro-expanded source. It does not support batch
 rendering, official `build.rs` integration, interactive HTML, a public JSON
 descriptor, or alternative output formats.
 
-These limits constrain the first renderer, not the semantic graph or future
-visual representations.
+These limits constrain the renderer, not the semantic graph or future visual
+representations.

@@ -1,6 +1,6 @@
 # RFC 0001: Contour Core Model
 
-- Status: executable discussion draft
+- Status: accepted design draft
 - Model version: `0.1`
 - Implementation target: Rust
 
@@ -17,20 +17,24 @@ which block executes next.
 Contour uses these terms consistently:
 
 - a **flow** is one function marked with `#[contour]`;
-- a **block** is an action, question, choice, or merge statement;
-- a **wire** is a named connection between the flow boundary and blocks;
-- an **input** names a wire before `->`, and an **output** declares a wire after
-  `->`;
+- a **block** is an action, question, choice, or End statement;
+- a **wire** is a named logical connection between one or more path-exclusive
+  producers and its consumers;
+- an **input** captures a wire before `->`, and an **output** produces a wire
+  after `->`;
 - a **branch** is one continuation selected by a question or choice;
 - a choice **case** describes one branch, while the corresponding Rust `match`
   **arm** implements it;
 - a **path** is the sequence of blocks executed through selected branches;
-- a **terminal action** is the last block on a path.
+- **End** is the unique structural block at which every path finishes.
 
 ## 2. Flow boundary
 
-Function parameters declare source wires. The function return type is the
-contract for every terminal action output.
+Function parameters written as simple identifiers produce source wires. A
+wildcard parameter (`_`) accepts and discards its argument at the boundary and
+produces no wire. A named wire whose spelling begins with `_` may be left
+unconsumed intentionally. The function return type is the contract for the
+ordered wires captured by End.
 
 ```rust
 use contour::contour;
@@ -41,19 +45,62 @@ fn decide(request: Request) -> Decision {
     |&request| -> (valid, invalid) { todo!() };
 
     #[action("Approve the valid request.")]
-    |valid, &request| -> approved { todo!() };
+    |valid, &request| -> result { todo!() };
 
     #[action("Reject the invalid request.")]
-    |invalid, &request| -> rejected { todo!() };
+    |invalid, &request| -> result { todo!() };
+
+    #[end]
+    |result| {};
 }
 ```
 
-The function body contains closure-shaped Rust expression statements. Each
-statement declares one block. The final statement may omit its semicolon as a
-Rust tail expression may.
+The two actions produce the same logical `result` wire on mutually exclusive
+paths. End captures whichever producer ran. The example is a complete flow
+whose computational bodies are placeholders. `todo!()` retains its Rust
+behavior and panics if execution reaches it.
 
-The example is a complete flow whose computational bodies are placeholders.
-`todo!()` retains its Rust behavior and panics if execution reaches it.
+The function body contains closure-shaped Rust expression statements. Each
+statement declares one block. Every flow contains exactly one End statement,
+and End is the final authored statement. The final statement may omit its
+semicolon as a Rust tail expression may.
+
+### 2.1 Zero-computation flow
+
+A flow may contain no computational blocks, but it still declares its mandatory
+End:
+
+```rust
+#[contour]
+fn nothing() {
+    #[end]
+    || {};
+}
+```
+
+This flow has zero source wires, zero result wires, and no wire connecting its
+boundaries. Rust represents the function result as `()`, but Contour does not
+create an implicit unit-valued wire. A completely empty body is invalid because
+it does not declare End.
+
+An ignored parameter remains explicit:
+
+```rust
+#[contour]
+fn discard(_value: Value) {
+    #[end]
+    || {};
+}
+
+#[contour]
+fn discard_at_the_boundary(_: Value) {
+    #[end]
+    || {};
+}
+```
+
+`_value` is a named source wire permitted to remain unconsumed. `_` declares no
+source wire at all.
 
 ## 3. Block statements
 
@@ -68,7 +115,7 @@ A computational block has this common shape:
 
 `#[action]`, `#[question]`, and `#[choice]` each carry one nonempty Rust string
 literal. The string is the block description. A choice also carries two or more
-ordered `#[case("description")]` attributes. A merge uses the bare `#[merge]`
+ordered `#[case("description")]` attributes. End uses the bare `#[end]`
 attribute because its behavior is fully structural.
 
 Source comments remain ordinary Rust comments. Block and case descriptions come
@@ -77,13 +124,40 @@ from their attributes.
 `#[contour]` consumes the closure-shaped syntax and executes it through ordinary
 Rust bindings and expressions.
 
-## 4. Wires and inputs
+## 4. Wires, producers, and inputs
 
-A wire is represented by an ordinary Rust binding. Source wires come from
-function parameters, and block outputs declare later wires. Every wire name is
-unique within a flow.
+A wire is represented by an ordinary Rust binding after all alternative
+producers have converged. Source wires come from named function parameters, and
+block outputs declare later producers.
 
-Each block lists every wire available to its body:
+A logical wire normally has one producer. Several blocks may declare the same
+output name only when their producer occurrences are path-exclusive: no
+execution path may run more than one of them. This is not sequential shadowing;
+declaring the same output name twice on one path is invalid even if the earlier
+value was consumed.
+
+```rust
+#[question("Which value should be used?")]
+|condition| -> (yes, no) { condition };
+
+#[action("Build the yes value.")]
+|yes| -> selected { yes_value() };
+
+#[action("Build the no value.")]
+|no| -> selected { no_value() };
+
+#[action("Use the selected value.")]
+|selected| -> result { use_value(selected) };
+
+#[end]
+|result| {};
+```
+
+The shared consumer captures `selected` by name. On either path exactly one
+producer is available, so the consumer is the implicit convergence point and is
+executed once. Contour does not have a merge block.
+
+Each computational block lists every wire available to its body:
 
 ```rust
 |&request, policy, yes| -> decision { /* body */ };
@@ -95,15 +169,19 @@ Inputs have two forms:
 - `&name` borrows the wire and leaves it available to later blocks on that path.
 
 Every input names a source wire or an output declared by an earlier block. Each
-block has at least one input, and duplicate inputs are invalid.
+computational block has at least one input, and duplicate inputs are invalid.
+On every path reaching a consumer, each captured name resolves to exactly one
+available producer. No producer is an error; more than one proves that the
+supposed alternatives are not path-exclusive and is also an error.
 
 Consumption is a Contour rule independent of Rust's `Copy` trait. A block body
 receives local bindings only for its listed inputs, so omitted and consumed
 wires are out of scope. Rust locals declared inside a block remain local to that
 body and may reuse a wire's spelling without changing wire resolution.
 
-Rust checks the concrete wire types, moves, borrows, and output destructuring.
-Contour keeps types out of wire declarations and relies on Rust inference.
+Rust checks concrete wire types, moves, borrows, alternative producer type
+agreement, and output destructuring. Contour keeps types out of wire declarations
+and relies on Rust inference.
 
 ## 5. Action
 
@@ -120,11 +198,10 @@ outputs:
 With one declared output, the complete body value is bound to that wire. The
 bare `output` and singleton tuple `(output,)` declarations are equivalent. With
 two or more outputs, the body's outer tuple is destructured positionally. Rust
-checks that the body value has the required shape. An action with consumed
-outputs continues to their downstream blocks.
+checks that the body value has the required shape.
 
-An action is terminal when its single output has no consumer. That output
-becomes the result of the current path and must satisfy the flow's return type.
+An action never terminates a flow implicitly. Its non-ignored outputs must be
+captured by later blocks or by End on every path where they are produced.
 
 ## 6. Question
 
@@ -142,8 +219,8 @@ The first output selects the yes/true branch, and the second selects the
 no/false branch. The question body is evaluated exactly once and must produce
 `bool`.
 
-Question outputs are unit-valued control wires. Downstream blocks list the
-selected control wire and every data wire they need as separate inputs.
+Question outputs are distinct unit-valued control wires. Downstream blocks list
+the selected control wire and every data wire they need as separate inputs.
 
 ## 7. Choice
 
@@ -180,49 +257,51 @@ blocks; downstream code receives only declared wires.
 Each choice branch continuation is entered at most once. Rust ownership rejects
 any extra invocation of a generated continuation.
 
-## 8. Merge
+## 8. End
 
-A merge combines two or more alternative branch outputs into one wire:
+End is the unique structural block at which every path finishes:
 
 ```rust
-#[merge]
-|negative_value, zero_value, positive_value| -> value {};
-
-#[action("Return the selected value.")]
-|value| -> result { value };
+#[end]
+|out1, out2, out3| {};
 ```
 
-Merge inputs are bare, consuming identifiers. Exactly one input is available on
-each path that reaches the merge. The merge has one output and an empty body.
+End is the final authored statement. It has no description, outputs, or body
+expressions. Its inputs are bare, consuming identifiers. Unlike computational
+blocks, End may have zero inputs.
 
-Continuing branches of one question or choice converge at the same merge.
-Sibling branches may instead end at terminal actions. The enclosing Rust `if`
-or `match` produces the merge output, so Rust checks that all merged values have
-one type.
+End captures logical wires by name. When a captured wire has path-exclusive
+producers, each path supplies the producer that ran; the alternatives do not
+appear in End syntax. Every path reaching End must provide exactly one producer
+for every captured name.
 
-Read in branch order, the continuing branches are adjacent: zero or more
-branches that end the flow, then the branches that reach the merge, then zero or
-more that end the flow. A branch that ends the flow between two continuing ones
-is rejected, because the later continuing branch can only reach the merge by
-crossing it. A question cannot state this arrangement, since a merge it feeds is
-reached by both of its branches or by neither.
+With zero inputs, End produces no result wires. With one input, the complete
+wire value is the function result. With two or more inputs, their values form an
+ordered Rust tuple. Rust checks this value against the function return type.
+Capturing an explicitly produced wire whose Rust type is `()` remains distinct
+from a zero-input End: the former is a real named wire, while the latter creates
+none.
 
-Only wires available on every continuing branch remain available after the
-merge. The merge output is added to that shared set and its continuation is
-lowered once.
+## 9. Paths and implicit convergence
 
-## 9. Paths and flow result
+A valid flow has exactly one next block at each execution step on a path. A
+computational block is ready when all its inputs are available. End is ready
+when all its captured result wires are available.
 
-A valid flow has exactly one ready block at each execution step. A regular
-block is ready when all its inputs are available. A merge is ready when one of
-its alternative inputs is available.
+Validation follows each question and choice branch independently. Alternative
+producers with the same output name converge at their first shared consumer.
+Only one such producer may be available on any path. The shared consumer and
+its continuation are represented once in the semantic plan and execute once.
 
-Every block is reachable from the source wires. At a question or choice,
-validation follows each branch independently. A branch either reaches the
-common merge selected by its siblings or ends at a terminal action.
+Wires available on every continuing branch remain available after convergence.
+An alternative logical wire is added to that shared set when every continuing
+path supplies exactly one of its producers. Rust checks that the branch values
+have one type.
 
-Every path ends at a terminal action with one output. Lowered Rust returns that
-output from its branch and checks it against the function return type.
+Every authored block is reachable from the source wires, and every path reaches
+the same End block. Branches may reach End after different numbers of
+computational blocks, but no action or other unconsumed output terminates a path
+implicitly.
 
 ## 10. Grammar
 
@@ -247,13 +326,12 @@ choice_statement :=
         "(" identifier "," identifier ("," identifier)* ")"
         choice_body ";"
 
+end_statement :=
+    "#[end]"
+    "|" end_input_list? "|" "{" "}" ";"
+
 choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
-
-merge_statement :=
-    "#[merge]"
-    "|" identifier "," identifier ("," identifier)* "|" "->"
-        single_output_declaration "{" "}" ";"
 
 case_attribute := "#[case(" block_description ")]"
 
@@ -262,28 +340,36 @@ single_output_declaration := identifier | "(" identifier "," ")"
 output_declaration := single_output_declaration | rust_tuple_of_two_or_more_identifiers
 input_list := input ("," input)* ","?
 input := identifier | "&" identifier
+end_input_list := identifier ("," identifier)* ","?
 ```
 
-The final block statement may omit the semicolon. Computational descriptions
-and input lists are nonempty. Choice cases, outputs, and match arms have equal
-counts. A merge has at least two inputs.
+Every flow has exactly one End statement, and it is the final authored
+statement. The final statement may omit its semicolon. Computational
+descriptions and input lists are nonempty; only End accepts an empty input list.
+Choice cases, outputs, and match arms have equal counts. Outputs within one
+declaration are distinct. Repeated output names across blocks are valid only
+when path analysis proves their producers mutually exclusive.
+
+There is no merge statement.
 
 ## 11. Validation and execution
 
-`#[contour]` parses block syntax, resolves every input to its producing wire,
-validates block-local and path-dependent invariants, and lowers the flow to
-nested Rust `let`, `if`, and `match` expressions.
+`#[contour]` parses block syntax, groups producer occurrences by logical wire
+name, validates block-local and path-dependent invariants, and lowers the flow
+to nested Rust `let`, `if`, and `match` expressions.
 
 An action binds its body value to its outputs. A question evaluates its body
 once and executes the selected branch. A choice preserves the authored match
-and passes the selected arm value to the corresponding branch. A merge binds
-the enclosing branch expression to its output before executing the shared
-continuation.
+and passes the selected arm value to the corresponding branch. When sibling
+paths produce the same logical wire, the enclosing Rust branch expression
+yields their alternative values and the shared continuation binds the logical
+wire once.
 
-Rust checks body types, match exhaustiveness, ownership, borrows, output
-patterns, merged value types, and terminal outputs. Contour's generated scopes
-keep omitted wires, consumed wires, match bindings, and block locals outside
-downstream block bodies.
+End lowers to an empty Rust body, its one captured wire, or the ordered tuple of
+its captured wires. Rust checks body types, match exhaustiveness, ownership,
+borrows, output patterns, alternative producer types, and the End result.
+Contour's generated scopes keep omitted wires, consumed wires, match bindings,
+and block locals outside downstream block bodies.
 
 An authored `todo!()` remains in the lowered body. A choice placeholder still
 type-checks every downstream branch, and execution panics if it reaches the
