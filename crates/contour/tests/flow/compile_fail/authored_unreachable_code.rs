@@ -11,7 +11,7 @@ fn written(value: i32) -> i32 {
         quadrupled
     };
 
-    #[action("Finish the flow.")]
+    #[action("Produce the result.")]
     |doubled| -> result { doubled };
 
     #[end]

@@ -2,13 +2,13 @@ use contour::contour;
 
 #[contour]
 fn invalid(input: u32) -> u32 {
-    #[question("Return a number?")]
+    #[question("Is the input nonzero?")]
     |&input| -> (yes, no) { *input };
 
-    #[action("Return the input from the yes branch.")]
+    #[action("Produce the yes result.")]
     |yes, &input| -> result { *input };
 
-    #[action("Return the input from the no branch.")]
+    #[action("Produce the no result.")]
     |no, &input| -> result { *input };
 
     #[end]

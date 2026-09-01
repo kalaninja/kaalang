@@ -1,4 +1,4 @@
-error: a Contour case that ends the flow must not separate cases that enter a shared continuation
+error: a Contour case that reaches End must not separate cases that enter a shared continuation
  --> tests/wire/compile_fail/separated_convergence_branches.rs:9:24
   |
 9 |     |value| -> (first, done, second) {

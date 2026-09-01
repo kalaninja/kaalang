@@ -14,7 +14,7 @@ fn keep_tuple_in_single_output(input: u32) -> (u32, u32) {
     #[action("Build one tuple-valued output.")]
     |input| -> (output,) { (input, input + 1) };
 
-    #[action("Return the tuple.")]
+    #[action("Produce the tuple.")]
     |output| -> result { output };
 
     #[end]
@@ -26,7 +26,7 @@ fn split_nested_tuple(input: u32) -> ((u32, u32), u32) {
     #[action("Build two outputs, including a tuple.")]
     |input| -> (out1, out2) { ((input, input + 1), input + 2) };
 
-    #[action("Return both outputs.")]
+    #[action("Produce the result pair.")]
     |out1, out2| -> result { (out1, out2) };
 
     #[end]

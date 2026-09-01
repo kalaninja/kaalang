@@ -44,7 +44,7 @@ fn capture_uneven(condition: bool) -> u32 {
     #[action("Prepare the long result.")]
     |long| -> prepared { 7 };
 
-    #[action("Finish the long result.")]
+    #[action("Build the long result.")]
     |prepared| -> result { prepared + 1 };
 
     #[end]

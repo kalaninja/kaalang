@@ -1,7 +1,7 @@
 use contour_svg::{RenderError, render_source};
 
 const SOURCE: &str = include_str!("fixtures/all_blocks.rs");
-const TWO_EXITS: &str = include_str!("fixtures/two_exits.rs");
+const END_COLLECTOR: &str = include_str!("fixtures/end_collector.rs");
 
 #[test]
 fn renders_the_golden_diagram() {
@@ -10,13 +10,14 @@ fn renders_the_golden_diagram() {
     assert_eq!(svg, include_str!("fixtures/all_blocks.svg"));
 }
 
-/// Two exits detour around the same obstruction. Each takes its own stub row,
-/// lane and turn row, so neither is drawn under the other.
+/// Three branches reach End from clear columns. Each descends in its own
+/// column onto the one collector above End, and the collector makes the single
+/// descent into the node.
 #[test]
-fn renders_the_golden_two_exit_diagram() {
-    let svg = render_source(TWO_EXITS, "route").unwrap();
+fn renders_the_golden_end_collector_diagram() {
+    let svg = render_source(END_COLLECTOR, "route").unwrap();
 
-    assert_eq!(svg, include_str!("fixtures/two_exits.svg"));
+    assert_eq!(svg, include_str!("fixtures/end_collector.svg"));
 }
 
 #[test]

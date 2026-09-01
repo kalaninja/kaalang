@@ -273,13 +273,13 @@ mod tests {
                 #[action("Build the second value")]
                 |second| -> selected { 2 };
 
-                #[action("Finish the early End path")]
+                #[action("Produce the early End result")]
                 |third| -> result { 3 };
 
-                #[action("Return the selected value")]
+                #[action("Produce the selected result")]
                 |selected| -> result { selected };
 
-                #[action("Return from the no branch")]
+                #[action("Produce the no-branch result")]
                 |no| -> result { 0 };
 
                 #[end]

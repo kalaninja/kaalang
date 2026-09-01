@@ -1047,13 +1047,13 @@ mod tests {
                 #[action("Build the inner no value")]
                 |inner_no| -> inner_value { 2 };
 
-                #[action("Finish the inner path")]
+                #[action("Produce the inner-path value")]
                 |inner_value| -> outer_value { inner_value };
 
                 #[action("Build the outer no value")]
                 |outer_no| -> outer_value { 0 };
 
-                #[action("Return the result")]
+                #[action("Produce the result")]
                 |outer_value| -> result { outer_value };
 
                 #[end]
@@ -1359,7 +1359,7 @@ mod tests {
                 #[choice("Choose a path")]
                 #[case("Left")]
                 #[case("Right")]
-                #[case("Finish now")]
+                #[case("Reach End directly")]
                 |input| -> (left, right, done) {
                     match input { 0 => (), 1 => (), _ => () }
                 };
@@ -1370,10 +1370,10 @@ mod tests {
                 #[action("Build right")]
                 |right| -> selected { 2 };
 
-                #[action("Finish immediately")]
+                #[action("Produce the direct result")]
                 |done| -> result { 3 };
 
-                #[action("Finish after convergence")]
+                #[action("Produce the converged result")]
                 |selected| -> result { selected };
 
                 #[end]
@@ -1458,10 +1458,10 @@ mod tests {
             #[contour]
             fn partial(input: u8) -> u8 {
                 #[choice("Choose a path")]
-                #[case("Finish first")]
-                #[case("Finish second")]
-                #[case("Finish third")]
-                #[case("Finish fourth")]
+                #[case("First End path")]
+                #[case("Second End path")]
+                #[case("Third End path")]
+                #[case("Fourth End path")]
                 |input| -> (first, second, third, fourth) {
                     match input { 0 => (), 1 => (), 2 => (), _ => () }
                 };
@@ -1555,19 +1555,19 @@ mod tests {
     /// the branching block's own skewer. The shared continuation takes the
     /// first continuing branch's skewer.
     #[test]
-    fn a_leading_terminal_case_keeps_the_shared_continuation_off_its_skewer() {
+    fn a_leading_end_path_keeps_the_shared_continuation_off_its_skewer() {
         let source = r#"
             #[contour]
             fn partial(input: u8) -> u8 {
                 #[choice("Choose a path")]
-                #[case("Finish now")]
+                #[case("Reach End directly")]
                 #[case("Left")]
                 #[case("Right")]
                 |input| -> (done, left, right) {
                     match input { 0 => (), 1 => (), _ => () }
                 };
 
-                #[action("Finish immediately")]
+                #[action("Produce the direct result")]
                 |done| -> result { 1 };
 
                 #[action("Build left")]
@@ -1576,7 +1576,7 @@ mod tests {
                 #[action("Build right")]
                 |right| -> selected { 3 };
 
-                #[action("Finish after convergence")]
+                #[action("Produce the converged result")]
                 |selected| -> result { selected };
 
                 #[end]
@@ -1602,7 +1602,7 @@ mod tests {
                 #[choice("Choose a path")]
                 #[case("Left")]
                 #[case("Right")]
-                #[case("Finish now")]
+                #[case("Reach End directly")]
                 |input| -> (left, right, done) {
                     match input { 0 => (), 1 => (), _ => () }
                 };
@@ -1613,7 +1613,7 @@ mod tests {
                 #[action("Build right")]
                 |right| -> selected { 2 };
 
-                #[action("Finish immediately")]
+                #[action("Produce the direct result")]
                 |done| -> result { 3 };
 
                 #[choice("Widen the continuation")]
@@ -1666,10 +1666,10 @@ mod tests {
                 #[question("Choose a path")]
                 |condition| -> (accepted, rejected) { condition };
 
-                #[action("Return accepted")]
+                #[action("Produce the accepted result")]
                 |accepted| -> result { 1 };
 
-                #[action("Return rejected")]
+                #[action("Produce the rejected result")]
                 |rejected| -> result { 0 };
 
                 #[end]

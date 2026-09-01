@@ -1,7 +1,7 @@
 use contour::contour;
 
 #[contour]
-fn run_choice(value: i32, terminal_count: &mut usize) -> &'static str {
+fn run_choice(value: i32, branch_action_count: &mut usize) -> &'static str {
     #[choice("What is the sign of the value?")]
     #[case("The value is negative.")]
     #[case("The value is zero.")]
@@ -14,21 +14,21 @@ fn run_choice(value: i32, terminal_count: &mut usize) -> &'static str {
         }
     };
 
-    #[action("Return the negative result.")]
-    |negative, terminal_count| -> result {
-        *terminal_count += 1;
+    #[action("Produce the negative result.")]
+    |negative, branch_action_count| -> result {
+        *branch_action_count += 1;
         "negative"
     };
 
-    #[action("Return the zero result.")]
-    |zero, terminal_count| -> result {
-        *terminal_count += 1;
+    #[action("Produce the zero result.")]
+    |zero, branch_action_count| -> result {
+        *branch_action_count += 1;
         "zero"
     };
 
-    #[action("Return the positive result.")]
-    |positive, terminal_count| -> result {
-        *terminal_count += 1;
+    #[action("Produce the positive result.")]
+    |positive, branch_action_count| -> result {
+        *branch_action_count += 1;
         "positive"
     };
 
@@ -44,10 +44,10 @@ fn run_choice_skeleton(value: i32) -> &'static str {
     #[case("The value is nonnegative.")]
     |value| -> (negative, nonnegative) { todo!() };
 
-    #[action("Return the negative result.")]
+    #[action("Produce the negative result.")]
     |negative| -> result { todo!() };
 
-    #[action("Return the nonnegative result.")]
+    #[action("Produce the nonnegative result.")]
     |nonnegative| -> result { todo!() };
 
     #[end]
@@ -66,10 +66,10 @@ fn run_choice_with_shadowing(value: i32, selected: Option<i32>) -> (i32, i32) {
         }
     };
 
-    #[action("Return the original value after a selection.")]
+    #[action("Produce the selected pair.")]
     |selected_value, value| -> result { (value, selected_value) };
 
-    #[action("Return the original value without a selection.")]
+    #[action("Produce the fallback pair.")]
     |absent, value| -> result { (value, 0) };
 
     #[end]
@@ -88,10 +88,10 @@ fn run_choice_with_guard(value: i32) -> i32 {
         }
     };
 
-    #[action("Return the positive-even result.")]
+    #[action("Produce the positive-even result.")]
     |positive_even| -> result { positive_even };
 
-    #[action("Return the other result.")]
+    #[action("Produce the other result.")]
     |other| -> result { 0 };
 
     #[end]
@@ -100,16 +100,16 @@ fn run_choice_with_guard(value: i32) -> i32 {
 
 #[test]
 fn choice_executes_each_branch() {
-    let mut terminal_count = 0;
+    let mut branch_action_count = 0;
 
-    assert_eq!(run_choice(-1, &mut terminal_count), "negative");
-    assert_eq!(terminal_count, 1);
-    assert_eq!(run_choice(0, &mut terminal_count), "zero");
-    assert_eq!(terminal_count, 2);
-    assert_eq!(run_choice(1, &mut terminal_count), "positive");
-    assert_eq!(terminal_count, 3);
-    assert_eq!(run_choice(2, &mut terminal_count), "positive");
-    assert_eq!(terminal_count, 4);
+    assert_eq!(run_choice(-1, &mut branch_action_count), "negative");
+    assert_eq!(branch_action_count, 1);
+    assert_eq!(run_choice(0, &mut branch_action_count), "zero");
+    assert_eq!(branch_action_count, 2);
+    assert_eq!(run_choice(1, &mut branch_action_count), "positive");
+    assert_eq!(branch_action_count, 3);
+    assert_eq!(run_choice(2, &mut branch_action_count), "positive");
+    assert_eq!(branch_action_count, 4);
 }
 
 #[test]

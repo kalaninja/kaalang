@@ -8,7 +8,7 @@ fn invalid(condition: bool) -> u32 {
     #[action("Build the result.")]
     |yes| -> result { 1 };
 
-    #[action("Finish without the result.")]
+    #[action("Consume the no branch.")]
     |no| -> _ignored { () };
 
     #[end]

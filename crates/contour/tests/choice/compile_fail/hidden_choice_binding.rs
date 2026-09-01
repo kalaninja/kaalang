@@ -12,10 +12,10 @@ fn invalid(input: Option<u32>) -> u32 {
         }
     };
 
-    #[action("Return the hidden match value.")]
+    #[action("Produce the hidden match value.")]
     |present| -> result { hidden };
 
-    #[action("Return zero for no value.")]
+    #[action("Produce zero for no value.")]
     |absent| -> result { 0 };
 
     #[end]

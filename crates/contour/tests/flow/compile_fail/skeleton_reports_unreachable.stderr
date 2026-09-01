@@ -4,7 +4,7 @@ error: unreachable statement
  8 |     |&seed| -> started { todo!() };
    |                          ------- any code following this expression is unreachable
  9 |
-10 |     #[action("Finish the flow.")]
+10 |     #[action("Produce the result.")]
    |     ^ unreachable statement
    |
 note: the lint level is defined here

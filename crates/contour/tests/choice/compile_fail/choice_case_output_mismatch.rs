@@ -13,13 +13,13 @@ fn invalid(input: i32) -> &'static str {
         }
     };
 
-    #[action("Return the negative result.")]
+    #[action("Produce the negative result.")]
     |negative| -> negative_result { "negative" };
 
-    #[action("Return the zero result.")]
+    #[action("Produce the zero result.")]
     |zero| -> zero_result { "zero" };
 
-    #[action("Return the positive result.")]
+    #[action("Produce the positive result.")]
     |positive| -> positive_result { "positive" };
 }
 

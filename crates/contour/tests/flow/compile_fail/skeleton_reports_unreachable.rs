@@ -7,7 +7,7 @@ fn skeleton(seed: u32) -> u32 {
     #[action("Leave the first body unwritten.")]
     |&seed| -> started { todo!() };
 
-    #[action("Finish the flow.")]
+    #[action("Produce the result.")]
     |started| -> result { started };
 
     #[end]

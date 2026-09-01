@@ -3,9 +3,9 @@ fn route(input: u8) -> u8 {
     #[choice("Which path does the input take?")]
     #[case("Take the left path.")]
     #[case("Take the right path.")]
-    #[case("Finish at the first exit.")]
-    #[case("Finish at the second exit.")]
-    |input| -> (left, right, first_exit, second_exit) {
+    #[case("Take the first direct End path.")]
+    #[case("Take the second direct End path.")]
+    |input| -> (left, right, first_direct, second_direct) {
         match input {
             0 => (),
             1 => (),
@@ -17,16 +17,16 @@ fn route(input: u8) -> u8 {
     #[action("Build the left value.")]
     |left| -> selected { 1 };
 
-    #[action("Finish immediately at the first exit.")]
-    |first_exit| -> result { 2 };
+    #[action("Build the first direct result.")]
+    |first_direct| -> result { 2 };
 
-    #[action("Finish immediately at the second exit.")]
-    |second_exit| -> result { 3 };
+    #[action("Build the second direct result.")]
+    |second_direct| -> result { 3 };
 
     #[action("Build the right value.")]
     |right| -> selected { 4 };
 
-    #[action("Finish after convergence.")]
+    #[action("Build the converged result.")]
     |selected| -> result { selected };
 
     #[end]

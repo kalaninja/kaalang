@@ -19,7 +19,7 @@ fn route(request: u8) -> u8 {
     #[action("Prepare the long result while preserving every important application detail.")]
     |long, &request| -> selected { request };
 
-    #[action("Return the selected result.")]
+    #[action("Use the selected result.")]
     |selected| -> result { selected };
 
     #[action("Reject the application.")]

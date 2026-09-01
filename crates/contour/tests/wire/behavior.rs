@@ -56,7 +56,7 @@ fn convergence_at_end(case: u8) -> u32 {
     #[choice("Choose whether to continue.")]
     #[case("First continuing path")]
     #[case("Second continuing path")]
-    #[case("Terminal path")]
+    #[case("Direct End path")]
     |case| -> (first, second, done) {
         match case {
             0 => (),
@@ -71,7 +71,7 @@ fn convergence_at_end(case: u8) -> u32 {
     #[action("Build the second value.")]
     |second| -> selected { 2 };
 
-    #[action("Finish the direct path.")]
+    #[action("Produce the direct result.")]
     |done| -> result { 99 };
 
     #[action("Use a value from a continuing path.")]
@@ -163,9 +163,9 @@ fn uneven_depth(condition: bool) -> u32 {
 }
 
 #[contour]
-fn leading_terminal_convergence(value: i8) -> &'static str {
+fn leading_end_path_convergence(value: i8) -> &'static str {
     #[choice("Choose a path.")]
-    #[case("Finish immediately")]
+    #[case("Reach End directly")]
     #[case("Build the left value")]
     #[case("Build the right value")]
     |value| -> (done, left, right) {
@@ -176,7 +176,7 @@ fn leading_terminal_convergence(value: i8) -> &'static str {
         }
     };
 
-    #[action("Finish the leading path.")]
+    #[action("Produce the direct result.")]
     |done| -> result { "done" };
 
     #[action("Build the left value.")]
@@ -241,8 +241,8 @@ fn branches_may_reach_convergence_at_different_depths() {
 }
 
 #[test]
-fn two_choice_branches_converge_after_a_leading_terminal_branch() {
-    assert_eq!(leading_terminal_convergence(-1), "done");
-    assert_eq!(leading_terminal_convergence(0), "left");
-    assert_eq!(leading_terminal_convergence(1), "right");
+fn two_choice_branches_converge_after_a_leading_end_path() {
+    assert_eq!(leading_end_path_convergence(-1), "done");
+    assert_eq!(leading_end_path_convergence(0), "left");
+    assert_eq!(leading_end_path_convergence(1), "right");
 }

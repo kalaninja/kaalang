@@ -14,10 +14,10 @@ fn invalid(input: i32) -> &'static str {
         }
     };
 
-    #[action("Return the negative result.")]
+    #[action("Produce the negative result.")]
     |negative| -> negative_result { "negative" };
 
-    #[action("Return the nonnegative result.")]
+    #[action("Produce the nonnegative result.")]
     |nonnegative| -> nonnegative_result { "nonnegative" };
 }
 

@@ -5,10 +5,10 @@ fn run_question(condition: bool) -> &'static str {
     #[question("Take the yes branch?")]
     |condition| -> (yes, no) { condition };
 
-    #[action("Return the yes result.")]
+    #[action("Produce the yes result.")]
     |yes| -> result { "yes" };
 
-    #[action("Return the no result.")]
+    #[action("Produce the no result.")]
     |no| -> result { "no" };
 
     #[end]

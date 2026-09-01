@@ -12,7 +12,7 @@ fn invalid(input: i32) -> &'static str {
         }
     };
 
-    #[action("Return only the negative result.")]
+    #[action("Produce only the negative result.")]
     |negative| -> negative_result { "negative" };
 
     #[end]

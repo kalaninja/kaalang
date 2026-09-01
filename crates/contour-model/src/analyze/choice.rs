@@ -33,7 +33,7 @@ pub(super) fn enter(
     })
 }
 
-/// Rejects a terminal case between two cases that enter a shared continuation,
+/// Rejects a case that reaches End between two cases that enter a shared continuation,
 /// because no skewer order can draw that crossing topology.
 pub(super) fn adjacent_branches(continuing: &[bool], outputs: &[Ident]) -> Result<()> {
     let Some(first) = continuing.iter().position(|branch| *branch) else {
@@ -49,6 +49,6 @@ pub(super) fn adjacent_branches(continuing: &[bool], outputs: &[Ident]) -> Resul
 
     Err(Error::new(
         outputs[first + offset].span(),
-        "a Contour case that ends the flow must not separate cases that enter a shared continuation",
+        "a Contour case that reaches End must not separate cases that enter a shared continuation",
     ))
 }
