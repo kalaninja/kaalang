@@ -33,3 +33,32 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
 
     Ok(quote!(#function))
 }
+
+#[cfg(test)]
+mod tests {
+    use syn::{ItemFn, parse_quote};
+
+    use super::expand;
+
+    #[test]
+    fn emits_a_shared_consumer_body_once() {
+        let mut function: ItemFn = parse_quote! {
+            fn choose(condition: bool) -> u32 {
+                #[question("Choose a value")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build the yes value")]
+                |yes| -> selected { 1 };
+
+                #[action("Build the no value")]
+                |no| -> selected { 2 };
+
+                #[action("Use the selected value")]
+                |selected| -> result { __contour_shared_marker(selected) };
+            }
+        };
+
+        let expansion = expand(&mut function).expect("the flow expands").to_string();
+        assert_eq!(expansion.matches("__contour_shared_marker").count(), 1);
+    }
+}

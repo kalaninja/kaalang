@@ -1,30 +1,33 @@
-//! Analyzes the two positional branches of a question.
+//! Opens the two positional frontiers of a question.
 
 use syn::Result;
 
-use super::{Analysis, PathState, Walked};
-use crate::model::{Branch, Plan};
+use super::{
+    Analysis, PathState, Producer,
+    frontier::{WorkJoin, WorkKind, WorkPlan},
+};
 
-/// Walks the yes and no branches and records their shared continuation.
-pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) -> Result<Walked> {
+pub(super) fn enter(
+    analysis: &mut Analysis<'_>,
+    index: usize,
+    state: PathState,
+) -> Result<WorkPlan> {
     let next = analysis.enter(index, state);
     let outputs = &analysis.flow.blocks[index].outputs;
-    let mut yes_state = next.clone();
-    yes_state.produce(&outputs[0])?;
-    let mut no_state = next;
-    no_state.produce(&outputs[1])?;
-    let walked = vec![analysis.walk(yes_state)?, analysis.walk(no_state)?];
-    let (branches, merge, exit) = analysis.branches(walked)?;
-    let Ok(branches) = <[Branch; 2]>::try_from(branches) else {
-        unreachable!("a question declares exactly two outputs")
-    };
-
-    Ok(Walked {
-        plan: Plan::Question {
+    let mut branches = Vec::with_capacity(outputs.len());
+    for (output, ident) in outputs.iter().enumerate() {
+        let mut branch = next.clone();
+        branch.produce(ident, Producer::Block { index, output })?;
+        branches.push(analysis.open(branch));
+    }
+    let id = analysis.branch_id();
+    Ok(WorkPlan {
+        kind: WorkKind::Question {
+            id,
             index,
             branches,
-            merge,
+            join: WorkJoin::None,
         },
-        exit,
+        exit: None,
     })
 }

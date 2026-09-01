@@ -9,7 +9,7 @@ mod parse;
 mod resolve;
 
 pub use choice::{choice_match, is_todo_body};
-pub use model::{Block, BlockKind, Branch, Flow, Graph, Input, Merge, Plan};
+pub use model::{Block, BlockKind, Branch, Convergence, Flow, Graph, Input, Merge, Plan};
 
 /// Builds the validated semantic model for one Contour flow function.
 ///
@@ -37,6 +37,51 @@ mod tests {
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{BlockKind, Plan, build};
+
+    fn count_block(plan: &Plan, target: usize) -> usize {
+        match plan {
+            Plan::Action { index, next } => {
+                usize::from(*index == target) + count_block(next, target)
+            }
+            Plan::Question {
+                index,
+                branches,
+                merge,
+                convergence,
+            } => {
+                usize::from(*index == target)
+                    + branches
+                        .iter()
+                        .map(|branch| count_block(&branch.plan, target))
+                        .sum::<usize>()
+                    + merge
+                        .as_ref()
+                        .map_or(0, |merge| count_block(&merge.next, target))
+                    + convergence
+                        .as_ref()
+                        .map_or(0, |convergence| count_block(&convergence.next, target))
+            }
+            Plan::Choice {
+                index,
+                branches,
+                merge,
+                convergence,
+            } => {
+                usize::from(*index == target)
+                    + branches
+                        .iter()
+                        .map(|branch| count_block(&branch.plan, target))
+                        .sum::<usize>()
+                    + merge
+                        .as_ref()
+                        .map_or(0, |merge| count_block(&merge.next, target))
+                    + convergence
+                        .as_ref()
+                        .map_or(0, |convergence| count_block(&convergence.next, target))
+            }
+            Plan::Terminal { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 0,
+        }
+    }
 
     #[test]
     fn preserves_authored_descriptions_and_case_order() {
@@ -117,6 +162,44 @@ mod tests {
     }
 
     #[test]
+    fn records_one_shared_consumer_and_orders_yields_by_its_inputs() {
+        let function: ItemFn = parse_quote! {
+            fn choose(condition: bool) -> (u32, u32) {
+                #[question("Choose values")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build the yes values")]
+                |yes| -> (first, second) { (1, 2) };
+
+                #[action("Build the no values")]
+                |no| -> (first, second) { (3, 4) };
+
+                #[action("Use the selected values")]
+                |second, first| -> result { (first, second) };
+            }
+        };
+
+        let graph = build(&function).expect("the path-exclusive producers are valid");
+        let Plan::Question {
+            convergence: Some(convergence),
+            ..
+        } = &graph.plan
+        else {
+            panic!("the question must record its implicit convergence")
+        };
+
+        assert_eq!(
+            convergence
+                .wires
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            ["second", "first"]
+        );
+        assert_eq!(count_block(&graph.plan, 3), 1);
+    }
+
+    #[test]
     fn records_nested_branch_merge_and_terminal_sibling_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
@@ -160,6 +243,7 @@ mod tests {
             index,
             branches: [yes, no],
             merge,
+            ..
         } = &graph.plan
         else {
             panic!("the root must be a question")
@@ -172,6 +256,7 @@ mod tests {
             index,
             branches,
             merge: Some(merge),
+            ..
         } = yes.plan.as_ref()
         else {
             panic!("the yes branch must contain the choice")

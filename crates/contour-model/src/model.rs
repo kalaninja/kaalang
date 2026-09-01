@@ -64,11 +64,13 @@ pub enum Plan {
         index: usize,
         branches: [Branch; 2],
         merge: Option<Merge>,
+        convergence: Option<Convergence>,
     },
     Choice {
         index: usize,
         branches: Vec<Branch>,
         merge: Option<Merge>,
+        convergence: Option<Convergence>,
     },
     /// The path ends here and its value is this terminal action output.
     Terminal {
@@ -80,18 +82,30 @@ pub enum Plan {
         /// The index of the merge block this branch arrives at.
         merge: usize,
     },
+    /// The branch yields path-exclusive producer values to an implicit
+    /// convergence.
+    Yield {
+        wires: Vec<Ident>,
+    },
 }
 
 /// One verified branch continuation.
 pub struct Branch {
     pub plan: Box<Plan>,
-    /// Set when siblings continue into a merge, which forces this terminating
-    /// branch to return rather than yield a value.
+    /// Set when siblings enter a shared continuation, which forces this
+    /// terminating branch to return rather than yield a value.
     pub early_return: bool,
 }
 
 /// One verified merge and its shared continuation.
 pub struct Merge {
     pub index: usize,
+    pub next: Box<Plan>,
+}
+
+/// Logical wire bindings and the continuation shared by sibling paths.
+pub struct Convergence {
+    /// Logical wire names, ordered by the shared consumer's inputs.
+    pub wires: Vec<Ident>,
     pub next: Box<Plan>,
 }

@@ -13,7 +13,7 @@ pub(super) fn dimensions() -> (i32, i32, Vec<String>) {
 impl Builder<'_> {
     pub(super) fn place_merge(
         &mut self,
-        placed: Vec<Placed>,
+        arrivals: Vec<Tail>,
         merge: &Merge,
         skewer: usize,
         bottom: i32,
@@ -21,12 +21,9 @@ impl Builder<'_> {
         // Branches that end the flow may lead the ones that reach the merge, and
         // the leading skewers belong to them. The merge and its continuation
         // take the first continuing branch's skewer instead.
-        let merge_skewer = placed
-            .iter()
-            .find_map(|branch| branch.arrival.as_ref())
-            .map_or(skewer, |arrival| arrival.skewer);
+        let merge_skewer = arrivals.first().map_or(skewer, |arrival| arrival.skewer);
         let node = self.add_authored_node(merge.index, merge_skewer, bottom + VERTICAL_GAP);
-        for arrival in placed.into_iter().filter_map(|branch| branch.arrival) {
+        for arrival in arrivals {
             debug_assert_eq!(arrival.merge, Some(merge.index));
             self.connect_to_merge(arrival, node, merge_skewer);
         }
@@ -73,12 +70,6 @@ impl Builder<'_> {
                 y: start.y + 18,
             },
         });
-        self.connect_points(
-            arrival.origin.node,
-            merge,
-            Some(arrival.label),
-            points,
-            label_at,
-        );
+        self.connect_points(arrival.origin.node, merge, arrival.label, points, label_at);
     }
 }

@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use contour_model::{BlockKind, Branch, Graph, Plan};
+use contour_model::{BlockKind, Branch, Convergence, Graph, Plan};
 use unicode_segmentation::UnicodeSegmentation;
 
 mod action;
 mod choice;
+mod convergence;
 mod merge;
 mod question;
 
@@ -176,52 +177,89 @@ impl Builder<'_> {
                 index,
                 branches,
                 merge,
-            } => self.place_question(*index, branches, merge.as_ref(), skewer, top, incoming),
+                convergence,
+            } => self.place_question(
+                *index,
+                branches,
+                Join {
+                    merge: merge.as_ref(),
+                    convergence: convergence.as_ref(),
+                },
+                skewer,
+                top,
+                incoming,
+            ),
             Plan::Choice {
                 index,
                 branches,
                 merge,
-            } => self.place_choice(*index, branches, merge.as_ref(), skewer, top, incoming),
+                convergence,
+            } => self.place_choice(
+                *index,
+                branches,
+                Join {
+                    merge: merge.as_ref(),
+                    convergence: convergence.as_ref(),
+                },
+                skewer,
+                top,
+                incoming,
+            ),
             Plan::Terminal { output } => {
                 self.terminals.push(Tail {
                     origin: incoming.origin,
-                    label: output.to_string(),
+                    label: Some(output.to_string()),
                     skewer: incoming.skewer,
                     merge: None,
                 });
                 Placed {
                     bottom: self.anchor(incoming.origin).y,
-                    arrival: None,
+                    arrivals: Vec::new(),
                 }
             }
             Plan::Arrival { input, merge } => Placed {
                 bottom: self.anchor(incoming.origin).y,
-                arrival: Some(Tail {
+                arrivals: vec![Tail {
                     origin: incoming.origin,
-                    label: incoming.label.unwrap_or_else(|| input.to_string()),
+                    label: Some(incoming.label.unwrap_or_else(|| input.to_string())),
                     skewer: incoming.skewer,
                     merge: Some(*merge),
-                }),
+                }],
+            },
+            Plan::Yield { wires } => Placed {
+                bottom: self.anchor(incoming.origin).y,
+                arrivals: vec![Tail {
+                    origin: incoming.origin,
+                    label: (!wires.is_empty()).then(|| {
+                        wires
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    }),
+                    skewer: incoming.skewer,
+                    merge: None,
+                }],
             },
         }
     }
 
-    fn finish_branches(
-        &mut self,
-        placed: Vec<Placed>,
-        merge: Option<&contour_model::Merge>,
-        skewer: usize,
-    ) -> Placed {
+    fn finish_branches(&mut self, placed: Vec<Placed>, join: Join<'_>, skewer: usize) -> Placed {
         let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
-        let Some(merge) = merge else {
-            debug_assert!(placed.iter().all(|branch| branch.arrival.is_none()));
-            return Placed {
-                bottom,
-                arrival: None,
-            };
-        };
-
-        self.place_merge(placed, merge, skewer, bottom)
+        // Branch order decides which skewer a shared continuation takes, and a
+        // nested branch point hands its own tails up in that same order.
+        let arrivals = placed
+            .into_iter()
+            .flat_map(|branch| branch.arrivals)
+            .collect::<Vec<_>>();
+        if let Some(merge) = join.merge {
+            return self.place_merge(arrivals, merge, skewer, bottom);
+        }
+        if let Some(convergence) = join.convergence {
+            return self.place_convergence(arrivals, convergence, bottom);
+        }
+        // Every branch ended the flow, or they all converge further out.
+        Placed { bottom, arrivals }
     }
 
     fn add_authored_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
@@ -412,7 +450,7 @@ impl Builder<'_> {
             self.connect_points(
                 terminal.origin.node,
                 end,
-                Some(terminal.label),
+                terminal.label,
                 points,
                 Some(Point {
                     x: start.x + 42,
@@ -538,14 +576,22 @@ struct Incoming {
     skewer: usize,
 }
 
+#[derive(Clone, Copy)]
+struct Join<'a> {
+    merge: Option<&'a contour_model::Merge>,
+    convergence: Option<&'a Convergence>,
+}
+
 struct Placed {
     bottom: i32,
-    arrival: Option<Tail>,
+    /// Tails still looking for the shared continuation they enter. A branch
+    /// point that has no join of its own passes its branches' tails outward.
+    arrivals: Vec<Tail>,
 }
 
 struct Tail {
     origin: Origin,
-    label: String,
+    label: Option<String>,
     skewer: usize,
     merge: Option<usize>,
 }
@@ -582,33 +628,46 @@ fn plan_span(plan: &Plan) -> usize {
     match plan {
         Plan::Action { next, .. } => plan_span(next),
         Plan::Question {
-            branches, merge, ..
-        } => branch_span(branches, merge.as_ref()),
+            branches,
+            merge,
+            convergence,
+            ..
+        } => branch_span(branches, merge.as_ref(), convergence.as_ref()),
         Plan::Choice {
-            branches, merge, ..
-        } => branch_span(branches, merge.as_ref()),
-        Plan::Terminal { .. } | Plan::Arrival { .. } => 1,
+            branches,
+            merge,
+            convergence,
+            ..
+        } => branch_span(branches, merge.as_ref(), convergence.as_ref()),
+        Plan::Terminal { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 1,
     }
 }
 
-fn branch_span(branches: &[Branch], merge: Option<&contour_model::Merge>) -> usize {
+fn branch_span(
+    branches: &[Branch],
+    merge: Option<&contour_model::Merge>,
+    convergence: Option<&Convergence>,
+) -> usize {
     let spans = branches
         .iter()
         .map(|branch| plan_span(&branch.plan))
         .collect::<Vec<_>>();
     let total = spans.iter().sum::<usize>();
-    let Some(merge) = merge else {
+    let continuation = merge
+        .map(|merge| merge.next.as_ref())
+        .or_else(|| convergence.map(|convergence| convergence.next.as_ref()));
+    let Some(continuation) = continuation else {
         return total;
     };
 
-    // The merge and everything after it sit on the first continuing branch's
-    // skewer, so the continuation reaches beyond any branch that leads it.
-    total.max(merge_offset(branches, &spans) + plan_span(&merge.next))
+    // The shared continuation sits on the first continuing branch's skewer, so
+    // it reaches beyond any branch that leads to it.
+    total.max(continuation_offset(branches, &spans) + plan_span(continuation))
 }
 
 /// Skewers between a branching block and the first of its branches that reaches
-/// the merge, which is where the merge is drawn.
-fn merge_offset(branches: &[Branch], spans: &[usize]) -> usize {
+/// the shared continuation, which is where that continuation is drawn.
+fn continuation_offset(branches: &[Branch], spans: &[usize]) -> usize {
     let continuing = branches
         .iter()
         .position(|branch| !branch.early_return)
@@ -1016,6 +1075,175 @@ mod tests {
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(4)).x);
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(7)).x);
         assert!(node(&scene, Block(3)).x < node(&scene, Block(6)).x);
+    }
+
+    #[test]
+    fn implicit_convergence_places_the_shared_consumer_once() {
+        use NodeId::{Block, Return, Start};
+
+        let source = r#"
+            #[contour]
+            fn choose(condition: bool) -> u8 {
+                #[question("Choose a path")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build yes")]
+                |yes| -> selected { 1 };
+
+                #[action("Build no")]
+                |no| -> selected { 2 };
+
+                #[action("Use selected")]
+                |selected| -> result { selected };
+            }
+        "#;
+
+        let scene = scene(source, "choose");
+        assert_eq!(
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to))
+                .collect::<Vec<_>>(),
+            [
+                (Start, Block(0)),
+                (Block(0), Block(1)),
+                (Block(0), Block(2)),
+                (Block(1), Block(3)),
+                (Block(2), Block(3)),
+                (Block(3), Return),
+            ]
+        );
+        assert_eq!(
+            scene
+                .nodes
+                .iter()
+                .filter(|node| node.id == Block(3))
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn nested_convergence_routes_every_branch_into_one_consumer() {
+        use NodeId::{Block, Return, Start};
+
+        let source = r#"
+            #[contour]
+            fn choose(outer: bool, inner: bool) -> u8 {
+                #[question("Take the nested path?")]
+                |outer| -> (nested, direct) { outer };
+
+                #[question("Choose the nested value")]
+                |nested, inner| -> (inner_yes, inner_no) { inner };
+
+                #[action("Build nested yes")]
+                |inner_yes| -> selected { 1 };
+
+                #[action("Build nested no")]
+                |inner_no| -> selected { 2 };
+
+                #[action("Build direct")]
+                |direct| -> selected { 3 };
+
+                #[action("Use selected")]
+                |selected| -> result { selected };
+            }
+        "#;
+
+        let scene = scene(source, "choose");
+        assert_eq!(
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to))
+                .collect::<Vec<_>>(),
+            [
+                (Start, Block(0)),
+                (Block(0), Block(1)),
+                (Block(1), Block(2)),
+                (Block(1), Block(3)),
+                (Block(0), Block(4)),
+                (Block(2), Block(5)),
+                (Block(3), Block(5)),
+                (Block(4), Block(5)),
+                (Block(5), Return),
+            ]
+        );
+        assert_eq!(
+            scene
+                .nodes
+                .iter()
+                .filter(|node| node.id == Block(5))
+                .count(),
+            1
+        );
+        // The shared consumer takes the first continuing branch's skewer.
+        assert_eq!(node(&scene, Block(2)).x, node(&scene, Block(5)).x);
+        for edge in &scene.edges {
+            for segment in edge.points.windows(2) {
+                for node in &scene.nodes {
+                    assert!(
+                        !enters_node(segment, node),
+                        "{:?} crosses {:?}",
+                        edge.from,
+                        node.id
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_nested_branch_point_without_its_own_join_hands_its_tails_outward() {
+        use NodeId::{Block, Return, Start};
+
+        let source = r#"
+            #[contour]
+            fn choose(outer: bool, inner: bool) -> u8 {
+                #[question("Take the nested path?")]
+                |outer| -> (nested, direct) { outer };
+
+                #[question("Choose the nested depth")]
+                |nested, inner| -> (short, long) { inner };
+
+                #[action("Build the short value")]
+                |short| -> selected { 1 };
+
+                #[action("Prepare the long value")]
+                |long| -> prepared { 2 };
+
+                #[action("Build the direct value")]
+                |direct| -> selected { 3 };
+
+                #[action("Build the long value")]
+                |prepared| -> selected { 4 };
+
+                #[action("Use selected")]
+                |selected| -> result { selected };
+            }
+        "#;
+
+        let scene = scene(source, "choose");
+        assert_eq!(
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to))
+                .collect::<Vec<_>>(),
+            [
+                (Start, Block(0)),
+                (Block(0), Block(1)),
+                (Block(1), Block(2)),
+                (Block(1), Block(3)),
+                (Block(3), Block(5)),
+                (Block(0), Block(4)),
+                (Block(2), Block(6)),
+                (Block(5), Block(6)),
+                (Block(4), Block(6)),
+                (Block(6), Return),
+            ]
+        );
     }
 
     #[test]

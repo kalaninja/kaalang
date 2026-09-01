@@ -1,23 +1,26 @@
-//! Analyzes an action and its single continuation.
+//! Opens an action and its single continuation frontier.
 
 use syn::Result;
 
-use super::{Analysis, PathState, Walked};
-use crate::model::Plan;
+use super::{
+    Analysis, PathState, Producer,
+    frontier::{WorkKind, WorkPlan},
+};
 
-/// Adds an action's outputs and analyzes its continuation.
-pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) -> Result<Walked> {
+pub(super) fn enter(
+    analysis: &mut Analysis<'_>,
+    index: usize,
+    state: PathState,
+) -> Result<WorkPlan> {
     let mut next = analysis.enter(index, state);
-    for output in &analysis.flow.blocks[index].outputs {
-        next.produce(output)?;
+    for (output, ident) in analysis.flow.blocks[index].outputs.iter().enumerate() {
+        next.produce(ident, Producer::Block { index, output })?;
     }
-    let continuation = analysis.walk(next)?;
-
-    Ok(Walked {
-        plan: Plan::Action {
+    Ok(WorkPlan {
+        kind: WorkKind::Action {
             index,
-            next: Box::new(continuation.plan),
+            next: Box::new(analysis.open(next)),
         },
-        exit: continuation.exit,
+        exit: None,
     })
 }

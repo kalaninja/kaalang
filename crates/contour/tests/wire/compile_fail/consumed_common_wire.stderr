@@ -1,0 +1,5 @@
+error: this Contour path does not terminate in an action
+ --> tests/wire/compile_fail/consumed_common_wire.rs:8:5
+  |
+8 |     #[action("Consume the common wire.")]
+  |     ^

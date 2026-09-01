@@ -10,6 +10,7 @@ use contour_model::{Branch, Flow, Input, Plan};
 
 mod action;
 mod choice;
+mod convergence;
 mod merge;
 mod question;
 
@@ -44,6 +45,12 @@ impl Bindings {
             .get(name)
             .expect("validated wires have lowering bindings")
     }
+
+    pub(crate) fn wire_at(&self, name: &Ident) -> Ident {
+        let mut wire = self.wire(name).clone();
+        wire.set_span(Span::mixed_site().located_at(name.span()));
+        wire
+    }
 }
 
 /// Emits the Rust that runs one verified plan. The plan already proves every
@@ -55,12 +62,28 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
             index,
             branches,
             merge,
-        } => question::emit(flow, bindings, *index, branches, merge.as_ref()),
+            convergence,
+        } => question::emit(
+            flow,
+            bindings,
+            *index,
+            branches,
+            merge.as_ref(),
+            convergence.as_ref(),
+        ),
         Plan::Choice {
             index,
             branches,
             merge,
-        } => choice::emit(flow, bindings, *index, branches, merge.as_ref()),
+            convergence,
+        } => choice::emit(
+            flow,
+            bindings,
+            *index,
+            branches,
+            merge.as_ref(),
+            convergence.as_ref(),
+        ),
         Plan::Terminal { output } => {
             let wire = bindings.wire(output);
             quote_spanned!(output.span()=> #wire)
@@ -69,11 +92,12 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
             let wire = bindings.wire(input);
             quote_spanned!(input.span()=> #wire)
         }
+        Plan::Yield { wires } => convergence::value(bindings, wires),
     }
 }
 
-/// A branch that ends the flow returns outright when its siblings continue past
-/// a merge, because the enclosing expression then carries the merged value.
+/// A branch that ends the flow returns outright when its siblings enter a shared
+/// continuation, because the enclosing expression then carries its value.
 /// Branch plans must be lowered through this function, never through `flow`,
 /// which would drop that early return.
 fn continuation(flow: &Flow, branch: &Branch, bindings: &Bindings) -> TokenStream2 {

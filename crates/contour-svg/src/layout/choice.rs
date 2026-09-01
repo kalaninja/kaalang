@@ -1,10 +1,11 @@
 //! Places a choice, its derived case row, and its ordered branches.
 
-use contour_model::{Branch, Merge};
+use contour_model::Branch;
 
 use super::{
-    Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, LABEL_FONT, LINE_HEIGHT,
-    NodeId, NodeKind, Origin, Placed, Point, VERTICAL_GAP, compact_points, plan_span, wrap_text,
+    Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, Join, LABEL_FONT,
+    LINE_HEIGHT, NodeId, NodeKind, Origin, Placed, Point, VERTICAL_GAP, compact_points, plan_span,
+    wrap_text,
 };
 
 pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
@@ -18,7 +19,7 @@ impl Builder<'_> {
         &mut self,
         index: usize,
         branches: &[Branch],
-        merge: Option<&Merge>,
+        join: Join<'_>,
         skewer: usize,
         top: i32,
         incoming: Incoming,
@@ -80,7 +81,7 @@ impl Builder<'_> {
             ));
         }
 
-        self.finish_branches(placed, merge, skewer)
+        self.finish_branches(placed, join, skewer)
     }
 
     fn align_case_row(&mut self, cases: &[(NodeId, usize)]) {

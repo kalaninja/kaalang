@@ -1,56 +1,54 @@
-//! Analyzes the ordered branches of a choice.
+//! Opens ordered choice frontiers and validates their skewer topology.
 
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use super::{Analysis, PathState, Walked};
-use crate::model::Plan;
+use super::{
+    Analysis, PathState, Producer,
+    frontier::{WorkJoin, WorkKind, WorkPlan},
+};
 
-/// Walks every case branch and records their shared continuation.
-pub(super) fn walk(analysis: &mut Analysis<'_>, index: usize, state: PathState) -> Result<Walked> {
+pub(super) fn enter(
+    analysis: &mut Analysis<'_>,
+    index: usize,
+    state: PathState,
+) -> Result<WorkPlan> {
     let next = analysis.enter(index, state);
     let outputs = &analysis.flow.blocks[index].outputs;
-    let mut walked = Vec::with_capacity(outputs.len());
-    for output in outputs {
-        let mut branch_state = next.clone();
-        branch_state.produce(output)?;
-        walked.push(analysis.walk(branch_state)?);
+    let mut branches = Vec::with_capacity(outputs.len());
+    for (output, ident) in outputs.iter().enumerate() {
+        let mut branch = next.clone();
+        branch.produce(ident, Producer::Block { index, output })?;
+        branches.push(analysis.open(branch));
     }
-    adjacent_branches(&walked, outputs)?;
-    let (branches, merge, exit) = analysis.branches(walked)?;
-
-    Ok(Walked {
-        plan: Plan::Choice {
+    let id = analysis.branch_id();
+    Ok(WorkPlan {
+        kind: WorkKind::Choice {
+            id,
             index,
             branches,
-            merge,
+            join: WorkJoin::None,
         },
-        exit,
+        exit: None,
     })
 }
 
-/// Rejects a case that ends the flow between two cases that continue, which no
-/// skewer order can draw: the later continuing branch reaches its merge by
-/// crossing the ending branch. A question cannot reach this, because a merge it
-/// feeds is reached by both of its branches or by neither.
-fn adjacent_branches(walked: &[Walked], outputs: &[Ident]) -> Result<()> {
-    let continuing = |path: &Walked| !path.exit.terminates();
-    let Some(first) = walked.iter().position(continuing) else {
+/// Rejects a terminal case between two cases that enter a shared continuation,
+/// because no skewer order can draw that crossing topology.
+pub(super) fn adjacent_branches(continuing: &[bool], outputs: &[Ident]) -> Result<()> {
+    let Some(first) = continuing.iter().position(|branch| *branch) else {
         return Ok(());
     };
-    let last = walked
+    let last = continuing
         .iter()
-        .rposition(continuing)
+        .rposition(|branch| *branch)
         .expect("a continuing branch was just found");
-    let Some(offset) = walked[first..last]
-        .iter()
-        .position(|path| !continuing(path))
-    else {
+    let Some(offset) = continuing[first..last].iter().position(|branch| !*branch) else {
         return Ok(());
     };
 
     Err(Error::new(
         outputs[first + offset].span(),
-        "a Contour case that ends the flow must not separate cases that continue to a merge",
+        "a Contour case that ends the flow must not separate cases that enter a shared continuation",
     ))
 }
