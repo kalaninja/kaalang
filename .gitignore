@@ -7,6 +7,9 @@ target/
 /.vscode/
 /.zed/
 
+# Local planning notes
+/plans/
+
 # Operating systems
 .DS_Store
 Thumbs.db
