@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1424" height="812" viewBox="0 0 1424 812" role="img" aria-labelledby="contour-title" aria-describedby="contour-description">
   <title id="contour-title">Contour diagram for route</title>
-  <desc id="contour-description">Nodes: Start: route(input); Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Finish at the first exit.; Case: Finish at the second exit.; Action: Build the left value.; Action: Build the right value.; Action: Finish immediately at the first exit.; Action: Finish immediately at the second exit.; Action: Finish after convergence.; return. Connections: Start: route(input) to Choice: Which path does the input take?; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Finish at the first exit.; Choice: Which path does the input take? to Case: Finish at the second exit.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Finish at the first exit. to Action: Finish immediately at the first exit. via first_exit; Case: Finish at the second exit. to Action: Finish immediately at the second exit. via second_exit; Action: Build the left value. to Action: Finish after convergence. via selected; Action: Build the right value. to Action: Finish after convergence. via selected; Action: Finish immediately at the first exit. to return via result; Action: Finish immediately at the second exit. to return via result; Action: Finish after convergence. to return via result.</desc>
+  <desc id="contour-description">Nodes: Start: route(input); Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Finish at the first exit.; Case: Finish at the second exit.; Action: Build the left value.; Action: Build the right value.; Action: Finish immediately at the first exit.; Action: Finish immediately at the second exit.; Action: Finish after convergence.; End. Connections: Start: route(input) to Choice: Which path does the input take?; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Finish at the first exit.; Choice: Which path does the input take? to Case: Finish at the second exit.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Finish at the first exit. to Action: Finish immediately at the first exit. via first_exit; Case: Finish at the second exit. to Action: Finish immediately at the second exit. via second_exit; Action: Build the left value. to Action: Finish after convergence. via selected; Action: Build the right value. to Action: Finish after convergence. via selected; Action: Finish immediately at the first exit. to End via result; Action: Finish immediately at the second exit. to End via result; Action: Finish after convergence. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -8,7 +8,7 @@
       .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
-      .start .label, .question .label, .select .label, .case .label, .return .label { font-weight: 600; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
@@ -93,9 +93,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish after convergence.</tspan></text>
     </g>
-    <g class="node return" transform="translate(172 751)">
+    <g class="node end" transform="translate(172 751)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">return</text>
+      <text class="label" y="5">End</text>
     </g>
   </g>
 </svg>

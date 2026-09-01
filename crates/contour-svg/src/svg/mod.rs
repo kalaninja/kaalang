@@ -23,6 +23,7 @@ macro_rules! emit_inline {
 
 mod action;
 mod choice;
+mod end;
 mod question;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
@@ -54,7 +55,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .edge-label {{ fill: currentColor; font-size: {EDGE_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {EDGE_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
-      .start .label, .question .label, .select .label, .case .label, .return .label {{ font-weight: 600; }}
+      .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
       .action .label {{ font-weight: 400; text-anchor: start; }}
     </style>
   </defs>
@@ -152,7 +153,7 @@ fn node_name(node: &Node) -> String {
         NodeKind::Question => question::name(node),
         NodeKind::Choice => choice::select_name(node),
         NodeKind::Case => choice::case_name(node),
-        NodeKind::Return => "return".to_owned(),
+        NodeKind::End => end::name(),
     }
 }
 
@@ -176,7 +177,7 @@ fn write_node(svg: &mut String, node: &Node) {
         NodeKind::Question => question::write(svg, node),
         NodeKind::Choice => choice::write_select(svg, node),
         NodeKind::Case => choice::write_case(svg, node),
-        NodeKind::Return => write_return(svg, node),
+        NodeKind::End => end::write(svg, node),
     }
     svg.push_str("    </g>\n");
 }
@@ -184,11 +185,6 @@ fn write_node(svg: &mut String, node: &Node) {
 fn write_start(svg: &mut String, node: &Node) {
     write_boundary_shape(svg, node);
     write_label(svg, node, 0, 0);
-}
-
-fn write_return(svg: &mut String, node: &Node) {
-    write_boundary_shape(svg, node);
-    svg.push_str("      <text class=\"label\" y=\"5\">return</text>\n");
 }
 
 fn write_boundary_shape(svg: &mut String, node: &Node) {
@@ -234,7 +230,7 @@ fn node_class(kind: NodeKind) -> &'static str {
         NodeKind::Question => "question",
         NodeKind::Choice => "choice select",
         NodeKind::Case => "case",
-        NodeKind::Return => "return",
+        NodeKind::End => "end",
     }
 }
 

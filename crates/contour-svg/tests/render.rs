@@ -28,6 +28,28 @@ fn output_is_deterministic() {
 }
 
 #[test]
+fn renders_the_authored_end_with_accessible_terminology() {
+    let source = r#"
+        #[contour]
+        fn finish(input: u8) -> u8 {
+            #[action("Build the result")]
+            |input| -> result { input };
+
+            #[end]
+            |result| {};
+        }
+    "#;
+
+    let svg = render_source(source, "finish").unwrap();
+
+    assert_eq!(svg.matches("class=\"node end\"").count(), 1);
+    assert!(svg.contains("; End. Connections:"));
+    assert!(svg.contains("Action: Build the result to End via result"));
+    assert!(svg.contains(">End</text>"));
+    assert!(!svg.to_ascii_lowercase().contains("return"));
+}
+
+#[test]
 fn escapes_authored_text() {
     let source = r#"
         #[contour]

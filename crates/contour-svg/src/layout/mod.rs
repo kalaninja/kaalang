@@ -6,6 +6,7 @@ use unicode_segmentation::UnicodeSegmentation;
 mod action;
 mod choice;
 mod convergence;
+mod end;
 mod question;
 
 const MARGIN: i32 = 32;
@@ -13,9 +14,9 @@ const SKEWER_WIDTH: i32 = 360;
 const VERTICAL_GAP: i32 = 72;
 const TERMINAL_STUB: i32 = 24;
 /// Height of the collector every terminal branch enters, measured up from the
-/// top edge of the return node.
+/// top edge of End.
 const COLLECTOR_GAP: i32 = 32;
-const RETURN_LANE_GAP: i32 = 52;
+const END_LANE_GAP: i32 = 52;
 const NODE_WIDTH: i32 = 280;
 const CASE_WIDTH: i32 = 240;
 pub(crate) const CASE_TIP_HEIGHT: i32 = 18;
@@ -54,7 +55,6 @@ pub(crate) enum NodeId {
     Start,
     Block(usize),
     Case { choice: usize, branch: usize },
-    Return,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -64,7 +64,7 @@ pub(crate) enum NodeKind {
     Question,
     Choice,
     Case,
-    Return,
+    End,
 }
 
 pub(crate) struct Node {
@@ -125,7 +125,7 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
         MARGIN,
     );
     let first_top = builder.node_bottom(start) + VERTICAL_GAP;
-    let placed = builder.place(
+    builder.place(
         &graph.plan,
         0,
         first_top,
@@ -135,14 +135,6 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
             skewer: 0,
         },
     );
-    let end = builder.add_node(
-        NodeId::Return,
-        NodeKind::Return,
-        String::new(),
-        0,
-        placed.bottom + VERTICAL_GAP,
-    );
-    builder.connect_terminals(end);
 
     let case_count = graph
         .flow
@@ -170,7 +162,7 @@ struct Builder<'a> {
 impl Builder<'_> {
     fn place(&mut self, plan: &Plan, skewer: usize, top: i32, incoming: Incoming) -> Placed {
         match plan {
-            Plan::End { body, .. } => self.place(body, skewer, top, incoming),
+            Plan::End { index, body } => self.place_end(*index, body, skewer, top, incoming),
             Plan::Action { index, next } => self.place_action(*index, next, skewer, top, incoming),
             Plan::Question {
                 index,
@@ -197,17 +189,22 @@ impl Builder<'_> {
                 incoming,
             ),
             Plan::EndArrival { inputs } => {
-                self.terminals.push(Tail {
-                    origin: incoming.origin,
-                    label: (!inputs.is_empty()).then(|| {
-                        inputs
-                            .iter()
-                            .map(ToString::to_string)
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    }),
-                    skewer: incoming.skewer,
-                });
+                let zero_wire_flow = inputs.is_empty()
+                    && incoming.origin.node == NodeId::Start
+                    && self.graph.flow.sources.is_empty();
+                if !zero_wire_flow {
+                    self.terminals.push(Tail {
+                        origin: incoming.origin,
+                        label: (!inputs.is_empty()).then(|| {
+                            inputs
+                                .iter()
+                                .map(ToString::to_string)
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        }),
+                        skewer: incoming.skewer,
+                    });
+                }
                 Placed {
                     bottom: self.anchor(incoming.origin).y,
                     arrivals: Vec::new(),
@@ -257,7 +254,7 @@ impl Builder<'_> {
                 BlockKind::Action => NodeKind::Action,
                 BlockKind::Question => NodeKind::Question,
                 BlockKind::Choice => NodeKind::Choice,
-                BlockKind::End => unreachable!("End remains the transitional Return node"),
+                BlockKind::End => NodeKind::End,
             },
             block.description.clone().unwrap_or_default(),
             skewer,
@@ -362,15 +359,15 @@ impl Builder<'_> {
         !blocked_by_node && !blocked_by_edge
     }
 
-    /// Draws every terminal into one horizontal collector above the return
-    /// node, mirroring the distributor that fans a Select out to its cases.
+    /// Draws every terminal into one horizontal collector above End, mirroring
+    /// the distributor that fans a Select out to its cases.
     /// Each branch drops vertically onto the collector and the collector makes
     /// the single descent into the node, so the runs terminals share are one
     /// path rather than connections hidden behind each other.
     fn connect_terminals(&mut self, end: NodeId) {
         let end_top = self.top_anchor(end);
         let collector_y = end_top.y - COLLECTOR_GAP;
-        let return_lane = self.return_lane_x();
+        let end_lane = self.end_lane_x();
         let terminals = std::mem::take(&mut self.terminals);
 
         // The column each terminal drops down: its own when nothing blocks it,
@@ -383,7 +380,7 @@ impl Builder<'_> {
                 if self.terminal_is_clear(terminal, end, collector_y) {
                     return self.anchor(terminal.origin).x;
                 }
-                let lane = return_lane + detour * RETURN_LANE_GAP;
+                let lane = end_lane + detour * END_LANE_GAP;
                 detour += 1;
                 lane
             })
@@ -411,7 +408,7 @@ impl Builder<'_> {
             } else {
                 // Detours leave on stepped rows, so an inner one crosses under
                 // the next instead of running along it out to the lanes.
-                let lane = (lane_x - return_lane) / RETURN_LANE_GAP;
+                let lane = (lane_x - end_lane) / END_LANE_GAP;
                 let stub_y = start.y + TERMINAL_STUB * (detour - lane);
                 compact_points([
                     start,
@@ -434,16 +431,11 @@ impl Builder<'_> {
                     end_top,
                 ])
             };
-            self.connect_points(
-                terminal.origin.node,
-                end,
-                terminal.label,
-                points,
-                Some(Point {
-                    x: start.x + 42,
-                    y: start.y + 18,
-                }),
-            );
+            let label_at = terminal.label.as_ref().map(|_| Point {
+                x: start.x + 42,
+                y: start.y + 18,
+            });
+            self.connect_points(terminal.origin.node, end, terminal.label, points, label_at);
         }
     }
 
@@ -514,8 +506,8 @@ impl Builder<'_> {
         &self.scene.nodes[self.indexes[&id]]
     }
 
-    fn return_lane_x(&self) -> i32 {
-        skewer_x(self.skewer_count - 1) + NODE_WIDTH / 2 + RETURN_LANE_GAP
+    fn end_lane_x(&self) -> i32 {
+        skewer_x(self.skewer_count - 1) + NODE_WIDTH / 2 + END_LANE_GAP
     }
 
     fn fit_scene(&mut self) {
@@ -690,7 +682,7 @@ fn vertical_route_hits(segment: &[Point], x: i32, top: i32, bottom: i32) -> bool
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
-        NodeKind::Return => (180, 58, Vec::new()),
+        NodeKind::End => end::dimensions(),
         NodeKind::Start => {
             let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
             let height = 58.max(30 + lines.len() as i32 * LINE_HEIGHT);
@@ -901,6 +893,54 @@ mod tests {
         assert_eq!(scene.height, content_bottom + MARGIN);
     }
 
+    #[test]
+    fn zero_wire_flow_draws_start_and_end_without_a_connection() {
+        let scene = scene(
+            r"
+                #[contour]
+                fn nothing() {
+                    #[end]
+                    || {};
+                }
+            ",
+            "nothing",
+        );
+
+        assert_eq!(
+            scene.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
+            [NodeId::Start, NodeId::Block(0)]
+        );
+        assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
+        assert!(scene.edges.is_empty());
+    }
+
+    /// A source with no result wires still connects Start to End: the
+    /// connection disappears only when both ends carry nothing. It carries no
+    /// label, which is the shape `connect_points` asserts on.
+    #[test]
+    fn a_sourced_flow_without_results_draws_an_unlabeled_connection() {
+        let scene = scene(
+            r"
+                #[contour]
+                fn discard(_value: u8) {
+                    #[end]
+                    || {};
+                }
+            ",
+            "discard",
+        );
+
+        assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
+        assert_eq!(
+            scene
+                .edges
+                .iter()
+                .map(|edge| (edge.from, edge.to, edge.label.as_deref()))
+                .collect::<Vec<_>>(),
+            [(NodeId::Start, NodeId::Block(0), None)]
+        );
+    }
+
     /// Node geometry dominates the canvas at the current spacing constants, so
     /// this does not reproduce a past clipping bug. It pins the invariant that a
     /// wrapped connection label stays drawable, which the spacing constants
@@ -990,7 +1030,7 @@ mod tests {
 
     #[test]
     fn nested_branches_converge_at_their_own_consumers() {
-        use NodeId::{Block, Return, Start};
+        use NodeId::{Block, Start};
 
         let source = r#"
             #[contour]
@@ -1038,7 +1078,7 @@ mod tests {
                 (Block(0), Block(5)),
                 (Block(4), Block(6)),
                 (Block(5), Block(6)),
-                (Block(6), Return),
+                (Block(6), Block(7)),
             ]
         );
         assert_eq!(node(&scene, Block(0)).x, node(&scene, Block(1)).x);
@@ -1049,7 +1089,7 @@ mod tests {
 
     #[test]
     fn implicit_convergence_places_the_shared_consumer_once() {
-        use NodeId::{Block, Return, Start};
+        use NodeId::{Block, Start};
 
         let source = r#"
             #[contour]
@@ -1084,7 +1124,7 @@ mod tests {
                 (Block(0), Block(2)),
                 (Block(1), Block(3)),
                 (Block(2), Block(3)),
-                (Block(3), Return),
+                (Block(3), Block(4)),
             ]
         );
         assert_eq!(
@@ -1095,11 +1135,20 @@ mod tests {
                 .count(),
             1
         );
+        assert_eq!(
+            scene
+                .edges
+                .iter()
+                .filter(|edge| edge.to == Block(3))
+                .map(|edge| edge.label.as_deref())
+                .collect::<Vec<_>>(),
+            [Some("selected"), Some("selected")]
+        );
     }
 
     #[test]
     fn nested_convergence_routes_every_branch_into_one_consumer() {
-        use NodeId::{Block, Return, Start};
+        use NodeId::{Block, Start};
 
         let source = r#"
             #[contour]
@@ -1143,7 +1192,7 @@ mod tests {
                 (Block(2), Block(5)),
                 (Block(3), Block(5)),
                 (Block(4), Block(5)),
-                (Block(5), Return),
+                (Block(5), Block(6)),
             ]
         );
         assert_eq!(
@@ -1172,7 +1221,7 @@ mod tests {
 
     #[test]
     fn a_nested_branch_point_without_its_own_join_hands_its_tails_outward() {
-        use NodeId::{Block, Return, Start};
+        use NodeId::{Block, Start};
 
         let source = r#"
             #[contour]
@@ -1220,7 +1269,7 @@ mod tests {
                 (Block(2), Block(6)),
                 (Block(5), Block(6)),
                 (Block(4), Block(6)),
-                (Block(6), Return),
+                (Block(6), Block(7)),
             ]
         );
     }
@@ -1302,7 +1351,7 @@ mod tests {
 
     #[test]
     fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
-        use NodeId::{Block, Case, Return, Start};
+        use NodeId::{Block, Case, Start};
 
         let source = r#"
             #[contour]
@@ -1385,26 +1434,26 @@ mod tests {
                 ),
                 (Block(1), Block(4)),
                 (Block(2), Block(4)),
-                (Block(3), Return),
-                (Block(4), Return),
+                (Block(3), Block(5)),
+                (Block(4), Block(5)),
             ]
         );
         let early_terminal = scene
             .edges
             .iter()
-            .find(|edge| edge.from == Block(3) && edge.to == Return)
-            .expect("the early terminal reaches Return");
+            .find(|edge| edge.from == Block(3) && edge.to == Block(5))
+            .expect("the early terminal reaches End");
         assert_eq!(early_terminal.points.len(), 4);
         assert_eq!(early_terminal.points[0].x, early_terminal.points[1].x);
         assert_eq!(early_terminal.points[1].x, node(&scene, Block(3)).x);
-        assert_eq!(early_terminal.points[2].x, node(&scene, Return).x);
+        assert_eq!(early_terminal.points[2].x, node(&scene, Block(5)).x);
     }
 
-    /// Terminal branches meet in one collector above the return node: each
+    /// Terminal branches meet in one collector above End: each
     /// drops onto its shared row, and the collector makes the single descent
     /// into the node.
     #[test]
-    fn terminal_branches_share_one_collector_into_the_return_node() {
+    fn terminal_branches_share_one_collector_into_end() {
         let source = r#"
             #[contour]
             fn partial(input: u8) -> u8 {
@@ -1435,15 +1484,15 @@ mod tests {
         "#;
 
         let scene = scene(source, "partial");
-        let return_top = node(&scene, NodeId::Return);
-        let return_top = Point {
-            x: return_top.x,
-            y: return_top.y - return_top.height / 2,
+        let end_top = node(&scene, NodeId::Block(5));
+        let end_top = Point {
+            x: end_top.x,
+            y: end_top.y - end_top.height / 2,
         };
         let terminals = scene
             .edges
             .iter()
-            .filter(|edge| edge.to == NodeId::Return)
+            .filter(|edge| edge.to == NodeId::Block(5))
             .collect::<Vec<_>>();
 
         assert_eq!(terminals.len(), 4);
@@ -1458,16 +1507,16 @@ mod tests {
         let straight = terminals
             .iter()
             .find(|edge| edge.points.len() == 2)
-            .expect("the branch above the return node drops straight in");
+            .expect("the branch above End drops straight in");
 
         assert_eq!(turning.len(), 3);
         let collector_y = turning[0].points[turning[0].points.len() - 2].y;
         let descent = [
             Point {
-                x: return_top.x,
+                x: end_top.x,
                 y: collector_y,
             },
-            return_top,
+            end_top,
         ];
         for edge in &turning {
             let corner = edge.points[edge.points.len() - 2];
@@ -1483,8 +1532,8 @@ mod tests {
                 edge.from
             );
         }
-        assert_eq!(straight.points[1], return_top);
-        assert_eq!(straight.points[0].x, return_top.x);
+        assert_eq!(straight.points[1], end_top);
+        assert_eq!(straight.points[0].x, end_top.x);
         assert!(straight.points[0].y <= collector_y);
 
         for edge in terminals {
@@ -1545,7 +1594,7 @@ mod tests {
     /// covers is routed outside the continuing branches instead.
     #[test]
     fn a_terminal_under_a_wide_continuation_uses_the_outer_lane() {
-        use NodeId::{Block, Return};
+        use NodeId::Block;
 
         let source = r#"
             #[contour]
@@ -1599,8 +1648,8 @@ mod tests {
         let early_terminal = scene
             .edges
             .iter()
-            .find(|edge| edge.from == Block(3) && edge.to == Return)
-            .expect("the early terminal reaches Return");
+            .find(|edge| edge.from == Block(3) && edge.to == Block(8))
+            .expect("the early terminal reaches End");
 
         assert!(
             early_terminal
@@ -1653,7 +1702,7 @@ mod tests {
     /// `segments_cross` compares a vertical run against a horizontal one, so
     /// collinear overlap is out of scope. Two overlaps are deliberate: the
     /// connections from a Select share the distributor row, and the connections
-    /// into the return node share the collector row and its descent.
+    /// into End share the collector row and its descent.
     #[test]
     fn fixture_connections_are_orthogonal_and_free_of_perpendicular_crossings() {
         let scene = scene(include_str!("../../tests/fixtures/all_blocks.rs"), "route");
