@@ -34,6 +34,9 @@ fn escapes_authored_text() {
         fn escaping(input: u8) -> u8 {
             #[action("<tag> & value")]
             |input| -> output { input };
+
+            #[end]
+            |output| {};
         }
     "#;
 
@@ -100,10 +103,13 @@ fn preserves_whitespace_in_block_and_case_labels() {
             };
 
             #[action("first")]
-            |first| -> first_result { 1 };
+            |first| -> result { 1 };
 
             #[action("second")]
-            |second| -> second_result { 2 };
+            |second| -> result { 2 };
+
+            #[end]
+            |result| {};
         }
     "#;
 
@@ -123,6 +129,9 @@ fn preserves_carriage_returns_through_xml_parsing() {
         fn carriage_return(input: u8) -> u8 {
             #[action("left\rright")]
             |input| -> result { input };
+
+            #[end]
+            |result| {};
         }
     "#;
 

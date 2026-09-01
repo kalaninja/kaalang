@@ -6,10 +6,13 @@ fn run_question(condition: bool) -> &'static str {
     |condition| -> (yes, no) { condition };
 
     #[action("Return the yes result.")]
-    |yes| -> yes_result { "yes" };
+    |yes| -> result { "yes" };
 
     #[action("Return the no result.")]
-    |no| -> no_result { "no" };
+    |no| -> result { "no" };
+
+    #[end]
+    |result| {};
 }
 
 #[test]

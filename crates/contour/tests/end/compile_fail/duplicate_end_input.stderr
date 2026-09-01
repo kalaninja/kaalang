@@ -1,0 +1,5 @@
+error: duplicate Contour block input
+ --> tests/end/compile_fail/duplicate_end_input.rs:6:13
+  |
+6 |     |input, input| {};
+  |             ^^^^^

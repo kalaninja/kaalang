@@ -1,5 +1,5 @@
-error: this Contour path does not terminate in an action
-  --> tests/wire/compile_fail/missing_path_producer.rs:11:5
+error: this Contour path cannot supply every End input
+  --> tests/wire/compile_fail/missing_path_producer.rs:18:6
    |
-11 |     #[action("Build only one required value.")]
-   |     ^
+18 |     |result| {};
+   |      ^^^^^^

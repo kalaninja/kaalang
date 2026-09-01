@@ -23,10 +23,13 @@ fn invalid(value: u8) -> u8 {
     |two, three| -> high {};
 
     #[action("Return the low branch.")]
-    |low| -> low_result { low };
+    |low| -> result { low };
 
     #[action("Return the high branch.")]
-    |high| -> high_result { high };
+    |high| -> result { high };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

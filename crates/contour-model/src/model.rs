@@ -24,12 +24,13 @@ pub enum BlockKind {
     Question,
     Choice,
     Merge,
+    End,
 }
 
 /// One authored Contour block.
 pub struct Block {
     pub kind: BlockKind,
-    /// The exact authored description, absent only for structural merges.
+    /// The exact authored description, absent for structural blocks.
     pub description: Option<String>,
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
@@ -37,7 +38,6 @@ pub struct Block {
     pub output_span: Span,
     pub inputs: Vec<Input>,
     pub body: Expr,
-    pub terminal: bool,
     pub span: Span,
 }
 
@@ -72,9 +72,14 @@ pub enum Plan {
         merge: Option<Merge>,
         convergence: Option<Convergence>,
     },
-    /// The path ends here and its value is this terminal action output.
-    Terminal {
-        output: Ident,
+    /// The one authored End block and the execution that feeds it.
+    End {
+        index: usize,
+        body: Box<Plan>,
+    },
+    /// One path yields its ordered values to End.
+    EndArrival {
+        inputs: Vec<Ident>,
     },
     /// The branch reaches a merge and hands over this input.
     Arrival {
@@ -92,8 +97,8 @@ pub enum Plan {
 /// One verified branch continuation.
 pub struct Branch {
     pub plan: Box<Plan>,
-    /// Set when siblings enter a shared continuation, which forces this
-    /// terminating branch to return rather than yield a value.
+    /// Set when siblings enter a shared continuation, which forces this path
+    /// to return its End value rather than yield it to the enclosing expression.
     pub early_return: bool,
 }
 

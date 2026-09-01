@@ -9,6 +9,7 @@ use crate::model::{Block, BlockKind, Flow, Plan};
 
 mod action;
 mod choice;
+mod end;
 mod frontier;
 mod merge;
 mod question;
@@ -18,6 +19,8 @@ use frontier::{Candidate, WorkJoin, WorkKind, WorkPlan};
 /// Walks every path through the flow exactly once, proving the invariants that
 /// need path state and recording what model consumers can rely on.
 pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
+    let end = flow.blocks.len() - 1;
+    debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
     let sources = flow
         .sources
         .iter()
@@ -33,6 +36,11 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
         })
         .collect();
     let produced = flow.sources.iter().cloned().collect();
+    let unconsumed = flow
+        .sources
+        .iter()
+        .map(|source| (source.clone(), source.clone()))
+        .collect();
     let mut analysis = Analysis {
         flow,
         visited: HashSet::new(),
@@ -42,8 +50,8 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
     let mut work = analysis.open(PathState {
         available: sources,
         produced,
+        unconsumed,
         executed: HashSet::new(),
-        last: None,
     });
     analysis.run(&mut work)?;
 
@@ -66,7 +74,10 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
         ));
     }
 
-    Ok(work.into_plan())
+    Ok(Plan::End {
+        index: end,
+        body: Box::new(work.into_plan()),
+    })
 }
 
 struct Analysis<'a> {
@@ -95,8 +106,8 @@ enum Producer {
 struct PathState {
     available: HashMap<Ident, AvailableWire>,
     produced: HashSet<Ident>,
+    unconsumed: HashMap<Ident, Ident>,
     executed: HashSet<usize>,
-    last: Option<usize>,
 }
 
 impl PathState {
@@ -115,13 +126,14 @@ impl PathState {
                 origin,
             },
         );
+        self.unconsumed.insert(output.clone(), output.clone());
         Ok(())
     }
 }
 
 #[derive(Clone)]
 enum Exit {
-    Terminal(PathState),
+    End(PathState),
     Merge {
         index: usize,
         input: Ident,
@@ -133,12 +145,12 @@ impl Exit {
     /// Returns the path state carried by either exit kind.
     fn state(&self) -> &PathState {
         match self {
-            Self::Terminal(state) | Self::Merge { state, .. } => state,
+            Self::End(state) | Self::Merge { state, .. } => state,
         }
     }
 
     fn terminates(&self) -> bool {
-        matches!(self, Self::Terminal(_))
+        matches!(self, Self::End(_))
     }
 }
 
@@ -201,6 +213,7 @@ impl Analysis<'_> {
                             regular_ready(block, state)
                         }
                         BlockKind::Merge => merge::ready(block, state),
+                        BlockKind::End => false,
                     }
             })
             .map(|(index, _)| index)
@@ -234,6 +247,7 @@ impl Analysis<'_> {
             BlockKind::Question => question::enter(self, index, state),
             BlockKind::Choice => choice::enter(self, index, state),
             BlockKind::Merge => self.arrive(index, state),
+            BlockKind::End => unreachable!("End is entered only after a path is exhausted"),
         }
     }
 
@@ -241,8 +255,8 @@ impl Analysis<'_> {
     fn enter(&mut self, index: usize, mut state: PathState) -> PathState {
         self.visited.insert(index);
         state.executed.insert(index);
-        state.last = Some(index);
         for input in &self.flow.blocks[index].inputs {
+            state.unconsumed.remove(&input.ident);
             if !input.borrowed {
                 state.available.remove(&input.ident);
             }
@@ -267,6 +281,7 @@ impl Analysis<'_> {
 
         let input = available[0].ident.clone();
         state.available.remove(&input);
+        state.unconsumed.remove(&input);
         Ok(WorkPlan {
             kind: WorkKind::Arrival {
                 input: input.clone(),
@@ -280,31 +295,15 @@ impl Analysis<'_> {
         })
     }
 
-    fn finish(&self, state: PathState) -> Result<WorkPlan> {
-        let last = state
-            .last
-            .expect("the first block is always ready, so a finished path executed one");
-        let block = &self.flow.blocks[last];
-        if !block.terminal {
-            return Err(Error::new(
-                block.span,
-                "this Contour path does not terminate in an action",
-            ));
-        }
-
-        Ok(WorkPlan {
-            kind: WorkKind::Terminal {
-                output: block.outputs[0].clone(),
-            },
-            exit: Some(Exit::Terminal(state)),
-        })
+    fn finish(&mut self, state: PathState) -> Result<WorkPlan> {
+        end::arrive(self, self.flow.blocks.len() - 1, state)
     }
 
     /// Propagates completed exits and opens legacy merge continuations.
     fn settle(&mut self, plan: &mut WorkPlan) -> Result<()> {
         let exit = match &mut plan.kind {
             WorkKind::Open { .. }
-            | WorkKind::Terminal { .. }
+            | WorkKind::EndArrival { .. }
             | WorkKind::Arrival { .. }
             | WorkKind::Yield { .. } => None,
             WorkKind::Action { next, .. } => {
@@ -354,7 +353,7 @@ impl Analysis<'_> {
 
         let Some(merged) = merge::plan(self, &exits)? else {
             let states = exits.iter().map(Exit::state).collect::<Vec<_>>();
-            return Ok(Some(Exit::Terminal(combine_states(&states))));
+            return Ok(Some(Exit::End(combine_states(&states))));
         };
         if let Some(index) = choice {
             let continuing = exits
@@ -381,7 +380,7 @@ impl Analysis<'_> {
             })
             .collect::<Vec<_>>();
         let mut combined = combine_states(&states.iter().collect::<Vec<_>>());
-        work.collect_terminal_states(candidate.branch, &mut |state| {
+        work.collect_end_states(candidate.branch, &mut |state| {
             combined.executed.extend(state.executed.iter().copied());
         });
 
@@ -474,6 +473,12 @@ fn combine_states(states: &[&PathState]) -> PathState {
                 .is_some_and(|other| other.origin == available.origin)
         });
         combined.produced.extend(state.produced.iter().cloned());
+        combined.unconsumed.extend(
+            state
+                .unconsumed
+                .iter()
+                .map(|(name, span)| (name.clone(), span.clone())),
+        );
         combined.executed.extend(state.executed.iter().copied());
     }
     combined

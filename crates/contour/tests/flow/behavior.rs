@@ -18,10 +18,13 @@ fn classify(seed: u32, limit: u32) -> u32 {
     |&total, &limit| -> (accepted, rejected) { *total > *limit };
 
     #[action("Keep the accepted total.")]
-    |accepted, total| -> accepted_total { total };
+    |accepted, total| -> result { total };
 
     #[action("Keep the rejected total.")]
-    |rejected, total| -> rejected_total { total };
+    |rejected, total| -> result { total };
+
+    #[end]
+    |result| {};
 }
 
 #[allow(unreachable_code)]
@@ -31,10 +34,13 @@ fn skeleton(seed: u32) -> u32 {
     |&seed| -> (accepted, rejected) { todo!() };
 
     #[action("Keep the accepted seed.")]
-    |accepted, seed| -> accepted_seed { todo!() };
+    |accepted, seed| -> result { todo!() };
 
     #[action("Keep the rejected seed.")]
-    |rejected, seed| -> rejected_seed { todo!() };
+    |rejected, seed| -> result { todo!() };
+
+    #[end]
+    |result| {};
 }
 
 #[test]

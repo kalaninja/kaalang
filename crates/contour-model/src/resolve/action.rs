@@ -1,19 +1,16 @@
-//! Resolves whether an action is a continuing or terminal block.
+//! Resolves an action's output-consumption invariant.
 
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-/// An action is terminal exactly when its sole output has no consumer.
-pub(super) fn terminal(outputs: &[Ident], unconsumed: &[&Ident]) -> Result<bool> {
-    if unconsumed.is_empty() {
-        return Ok(false);
-    }
-    if outputs.len() == 1 {
-        return Ok(true);
-    }
+/// Every ordinary action output needs a consumer.
+pub(super) fn validate(unconsumed: &[&Ident]) -> Result<()> {
+    let Some(output) = unconsumed.first() else {
+        return Ok(());
+    };
 
     Err(Error::new(
-        unconsumed[0].span(),
-        "a terminal Contour action must have exactly one output",
+        output.span(),
+        "every Contour action output must have a consumer",
     ))
 }

@@ -13,6 +13,9 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Use the selected value.")]
     |selected| -> result { 0 };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

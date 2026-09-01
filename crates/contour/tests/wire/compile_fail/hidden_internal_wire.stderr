@@ -9,6 +9,6 @@ help: an identifier with the same name is defined here, but is not accessible du
   |
 3 | #[contour]
   | ---------- in this attribute macro expansion
-4 | fn invalid(secret: u32, trigger: ()) -> u32 {
+4 | fn invalid(secret: u32, trigger: ()) -> (u32, u32) {
   |            ^^^^^^
   = note: this error originates in the attribute macro `contour` (in Nightly builds, run with -Z macro-backtrace for more info)

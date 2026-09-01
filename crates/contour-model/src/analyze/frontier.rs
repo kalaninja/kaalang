@@ -34,8 +34,8 @@ pub(super) enum WorkKind {
         branches: Vec<WorkPlan>,
         join: WorkJoin,
     },
-    Terminal {
-        output: Ident,
+    EndArrival {
+        inputs: Vec<Ident>,
     },
     Arrival {
         input: Ident,
@@ -60,7 +60,7 @@ pub(super) enum WorkJoin {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Outcome {
-    Terminal,
+    End,
     Arrival,
     Yield,
 }
@@ -88,7 +88,7 @@ impl WorkPlan {
                     }
                 }
             }
-            WorkKind::Terminal { .. } | WorkKind::Arrival { .. } | WorkKind::Yield { .. } => {}
+            WorkKind::EndArrival { .. } | WorkKind::Arrival { .. } | WorkKind::Yield { .. } => {}
         }
     }
 
@@ -150,7 +150,7 @@ impl WorkPlan {
                 join,
             } => branch_candidate(analysis, *id, branches, join, Some(*index)),
             WorkKind::Open { .. }
-            | WorkKind::Terminal { .. }
+            | WorkKind::EndArrival { .. }
             | WorkKind::Arrival { .. }
             | WorkKind::Yield { .. } => Ok(None),
         }
@@ -208,13 +208,13 @@ impl WorkPlan {
         }
     }
 
-    pub(super) fn collect_terminal_states(
+    pub(super) fn collect_end_states(
         &self,
         target: usize,
         visit: &mut impl FnMut(&PathState),
     ) -> bool {
         match &self.kind {
-            WorkKind::Action { next, .. } => next.collect_terminal_states(target, visit),
+            WorkKind::Action { next, .. } => next.collect_end_states(target, visit),
             WorkKind::Question {
                 id, branches, join, ..
             }
@@ -223,16 +223,16 @@ impl WorkPlan {
             } => {
                 if *id == target {
                     for branch in branches {
-                        branch.visit_terminal_states(visit);
+                        branch.visit_end_states(visit);
                     }
                     true
                 } else {
                     match join {
                         WorkJoin::None => branches
                             .iter()
-                            .any(|branch| branch.collect_terminal_states(target, visit)),
+                            .any(|branch| branch.collect_end_states(target, visit)),
                         WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                            next.collect_terminal_states(target, visit)
+                            next.collect_end_states(target, visit)
                         }
                     }
                 }
@@ -241,22 +241,22 @@ impl WorkPlan {
         }
     }
 
-    fn visit_terminal_states(&self, visit: &mut impl FnMut(&PathState)) {
-        if let Some(Exit::Terminal(state)) = &self.exit {
+    fn visit_end_states(&self, visit: &mut impl FnMut(&PathState)) {
+        if let Some(Exit::End(state)) = &self.exit {
             visit(state);
             return;
         }
         match &self.kind {
-            WorkKind::Action { next, .. } => next.visit_terminal_states(visit),
+            WorkKind::Action { next, .. } => next.visit_end_states(visit),
             WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
                 match join {
                     WorkJoin::None => {
                         for branch in branches {
-                            branch.visit_terminal_states(visit);
+                            branch.visit_end_states(visit);
                         }
                     }
                     WorkJoin::Merge { next, .. } | WorkJoin::Convergence { next, .. } => {
-                        next.visit_terminal_states(visit);
+                        next.visit_end_states(visit);
                     }
                 }
             }
@@ -274,8 +274,8 @@ impl WorkPlan {
                     }
                     WorkJoin::None => {
                         let outcomes = branches.iter().map(WorkPlan::outcome).collect::<Vec<_>>();
-                        if outcomes.iter().all(|outcome| *outcome == Outcome::Terminal) {
-                            Outcome::Terminal
+                        if outcomes.iter().all(|outcome| *outcome == Outcome::End) {
+                            Outcome::End
                         } else if outcomes.contains(&Outcome::Yield) {
                             Outcome::Yield
                         } else {
@@ -284,7 +284,7 @@ impl WorkPlan {
                     }
                 }
             }
-            WorkKind::Terminal { .. } => Outcome::Terminal,
+            WorkKind::EndArrival { .. } => Outcome::End,
             WorkKind::Arrival { .. } => Outcome::Arrival,
             WorkKind::Yield { .. } => Outcome::Yield,
             WorkKind::Open { .. } => panic!("an open frontier has no completed outcome"),
@@ -330,7 +330,7 @@ impl WorkPlan {
                     convergence,
                 }
             }
-            WorkKind::Terminal { output } => Plan::Terminal { output },
+            WorkKind::EndArrival { inputs } => Plan::EndArrival { inputs },
             WorkKind::Arrival { input, merge } => Plan::Arrival { input, merge },
             WorkKind::Yield { wires } => Plan::Yield { wires },
         }
@@ -421,13 +421,13 @@ impl WorkJoin {
 
 fn public_branches(branches: Vec<WorkPlan>, joined: bool) -> Vec<Branch> {
     let outcomes = branches.iter().map(WorkPlan::outcome).collect::<Vec<_>>();
-    let continuing = joined || outcomes.iter().any(|outcome| *outcome != Outcome::Terminal);
+    let continuing = joined || outcomes.iter().any(|outcome| *outcome != Outcome::End);
     branches
         .into_iter()
         .zip(outcomes)
         .map(|(plan, outcome)| Branch {
             plan: Box::new(plan.into_plan()),
-            early_return: continuing && outcome == Outcome::Terminal,
+            early_return: continuing && outcome == Outcome::End,
         })
         .collect()
 }

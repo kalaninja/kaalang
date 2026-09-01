@@ -26,7 +26,7 @@ pub(super) fn plan(analysis: &mut Analysis<'_>, exits: &[Exit]) -> Result<Option
                 input,
                 state,
             } => Some((*index, input, state)),
-            Exit::Terminal(_) => None,
+            Exit::End(_) => None,
         })
         .collect::<Vec<_>>();
     let Some((index, _, _)) = arrivals.first().copied() else {
@@ -74,7 +74,6 @@ pub(super) fn plan(analysis: &mut Analysis<'_>, exits: &[Exit]) -> Result<Option
     }
     state.produce(&merge.outputs[0], Producer::Block { index, output: 0 })?;
     state.executed.insert(index);
-    state.last = Some(index);
     analysis.visited.insert(index);
 
     Ok(Some(MergePlan { index, state }))

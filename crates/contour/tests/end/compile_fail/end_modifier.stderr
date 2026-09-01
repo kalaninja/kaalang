@@ -1,0 +1,6 @@
+error: Contour block statements do not support `move`, `async`, `const`, or lifetime modifiers
+ --> tests/end/compile_fail/end_modifier.rs:5:5
+  |
+5 | /     #[end]
+6 | |     move |input| {};
+  | |___________________^

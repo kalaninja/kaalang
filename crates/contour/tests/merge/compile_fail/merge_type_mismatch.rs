@@ -16,6 +16,9 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Return the selected value.")]
     |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

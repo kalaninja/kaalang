@@ -70,11 +70,12 @@ impl Builder<'_> {
 /// only yields its value to an enclosing convergence.
 fn plan_root(plan: &Plan) -> Option<NodeId> {
     match plan {
+        Plan::End { body, .. } => plan_root(body),
         Plan::Action { index, .. } | Plan::Question { index, .. } | Plan::Choice { index, .. } => {
             Some(NodeId::Block(*index))
         }
         Plan::Yield { .. } => None,
-        Plan::Terminal { .. } | Plan::Arrival { .. } => {
+        Plan::EndArrival { .. } | Plan::Arrival { .. } => {
             unreachable!("a convergence continuation is a shared consumer or a yield")
         }
     }

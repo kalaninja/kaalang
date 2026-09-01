@@ -9,13 +9,16 @@ fn invalid(condition: bool) -> u32 {
     |yes| -> (left, right) { (1_u32, 2_u32) };
 
     #[action("Return the other path.")]
-    |no| -> other { 0 };
+    |no| -> result { 0 };
 
     #[merge]
     |left, right| -> selected {};
 
     #[action("Return the selected value.")]
     |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

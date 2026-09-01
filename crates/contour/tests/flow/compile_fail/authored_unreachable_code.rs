@@ -13,6 +13,9 @@ fn written(value: i32) -> i32 {
 
     #[action("Finish the flow.")]
     |doubled| -> result { doubled };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {

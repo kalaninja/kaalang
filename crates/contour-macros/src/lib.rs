@@ -55,6 +55,9 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { __contour_shared_marker(selected) };
+
+                #[end]
+                |result| {};
             }
         };
 

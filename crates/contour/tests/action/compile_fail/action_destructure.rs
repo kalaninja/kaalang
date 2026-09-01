@@ -7,6 +7,9 @@ fn invalid(input: u32) -> u32 {
 
     #[action("Add both outputs.")]
     |left, right| -> output { left + right };
+
+    #[end]
+    |output| {};
 }
 
 fn main() {}

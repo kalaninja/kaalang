@@ -15,22 +15,25 @@ fn run_choice(value: i32, terminal_count: &mut usize) -> &'static str {
     };
 
     #[action("Return the negative result.")]
-    |negative, terminal_count| -> negative_result {
+    |negative, terminal_count| -> result {
         *terminal_count += 1;
         "negative"
     };
 
     #[action("Return the zero result.")]
-    |zero, terminal_count| -> zero_result {
+    |zero, terminal_count| -> result {
         *terminal_count += 1;
         "zero"
     };
 
     #[action("Return the positive result.")]
-    |positive, terminal_count| -> positive_result {
+    |positive, terminal_count| -> result {
         *terminal_count += 1;
         "positive"
     };
+
+    #[end]
+    |result| {};
 }
 
 #[allow(unreachable_code)]
@@ -42,10 +45,13 @@ fn run_choice_skeleton(value: i32) -> &'static str {
     |value| -> (negative, nonnegative) { todo!() };
 
     #[action("Return the negative result.")]
-    |negative| -> negative_result { todo!() };
+    |negative| -> result { todo!() };
 
     #[action("Return the nonnegative result.")]
-    |nonnegative| -> nonnegative_result { todo!() };
+    |nonnegative| -> result { todo!() };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -61,10 +67,13 @@ fn run_choice_with_shadowing(value: i32, selected: Option<i32>) -> (i32, i32) {
     };
 
     #[action("Return the original value after a selection.")]
-    |selected_value, value| -> present_result { (value, selected_value) };
+    |selected_value, value| -> result { (value, selected_value) };
 
     #[action("Return the original value without a selection.")]
-    |absent, value| -> absent_result { (value, 0) };
+    |absent, value| -> result { (value, 0) };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -80,10 +89,13 @@ fn run_choice_with_guard(value: i32) -> i32 {
     };
 
     #[action("Return the positive-even result.")]
-    |positive_even| -> positive_even_result { positive_even };
+    |positive_even| -> result { positive_even };
 
     #[action("Return the other result.")]
-    |other| -> other_result { 0 };
+    |other| -> result { 0 };
+
+    #[end]
+    |result| {};
 }
 
 #[test]

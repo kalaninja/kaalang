@@ -7,6 +7,9 @@ fn invalid(input: u32) -> u32 {
 
     #[action("Produce the same wire name again.")]
     |shared| -> shared { shared };
+
+    #[end]
+    |shared| {};
 }
 
 fn main() {}

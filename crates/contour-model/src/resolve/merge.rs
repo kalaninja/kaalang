@@ -4,9 +4,9 @@ use proc_macro2::Ident;
 use syn::{Error, Result};
 
 /// A merge is structural, so its output must feed a later block.
-pub(super) fn terminal(unconsumed: &[&Ident]) -> Result<bool> {
+pub(super) fn validate(unconsumed: &[&Ident]) -> Result<()> {
     let Some(output) = unconsumed.first() else {
-        return Ok(false);
+        return Ok(());
     };
 
     Err(Error::new(

@@ -16,6 +16,9 @@ fn merge_question(condition: bool) -> String {
 
     #[action("Uppercase the selected result.")]
     |selected| -> result { selected.to_uppercase() };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -37,6 +40,9 @@ fn merge_choice(value: i32) -> String {
 
     #[action("Label the selected result.")]
     |selected| -> result { format!("merged: {selected}") };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -60,13 +66,16 @@ fn partially_merge_choice(value: i32, suffix: String) -> String {
     |zero| -> zero_value { "zero" };
 
     #[action("Return the positive result.")]
-    |positive, suffix| -> positive_result { format!("positive{suffix}") };
+    |positive, suffix| -> result { format!("positive{suffix}") };
 
     #[merge]
     |negative_value, zero_value| -> selected {};
 
     #[action("Uppercase and suffix the merged result.")]
     |selected, suffix| -> result { format!("{}{suffix}", selected.to_uppercase()) };
+
+    #[end]
+    |result| {};
 }
 
 #[test]
@@ -104,7 +113,7 @@ fn lead_with_a_terminal_case(value: i32) -> String {
     };
 
     #[action("Return the negative result.")]
-    |negative| -> negative_result { negative.to_owned() };
+    |negative| -> result { negative.to_owned() };
 
     #[action("Build the zero result.")]
     |zero| -> zero_value { zero };
@@ -117,6 +126,9 @@ fn lead_with_a_terminal_case(value: i32) -> String {
 
     #[action("Uppercase the merged result.")]
     |selected| -> result { selected.to_uppercase() };
+
+    #[end]
+    |result| {};
 }
 
 #[test]

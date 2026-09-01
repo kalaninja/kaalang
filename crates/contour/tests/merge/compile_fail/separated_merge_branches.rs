@@ -18,7 +18,7 @@ fn invalid(value: u8) -> u8 {
     |first| -> first_value { 1 };
 
     #[action("Finish immediately.")]
-    |done| -> done_result { 2 };
+    |done| -> result { 2 };
 
     #[action("Build the second value.")]
     |second| -> second_value { 3 };
@@ -27,7 +27,10 @@ fn invalid(value: u8) -> u8 {
     |first_value, second_value| -> selected {};
 
     #[action("Return the merged value.")]
-    |selected| -> merged_result { selected };
+    |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

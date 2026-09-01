@@ -154,7 +154,7 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
         .sum::<usize>();
     debug_assert_eq!(
         builder.scene.nodes.len(),
-        graph.flow.blocks.len() + case_count + 2
+        graph.flow.blocks.len() + case_count + 1
     );
 
     builder.fit_scene();
@@ -172,6 +172,7 @@ struct Builder<'a> {
 impl Builder<'_> {
     fn place(&mut self, plan: &Plan, skewer: usize, top: i32, incoming: Incoming) -> Placed {
         match plan {
+            Plan::End { body, .. } => self.place(body, skewer, top, incoming),
             Plan::Action { index, next } => self.place_action(*index, next, skewer, top, incoming),
             Plan::Question {
                 index,
@@ -205,10 +206,16 @@ impl Builder<'_> {
                 top,
                 incoming,
             ),
-            Plan::Terminal { output } => {
+            Plan::EndArrival { inputs } => {
                 self.terminals.push(Tail {
                     origin: incoming.origin,
-                    label: Some(output.to_string()),
+                    label: (!inputs.is_empty()).then(|| {
+                        inputs
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    }),
                     skewer: incoming.skewer,
                     merge: None,
                 });
@@ -271,6 +278,7 @@ impl Builder<'_> {
                 BlockKind::Question => NodeKind::Question,
                 BlockKind::Choice => NodeKind::Choice,
                 BlockKind::Merge => NodeKind::Merge,
+                BlockKind::End => unreachable!("End remains the transitional Return node"),
             },
             block.description.clone().unwrap_or_default(),
             skewer,
@@ -626,6 +634,7 @@ enum Side {
 
 fn plan_span(plan: &Plan) -> usize {
     match plan {
+        Plan::End { body, .. } => plan_span(body),
         Plan::Action { next, .. } => plan_span(next),
         Plan::Question {
             branches,
@@ -639,7 +648,7 @@ fn plan_span(plan: &Plan) -> usize {
             convergence,
             ..
         } => branch_span(branches, merge.as_ref(), convergence.as_ref()),
-        Plan::Terminal { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 1,
+        Plan::EndArrival { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 1,
     }
 }
 
@@ -942,12 +951,15 @@ mod tests {
                 |condition| -> (accepted, rejected) { condition };
 
                 #[action("Take the accepted path")]
-                |accepted| -> accepted_result { 1 };
+                |accepted| -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines { 1 };
 
                 #[action("Take the rejected path")]
                 |rejected| -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines {
                     0
                 };
+
+                #[end]
+                |a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines| {};
             }
         "#;
 
@@ -1021,7 +1033,7 @@ mod tests {
             #[contour]
             fn nested(outer: bool, inner: bool) -> u8 {
                 #[question("Take the outer path?")]
-                |outer| -> (outer_yes, outer_no) { outer };
+                |outer, &inner| -> (outer_yes, outer_no) { outer };
 
                 #[question("Take the inner path?")]
                 |outer_yes, inner| -> (inner_yes, inner_no) { inner };
@@ -1046,6 +1058,9 @@ mod tests {
 
                 #[action("Return the result")]
                 |outer_value| -> result { outer_value };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1095,6 +1110,9 @@ mod tests {
 
                 #[action("Use selected")]
                 |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1132,7 +1150,7 @@ mod tests {
             #[contour]
             fn choose(outer: bool, inner: bool) -> u8 {
                 #[question("Take the nested path?")]
-                |outer| -> (nested, direct) { outer };
+                |outer, &inner| -> (nested, direct) { outer };
 
                 #[question("Choose the nested value")]
                 |nested, inner| -> (inner_yes, inner_no) { inner };
@@ -1148,6 +1166,9 @@ mod tests {
 
                 #[action("Use selected")]
                 |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1202,7 +1223,7 @@ mod tests {
             #[contour]
             fn choose(outer: bool, inner: bool) -> u8 {
                 #[question("Take the nested path?")]
-                |outer| -> (nested, direct) { outer };
+                |outer, &inner| -> (nested, direct) { outer };
 
                 #[question("Choose the nested depth")]
                 |nested, inner| -> (short, long) { inner };
@@ -1221,6 +1242,9 @@ mod tests {
 
                 #[action("Use selected")]
                 |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1262,13 +1286,16 @@ mod tests {
                 };
 
                 #[action("Build left")]
-                |left| -> left_result { 0 };
+                |left| -> result { 0 };
 
                 #[action("Build middle")]
-                |middle| -> middle_result { 1 };
+                |middle| -> result { 1 };
 
                 #[action("Build right")]
-                |right| -> right_result { 2 };
+                |right| -> result { 2 };
+
+                #[end]
+                |result| {};
             }
         "#;
         let scene = scene(source, "choose");
@@ -1340,13 +1367,16 @@ mod tests {
                 |right| -> right_value { 2 };
 
                 #[action("Finish immediately")]
-                |done| -> immediate_result { 3 };
+                |done| -> result { 3 };
 
                 #[merge]
                 |left_value, right_value| -> selected {};
 
                 #[action("Finish after merge")]
-                |selected| -> merged_result { selected };
+                |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1437,16 +1467,19 @@ mod tests {
                 };
 
                 #[action("Build first")]
-                |first| -> first_result { 1 };
+                |first| -> result { 1 };
 
                 #[action("Build second")]
-                |second| -> second_result { 2 };
+                |second| -> result { 2 };
 
                 #[action("Build third")]
-                |third| -> third_result { 3 };
+                |third| -> result { 3 };
 
                 #[action("Build fourth")]
-                |fourth| -> fourth_result { 4 };
+                |fourth| -> result { 4 };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1535,7 +1568,7 @@ mod tests {
                 };
 
                 #[action("Finish immediately")]
-                |done| -> immediate_result { 1 };
+                |done| -> result { 1 };
 
                 #[action("Build left")]
                 |left| -> left_value { 2 };
@@ -1547,7 +1580,10 @@ mod tests {
                 |left_value, right_value| -> selected {};
 
                 #[action("Finish after merge")]
-                |selected| -> merged_result { selected };
+                |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1588,7 +1624,7 @@ mod tests {
                 |right| -> right_value { 2 };
 
                 #[action("Finish immediately")]
-                |done| -> immediate_result { 3 };
+                |done| -> result { 3 };
 
                 #[merge]
                 |left_value, right_value| -> selected {};
@@ -1602,13 +1638,16 @@ mod tests {
                 };
 
                 #[action("Build wide left")]
-                |wide_left| -> wide_left_result { 4 };
+                |wide_left| -> result { 4 };
 
                 #[action("Build wide middle")]
-                |wide_middle| -> wide_middle_result { 5 };
+                |wide_middle| -> result { 5 };
 
                 #[action("Build wide right")]
-                |wide_right| -> wide_right_result { 6 };
+                |wide_right| -> result { 6 };
+
+                #[end]
+                |result| {};
             }
         "#;
 
@@ -1641,10 +1680,13 @@ mod tests {
                 |condition| -> (accepted, rejected) { condition };
 
                 #[action("Return accepted")]
-                |accepted| -> accepted_result { 1 };
+                |accepted| -> result { 1 };
 
                 #[action("Return rejected")]
-                |rejected| -> rejected_result { 0 };
+                |rejected| -> result { 0 };
+
+                #[end]
+                |result| {};
             }
         };
         let graph = contour_model::build(&function).expect("the flow is valid");

@@ -11,6 +11,7 @@ use contour_model::{Branch, Flow, Input, Plan};
 mod action;
 mod choice;
 mod convergence;
+mod end;
 mod merge;
 mod question;
 
@@ -84,10 +85,8 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
             merge.as_ref(),
             convergence.as_ref(),
         ),
-        Plan::Terminal { output } => {
-            let wire = bindings.wire(output);
-            quote_spanned!(output.span()=> #wire)
-        }
+        Plan::End { body, .. } => end::emit(flow, bindings, body),
+        Plan::EndArrival { inputs } => end::arrival(bindings, inputs),
         Plan::Arrival { input, .. } => {
             let wire = bindings.wire(input);
             quote_spanned!(input.span()=> #wire)

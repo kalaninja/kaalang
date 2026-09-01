@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn reports_model_errors_at_their_source_position() {
-        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy the input\")]\n    |input| -> input { input };\n}\n";
+        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy the input\")]\n    |input| -> input { input };\n\n    #[end]\n    |input| {};\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn rejects_characters_that_xml_cannot_represent() {
-        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    |input| -> result { input };\n}\n";
+        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    |input| -> result { input };\n\n    #[end]\n    |result| {};\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -301,7 +301,7 @@ mod tests {
 
     #[test]
     fn reports_an_invalid_case_description_by_its_position() {
-        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    |input| -> (a, b) {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    |a| -> a_result { 1 };\n\n    #[action(\"B\")]\n    |b| -> b_result { 2 };\n}\n";
+        let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    |input| -> (a, b) {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    |a| -> result { 1 };\n\n    #[action(\"B\")]\n    |b| -> result { 2 };\n\n    #[end]\n    |result| {};\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),

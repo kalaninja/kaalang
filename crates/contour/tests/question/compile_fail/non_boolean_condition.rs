@@ -6,10 +6,13 @@ fn invalid(input: u32) -> u32 {
     |&input| -> (yes, no) { *input };
 
     #[action("Return the input from the yes branch.")]
-    |yes, &input| -> yes_output { *input };
+    |yes, &input| -> result { *input };
 
     #[action("Return the input from the no branch.")]
-    |no, &input| -> no_output { *input };
+    |no, &input| -> result { *input };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

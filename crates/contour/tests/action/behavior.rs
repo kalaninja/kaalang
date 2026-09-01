@@ -4,6 +4,9 @@ use contour::contour;
 fn run_action(input: u32) -> u32 {
     #[action("Increment the input.")]
     |input| -> output { input + 1 };
+
+    #[end]
+    |output| {};
 }
 
 #[contour]
@@ -13,6 +16,9 @@ fn keep_tuple_in_single_output(input: u32) -> (u32, u32) {
 
     #[action("Return the tuple.")]
     |output| -> result { output };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -22,6 +28,9 @@ fn split_nested_tuple(input: u32) -> ((u32, u32), u32) {
 
     #[action("Return both outputs.")]
     |out1, out2| -> result { (out1, out2) };
+
+    #[end]
+    |result| {};
 }
 
 #[test]

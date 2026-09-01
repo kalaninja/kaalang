@@ -1,0 +1,5 @@
+error: every non-ignored Contour wire must have a consumer on every path
+ --> tests/end/compile_fail/unconsumed_path_wire.rs:9:23
+  |
+9 |     |yes| -> (result, first_stray, second_stray) { (1, (), ()) };
+  |                       ^^^^^^^^^^^

@@ -16,6 +16,9 @@ fn question_value(condition: bool, shared_runs: &mut usize) -> u32 {
         *shared_runs += 1;
         selected
     };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -43,10 +46,13 @@ fn choice_value(case: u8) -> &'static str {
 
     #[action("Use the selected value.")]
     |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
-fn convergence_with_terminal_sibling(case: u8) -> u32 {
+fn convergence_at_end(case: u8) -> u32 {
     #[choice("Choose whether to continue.")]
     #[case("First continuing path")]
     #[case("Second continuing path")]
@@ -65,11 +71,14 @@ fn convergence_with_terminal_sibling(case: u8) -> u32 {
     #[action("Build the second value.")]
     |second| -> selected { 2 };
 
-    #[action("Finish the terminal path.")]
-    |done| -> done_result { 99 };
+    #[action("Finish the direct path.")]
+    |done| -> result { 99 };
 
     #[action("Use a value from a continuing path.")]
     |selected| -> result { selected * 10 };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -85,6 +94,9 @@ fn several_wires(condition: bool) -> (u32, &'static str) {
 
     #[action("Use both selected values.")]
     |label, number| -> result { (number, label) };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -100,12 +112,15 @@ fn borrowed_common(condition: bool, prefix: String) -> String {
 
     #[action("Use the suffix and the preserved prefix.")]
     |suffix, prefix| -> result { format!("{prefix}:{suffix}") };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
 fn nested_convergence(outer: bool, inner: bool) -> u32 {
     #[question("Take the nested path?")]
-    |outer| -> (nested, direct) { outer };
+    |outer, &inner| -> (nested, direct) { outer };
 
     #[question("Choose the nested value.")]
     |nested, inner| -> (inner_yes, inner_no) { inner };
@@ -121,6 +136,9 @@ fn nested_convergence(outer: bool, inner: bool) -> u32 {
 
     #[action("Use the selected nested value.")]
     |selected| -> result { selected * 10 };
+
+    #[end]
+    |result| {};
 }
 
 #[contour]
@@ -139,6 +157,9 @@ fn uneven_depth(condition: bool) -> u32 {
 
     #[action("Use the selected value.")]
     |selected| -> result { selected * 2 };
+
+    #[end]
+    |result| {};
 }
 
 #[test]
@@ -158,10 +179,10 @@ fn choice_converges_three_producers() {
 }
 
 #[test]
-fn terminal_siblings_are_excluded_from_convergence() {
-    assert_eq!(convergence_with_terminal_sibling(0), 10);
-    assert_eq!(convergence_with_terminal_sibling(1), 20);
-    assert_eq!(convergence_with_terminal_sibling(2), 99);
+fn alternative_paths_converge_at_end() {
+    assert_eq!(convergence_at_end(0), 10);
+    assert_eq!(convergence_at_end(1), 20);
+    assert_eq!(convergence_at_end(2), 99);
 }
 
 #[test]

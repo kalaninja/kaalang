@@ -18,13 +18,16 @@ fn invalid(value: u8) -> u8 {
     |first| -> selected { 1 };
 
     #[action("Finish immediately.")]
-    |done| -> done_result { 2 };
+    |done| -> result { 2 };
 
     #[action("Build the second value.")]
     |second| -> selected { 3 };
 
     #[action("Return the selected value.")]
     |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {}

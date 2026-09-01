@@ -11,6 +11,9 @@ fn invalid(value: u32) -> u32 {
             _ => value,
         }
     };
+
+    #[end]
+    |branch| {};
 }
 
 fn main() {}

@@ -10,6 +10,7 @@ use crate::model::{Block, BlockKind, Flow, Input};
 
 mod action;
 mod choice;
+mod end;
 mod merge;
 mod question;
 
@@ -39,14 +40,31 @@ fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
 
 /// Parses every function-body statement as one Contour block.
 fn blocks(statements: &[Stmt]) -> Result<Vec<Block>> {
-    if statements.is_empty() {
-        return Err(Error::new(
-            Span::call_site(),
-            "a Contour flow requires at least one block",
-        ));
-    }
+    let blocks = statements
+        .iter()
+        .map(parse_block)
+        .collect::<Result<Vec<_>>>()?;
+    let ends = blocks
+        .iter()
+        .enumerate()
+        .filter(|(_, block)| block.kind == BlockKind::End)
+        .collect::<Vec<_>>();
 
-    statements.iter().map(parse_block).collect()
+    match ends.as_slice() {
+        [] => Err(Error::new(
+            Span::call_site(),
+            "a Contour flow requires exactly one End block",
+        )),
+        [(index, end)] if *index + 1 != blocks.len() => Err(Error::new(
+            end.span,
+            "the Contour End block must be the final statement",
+        )),
+        [_] => Ok(blocks),
+        [_, (_, duplicate), ..] => Err(Error::new(
+            duplicate.span,
+            "a Contour flow must not declare more than one End block",
+        )),
+    }
 }
 
 /// Parses one closure-shaped statement and hands it to its kind's parser.
@@ -54,8 +72,8 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let closure = block_statement(statement)?;
     let (kind, kind_attribute, companions) =
         block_kind(&closure.attrs, closure.inputs_begin.span())?;
-    let (inputs, body) = block_closure(closure)?;
-    let (outputs, output_span) = block_outputs(closure)?;
+    let (inputs, body) = block_closure(closure, kind)?;
+    let (outputs, output_span) = block_outputs(closure, kind)?;
     let syntax = BlockSyntax {
         kind,
         closure,
@@ -72,6 +90,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
         BlockKind::Merge => merge::parse(syntax),
+        BlockKind::End => end::parse(syntax),
     }
 }
 
@@ -125,7 +144,6 @@ impl<'a> BlockSyntax<'a> {
             output_span: self.output_span,
             inputs: self.inputs,
             body: self.body,
-            terminal: false,
             span: self.kind_attribute.span(),
         }
     }
@@ -215,6 +233,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
         Some("merge") => Role::Kind(BlockKind::Merge),
+        Some("end") => Role::Kind(BlockKind::End),
         Some("case") => Role::Companion,
         Some("doc") => Role::Comment,
         _ => {
@@ -227,7 +246,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
 }
 
 /// Extracts inputs and the authored body from a block's closure-shaped syntax.
-fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
+fn block_closure(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Input>, Expr)> {
     if closure.lifetimes.is_some()
         || closure.constness.is_some()
         || closure.asyncness.is_some()
@@ -238,7 +257,7 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
             "Contour block statements do not support `move`, `async`, `const`, or lifetime modifiers",
         ));
     }
-    if closure.inputs.is_empty() {
+    if closure.inputs.is_empty() && kind != BlockKind::End {
         return Err(Error::new(
             closure.inputs_end.span(),
             "a Contour block requires at least one input",
@@ -276,7 +295,10 @@ fn block_input(pattern: &Pat) -> Result<Input> {
 }
 
 /// Parses output wire declarations from the closure return position.
-fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, Span)> {
+fn block_outputs(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Ident>, Span)> {
+    if kind == BlockKind::End {
+        return Ok((Vec::new(), closure.output.span()));
+    }
     let ReturnType::Type(_, output) = &closure.output else {
         return Err(Error::new(
             closure.inputs_end.span(),

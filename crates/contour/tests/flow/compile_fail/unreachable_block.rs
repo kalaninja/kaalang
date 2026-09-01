@@ -9,7 +9,10 @@ fn invalid(input: u32, extra: u32) -> u32 {
     |&combined| -> finished { *combined };
 
     #[action("Reuse the already consumed input.")]
-    |combined, extra| -> reused { combined + extra };
+    |combined, extra| -> _reused { combined + extra };
+
+    #[end]
+    |finished| {};
 }
 
 fn main() {}

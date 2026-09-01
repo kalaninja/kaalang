@@ -26,5 +26,8 @@ fn route(request: u8) -> u8 {
     |selected| -> result { selected };
 
     #[action("Reject the application.")]
-    |rejected, request| -> declined { request };
+    |rejected, request| -> result { request };
+
+    #[end]
+    |result| {};
 }

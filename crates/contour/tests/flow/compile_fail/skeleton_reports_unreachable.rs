@@ -9,6 +9,9 @@ fn skeleton(seed: u32) -> u32 {
 
     #[action("Finish the flow.")]
     |started| -> result { started };
+
+    #[end]
+    |result| {};
 }
 
 fn main() {

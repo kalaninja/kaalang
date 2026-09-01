@@ -7,6 +7,9 @@ fn invalid(input: u32) -> u32 {
 
     #[action("Handle only the large input.")]
     |large, &input| -> handled { *input };
+
+    #[end]
+    |handled| {};
 }
 
 fn main() {}

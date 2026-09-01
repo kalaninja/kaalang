@@ -8,7 +8,10 @@ fn omit_the_final_semicolon(input: u32) -> u32 {
     |input| -> doubled { input * 2 };
 
     #[action("Add one to the doubled value.")]
-    |doubled| -> output { doubled + 1 }
+    |doubled| -> output { doubled + 1 };
+
+    #[end]
+    |output| {}
 }
 
 /// RFC 0001 §3: source comments remain ordinary Rust comments beside a block's
@@ -18,6 +21,9 @@ fn document_a_block(input: u32) -> u32 {
     /// Increments by one, because the flow needs a successor.
     #[action("Increment the input.")]
     |input| -> output { input + 1 };
+
+    #[end]
+    |output| {};
 }
 
 #[test]

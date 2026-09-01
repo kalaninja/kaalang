@@ -1,0 +1,5 @@
+error: a Contour flow must not declare more than one End block
+ --> tests/end/compile_fail/duplicate_end.rs:8:5
+  |
+8 |     #[end]
+  |     ^

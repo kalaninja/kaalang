@@ -1,7 +1,7 @@
 use contour::contour;
 
 #[contour]
-fn invalid(condition: bool) -> bool {
+fn invalid(condition: bool) {
     #[question("Select a branch.")]
     |condition| -> (yes, no) { condition };
 
@@ -13,6 +13,9 @@ fn invalid(condition: bool) -> bool {
 
     #[merge]
     |yes_value, no_value| -> selected {};
+
+    #[end]
+    || {};
 }
 
 fn main() {}

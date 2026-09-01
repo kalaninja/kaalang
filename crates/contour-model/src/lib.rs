@@ -19,8 +19,8 @@ pub use model::{Block, BlockKind, Branch, Convergence, Flow, Graph, Input, Merge
 /// wires to their producers, or walking every path, spanned at the offending
 /// token so callers can report it against the authored source.
 pub fn build(function: &ItemFn) -> Result<Graph> {
-    let mut flow = parse::flow(function)?;
-    resolve::flow(&mut flow)?;
+    let flow = parse::flow(function)?;
+    resolve::flow(&flow)?;
     let plan = analyze::flow(&flow)?;
 
     Ok(Graph {
@@ -79,8 +79,16 @@ mod tests {
                         .as_ref()
                         .map_or(0, |convergence| count_block(&convergence.next, target))
             }
-            Plan::Terminal { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 0,
+            Plan::End { index, body } => usize::from(*index == target) + count_block(body, target),
+            Plan::EndArrival { .. } | Plan::Arrival { .. } | Plan::Yield { .. } => 0,
         }
+    }
+
+    fn end_body(plan: &Plan) -> &Plan {
+        let Plan::End { body, .. } = plan else {
+            panic!("the verified plan must be rooted at End")
+        };
+        body
     }
 
     #[test]
@@ -98,10 +106,13 @@ mod tests {
                 };
 
                 #[action("Use the first path")]
-                |left| -> first_result { left };
+                |left| -> result { left };
 
                 #[action("Use the second path")]
-                |right| -> second_result { right };
+                |right| -> result { right };
+
+                #[end]
+                |result| {};
             }
         };
 
@@ -128,9 +139,9 @@ mod tests {
         assert_eq!(choice.description.as_deref(), Some("  Choose a path  "));
         assert_eq!(choice.case_descriptions, ["Первый", "Second & final"]);
         assert!(matches!(
-            graph.plan,
+            end_body(&graph.plan),
             Plan::Choice {
-                branches: ref paths,
+                branches: paths,
                 merge: None,
                 ..
             } if paths.len() == 2
@@ -152,6 +163,9 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { selected };
+
+                #[end]
+                |result| {};
             }
         };
 
@@ -176,6 +190,9 @@ mod tests {
 
                 #[action("Use the selected values")]
                 |second, first| -> result { (first, second) };
+
+                #[end]
+                |result| {};
             }
         };
 
@@ -183,7 +200,7 @@ mod tests {
         let Plan::Question {
             convergence: Some(convergence),
             ..
-        } = &graph.plan
+        } = end_body(&graph.plan)
         else {
             panic!("the question must record its implicit convergence")
         };
@@ -197,19 +214,20 @@ mod tests {
             ["second", "first"]
         );
         assert_eq!(count_block(&graph.plan, 3), 1);
+        assert_eq!(count_block(&graph.plan, 4), 1);
     }
 
     #[test]
-    fn records_nested_branch_merge_and_terminal_sibling_topology() {
+    fn records_nested_branch_merge_and_early_end_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
                 #[question("Take the branching path?")]
-                |condition| -> (yes, no) { condition };
+                |condition, &value| -> (yes, no) { condition };
 
                 #[choice("Which branch?")]
                 #[case("First")]
                 #[case("Second")]
-                #[case("Terminal")]
+                #[case("End")]
                 |yes, value| -> (first, second, third) {
                     match value {
                         0 => (),
@@ -224,17 +242,20 @@ mod tests {
                 #[action("Build the second value")]
                 |second| -> second_value { 2 };
 
-                #[action("Return from the terminal sibling")]
-                |third| -> third_result { 3 };
+                #[action("Finish the early End path")]
+                |third| -> result { 3 };
 
                 #[merge]
                 |first_value, second_value| -> selected {};
 
                 #[action("Return the merged value")]
-                |selected| -> selected_result { selected };
+                |selected| -> result { selected };
 
                 #[action("Return from the no branch")]
-                |no| -> no_result { 0 };
+                |no| -> result { 0 };
+
+                #[end]
+                |result| {};
             }
         };
 
@@ -244,7 +265,7 @@ mod tests {
             branches: [yes, no],
             merge,
             ..
-        } = &graph.plan
+        } = end_body(&graph.plan)
         else {
             panic!("the root must be a question")
         };
@@ -279,13 +300,14 @@ mod tests {
         assert!(matches!(
             branches[2].plan.as_ref(),
             Plan::Action { index: 4, next }
-                if matches!(next.as_ref(), Plan::Terminal { .. })
+                if matches!(next.as_ref(), Plan::EndArrival { .. })
         ));
         assert_eq!(merge.index, 5);
         assert!(matches!(
             merge.next.as_ref(),
             Plan::Action { index: 6, next }
-                if matches!(next.as_ref(), Plan::Terminal { .. })
+                if matches!(next.as_ref(), Plan::EndArrival { .. })
         ));
+        assert_eq!(count_block(&graph.plan, 8), 1);
     }
 }

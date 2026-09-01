@@ -1,0 +1,5 @@
+error: a Contour End body must be empty
+ --> tests/end/compile_fail/nonempty_end_body.rs:6:13
+  |
+6 |     |input| { input };
+  |             ^^^^^^^^^

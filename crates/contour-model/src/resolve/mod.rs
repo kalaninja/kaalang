@@ -12,10 +12,10 @@ mod choice;
 mod merge;
 mod question;
 
-/// Resolves a parsed flow's wires and settles terminality.
-pub(crate) fn flow(flow: &mut Flow) -> Result<()> {
+/// Resolves a parsed flow's wires and output-consumption invariants.
+pub(crate) fn flow(flow: &Flow) -> Result<()> {
     validate_wires(&flow.sources, &flow.blocks)?;
-    mark_terminals(&mut flow.blocks)
+    validate_outputs(&flow.blocks)
 }
 
 /// Checks that every input names an earlier producer and settles local name conflicts.
@@ -63,25 +63,24 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
     Ok(())
 }
 
-/// Requires every output to have a consumer, except the single output that
-/// makes an action terminal.
-fn mark_terminals(blocks: &mut [Block]) -> Result<()> {
+/// Requires every ordinary output to have a consumer.
+fn validate_outputs(blocks: &[Block]) -> Result<()> {
     let consumed = consumed_wires(blocks);
 
     for block in blocks {
         let unconsumed = block
             .outputs
             .iter()
-            .filter(|output| !consumed.contains(*output))
+            .filter(|output| !output.to_string().starts_with('_') && !consumed.contains(*output))
             .collect::<Vec<_>>();
 
-        let terminal = match block.kind {
-            BlockKind::Action => action::terminal(&block.outputs, &unconsumed),
-            BlockKind::Question => question::terminal(&unconsumed),
-            BlockKind::Choice => choice::terminal(&unconsumed),
-            BlockKind::Merge => merge::terminal(&unconsumed),
+        match block.kind {
+            BlockKind::Action => action::validate(&unconsumed),
+            BlockKind::Question => question::validate(&unconsumed),
+            BlockKind::Choice => choice::validate(&unconsumed),
+            BlockKind::Merge => merge::validate(&unconsumed),
+            BlockKind::End => Ok(()),
         }?;
-        block.terminal = terminal;
     }
 
     Ok(())

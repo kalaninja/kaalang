@@ -18,10 +18,10 @@ fn route(input: u8) -> u8 {
     |left| -> left_value { 1 };
 
     #[action("Finish immediately at the first exit.")]
-    |first_exit| -> first_result { 2 };
+    |first_exit| -> result { 2 };
 
     #[action("Finish immediately at the second exit.")]
-    |second_exit| -> second_result { 3 };
+    |second_exit| -> result { 3 };
 
     #[action("Build the right value.")]
     |right| -> right_value { 4 };
@@ -30,5 +30,8 @@ fn route(input: u8) -> u8 {
     |left_value, right_value| -> selected {};
 
     #[action("Finish after the merge.")]
-    |selected| -> merged_result { selected };
+    |selected| -> result { selected };
+
+    #[end]
+    |result| {};
 }
