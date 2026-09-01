@@ -28,7 +28,7 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let bindings = codegen::Bindings::new(&graph.flow);
     let body = codegen::flow(&graph.flow, &graph.plan, &bindings);
 
-    codegen::rename_source_bindings(function, &graph.flow, &bindings);
+    codegen::rename_source_bindings(function, &bindings);
     *function.block = syn::parse2(quote!({ #body }))?;
 
     Ok(quote!(#function))

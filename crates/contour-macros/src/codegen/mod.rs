@@ -141,14 +141,15 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
 }
 
 /// Rewrites source parameters to their hygienic internal bindings.
-pub(crate) fn rename_source_bindings(function: &mut ItemFn, flow: &Flow, bindings: &Bindings) {
-    for (argument, source) in function.sig.inputs.iter_mut().zip(&flow.sources) {
+pub(crate) fn rename_source_bindings(function: &mut ItemFn, bindings: &Bindings) {
+    for argument in &mut function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             unreachable!("source_wires rejects method receivers")
         };
-        let Pat::Ident(parameter) = argument.pat.as_mut() else {
-            unreachable!("source_wires accepts only simple parameter bindings")
-        };
-        parameter.ident = bindings.wire(source).clone();
+        match argument.pat.as_mut() {
+            Pat::Ident(parameter) => parameter.ident = bindings.wire(&parameter.ident).clone(),
+            Pat::Wild(_) => {}
+            _ => unreachable!("source_wires accepts only simple bindings or wildcards"),
+        }
     }
 }

@@ -60,12 +60,6 @@ fn capture_explicit_unit(input: ()) {
     |result| {};
 }
 
-#[contour]
-fn capture_nothing() {
-    #[end]
-    || {};
-}
-
 #[test]
 fn end_returns_one_complete_wire_value() {
     assert_eq!(capture_one(1), 2);
@@ -89,7 +83,6 @@ fn paths_may_reach_end_at_different_depths() {
 }
 
 #[test]
-fn explicit_unit_and_zero_inputs_remain_distinct_valid_forms() {
+fn end_can_capture_an_explicit_unit_wire() {
     capture_explicit_unit(());
-    capture_nothing();
 }

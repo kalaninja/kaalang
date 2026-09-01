@@ -1,0 +1,7 @@
+error[E0308]: mismatched types
+ --> tests/empty_flow/compile_fail/non_unit_return.rs:4:17
+  |
+4 | fn invalid() -> u8 {
+  |    -------      ^^ expected `u8`, found `()`
+  |    |
+  |    implicitly returns `()` as its body has no tail or `return` expression

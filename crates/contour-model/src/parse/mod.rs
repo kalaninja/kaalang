@@ -28,12 +28,15 @@ fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
         .sig
         .inputs
         .iter()
-        .map(|argument| match argument {
-            FnArg::Typed(argument) => simple_binding(&argument.pat, "Contour flow parameters"),
-            FnArg::Receiver(receiver) => Err(Error::new(
+        .filter_map(|argument| match argument {
+            FnArg::Typed(argument) => match argument.pat.as_ref() {
+                Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
+                pattern => Some(simple_binding(pattern, "Contour flow parameters")),
+            },
+            FnArg::Receiver(receiver) => Some(Err(Error::new(
                 receiver.span(),
                 "#[contour] is supported only on free functions",
-            )),
+            ))),
         })
         .collect()
 }

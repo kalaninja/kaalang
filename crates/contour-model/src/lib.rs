@@ -92,6 +92,46 @@ mod tests {
     }
 
     #[test]
+    fn zero_wire_flow_has_no_implicit_unit_wire() {
+        let function: ItemFn = parse_quote! {
+            fn nothing() {
+                #[end]
+                || {};
+            }
+        };
+
+        let graph = build(&function).expect("the zero-wire flow is valid");
+        assert!(graph.flow.sources.is_empty());
+        assert_eq!(graph.flow.blocks.len(), 1);
+        assert!(graph.flow.blocks[0].inputs.is_empty());
+        assert!(graph.flow.blocks[0].outputs.is_empty());
+        assert!(matches!(
+            end_body(&graph.plan),
+            Plan::EndArrival { inputs } if inputs.is_empty()
+        ));
+    }
+
+    #[test]
+    fn wildcard_is_not_a_source_but_underscore_name_is() {
+        let function: ItemFn = parse_quote! {
+            fn discard(_: u8, _value: u8) {
+                #[end]
+                || {};
+            }
+        };
+
+        let graph = build(&function).expect("both ignored parameter forms are valid");
+        assert_eq!(graph.flow.sources.len(), 1);
+        assert_eq!(graph.flow.sources[0], "_value");
+        assert!(matches!(
+            graph.parameters.as_slice(),
+            [FnArg::Typed(wildcard), FnArg::Typed(named)]
+                if matches!(wildcard.pat.as_ref(), Pat::Wild(_))
+                    && matches!(named.pat.as_ref(), Pat::Ident(binding) if binding.ident == "_value")
+        ));
+    }
+
+    #[test]
     fn preserves_authored_descriptions_and_case_order() {
         let function: ItemFn = parse_quote! {
             fn choose(input: usize) -> usize {
