@@ -1,5 +1,0 @@
-error: `#[case]` is not valid on this kind of Contour block
- --> tests/end/compile_fail/end_companion.rs:6:5
-  |
-6 |     #[case("Not an End attribute.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

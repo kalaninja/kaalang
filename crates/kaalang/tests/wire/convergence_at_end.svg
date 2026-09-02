@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="810" viewBox="0 0 1064 810" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for convergence_at_end</title>
+  <desc id="kaalang-description">Nodes: Start: convergence_at_end(case); Choice: Choose whether to continue.; Case: First continuing path; Case: Second continuing path; Case: Direct End path; Action: Build the first value.; Action: Build the second value.; Action: Produce the direct result.; Action: Use a value from a continuing path.; End. Connections: Start: convergence_at_end(case) to Choice: Choose whether to continue.; Choice: Choose whether to continue. to Case: First continuing path; Choice: Choose whether to continue. to Case: Second continuing path; Choice: Choose whether to continue. to Case: Direct End path; Case: First continuing path to Action: Build the first value. via first; Case: Second continuing path to Action: Build the second value. via second; Case: Direct End path to Action: Produce the direct result. via done; Action: Build the first value. to Action: Use a value from a continuing path. via selected; Action: Build the second value. to Action: Use a value from a continuing path. via selected; Action: Produce the direct result. to End via result; Action: Use a value from a continuing path. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 234 L 172 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 532 270 L 532 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 892 270 L 892 306"/>
+    <path class="edge" d="M 172 376 L 172 448"/>
+    <text class="edge-label" x="214" y="407" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <path class="edge" d="M 532 376 L 532 448"/>
+    <text class="edge-label" x="574" y="407" xml:space="preserve"><tspan x="574" dy="0">second</tspan></text>
+    <path class="edge" d="M 892 376 L 892 448"/>
+    <text class="edge-label" x="934" y="407" xml:space="preserve"><tspan x="934" dy="0">done</tspan></text>
+    <path class="edge" d="M 172 512 L 172 584"/>
+    <text class="edge-label" x="214" y="543" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <path class="edge" d="M 532 512 L 532 548 L 172 548 L 172 584"/>
+    <text class="edge-label" x="574" y="530" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
+    <path class="edge" d="M 892 512 L 892 688 L 172 688 L 172 720"/>
+    <text class="edge-label" x="934" y="530" xml:space="preserve"><tspan x="934" dy="0">result</tspan></text>
+    <path class="edge" d="M 172 648 L 172 720"/>
+    <text class="edge-label" x="214" y="666" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">convergence_at_end(case)</tspan></text>
+    </g>
+    <g class="node choice select" transform="translate(172 198)">
+      <title xml:space="preserve">Choose whether to continue.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Choose whether to </tspan><tspan x="0" dy="18">continue.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 341)">
+      <title xml:space="preserve">First continuing path</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First continuing path</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 341)">
+      <title xml:space="preserve">Second continuing path</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second continuing path</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 341)">
+      <title xml:space="preserve">Direct End path</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Direct End path</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 480)">
+      <title xml:space="preserve">Build the first value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 480)">
+      <title xml:space="preserve">Build the second value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 480)">
+      <title xml:space="preserve">Produce the direct result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the direct result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 616)">
+      <title xml:space="preserve">Use a value from a continuing path.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use a value from a continuing path.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 749)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

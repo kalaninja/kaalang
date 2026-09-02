@@ -11,10 +11,13 @@
 
 ## Sources of truth
 
-RFCs in `docs/rfcs/` define Contour syntax and semantics. Implementation code,
+RFCs in `docs/rfcs/` define kaalang syntax and semantics. Implementation code,
 Rust documentation, diagnostics, test names, and test fixtures use the same
 terminology as the relevant RFC. Do not duplicate the language contract in
 other documentation.
+
+Always write the language name as `kaalang`, including at the start of a
+sentence and in headings.
 
 Behavior tests are executable examples of accepted programs. Compile-fail tests
 document rejected programs and their diagnostics.
@@ -84,15 +87,15 @@ compared byte for byte. Regenerate them with the CLI the crate ships, then open
 each result and confirm the diagram still reads correctly before committing it:
 
 ```sh
-cargo run -p contour-svg --bin cargo-contour -- diagram \
-  crates/contour-svg/tests/fixtures/all_blocks.rs --flow route \
-  -o crates/contour-svg/tests/fixtures/all_blocks.svg
-cargo run -p contour-svg --bin cargo-contour -- diagram \
-  crates/contour-svg/tests/fixtures/end_collector.rs --flow route \
-  -o crates/contour-svg/tests/fixtures/end_collector.svg
+cargo run -p kaalang-svg --bin cargo-kaalang -- diagram \
+  crates/kaalang-svg/tests/fixtures/all_blocks.rs --flow route \
+  -o crates/kaalang-svg/tests/fixtures/all_blocks.svg
+cargo run -p kaalang-svg --bin cargo-kaalang -- diagram \
+  crates/kaalang-svg/tests/fixtures/end_collector.rs --flow route \
+  -o crates/kaalang-svg/tests/fixtures/end_collector.svg
 ```
 
-The diagrams beside each `crates/contour/tests/*/behavior.rs` redraw themselves
+The diagrams beside each `crates/kaalang/tests/*/behavior.rs` redraw themselves
 during `cargo test`, so a renderer or model change arrives as a diff over them.
 Read that diff before committing: nothing else checks that the new diagrams
 still make sense.

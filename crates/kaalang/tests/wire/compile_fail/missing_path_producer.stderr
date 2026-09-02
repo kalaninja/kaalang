@@ -1,0 +1,5 @@
+error: this kaalang path cannot supply every End input
+  --> tests/wire/compile_fail/missing_path_producer.rs:18:6
+   |
+18 |     |result| {};
+   |      ^^^^^^

@@ -1,0 +1,5 @@
+error: every kaalang action output must have a consumer
+ --> tests/end/compile_fail/unconsumed_action_output.rs:6:16
+  |
+6 |     |input| -> unused { input };
+  |                ^^^^^^

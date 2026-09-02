@@ -1,0 +1,14 @@
+error[E0425]: cannot find value `__kaalang_wire_0` in this scope
+ --> tests/wire/compile_fail/hidden_internal_wire.rs:6:27
+  |
+6 |     |trigger| -> output { __kaalang_wire_0 };
+  |                           ^^^^^^^^^^^^^^^^ not found in this scope
+  |
+help: an identifier with the same name is defined here, but is not accessible due to macro hygiene
+ --> tests/wire/compile_fail/hidden_internal_wire.rs:4:12
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+4 | fn invalid(secret: u32, trigger: ()) -> (u32, u32) {
+  |            ^^^^^^
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

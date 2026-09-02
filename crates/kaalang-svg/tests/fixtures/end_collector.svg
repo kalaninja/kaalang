@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="822" viewBox="0 0 1424 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for route</title>
+  <desc id="kaalang-description">Nodes: Start: route(input); Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Take the first direct End path.; Case: Take the second direct End path.; Action: Build the left value.; Action: Build the right value.; Action: Build the first direct result.; Action: Build the second direct result.; Action: Build the converged result.; End. Connections: Start: route(input) to Choice: Which path does the input take?; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Take the first direct End path.; Choice: Which path does the input take? to Case: Take the second direct End path.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Take the first direct End path. to Action: Build the first direct result. via first_direct; Case: Take the second direct End path. to Action: Build the second direct result. via second_direct; Action: Build the left value. to Action: Build the converged result. via selected; Action: Build the right value. to Action: Build the converged result. via selected; Action: Build the first direct result. to End via result; Action: Build the second direct result. to End via result; Action: Build the converged result. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 234 L 172 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 532 270 L 532 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 892 270 L 892 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 1252 270 L 1252 306"/>
+    <path class="edge" d="M 172 388 L 172 460"/>
+    <text class="edge-label" x="214" y="419" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
+    <path class="edge" d="M 532 388 L 532 460"/>
+    <text class="edge-label" x="574" y="419" xml:space="preserve"><tspan x="574" dy="0">right</tspan></text>
+    <path class="edge" d="M 892 388 L 892 460"/>
+    <text class="edge-label" x="934" y="419" xml:space="preserve"><tspan x="934" dy="0">first_direct</tspan></text>
+    <path class="edge" d="M 1252 388 L 1252 460"/>
+    <text class="edge-label" x="1294" y="419" xml:space="preserve"><tspan x="1294" dy="0">second_direct</tspan></text>
+    <path class="edge" d="M 172 524 L 172 596"/>
+    <text class="edge-label" x="214" y="555" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <path class="edge" d="M 532 524 L 532 560 L 172 560 L 172 596"/>
+    <text class="edge-label" x="574" y="542" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
+    <path class="edge" d="M 892 524 L 892 700 L 172 700 L 172 732"/>
+    <text class="edge-label" x="934" y="542" xml:space="preserve"><tspan x="934" dy="0">result</tspan></text>
+    <path class="edge" d="M 1252 524 L 1252 700 L 172 700 L 172 732"/>
+    <text class="edge-label" x="1294" y="542" xml:space="preserve"><tspan x="1294" dy="0">result</tspan></text>
+    <path class="edge" d="M 172 660 L 172 732"/>
+    <text class="edge-label" x="214" y="678" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">route(input)</tspan></text>
+    </g>
+    <g class="node choice select" transform="translate(172 198)">
+      <title xml:space="preserve">Which path does the input take?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which path does the input </tspan><tspan x="0" dy="18">take?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 347)">
+      <title xml:space="preserve">Take the left path.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the left path.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 347)">
+      <title xml:space="preserve">Take the right path.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the right path.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 347)">
+      <title xml:space="preserve">Take the first direct End path.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Take the first direct End </tspan><tspan x="0" dy="18">path.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 347)">
+      <title xml:space="preserve">Take the second direct End path.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Take the second direct End </tspan><tspan x="0" dy="18">path.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 492)">
+      <title xml:space="preserve">Build the left value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the left value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 492)">
+      <title xml:space="preserve">Build the right value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the right value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 492)">
+      <title xml:space="preserve">Build the first direct result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first direct result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 492)">
+      <title xml:space="preserve">Build the second direct result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second direct result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 628)">
+      <title xml:space="preserve">Build the converged result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the converged result.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 761)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

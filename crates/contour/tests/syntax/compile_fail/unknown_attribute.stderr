@@ -1,5 +1,0 @@
-error: Contour blocks support only comments and Contour attributes
- --> tests/syntax/compile_fail/unknown_attribute.rs:6:5
-  |
-6 |     #[unknown("Not a Contour attribute.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

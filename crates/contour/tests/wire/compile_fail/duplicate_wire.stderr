@@ -1,5 +1,0 @@
-error: a Contour wire must not be produced more than once on the same path
- --> tests/wire/compile_fail/duplicate_wire.rs:9:17
-  |
-9 |     |shared| -> shared { shared };
-  |                 ^^^^^^

@@ -1,0 +1,16 @@
+[package]
+name = "kaalang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+kaalang-macros = { workspace = true }
+
+[dev-dependencies]
+kaalang-svg = { workspace = true }
+trybuild = { workspace = true }
+
+[lints]
+workspace = true

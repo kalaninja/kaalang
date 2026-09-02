@@ -1,0 +1,10 @@
+error[E0425]: cannot find value `hidden` in this scope
+  --> tests/choice/compile_fail/hidden_choice_binding.rs:16:27
+   |
+ 3 | #[kaalang]
+   | ---------- in this attribute macro expansion
+...
+16 |     |present| -> result { hidden };
+   |                           ^^^^^^ not found in this scope
+   |
+   = note: this error originates in the macro `__kaalang_continue_0_0` which comes from the expansion of the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

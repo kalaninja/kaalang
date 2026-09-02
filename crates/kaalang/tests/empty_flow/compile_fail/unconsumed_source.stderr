@@ -1,0 +1,5 @@
+error: every non-ignored kaalang wire must have a consumer on every path
+ --> tests/empty_flow/compile_fail/unconsumed_source.rs:4:12
+  |
+4 | fn invalid(value: u8) {
+  |            ^^^^^

@@ -1,5 +1,0 @@
-error: duplicate Contour block output
- --> tests/wire/compile_fail/duplicate_action_output.rs:6:25
-  |
-6 |     |input| -> (shared, shared) { (input, input) };
-  |                         ^^^^^^

@@ -1,5 +1,0 @@
-error: a Contour block output must not reuse a source wire name
- --> tests/wire/compile_fail/source_output_conflict.rs:6:17
-  |
-6 |     |&input| -> input { *input };
-  |                 ^^^^^

@@ -1,5 +1,0 @@
-error: the Contour End block must be the final statement
- --> tests/end/compile_fail/non_final_end.rs:5:5
-  |
-5 |     #[end]
-  |     ^

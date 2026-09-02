@@ -1,8 +1,0 @@
-error: a Contour choice match must contain exactly one arm for each output
-  --> tests/choice/compile_fail/choice_missing_output.rs:10:9
-   |
-10 | /         match input {
-11 | |             ..0 => (),
-12 | |             _ => (),
-13 | |         }
-   | |_________^

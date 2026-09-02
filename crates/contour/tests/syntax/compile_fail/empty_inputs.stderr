@@ -1,5 +1,0 @@
-error: a Contour block requires at least one input
- --> tests/syntax/compile_fail/empty_inputs.rs:6:6
-  |
-6 |     || -> (yes, no) { true };
-  |      ^

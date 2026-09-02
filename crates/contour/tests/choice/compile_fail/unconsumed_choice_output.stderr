@@ -1,5 +1,0 @@
-error: every Contour choice output must have a consumer
- --> tests/choice/compile_fail/unconsumed_choice_output.rs:8:27
-  |
-8 |     |input| -> (negative, nonnegative) {
-  |                           ^^^^^^^^^^^

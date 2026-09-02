@@ -1,7 +1,0 @@
-error: #[contour] does not accept arguments
- --> tests/syntax/compile_fail/contour_arguments.rs:3:1
-  |
-3 | #[contour(unexpected)]
-  | ^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `contour` (in Nightly builds, run with -Z macro-backtrace for more info)

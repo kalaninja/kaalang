@@ -1,8 +1,0 @@
-error: `todo!()` is supported only as the whole Contour choice body
-  --> tests/choice/compile_fail/partial_choice_todo.rs:10:20
-   |
-10 |               ..0 => {
-   |  ____________________^
-11 | |                 todo!()
-12 | |             }
-   | |_____________^

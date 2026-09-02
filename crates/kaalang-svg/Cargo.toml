@@ -1,0 +1,19 @@
+[package]
+name = "kaalang-svg"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+kaalang-model = { workspace = true }
+proc-macro2 = { workspace = true, features = ["span-locations"] }
+syn = { workspace = true }
+unicode-segmentation = { workspace = true }
+
+[[bin]]
+name = "cargo-kaalang"
+path = "src/main.rs"
+
+[lints]
+workspace = true

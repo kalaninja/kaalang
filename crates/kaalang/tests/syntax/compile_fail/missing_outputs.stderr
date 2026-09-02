@@ -1,0 +1,5 @@
+error: a kaalang block must declare its outputs after `->`
+ --> tests/syntax/compile_fail/missing_outputs.rs:6:12
+  |
+6 |     |&input| true;
+  |            ^

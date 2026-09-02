@@ -1,0 +1,5 @@
+error: a kaalang block input must name a source wire or an earlier block output
+ --> tests/empty_flow/compile_fail/unknown_end_input.rs:6:6
+  |
+6 |     |unknown| {};
+  |      ^^^^^^^

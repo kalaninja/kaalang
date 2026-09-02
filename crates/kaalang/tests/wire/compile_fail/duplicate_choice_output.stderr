@@ -1,0 +1,5 @@
+error: duplicate kaalang block output
+ --> tests/wire/compile_fail/duplicate_choice_output.rs:8:25
+  |
+8 |     |value| -> (branch, branch) {
+  |                         ^^^^^^

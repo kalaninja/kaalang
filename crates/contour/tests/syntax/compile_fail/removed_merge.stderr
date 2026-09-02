@@ -1,5 +1,0 @@
-error: Contour blocks support only comments and Contour attributes
- --> tests/syntax/compile_fail/removed_merge.rs:5:5
-  |
-5 |     #[merge]
-  |     ^^^^^^^^

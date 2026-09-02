@@ -1,5 +1,0 @@
-error: multiple Contour blocks are ready at once; add an explicit dependency
- --> tests/flow/compile_fail/ambiguous_start.rs:8:5
-  |
-8 |     #[action("Produce the second result.")]
-  |     ^

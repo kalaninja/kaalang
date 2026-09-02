@@ -1,5 +1,0 @@
-error: a Contour choice case attribute requires a parenthesized description
- --> tests/choice/compile_fail/missing_case_description.rs:6:5
-  |
-6 |     #[case]
-  |     ^^^^^^^

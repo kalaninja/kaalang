@@ -1,5 +1,0 @@
-error: this Contour block is unreachable
-  --> tests/flow/compile_fail/unreachable_block.rs:11:5
-   |
-11 |     #[action("Reuse the already consumed input.")]
-   |     ^

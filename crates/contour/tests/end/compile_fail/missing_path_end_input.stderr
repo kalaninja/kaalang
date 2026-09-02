@@ -1,5 +1,0 @@
-error: this Contour path cannot supply every End input
-  --> tests/end/compile_fail/missing_path_end_input.rs:15:6
-   |
-15 |     |result| {};
-   |      ^^^^^^

@@ -1,0 +1,5 @@
+error: kaalang End inputs must be bare identifiers
+ --> tests/end/compile_fail/borrowed_end_input.rs:6:7
+  |
+6 |     |&input| {};
+  |       ^^^^^

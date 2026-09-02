@@ -1,0 +1,5 @@
+error: `#[case]` is not valid on this kind of kaalang block
+ --> tests/choice/compile_fail/case_without_choice.rs:6:5
+  |
+6 |     #[case("The action has no cases.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

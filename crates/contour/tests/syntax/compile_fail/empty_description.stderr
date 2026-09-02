@@ -1,5 +1,0 @@
-error: a Contour block requires a non-empty description
- --> tests/syntax/compile_fail/empty_description.rs:3:14
-  |
-3 |     #[action("")]
-  |              ^^

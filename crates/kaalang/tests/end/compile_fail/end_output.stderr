@@ -1,0 +1,5 @@
+error: a kaalang End block must not declare outputs
+ --> tests/end/compile_fail/end_output.rs:6:13
+  |
+6 |     |input| -> output {};
+  |             ^^^^^^^^^

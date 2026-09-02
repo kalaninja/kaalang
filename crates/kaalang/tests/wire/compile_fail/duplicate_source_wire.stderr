@@ -1,0 +1,5 @@
+error: duplicate kaalang source wire
+ --> tests/wire/compile_fail/duplicate_source_wire.rs:4:38
+  |
+4 | fn duplicate_source_wire(value: i32, value: i32) -> i32 {
+  |                                      ^^^^^

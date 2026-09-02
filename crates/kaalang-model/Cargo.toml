@@ -1,0 +1,13 @@
+[package]
+name = "kaalang-model"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+proc-macro2 = { workspace = true }
+syn = { workspace = true }
+
+[lints]
+workspace = true

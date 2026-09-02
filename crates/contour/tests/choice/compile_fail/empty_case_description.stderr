@@ -1,5 +1,0 @@
-error: a Contour choice case requires a non-empty description
- --> tests/choice/compile_fail/empty_case_description.rs:6:12
-  |
-6 |     #[case("")]
-  |            ^^

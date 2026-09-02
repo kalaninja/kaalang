@@ -1,5 +1,0 @@
-error: a Contour block must declare exactly one kind
- --> tests/syntax/compile_fail/duplicate_kind.rs:6:5
-  |
-6 |     #[question("Is the value large?")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

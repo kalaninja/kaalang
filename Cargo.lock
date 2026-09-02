@@ -3,43 +3,6 @@
 version = 4
 
 [[package]]
-name = "contour"
-version = "0.1.0"
-dependencies = [
- "contour-macros",
- "contour-svg",
- "trybuild",
-]
-
-[[package]]
-name = "contour-macros"
-version = "0.1.0"
-dependencies = [
- "contour-model",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "contour-model"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "syn",
-]
-
-[[package]]
-name = "contour-svg"
-version = "0.1.0"
-dependencies = [
- "contour-model",
- "proc-macro2",
- "syn",
- "unicode-segmentation",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -72,6 +35,43 @@ name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+
+[[package]]
+name = "kaalang"
+version = "0.1.0"
+dependencies = [
+ "kaalang-macros",
+ "kaalang-svg",
+ "trybuild",
+]
+
+[[package]]
+name = "kaalang-macros"
+version = "0.1.0"
+dependencies = [
+ "kaalang-model",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "kaalang-model"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "syn",
+]
+
+[[package]]
+name = "kaalang-svg"
+version = "0.1.0"
+dependencies = [
+ "kaalang-model",
+ "proc-macro2",
+ "syn",
+ "unicode-segmentation",
+]
 
 [[package]]
 name = "memchr"

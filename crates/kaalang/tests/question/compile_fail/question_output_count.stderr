@@ -1,0 +1,5 @@
+error: a kaalang question must declare exactly two outputs
+ --> tests/question/compile_fail/question_output_count.rs:6:14
+  |
+6 |     |&input| -> yes { true };
+  |              ^^^^^^

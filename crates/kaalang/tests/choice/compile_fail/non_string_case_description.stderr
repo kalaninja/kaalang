@@ -1,0 +1,5 @@
+error: a kaalang choice case description must be a string literal
+ --> tests/choice/compile_fail/non_string_case_description.rs:6:5
+  |
+6 |     #[case(The input is negative.)]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

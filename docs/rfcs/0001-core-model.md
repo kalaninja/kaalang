@@ -1,4 +1,4 @@
-# RFC 0001: Contour Core Model
+# RFC 0001: kaalang Core Model
 
 - Status: accepted design draft
 - Model version: `0.1`
@@ -6,23 +6,23 @@
 
 ## 1. Overview
 
-Contour is a language for writing flows as valid Rust. It is inspired by DRAKON
+kaalang is a language for writing flows as valid Rust. It is inspired by DRAKON
 but defines its own syntax and semantics.
 
-Contour's defining property is that visual semantics and execution share one
+kaalang's defining property is that visual semantics and execution share one
 model. A diagram is not an architectural sketch implemented separately; it is a
-view of the same validated flow that Contour lowers for execution. Reviewers can
+view of the same validated flow that kaalang lowers for execution. Reviewers can
 therefore reason about program behavior from the diagram without translating it
 to another implementation or wondering whether the two have diverged.
 
-A Contour flow is an ordinary Rust function marked with `#[contour]`. The
+A kaalang flow is an ordinary Rust function marked with `#[kaalang]`. The
 attribute validates the flow and lowers it to ordinary Rust control flow. A flow
 contains blocks connected by named wires, and its visible dependencies determine
 which block executes next.
 
-Contour uses these terms consistently:
+kaalang uses these terms consistently:
 
-- a **flow** is one function marked with `#[contour]`;
+- a **flow** is one function marked with `#[kaalang]`;
 - a **block** is an action, question, choice, or End statement;
 - a **wire** is a named logical connection between one or more path-exclusive
   producers and its consumers;
@@ -43,9 +43,9 @@ unconsumed intentionally. The function return type is the contract for the
 ordered wires captured by End.
 
 ```rust
-use contour::contour;
+use kaalang::kaalang;
 
-#[contour]
+#[kaalang]
 fn decide(request: Request) -> Decision {
     #[question("Is the request valid?")]
     |&request| -> (valid, invalid) { todo!() };
@@ -77,7 +77,7 @@ A flow may contain no computational blocks, but it still declares its mandatory
 End:
 
 ```rust
-#[contour]
+#[kaalang]
 fn nothing() {
     #[end]
     || {};
@@ -85,20 +85,20 @@ fn nothing() {
 ```
 
 This flow has zero source wires, zero result wires, and no wire connecting its
-boundaries. Rust represents the function result as `()`, but Contour does not
+boundaries. Rust represents the function result as `()`, but kaalang does not
 create an implicit unit-valued wire. A completely empty body is invalid because
 it does not declare End.
 
 An ignored parameter remains explicit:
 
 ```rust
-#[contour]
+#[kaalang]
 fn discard(_value: Value) {
     #[end]
     || {};
 }
 
-#[contour]
+#[kaalang]
 fn discard_at_the_boundary(_: Value) {
     #[end]
     || {};
@@ -127,7 +127,7 @@ attribute because its behavior is fully structural.
 Source comments remain ordinary Rust comments. Block and case descriptions come
 from their attributes.
 
-`#[contour]` consumes the closure-shaped syntax and executes it through ordinary
+`#[kaalang]` consumes the closure-shaped syntax and executes it through ordinary
 Rust bindings and expressions.
 
 ## 4. Wires, producers, and inputs
@@ -166,7 +166,7 @@ join a wire that has already appeared as an input.
 
 The shared consumer captures `selected` by name. On either path exactly one
 producer is available, so the consumer is the implicit convergence point and is
-executed once. Contour does not have a merge block.
+executed once. kaalang does not have a merge block.
 
 Each computational block lists every wire available to its body:
 
@@ -185,13 +185,13 @@ On every path reaching a consumer, each captured name resolves to exactly one
 available producer. No producer is an error; more than one proves that the
 supposed alternatives are not path-exclusive and is also an error.
 
-Consumption is a Contour rule independent of Rust's `Copy` trait. A block body
+Consumption is a kaalang rule independent of Rust's `Copy` trait. A block body
 receives local bindings only for its listed inputs, so omitted and consumed
 wires are out of scope. Rust locals declared inside a block remain local to that
 body and may reuse a wire's spelling without changing wire resolution.
 
 Rust checks concrete wire types, moves, borrows, alternative producer type
-agreement, and output destructuring. Contour keeps types out of wire declarations
+agreement, and output destructuring. kaalang keeps types out of wire declarations
 and relies on Rust inference.
 
 ## 5. Action
@@ -325,7 +325,7 @@ implicitly.
 The outer syntax is ordinary Rust:
 
 ```text
-flow := "#[contour]" rust_function
+flow := "#[kaalang]" rust_function
 
 action_statement :=
     "#[action(" block_description ")]"
@@ -371,7 +371,7 @@ There is no merge statement.
 
 ## 11. Validation and execution
 
-`#[contour]` parses block syntax, groups producer occurrences by logical wire
+`#[kaalang]` parses block syntax, groups producer occurrences by logical wire
 name, validates block-local and path-dependent invariants, and lowers the flow
 to nested Rust `let`, `if`, and `match` expressions.
 
@@ -385,7 +385,7 @@ wire once.
 End lowers to an empty Rust body, its one captured wire, or the ordered tuple of
 its captured wires. Rust checks body types, match exhaustiveness, ownership,
 borrows, output patterns, alternative producer types, and the End result.
-Contour's generated scopes keep omitted wires, consumed wires, match bindings,
+kaalang's generated scopes keep omitted wires, consumed wires, match bindings,
 and block locals outside downstream block bodies.
 
 An authored `todo!()` remains in the lowered body. A choice placeholder still
@@ -393,8 +393,8 @@ type-checks every downstream branch, and execution panics if it reaches the
 placeholder.
 
 A placeholder diverges, so Rust reports every block lowered after it as
-unreachable code. `#[contour]` does not suppress this: an unfinished flow is
+unreachable code. `#[kaalang]` does not suppress this: an unfinished flow is
 meant to be visible, and a workspace that denies warnings rejects one until its
 placeholders are written. An author who wants the flow quiet while filling it in
-writes `#[allow(unreachable_code)]` on the function, which `#[contour]` re-emits
+writes `#[allow(unreachable_code)]` on the function, which `#[kaalang]` re-emits
 with the function's other attributes.

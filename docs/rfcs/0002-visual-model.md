@@ -1,4 +1,4 @@
-# RFC 0002: Contour Visual Model
+# RFC 0002: kaalang Visual Model
 
 - Status: accepted design draft
 - Model version: `0.1`
@@ -6,14 +6,14 @@
 
 ## 1. Overview
 
-Contour has a visual representation of the flow model defined by RFC 0001. The
+kaalang has a visual representation of the flow model defined by RFC 0001. The
 visual graph is a projection of a validated semantic `Graph`; it does not parse
 or reinterpret the authored Rust syntax independently.
 
 The graph builder remains the source of truth for blocks, wires, branches,
 paths, implicit convergence, and their order. Rust lowering and visual rendering
 are separate consumers of that graph. A diagram therefore represents the same
-validated flow that Contour lowers for execution.
+validated flow that kaalang lowers for execution.
 
 ## 2. Visual graph
 
@@ -32,7 +32,7 @@ comments, and data-wire dependencies do not add or change control topology. A
 wire name may label a connection, but data dependencies are not drawn as a
 separate graph.
 
-Contour has no merge node. Path-exclusive producers of the same logical wire
+kaalang has no merge node. Path-exclusive producers of the same logical wire
 converge directly at their first shared consumer or at End.
 
 ## 3. Labels and branches
@@ -108,18 +108,18 @@ escapes XML content, and wraps long labels without changing their values.
 The library entry point is:
 
 ```rust
-contour_svg::render_source(source: &str, flow_name: &str)
+kaalang_svg::render_source(source: &str, flow_name: &str)
     -> Result<String, RenderError>
 ```
 
-It finds the named top-level `#[contour]` function in one UTF-8 Rust source
+It finds the named top-level `#[kaalang]` function in one UTF-8 Rust source
 file, builds its validated semantic graph, lays it out, and serializes it. It
 does not invoke `cargo check` or perform full Rust type checking.
 
 The command-line interface is:
 
 ```text
-cargo contour diagram <source.rs> --flow <name> [-o <path>]
+cargo kaalang diagram <source.rs> --flow <name> [-o <path>]
 ```
 
 Without `-o`, the command writes `./<name>.svg`. It creates or replaces the

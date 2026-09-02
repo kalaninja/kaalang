@@ -1,5 +1,0 @@
-error: duplicate Contour block input
- --> tests/wire/compile_fail/duplicate_block_input.rs:6:13
-  |
-6 |     |value, value| -> doubled { value * 2 };
-  |             ^^^^^
