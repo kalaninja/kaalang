@@ -180,10 +180,11 @@ impl Builder<'_> {
                 incoming,
             ),
             Plan::EndArrival { inputs } => {
-                let zero_wire_flow = inputs.is_empty()
-                    && incoming.origin.node == NodeId::Start
-                    && self.graph.flow.sources.is_empty();
-                if !zero_wire_flow {
+                // Start reaches End only across a wire End captures: a boundary
+                // that hands nothing over is drawn unconnected, whatever it
+                // declares.
+                let unwired_boundary = inputs.is_empty() && incoming.origin.node == NodeId::Start;
+                if !unwired_boundary {
                     self.terminals.push(Incoming {
                         label: (!inputs.is_empty()).then(|| join(inputs)),
                         ..incoming
@@ -805,41 +806,43 @@ mod tests {
         );
     }
 
+    /// Start reaches End only across a wire End captures. What the boundary
+    /// declares does not decide it: a wildcard parameter, a named parameter
+    /// left unconsumed, and no parameter at all are drawn the same way.
     #[test]
-    fn zero_wire_flow_draws_start_and_end_without_a_connection() {
+    fn a_zero_computation_flow_connects_start_to_end_only_through_a_captured_wire() {
+        for parameters in ["", "_: u8", "_value: u8"] {
+            let source = format!(
+                r"
+                #[kaalang]
+                fn boundary({parameters}) {{
+                    #[end]
+                    || {{}};
+                }}
+            "
+            );
+            let scene = scene(&source, "boundary");
+
+            assert_eq!(
+                scene.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
+                [NodeId::Start, NodeId::Block(0)]
+            );
+            assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
+            assert!(
+                scene.edges.is_empty(),
+                "`{parameters}` hands nothing to End, so nothing connects them"
+            );
+        }
+
         let scene = scene(
             r"
                 #[kaalang]
-                fn nothing() {
+                fn identity<T>(value: T) -> T {
                     #[end]
-                    || {};
+                    |value| {};
                 }
             ",
-            "nothing",
-        );
-
-        assert_eq!(
-            scene.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
-            [NodeId::Start, NodeId::Block(0)]
-        );
-        assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
-        assert!(scene.edges.is_empty());
-    }
-
-    /// A source with no result wires still connects Start to End: the
-    /// connection disappears only when both ends carry nothing. It carries no
-    /// label, which is the shape `connect_points` asserts on.
-    #[test]
-    fn a_sourced_flow_without_results_draws_an_unlabeled_connection() {
-        let scene = scene(
-            r"
-                #[kaalang]
-                fn discard(_value: u8) {
-                    #[end]
-                    || {};
-                }
-            ",
-            "discard",
+            "identity",
         );
 
         assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
@@ -849,7 +852,7 @@ mod tests {
                 .iter()
                 .map(|edge| (edge.from, edge.to, edge.label.as_deref()))
                 .collect::<Vec<_>>(),
-            [(NodeId::Start, NodeId::Block(0), None)]
+            [(NodeId::Start, NodeId::Block(0), Some("value"))]
         );
     }
 

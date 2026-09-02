@@ -60,9 +60,10 @@ When sibling paths produce the same logical wire, each incoming connection keeps
 that shared wire name. The paths meet at the one downstream consumer that
 captures the name. No synthetic node is inserted between them.
 
-A zero-computation flow contains Start and the authored End. With zero source
-and result wires, it contains no connection between those nodes; Rust's unit
-result does not appear as a wire.
+A zero-computation flow contains Start and the authored End. Those nodes are
+connected only when End captures a source wire; when End captures nothing they
+are drawn unconnected, whether or not the boundary declares source wires. Rust's
+unit result does not appear as a wire.
 
 ## 4. Layout and style
 
