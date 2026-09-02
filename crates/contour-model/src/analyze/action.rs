@@ -13,8 +13,8 @@ pub(super) fn enter(
     state: PathState,
 ) -> Result<WorkPlan> {
     let mut next = analysis.enter(index, state);
-    for (output, ident) in analysis.flow.blocks[index].outputs.iter().enumerate() {
-        next.produce(ident, Producer::Block { index, output })?;
+    for output in &analysis.flow.blocks[index].outputs {
+        next.produce(output, Producer::Block(index))?;
     }
     Ok(WorkPlan {
         kind: WorkKind::Action {

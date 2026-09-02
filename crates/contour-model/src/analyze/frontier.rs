@@ -1,10 +1,12 @@
 //! Resumable execution-plan frontiers and their public-plan conversion.
 
+use std::slice;
+
 use proc_macro2::Ident;
 use syn::Result;
 
-use super::{Analysis, PathState, choice};
-use crate::model::{Branch, Convergence, Plan};
+use super::{Analysis, PathState, choice, combine_states};
+use crate::model::{BlockKind, Branch, Convergence, Plan};
 
 pub(super) struct WorkPlan {
     pub(super) kind: WorkKind,
@@ -22,17 +24,13 @@ pub(super) enum WorkKind {
         index: usize,
         next: Box<WorkPlan>,
     },
-    Question {
+    /// A question or choice; the block kind decides its public plan variant.
+    Branching {
         id: usize,
         index: usize,
+        kind: BlockKind,
         branches: Vec<WorkPlan>,
-        join: WorkJoin,
-    },
-    Choice {
-        id: usize,
-        index: usize,
-        branches: Vec<WorkPlan>,
-        join: WorkJoin,
+        join: Option<WorkJoin>,
     },
     EndArrival {
         inputs: Vec<Ident>,
@@ -42,18 +40,10 @@ pub(super) enum WorkKind {
     },
 }
 
-pub(super) enum WorkJoin {
-    None,
-    Convergence {
-        wires: Vec<Ident>,
-        next: Box<WorkPlan>,
-    },
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Outcome {
-    End,
-    Yield,
+/// The implicit convergence sibling branches yield into, and what follows it.
+pub(super) struct WorkJoin {
+    pub(super) wires: Vec<Ident>,
+    pub(super) next: Box<WorkPlan>,
 }
 
 pub(super) struct Candidate {
@@ -63,61 +53,58 @@ pub(super) struct Candidate {
 }
 
 impl WorkPlan {
+    /// The subtrees that continue this plan: an action's continuation, a
+    /// converged branch point's shared continuation, or its open branches.
+    fn children(&self) -> impl Iterator<Item = &WorkPlan> {
+        let children: &[WorkPlan] = match &self.kind {
+            WorkKind::Action { next, .. } => slice::from_ref(next.as_ref()),
+            WorkKind::Branching {
+                join: Some(join), ..
+            } => slice::from_ref(join.next.as_ref()),
+            WorkKind::Branching { branches, .. } => branches,
+            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => &[],
+        };
+        children.iter()
+    }
+
+    fn children_mut(&mut self) -> impl Iterator<Item = &mut WorkPlan> {
+        let children: &mut [WorkPlan] = match &mut self.kind {
+            WorkKind::Action { next, .. } => slice::from_mut(next.as_mut()),
+            WorkKind::Branching {
+                join: Some(join), ..
+            } => slice::from_mut(join.next.as_mut()),
+            WorkKind::Branching { branches, .. } => branches,
+            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => &mut [],
+        };
+        children.iter_mut()
+    }
+
     pub(super) fn collect_frontiers<'a>(&'a self, frontiers: &mut Vec<(usize, &'a PathState)>) {
-        match &self.kind {
-            WorkKind::Open { id, state } => frontiers.push((*id, state)),
-            WorkKind::Action { next, .. } => next.collect_frontiers(frontiers),
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::None => {
-                        for branch in branches {
-                            branch.collect_frontiers(frontiers);
-                        }
-                    }
-                    WorkJoin::Convergence { next, .. } => next.collect_frontiers(frontiers),
-                }
-            }
-            WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => {}
+        if let WorkKind::Open { id, state } = &self.kind {
+            frontiers.push((*id, state));
+        }
+        for child in self.children() {
+            child.collect_frontiers(frontiers);
         }
     }
 
     pub(super) fn frontier(&self, target: usize) -> Option<&PathState> {
         match &self.kind {
             WorkKind::Open { id, state } if *id == target => Some(state),
-            WorkKind::Action { next, .. } => next.frontier(target),
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::None => branches.iter().find_map(|branch| branch.frontier(target)),
-                    WorkJoin::Convergence { next, .. } => next.frontier(target),
-                }
-            }
-            _ => None,
+            _ => self.children().find_map(|child| child.frontier(target)),
         }
     }
 
-    pub(super) fn replace_frontier(&mut self, target: usize, replacement: WorkPlan) -> bool {
-        match &mut self.kind {
-            WorkKind::Open { id, .. } if *id == target => {
-                *self = replacement;
-                true
-            }
-            WorkKind::Action { next, .. } => next.replace_frontier(target, replacement),
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::None => {
-                        for branch in branches {
-                            if branch.frontier(target).is_some() {
-                                return branch.replace_frontier(target, replacement);
-                            }
-                        }
-                        false
-                    }
-                    WorkJoin::Convergence { next, .. } => {
-                        next.replace_frontier(target, replacement)
-                    }
-                }
-            }
-            _ => false,
+    pub(super) fn replace_frontier(&mut self, target: usize, replacement: WorkPlan) {
+        if matches!(&self.kind, WorkKind::Open { id, .. } if *id == target) {
+            *self = replacement;
+            return;
+        }
+        if let Some(child) = self
+            .children_mut()
+            .find(|child| child.frontier(target).is_some())
+        {
+            child.replace_frontier(target, replacement);
         }
     }
 
@@ -125,103 +112,59 @@ impl WorkPlan {
         &self,
         analysis: &Analysis<'_>,
     ) -> Result<Option<Candidate>> {
-        match &self.kind {
-            WorkKind::Action { next, .. } => next.convergence_candidate(analysis),
-            WorkKind::Question {
-                id, branches, join, ..
-            } => branch_candidate(analysis, *id, branches, join, None),
-            WorkKind::Choice {
-                id,
-                index,
-                branches,
-                join,
-            } => branch_candidate(analysis, *id, branches, join, Some(*index)),
-            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => {
-                Ok(None)
+        if let WorkKind::Branching {
+            id,
+            index,
+            kind,
+            branches,
+            join: None,
+        } = &self.kind
+            && let Some(candidate) = branch_candidate(analysis, *id, *index, *kind, branches)?
+        {
+            return Ok(Some(candidate));
+        }
+        for child in self.children() {
+            if let Some(candidate) = child.convergence_candidate(analysis)? {
+                return Ok(Some(candidate));
             }
         }
+        Ok(None)
     }
 
-    pub(super) fn install_convergence(&mut self, target: usize, convergence: WorkJoin) -> bool {
-        match &mut self.kind {
-            WorkKind::Action { next, .. } => next.install_convergence(target, convergence),
-            WorkKind::Question { id, join, .. } | WorkKind::Choice { id, join, .. }
-                if *id == target =>
-            {
-                debug_assert!(matches!(join, WorkJoin::None));
-                *join = convergence;
-                true
-            }
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::None => {
-                        for branch in branches {
-                            if branch.contains_branch(target) {
-                                return branch.install_convergence(target, convergence);
-                            }
-                        }
-                        false
-                    }
-                    WorkJoin::Convergence { next, .. } => {
-                        next.install_convergence(target, convergence)
-                    }
-                }
-            }
-            _ => false,
+    pub(super) fn install_convergence(&mut self, target: usize, convergence: WorkJoin) {
+        if let WorkKind::Branching { id, join, .. } = &mut self.kind
+            && *id == target
+        {
+            debug_assert!(join.is_none());
+            *join = Some(convergence);
+            return;
+        }
+        if let Some(child) = self
+            .children_mut()
+            .find(|child| child.contains_branch(target))
+        {
+            child.install_convergence(target, convergence);
         }
     }
 
     fn contains_branch(&self, target: usize) -> bool {
-        match &self.kind {
-            WorkKind::Action { next, .. } => next.contains_branch(target),
-            WorkKind::Question {
-                id, branches, join, ..
-            }
-            | WorkKind::Choice {
-                id, branches, join, ..
-            } => {
-                *id == target
-                    || match join {
-                        WorkJoin::None => {
-                            branches.iter().any(|branch| branch.contains_branch(target))
-                        }
-                        WorkJoin::Convergence { next, .. } => next.contains_branch(target),
-                    }
-            }
-            _ => false,
-        }
+        matches!(&self.kind, WorkKind::Branching { id, .. } if *id == target)
+            || self.children().any(|child| child.contains_branch(target))
     }
 
-    pub(super) fn collect_end_states(
-        &self,
-        target: usize,
-        visit: &mut impl FnMut(&PathState),
-    ) -> bool {
+    /// Visits the exit state of every path below one branch point that ended.
+    pub(super) fn collect_end_states(&self, target: usize, visit: &mut impl FnMut(&PathState)) {
         match &self.kind {
-            WorkKind::Action { next, .. } => next.collect_end_states(target, visit),
-            WorkKind::Question {
-                id, branches, join, ..
-            }
-            | WorkKind::Choice {
-                id, branches, join, ..
-            } => {
-                if *id == target {
-                    for branch in branches {
-                        branch.visit_end_states(visit);
-                    }
-                    true
-                } else {
-                    match join {
-                        WorkJoin::None => branches
-                            .iter()
-                            .any(|branch| branch.collect_end_states(target, visit)),
-                        WorkJoin::Convergence { next, .. } => {
-                            next.collect_end_states(target, visit)
-                        }
-                    }
+            WorkKind::Branching { id, branches, .. } if *id == target => {
+                for branch in branches {
+                    branch.visit_end_states(visit);
                 }
             }
-            _ => false,
+            _ => {
+                for child in self.children() {
+                    child.collect_end_states(target, visit);
+                }
+            }
         }
     }
 
@@ -230,43 +173,41 @@ impl WorkPlan {
             visit(state);
             return;
         }
-        match &self.kind {
-            WorkKind::Action { next, .. } => next.visit_end_states(visit),
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::None => {
-                        for branch in branches {
-                            branch.visit_end_states(visit);
-                        }
-                    }
-                    WorkJoin::Convergence { next, .. } => next.visit_end_states(visit),
-                }
-            }
-            _ => {}
+        for child in self.children() {
+            child.visit_end_states(visit);
         }
     }
 
-    fn outcome(&self) -> Outcome {
+    /// Propagates completed paths through shared continuations: a plan exits
+    /// once every child that continues it does.
+    pub(super) fn settle(&mut self) {
+        for child in self.children_mut() {
+            child.settle();
+        }
+        if self.exit.is_some() {
+            return;
+        }
+        let exits = self
+            .children()
+            .map(|child| child.exit.as_ref())
+            .collect::<Option<Vec<_>>>();
+        if let Some(states) = exits.as_deref()
+            && !states.is_empty()
+        {
+            self.exit = Some(combine_states(states));
+        }
+    }
+
+    /// Reports whether this completed subtree yields into an ancestor
+    /// convergence instead of reaching End.
+    fn yields(&self) -> bool {
         match &self.kind {
-            WorkKind::Action { next, .. } => next.outcome(),
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                match join {
-                    WorkJoin::Convergence { next, .. } => next.outcome(),
-                    WorkJoin::None => {
-                        if branches
-                            .iter()
-                            .any(|branch| branch.outcome() == Outcome::Yield)
-                        {
-                            Outcome::Yield
-                        } else {
-                            Outcome::End
-                        }
-                    }
-                }
-            }
-            WorkKind::EndArrival { .. } => Outcome::End,
-            WorkKind::Yield { .. } => Outcome::Yield,
+            WorkKind::Yield { .. } => true,
+            WorkKind::EndArrival { .. } => false,
             WorkKind::Open { .. } => panic!("an open frontier has no completed outcome"),
+            WorkKind::Action { .. } | WorkKind::Branching { .. } => {
+                self.children().any(WorkPlan::yields)
+            }
         }
     }
 
@@ -277,34 +218,37 @@ impl WorkPlan {
                 index,
                 next: Box::new(next.into_plan()),
             },
-            WorkKind::Question {
+            WorkKind::Branching {
                 index,
+                kind,
                 branches,
                 join,
                 ..
             } => {
-                let convergence = join.into_public();
+                let convergence = join.map(|join| Convergence {
+                    wires: join.wires,
+                    next: Box::new(join.next.into_plan()),
+                });
                 let branches = public_branches(branches, convergence.is_some());
-                let Ok(branches) = <[Branch; 2]>::try_from(branches) else {
-                    unreachable!("a question declares exactly two outputs")
-                };
-                Plan::Question {
-                    index,
-                    branches,
-                    convergence,
-                }
-            }
-            WorkKind::Choice {
-                index,
-                branches,
-                join,
-                ..
-            } => {
-                let convergence = join.into_public();
-                Plan::Choice {
-                    index,
-                    branches: public_branches(branches, convergence.is_some()),
-                    convergence,
+                match kind {
+                    BlockKind::Question => {
+                        let Ok(branches) = <[Branch; 2]>::try_from(branches) else {
+                            unreachable!("a question declares exactly two outputs")
+                        };
+                        Plan::Question {
+                            index,
+                            branches,
+                            convergence,
+                        }
+                    }
+                    BlockKind::Choice => Plan::Choice {
+                        index,
+                        branches,
+                        convergence,
+                    },
+                    BlockKind::Action | BlockKind::End => {
+                        unreachable!("only questions and choices branch")
+                    }
                 }
             }
             WorkKind::EndArrival { inputs } => Plan::EndArrival { inputs },
@@ -313,20 +257,16 @@ impl WorkPlan {
     }
 }
 
-/// Reports the convergence one branch point is ready for: every frontier still
-/// open below it waits on the same authored block. Branches whose paths already
-/// ended contribute no frontier and take no part in it.
+/// Reports the convergence one unconverged branch point is ready for: every
+/// frontier still open below it waits on the same authored block. Branches
+/// whose paths already ended contribute no frontier and take no part in it.
 fn branch_candidate(
     analysis: &Analysis<'_>,
     id: usize,
+    index: usize,
+    kind: BlockKind,
     branches: &[WorkPlan],
-    join: &WorkJoin,
-    choice: Option<usize>,
 ) -> Result<Option<Candidate>> {
-    if let WorkJoin::Convergence { next, .. } = join {
-        return next.convergence_candidate(analysis);
-    }
-
     let mut frontiers = Vec::new();
     let mut continuing = Vec::with_capacity(branches.len());
     for branch in branches {
@@ -334,80 +274,65 @@ fn branch_candidate(
         branch.collect_frontiers(&mut frontiers);
         continuing.push(frontiers.len() > opened);
     }
-    if frontiers.len() > 1 {
-        let ready = frontiers
+    if frontiers.len() < 2 {
+        return Ok(None);
+    }
+    let ready = frontiers
+        .iter()
+        .map(|(_, state)| analysis.ready(state))
+        .collect::<Result<Vec<_>>>()?;
+    let Some(Some(shared)) = ready.first() else {
+        return Ok(None);
+    };
+    if ready.iter().any(|candidate| candidate != &Some(*shared)) {
+        return Ok(None);
+    }
+    if kind == BlockKind::Choice {
+        choice::adjacent_branches(&continuing, &analysis.flow.blocks[index].outputs)?;
+    }
+
+    // The shared consumer's inputs come first and fix the yielded tuple
+    // order; every other output joins them so alternative wires survive
+    // for consumers further along the shared continuation.
+    let inputs = analysis.flow.blocks[*shared]
+        .inputs
+        .iter()
+        .map(|input| &input.ident);
+    let outputs = analysis.flow.blocks.iter().flat_map(|block| &block.outputs);
+    let mut wires = Vec::new();
+    for ident in inputs.chain(outputs) {
+        if wires.contains(ident) {
+            continue;
+        }
+        let Some(first) = frontiers[0].1.available.get(ident) else {
+            continue;
+        };
+        if frontiers[1..]
             .iter()
-            .map(|(_, state)| analysis.ready(state))
-            .collect::<Result<Vec<_>>>()?;
-        if let Some(Some(shared)) = ready.first()
-            && ready.iter().all(|candidate| candidate == &Some(*shared))
-        {
-            if let Some(index) = choice {
-                choice::adjacent_branches(&continuing, &analysis.flow.blocks[index].outputs)?;
-            }
-            // The shared consumer's inputs come first and fix the yielded tuple
-            // order; every other output joins them so alternative wires survive
-            // for consumers further along the shared continuation.
-            let inputs = analysis.flow.blocks[*shared]
-                .inputs
+            .all(|(_, state)| state.available.contains_key(ident))
+            && frontiers[1..]
                 .iter()
-                .map(|input| &input.ident);
-            let outputs = analysis.flow.blocks.iter().flat_map(|block| &block.outputs);
-            let mut wires = Vec::new();
-            for ident in inputs.chain(outputs) {
-                if wires.contains(ident) {
-                    continue;
-                }
-                let Some(first) = frontiers[0].1.available.get(ident) else {
-                    continue;
-                };
-                if frontiers[1..]
-                    .iter()
-                    .all(|(_, state)| state.available.contains_key(ident))
-                    && frontiers[1..]
-                        .iter()
-                        .any(|(_, state)| state.available[ident].origin != first.origin)
-                {
-                    wires.push(ident.clone());
-                }
-            }
-            return Ok(Some(Candidate {
-                branch: id,
-                frontiers: frontiers.iter().map(|(id, _)| *id).collect(),
-                wires,
-            }));
+                .any(|(_, state)| state.available[ident] != *first)
+        {
+            wires.push(ident.clone());
         }
     }
-
-    for branch in branches {
-        if let Some(candidate) = branch.convergence_candidate(analysis)? {
-            return Ok(Some(candidate));
-        }
-    }
-    Ok(None)
-}
-
-impl WorkJoin {
-    fn into_public(self) -> Option<Convergence> {
-        match self {
-            Self::None => None,
-            Self::Convergence { wires, next } => Some(Convergence {
-                wires,
-                next: Box::new(next.into_plan()),
-            }),
-        }
-    }
+    Ok(Some(Candidate {
+        branch: id,
+        frontiers: frontiers.iter().map(|(id, _)| *id).collect(),
+        wires,
+    }))
 }
 
 fn public_branches(branches: Vec<WorkPlan>, joined: bool) -> Vec<Branch> {
-    let outcomes = branches.iter().map(WorkPlan::outcome).collect::<Vec<_>>();
-    let continuing = joined || outcomes.iter().any(|outcome| *outcome != Outcome::End);
+    let yields = branches.iter().map(WorkPlan::yields).collect::<Vec<_>>();
+    let continuing = joined || yields.contains(&true);
     branches
         .into_iter()
-        .zip(outcomes)
-        .map(|(plan, outcome)| Branch {
+        .zip(yields)
+        .map(|(plan, yields)| Branch {
             plan: Box::new(plan.into_plan()),
-            early_return: continuing && outcome == Outcome::End,
+            early_return: continuing && !yields,
         })
         .collect()
 }

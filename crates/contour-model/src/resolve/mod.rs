@@ -81,13 +81,17 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
 
 /// Requires every ordinary output to have a consumer.
 fn validate_outputs(blocks: &[Block]) -> Result<()> {
-    let consumed = consumed_wires(blocks);
+    let consumed = blocks
+        .iter()
+        .flat_map(|block| &block.inputs)
+        .map(|input| &input.ident)
+        .collect::<HashSet<_>>();
 
     for block in blocks {
         let unconsumed = block
             .outputs
             .iter()
-            .filter(|output| !output.to_string().starts_with('_') && !consumed.contains(*output))
+            .filter(|output| !output.to_string().starts_with('_') && !consumed.contains(output))
             .collect::<Vec<_>>();
 
         match block.kind {
@@ -99,13 +103,4 @@ fn validate_outputs(blocks: &[Block]) -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Collects every wire name that some block reads.
-fn consumed_wires(blocks: &[Block]) -> HashSet<Ident> {
-    blocks
-        .iter()
-        .flat_map(|block| &block.inputs)
-        .map(|input| input.ident.clone())
-        .collect()
 }

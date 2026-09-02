@@ -11,7 +11,6 @@ mod action;
 mod choice;
 mod end;
 mod frontier;
-mod question;
 
 use frontier::{Candidate, WorkJoin, WorkKind, WorkPlan};
 
@@ -20,36 +19,19 @@ use frontier::{Candidate, WorkJoin, WorkKind, WorkPlan};
 pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
     let end = flow.blocks.len() - 1;
     debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
-    let sources = flow
-        .sources
-        .iter()
-        .enumerate()
-        .map(|(index, source)| {
-            (
-                source.clone(),
-                AvailableWire {
-                    ident: source.clone(),
-                    origin: Producer::Source(index),
-                },
-            )
-        })
-        .collect();
-    let produced = flow.sources.iter().cloned().collect();
-    let unconsumed = flow
-        .sources
-        .iter()
-        .map(|source| (source.clone(), source.clone()))
-        .collect();
     let mut analysis = Analysis {
         flow,
         visited: HashSet::new(),
-        next_frontier: 0,
-        next_branch: 0,
+        next_id: 0,
     };
     let mut work = analysis.open(PathState {
-        available: sources,
-        produced,
-        unconsumed,
+        available: flow
+            .sources
+            .iter()
+            .map(|source| (source.clone(), Producer::Source))
+            .collect(),
+        produced: flow.sources.iter().cloned().collect(),
+        unconsumed: flow.sources.iter().cloned().collect(),
         executed: HashSet::new(),
     });
     analysis.run(&mut work)?;
@@ -76,30 +58,28 @@ pub(crate) fn flow(flow: &Flow) -> Result<Plan> {
 struct Analysis<'a> {
     flow: &'a Flow,
     visited: HashSet<usize>,
-    next_frontier: usize,
-    next_branch: usize,
+    /// Frontiers and branch points draw ids from one counter; each only needs
+    /// to be unique.
+    next_id: usize,
 }
 
-#[derive(Clone)]
-struct AvailableWire {
-    /// The producer occurrence whose span should be used when this value is
-    /// yielded from a branch expression.
-    ident: Ident,
-    origin: Producer,
-}
-
+/// The occurrence that made a wire available on a path. Origins are compared
+/// only for one wire name at a time, and sources, one block's outputs, and one
+/// convergence's wires are each unique by name, so the owner identifies it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Producer {
-    Source(usize),
-    Block { index: usize, output: usize },
-    Convergence { branch: usize, wire: usize },
+    Source,
+    Block(usize),
+    Convergence(usize),
 }
 
 #[derive(Clone)]
 struct PathState {
-    available: HashMap<Ident, AvailableWire>,
+    /// Every wire a block on this path may still consume. The key is the
+    /// producer occurrence whose span a branch yield reports against.
+    available: HashMap<Ident, Producer>,
     produced: HashSet<Ident>,
-    unconsumed: HashMap<Ident, Ident>,
+    unconsumed: HashSet<Ident>,
     executed: HashSet<usize>,
 }
 
@@ -112,14 +92,8 @@ impl PathState {
                 "a Contour wire must not be produced more than once on the same path",
             ));
         }
-        self.available.insert(
-            output.clone(),
-            AvailableWire {
-                ident: output.clone(),
-                origin,
-            },
-        );
-        self.unconsumed.insert(output.clone(), output.clone());
+        self.available.insert(output.clone(), origin);
+        self.unconsumed.insert(output.clone());
         Ok(())
     }
 }
@@ -127,7 +101,7 @@ impl PathState {
 impl Analysis<'_> {
     fn run(&mut self, work: &mut WorkPlan) -> Result<()> {
         loop {
-            self.settle(work)?;
+            work.settle();
             if work.exit.is_some() {
                 return Ok(());
             }
@@ -148,51 +122,46 @@ impl Analysis<'_> {
         }
     }
 
+    fn next_id(&mut self) -> usize {
+        let id = self.next_id;
+        self.next_id += 1;
+        id
+    }
+
     fn open(&mut self, state: PathState) -> WorkPlan {
-        let id = self.next_frontier;
-        self.next_frontier += 1;
         WorkPlan {
-            kind: WorkKind::Open { id, state },
+            kind: WorkKind::Open {
+                id: self.next_id(),
+                state,
+            },
             exit: None,
         }
     }
 
-    fn branch_id(&mut self) -> usize {
-        let id = self.next_branch;
-        self.next_branch += 1;
-        id
-    }
-
     /// Reports the one block ready at a frontier, or `None` when the path has
-    /// run out of blocks and must be finished.
+    /// run out of blocks and must be finished. End counts toward readiness
+    /// even after a converged sibling path executed it.
     fn ready(&self, state: &PathState) -> Result<Option<usize>> {
+        let end = self.flow.blocks.len() - 1;
         let ready = self
             .flow
             .blocks
             .iter()
             .enumerate()
             .filter(|(index, block)| {
-                !state.executed.contains(index)
-                    && match block.kind {
-                        BlockKind::Action | BlockKind::Question | BlockKind::Choice => {
-                            inputs_available(block, state)
-                        }
-                        BlockKind::End => false,
-                    }
+                (*index == end || !state.executed.contains(index)) && inputs_available(block, state)
             })
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
 
-        let end = self.flow.blocks.len() - 1;
-        let end_ready = inputs_available(&self.flow.blocks[end], state);
-        if ready.len() + usize::from(end_ready) > 1 {
-            let conflict = ready.get(1).copied().unwrap_or(end);
-            return Err(Error::new(
-                self.flow.blocks[conflict].span,
+        match ready.as_slice() {
+            [] => Ok(None),
+            [first] => Ok((*first != end).then_some(*first)),
+            [_, conflict, ..] => Err(Error::new(
+                self.flow.blocks[*conflict].span,
                 "multiple Contour blocks are ready at once; add an explicit dependency",
-            ));
+            )),
         }
-        Ok(ready.first().copied())
     }
 
     fn advance(&mut self, work: &mut WorkPlan, frontier: usize) -> Result<()> {
@@ -200,9 +169,10 @@ impl Analysis<'_> {
             .frontier(frontier)
             .expect("the selected frontier belongs to the work plan")
             .clone();
+        let end = self.flow.blocks.len() - 1;
         let replacement = match self.ready(&state)? {
             Some(index) => self.enter_block(index, state)?,
-            None => self.finish(state)?,
+            None => end::arrive(self, end, state)?,
         };
         work.replace_frontier(frontier, replacement);
         Ok(())
@@ -211,8 +181,7 @@ impl Analysis<'_> {
     fn enter_block(&mut self, index: usize, state: PathState) -> Result<WorkPlan> {
         match self.flow.blocks[index].kind {
             BlockKind::Action => action::enter(self, index, state),
-            BlockKind::Question => question::enter(self, index, state),
-            BlockKind::Choice => choice::enter(self, index, state),
+            BlockKind::Question | BlockKind::Choice => self.branch_point(index, state),
             BlockKind::End => unreachable!("End is entered only after a path is exhausted"),
         }
     }
@@ -230,52 +199,27 @@ impl Analysis<'_> {
         state
     }
 
-    fn finish(&mut self, state: PathState) -> Result<WorkPlan> {
-        end::arrive(self, self.flow.blocks.len() - 1, state)
-    }
-
-    /// Propagates completed paths through shared continuations.
-    fn settle(&mut self, plan: &mut WorkPlan) -> Result<()> {
-        let exit = match &mut plan.kind {
-            WorkKind::Open { .. } | WorkKind::EndArrival { .. } | WorkKind::Yield { .. } => None,
-            WorkKind::Action { next, .. } => {
-                self.settle(next)?;
-                next.exit.clone()
-            }
-            WorkKind::Question { branches, join, .. } | WorkKind::Choice { branches, join, .. } => {
-                self.settle_branches(branches, join)?
-            }
-        };
-        if plan.exit.is_none() {
-            plan.exit = exit;
+    /// Opens one frontier per output of a question or choice, each producing
+    /// only the output that selects it.
+    fn branch_point(&mut self, index: usize, state: PathState) -> Result<WorkPlan> {
+        let next = self.enter(index, state);
+        let outputs = &self.flow.blocks[index].outputs;
+        let mut branches = Vec::with_capacity(outputs.len());
+        for output in outputs {
+            let mut branch = next.clone();
+            branch.produce(output, Producer::Block(index))?;
+            branches.push(self.open(branch));
         }
-        Ok(())
-    }
-
-    fn settle_branches(
-        &mut self,
-        branches: &mut [WorkPlan],
-        join: &mut WorkJoin,
-    ) -> Result<Option<PathState>> {
-        match join {
-            WorkJoin::Convergence { next, .. } => {
-                self.settle(next)?;
-                return Ok(next.exit.clone());
-            }
-            WorkJoin::None => {}
-        }
-
-        for branch in branches.iter_mut() {
-            self.settle(branch)?;
-        }
-        let mut states = Vec::with_capacity(branches.len());
-        for branch in branches.iter() {
-            let Some(state) = &branch.exit else {
-                return Ok(None);
-            };
-            states.push(state);
-        }
-        Ok(Some(combine_states(&states)))
+        Ok(WorkPlan {
+            kind: WorkKind::Branching {
+                id: self.next_id(),
+                index,
+                kind: self.flow.blocks[index].kind,
+                branches,
+                join: None,
+            },
+            exit: None,
+        })
     }
 
     fn converge(&mut self, work: &mut WorkPlan, candidate: Candidate) {
@@ -285,45 +229,37 @@ impl Analysis<'_> {
             .map(|id| {
                 work.frontier(*id)
                     .expect("a convergence frontier belongs to its branch")
-                    .clone()
             })
             .collect::<Vec<_>>();
-        let mut combined = combine_states(&states.iter().collect::<Vec<_>>());
+        let mut combined = combine_states(&states);
         work.collect_end_states(candidate.branch, &mut |state| {
             combined.executed.extend(state.executed.iter().copied());
         });
-
         for (wire, ident) in candidate.wires.iter().enumerate() {
-            combined.available.insert(
-                ident.clone(),
-                AvailableWire {
-                    ident: ident.clone(),
-                    origin: Producer::Convergence {
-                        branch: candidate.branch,
-                        wire,
-                    },
-                },
-            );
+            combined
+                .available
+                .insert(ident.clone(), Producer::Convergence(wire));
         }
 
-        let yielded = candidate
-            .frontiers
+        let yielded = states
             .iter()
-            .map(|id| {
-                let state = work
-                    .frontier(*id)
-                    .expect("a convergence frontier belongs to its branch");
-                let wires = candidate
+            .map(|state| {
+                candidate
                     .wires
                     .iter()
-                    .map(|wire| state.available[wire].ident.clone())
-                    .collect::<Vec<_>>();
-                (*id, wires)
+                    .map(|wire| {
+                        let (ident, _) = state
+                            .available
+                            .get_key_value(wire)
+                            .expect("a convergence wire is available on every converging frontier");
+                        ident.clone()
+                    })
+                    .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
-        for (id, wires) in yielded {
+        for (id, wires) in candidate.frontiers.iter().zip(yielded) {
             work.replace_frontier(
-                id,
+                *id,
                 WorkPlan {
                     kind: WorkKind::Yield { wires },
                     exit: None,
@@ -334,7 +270,7 @@ impl Analysis<'_> {
         let next = self.open(combined);
         work.install_convergence(
             candidate.branch,
-            WorkJoin::Convergence {
+            WorkJoin {
                 wires: candidate.wires,
                 next: Box::new(next),
             },
@@ -375,19 +311,11 @@ fn combine_states(states: &[&PathState]) -> PathState {
         .expect("a question or choice has at least one continuing path"))
     .clone();
     for state in &states[1..] {
-        combined.available.retain(|name, available| {
-            state
-                .available
-                .get(name)
-                .is_some_and(|other| other.origin == available.origin)
-        });
+        combined
+            .available
+            .retain(|name, origin| state.available.get(name) == Some(&*origin));
         combined.produced.extend(state.produced.iter().cloned());
-        combined.unconsumed.extend(
-            state
-                .unconsumed
-                .iter()
-                .map(|(name, span)| (name.clone(), span.clone())),
-        );
+        combined.unconsumed.extend(state.unconsumed.iter().cloned());
         combined.executed.extend(state.executed.iter().copied());
     }
     combined
