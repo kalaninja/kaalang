@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use kaalang_model::{BlockKind, Branch, Convergence, Graph, Plan};
-use syn::Ident;
+use syn::{Ident, Signature, spanned::Spanned};
 use unicode_segmentation::UnicodeSegmentation;
 
 mod action;
@@ -97,8 +97,17 @@ pub(crate) struct Edge {
     pub(crate) label_at: Option<Point>,
 }
 
-pub(crate) fn layout(graph: &Graph) -> Scene {
-    let parameters = join(&graph.flow.sources);
+/// The authored flow signature, minus `fn`, with every whitespace run collapsed
+/// so a signature written across source lines wraps on the label's own terms.
+pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
+    let authored = source[signature.span().byte_range()]
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    authored.strip_prefix("fn ").unwrap_or(&authored).to_owned()
+}
+
+pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
     let skewer_count = plan_span(&graph.plan);
     let mut builder = Builder {
         graph,
@@ -111,7 +120,7 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
     let start = builder.add_node(
         NodeId::Start,
         NodeKind::Start,
-        format!("{}({parameters})", graph.name),
+        signature.to_owned(),
         0,
         MARGIN,
     );
@@ -757,7 +766,7 @@ mod tests {
 
     use super::{
         LABEL_FONT, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds, layout,
-        skewer_x, text_width, wrap_text,
+        signature_text, skewer_x, text_width, wrap_text,
     };
 
     fn scene(source: &str, flow: &str) -> Scene {
@@ -772,7 +781,7 @@ mod tests {
         };
         let graph = kaalang_model::build(function).expect("the flow is valid");
 
-        layout(&graph)
+        layout(&graph, &signature_text(source, &function.sig))
     }
 
     fn node(scene: &Scene, id: NodeId) -> &Node {
@@ -781,6 +790,37 @@ mod tests {
             .iter()
             .find(|node| node.id == id)
             .expect("the node is drawn")
+    }
+
+    /// Start carries the signature as authored. `fn` goes because the label is
+    /// already known to be the flow, a signature spread over source lines
+    /// becomes one line so the label wraps to its own budget, and everything
+    /// else survives: a wildcard parameter the boundary declares no wire for,
+    /// a raw identifier, generics, and a where clause.
+    #[test]
+    fn a_signature_label_keeps_the_authored_text_without_the_fn_keyword() {
+        let source = r"
+            #[kaalang]
+            fn boundary<T>(
+                _: u8,
+                r#type: T,
+            ) -> T
+            where
+                T: Clone,
+            {
+                #[end]
+                |r#type| {};
+            }
+        ";
+        let file = syn::parse_file(source).expect("the fixture parses");
+        let syn::Item::Fn(function) = &file.items[0] else {
+            unreachable!("the fixture declares a function")
+        };
+
+        assert_eq!(
+            signature_text(source, &function.sig),
+            "boundary<T>( _: u8, r#type: T, ) -> T where T: Clone,"
+        );
     }
 
     /// A word with no break opportunity is split rather than left to run
@@ -1592,7 +1632,7 @@ mod tests {
             }
         };
         let graph = kaalang_model::build(&function).expect("the flow is valid");
-        let scene = layout(&graph);
+        let scene = layout(&graph, "decide(condition: bool) -> u8");
         let question = scene
             .nodes
             .iter()

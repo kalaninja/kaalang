@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="526" viewBox="0 0 344 526" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="534" viewBox="0 0 344 534" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for split_nested_tuple</title>
-  <desc id="kaalang-description">Nodes: Start: split_nested_tuple(input); Action: Build two outputs, including a tuple.; Action: Produce the result pair.; End. Connections: Start: split_nested_tuple(input) to Action: Build two outputs, including a tuple.; Action: Build two outputs, including a tuple. to Action: Produce the result pair.; Action: Produce the result pair. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: split_nested_tuple(input: u32) -&gt; ((u32, u32), u32); Action: Build two outputs, including a tuple.; Action: Produce the result pair.; End. Connections: Start: split_nested_tuple(input: u32) -&gt; ((u32, u32), u32) to Action: Build two outputs, including a tuple.; Action: Build two outputs, including a tuple. to Action: Produce the result pair.; Action: Produce the result pair. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -14,27 +14,27 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-    <path class="edge" d="M 172 90 L 172 162"/>
-    <path class="edge" d="M 172 228 L 172 300"/>
-    <path class="edge" d="M 172 364 L 172 436"/>
-    <text class="edge-label" x="214" y="382" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 236 L 172 308"/>
+    <path class="edge" d="M 172 372 L 172 444"/>
+    <text class="edge-label" x="214" y="390" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">split_nested_tuple(input)</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">split_nested_tuple(input: u32) -&gt; </tspan><tspan x="0" dy="18">((u32, u32), u32)</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 195)">
+    <g class="node action" transform="translate(172 203)">
       <title xml:space="preserve">Build two outputs, including a tuple.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build two outputs, including a </tspan><tspan x="-124" dy="18">tuple.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 332)">
+    <g class="node action" transform="translate(172 340)">
       <title xml:space="preserve">Produce the result pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the result pair.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 465)">
+    <g class="node end" transform="translate(172 473)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>

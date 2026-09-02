@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="812" viewBox="0 0 1064 812" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="820" viewBox="0 0 1064 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_convergence</title>
-  <desc id="kaalang-description">Nodes: Start: nested_convergence(outer, inner); Question: Take the nested path?; Question: Choose the nested value.; Action: Build the nested yes value.; Action: Build the nested no value.; Action: Build the direct value.; Action: Use the selected nested value.; End. Connections: Start: nested_convergence(outer, inner) to Question: Take the nested path?; Question: Take the nested path? to Question: Choose the nested value. via nested; Question: Choose the nested value. to Action: Build the nested yes value. via inner_yes; Question: Choose the nested value. to Action: Build the nested no value. via inner_no; Question: Take the nested path? to Action: Build the direct value. via direct; Action: Build the nested yes value. to Action: Use the selected nested value. via selected; Action: Build the nested no value. to Action: Use the selected nested value. via selected; Action: Build the direct value. to Action: Use the selected nested value. via selected; Action: Use the selected nested value. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: nested_convergence(outer: bool, inner: bool) -&gt; u32; Question: Take the nested path?; Question: Choose the nested value.; Action: Build the nested yes value.; Action: Build the nested no value.; Action: Build the direct value.; Action: Use the selected nested value.; End. Connections: Start: nested_convergence(outer: bool, inner: bool) -&gt; u32 to Question: Take the nested path?; Question: Take the nested path? to Question: Choose the nested value. via nested; Question: Choose the nested value. to Action: Build the nested yes value. via inner_yes; Question: Choose the nested value. to Action: Build the nested no value. via inner_no; Question: Take the nested path? to Action: Build the direct value. via direct; Action: Build the nested yes value. to Action: Use the selected nested value. via selected; Action: Build the nested no value. to Action: Use the selected nested value. via selected; Action: Build the direct value. to Action: Use the selected nested value. via selected; Action: Use the selected nested value. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -14,60 +14,60 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-    <path class="edge" d="M 172 90 L 172 162"/>
-    <path class="edge" d="M 172 234 L 172 306"/>
-    <text class="edge-label" x="214" y="265" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
-    <path class="edge" d="M 172 378 L 172 450"/>
-    <text class="edge-label" x="214" y="409" xml:space="preserve"><tspan x="214" dy="0">inner_yes</tspan></text>
-    <path class="edge" d="M 312 342 L 532 342 L 532 450"/>
-    <text class="edge-label" x="422" y="334" xml:space="preserve"><tspan x="422" dy="0">inner_no</tspan></text>
-    <path class="edge" d="M 312 198 L 892 198 L 892 306"/>
-    <text class="edge-label" x="602" y="190" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
-    <path class="edge" d="M 172 514 L 172 586"/>
-    <text class="edge-label" x="214" y="545" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
-    <path class="edge" d="M 532 514 L 532 550 L 172 550 L 172 586"/>
-    <text class="edge-label" x="574" y="532" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
-    <path class="edge" d="M 892 370 L 892 550 L 172 550 L 172 586"/>
-    <text class="edge-label" x="934" y="388" xml:space="preserve"><tspan x="934" dy="0">selected</tspan></text>
-    <path class="edge" d="M 172 650 L 172 722"/>
-    <text class="edge-label" x="214" y="668" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 242 L 172 314"/>
+    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
+    <path class="edge" d="M 172 386 L 172 458"/>
+    <text class="edge-label" x="214" y="417" xml:space="preserve"><tspan x="214" dy="0">inner_yes</tspan></text>
+    <path class="edge" d="M 312 350 L 532 350 L 532 458"/>
+    <text class="edge-label" x="422" y="342" xml:space="preserve"><tspan x="422" dy="0">inner_no</tspan></text>
+    <path class="edge" d="M 312 206 L 892 206 L 892 314"/>
+    <text class="edge-label" x="602" y="198" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
+    <path class="edge" d="M 172 522 L 172 594"/>
+    <text class="edge-label" x="214" y="553" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <path class="edge" d="M 532 522 L 532 558 L 172 558 L 172 594"/>
+    <text class="edge-label" x="574" y="540" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
+    <path class="edge" d="M 892 378 L 892 558 L 172 558 L 172 594"/>
+    <text class="edge-label" x="934" y="396" xml:space="preserve"><tspan x="934" dy="0">selected</tspan></text>
+    <path class="edge" d="M 172 658 L 172 730"/>
+    <text class="edge-label" x="214" y="676" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_convergence(outer, inner)</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_convergence(outer: bool, </tspan><tspan x="0" dy="18">inner: bool) -&gt; u32</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 198)">
+    <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Take the nested path?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the nested path?</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 342)">
+    <g class="node question" transform="translate(172 350)">
       <title xml:space="preserve">Choose the nested value.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose the nested value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 482)">
+    <g class="node action" transform="translate(172 490)">
       <title xml:space="preserve">Build the nested yes value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the nested yes value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 482)">
+    <g class="node action" transform="translate(532 490)">
       <title xml:space="preserve">Build the nested no value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the nested no value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 338)">
+    <g class="node action" transform="translate(892 346)">
       <title xml:space="preserve">Build the direct value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 618)">
+    <g class="node action" transform="translate(172 626)">
       <title xml:space="preserve">Use the selected nested value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected nested value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 751)">
+    <g class="node end" transform="translate(172 759)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>

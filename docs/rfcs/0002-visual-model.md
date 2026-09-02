@@ -23,9 +23,9 @@ a Select node followed by one derived Case node for each authored `#[case]`
 attribute. Case nodes are visual projections, not additional semantic blocks.
 No authored block is duplicated to simplify layout.
 
-The renderer adds one synthetic **Start** node representing the flow boundary
-and its source wires. End comes from the mandatory authored `#[end]` statement;
-the renderer does not add a separate Return node.
+The renderer adds one synthetic **Start** node representing the flow boundary,
+labeled with the authored flow signature. End comes from the mandatory authored
+`#[end]` statement; the renderer does not add a separate Return node.
 
 Connections between nodes come from the validated plan. Rust bodies, source
 comments, and data-wire dependencies do not add or change control topology. A
@@ -44,6 +44,14 @@ breaks between grapheme clusters, so a cluster spelled with several code points
 stays on one line and a word with no other break opportunity is still divided
 rather than drawn outside its node. End has no authored description and is
 identified by its visual role.
+
+Start uses the authored flow signature without its `fn` keyword, with each run
+of whitespace collapsed to one space so the label wraps to its own budget.
+Nothing else is rewritten: parameter types, generics, the return type, a where
+clause, a wildcard parameter, and the `r#` of a raw identifier all appear as
+authored. The signature states the flow's calling contract, which wire names
+alone do not: a boundary input is otherwise drawn only where a connection
+happens to carry its name.
 
 Question branches preserve their positional meaning from RFC 0001: the first
 output is yes/true and the second is no/false. A diagram labels each branch with

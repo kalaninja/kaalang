@@ -99,7 +99,8 @@ pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderErro
     let function = select_flow(&file.items, flow_name)?;
     let graph = kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
     validate_labels(&graph)?;
-    let scene = layout::layout(&graph);
+    let signature = layout::signature_text(source, &function.sig);
+    let scene = layout::layout(&graph, &signature);
 
     Ok(svg::serialize(&scene, &graph.name.to_string()))
 }

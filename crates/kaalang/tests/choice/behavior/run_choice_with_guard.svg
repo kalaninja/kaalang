@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="686" viewBox="0 0 704 686" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="694" viewBox="0 0 704 694" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_guard</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_with_guard(value); Choice: Is the value a positive even number?; Case: The value is positive and even.; Case: The value is not positive and even.; Action: Produce the positive-even result.; Action: Produce the other result.; End. Connections: Start: run_choice_with_guard(value) to Choice: Is the value a positive even number?; Choice: Is the value a positive even number? to Case: The value is positive and even.; Choice: Is the value a positive even number? to Case: The value is not positive and even.; Case: The value is positive and even. to Action: Produce the positive-even result. via positive_even; Case: The value is not positive and even. to Action: Produce the other result. via other; Action: Produce the positive-even result. to End via result; Action: Produce the other result. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_with_guard(value: i32) -&gt; i32; Choice: Is the value a positive even number?; Case: The value is positive and even.; Case: The value is not positive and even.; Action: Produce the positive-even result.; Action: Produce the other result.; End. Connections: Start: run_choice_with_guard(value: i32) -&gt; i32 to Choice: Is the value a positive even number?; Choice: Is the value a positive even number? to Case: The value is positive and even.; Choice: Is the value a positive even number? to Case: The value is not positive and even.; Case: The value is positive and even. to Action: Produce the positive-even result. via positive_even; Case: The value is not positive and even. to Action: Produce the other result. via other; Action: Produce the positive-even result. to End via result; Action: Produce the other result. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -14,49 +14,49 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-    <path class="edge" d="M 172 90 L 172 162"/>
-    <path class="edge" d="M 172 234 L 172 306"/>
-    <path class="edge" d="M 172 234 L 172 270 L 532 270 L 532 306"/>
-    <path class="edge" d="M 172 388 L 172 460"/>
-    <text class="edge-label" x="214" y="419" xml:space="preserve"><tspan x="214" dy="0">positive_even</tspan></text>
-    <path class="edge" d="M 532 388 L 532 460"/>
-    <text class="edge-label" x="574" y="419" xml:space="preserve"><tspan x="574" dy="0">other</tspan></text>
-    <path class="edge" d="M 172 524 L 172 596"/>
-    <text class="edge-label" x="214" y="542" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <path class="edge" d="M 532 524 L 532 564 L 172 564 L 172 596"/>
-    <text class="edge-label" x="574" y="542" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 242 L 172 314"/>
+    <path class="edge" d="M 172 242 L 172 278 L 532 278 L 532 314"/>
+    <path class="edge" d="M 172 396 L 172 468"/>
+    <text class="edge-label" x="214" y="427" xml:space="preserve"><tspan x="214" dy="0">positive_even</tspan></text>
+    <path class="edge" d="M 532 396 L 532 468"/>
+    <text class="edge-label" x="574" y="427" xml:space="preserve"><tspan x="574" dy="0">other</tspan></text>
+    <path class="edge" d="M 172 532 L 172 604"/>
+    <text class="edge-label" x="214" y="550" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <path class="edge" d="M 532 532 L 532 572 L 172 572 L 172 604"/>
+    <text class="edge-label" x="574" y="550" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">run_choice_with_guard(value)</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">run_choice_with_guard(value: i32) </tspan><tspan x="0" dy="18">-&gt; i32</tspan></text>
     </g>
-    <g class="node choice select" transform="translate(172 198)">
+    <g class="node choice select" transform="translate(172 206)">
       <title xml:space="preserve">Is the value a positive even number?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the value a positive even </tspan><tspan x="0" dy="18">number?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 347)">
+    <g class="node case" transform="translate(172 355)">
       <title xml:space="preserve">The value is positive and even.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">The value is positive and </tspan><tspan x="0" dy="18">even.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 347)">
+    <g class="node case" transform="translate(532 355)">
       <title xml:space="preserve">The value is not positive and even.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">The value is not positive and </tspan><tspan x="0" dy="18">even.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 492)">
+    <g class="node action" transform="translate(172 500)">
       <title xml:space="preserve">Produce the positive-even result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the positive-even result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 492)">
+    <g class="node action" transform="translate(532 500)">
       <title xml:space="preserve">Produce the other result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the other result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 625)">
+    <g class="node end" transform="translate(172 633)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>
