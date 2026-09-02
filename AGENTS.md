@@ -20,6 +20,8 @@ tests, commit messages, and pull request content.
   including the `cargo-contour` CLI.
 - `crates/contour/` exports the public macro and owns its test suite. Behavior
   tests are executable examples; compile-fail tests document rejected forms.
+  The `.svg` beside each `behavior.rs` is drawn by `cargo test -p contour` and
+  reviewed in the diff; never edit one by hand.
 
 Do not restate the language contract in this guide or the root README. Link to
 the relevant RFC instead.

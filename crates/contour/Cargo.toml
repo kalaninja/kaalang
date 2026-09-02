@@ -9,6 +9,7 @@ publish = false
 contour-macros = { workspace = true }
 
 [dev-dependencies]
+contour-svg = { workspace = true }
 trybuild = { workspace = true }
 
 [lints]

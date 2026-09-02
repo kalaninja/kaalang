@@ -18,3 +18,5 @@ jobs:
       - run: cargo check --workspace
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # The behavior diagrams redraw themselves during the tests above.
+      - run: git add -A && git diff --cached --exit-code

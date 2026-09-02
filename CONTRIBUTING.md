@@ -92,6 +92,11 @@ cargo run -p contour-svg --bin cargo-contour -- diagram \
   -o crates/contour-svg/tests/fixtures/end_collector.svg
 ```
 
+The diagrams beside each `crates/contour/tests/*/behavior.rs` redraw themselves
+during `cargo test`, so a renderer or model change arrives as a diff over them.
+Read that diff before committing: nothing else checks that the new diagrams
+still make sense.
+
 ## Commits
 
 Use Conventional Commits:

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="940" viewBox="0 0 704 940" role="img" aria-labelledby="contour-title" aria-describedby="contour-description">
+  <title id="contour-title">Contour diagram for classify</title>
+  <desc id="contour-description">Nodes: Start: classify(seed, limit); Action: Normalize the seed.; Action: Split the seed.; Action: Add the values.; Question: Is the total above the limit?; Action: Keep the accepted total.; Action: Keep the rejected total.; End. Connections: Start: classify(seed, limit) to Action: Normalize the seed.; Action: Normalize the seed. to Action: Split the seed.; Action: Split the seed. to Action: Add the values.; Action: Add the values. to Question: Is the total above the limit?; Question: Is the total above the limit? to Action: Keep the accepted total. via accepted; Question: Is the total above the limit? to Action: Keep the rejected total. via rejected; Action: Keep the accepted total. to End via result; Action: Keep the rejected total. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 226 L 172 298"/>
+    <path class="edge" d="M 172 362 L 172 434"/>
+    <path class="edge" d="M 172 498 L 172 570"/>
+    <path class="edge" d="M 172 642 L 172 714"/>
+    <text class="edge-label" x="214" y="673" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
+    <path class="edge" d="M 312 606 L 532 606 L 532 714"/>
+    <text class="edge-label" x="422" y="598" xml:space="preserve"><tspan x="422" dy="0">rejected</tspan></text>
+    <path class="edge" d="M 172 778 L 172 850"/>
+    <text class="edge-label" x="214" y="796" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <path class="edge" d="M 532 778 L 532 818 L 172 818 L 172 850"/>
+    <text class="edge-label" x="574" y="796" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">classify(seed, limit)</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 194)">
+      <title xml:space="preserve">Normalize the seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Normalize the seed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 330)">
+      <title xml:space="preserve">Split the seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Split the seed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 466)">
+      <title xml:space="preserve">Add the values.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the values.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 606)">
+      <title xml:space="preserve">Is the total above the limit?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the total above the limit?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 746)">
+      <title xml:space="preserve">Keep the accepted total.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the accepted total.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 746)">
+      <title xml:space="preserve">Keep the rejected total.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the rejected total.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 879)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

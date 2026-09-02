@@ -7,6 +7,7 @@ name = "contour"
 version = "0.1.0"
 dependencies = [
  "contour-macros",
+ "contour-svg",
  "trybuild",
 ]
 

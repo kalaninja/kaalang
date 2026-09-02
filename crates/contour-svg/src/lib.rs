@@ -3,7 +3,7 @@
 use std::{error::Error, fmt};
 
 use proc_macro2::Span;
-use syn::{Item, ItemFn, Meta};
+use syn::{File, Item, ItemFn, Meta};
 
 mod layout;
 mod svg;
@@ -95,14 +95,7 @@ impl Error for RenderError {}
 /// and [`RenderError::InvalidLabelCharacter`] when an authored description
 /// contains a character XML 1.0 cannot represent.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
-    let file = syn::parse_file(source).map_err(|error| {
-        let (line, column) = location(error.span());
-        RenderError::Parse {
-            line,
-            column,
-            message: error.to_string(),
-        }
-    })?;
+    let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
     let graph = contour_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
     validate_labels(&graph)?;
@@ -111,19 +104,46 @@ pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderErro
     Ok(svg::serialize(&scene, &graph.name.to_string()))
 }
 
-fn select_flow<'a>(items: &'a [Item], flow_name: &str) -> Result<&'a ItemFn, RenderError> {
-    let mut matches = items.iter().filter_map(|item| match item {
+/// Names every top-level `#[contour]` function in a UTF-8 Rust source file, in
+/// source order.
+///
+/// # Errors
+///
+/// Returns [`RenderError::Parse`] when `source` is not valid Rust.
+pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
+    Ok(contour_functions(&parse_file(source)?.items)
+        .map(|function| function.sig.ident.to_string())
+        .collect())
+}
+
+fn parse_file(source: &str) -> Result<File, RenderError> {
+    syn::parse_file(source).map_err(|error| {
+        let (line, column) = location(error.span());
+        RenderError::Parse {
+            line,
+            column,
+            message: error.to_string(),
+        }
+    })
+}
+
+/// Yields the top-level functions carrying a `#[contour]` attribute.
+fn contour_functions(items: &[Item]) -> impl Iterator<Item = &ItemFn> {
+    items.iter().filter_map(|item| match item {
         Item::Fn(function)
-            if function.sig.ident == flow_name
-                && function
-                    .attrs
-                    .iter()
-                    .any(|attribute| attribute.path().is_ident("contour")) =>
+            if function
+                .attrs
+                .iter()
+                .any(|attribute| attribute.path().is_ident("contour")) =>
         {
             Some(function)
         }
         _ => None,
-    });
+    })
+}
+
+fn select_flow<'a>(items: &'a [Item], flow_name: &str) -> Result<&'a ItemFn, RenderError> {
+    let mut matches = contour_functions(items).filter(|function| function.sig.ident == flow_name);
     let Some(function) = matches.next() else {
         return Err(RenderError::FlowNotFound(flow_name.to_owned()));
     };

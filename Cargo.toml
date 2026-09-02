@@ -15,6 +15,7 @@ version = "0.1.0"
 [workspace.dependencies]
 contour-macros = { path = "crates/contour-macros" }
 contour-model = { path = "crates/contour-model" }
+contour-svg = { path = "crates/contour-svg" }
 
 proc-macro2 = "1"
 quote = "1"
