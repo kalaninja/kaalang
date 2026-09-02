@@ -61,6 +61,9 @@ alphabetical position.
 
 ## Change workflow
 
+Use `git mv`, not plain `mv`, when moving or renaming tracked files and
+directories so the rename is staged immediately and remains clear in review.
+
 For syntax or semantic changes:
 
 1. Read the relevant RFC, implementation, and tests.
