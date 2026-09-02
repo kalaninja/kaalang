@@ -12,12 +12,7 @@ use std::{
 fn draws_a_diagram_beside_every_behavior_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut drawn = 0;
-    for entry in fs::read_dir(&tests).unwrap() {
-        let directory = entry.unwrap().path().join("behavior");
-        if !directory.is_dir() {
-            continue;
-        }
-
+    for directory in fixture_directories(&tests) {
         // Collected up front because the loop below writes into this directory.
         let paths: Vec<PathBuf> = fs::read_dir(&directory)
             .unwrap()
@@ -26,20 +21,24 @@ fn draws_a_diagram_beside_every_behavior_fixture() {
 
         let mut current = Vec::new();
         for fixture in paths.iter().filter(|path| extension_is(path, "rs")) {
-            let flow = fixture.file_stem().unwrap().to_str().unwrap();
-            if flow == "mod" {
+            let source = fs::read_to_string(fixture).unwrap();
+            let names = kaalang_svg::flow_names(&source).unwrap();
+            // A `mod.rs` that only lists the fixtures beside it draws nothing.
+            if names.is_empty() {
                 continue;
             }
 
-            let source = fs::read_to_string(fixture).unwrap();
-            // One flow per file, named for it, is what keeps a diagram beside
-            // the source it was drawn from.
-            assert_eq!(
-                kaalang_svg::flow_names(&source).unwrap(),
-                [flow],
-                "{}",
-                fixture.display()
-            );
+            // One flow per file, named for the file — or for the folder, when
+            // the fixture is the folder — is what keeps a diagram beside the
+            // source it was drawn from.
+            let stem = fixture.file_stem().unwrap();
+            let named_after = if stem == "mod" {
+                directory.file_name().unwrap()
+            } else {
+                stem
+            };
+            let flow = named_after.to_str().unwrap();
+            assert_eq!(names, [flow], "{}", fixture.display());
 
             let svg = kaalang_svg::render_source(&source, flow)
                 .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
@@ -61,6 +60,25 @@ fn draws_a_diagram_beside_every_behavior_fixture() {
     }
 
     assert!(drawn > 0, "no behavior fixture was found under {tests:?}");
+}
+
+/// Every module directory inside a test suite. `compile_fail` fixtures are
+/// handed to trybuild rather than compiled as modules, so they have no `mod.rs`
+/// and stay out of the gallery.
+fn fixture_directories(tests: &Path) -> Vec<PathBuf> {
+    let mut directories: Vec<PathBuf> = read_directory(tests)
+        .flat_map(|suite| read_directory(&suite).collect::<Vec<_>>())
+        .filter(|path| path.join("mod.rs").is_file())
+        .collect();
+    directories.sort();
+    directories
+}
+
+fn read_directory(path: &Path) -> impl Iterator<Item = PathBuf> {
+    fs::read_dir(path)
+        .into_iter()
+        .flatten()
+        .map(|entry| entry.expect("readable directory entry").path())
 }
 
 fn extension_is(path: &Path, extension: &str) -> bool {

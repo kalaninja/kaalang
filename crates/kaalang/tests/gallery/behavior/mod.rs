@@ -1,2 +1,0 @@
-mod fizzbuzz;
-mod swap;
