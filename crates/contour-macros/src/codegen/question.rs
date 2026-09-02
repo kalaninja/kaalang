@@ -13,16 +13,13 @@ pub(crate) fn emit(
     branches: &[Branch; 2],
     converged: Option<&Convergence>,
 ) -> TokenStream2 {
-    let branches = [
-        super::continuation(flow, &branches[0], bindings),
-        super::continuation(flow, &branches[1], bindings),
-    ];
+    let yes_path = super::continuation(flow, &branches[0], bindings);
+    let no_path = super::continuation(flow, &branches[1], bindings);
     let block = &flow.blocks[index];
     let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let yes_wire = bindings.wire(&block.outputs[0]);
     let no_wire = bindings.wire(&block.outputs[1]);
-    let [yes_path, no_path] = branches;
     let question = quote_spanned! {block.span=>
         if {
             #input_bindings
@@ -36,5 +33,5 @@ pub(crate) fn emit(
         }
     };
 
-    convergence::emit(flow, bindings, question, converged, None)
+    convergence::emit(flow, bindings, question, converged, block.span)
 }

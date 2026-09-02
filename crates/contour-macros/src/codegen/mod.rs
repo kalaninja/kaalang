@@ -68,7 +68,7 @@ pub(crate) fn flow(flow: &Flow, plan: &Plan, bindings: &Bindings) -> TokenStream
             branches,
             convergence,
         } => choice::emit(flow, bindings, *index, branches, convergence.as_ref()),
-        Plan::End { body, .. } => end::emit(flow, bindings, body),
+        Plan::End { body, .. } => self::flow(flow, body, bindings),
         Plan::EndArrival { inputs } => end::arrival(bindings, inputs),
         Plan::Yield { wires } => convergence::value(bindings, wires),
     }
@@ -104,17 +104,11 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
         // The alias keeps the authored spelling, so a wire named `r#type` binds.
         let alias = &input.alias;
         let wire = bindings.wire(&input.ident);
-        if input.borrowed {
-            quote_spanned!(alias.span()=>
-                #[allow(unused_variables)]
-                let #alias = &#wire;
-            )
-        } else {
-            quote_spanned!(alias.span()=>
-                #[allow(unused_variables, clippy::let_unit_value)]
-                let #alias = #wire;
-            )
-        }
+        let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
+        quote_spanned!(alias.span()=>
+            #[allow(unused_variables, clippy::let_unit_value)]
+            let #alias = #borrow #wire;
+        )
     });
 
     quote!(#(#bindings)*)

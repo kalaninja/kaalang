@@ -149,7 +149,7 @@ pub(crate) fn emit(
         ..
     } = &names;
 
-    let tail = convergence::emit(flow, bindings, dispatch, converged, Some(block.span));
+    let tail = convergence::emit(flow, bindings, dispatch, converged, block.span);
 
     quote_spanned! {block.span=>
         struct #capability_type;

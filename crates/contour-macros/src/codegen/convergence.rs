@@ -24,19 +24,13 @@ pub(super) fn emit(
     bindings: &Bindings,
     branch: TokenStream2,
     converged: Option<&Convergence>,
-    span: Option<Span>,
+    span: Span,
 ) -> TokenStream2 {
     let Some(converged) = converged else {
         return branch;
     };
     let pattern = value(bindings, &converged.wires);
     let continuation = super::flow(flow, &converged.next, bindings);
-    let span = span.unwrap_or_else(|| {
-        converged
-            .wires
-            .first()
-            .map_or(Span::call_site(), Ident::span)
-    });
 
     quote_spanned! {span=>
         let #pattern = #branch;
