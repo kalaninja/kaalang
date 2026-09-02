@@ -26,6 +26,7 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
         }
     }
     let mut producers = source_names.clone();
+    let mut earlier_inputs = HashSet::new();
 
     for block in blocks {
         let mut seen_inputs = HashSet::new();
@@ -55,8 +56,24 @@ fn validate_wires(sources: &[Ident], blocks: &[Block]) -> Result<()> {
                     "a Contour block output must not reuse a source wire name",
                 ));
             }
+            // This must reject before `analyze::ready` sees the flow: End counts
+            // toward readiness, so a block reproducing its own input would be
+            // reported as two ready blocks instead of a duplicate producer.
+            if block.inputs.iter().any(|input| input.ident == *output) {
+                return Err(Error::new(
+                    output.span(),
+                    "a Contour wire must not be produced more than once on the same path",
+                ));
+            }
+            if earlier_inputs.contains(output) {
+                return Err(Error::new(
+                    output.span(),
+                    "every producer of a Contour wire must be declared before its consumers",
+                ));
+            }
             producers.insert(output.clone());
         }
+        earlier_inputs.extend(block.inputs.iter().map(|input| input.ident.clone()));
     }
 
     Ok(())

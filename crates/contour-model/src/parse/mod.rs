@@ -3,7 +3,7 @@
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprClosure, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Result,
-    ReturnType, Stmt, Type, spanned::Spanned,
+    ReturnType, Stmt, Type, ext::IdentExt, spanned::Spanned,
 };
 
 use crate::model::{Block, BlockKind, Flow, Input};
@@ -30,7 +30,9 @@ fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
         .filter_map(|argument| match argument {
             FnArg::Typed(argument) => match argument.pat.as_ref() {
                 Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
-                pattern => Some(simple_binding(pattern, "Contour flow parameters")),
+                pattern => Some(
+                    simple_binding(pattern, "Contour flow parameters").map(|source| source.unraw()),
+                ),
             },
             FnArg::Receiver(receiver) => Some(Err(Error::new(
                 receiver.span(),
@@ -275,22 +277,31 @@ fn block_closure(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Input>, 
 /// Parses one consuming or borrowing block input.
 fn block_input(pattern: &Pat) -> Result<Input> {
     match pattern {
-        Pat::Ident(_) => Ok(Input {
-            borrowed: false,
-            ident: simple_binding(pattern, "Contour block inputs")?,
-        }),
+        Pat::Ident(_) => Ok(input(
+            simple_binding(pattern, "Contour block inputs")?,
+            false,
+        )),
         Pat::Reference(reference)
             if reference.attrs.is_empty() && reference.mutability.is_none() =>
         {
-            Ok(Input {
-                borrowed: true,
-                ident: simple_binding(&reference.pat, "Contour block inputs")?,
-            })
+            Ok(input(
+                simple_binding(&reference.pat, "Contour block inputs")?,
+                true,
+            ))
         }
         _ => Err(Error::new_spanned(
             pattern,
             "Contour block inputs must contain only `name` or `&name`",
         )),
+    }
+}
+
+/// Pairs one authored input spelling with the logical wire it names.
+fn input(alias: Ident, borrowed: bool) -> Input {
+    Input {
+        borrowed,
+        ident: alias.unraw(),
+        alias,
     }
 }
 
@@ -328,7 +339,7 @@ fn output_ident(output: &Type) -> Result<Ident> {
 
     path.path
         .get_ident()
-        .cloned()
+        .map(IdentExt::unraw)
         .ok_or_else(|| unexpected_output(output))
 }
 
@@ -369,7 +380,7 @@ pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String
     Ok(description.value())
 }
 
-/// Extracts an unmodified identifier binding from a Rust pattern.
+/// Extracts an unmodified identifier binding, as authored, from a Rust pattern.
 fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
     let Pat::Ident(binding) = pattern else {
         return Err(Error::new_spanned(

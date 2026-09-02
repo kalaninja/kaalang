@@ -43,7 +43,10 @@ pub struct Block {
 /// One consuming or borrowing block input.
 pub struct Input {
     pub borrowed: bool,
+    /// The logical wire name: raw and ordinary spellings normalize to one ident.
     pub ident: Ident,
+    /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
+    pub alias: Ident,
 }
 
 /// A flow's source wires and blocks, wire-validated by the time consumers see it.

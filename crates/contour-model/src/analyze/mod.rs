@@ -175,7 +175,7 @@ impl Analysis<'_> {
                 !state.executed.contains(index)
                     && match block.kind {
                         BlockKind::Action | BlockKind::Question | BlockKind::Choice => {
-                            regular_ready(block, state)
+                            inputs_available(block, state)
                         }
                         BlockKind::End => false,
                     }
@@ -183,9 +183,12 @@ impl Analysis<'_> {
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
 
-        if ready.len() > 1 {
+        let end = self.flow.blocks.len() - 1;
+        let end_ready = inputs_available(&self.flow.blocks[end], state);
+        if ready.len() + usize::from(end_ready) > 1 {
+            let conflict = ready.get(1).copied().unwrap_or(end);
             return Err(Error::new(
-                self.flow.blocks[ready[1]].span,
+                self.flow.blocks[conflict].span,
                 "multiple Contour blocks are ready at once; add an explicit dependency",
             ));
         }
@@ -339,8 +342,8 @@ impl Analysis<'_> {
     }
 }
 
-/// Reports whether all inputs of a computational block are available.
-fn regular_ready(block: &Block, state: &PathState) -> bool {
+/// Reports whether all inputs of a block are available.
+fn inputs_available(block: &Block, state: &PathState) -> bool {
     block
         .inputs
         .iter()

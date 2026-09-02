@@ -345,17 +345,32 @@ fn branch_candidate(
             if let Some(index) = choice {
                 choice::adjacent_branches(&continuing, &analysis.flow.blocks[index].outputs)?;
             }
-            let wires = analysis.flow.blocks[*shared]
+            // The shared consumer's inputs come first and fix the yielded tuple
+            // order; every other output joins them so alternative wires survive
+            // for consumers further along the shared continuation.
+            let inputs = analysis.flow.blocks[*shared]
                 .inputs
                 .iter()
-                .filter(|input| {
-                    let first = frontiers[0].1.available[&input.ident].origin;
-                    frontiers[1..]
+                .map(|input| &input.ident);
+            let outputs = analysis.flow.blocks.iter().flat_map(|block| &block.outputs);
+            let mut wires = Vec::new();
+            for ident in inputs.chain(outputs) {
+                if wires.contains(ident) {
+                    continue;
+                }
+                let Some(first) = frontiers[0].1.available.get(ident) else {
+                    continue;
+                };
+                if frontiers[1..]
+                    .iter()
+                    .all(|(_, state)| state.available.contains_key(ident))
+                    && frontiers[1..]
                         .iter()
-                        .any(|(_, state)| state.available[&input.ident].origin != first)
-                })
-                .map(|input| input.ident.clone())
-                .collect();
+                        .any(|(_, state)| state.available[ident].origin != first.origin)
+                {
+                    wires.push(ident.clone());
+                }
+            }
             return Ok(Some(Candidate {
                 branch: id,
                 frontiers: frontiers.iter().map(|(id, _)| *id).collect(),

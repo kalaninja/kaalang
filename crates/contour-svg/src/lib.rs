@@ -284,6 +284,41 @@ mod tests {
         );
     }
 
+    /// The core model rejects this before `layout` can receive a plan that
+    /// repeats the shared consumer.
+    #[test]
+    fn rejects_a_late_alternative_producer_before_layout() {
+        let source = r#"#[contour]
+fn invalid(condition: bool) -> u32 {
+    #[question("Choose a value")]
+    |condition| -> (yes, no) { condition };
+
+    #[action("Build the first value")]
+    |yes| -> selected { 1 };
+
+    #[action("Use the selected value")]
+    |selected| -> result { selected };
+
+    #[action("Build the later alternative")]
+    |no| -> selected { 2 };
+
+    #[end]
+    |result| {};
+}
+"#;
+
+        assert_eq!(
+            render_source(source, "invalid"),
+            Err(RenderError::InvalidFlow {
+                name: "invalid".into(),
+                line: 13,
+                column: 13,
+                message: "every producer of a Contour wire must be declared before its consumers"
+                    .into(),
+            })
+        );
+    }
+
     #[test]
     fn rejects_characters_that_xml_cannot_represent() {
         let source = "#[contour]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    |input| -> result { input };\n\n    #[end]\n    |result| {};\n}\n";

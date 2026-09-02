@@ -49,6 +49,42 @@ fn named_after_wildcard<T>(_: (), value: T) -> T {
     |value| {};
 }
 
+#[contour]
+fn raw_source_name(value: u8) -> u8 {
+    #[end]
+    |r#value| {};
+}
+
+#[contour]
+fn raw_output_name(value: u8) -> u8 {
+    #[action("Preserve the value.")]
+    |value| -> r#result { value };
+
+    #[end]
+    |result| {};
+}
+
+#[contour]
+fn raw_ignored_output(value: u8) -> u8 {
+    #[action("Preserve the value and ignore the marker.")]
+    |value| -> (result, r#_ignored) { (value, ()) };
+
+    #[end]
+    |result| {};
+}
+
+#[contour]
+fn raw_keyword_wires(r#type: u8) -> u8 {
+    #[action("Rename the value.")]
+    |r#type| -> r#match { r#type };
+
+    #[action("Preserve the renamed value.")]
+    |r#match| -> result { r#match };
+
+    #[end]
+    |result| {};
+}
+
 #[test]
 fn zero_input_end_returns_unit_without_a_wire() {
     nothing();
@@ -67,4 +103,12 @@ fn end_captures_sources_by_name_and_in_authored_order() {
     assert_eq!(pair(1, 2), (1, 2));
     assert_eq!(reverse_pair(1, 2), (2, 1));
     assert_eq!(named_after_wildcard((), 3), 3);
+}
+
+#[test]
+fn raw_and_ordinary_identifier_spellings_name_the_same_wire() {
+    assert_eq!(raw_source_name(4), 4);
+    assert_eq!(raw_output_name(5), 5);
+    assert_eq!(raw_ignored_output(6), 6);
+    assert_eq!(raw_keyword_wires(7), 7);
 }

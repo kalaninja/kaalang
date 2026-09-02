@@ -1,0 +1,5 @@
+error: every producer of a Contour wire must be declared before its consumers
+  --> tests/wire/compile_fail/producer_after_consumer.rs:15:13
+   |
+15 |     |no| -> selected { 2 };
+   |             ^^^^^^^^

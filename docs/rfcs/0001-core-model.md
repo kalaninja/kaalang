@@ -136,6 +136,11 @@ execution path may run more than one of them. This is not sequential shadowing;
 declaring the same output name twice on one path is invalid even if the earlier
 value was consumed.
 
+Raw and ordinary spellings of the same Rust identifier name the same wire, so
+`value` and `r#value` are interchangeable. Every producer occurrence is authored
+before every consumer of its logical wire; a later producer cannot retroactively
+join a wire that has already appeared as an input.
+
 ```rust
 #[question("Which value should be used?")]
 |condition| -> (yes, no) { condition };
@@ -292,6 +297,12 @@ Validation follows each question and choice branch independently. Alternative
 producers with the same output name converge at their first shared consumer.
 Only one such producer may be available on any path. The shared consumer and
 its continuation are represented once in the semantic plan and execute once.
+
+Read in authored choice-case order, branches that enter one shared continuation
+are adjacent. A case that reaches End cannot separate two continuing cases,
+because preserving their skewer order would force one connection to cross
+another. A question cannot express this arrangement because it has only two
+branches.
 
 Wires available on every continuing branch remain available after convergence.
 An alternative logical wire is added to that shared set when every continuing

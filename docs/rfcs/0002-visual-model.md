@@ -86,6 +86,9 @@ another.
 A clear terminal skewer descends in its own column. An obstructed one is routed
 outside continuing branches and joins the same collector at the bottom.
 Connections use horizontal and vertical segments without arrowheads.
+The core model's adjacency rule prevents a terminal sibling from separating two
+branches that enter one shared continuation, which would otherwise force a
+crossing regardless of the outer lane used.
 
 Action nodes are rectangles, question nodes are elongated hexagons, choice
 nodes are skewed Select parallelograms, Case nodes have a lower triangular

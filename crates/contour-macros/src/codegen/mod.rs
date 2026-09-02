@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Pat};
+use syn::{Expr, FnArg, ItemFn, Pat, ext::IdentExt};
 
 use contour_model::{Branch, Flow, Input, Plan};
 
@@ -101,17 +101,18 @@ pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
 /// Emits block-local aliases for explicitly listed input wires.
 pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
     let bindings = inputs.iter().map(|input| {
-        let ident = &input.ident;
-        let wire = bindings.wire(ident);
+        // The alias keeps the authored spelling, so a wire named `r#type` binds.
+        let alias = &input.alias;
+        let wire = bindings.wire(&input.ident);
         if input.borrowed {
-            quote_spanned!(ident.span()=>
+            quote_spanned!(alias.span()=>
                 #[allow(unused_variables)]
-                let #ident = &#wire;
+                let #alias = &#wire;
             )
         } else {
-            quote_spanned!(ident.span()=>
+            quote_spanned!(alias.span()=>
                 #[allow(unused_variables, clippy::let_unit_value)]
-                let #ident = #wire;
+                let #alias = #wire;
             )
         }
     });
@@ -126,7 +127,9 @@ pub(crate) fn rename_source_bindings(function: &mut ItemFn, bindings: &Bindings)
             unreachable!("source_wires rejects method receivers")
         };
         match argument.pat.as_mut() {
-            Pat::Ident(parameter) => parameter.ident = bindings.wire(&parameter.ident).clone(),
+            Pat::Ident(parameter) => {
+                parameter.ident = bindings.wire(&parameter.ident.unraw()).clone();
+            }
             Pat::Wild(_) => {}
             _ => unreachable!("source_wires accepts only simple bindings or wildcards"),
         }
