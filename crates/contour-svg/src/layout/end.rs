@@ -22,7 +22,7 @@ impl Builder<'_> {
         self.connect_terminals(end);
 
         Placed {
-            bottom: self.node_bottom(end),
+            bottom: self.bottom_anchor(end).y,
             arrivals: Vec::new(),
         }
     }

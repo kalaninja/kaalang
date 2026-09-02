@@ -41,14 +41,14 @@ impl Builder<'_> {
                 NodeKind::Case,
                 description.clone(),
                 branch_skewer,
-                self.node_bottom(select) + VERTICAL_GAP,
+                self.bottom_anchor(select).y + VERTICAL_GAP,
             );
             cases.push((case, branch_skewer));
             branch_skewer += spans[branch_index];
         }
         self.align_case_row(&cases);
 
-        let case_top = self.node_top(cases[0].0);
+        let case_top = self.top_anchor(cases[0].0).y;
         for (case, _) in &cases {
             self.connect_points(
                 select,
@@ -61,9 +61,9 @@ impl Builder<'_> {
 
         let branch_top = cases
             .iter()
-            .map(|(case, _)| self.node_bottom(*case))
+            .map(|(case, _)| self.bottom_anchor(*case).y)
             .max()
-            .unwrap_or(self.node_bottom(select))
+            .unwrap_or(self.bottom_anchor(select).y)
             + VERTICAL_GAP;
         let mut placed = Vec::with_capacity(branches.len());
         for (branch_index, branch) in branches.iter().enumerate() {
@@ -90,7 +90,7 @@ impl Builder<'_> {
             .max()
             .unwrap_or(0);
         for (case, _) in cases {
-            let top = self.node_top(*case);
+            let top = self.top_anchor(*case).y;
             let index = self.indexes[case];
             self.scene.nodes[index].height = height;
             self.scene.nodes[index].y = top + height / 2;

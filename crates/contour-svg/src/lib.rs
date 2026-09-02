@@ -192,17 +192,14 @@ fn validate_labels(graph: &contour_model::Graph) -> Result<(), RenderError> {
     Ok(())
 }
 
+/// Finds the first character XML 1.0 cannot represent.
 fn invalid_xml_character(label: &str) -> Option<char> {
-    label
-        .chars()
-        .find(|character| !is_xml_character(*character))
-}
-
-fn is_xml_character(character: char) -> bool {
-    matches!(character, '\u{9}' | '\u{A}' | '\u{D}')
-        || ('\u{20}'..='\u{D7FF}').contains(&character)
-        || ('\u{E000}'..='\u{FFFD}').contains(&character)
-        || ('\u{10000}'..='\u{10FFFF}').contains(&character)
+    label.chars().find(|character| {
+        !matches!(
+            *character,
+            '\u{9}' | '\u{A}' | '\u{D}' | '\u{20}'..='\u{D7FF}' | '\u{E000}'..='\u{FFFD}' | '\u{10000}'..='\u{10FFFF}'
+        )
+    })
 }
 
 #[cfg(test)]

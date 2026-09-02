@@ -2,12 +2,12 @@
 
 use contour_model::{Convergence, Plan};
 
-use super::{Builder, Incoming, NodeId, Placed, Point, Tail, VERTICAL_GAP, compact_points};
+use super::{Builder, Incoming, NodeId, Placed, Point, VERTICAL_GAP, compact_points};
 
 impl Builder<'_> {
     pub(super) fn place_convergence(
         &mut self,
-        mut arrivals: Vec<Tail>,
+        mut arrivals: Vec<Incoming>,
         convergence: &Convergence,
         bottom: i32,
     ) -> Placed {
@@ -23,16 +23,11 @@ impl Builder<'_> {
             "an implicit convergence has continuing branches"
         );
         let first = arrivals.remove(0);
-        let convergence_skewer = first.skewer;
         let continuation = self.place(
             &convergence.next,
-            convergence_skewer,
+            first.skewer,
             bottom + VERTICAL_GAP,
-            Incoming {
-                origin: first.origin,
-                label: first.label,
-                skewer: convergence_skewer,
-            },
+            first,
         );
         let join_y = i32::midpoint(bottom, self.top_anchor(root).y);
         for arrival in arrivals {
@@ -43,7 +38,7 @@ impl Builder<'_> {
 
     /// Routes a sibling below every branch node before it enters the shared
     /// consumer, so a shorter path cannot cut through a deeper one.
-    fn connect_to_convergence(&mut self, arrival: Tail, root: NodeId, join_y: i32) {
+    fn connect_to_convergence(&mut self, arrival: Incoming, root: NodeId, join_y: i32) {
         let start = self.anchor(arrival.origin);
         let end = self.top_anchor(root);
         let points = compact_points([

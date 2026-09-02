@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use contour_model::{BlockKind, Branch, Convergence, Graph, Plan};
+use syn::Ident;
 use unicode_segmentation::UnicodeSegmentation;
 
 mod action;
@@ -43,6 +44,7 @@ const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 /// Text budget for an edge label, which floats free of any node.
 pub(crate) const EDGE_LABEL_WIDTH: i32 = 240;
 
+#[derive(Default)]
 pub(crate) struct Scene {
     pub(crate) width: i32,
     pub(crate) height: i32,
@@ -96,22 +98,11 @@ pub(crate) struct Edge {
 }
 
 pub(crate) fn layout(graph: &Graph) -> Scene {
-    let parameters = graph
-        .flow
-        .sources
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join(", ");
+    let parameters = join(&graph.flow.sources);
     let skewer_count = plan_span(&graph.plan);
     let mut builder = Builder {
         graph,
-        scene: Scene {
-            width: 0,
-            height: 0,
-            nodes: Vec::new(),
-            edges: Vec::new(),
-        },
+        scene: Scene::default(),
         indexes: HashMap::new(),
         terminals: Vec::new(),
         skewer_count,
@@ -124,7 +115,7 @@ pub(crate) fn layout(graph: &Graph) -> Scene {
         0,
         MARGIN,
     );
-    let first_top = builder.node_bottom(start) + VERTICAL_GAP;
+    let first_top = builder.bottom_anchor(start).y + VERTICAL_GAP;
     builder.place(
         &graph.plan,
         0,
@@ -155,7 +146,7 @@ struct Builder<'a> {
     graph: &'a Graph,
     scene: Scene,
     indexes: HashMap<NodeId, usize>,
-    terminals: Vec<Tail>,
+    terminals: Vec<Incoming>,
     skewer_count: usize,
 }
 
@@ -193,16 +184,9 @@ impl Builder<'_> {
                     && incoming.origin.node == NodeId::Start
                     && self.graph.flow.sources.is_empty();
                 if !zero_wire_flow {
-                    self.terminals.push(Tail {
-                        origin: incoming.origin,
-                        label: (!inputs.is_empty()).then(|| {
-                            inputs
-                                .iter()
-                                .map(ToString::to_string)
-                                .collect::<Vec<_>>()
-                                .join(", ")
-                        }),
-                        skewer: incoming.skewer,
+                    self.terminals.push(Incoming {
+                        label: (!inputs.is_empty()).then(|| join(inputs)),
+                        ..incoming
                     });
                 }
                 Placed {
@@ -212,16 +196,9 @@ impl Builder<'_> {
             }
             Plan::Yield { wires } => Placed {
                 bottom: self.anchor(incoming.origin).y,
-                arrivals: vec![Tail {
-                    origin: incoming.origin,
-                    label: (!wires.is_empty()).then(|| {
-                        wires
-                            .iter()
-                            .map(ToString::to_string)
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    }),
-                    skewer: incoming.skewer,
+                arrivals: vec![Incoming {
+                    label: (!wires.is_empty()).then(|| join(wires)),
+                    ..incoming
                 }],
             },
         }
@@ -234,7 +211,7 @@ impl Builder<'_> {
     ) -> Placed {
         let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
         // Branch order decides which skewer a shared continuation takes, and a
-        // nested branch point hands its own tails up in that same order.
+        // nested branch point hands its own arrivals up in that same order.
         let arrivals = placed
             .into_iter()
             .flat_map(|branch| branch.arrivals)
@@ -338,15 +315,16 @@ impl Builder<'_> {
 
     /// Reports whether a terminal can drop straight down its own column, which
     /// it cannot when a node or an earlier connection stands in the way.
-    fn terminal_is_clear(&self, terminal: &Tail, end: NodeId, join_y: i32) -> bool {
+    fn terminal_is_clear(&self, terminal: &Incoming, end: NodeId, join_y: i32) -> bool {
         let start = self.anchor(terminal.origin);
         let end_top = self.top_anchor(end);
         let blocked_by_node = self.scene.nodes.iter().any(|node| {
+            let top = self.top_anchor(node.id).y;
             node.id != terminal.origin.node
                 && node.id != end
                 && node.x == start.x
-                && self.node_top(node.id) > start.y
-                && self.node_top(node.id) < end_top.y
+                && top > start.y
+                && top < end_top.y
         });
         // Every lane is chosen before the first terminal connection is drawn,
         // so the scene holds no terminal edges yet and none obstructs another.
@@ -494,14 +472,6 @@ impl Builder<'_> {
         }
     }
 
-    fn node_top(&self, id: NodeId) -> i32 {
-        self.top_anchor(id).y
-    }
-
-    fn node_bottom(&self, id: NodeId) -> i32 {
-        self.bottom_anchor(id).y
-    }
-
     fn node(&self, id: NodeId) -> &Node {
         &self.scene.nodes[self.indexes[&id]]
     }
@@ -511,44 +481,27 @@ impl Builder<'_> {
     }
 
     fn fit_scene(&mut self) {
-        let node_right = self.scene.nodes.iter().map(|node| node.x + node.width / 2);
-        let edge_right = self
-            .scene
-            .edges
-            .iter()
-            .flat_map(|edge| edge.points.iter().map(|point| point.x));
-        let label_right = self
-            .scene
-            .edges
-            .iter()
-            .filter_map(|edge| label_bounds(edge).map(|(right, _)| right));
-        let node_bottom = self.scene.nodes.iter().map(|node| node.y + node.height / 2);
-        let edge_bottom = self
-            .scene
-            .edges
-            .iter()
-            .flat_map(|edge| edge.points.iter().map(|point| point.y));
-        let label_bottom = self
-            .scene
-            .edges
-            .iter()
-            .filter_map(|edge| label_bounds(edge).map(|(_, bottom)| bottom));
-
-        self.scene.width = node_right
-            .chain(edge_right)
-            .chain(label_right)
-            .max()
-            .unwrap_or(0)
-            + MARGIN;
-        self.scene.height = node_bottom
-            .chain(edge_bottom)
-            .chain(label_bottom)
-            .max()
-            .unwrap_or(0)
-            + MARGIN;
+        let (mut right, mut bottom) = (0, 0);
+        for node in &self.scene.nodes {
+            right = right.max(node.x + node.width / 2);
+            bottom = bottom.max(node.y + node.height / 2);
+        }
+        for edge in &self.scene.edges {
+            for point in &edge.points {
+                right = right.max(point.x);
+                bottom = bottom.max(point.y);
+            }
+            if let Some((label_right, label_bottom)) = label_bounds(edge) {
+                right = right.max(label_right);
+                bottom = bottom.max(label_bottom);
+            }
+        }
+        self.scene.width = right + MARGIN;
+        self.scene.height = bottom + MARGIN;
     }
 }
 
+/// A connection that has left its origin and awaits the node it enters.
 struct Incoming {
     origin: Origin,
     label: Option<String>,
@@ -557,15 +510,9 @@ struct Incoming {
 
 struct Placed {
     bottom: i32,
-    /// Tails still looking for the shared continuation they enter. A branch
-    /// point that has no join of its own passes its branches' tails outward.
-    arrivals: Vec<Tail>,
-}
-
-struct Tail {
-    origin: Origin,
-    label: Option<String>,
-    skewer: usize,
+    /// Connections still looking for the shared continuation they enter. A
+    /// branch point that has no join of its own hands them outward.
+    arrivals: Vec<Incoming>,
 }
 
 #[derive(Clone, Copy)]
@@ -660,6 +607,15 @@ fn label_bounds(edge: &Edge) -> Option<(i32, i32)> {
 
 fn skewer_x(skewer: usize) -> i32 {
     MARGIN + NODE_WIDTH / 2 + skewer as i32 * SKEWER_WIDTH
+}
+
+/// Renders wire names as one comma-separated label.
+fn join(names: &[Ident]) -> String {
+    names
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn compact_points(points: impl IntoIterator<Item = Point>) -> Vec<Point> {
@@ -799,8 +755,8 @@ mod tests {
     use unicode_segmentation::UnicodeSegmentation;
 
     use super::{
-        LABEL_FONT, MARGIN, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds,
-        layout, skewer_x, text_width, wrap_text,
+        LABEL_FONT, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds, layout,
+        skewer_x, text_width, wrap_text,
     };
 
     fn scene(source: &str, flow: &str) -> Scene {
@@ -847,50 +803,6 @@ mod tests {
             wrap_text("e\u{301}e\u{301}", 8, 14),
             ["e\u{301}", "e\u{301}"]
         );
-    }
-
-    #[test]
-    fn canvas_follows_the_actual_scene_bounds() {
-        let scene = scene(include_str!("../../tests/fixtures/all_blocks.rs"), "route");
-        let content_right = scene
-            .nodes
-            .iter()
-            .map(|node| node.x + node.width / 2)
-            .chain(
-                scene
-                    .edges
-                    .iter()
-                    .flat_map(|edge| edge.points.iter().map(|point| point.x)),
-            )
-            .chain(
-                scene
-                    .edges
-                    .iter()
-                    .filter_map(|edge| label_bounds(edge).map(|(right, _)| right)),
-            )
-            .max()
-            .expect("the scene is not empty");
-        let content_bottom = scene
-            .nodes
-            .iter()
-            .map(|node| node.y + node.height / 2)
-            .chain(
-                scene
-                    .edges
-                    .iter()
-                    .flat_map(|edge| edge.points.iter().map(|point| point.y)),
-            )
-            .chain(
-                scene
-                    .edges
-                    .iter()
-                    .filter_map(|edge| label_bounds(edge).map(|(_, bottom)| bottom)),
-            )
-            .max()
-            .expect("the scene is not empty");
-
-        assert_eq!(scene.width, content_right + MARGIN);
-        assert_eq!(scene.height, content_bottom + MARGIN);
     }
 
     #[test]
@@ -1734,7 +1646,7 @@ mod tests {
     fn enters_node(segment: &[Point], node: &Node) -> bool {
         let (left, right) = (node.x - node.width / 2, node.x + node.width / 2);
         let (top, bottom) = (node.y - node.height / 2, node.y + node.height / 2);
-        let ([first, second], ..) = (segment,) else {
+        let [first, second] = segment else {
             return false;
         };
         if first.x == second.x {

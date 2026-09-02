@@ -113,28 +113,27 @@ fn write_edge(svg: &mut String, edge: &Edge) {
 }
 
 fn describe(scene: &Scene) -> String {
-    let mut description = String::from("Nodes: ");
-    for (index, node) in scene.nodes.iter().enumerate() {
-        if index != 0 {
-            description.push_str("; ");
-        }
-        description.push_str(&node_name(node));
-    }
-    description.push_str(". Connections: ");
-    for (index, edge) in scene.edges.iter().enumerate() {
-        if index != 0 {
-            description.push_str("; ");
-        }
-        description.push_str(&node_name_by_id(scene, edge.from));
-        description.push_str(" to ");
-        description.push_str(&node_name_by_id(scene, edge.to));
-        if let Some(label) = &edge.label {
-            description.push_str(" via ");
-            description.push_str(label);
-        }
-    }
-    description.push('.');
-    description
+    let nodes = scene
+        .nodes
+        .iter()
+        .map(node_name)
+        .collect::<Vec<_>>()
+        .join("; ");
+    let connections = scene
+        .edges
+        .iter()
+        .map(|edge| {
+            let from = node_name_by_id(scene, edge.from);
+            let to = node_name_by_id(scene, edge.to);
+            match &edge.label {
+                Some(label) => format!("{from} to {to} via {label}"),
+                None => format!("{from} to {to}"),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+
+    format!("Nodes: {nodes}. Connections: {connections}.")
 }
 
 fn node_name_by_id(scene: &Scene, id: NodeId) -> String {

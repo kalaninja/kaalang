@@ -24,7 +24,7 @@ impl Builder<'_> {
         self.place(
             next,
             skewer,
-            self.node_bottom(node) + VERTICAL_GAP,
+            self.bottom_anchor(node).y + VERTICAL_GAP,
             Incoming {
                 origin: Origin::bottom(node),
                 label: None,

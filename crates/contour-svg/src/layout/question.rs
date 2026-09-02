@@ -16,7 +16,7 @@ impl Builder<'_> {
     ) -> Placed {
         let node = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, node);
-        let branch_top = self.node_bottom(node) + VERTICAL_GAP;
+        let branch_top = self.bottom_anchor(node).y + VERTICAL_GAP;
         let outputs = &self.graph.flow.blocks[index].outputs;
         let spans = branches
             .iter()

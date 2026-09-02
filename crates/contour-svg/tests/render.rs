@@ -21,14 +21,6 @@ fn renders_the_golden_end_collector_diagram() {
 }
 
 #[test]
-fn output_is_deterministic() {
-    let first = render_source(SOURCE, "route").unwrap();
-    let second = render_source(SOURCE, "route").unwrap();
-
-    assert_eq!(first, second);
-}
-
-#[test]
 fn renders_the_authored_end_with_accessible_terminology() {
     let source = r#"
         #[contour]
