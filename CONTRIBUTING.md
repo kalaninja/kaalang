@@ -98,10 +98,11 @@ cargo run -p kaalang-svg --bin cargo-kaalang -- diagram \
   -o crates/kaalang-svg/tests/fixtures/end_collector.svg
 ```
 
-The diagrams beside each `crates/kaalang/tests/*/behavior.rs` redraw themselves
-during `cargo test`, so a renderer or model change arrives as a diff over them.
-Read that diff before committing: nothing else checks that the new diagrams
-still make sense.
+Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
+flow it declares, with that flow's diagram beside it. The diagrams redraw
+themselves during `cargo test`, so a renderer or model change arrives as a diff
+over them. Read that diff before committing: nothing else checks that the new
+diagrams still make sense.
 
 ## Commits
 
