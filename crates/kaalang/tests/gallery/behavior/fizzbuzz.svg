@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="674" viewBox="0 0 1424 674" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for fizzbuzz</title>
+  <desc id="kaalang-description">Nodes: Start: fizzbuzz(number: u32) -&gt; String; Choice: Which of three and five divide the number?; Case: Both three and five divide it.; Case: Only three divides it.; Case: Only five divides it.; Case: Neither divides it.; Action: Say FizzBuzz.; Action: Say Fizz.; Action: Say Buzz.; Action: Say the number itself.; End. Connections: Start: fizzbuzz(number: u32) -&gt; String to Choice: Which of three and five divide the number?; Choice: Which of three and five divide the number? to Case: Both three and five divide it.; Choice: Which of three and five divide the number? to Case: Only three divides it.; Choice: Which of three and five divide the number? to Case: Only five divides it.; Choice: Which of three and five divide the number? to Case: Neither divides it.; Case: Both three and five divide it. to Action: Say FizzBuzz. via fizz_buzz; Case: Only three divides it. to Action: Say Fizz. via fizz; Case: Only five divides it. to Action: Say Buzz. via buzz; Case: Neither divides it. to Action: Say the number itself. via plain; Action: Say FizzBuzz. to End via word; Action: Say Fizz. to End via word; Action: Say Buzz. to End via word; Action: Say the number itself. to End via word.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 90 L 172 162"/>
+    <path class="edge" d="M 172 234 L 172 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 532 270 L 532 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 892 270 L 892 306"/>
+    <path class="edge" d="M 172 234 L 172 270 L 1252 270 L 1252 306"/>
+    <path class="edge" d="M 172 376 L 172 448"/>
+    <text class="edge-label" x="214" y="407" xml:space="preserve"><tspan x="214" dy="0">fizz_buzz</tspan></text>
+    <path class="edge" d="M 532 376 L 532 448"/>
+    <text class="edge-label" x="574" y="407" xml:space="preserve"><tspan x="574" dy="0">fizz</tspan></text>
+    <path class="edge" d="M 892 376 L 892 448"/>
+    <text class="edge-label" x="934" y="407" xml:space="preserve"><tspan x="934" dy="0">buzz</tspan></text>
+    <path class="edge" d="M 1252 376 L 1252 448"/>
+    <text class="edge-label" x="1294" y="407" xml:space="preserve"><tspan x="1294" dy="0">plain</tspan></text>
+    <path class="edge" d="M 172 512 L 172 584"/>
+    <text class="edge-label" x="214" y="530" xml:space="preserve"><tspan x="214" dy="0">word</tspan></text>
+    <path class="edge" d="M 532 512 L 532 552 L 172 552 L 172 584"/>
+    <text class="edge-label" x="574" y="530" xml:space="preserve"><tspan x="574" dy="0">word</tspan></text>
+    <path class="edge" d="M 892 512 L 892 552 L 172 552 L 172 584"/>
+    <text class="edge-label" x="934" y="530" xml:space="preserve"><tspan x="934" dy="0">word</tspan></text>
+    <path class="edge" d="M 1252 512 L 1252 552 L 172 552 L 172 584"/>
+    <text class="edge-label" x="1294" y="530" xml:space="preserve"><tspan x="1294" dy="0">word</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">fizzbuzz(number: u32) -&gt; String</tspan></text>
+    </g>
+    <g class="node choice select" transform="translate(172 198)">
+      <title xml:space="preserve">Which of three and five divide the number?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which of three and five </tspan><tspan x="0" dy="18">divide the number?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 341)">
+      <title xml:space="preserve">Both three and five divide it.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Both three and five divide it.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 341)">
+      <title xml:space="preserve">Only three divides it.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Only three divides it.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 341)">
+      <title xml:space="preserve">Only five divides it.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Only five divides it.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 341)">
+      <title xml:space="preserve">Neither divides it.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Neither divides it.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 480)">
+      <title xml:space="preserve">Say FizzBuzz.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say FizzBuzz.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 480)">
+      <title xml:space="preserve">Say Fizz.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say Fizz.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 480)">
+      <title xml:space="preserve">Say Buzz.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say Buzz.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 480)">
+      <title xml:space="preserve">Say the number itself.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say the number itself.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 613)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>
