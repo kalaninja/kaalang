@@ -9,6 +9,12 @@
 Contour is a language for writing flows as valid Rust. It is inspired by DRAKON
 but defines its own syntax and semantics.
 
+Contour's defining property is that visual semantics and execution share one
+model. A diagram is not an architectural sketch implemented separately; it is a
+view of the same validated flow that Contour lowers for execution. Reviewers can
+therefore reason about program behavior from the diagram without translating it
+to another implementation or wondering whether the two have diverged.
+
 A Contour flow is an ordinary Rust function marked with `#[contour]`. The
 attribute validates the flow and lowers it to ordinary Rust control flow. A flow
 contains blocks connected by named wires, and its visible dependencies determine
