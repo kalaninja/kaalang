@@ -4,7 +4,7 @@ use kaalang_model::{Branch, Convergence};
 
 use super::{
     Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, LABEL_FONT, LINE_HEIGHT,
-    NodeId, NodeKind, Origin, Placed, Point, compact_points, plan_span, text::wrap_text,
+    NodeId, NodeKind, Origin, Placed, Point, branch_layout, compact_points, text::wrap_text,
 };
 
 pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
@@ -26,13 +26,10 @@ impl Builder<'_> {
         let select = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, select);
         let block = &self.graph.flow.blocks[index];
-        let spans = branches
-            .iter()
-            .map(|branch| plan_span(&branch.plan))
-            .collect::<Vec<_>>();
-        let mut branch_skewer = skewer;
+        let (offsets, _) = branch_layout(branches, convergence);
         let mut cases = Vec::with_capacity(branches.len());
         for (branch_index, description) in block.case_descriptions.iter().enumerate() {
+            let branch_skewer = skewer + offsets[branch_index];
             let case = self.add_node(
                 NodeId::Case {
                     choice: index,
@@ -44,7 +41,6 @@ impl Builder<'_> {
                 self.bottom_anchor(select).y + self.vertical_gap,
             );
             cases.push((case, branch_skewer));
-            branch_skewer += spans[branch_index];
         }
         self.align_case_row(&cases);
 

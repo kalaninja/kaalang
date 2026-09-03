@@ -894,11 +894,10 @@ fn a_leading_end_path_keeps_the_shared_continuation_off_its_skewer() {
     assert_eq!(node(&scene, NodeId::Block(4)).x, skewer_x(1));
 }
 
-/// Branch order alone cannot free every terminal column. A continuation
-/// wider than the branches beside it reaches past them, and the terminal it
-/// covers is routed outside the continuing branches instead.
+/// A shared continuation reserves its full footprint before a trailing
+/// terminal branch, even when the continuing siblings themselves are narrow.
 #[test]
-fn a_terminal_under_a_wide_continuation_uses_the_outer_lane() {
+fn a_wide_continuation_moves_a_trailing_terminal_past_its_footprint() {
     use NodeId::Block;
 
     let source = r#"
@@ -944,24 +943,20 @@ fn a_terminal_under_a_wide_continuation_uses_the_outer_lane() {
     "#;
 
     let scene = scene(source, "partial");
-    let rightmost_node = scene
-        .nodes
-        .iter()
-        .map(|node| node.x + node.width / 2)
+    let continuation_right = [Block(4), Block(5), Block(6), Block(7)]
+        .into_iter()
+        .map(|id| node(&scene, id).x)
         .max()
-        .expect("the scene is not empty");
+        .expect("the continuation is drawn");
     let early_terminal = scene
         .edges
         .iter()
         .find(|edge| edge.from == Block(3) && edge.to == Block(8))
         .expect("the early terminal reaches End");
 
-    assert!(
-        early_terminal
-            .points
-            .iter()
-            .any(|point| point.x > rightmost_node)
-    );
+    assert_eq!(node(&scene, Block(3)).x, skewer_x(3));
+    assert!(node(&scene, Block(3)).x > continuation_right);
+    assert_eq!(early_terminal.points[0].x, skewer_x(3));
 }
 
 #[test]
@@ -1117,12 +1112,12 @@ fn the_collector_row_clears_the_end_capture_label() {
     }
 }
 
-/// A terminal leaving a question's right vertex starts half a node width
-/// off the skewer, which is exactly the right border of the rectangular
-/// nodes below it. A descent there is hidden: it carries the node's own
-/// stroke and nodes are drawn last, so the terminal needs an outer lane.
+/// A terminal leaving a question's right vertex first joins the skewer
+/// assigned to its branch, then descends without passing through later nodes.
 #[test]
-fn a_terminal_off_a_right_vertex_clears_the_nodes_below_it() {
+fn a_terminal_off_a_right_vertex_joins_its_assigned_skewer() {
+    use NodeId::Block;
+
     let scene = scene(
         r#"
             #[kaalang]
@@ -1140,25 +1135,22 @@ fn a_terminal_off_a_right_vertex_clears_the_nodes_below_it() {
         "rex",
     );
 
-    for edge in &scene.edges {
-        for segment in edge.points.windows(2) {
-            if segment[0].x != segment[1].x {
-                continue;
-            }
-            let top = segment[0].y.min(segment[1].y);
-            let bottom = segment[0].y.max(segment[1].y);
-            for node in &scene.nodes {
-                // A connection's own ends anchor on their node's boundary.
-                if node.id == edge.from || node.id == edge.to {
-                    continue;
-                }
-                let overlaps =
-                    top.max(node.y - node.height / 2) < bottom.min(node.y + node.height / 2);
+    let terminal = scene
+        .edges
+        .iter()
+        .find(|edge| edge.from == Block(0) && edge.to == Block(2))
+        .expect("the right output reaches End");
+    assert_eq!(terminal.points[0].y, terminal.points[1].y);
+    assert_eq!(terminal.points[1].x, skewer_x(1));
+
+    for segment in terminal.points.windows(2) {
+        for node in &scene.nodes {
+            if node.id != terminal.from && node.id != terminal.to {
                 assert!(
-                    !overlaps || (segment[0].x - node.x).abs() > node.width / 2,
-                    "a descent at x={} runs down node {:?}",
-                    segment[0].x,
-                    node.id
+                    !enters_node(segment, node),
+                    "the terminal crosses {:?}: {:?}",
+                    node.id,
+                    terminal.points
                 );
             }
         }
@@ -1205,6 +1197,10 @@ fn route(request: u8) -> u8 {
 "#;
 
     let scene = scene(source, "route");
+    assert_no_unrelated_crossings(&scene);
+}
+
+fn assert_no_unrelated_crossings(scene: &Scene) {
     for edge in &scene.edges {
         assert!(
             edge.points
@@ -1228,12 +1224,11 @@ fn route(request: u8) -> u8 {
     }
 }
 
-/// Two blocked terminals leave on rows ordered by how deep their branches
-/// end, so neither row cuts down through the other's outer lane. The
-/// orthogonality test above cannot see this: it skips pairs that share a
-/// destination, and every terminal enters End.
+/// The two continuing branches occupy skewers 0 and 1. Their four-skewer
+/// continuation reserves 0 through 3, so the trailing terminal branches start
+/// at 4 and 5 and no unrelated connections cross.
 #[test]
-fn detouring_terminals_keep_their_rows_out_of_each_other_s_lanes() {
+fn a_wide_continuation_reserves_offsets_before_trailing_terminals() {
     let source = r#"
 #[kaalang]
 fn crossing(request: u8) -> u8 {
@@ -1281,16 +1276,19 @@ fn crossing(request: u8) -> u8 {
     };
 
     #[action("A step.")]
-    |a| -> result { 6u8 };
+    |a| -> selected { 6u8 };
 
     #[action("B step.")]
-    |b| -> result { 7u8 };
+    |b| -> selected { 7u8 };
 
     #[action("C step.")]
-    |c| -> result { 8u8 };
+    |c| -> selected { 8u8 };
 
     #[action("D step.")]
-    |d| -> result { 9u8 };
+    |d| -> selected { 9u8 };
+
+    #[action("Use the selected result.")]
+    |selected| -> result { selected };
 
     #[end]
     |result| {};
@@ -1298,31 +1296,109 @@ fn crossing(request: u8) -> u8 {
 "#;
 
     let scene = scene(source, "crossing");
-    let end = scene
-        .nodes
-        .iter()
-        .find(|node| node.kind == NodeKind::End)
-        .expect("the flow declares End")
-        .id;
-    let terminals = scene
+    let offsets = [1, 2, 3, 4]
+        .map(|index| node(&scene, NodeId::Block(index)).x)
+        .map(|x| (x - skewer_x(0)) / (skewer_x(1) - skewer_x(0)));
+    assert_eq!(offsets, [0, 1, 4, 5]);
+    assert_eq!(node(&scene, NodeId::Block(5)).x, skewer_x(5));
+    assert_no_unrelated_crossings(&scene);
+}
+
+/// The first continuing case reaches its yield inside a nested question, so
+/// the shared continuation is drawn one skewer right of that case's own. The
+/// reserved footprint is measured from where the continuation actually lands,
+/// which is what keeps the trailing terminal clear of it.
+#[test]
+fn a_nested_arrival_moves_a_trailing_terminal_past_the_continuation() {
+    use NodeId::Block;
+
+    let source = r#"
+#[kaalang]
+fn nested(request: u8) -> u8 {
+    #[choice("Choose an outer path.")]
+    #[case("Take the nested path.")]
+    #[case("Take the direct path.")]
+    #[case("Reach End without joining.")]
+    |request| -> (nested, direct, done) {
+        match request {
+            0 => (),
+            1 => (),
+            _ => (),
+        }
+    };
+
+    #[action("Take one step down the nested path.")]
+    |nested| -> stepped { true };
+
+    #[question("Does the nested path end early?")]
+    |stepped| -> (early, late) { stepped };
+
+    #[action("Produce the early result.")]
+    |early| -> result { 1u8 };
+
+    #[action("Build the shared value on the late output.")]
+    |late| -> shared { 2u8 };
+
+    #[action("Build the shared value on the direct path.")]
+    |direct| -> shared { 3u8 };
+
+    #[choice("Select one of four shared results.")]
+    #[case("Build A.")]
+    #[case("Build B.")]
+    #[case("Build C.")]
+    #[case("Build D.")]
+    |shared| -> (a, b, c, d) {
+        match shared {
+            0 => (),
+            1 => (),
+            2 => (),
+            _ => (),
+        }
+    };
+
+    #[action("Build result A.")]
+    |a| -> selected { 4u8 };
+
+    #[action("Build result B.")]
+    |b| -> selected { 5u8 };
+
+    #[action("Build result C.")]
+    |c| -> selected { 6u8 };
+
+    #[action("Build result D.")]
+    |d| -> selected { 7u8 };
+
+    #[action("Use the selected result.")]
+    |selected| -> result { selected };
+
+    #[action("Produce the terminal result.")]
+    |done| -> result { 8u8 };
+
+    #[end]
+    |result| {};
+}
+"#;
+
+    let scene = scene(source, "nested");
+    // The nested question yields on skewer 1, so the four-skewer continuation
+    // reserves 1 through 4 and the trailing terminal starts at 5.
+    assert_eq!(node(&scene, Block(11)).x, skewer_x(1));
+    assert_eq!(node(&scene, Block(12)).x, skewer_x(5));
+    let terminal = scene
         .edges
         .iter()
-        .filter(|edge| edge.to == end)
-        .collect::<Vec<_>>();
-    assert!(
-        terminals.len() > 2,
-        "the fixture reaches End from several branches"
-    );
+        .find(|edge| edge.from == Block(12) && edge.to == Block(13))
+        .expect("the trailing terminal reaches End");
 
-    for (index, left) in terminals.iter().enumerate() {
-        for right in &terminals[index + 1..] {
-            for left in left.points.windows(2) {
-                for right in right.points.windows(2) {
-                    assert!(
-                        !segments_cross(left[0], left[1], right[0], right[1]),
-                        "terminal runs {left:?} and {right:?} cross"
-                    );
-                }
+    for segment in terminal.points.windows(2) {
+        for node in &scene.nodes {
+            if node.id != terminal.from && node.id != terminal.to {
+                assert!(
+                    !enters_node(segment, node),
+                    "the terminal crosses {:?}: {:?}",
+                    node.id,
+                    terminal.points
+                );
             }
         }
     }

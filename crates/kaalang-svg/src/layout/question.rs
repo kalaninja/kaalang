@@ -2,7 +2,7 @@
 
 use kaalang_model::{Branch, Convergence};
 
-use super::{Builder, Incoming, Origin, Placed, plan_span};
+use super::{Builder, Incoming, Origin, Placed, branch_layout};
 
 impl Builder<'_> {
     pub(super) fn place_question(
@@ -17,13 +17,10 @@ impl Builder<'_> {
         let node = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, node);
         let branch_top = self.bottom_anchor(node).y + self.vertical_gap;
-        let spans = branches
-            .iter()
-            .map(|branch| plan_span(&branch.plan))
-            .collect::<Vec<_>>();
-        let mut branch_skewer = skewer;
+        let (offsets, _) = branch_layout(branches, convergence);
         let mut placed = Vec::with_capacity(branches.len());
         for (branch_index, branch) in branches.iter().enumerate() {
+            let branch_skewer = skewer + offsets[branch_index];
             let origin = if branch_index == 0 {
                 Origin::bottom(node)
             } else {
@@ -39,7 +36,6 @@ impl Builder<'_> {
                     skewer: branch_skewer,
                 },
             ));
-            branch_skewer += spans[branch_index];
         }
 
         self.finish_branches(placed, convergence)

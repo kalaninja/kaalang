@@ -1,3 +1,4 @@
+mod blocked_terminal_crossing;
 mod borrowed_common;
 mod choice_value;
 mod convergence_at_end;

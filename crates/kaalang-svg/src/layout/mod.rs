@@ -115,13 +115,11 @@ pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
 }
 
 pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
-    let skewer_count = plan_span(&graph.plan);
     let mut builder = Builder {
         graph,
         scene: Scene::default(),
         indexes: HashMap::new(),
         terminals: Vec::new(),
-        skewer_count,
         vertical_gap: vertical_gap(graph),
     };
 
@@ -170,7 +168,6 @@ struct Builder<'a> {
     scene: Scene,
     indexes: HashMap<NodeId, usize>,
     terminals: Vec<Incoming>,
-    skewer_count: usize,
     vertical_gap: i32,
 }
 
@@ -487,49 +484,110 @@ enum Side {
     Right,
 }
 
-fn plan_span(plan: &Plan) -> usize {
+#[derive(Clone, Copy)]
+struct PlanMetrics {
+    span: usize,
+    first_yield: Option<usize>,
+}
+
+fn plan_metrics(plan: &Plan) -> PlanMetrics {
     match plan {
-        Plan::End { body, .. } => plan_span(body),
-        Plan::Action { next, .. } => plan_span(next),
+        Plan::End { body, .. } => plan_metrics(body),
+        Plan::Action { next, .. } => plan_metrics(next),
         Plan::Question {
             branches,
             convergence,
             ..
-        } => branch_span(branches, convergence.as_ref()),
+        } => branch_metrics(branches, convergence.as_ref()).1,
         Plan::Choice {
             branches,
             convergence,
             ..
-        } => branch_span(branches, convergence.as_ref()),
-        Plan::EndArrival { .. } | Plan::Yield { .. } => 1,
+        } => branch_metrics(branches, convergence.as_ref()).1,
+        Plan::EndArrival { .. } => PlanMetrics {
+            span: 1,
+            first_yield: None,
+        },
+        Plan::Yield { .. } => PlanMetrics {
+            span: 1,
+            first_yield: Some(0),
+        },
     }
 }
 
-fn branch_span(branches: &[Branch], convergence: Option<&Convergence>) -> usize {
-    let spans = branches
-        .iter()
-        .map(|branch| plan_span(&branch.plan))
-        .collect::<Vec<_>>();
-    let total = spans.iter().sum::<usize>();
-    let continuation = convergence.map(|convergence| convergence.next.as_ref());
-    let Some(continuation) = continuation else {
-        return total;
-    };
-
-    // The shared continuation sits on the first continuing branch's skewer, so
-    // it reaches beyond any branch that leads to it.
-    total.max(continuation_offset(branches, &spans) + plan_span(continuation))
+fn branch_layout(branches: &[Branch], convergence: Option<&Convergence>) -> (Vec<usize>, usize) {
+    let (offsets, metrics) = branch_metrics(branches, convergence);
+    (offsets, metrics.span)
 }
 
-/// Skewers between a branching block and the first of its branches that reaches
-/// the shared continuation, which is where that continuation is drawn.
-fn continuation_offset(branches: &[Branch], spans: &[usize]) -> usize {
-    let continuing = branches
+fn branch_metrics(
+    branches: &[Branch],
+    convergence: Option<&Convergence>,
+) -> (Vec<usize>, PlanMetrics) {
+    let children = branches
+        .iter()
+        .map(|branch| plan_metrics(&branch.plan))
+        .collect::<Vec<_>>();
+    let mut offsets = Vec::with_capacity(children.len());
+    let mut total = 0;
+    for child in &children {
+        offsets.push(total);
+        total += child.span;
+    }
+    let Some(convergence) = convergence else {
+        let first_yield = children
+            .iter()
+            .zip(&offsets)
+            .find_map(|(child, offset)| child.first_yield.map(|first_yield| offset + first_yield));
+        return (
+            offsets,
+            PlanMetrics {
+                span: total,
+                first_yield,
+            },
+        );
+    };
+
+    let first = branches
         .iter()
         .position(|branch| !branch.early_return)
-        .unwrap_or(0);
+        .expect("a convergence has a continuing branch");
+    let last = branches
+        .iter()
+        .rposition(|branch| !branch.early_return)
+        .expect("a convergence has a continuing branch");
+    debug_assert!(
+        branches[first..=last]
+            .iter()
+            .all(|branch| !branch.early_return)
+    );
 
-    spans[..continuing].iter().sum()
+    let continuing_span = children[first..=last]
+        .iter()
+        .map(|child| child.span)
+        .sum::<usize>();
+    // The continuation is drawn on the skewer the first arrival reaches, which
+    // lies inside the first continuing branch rather than on its own skewer
+    // when that branch yields from within a nested block.
+    let arrival = children[first]
+        .first_yield
+        .expect("a continuing branch yields");
+    let continuation = plan_metrics(&convergence.next);
+    let reserved = (arrival + continuation.span).saturating_sub(continuing_span);
+    for offset in &mut offsets[last + 1..] {
+        *offset += reserved;
+    }
+
+    let first_yield = continuation
+        .first_yield
+        .map(|first_yield| offsets[first] + arrival + first_yield);
+    (
+        offsets,
+        PlanMetrics {
+            span: total + reserved,
+            first_yield,
+        },
+    )
 }
 
 /// Renders every ordinary wire and every underscore-prefixed wire that a block

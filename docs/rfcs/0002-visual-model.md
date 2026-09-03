@@ -97,23 +97,26 @@ skewer. Remaining branches occupy successive skewers to the right in authored
 order. Nested branches receive non-overlapping groups of skewers.
 
 When several branches continue into one shared consumer, that consumer occupies
-the skewer of the first continuing branch. Other continuing branches route into
-it directly. A branch that reaches End instead routes to the unique End node;
-branches may do so after different numbers of computational blocks.
+the skewer the first of them yields on, which is that branch's own skewer unless
+it yields from inside a nested branching block. Other continuing branches route
+into it directly. The continuing branches and their shared continuation reserve
+one footprint, measured from the first continuing branch to whichever of the two
+reaches further right. Terminal branches before that group stay to its left;
+terminal branches after it start beyond the reserved footprint. A branch that
+reaches End instead routes to the unique End node; branches may do so after
+different numbers of computational blocks.
 
 Paths into End converge on one horizontal collector above the node, the mirror
-of the distributor that fans a Select out to its cases. Each terminal skewer
-descends onto the collector, and the collector makes the one vertical descent
-into End; a terminal skewer already in the End column descends straight through
-it. Shared runs are deliberate common paths, not connections hidden behind one
-another.
+of the distributor that fans a Select out to its cases. Each terminal path first
+reaches its assigned skewer, descends on it to the collector, and follows the
+collector into End. A terminal skewer already in the End column descends straight
+through it. Shared runs are deliberate common paths, not connections hidden
+behind one another. Connections use horizontal and vertical segments without
+arrowheads.
 
-A clear terminal skewer descends in its own column. An obstructed one is routed
-outside continuing branches and joins the same collector at the bottom.
-Connections use horizontal and vertical segments without arrowheads.
 The core model's adjacency rule prevents a terminal sibling from separating two
-branches that enter one shared continuation, which would otherwise force a
-crossing regardless of the outer lane used.
+branches that enter one shared continuation. The continuing branches therefore
+form one contiguous footprint that terminal paths can be placed outside.
 
 Action nodes are rectangles, question nodes are elongated hexagons, choice
 nodes are skewed Select parallelograms, Case nodes have a lower triangular
