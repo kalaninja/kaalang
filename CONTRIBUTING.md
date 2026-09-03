@@ -85,19 +85,6 @@ cargo test --workspace
 git diff --check
 ```
 
-A change to the SVG renderer also changes the golden diagrams, which are
-compared byte for byte. Regenerate them with the CLI the crate ships, then open
-each result and confirm the diagram still reads correctly before committing it:
-
-```sh
-cargo run -p kaalang-svg --bin cargo-kaalang -- diagram \
-  crates/kaalang-svg/tests/fixtures/all_blocks.rs --flow route \
-  -o crates/kaalang-svg/tests/fixtures/all_blocks.svg
-cargo run -p kaalang-svg --bin cargo-kaalang -- diagram \
-  crates/kaalang-svg/tests/fixtures/end_collector.rs --flow route \
-  -o crates/kaalang-svg/tests/fixtures/end_collector.svg
-```
-
 Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
 flow it declares, with that flow's diagram beside it. The diagrams redraw
 themselves during `cargo test`, so a renderer or model change arrives as a diff

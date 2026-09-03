@@ -1,6 +1,15 @@
 use std::{fs, path::Path, process::Command};
 
-const SOURCE: &str = include_str!("fixtures/all_blocks.rs");
+const SOURCE: &str = r#"
+#[kaalang]
+fn route(request: u8) -> u8 {
+    #[action("Use the request.")]
+    |&request| -> result { request };
+
+    #[end]
+    |result| {};
+}
+"#;
 
 #[test]
 fn writes_default_and_explicit_outputs_only_after_success() {

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/kaalang",
+    "crates/kaalang-cli",
     "crates/kaalang-macros",
     "crates/kaalang-model",
     "crates/kaalang-svg",

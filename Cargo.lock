@@ -46,6 +46,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaalang-cli"
+version = "0.1.0"
+dependencies = [
+ "kaalang-svg",
+]
+
+[[package]]
 name = "kaalang-macros"
 version = "0.1.0"
 dependencies = [

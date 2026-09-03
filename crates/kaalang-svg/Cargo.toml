@@ -11,9 +11,5 @@ proc-macro2 = { workspace = true, features = ["span-locations"] }
 syn = { workspace = true }
 unicode-segmentation = { workspace = true }
 
-[[bin]]
-name = "cargo-kaalang"
-path = "src/main.rs"
-
 [lints]
 workspace = true

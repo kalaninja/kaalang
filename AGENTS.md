@@ -16,8 +16,9 @@ tests, commit messages, and pull request content.
   validated semantic model.
 - `crates/kaalang-macros/` owns the procedural macro entry point and Rust code
   generation.
-- `crates/kaalang-svg/` lays out validated models and renders standalone SVG,
-  including the `cargo-kaalang` CLI.
+- `crates/kaalang-svg/` lays out validated models and renders standalone SVG.
+- `crates/kaalang-cli/` owns the `cargo kaalang` subcommand, shipped as the
+  `cargo-kaalang` binary.
 - `crates/kaalang/` exports the public macro and owns its test suite. Behavior
   tests are executable examples; compile-fail tests document rejected forms.
   The `.svg` beside each `behavior/<flow>.rs` is drawn by `cargo test -p kaalang`
