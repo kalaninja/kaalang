@@ -330,6 +330,20 @@ impl Builder<'_> {
         self.connect(incoming, to, points);
     }
 
+    /// How far a node's capture label reaches above its top border, halo
+    /// included, or nothing when it captures no wire.
+    fn capture_rise(&self, node: NodeId) -> i32 {
+        let names = self.capture(node);
+        if names.is_empty() {
+            return 0;
+        }
+        let lines = wrap_text(&names.join(", "), EDGE_LABEL_WIDTH, EDGE_LABEL_FONT);
+        LABEL_RISE
+            + (lines.len() as i32 - 1) * EDGE_LINE_HEIGHT
+            + EDGE_LABEL_FONT / 2
+            + 2 * EDGE_LABEL_HALO
+    }
+
     /// Reports whether a terminal can drop straight down its own column, which
     /// it cannot when a node or an earlier connection stands in the way.
     fn terminal_is_clear(&self, terminal: &Incoming, end: NodeId, join_y: i32) -> bool {
@@ -337,9 +351,12 @@ impl Builder<'_> {
         let end_top = self.top_anchor(end);
         let blocked_by_node = self.scene.nodes.iter().any(|node| {
             let top = self.top_anchor(node.id).y;
+            // A descent on the node's own border is hidden by it: both carry
+            // the same stroke and nodes are drawn last, so the span counts as
+            // blocked up to and including its edges.
             node.id != terminal.origin.node
                 && node.id != end
-                && node.x == start.x
+                && (start.x - node.x).abs() <= node.width / 2
                 && top > start.y
                 && top < end_top.y
         });
@@ -361,7 +378,11 @@ impl Builder<'_> {
     /// path rather than connections hidden behind each other.
     fn connect_terminals(&mut self, end: NodeId) {
         let end_top = self.top_anchor(end);
-        let collector_y = end_top.y - COLLECTOR_GAP;
+        // End's capture label stacks above it inside this same gap. The
+        // collector carries the other branches, so it clears that label
+        // instead of sitting at a fixed offset: labels are drawn after paths
+        // and their halo would erase the row.
+        let collector_y = end_top.y - COLLECTOR_GAP.max(self.capture_rise(end));
         let end_lane = self.end_lane_x();
         let terminals = std::mem::take(&mut self.terminals);
 
@@ -537,7 +558,7 @@ impl Builder<'_> {
             ));
             for arrival in arrivals {
                 if arrival.handover != arrival.capture {
-                    let (at, exit) = exit_of(arrival);
+                    let (at, exit) = exit_of(arrival, self.node(arrival.from).x);
                     labels.extend(wire_label(&arrival.handover, at, Stack::Below, exit));
                 }
             }
@@ -703,8 +724,19 @@ fn vertical_gap(graph: &Graph) -> i32 {
     // tall diagrams become a practical problem.
     let source_lines = label_line_count(graph, &graph.flow.sources);
     let block_lines = graph.flow.blocks.iter().flat_map(|block| {
+        // A question or choice hands over one output per connection, so its
+        // gap follows the widest single name, not all of them joined.
+        let handover = match block.kind {
+            BlockKind::Question | BlockKind::Choice => block
+                .outputs
+                .iter()
+                .map(|output| label_line_count(graph, [output]))
+                .max()
+                .unwrap_or(0),
+            BlockKind::Action | BlockKind::End => label_line_count(graph, &block.outputs),
+        };
         [
-            label_line_count(graph, &block.outputs),
+            handover,
             label_line_count(
                 graph,
                 block
@@ -808,9 +840,12 @@ fn centre_of(edge: &Edge) -> (Point, Option<i32>) {
 
 /// Just outside the exit a connection leaves by, so its hand-over reads as
 /// belonging to the node above it.
-fn exit_of(edge: &Edge) -> (Point, Option<i32>) {
+fn exit_of(edge: &Edge, origin_x: i32) -> (Point, Option<i32>) {
     let [start, next] = route_head(edge);
-    if start.y == next.y {
+    // A run leaving a node's side, vertical or not, drops its label level with
+    // that node, so both need the clamp: `origin_x` is the node's centre, and
+    // an exit away from it is on a side rather than the bottom.
+    if start.y == next.y || start.x != origin_x {
         return (
             Point {
                 x: start.x,
@@ -1156,6 +1191,57 @@ mod tests {
         assert_eq!(scene.edges[0].handover, ["_value"]);
         assert_eq!(scene.edges[0].capture, ["_value"]);
         assert_eq!(scene.labels[0].lines.concat(), "_value");
+    }
+
+    /// A choice hands over one output per connection, so the gap it needs
+    /// follows its widest single wire. Lengthening the other two must not
+    /// reserve room for a label that names all three at once.
+    #[test]
+    fn a_choice_reserves_no_room_for_its_outputs_joined() {
+        fn lanes(wires: [&str; 3]) -> String {
+            format!(
+                r#"
+                #[kaalang]
+                fn lanes(request: u8) {{
+                    #[choice("Pick a lane.")]
+                    #[case("A")]
+                    #[case("B")]
+                    #[case("C")]
+                    |&request| -> ({0}, {1}, {2}) {{
+                        match request {{
+                            1 => (),
+                            2 => (),
+                            _ => (),
+                        }}
+                    }};
+
+                    #[action("Alpha.")]
+                    |{0}| -> result {{}};
+
+                    #[action("Bravo.")]
+                    |{1}| -> result {{}};
+
+                    #[action("Charlie.")]
+                    |{2}| -> result {{}};
+
+                    #[end]
+                    |result| {{}};
+                }}
+                "#,
+                wires[0], wires[1], wires[2]
+            )
+        }
+
+        // The first wire is the widest in both flows, so both need the same
+        // gap. Only the joined width differs, and only one of them wraps.
+        let widest = "a_lane_wire_name_long_enough_to_wrap_on_its_own";
+        let one_long = scene(&lanes([widest, "b", "c"]), "lanes");
+        let all_long = scene(
+            &lanes([widest, "b_lane_wire_shorter", "c_lane_wire_shorter"]),
+            "lanes",
+        );
+
+        assert_eq!(all_long.height, one_long.height);
     }
 
     /// A flow whose endpoint labels need more than the minimum vertical gap,
@@ -2011,13 +2097,207 @@ mod tests {
         assert!(edges[1].points[1].x > question.x);
     }
 
+    /// A hand-over leaving a question's right vertex drops its label level
+    /// with that question, so the label must clear the node it left: nodes
+    /// are drawn last and would paint over its first column.
+    #[test]
+    fn a_label_below_a_right_exit_clears_the_node_it_left() {
+        let scene = scene(
+            r#"
+                #[kaalang]
+                fn probe(condition: bool, extra: u8) {
+                    #[question("Does it need the long path?")]
+                    |condition| -> (other, a_long_result_wire_name_that_needs_room) {
+                        condition
+                    };
+
+                    #[action("Work out the answer.")]
+                    |other| -> a_long_result_wire_name_that_needs_room {};
+
+                    #[end]
+                    |a_long_result_wire_name_that_needs_room, extra| {};
+                }
+            "#,
+            "probe",
+        );
+
+        let question = scene
+            .nodes
+            .iter()
+            .find(|node| node.kind == NodeKind::Question)
+            .expect("the question is drawn");
+        let label = scene
+            .labels
+            .iter()
+            .find(|label| (label.at.y - question.y).abs() < question.height / 2)
+            .expect("the right exit drops its label level with the question");
+        assert!(label.lines.len() > 1, "the label must wrap to reach back");
+
+        let left = label.at.x - label_width(&label.lines) / 2 - EDGE_LABEL_HALO;
+        let right = question.x + question.width / 2;
+        assert!(
+            left >= right,
+            "a label starting at x={left} runs back over a node ending at x={right}"
+        );
+    }
+
+    /// End's capture label stacks above End inside the gap the collector row
+    /// occupies. The collector carries the other branches into End, so the
+    /// label's halo must not be painted over it.
+    #[test]
+    fn the_collector_row_clears_the_end_capture_label() {
+        let scene = scene(
+            r#"
+                #[kaalang]
+                fn halo(condition: bool) {
+                    #[action("Build the shared values.")]
+                    |condition| -> (
+                        gate,
+                        first_shared_wire_name,
+                        second_shared_wire_name,
+                        third_shared_wire_name
+                    ) { (condition, 1, 2, 3) };
+
+                    #[question("Which depth does this take?")]
+                    |gate| -> (short, long) { gate };
+
+                    #[action("Build the short result.")]
+                    |short| -> result {};
+
+                    #[action("Prepare the long result.")]
+                    |long| -> prepared {};
+
+                    #[action("Build the long result.")]
+                    |prepared| -> result {};
+
+                    #[end]
+                    |result, first_shared_wire_name, second_shared_wire_name, third_shared_wire_name| {};
+                }
+            "#,
+            "halo",
+        );
+
+        let end = scene
+            .nodes
+            .iter()
+            .find(|node| node.kind == NodeKind::End)
+            .expect("End is drawn");
+        let capture = scene
+            .labels
+            .iter()
+            .find(|label| {
+                label
+                    .lines
+                    .concat()
+                    .starts_with("result, first_shared_wire_name")
+            })
+            .expect("End captures every wire that reaches it");
+        assert!(capture.lines.len() > 2, "the capture label must wrap");
+        // `at.y` is the first baseline, so the ink starts half a line above it.
+        let label_top = capture.at.y - EDGE_LABEL_FONT / 2 - EDGE_LABEL_HALO;
+
+        for edge in scene.edges.iter().filter(|edge| edge.to == end.id) {
+            for segment in edge.points.windows(2) {
+                if segment[0].y != segment[1].y {
+                    continue;
+                }
+                let row = segment[0].y;
+                assert!(
+                    row < label_top,
+                    "a collector row at y={row} is under the capture label at y={label_top}"
+                );
+            }
+        }
+    }
+
+    /// A terminal leaving a question's right vertex starts half a node width
+    /// off the skewer, which is exactly the right border of the rectangular
+    /// nodes below it. A descent there is hidden: it carries the node's own
+    /// stroke and nodes are drawn last, so the terminal needs an outer lane.
+    #[test]
+    fn a_terminal_off_a_right_vertex_clears_the_nodes_below_it() {
+        let scene = scene(
+            r#"
+                #[kaalang]
+                fn rex(condition: bool) {
+                    #[question("Is the short answer enough?")]
+                    |condition| -> (more, done) { condition };
+
+                    #[action("Work out the answer.")]
+                    |more| -> done {};
+
+                    #[end]
+                    |done| {};
+                }
+            "#,
+            "rex",
+        );
+
+        for edge in &scene.edges {
+            for segment in edge.points.windows(2) {
+                if segment[0].x != segment[1].x {
+                    continue;
+                }
+                let top = segment[0].y.min(segment[1].y);
+                let bottom = segment[0].y.max(segment[1].y);
+                for node in &scene.nodes {
+                    // A connection's own ends anchor on their node's boundary.
+                    if node.id == edge.from || node.id == edge.to {
+                        continue;
+                    }
+                    let overlaps =
+                        top.max(node.y - node.height / 2) < bottom.min(node.y + node.height / 2);
+                    assert!(
+                        !overlaps || (segment[0].x - node.x).abs() > node.width / 2,
+                        "a descent at x={} runs down node {:?}",
+                        segment[0].x,
+                        node.id
+                    );
+                }
+            }
+        }
+    }
+
     /// `segments_cross` compares a vertical run against a horizontal one, so
     /// collinear overlap is out of scope. Two overlaps are deliberate: the
     /// connections from a Select share the distributor row, and the connections
     /// into End share the collector row and its descent.
     #[test]
-    fn fixture_connections_are_orthogonal_and_free_of_perpendicular_crossings() {
-        let scene = scene(include_str!("../../tests/fixtures/all_blocks.rs"), "route");
+    fn connections_are_orthogonal_and_free_of_perpendicular_crossings() {
+        let source = r#"
+#[kaalang]
+fn route(request: u8) -> u8 {
+    #[question("Is there an application, and is it eligible?")]
+    |&request| -> (accepted, rejected) { request > 0 };
+
+    #[choice("Which path should process this application?")]
+    #[case("Short path")]
+    #[case("Long path with an additional check")]
+    |accepted, &request| -> (short, long) {
+        match request {
+            1 => (),
+            _ => (),
+        }
+    };
+
+    #[action("Prepare the short result.")]
+    |short, &request| -> selected { request };
+
+    #[action("Prepare the long result while preserving every important application detail.")]
+    |long, &request| -> selected { request };
+
+    #[action("Use the selected result.")]
+    |selected| -> result { selected };
+
+    #[action("Reject the application.")]
+    |rejected, request| -> result { request };
+
+    #[end]
+    |result| {};
+}
+"#;
+
+        let scene = scene(source, "route");
         for edge in &scene.edges {
             assert!(
                 edge.points
