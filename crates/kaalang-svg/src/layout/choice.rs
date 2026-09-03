@@ -4,7 +4,7 @@ use kaalang_model::{Branch, Convergence};
 
 use super::{
     Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, LABEL_FONT, LINE_HEIGHT,
-    NodeId, NodeKind, Origin, Placed, Point, compact_points, plan_span, wrap_text,
+    NodeId, NodeKind, Origin, Placed, Point, compact_points, plan_span, text::wrap_text,
 };
 
 pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
