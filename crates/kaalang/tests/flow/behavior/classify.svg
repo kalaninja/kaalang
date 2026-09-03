@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="940" viewBox="0 0 704 940" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for classify</title>
-  <desc id="kaalang-description">Nodes: Start: classify(seed: u32, limit: u32) -&gt; u32; Action: Normalize the seed.; Action: Split the seed.; Action: Add the values.; Question: Is the total above the limit?; Action: Keep the accepted total.; Action: Keep the rejected total.; End. Connections: Start: classify(seed: u32, limit: u32) -&gt; u32 to Action: Normalize the seed.; Action: Normalize the seed. to Action: Split the seed.; Action: Split the seed. to Action: Add the values.; Action: Add the values. to Question: Is the total above the limit?; Question: Is the total above the limit? to Action: Keep the accepted total. via accepted; Question: Is the total above the limit? to Action: Keep the rejected total. via rejected; Action: Keep the accepted total. to End via result; Action: Keep the rejected total. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: classify(seed: u32, limit: u32) -&gt; u32; Action: Normalize the seed.; Action: Split the seed.; Action: Add the values.; Question: Is the total above the limit?; Action: Keep the accepted total.; Action: Keep the rejected total.; End. Connections: Start: classify(seed: u32, limit: u32) -&gt; u32 to Action: Normalize the seed. handing over seed, limit; Action: Normalize the seed. to Action: Split the seed. via normalized; Action: Split the seed. to Action: Add the values. via left, right; Action: Add the values. to Question: Is the total above the limit? handing over total; Question: Is the total above the limit? to Action: Keep the accepted total. handing over accepted, captured as accepted, total; Question: Is the total above the limit? to Action: Keep the rejected total. handing over rejected, captured as rejected, total; Action: Keep the accepted total. to End via result; Action: Keep the rejected total. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -19,13 +19,18 @@
     <path class="edge" d="M 172 362 L 172 434"/>
     <path class="edge" d="M 172 498 L 172 570"/>
     <path class="edge" d="M 172 642 L 172 714"/>
-    <text class="edge-label" x="214" y="673" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
     <path class="edge" d="M 312 606 L 532 606 L 532 714"/>
-    <text class="edge-label" x="422" y="598" xml:space="preserve"><tspan x="422" dy="0">rejected</tspan></text>
     <path class="edge" d="M 172 778 L 172 850"/>
-    <text class="edge-label" x="214" y="796" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
     <path class="edge" d="M 532 778 L 532 818 L 172 818 L 172 850"/>
-    <text class="edge-label" x="574" y="796" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">seed, limit</tspan></text>
+    <text class="edge-label" x="214" y="257" xml:space="preserve"><tspan x="214" dy="0">normalized</tspan></text>
+    <text class="edge-label" x="214" y="393" xml:space="preserve"><tspan x="214" dy="0">left, right</tspan></text>
+    <text class="edge-label" x="214" y="516" xml:space="preserve"><tspan x="214" dy="0">total</tspan></text>
+    <text class="edge-label" x="214" y="706" xml:space="preserve"><tspan x="214" dy="0">accepted, total</tspan></text>
+    <text class="edge-label" x="214" y="660" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
+    <text class="edge-label" x="574" y="706" xml:space="preserve"><tspan x="574" dy="0">rejected, total</tspan></text>
+    <text class="edge-label" x="342" y="624" xml:space="preserve"><tspan x="342" dy="0">rejected</tspan></text>
+    <text class="edge-label" x="214" y="842" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

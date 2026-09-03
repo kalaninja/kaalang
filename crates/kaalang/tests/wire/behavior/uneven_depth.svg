@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="804" viewBox="0 0 704 804" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for uneven_depth</title>
-  <desc id="kaalang-description">Nodes: Start: uneven_depth(condition: bool) -&gt; u32; Question: Choose a path depth.; Action: Build the short value.; Action: Prepare the long value.; Action: Build the long value.; Action: Use the selected value.; End. Connections: Start: uneven_depth(condition: bool) -&gt; u32 to Question: Choose a path depth.; Question: Choose a path depth. to Action: Build the short value. via short; Question: Choose a path depth. to Action: Prepare the long value. via long; Action: Prepare the long value. to Action: Build the long value.; Action: Build the short value. to Action: Use the selected value. via selected; Action: Build the long value. to Action: Use the selected value. via selected; Action: Use the selected value. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: uneven_depth(condition: bool) -&gt; u32; Question: Choose a path depth.; Action: Build the short value.; Action: Prepare the long value.; Action: Build the long value.; Action: Use the selected value.; End. Connections: Start: uneven_depth(condition: bool) -&gt; u32 to Question: Choose a path depth. via condition; Question: Choose a path depth. to Action: Build the short value. via short; Question: Choose a path depth. to Action: Prepare the long value. via long; Action: Prepare the long value. to Action: Build the long value. via prepared; Action: Build the short value. to Action: Use the selected value. via selected; Action: Build the long value. to Action: Use the selected value. via selected; Action: Use the selected value. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -16,16 +16,17 @@
   <g class="edges">
     <path class="edge" d="M 172 90 L 172 162"/>
     <path class="edge" d="M 172 234 L 172 306"/>
-    <text class="edge-label" x="214" y="265" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
     <path class="edge" d="M 312 198 L 532 198 L 532 306"/>
-    <text class="edge-label" x="422" y="190" xml:space="preserve"><tspan x="422" dy="0">long</tspan></text>
     <path class="edge" d="M 532 370 L 532 442"/>
     <path class="edge" d="M 172 370 L 172 578"/>
-    <text class="edge-label" x="214" y="469" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
     <path class="edge" d="M 532 506 L 532 542 L 172 542 L 172 578"/>
-    <text class="edge-label" x="574" y="524" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
     <path class="edge" d="M 172 642 L 172 714"/>
-    <text class="edge-label" x="214" y="660" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="121" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="265" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
+    <text class="edge-label" x="422" y="190" xml:space="preserve"><tspan x="422" dy="0">long</tspan></text>
+    <text class="edge-label" x="574" y="401" xml:space="preserve"><tspan x="574" dy="0">prepared</tspan></text>
+    <text class="edge-label" x="214" y="570" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="673" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

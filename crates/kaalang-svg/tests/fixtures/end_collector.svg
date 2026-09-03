@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1424" height="822" viewBox="0 0 1424 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for route</title>
-  <desc id="kaalang-description">Nodes: Start: route(input: u8) -&gt; u8; Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Take the first direct End path.; Case: Take the second direct End path.; Action: Build the left value.; Action: Build the right value.; Action: Build the first direct result.; Action: Build the second direct result.; Action: Build the converged result.; End. Connections: Start: route(input: u8) -&gt; u8 to Choice: Which path does the input take?; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Take the first direct End path.; Choice: Which path does the input take? to Case: Take the second direct End path.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Take the first direct End path. to Action: Build the first direct result. via first_direct; Case: Take the second direct End path. to Action: Build the second direct result. via second_direct; Action: Build the left value. to Action: Build the converged result. via selected; Action: Build the right value. to Action: Build the converged result. via selected; Action: Build the first direct result. to End via result; Action: Build the second direct result. to End via result; Action: Build the converged result. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: route(input: u8) -&gt; u8; Choice: Which path does the input take?; Case: Take the left path.; Case: Take the right path.; Case: Take the first direct End path.; Case: Take the second direct End path.; Action: Build the left value.; Action: Build the right value.; Action: Build the first direct result.; Action: Build the second direct result.; Action: Build the converged result.; End. Connections: Start: route(input: u8) -&gt; u8 to Choice: Which path does the input take? via input; Choice: Which path does the input take? to Case: Take the left path.; Choice: Which path does the input take? to Case: Take the right path.; Choice: Which path does the input take? to Case: Take the first direct End path.; Choice: Which path does the input take? to Case: Take the second direct End path.; Case: Take the left path. to Action: Build the left value. via left; Case: Take the right path. to Action: Build the right value. via right; Case: Take the first direct End path. to Action: Build the first direct result. via first_direct; Case: Take the second direct End path. to Action: Build the second direct result. via second_direct; Action: Build the left value. to Action: Build the converged result. via selected; Action: Build the right value. to Action: Build the converged result. via selected; Action: Build the first direct result. to End via result; Action: Build the second direct result. to End via result; Action: Build the converged result. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -20,23 +20,21 @@
     <path class="edge" d="M 172 234 L 172 270 L 892 270 L 892 306"/>
     <path class="edge" d="M 172 234 L 172 270 L 1252 270 L 1252 306"/>
     <path class="edge" d="M 172 388 L 172 460"/>
-    <text class="edge-label" x="214" y="419" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
     <path class="edge" d="M 532 388 L 532 460"/>
-    <text class="edge-label" x="574" y="419" xml:space="preserve"><tspan x="574" dy="0">right</tspan></text>
     <path class="edge" d="M 892 388 L 892 460"/>
-    <text class="edge-label" x="934" y="419" xml:space="preserve"><tspan x="934" dy="0">first_direct</tspan></text>
     <path class="edge" d="M 1252 388 L 1252 460"/>
-    <text class="edge-label" x="1294" y="419" xml:space="preserve"><tspan x="1294" dy="0">second_direct</tspan></text>
     <path class="edge" d="M 172 524 L 172 596"/>
-    <text class="edge-label" x="214" y="555" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
     <path class="edge" d="M 532 524 L 532 560 L 172 560 L 172 596"/>
-    <text class="edge-label" x="574" y="542" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
     <path class="edge" d="M 892 524 L 892 700 L 172 700 L 172 732"/>
-    <text class="edge-label" x="934" y="542" xml:space="preserve"><tspan x="934" dy="0">result</tspan></text>
     <path class="edge" d="M 1252 524 L 1252 700 L 172 700 L 172 732"/>
-    <text class="edge-label" x="1294" y="542" xml:space="preserve"><tspan x="1294" dy="0">result</tspan></text>
     <path class="edge" d="M 172 660 L 172 732"/>
-    <text class="edge-label" x="214" y="678" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="121" xml:space="preserve"><tspan x="214" dy="0">input</tspan></text>
+    <text class="edge-label" x="214" y="419" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
+    <text class="edge-label" x="574" y="419" xml:space="preserve"><tspan x="574" dy="0">right</tspan></text>
+    <text class="edge-label" x="934" y="419" xml:space="preserve"><tspan x="934" dy="0">first_direct</tspan></text>
+    <text class="edge-label" x="1294" y="419" xml:space="preserve"><tspan x="1294" dy="0">second_direct</tspan></text>
+    <text class="edge-label" x="214" y="588" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="724" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

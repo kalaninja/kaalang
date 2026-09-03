@@ -2,7 +2,7 @@
 
 use kaalang_model::{Convergence, Plan};
 
-use super::{Builder, Incoming, NodeId, Placed, Point, VERTICAL_GAP, compact_points};
+use super::{Builder, Incoming, NodeId, Placed, Point, compact_points};
 
 impl Builder<'_> {
     pub(super) fn place_convergence(
@@ -26,7 +26,7 @@ impl Builder<'_> {
         let continuation = self.place(
             &convergence.next,
             first.skewer,
-            bottom + VERTICAL_GAP,
+            bottom + self.vertical_gap,
             first,
         );
         let join_y = i32::midpoint(bottom, self.top_anchor(root).y);
@@ -53,11 +53,7 @@ impl Builder<'_> {
             },
             end,
         ]);
-        let label_at = arrival.label.as_ref().map(|_| Point {
-            x: start.x + 42,
-            y: start.y + 18,
-        });
-        self.connect_points(arrival.origin.node, root, arrival.label, points, label_at);
+        self.connect(arrival, root, points);
     }
 }
 

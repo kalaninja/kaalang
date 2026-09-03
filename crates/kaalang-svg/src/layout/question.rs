@@ -2,7 +2,7 @@
 
 use kaalang_model::{Branch, Convergence};
 
-use super::{Builder, Incoming, Origin, Placed, VERTICAL_GAP, plan_span};
+use super::{Builder, Incoming, Origin, Placed, plan_span};
 
 impl Builder<'_> {
     pub(super) fn place_question(
@@ -16,8 +16,7 @@ impl Builder<'_> {
     ) -> Placed {
         let node = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, node);
-        let branch_top = self.bottom_anchor(node).y + VERTICAL_GAP;
-        let outputs = &self.graph.flow.blocks[index].outputs;
+        let branch_top = self.bottom_anchor(node).y + self.vertical_gap;
         let spans = branches
             .iter()
             .map(|branch| plan_span(&branch.plan))
@@ -36,7 +35,7 @@ impl Builder<'_> {
                 branch_top,
                 Incoming {
                     origin,
-                    label: Some(outputs[branch_index].to_string()),
+                    branch: Some(branch_index),
                     skewer: branch_skewer,
                 },
             ));

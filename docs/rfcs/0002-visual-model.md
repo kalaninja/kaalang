@@ -28,9 +28,9 @@ labeled with the authored flow signature. End comes from the mandatory authored
 `#[end]` statement; the renderer does not add a separate Return node.
 
 Connections between nodes come from the validated plan. Rust bodies, source
-comments, and data-wire dependencies do not add or change control topology. A
-wire name may label a connection, but data dependencies are not drawn as a
-separate graph.
+comments, and data-wire dependencies do not add or change control topology. Wire
+names label a connection's ends as section 3 sets out, but data dependencies are
+not drawn as a separate graph.
 
 kaalang has no merge node. Path-exclusive producers of the same logical wire
 converge directly at their first shared consumer or at End.
@@ -53,20 +53,36 @@ authored. The signature states the flow's calling contract, which wire names
 alone do not: a boundary input is otherwise drawn only where a connection
 happens to carry its name.
 
+A connection is labeled at the end whose wires it names. Its hand-over is what
+the node it leaves passes on: the boundary's source wires for Start, the branch's
+own output wire for a question or a case, and every output for any other node. A
+node's capture is what it consumes, and is drawn once above that node however
+many connections arrive there, because every connection into one node delivers
+the same captured wires. A borrowed input is read where its wire lies rather than
+taken off the flow, so it is a data dependency and no connection names it. An
+underscore-prefixed wire that no block uses is omitted because it names no
+value carried onward. If a block does use it, its name is drawn like any other
+logical wire. Where a hand-over and the capture it meets name the same wires in
+the same order, the connection carries one label instead of two.
+
+A connection label carries the logical wire name, so a raw identifier appears
+without its `r#`: the raw and ordinary spellings of one wire name the same wire,
+and only the Start signature quotes the source as authored.
+
 Question branches preserve their positional meaning from RFC 0001: the first
-output is yes/true and the second is no/false. A diagram labels each branch with
-only its exact output wire name; it does not add `yes` or `no`.
+output is yes/true and the second is no/false. A branch's hand-over is only its
+exact output wire name; a diagram does not add `yes` or `no`.
 
 Choice branches preserve authored case order. The Select node uses the choice
 description. Each Case node uses the exact text value of its corresponding case
-description. A Select-to-Case connection is unlabeled, and the connection from
-the Case node into its branch uses only the exact output wire name. The visual
-graph must not reorder cases according to their Rust patterns or layout
-position.
+description. A Select-to-Case connection names nothing at either end, because the
+case row belongs to the Select above it and the branch's output wire rides the
+connection leaving the Case node. The visual graph must not reorder cases
+according to their Rust patterns or layout position.
 
-When sibling paths produce the same logical wire, each incoming connection keeps
-that shared wire name. The paths meet at the one downstream consumer that
-captures the name. No synthetic node is inserted between them.
+When sibling paths produce the same logical wire, they meet at the one downstream
+consumer that captures the name, which names that wire once above itself. No
+synthetic node is inserted between them.
 
 A zero-computation flow contains Start and the authored End. Those nodes are
 connected only when End captures a source wire; when End captures nothing they
@@ -105,8 +121,9 @@ point, and Start and End are capsules. The renderer uses one monochrome style
 and does not print block-kind captions inside nodes. There is no merge icon.
 
 Exact dimensions, colors, typography, spacing, and routing offsets remain
-rendering choices. The stable contract is the visual graph's nodes, roles,
-labels, branch order, implicit convergence, connections, and skewer ordering.
+rendering choices; which end of a connection a label belongs to does not. The
+stable contract is the visual graph's nodes, roles, labels and the ends they
+name, branch order, implicit convergence, connections, and skewer ordering.
 
 ## 5. SVG renderer
 

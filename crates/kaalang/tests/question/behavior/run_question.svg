@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="540" viewBox="0 0 704 540" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_question</title>
-  <desc id="kaalang-description">Nodes: Start: run_question(condition: bool) -&gt; &amp;&apos;static str; Question: Take the yes branch?; Action: Produce the yes result.; Action: Produce the no result.; End. Connections: Start: run_question(condition: bool) -&gt; &amp;&apos;static str to Question: Take the yes branch?; Question: Take the yes branch? to Action: Produce the yes result. via yes; Question: Take the yes branch? to Action: Produce the no result. via no; Action: Produce the yes result. to End via result; Action: Produce the no result. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_question(condition: bool) -&gt; &amp;&apos;static str; Question: Take the yes branch?; Action: Produce the yes result.; Action: Produce the no result.; End. Connections: Start: run_question(condition: bool) -&gt; &amp;&apos;static str to Question: Take the yes branch? via condition; Question: Take the yes branch? to Action: Produce the yes result. via yes; Question: Take the yes branch? to Action: Produce the no result. via no; Action: Produce the yes result. to End via result; Action: Produce the no result. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -16,13 +16,13 @@
   <g class="edges">
     <path class="edge" d="M 172 98 L 172 170"/>
     <path class="edge" d="M 172 242 L 172 314"/>
-    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
     <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
-    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <path class="edge" d="M 172 378 L 172 450"/>
-    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
     <path class="edge" d="M 532 378 L 532 418 L 172 418 L 172 450"/>
-    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

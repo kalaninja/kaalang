@@ -4,7 +4,7 @@ use kaalang_model::{Branch, Convergence};
 
 use super::{
     Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, LABEL_FONT, LINE_HEIGHT,
-    NodeId, NodeKind, Origin, Placed, Point, VERTICAL_GAP, compact_points, plan_span, wrap_text,
+    NodeId, NodeKind, Origin, Placed, Point, compact_points, plan_span, wrap_text,
 };
 
 pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
@@ -41,7 +41,7 @@ impl Builder<'_> {
                 NodeKind::Case,
                 description.clone(),
                 branch_skewer,
-                self.bottom_anchor(select).y + VERTICAL_GAP,
+                self.bottom_anchor(select).y + self.vertical_gap,
             );
             cases.push((case, branch_skewer));
             branch_skewer += spans[branch_index];
@@ -50,13 +50,11 @@ impl Builder<'_> {
 
         let case_top = self.top_anchor(cases[0].0).y;
         for (case, _) in &cases {
-            self.connect_points(
-                select,
-                *case,
-                None,
-                self.distributor_points(select, *case, case_top),
-                None,
-            );
+            // The case row belongs to the select above it, so the fan-out
+            // carries no names of its own: the branch name rides the
+            // connection leaving the case.
+            let points = self.distributor_points(select, *case, case_top);
+            self.connect_points(select, *case, Vec::new(), Vec::new(), points);
         }
 
         let branch_top = cases
@@ -64,7 +62,7 @@ impl Builder<'_> {
             .map(|(case, _)| self.bottom_anchor(*case).y)
             .max()
             .unwrap_or(self.bottom_anchor(select).y)
-            + VERTICAL_GAP;
+            + self.vertical_gap;
         let mut placed = Vec::with_capacity(branches.len());
         for (branch_index, branch) in branches.iter().enumerate() {
             let (case, branch_skewer) = cases[branch_index];
@@ -74,7 +72,7 @@ impl Builder<'_> {
                 branch_top,
                 Incoming {
                     origin: Origin::bottom(case),
-                    label: Some(block.outputs[branch_index].to_string()),
+                    branch: Some(branch_index),
                     skewer: branch_skewer,
                 },
             ));

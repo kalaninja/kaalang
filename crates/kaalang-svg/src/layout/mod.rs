@@ -12,7 +12,7 @@ mod question;
 
 const MARGIN: i32 = 32;
 const SKEWER_WIDTH: i32 = 360;
-const VERTICAL_GAP: i32 = 72;
+const MIN_VERTICAL_GAP: i32 = 72;
 const TERMINAL_STUB: i32 = 24;
 /// Height of the collector every terminal branch enters, measured up from the
 /// top edge of End.
@@ -43,6 +43,14 @@ const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 /// Text budget for an edge label, which floats free of any node.
 pub(crate) const EDGE_LABEL_WIDTH: i32 = 240;
+/// Sideways offset of a connection label from the wire it names.
+const LABEL_ASIDE: i32 = 42;
+/// Rise of a label that sits above a horizontal run or a node's top border.
+const LABEL_RISE: i32 = 8;
+/// Drop of a hand-over label below the exit it leaves by.
+const LABEL_DROP: i32 = 18;
+/// Lifts a baseline so a label's ink straddles the point it marks.
+const LABEL_BASELINE: i32 = 5;
 
 #[derive(Default)]
 pub(crate) struct Scene {
@@ -50,6 +58,7 @@ pub(crate) struct Scene {
     pub(crate) height: i32,
     pub(crate) nodes: Vec<Node>,
     pub(crate) edges: Vec<Edge>,
+    pub(crate) labels: Vec<Label>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -89,12 +98,30 @@ pub(crate) struct Point {
 pub(crate) struct Edge {
     pub(crate) from: NodeId,
     pub(crate) to: NodeId,
-    /// The exact authored wire name this connection carries.
-    pub(crate) label: Option<String>,
-    /// `label` wrapped to its budget, so its size is known during layout.
-    pub(crate) lines: Vec<String>,
+    /// The logical wire names the origin hands over here.
+    pub(crate) handover: Vec<String>,
+    /// The logical wire names the destination captures.
+    pub(crate) capture: Vec<String>,
     pub(crate) points: Vec<Point>,
-    pub(crate) label_at: Option<Point>,
+}
+
+/// One placed connection label, wrapped during layout so the canvas can be
+/// sized around it. `at` is the first line's baseline, so the serializer writes
+/// the block without deciding where it sits.
+pub(crate) struct Label {
+    pub(crate) lines: Vec<String>,
+    pub(crate) at: Point,
+}
+
+/// Where a label's lines stack against the point it marks.
+#[derive(Clone, Copy)]
+enum Stack {
+    /// Centred on it, for a label in the middle of a run.
+    Around,
+    /// Ending at it, so a wrapped label climbs away from the node below.
+    Above,
+    /// Starting at it, so a wrapped label hangs away from the node above.
+    Below,
 }
 
 /// The authored flow signature, minus `fn`, with every whitespace run collapsed
@@ -115,6 +142,7 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
         indexes: HashMap::new(),
         terminals: Vec::new(),
         skewer_count,
+        vertical_gap: vertical_gap(graph),
     };
 
     let start = builder.add_node(
@@ -124,14 +152,14 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
         0,
         MARGIN,
     );
-    let first_top = builder.bottom_anchor(start).y + VERTICAL_GAP;
+    let first_top = builder.bottom_anchor(start).y + builder.vertical_gap;
     builder.place(
         &graph.plan,
         0,
         first_top,
         Incoming {
             origin: Origin::bottom(start),
-            label: None,
+            branch: None,
             skewer: 0,
         },
     );
@@ -147,6 +175,7 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
         graph.flow.blocks.len() + case_count + 1
     );
 
+    builder.place_labels();
     builder.fit_scene();
     builder.scene
 }
@@ -157,6 +186,7 @@ struct Builder<'a> {
     indexes: HashMap<NodeId, usize>,
     terminals: Vec<Incoming>,
     skewer_count: usize,
+    vertical_gap: i32,
 }
 
 impl Builder<'_> {
@@ -194,22 +224,16 @@ impl Builder<'_> {
                 // declares.
                 let unwired_boundary = inputs.is_empty() && incoming.origin.node == NodeId::Start;
                 if !unwired_boundary {
-                    self.terminals.push(Incoming {
-                        label: (!inputs.is_empty()).then(|| join(inputs)),
-                        ..incoming
-                    });
+                    self.terminals.push(incoming);
                 }
                 Placed {
                     bottom: self.anchor(incoming.origin).y,
                     arrivals: Vec::new(),
                 }
             }
-            Plan::Yield { wires } => Placed {
+            Plan::Yield { .. } => Placed {
                 bottom: self.anchor(incoming.origin).y,
-                arrivals: vec![Incoming {
-                    label: (!wires.is_empty()).then(|| join(wires)),
-                    ..incoming
-                }],
+                arrivals: vec![incoming],
             },
         }
     }
@@ -277,50 +301,33 @@ impl Builder<'_> {
     fn connect_to_node(&mut self, incoming: Incoming, to: NodeId) {
         let start = self.anchor(incoming.origin);
         let end = self.top_anchor(to);
-        let (points, label_at) = match incoming.origin.side {
-            Side::Right => {
-                let bend = Point {
+        let points = match incoming.origin.side {
+            Side::Right => compact_points([
+                start,
+                Point {
                     x: end.x,
                     y: start.y,
-                };
-                (
-                    compact_points([start, bend, end]),
-                    incoming.label.as_ref().map(|_| Point {
-                        x: i32::midpoint(start.x, bend.x),
-                        y: start.y - 8,
-                    }),
-                )
-            }
-            Side::Bottom if start.x == end.x => (
-                vec![start, end],
-                incoming.label.as_ref().map(|_| Point {
-                    x: start.x + 42,
-                    y: i32::midpoint(start.y, end.y) - 5,
-                }),
-            ),
+                },
+                end,
+            ]),
+            Side::Bottom if start.x == end.x => vec![start, end],
             Side::Bottom => {
                 let middle_y = i32::midpoint(start.y, end.y);
-                (
-                    compact_points([
-                        start,
-                        Point {
-                            x: start.x,
-                            y: middle_y,
-                        },
-                        Point {
-                            x: end.x,
-                            y: middle_y,
-                        },
-                        end,
-                    ]),
-                    incoming.label.as_ref().map(|_| Point {
-                        x: i32::midpoint(start.x, end.x),
-                        y: middle_y - 8,
-                    }),
-                )
+                compact_points([
+                    start,
+                    Point {
+                        x: start.x,
+                        y: middle_y,
+                    },
+                    Point {
+                        x: end.x,
+                        y: middle_y,
+                    },
+                    end,
+                ])
             }
         };
-        self.connect_points(incoming.origin.node, to, incoming.label, points, label_at);
+        self.connect(incoming, to, points);
     }
 
     /// Reports whether a terminal can drop straight down its own column, which
@@ -419,36 +426,123 @@ impl Builder<'_> {
                     end_top,
                 ])
             };
-            let label_at = terminal.label.as_ref().map(|_| Point {
-                x: start.x + 42,
-                y: start.y + 18,
-            });
-            self.connect_points(terminal.origin.node, end, terminal.label, points, label_at);
+            self.connect(terminal, end, points);
         }
+    }
+
+    /// Records one connection with the wire names each of its ends names, which
+    /// `place_labels` turns into the drawn labels once every node is placed.
+    fn connect(&mut self, incoming: Incoming, to: NodeId, points: Vec<Point>) {
+        let handover = self.handover(incoming.origin.node, incoming.branch);
+        let capture = self.capture(to);
+        self.connect_points(incoming.origin.node, to, handover, capture, points);
     }
 
     fn connect_points(
         &mut self,
         from: NodeId,
         to: NodeId,
-        label: Option<String>,
+        handover: Vec<String>,
+        capture: Vec<String>,
         points: Vec<Point>,
-        label_at: Option<Point>,
     ) {
         debug_assert!(points.len() >= 2);
-        debug_assert_eq!(label.is_some(), label_at.is_some());
-        let lines = label
-            .as_deref()
-            .map(|label| wrap_text(label, EDGE_LABEL_WIDTH, EDGE_LABEL_FONT))
-            .unwrap_or_default();
         self.scene.edges.push(Edge {
             from,
             to,
-            label,
-            lines,
+            handover,
+            capture,
             points,
-            label_at,
         });
+    }
+
+    /// The wire names a node hands over on one connection leaving it. A
+    /// question hands over the single output its branch carries; a case hands
+    /// over the choice output it stands for; every other node hands over all it
+    /// produces.
+    fn handover(&self, from: NodeId, branch: Option<usize>) -> Vec<String> {
+        let names: Vec<&Ident> = match from {
+            NodeId::Start => self.graph.flow.sources.iter().collect(),
+            NodeId::Case {
+                choice,
+                branch: case,
+            } => {
+                vec![&self.graph.flow.blocks[choice].outputs[case]]
+            }
+            NodeId::Block(index) => {
+                let outputs = &self.graph.flow.blocks[index].outputs;
+                match branch {
+                    Some(branch) => vec![&outputs[branch]],
+                    None => outputs.iter().collect(),
+                }
+            }
+        };
+
+        drawn(self.graph, names)
+    }
+
+    /// The wire names a node captures. Only consuming inputs count: a borrow
+    /// reads its wire where it lies and leaves it on the flow, so it is a data
+    /// dependency, which the visual graph does not draw. A case captures
+    /// nothing of its own: it stands for one output of the choice above it.
+    fn capture(&self, to: NodeId) -> Vec<String> {
+        match to {
+            NodeId::Start | NodeId::Case { .. } => Vec::new(),
+            NodeId::Block(index) => drawn(
+                self.graph,
+                self.graph.flow.blocks[index]
+                    .inputs
+                    .iter()
+                    .filter(|input| !input.borrowed)
+                    .map(|input| &input.ident),
+            ),
+        }
+    }
+
+    /// Places every connection label at the end whose wires it names. A node's
+    /// capture is drawn once above it, and a connection that hands over
+    /// something else names that below its own exit. A lone connection handing
+    /// over exactly what its destination captures needs only the one label,
+    /// centred on the run.
+    fn place_labels(&mut self) {
+        let mut labels = Vec::new();
+        let mut seen = Vec::new();
+        for edge in &self.scene.edges {
+            if seen.contains(&edge.to) {
+                continue;
+            }
+            seen.push(edge.to);
+            let arrivals = self
+                .scene
+                .edges
+                .iter()
+                .filter(|arrival| arrival.to == edge.to)
+                .collect::<Vec<_>>();
+
+            if arrivals.len() == 1 && edge.handover == edge.capture {
+                let (at, exit) = centre_of(edge);
+                labels.extend(wire_label(&edge.capture, at, Stack::Around, exit));
+                continue;
+            }
+
+            let top = self.top_anchor(edge.to);
+            labels.extend(wire_label(
+                &edge.capture,
+                Point {
+                    x: top.x + LABEL_ASIDE,
+                    y: top.y - LABEL_RISE,
+                },
+                Stack::Above,
+                None,
+            ));
+            for arrival in arrivals {
+                if arrival.handover != arrival.capture {
+                    let (at, exit) = exit_of(arrival);
+                    labels.extend(wire_label(&arrival.handover, at, Stack::Below, exit));
+                }
+            }
+        }
+        self.scene.labels = labels;
     }
 
     fn anchor(&self, origin: Origin) -> Point {
@@ -501,10 +595,11 @@ impl Builder<'_> {
                 right = right.max(point.x);
                 bottom = bottom.max(point.y);
             }
-            if let Some((label_right, label_bottom)) = label_bounds(edge) {
-                right = right.max(label_right);
-                bottom = bottom.max(label_bottom);
-            }
+        }
+        for label in &self.scene.labels {
+            let (label_right, label_bottom) = label_bounds(label);
+            right = right.max(label_right);
+            bottom = bottom.max(label_bottom);
         }
         self.scene.width = right + MARGIN;
         self.scene.height = bottom + MARGIN;
@@ -512,9 +607,13 @@ impl Builder<'_> {
 }
 
 /// A connection that has left its origin and awaits the node it enters.
+#[derive(Clone, Copy)]
 struct Incoming {
     origin: Origin,
-    label: Option<String>,
+    /// The branch this connection left on, which decides how much of a
+    /// branching origin's output tuple it hands over. `None` for a node that
+    /// hands over everything it produces.
+    branch: Option<usize>,
     skewer: usize,
 }
 
@@ -598,34 +697,168 @@ fn continuation_offset(branches: &[Branch], spans: &[usize]) -> usize {
     spans[..continuing].iter().sum()
 }
 
-/// Right and bottom extent of an edge label, matching how the serializer places
-/// it: centred on `label_at`, with the block of lines centred on that baseline.
-fn label_bounds(edge: &Edge) -> Option<(i32, i32)> {
-    let at = edge.label_at?;
-    let width = edge
-        .lines
+/// Leaves enough room for the largest pair of hand-over and capture labels.
+fn vertical_gap(graph: &Graph) -> i32 {
+    // ponytail: one global gap keeps routing simple; reserve per-edge gaps if
+    // tall diagrams become a practical problem.
+    let source_lines = label_line_count(graph, &graph.flow.sources);
+    let block_lines = graph.flow.blocks.iter().flat_map(|block| {
+        [
+            label_line_count(graph, &block.outputs),
+            label_line_count(
+                graph,
+                block
+                    .inputs
+                    .iter()
+                    .filter(|input| !input.borrowed)
+                    .map(|input| &input.ident),
+            ),
+        ]
+    });
+    let lines = block_lines.chain([source_lines]).max().unwrap_or(0) as i32;
+    if lines == 0 {
+        return MIN_VERTICAL_GAP;
+    }
+
+    MIN_VERTICAL_GAP.max(
+        LABEL_DROP
+            + LABEL_RISE
+            + EDGE_LABEL_FONT
+            + 2 * EDGE_LABEL_HALO
+            + 2 * (lines - 1) * EDGE_LINE_HEIGHT,
+    )
+}
+
+fn label_line_count<'a>(graph: &Graph, names: impl IntoIterator<Item = &'a Ident>) -> usize {
+    let names = drawn(graph, names);
+    if names.is_empty() {
+        0
+    } else {
+        wrap_text(&names.join(", "), EDGE_LABEL_WIDTH, EDGE_LABEL_FONT).len()
+    }
+}
+
+/// Renders every ordinary wire and every underscore-prefixed wire that a block
+/// uses. Only an unused ignored wire is absent from the flow.
+fn drawn<'a>(graph: &Graph, names: impl IntoIterator<Item = &'a Ident>) -> Vec<String> {
+    names
+        .into_iter()
+        .filter(|name| {
+            !name.to_string().starts_with('_')
+                || graph
+                    .flow
+                    .blocks
+                    .iter()
+                    .any(|block| block.inputs.iter().any(|input| input.ident == **name))
+        })
+        .map(ToString::to_string)
+        .collect()
+}
+
+/// Wraps one connection label and stacks its lines against `at`, or nothing
+/// when that end names no wire. A label beside a horizontal run is also kept
+/// right of `exit`: it reaches back over the node it left once it wraps, and
+/// nodes are drawn last and would cover its first column.
+fn wire_label(names: &[String], at: Point, stack: Stack, exit: Option<i32>) -> Option<Label> {
+    if names.is_empty() {
+        return None;
+    }
+    let lines = wrap_text(&names.join(", "), EDGE_LABEL_WIDTH, EDGE_LABEL_FONT);
+    let below_first = (lines.len() as i32 - 1) * EDGE_LINE_HEIGHT;
+    let clear = exit.map_or(at.x, |exit| {
+        at.x.max(exit + label_width(&lines) / 2 + EDGE_LABEL_HALO)
+    });
+
+    Some(Label {
+        at: Point {
+            x: clear,
+            y: at.y
+                - match stack {
+                    Stack::Around => below_first / 2,
+                    Stack::Above => below_first,
+                    Stack::Below => 0,
+                },
+        },
+        lines,
+    })
+}
+
+/// The middle of the run a connection leaves on, beside the wire rather than
+/// over it, for the label both of its ends agree on.
+fn centre_of(edge: &Edge) -> (Point, Option<i32>) {
+    let [start, next] = route_head(edge);
+    if start.y == next.y {
+        return (
+            Point {
+                x: i32::midpoint(start.x, next.x),
+                y: start.y - LABEL_RISE,
+            },
+            Some(start.x),
+        );
+    }
+
+    (
+        Point {
+            x: start.x + LABEL_ASIDE,
+            y: i32::midpoint(start.y, next.y) - LABEL_BASELINE,
+        },
+        None,
+    )
+}
+
+/// Just outside the exit a connection leaves by, so its hand-over reads as
+/// belonging to the node above it.
+fn exit_of(edge: &Edge) -> (Point, Option<i32>) {
+    let [start, next] = route_head(edge);
+    if start.y == next.y {
+        return (
+            Point {
+                x: start.x,
+                y: start.y + LABEL_DROP,
+            },
+            Some(start.x),
+        );
+    }
+
+    (
+        Point {
+            x: start.x + LABEL_ASIDE,
+            y: start.y + LABEL_DROP,
+        },
+        None,
+    )
+}
+
+/// The first segment of a route, which is the one leaving the origin.
+fn route_head(edge: &Edge) -> [Point; 2] {
+    let [start, next, ..] = edge.points[..] else {
+        unreachable!("a positioned connection has at least two points")
+    };
+    [start, next]
+}
+
+/// Right and bottom extent of a connection label, matching how the serializer
+/// places it: centred on `at.x`, its first baseline at `at.y`.
+fn label_bounds(label: &Label) -> (i32, i32) {
+    let width = label_width(&label.lines);
+    let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * EDGE_LINE_HEIGHT;
+
+    (
+        label.at.x + width / 2 + EDGE_LABEL_HALO,
+        last_baseline + EDGE_LABEL_FONT / 2 + EDGE_LABEL_HALO,
+    )
+}
+
+fn label_width(lines: &[String]) -> i32 {
+    lines
         .iter()
         .map(|line| text_width(&line.graphemes(true).collect::<Vec<_>>(), EDGE_LABEL_FONT))
-        .max()?;
-    let last_baseline = at.y + (edge.lines.len() as i32 - 1) * EDGE_LINE_HEIGHT / 2;
-
-    Some((
-        at.x + width / 2 + EDGE_LABEL_HALO,
-        last_baseline + EDGE_LABEL_FONT / 2 + EDGE_LABEL_HALO,
-    ))
+        .max()
+        .unwrap_or_default()
 }
 
 fn skewer_x(skewer: usize) -> i32 {
     MARGIN + NODE_WIDTH / 2 + skewer as i32 * SKEWER_WIDTH
-}
-
-/// Renders wire names as one comma-separated label.
-fn join(names: &[Ident]) -> String {
-    names
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join(", ")
 }
 
 fn compact_points(points: impl IntoIterator<Item = Point>) -> Vec<Point> {
@@ -765,8 +998,9 @@ mod tests {
     use unicode_segmentation::UnicodeSegmentation;
 
     use super::{
-        LABEL_FONT, NODE_LABEL_WIDTH, Node, NodeId, NodeKind, Point, Scene, label_bounds, layout,
-        signature_text, skewer_x, text_width, wrap_text,
+        EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, LABEL_FONT, NODE_LABEL_WIDTH, Node,
+        NodeId, NodeKind, Point, Scene, label_bounds, label_width, layout, signature_text,
+        skewer_x, text_width, wrap_text,
     };
 
     fn scene(source: &str, flow: &str) -> Scene {
@@ -890,29 +1124,70 @@ mod tests {
             scene
                 .edges
                 .iter()
-                .map(|edge| (edge.from, edge.to, edge.label.as_deref()))
+                .map(|edge| (
+                    edge.from,
+                    edge.to,
+                    edge.handover.clone(),
+                    edge.capture.clone()
+                ))
                 .collect::<Vec<_>>(),
-            [(NodeId::Start, NodeId::Block(0), Some("value"))]
+            [(
+                NodeId::Start,
+                NodeId::Block(0),
+                vec![String::from("value")],
+                vec![String::from("value")],
+            )]
         );
     }
 
-    /// Node geometry dominates the canvas at the current spacing constants, so
-    /// this does not reproduce a past clipping bug. It pins the invariant that a
-    /// wrapped connection label stays drawable, which the spacing constants
-    /// currently satisfy only by a few pixels.
     #[test]
-    fn a_wrapped_connection_label_stays_inside_the_canvas() {
+    fn a_consumed_underscore_wire_keeps_its_name() {
+        let scene = scene(
+            r"
+                #[kaalang]
+                fn identity(_value: u8) -> u8 {
+                    #[end]
+                    |_value| {};
+                }
+            ",
+            "identity",
+        );
+
+        assert_eq!(scene.edges[0].handover, ["_value"]);
+        assert_eq!(scene.edges[0].capture, ["_value"]);
+        assert_eq!(scene.labels[0].lines.concat(), "_value");
+    }
+
+    /// A flow whose endpoint labels need more than the minimum vertical gap,
+    /// including a wrapped hand-over leaving a question horizontally.
+    fn wrapping_labels() -> Scene {
         let source = r#"
             #[kaalang]
-            fn wide(condition: bool) -> u8 {
+            fn wide(
+                condition: bool,
+                a_second_boundary_wire_that_makes_the_connection_label_wrap: u8,
+                a_third_boundary_wire_that_makes_the_connection_label_wrap: u8,
+                a_fourth_boundary_wire_that_makes_the_connection_label_wrap: u8,
+                a_fifth_boundary_wire_that_makes_the_connection_label_wrap: u8,
+            ) -> u8 {
                 #[question("Choose a path")]
-                |condition| -> (accepted, rejected) { condition };
+                |condition| -> (accepted, a_rejected_branch_wire_name_long_enough_to_wrap_beside_its_horizontal_exit) { condition };
 
                 #[action("Take the accepted path")]
-                |accepted| -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines { 1 };
+                |accepted,
+                 a_second_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_third_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_fourth_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_fifth_boundary_wire_that_makes_the_connection_label_wrap|
+                    -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines { 1 };
 
                 #[action("Take the rejected path")]
-                |rejected| -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines {
+                |a_rejected_branch_wire_name_long_enough_to_wrap_beside_its_horizontal_exit,
+                 a_second_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_third_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_fourth_boundary_wire_that_makes_the_connection_label_wrap,
+                 a_fifth_boundary_wire_that_makes_the_connection_label_wrap|
+                    -> a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines {
                     0
                 };
 
@@ -922,23 +1197,101 @@ mod tests {
         "#;
 
         let scene = scene(source, "wide");
-        let labelled = scene
-            .edges
-            .iter()
-            .filter_map(label_bounds)
-            .collect::<Vec<_>>();
-
-        assert!(!labelled.is_empty());
         assert!(
-            scene.edges.iter().any(|edge| edge.lines.len() > 1),
-            "the fixture must wrap at least one connection label"
+            scene.labels.iter().any(|label| label.lines.len() >= 6),
+            "the fixture must need more than the minimum connection gap"
         );
-        for (right, bottom) in labelled {
-            assert!(right <= scene.width, "a label leaves the canvas: {right}");
-            assert!(
-                bottom <= scene.height,
-                "a label leaves the canvas: {bottom}"
-            );
+        assert!(
+            scene.labels.iter().any(|label| {
+                label.lines.concat().starts_with(
+                    "a_rejected_branch_wire_name_long_enough_to_wrap_beside_its_horizontal_exit",
+                ) && label.lines.len() > 1
+            }),
+            "the horizontal hand-over must wrap"
+        );
+
+        scene
+    }
+
+    /// A branch wire long enough to wrap on the horizontal exit it leaves by,
+    /// and consumed under its own name, so one shared label sits beside the
+    /// branch point rather than at either end of the run.
+    fn wrapping_shared_label() -> Scene {
+        let source = r#"
+            #[kaalang]
+            fn wide(condition: bool) -> u8 {
+                #[question("Choose a path")]
+                |condition| -> (accepted, a_rejected_branch_wire_name_long_enough_to_wrap_several_times_beside_its_horizontal_exit) { condition };
+
+                #[action("Take the accepted path")]
+                |accepted| -> result { 1 };
+
+                #[action("Take the rejected path")]
+                |a_rejected_branch_wire_name_long_enough_to_wrap_several_times_beside_its_horizontal_exit| -> result { 0 };
+
+                #[end]
+                |result| {};
+            }
+        "#;
+
+        let scene = scene(source, "wide");
+        assert!(
+            scene.labels.iter().any(|label| label.lines.len() > 1),
+            "the fixture must wrap the shared label on the horizontal exit"
+        );
+
+        scene
+    }
+
+    /// A connection label stays drawable however much vertical room it needs.
+    #[test]
+    fn a_wrapped_connection_label_stays_inside_the_canvas() {
+        for scene in [wrapping_labels(), wrapping_shared_label()] {
+            for label in &scene.labels {
+                let width = label_width(&label.lines);
+                let left = label.at.x - width / 2 - EDGE_LABEL_HALO;
+                let top = label.at.y - EDGE_LABEL_FONT / 2 - EDGE_LABEL_HALO;
+                let (right, bottom) = label_bounds(label);
+
+                assert!(left >= 0, "a label leaves the canvas: {left}");
+                assert!(top >= 0, "a label leaves the canvas: {top}");
+                assert!(right <= scene.width, "a label leaves the canvas: {right}");
+                assert!(
+                    bottom <= scene.height,
+                    "a label leaves the canvas: {bottom}"
+                );
+            }
+        }
+    }
+
+    /// Nodes are drawn after the labels and fill themselves white, so a line
+    /// that reaches into one is painted over. A label stacks away from the node
+    /// it names to keep every wrapped line outside it. Only the glyphs are
+    /// measured: the halo is white on white, so a node covering its edge costs
+    /// nothing.
+    #[test]
+    fn a_wrapped_connection_label_stays_outside_every_node() {
+        for scene in [wrapping_labels(), wrapping_shared_label()] {
+            for label in &scene.labels {
+                let width = label_width(&label.lines);
+                let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * EDGE_LINE_HEIGHT;
+                let left = label.at.x - width / 2;
+                let right = label.at.x + width / 2;
+                let top = label.at.y - EDGE_LABEL_FONT / 2;
+                let bottom = last_baseline + EDGE_LABEL_FONT / 2;
+
+                for node in &scene.nodes {
+                    let overlaps = left < node.x + node.width / 2
+                        && right > node.x - node.width / 2
+                        && top < node.y + node.height / 2
+                        && bottom > node.y - node.height / 2;
+                    assert!(
+                        !overlaps,
+                        "the label {:?} at {left}..{right} x {top}..{bottom} reaches into the {:?} node at {},{}",
+                        label.lines, node.kind, node.x, node.y
+                    );
+                }
+            }
         }
     }
 
@@ -1095,9 +1448,9 @@ mod tests {
                 .edges
                 .iter()
                 .filter(|edge| edge.to == Block(3))
-                .map(|edge| edge.label.as_deref())
+                .map(|edge| edge.capture.join(", "))
                 .collect::<Vec<_>>(),
-            [Some("selected"), Some("selected")]
+            ["selected", "selected"]
         );
     }
 
@@ -1265,7 +1618,11 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(select_edges.len(), 3);
-        assert!(select_edges.iter().all(|edge| edge.label.is_none()));
+        assert!(
+            select_edges
+                .iter()
+                .all(|edge| edge.handover.is_empty() && edge.capture.is_empty())
+        );
         assert_eq!(
             select_edges.iter().map(|edge| edge.to).collect::<Vec<_>>(),
             [
@@ -1291,9 +1648,9 @@ mod tests {
         assert_eq!(
             case_edges
                 .iter()
-                .map(|edge| edge.label.as_deref())
+                .map(|edge| edge.handover.join(", "))
                 .collect::<Vec<_>>(),
-            [Some("left"), Some("middle"), Some("right")]
+            ["left", "middle", "right"]
         );
         let case_x = scene
             .nodes
@@ -1645,10 +2002,10 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(edges.len(), 2);
-        assert_eq!(edges[0].label.as_deref(), Some("accepted"));
+        assert_eq!(edges[0].handover, ["accepted"]);
         assert_eq!(edges[0].points[0].x, question.x);
         assert_eq!(edges[0].points[0].y, question.y + question.height / 2);
-        assert_eq!(edges[1].label.as_deref(), Some("rejected"));
+        assert_eq!(edges[1].handover, ["rejected"]);
         assert_eq!(edges[1].points[0].x, question.x + question.width / 2);
         assert_eq!(edges[1].points[0].y, question.y);
         assert!(edges[1].points[1].x > question.x);

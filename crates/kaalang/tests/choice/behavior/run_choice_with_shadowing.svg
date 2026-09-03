@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="700" viewBox="0 0 704 700" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_shadowing</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32); Choice: Was a value selected?; Case: A value was selected.; Case: No value was selected.; Action: Produce the selected pair.; Action: Produce the fallback pair.; End. Connections: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32) to Choice: Was a value selected?; Choice: Was a value selected? to Case: A value was selected.; Choice: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair. via selected_value; Case: No value was selected. to Action: Produce the fallback pair. via absent; Action: Produce the selected pair. to End via result; Action: Produce the fallback pair. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32); Choice: Was a value selected?; Case: A value was selected.; Case: No value was selected.; Action: Produce the selected pair.; Action: Produce the fallback pair.; End. Connections: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32) to Choice: Was a value selected? handing over value, selected, captured as selected; Choice: Was a value selected? to Case: A value was selected.; Choice: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair. handing over selected_value, captured as selected_value, value; Case: No value was selected. to Action: Produce the fallback pair. handing over absent, captured as absent, value; Action: Produce the selected pair. to End via result; Action: Produce the fallback pair. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -18,13 +18,16 @@
     <path class="edge" d="M 172 260 L 172 332"/>
     <path class="edge" d="M 172 260 L 172 296 L 532 296 L 532 332"/>
     <path class="edge" d="M 172 402 L 172 474"/>
-    <text class="edge-label" x="214" y="433" xml:space="preserve"><tspan x="214" dy="0">selected_value</tspan></text>
     <path class="edge" d="M 532 402 L 532 474"/>
-    <text class="edge-label" x="574" y="433" xml:space="preserve"><tspan x="574" dy="0">absent</tspan></text>
     <path class="edge" d="M 172 538 L 172 610"/>
-    <text class="edge-label" x="214" y="556" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
     <path class="edge" d="M 532 538 L 532 578 L 172 578 L 172 610"/>
-    <text class="edge-label" x="574" y="556" xml:space="preserve"><tspan x="574" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="180" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="134" xml:space="preserve"><tspan x="214" dy="0">value, selected</tspan></text>
+    <text class="edge-label" x="214" y="466" xml:space="preserve"><tspan x="214" dy="0">selected_value, value</tspan></text>
+    <text class="edge-label" x="214" y="420" xml:space="preserve"><tspan x="214" dy="0">selected_value</tspan></text>
+    <text class="edge-label" x="574" y="466" xml:space="preserve"><tspan x="574" dy="0">absent, value</tspan></text>
+    <text class="edge-label" x="574" y="420" xml:space="preserve"><tspan x="574" dy="0">absent</tspan></text>
+    <text class="edge-label" x="214" y="602" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 74)">

@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
 use crate::layout::{
-    EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, Edge, LABEL_FONT, LINE_HEIGHT, Node,
-    NodeId, NodeKind, Scene,
+    EDGE_LABEL_FONT, EDGE_LABEL_HALO, EDGE_LINE_HEIGHT, Edge, LABEL_FONT, LINE_HEIGHT, Label, Node,
+    NodeId, NodeKind, Point, Scene,
 };
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
@@ -66,6 +66,10 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     for edge in &scene.edges {
         write_edge(&mut svg, edge);
     }
+    // After the paths, so a label's halo covers the wires it crosses.
+    for label in &scene.labels {
+        write_wire_label(&mut svg, label);
+    }
     svg.push_str("  </g>\n  <g class=\"nodes\">\n");
     for node in &scene.nodes {
         write_node(&mut svg, node);
@@ -90,22 +94,15 @@ fn write_edge(svg: &mut String, edge: &Edge) {
         emit_inline!(svg, " L {} {}", point.x, point.y);
     }
     emit!(svg, "\"/>");
-    // Empty exactly when the connection carries no label: layout wraps every
-    // label it sets, and a wrapped label always has at least one line.
-    if edge.lines.is_empty() {
-        return;
-    }
-    let lines = &edge.lines;
-    let label_at = edge
-        .label_at
-        .expect("a labelled edge has a positioned label");
-    let x = label_at.x;
-    let first_y = label_at.y - (lines.len() as i32 - 1) * EDGE_LINE_HEIGHT / 2;
+}
+
+fn write_wire_label(svg: &mut String, label: &Label) {
+    let Point { x, y } = label.at;
     emit_inline!(
         svg,
-        "    <text class=\"edge-label\" x=\"{x}\" y=\"{first_y}\" xml:space=\"preserve\">"
+        "    <text class=\"edge-label\" x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">"
     );
-    for (index, line) in lines.iter().enumerate() {
+    for (index, line) in label.lines.iter().enumerate() {
         let dy = if index == 0 { 0 } else { EDGE_LINE_HEIGHT };
         emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
     }
@@ -125,15 +122,31 @@ fn describe(scene: &Scene) -> String {
         .map(|edge| {
             let from = node_name_by_id(scene, edge.from);
             let to = node_name_by_id(scene, edge.to);
-            match &edge.label {
-                Some(label) => format!("{from} to {to} via {label}"),
-                None => format!("{from} to {to}"),
-            }
+            format!("{from} to {to}{}", describe_wires(edge))
         })
         .collect::<Vec<_>>()
         .join("; ");
 
     format!("Nodes: {nodes}. Connections: {connections}.")
+}
+
+/// Names the wires one connection carries, spelling both ends out when they
+/// differ, as the drawn labels do.
+fn describe_wires(edge: &Edge) -> String {
+    let handover = edge.handover.join(", ");
+    let capture = edge.capture.join(", ");
+    if handover == capture {
+        return if handover.is_empty() {
+            String::new()
+        } else {
+            format!(" via {handover}")
+        };
+    }
+    match (handover.is_empty(), capture.is_empty()) {
+        (true, _) => format!(" captured as {capture}"),
+        (_, true) => format!(" handing over {handover}"),
+        _ => format!(" handing over {handover}, captured as {capture}"),
+    }
 }
 
 fn node_name_by_id(scene: &Scene, id: NodeId) -> String {

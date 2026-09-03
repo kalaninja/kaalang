@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="678" viewBox="0 0 704 678" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_common</title>
-  <desc id="kaalang-description">Nodes: Start: borrowed_common(condition: bool, prefix: String) -&gt; String; Question: Choose a suffix.; Action: Build the yes suffix.; Action: Build the no suffix.; Action: Use the suffix and the preserved prefix.; End. Connections: Start: borrowed_common(condition: bool, prefix: String) -&gt; String to Question: Choose a suffix.; Question: Choose a suffix. to Action: Build the yes suffix. via yes; Question: Choose a suffix. to Action: Build the no suffix. via no; Action: Build the yes suffix. to Action: Use the suffix and the preserved prefix. via suffix; Action: Build the no suffix. to Action: Use the suffix and the preserved prefix. via suffix; Action: Use the suffix and the preserved prefix. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: borrowed_common(condition: bool, prefix: String) -&gt; String; Question: Choose a suffix.; Action: Build the yes suffix.; Action: Build the no suffix.; Action: Use the suffix and the preserved prefix.; End. Connections: Start: borrowed_common(condition: bool, prefix: String) -&gt; String to Question: Choose a suffix. handing over condition, prefix, captured as condition; Question: Choose a suffix. to Action: Build the yes suffix. via yes; Question: Choose a suffix. to Action: Build the no suffix. via no; Action: Build the yes suffix. to Action: Use the suffix and the preserved prefix. handing over suffix, captured as suffix, prefix; Action: Build the no suffix. to Action: Use the suffix and the preserved prefix. handing over suffix, captured as suffix, prefix; Action: Use the suffix and the preserved prefix. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -16,15 +16,18 @@
   <g class="edges">
     <path class="edge" d="M 172 98 L 172 170"/>
     <path class="edge" d="M 172 242 L 172 314"/>
-    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
     <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
-    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <path class="edge" d="M 172 378 L 172 450"/>
-    <text class="edge-label" x="214" y="409" xml:space="preserve"><tspan x="214" dy="0">suffix</tspan></text>
     <path class="edge" d="M 532 378 L 532 414 L 172 414 L 172 450"/>
-    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">suffix</tspan></text>
     <path class="edge" d="M 172 516 L 172 588"/>
-    <text class="edge-label" x="214" y="534" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">condition, prefix</tspan></text>
+    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">suffix, prefix</tspan></text>
+    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">suffix</tspan></text>
+    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">suffix</tspan></text>
+    <text class="edge-label" x="214" y="547" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="812" viewBox="0 0 704 812" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for staged_convergence</title>
-  <desc id="kaalang-description">Nodes: Start: staged_convergence(condition: bool) -&gt; (u32, &amp;&apos;static str); Question: Choose two values.; Action: Build the yes values.; Action: Build the no values.; Action: Use the number first.; Action: Use the preserved label later.; End. Connections: Start: staged_convergence(condition: bool) -&gt; (u32, &amp;&apos;static str) to Question: Choose two values.; Question: Choose two values. to Action: Build the yes values. via yes; Question: Choose two values. to Action: Build the no values. via no; Action: Build the yes values. to Action: Use the number first. via number, label; Action: Use the number first. to Action: Use the preserved label later.; Action: Build the no values. to Action: Use the number first. via number, label; Action: Use the preserved label later. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: staged_convergence(condition: bool) -&gt; (u32, &amp;&apos;static str); Question: Choose two values.; Action: Build the yes values.; Action: Build the no values.; Action: Use the number first.; Action: Use the preserved label later.; End. Connections: Start: staged_convergence(condition: bool) -&gt; (u32, &amp;&apos;static str) to Question: Choose two values. via condition; Question: Choose two values. to Action: Build the yes values. via yes; Question: Choose two values. to Action: Build the no values. via no; Action: Build the yes values. to Action: Use the number first. handing over number, label, captured as number; Action: Use the number first. to Action: Use the preserved label later. handing over doubled, captured as doubled, label; Action: Build the no values. to Action: Use the number first. handing over number, label, captured as number; Action: Use the preserved label later. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -16,16 +16,20 @@
   <g class="edges">
     <path class="edge" d="M 172 98 L 172 170"/>
     <path class="edge" d="M 172 242 L 172 314"/>
-    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
     <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
-    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <path class="edge" d="M 172 378 L 172 450"/>
-    <text class="edge-label" x="214" y="409" xml:space="preserve"><tspan x="214" dy="0">number, label</tspan></text>
     <path class="edge" d="M 172 514 L 172 586"/>
     <path class="edge" d="M 532 378 L 532 414 L 172 414 L 172 450"/>
-    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">number, label</tspan></text>
     <path class="edge" d="M 172 650 L 172 722"/>
-    <text class="edge-label" x="214" y="668" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">number</tspan></text>
+    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">number, label</tspan></text>
+    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">number, label</tspan></text>
+    <text class="edge-label" x="214" y="578" xml:space="preserve"><tspan x="214" dy="0">doubled, label</tspan></text>
+    <text class="edge-label" x="214" y="532" xml:space="preserve"><tspan x="214" dy="0">doubled</tspan></text>
+    <text class="edge-label" x="214" y="681" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -15,7 +15,7 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
     <path class="edge" d="M 172 90 L 172 162"/>
-    <text class="edge-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">a, b</tspan></text>
+    <text class="edge-label" x="214" y="121" xml:space="preserve"><tspan x="214" dy="0">a, b</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

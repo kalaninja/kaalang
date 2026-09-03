@@ -2,9 +2,7 @@
 
 use kaalang_model::Plan;
 
-use super::{
-    Builder, Incoming, NODE_LABEL_WIDTH, NODE_WIDTH, Origin, Placed, VERTICAL_GAP, block_dimensions,
-};
+use super::{Builder, Incoming, NODE_LABEL_WIDTH, NODE_WIDTH, Origin, Placed, block_dimensions};
 
 pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
     block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 64)
@@ -24,10 +22,10 @@ impl Builder<'_> {
         self.place(
             next,
             skewer,
-            self.bottom_anchor(node).y + VERTICAL_GAP,
+            self.bottom_anchor(node).y + self.vertical_gap,
             Incoming {
                 origin: Origin::bottom(node),
-                label: None,
+                branch: None,
                 skewer,
             },
         )
