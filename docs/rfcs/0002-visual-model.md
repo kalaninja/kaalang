@@ -1,165 +1,257 @@
-# RFC 0002: kaalang Visual Model
+# RFC 0002: kaalang Visual Language
 
 - Status: accepted design draft
-- Model version: `0.1`
-- Artifact target: SVG
+- Visual language version: `0.1`
 
 ## 1. Overview
 
-kaalang has a visual representation of the flow model defined by RFC 0001. The
-visual graph is a projection of a validated semantic `Graph`; it does not parse
-or reinterpret the authored Rust syntax independently.
+kaalang's visual language represents the [core model](0001-core-model.md)
+defined by RFC 0001. A diagram is a projection of the validated semantic model
+and represents the same flow semantics. It does not introduce a separate
+execution model.
 
-The graph builder remains the source of truth for blocks, wires, branches,
-paths, implicit convergence, and their order. Rust lowering and visual rendering
-are separate consumers of that graph. A diagram therefore represents the same
-validated flow that kaalang lowers for execution.
+## 2. Terminology
 
-## 2. Visual graph
+Terms defined by RFC 0001 keep their meanings. The visual language adds the
+following terms:
 
-A visual graph contains one node for each authored block. Actions, questions,
-choices, and the unique End retain distinct visual roles. A choice is drawn as
-a Select node followed by one derived Case node for each authored `#[case]`
-attribute. Case nodes are visual projections, not additional semantic blocks.
-No authored block is duplicated to simplify layout.
+- a **diagram** is the complete visual representation of one flow;
+- a **node** is a drawn unit that represents all or part of an authored block,
+  except for the synthetic start node;
+- a **connection** is one drawn control-flow link between nodes, not a wire;
+  connections need not correspond one-to-one with wire dependencies;
+- a **label** is text attached to a node or connection;
+- an **exit** is an outgoing attachment point of a node; start and action nodes
+  each have one non-branching exit, a question has one branch-specific exit per
+  output, a select has one distributor exit, each case has one exit associated
+  with its choice branch, and end has no exit;
+- a **hand-over** is the ordered sequence of newly provided wires labeled at a
+  node exit;
+- a **column** is a vertical layout position at which nodes and vertical
+  connection segments may be aligned;
+- a **row** is a horizontal layout position at which nodes and horizontal
+  connection segments may be aligned;
+- a **distributor** is the shared horizontal connection segment from which a
+  select node's branches fan out to its case nodes;
+- a **terminal path** ends at an action exit, question branch exit, or case exit
+  from which no further node representing a computational block is reachable in
+  that execution;
+- a **collector** is the shared horizontal connection segment into which
+  terminal paths gather before the end node.
 
-The renderer adds one synthetic **Start** node representing the flow boundary,
-labeled with the authored flow signature. End comes from the mandatory authored
-`#[end]` statement; the renderer does not add a separate Return node.
+## 3. Diagram structure
 
-Connections between nodes come from the validated plan. Rust bodies, source
-comments, and data-wire dependencies do not add or change control topology. Wire
-names label a connection's ends as section 3 sets out, but data dependencies are
-not drawn as a separate graph.
+A diagram contains a visual representation of each authored block. No authored
+block is duplicated to simplify layout.
 
-kaalang has no merge node. Path-exclusive producers of the same logical wire
-converge directly at their first shared consumer or at End.
+Connections and their reachability come from the validated semantic model. They
+preserve execution dependencies and branch routes but add no order between
+independent blocks. Block bodies and source comments do not affect control
+topology. Wire names label connection ends as section 6 sets out, but wires are
+not drawn as separate data connections.
 
-## 3. Labels and branches
+## 4. Node kinds
 
-Action, question, and choice nodes use the exact text value of their block
-description. The renderer does not paraphrase, normalize, or synthesize that
-text; output-format escaping and line wrapping do not change its value. Wrapping
-breaks between grapheme clusters, so a cluster spelled with several code points
-stays on one line and a word with no other break opportunity is still divided
-rather than drawn outside its node. End has no authored description and is
-identified by its visual role.
+An action, a question, and the unique end block each become one node. A choice
+becomes one select node and one case node per authored case. Case nodes are
+visual projections, not additional semantic blocks.
 
-Start uses the authored flow signature without its `fn` keyword, with each run
-of whitespace collapsed to one space so the label wraps to its own budget.
-Nothing else is rewritten: parameter types, generics, the return type, a where
-clause, a wildcard parameter, and the `r#` of a raw identifier all appear as
-authored. The signature states the flow's calling contract, which wire names
-alone do not: a boundary input is otherwise drawn only where a connection
-happens to carry its name.
+| Node kind | Represents | Label source | Shape |
+| --- | --- | --- | --- |
+| **start** | the beginning of a flow | the flow signature | capsule |
+| **action** | an action block | the block description | rectangle |
+| **question** | a question block | the block description | elongated hexagon |
+| **select** | a choice block | the choice description | skewed parallelogram |
+| **case** | one case of a choice | the case description | a shape with a lower triangular point |
+| **end** | the end block | the synthetic label "end" | capsule |
 
-A connection is labeled at the end whose wires it names. Its hand-over is what
-the node it leaves passes on: the boundary's source wires for Start, the branch's
-own output wire for a question or a case, and every output for any other node. A
-node's capture is what it consumes, and is drawn once above that node however
-many connections arrive there, because every connection into one node delivers
-the same captured wires. A borrowed input is read where its wire lies rather than
-taken off the flow, so it is a data dependency and no connection names it. An
-underscore-prefixed wire that no block uses is omitted because it names no
-value carried onward. If a block does use it, its name is drawn like any other
-logical wire. Where a hand-over and the capture it meets name the same wires in
-the same order, the connection carries one label instead of two.
+### 4.1 start
 
-A connection label carries the logical wire name, so a raw identifier appears
-without its `r#`: the raw and ordinary spellings of one wire name the same wire,
-and only the Start signature quotes the source as authored.
+A diagram contains one synthetic start node. It uses the authored flow signature
+without its `fn` keyword. The label retains parameter types, generics, the return
+type, a where clause, a wildcard parameter, and the `r#` of a raw identifier.
 
-Question branches preserve their positional meaning from RFC 0001: the first
-output is yes/true and the second is no/false. A branch's hand-over is only its
-exact output wire name; a diagram does not add `yes` or `no`.
+### 4.2 action
 
-Choice branches preserve authored case order. The Select node uses the choice
-description. Each Case node uses the exact text value of its corresponding case
-description. A Select-to-Case connection names nothing at either end, because the
-case row belongs to the Select above it and the branch's output wire rides the
-connection leaving the Case node. The visual graph must not reorder cases
-according to their Rust patterns or layout position.
+An action block becomes one action node.
 
-When sibling paths produce the same logical wire, they meet at the one downstream
-consumer that captures the name, which names that wire once above itself. No
-synthetic node is inserted between them.
+### 4.3 question
 
-A zero-computation flow contains Start and the authored End. Those nodes are
-connected only when End captures a source wire; when End captures nothing they
-are drawn unconnected, whether or not the boundary declares source wires. Rust's
-unit result does not appear as a wire.
+A question block becomes one question node. Its branches preserve their
+positional meaning from RFC 0001: the first output is yes/true and the second is
+no/false. The diagram does not add `yes` or `no` labels.
 
-## 4. Layout and style
+### 4.4 select
 
-The renderer uses a deterministic primitive skewer layout. The first
-question output and the first choice case continue down the current vertical
-skewer. Remaining branches occupy successive skewers to the right in authored
-order. Nested branches receive non-overlapping groups of skewers.
+A choice block becomes one select node. Its branches preserve authored case
+order, and the diagram must not reorder them according to their patterns or
+layout position. Its distributor exit has exactly one connection to each of its
+case nodes.
 
-When several branches continue into one shared consumer, that consumer occupies
-the skewer the first of them yields on, which is that branch's own skewer unless
-it yields from inside a nested branching block. Other continuing branches route
-into it directly. The continuing branches and their shared continuation reserve
-one footprint, measured from the first continuing branch to whichever of the two
-reaches further right. Terminal branches before that group stay to its left;
-terminal branches after it start beyond the reserved footprint. A branch that
-reaches End instead routes to the unique End node; branches may do so after
-different numbers of computational blocks.
+### 4.5 case
 
-Paths into End converge on one horizontal collector above the node, the mirror
-of the distributor that fans a Select out to its cases. Each terminal path first
-reaches its assigned skewer, descends on it to the collector, and follows the
-collector into End. A terminal skewer already in the End column descends straight
-through it. Shared runs are deliberate common paths, not connections hidden
-behind one another. Connections use horizontal and vertical segments without
-arrowheads.
+Each authored case becomes one derived case node. A select-to-case connection
+names nothing at either end, because the case row belongs to the select above
+it. The branch's output wire is handed over at the case node's exit. A choice
+output may carry data or serve as a unit-valued control wire; the diagram shows
+its wire name in either case.
 
-The core model's adjacency rule prevents a terminal sibling from separating two
-branches that enter one shared continuation. The continuing branches therefore
-form one contiguous footprint that terminal paths can be placed outside.
+### 4.6 end
 
-Action nodes are rectangles, question nodes are elongated hexagons, choice
-nodes are skewed Select parallelograms, Case nodes have a lower triangular
-point, and Start and End are capsules. The renderer uses one monochrome style
-and does not print block-kind captions inside nodes. There is no merge icon.
+The end node comes from the mandatory authored `#[end]` statement. Because the
+end block has no authored description, its node carries the synthetic lowercase
+label "end". A diagram has no separate return node.
 
-Exact dimensions, colors, typography, spacing, and routing offsets remain
-rendering choices; which end of a connection a label belongs to does not. The
-stable contract is the visual graph's nodes, roles, labels and the ends they
-name, branch order, implicit convergence, connections, and skewer ordering.
+## 5. Flow inputs and outputs
 
-## 5. SVG renderer
+The start node's signature shows the flow input parameters and, when present,
+the return type that constrains the flow outputs. Every named flow input is also
+shown as an output of the start node, even if no block captures it. A wildcard
+flow input produces no wire label. Flow outputs appear as input labels at the end
+node.
 
-The renderer produces a standalone SVG with embedded styles and no JavaScript,
-external fonts, or external rendering programs. It preserves Unicode text,
-escapes XML content, and wraps long labels without changing their values.
+### 5.1 Zero-computation flow
 
-The library entry point is:
+A zero-computation flow contains the start node and the authored end node. Those
+nodes are connected only when the end block captures a wire provided by a flow
+input; otherwise they are drawn unconnected. Named flow inputs remain visible as
+start node outputs. kaalang does not add an implicit unit-valued wire.
 
-```rust
-kaalang_svg::render_source(source: &str, flow_name: &str)
-    -> Result<String, RenderError>
-```
+## 6. Wires and labels
 
-It finds the named top-level `#[kaalang]` function in one UTF-8 Rust source
-file, builds its validated semantic graph, lays it out, and serializes it. It
-does not invoke `cargo check` or perform full Rust type checking.
+Description labels carry the exact authored text. A presentation may wrap or
+escape that text but must not paraphrase, normalize, or synthesize it.
 
-The command-line interface is:
+Every named flow input and every block output is labeled once at the exit that
+provides it, including an intentionally unused wire whose name begins with `_`.
+The labels at one exit form its hand-over. The start node hands over its named
+flow inputs in signature order, an action hands over all its outputs in
+declaration order, and each question branch or case hands over its exact branch
+output. A hand-over names newly provided wires only; it neither lists wires that
+remain available nor implies that the next node captures every named wire.
 
-```text
-cargo kaalang diagram <source.rs> --flow <name> [-o <path>]
-```
+Every block input is labeled beside its receiving node. A consuming input is
+shown as `name`, while a borrowed input is shown as `&name`. The captures of a
+node are drawn once however many connections arrive there, because the capture
+list belongs to the node rather than to an incoming connection. Consuming and
+borrowed captures both establish execution dependencies. A wire that remains
+available for a later capture may pass virtually along a transitive connection
+path without appearing in intermediate hand-overs. This version of the visual
+language does not show wire lifetimes or assign a wire to one particular
+sequence of connections.
 
-Without `-o`, the command writes `./<name>.svg`. It creates or replaces the
-output only after the complete source has been validated and rendered.
+A hand-over and an adjacent capture may share one label only when they are the
+two ends of the same connection, that connection is the only one leaving its
+source exit and the only one entering its destination node, and the two lists
+have the same displayed names in the same order. `name` and `&name` do not
+match. The shared label represents both connection-end labels.
 
-## 6. Renderer limits
+Wire labels use logical wire names. A raw identifier appears without its `r#`:
+the raw and ordinary spellings of one wire name the same wire, and only the
+signature in the start node preserves the authored raw spelling.
 
-The renderer does not search an entire crate or resolve external modules,
-conditional compilation, or macro-expanded source. It does not support batch
-rendering, official `build.rs` integration, interactive HTML, a public JSON
-descriptor, or alternative output formats.
+## 7. Connections and implicit convergence
 
-These limits constrain the renderer, not the semantic graph or future visual
-representations.
+For dependency routing, the start node represents the producers of named flow
+inputs, a question's two outputs are distinct exits of its node, and a case node
+represents its corresponding choice output.
+
+Consider one possible execution after its branches have been selected. A node
+participates in that execution when its represented block executes or its
+represented case is selected; the start and end nodes always participate. A
+producer node precedes a consumer node when a capture dependency from the
+represented producer occurrence to that consumer participates in the execution,
+and this order is transitive. A select node precedes its selected case node.
+Every participating node other than start and end also precedes the end node.
+
+A direct connection joins an exit of a participating source node to a
+participating destination node exactly when the source node precedes the
+destination node and no other participating node lies between them in this
+order. A connection is identified by its source exit and destination node,
+so connections from distinct exits remain distinct even when they join the same
+pair of nodes.
+
+The complete diagram is the union of these connections over all possible
+executions. A connection may therefore be direct in one execution and
+transitively redundant in another. Each select-to-case connection and every
+connection leaving a question or case exit remains associated with its branch.
+
+A drawn connection participates in an execution when both endpoint nodes
+participate and its branch, if any, is selected. A connection that is
+transitively redundant in that execution adds no new ordering requirement.
+
+The producer occurrence that supplies a capture therefore reaches its consumer
+through one or more connections in every execution where that resolution
+occurs. A dependency needs no direct producer-to-consumer connection when a
+sequence of connections through participating intermediate nodes already
+represents it. For example, if `P` produces `x`, `A` borrows `x` and produces
+`a`, and `C` captures `x` and `a`, the diagram contains `P → A → C` but no
+direct `P → C` connection.
+
+A zero-input computational node has no incoming connection. The start node may
+be isolated when none of its flow-input wires is captured. Independent parts of
+the diagram remain separate until they reach a shared dependent node or the end
+node.
+
+Multiple connections from a start or action exit are ordinary fan-out: each
+represented successor becomes ready according to RFC 0001. A question activates
+exactly one branch-specific exit. A select activates exactly one connection from
+its distributor exit and therefore exactly one case. Multiple connections
+leaving the active question exit or the selected case exit are ordinary fan-out,
+not further branch selection. A node with several incoming connections waits for
+every one that participates in the current execution. At a convergence,
+incoming connections from alternative branches never participate together.
+
+kaalang has no merge node or merge icon. The branches of a convergence group
+meet at the nodes representing its convergence points. When a convergence-point
+block captures a logical wire provided by alternative producers, its node
+displays the captured wire name once. No synthetic node is inserted for the
+convergence.
+
+Consequently, each terminal path is structurally connected to the end node. The
+end node waits for all terminal paths that participate in the current execution;
+of several alternative terminal branches, only the selected one participates.
+A terminal structural connection leaves the exit at which its terminal path
+ends. It neither captures nor consumes a wire absent from the end
+block's inputs. One connection may represent both an end capture and structural
+completion; no duplicate is drawn. If the end block captures a wire from
+alternative producers, it displays that logical wire once, but their terminal
+collection is not a convergence.
+
+## 8. Spatial notation
+
+Along each connection, dependency time runs from top to bottom: the destination
+node occupies a lower row than its source node, and the route never moves
+upward. Nodes not ordered by connection reachability may share a row; such
+alignment implies neither execution order nor concurrent execution.
+
+The visual language uses columns and rows. Branches are arranged from left to
+right in authored order. The first question output and the first choice case
+continue down the current column; remaining branches appear to their right.
+
+Within those constraints, the relative placement of independent parts of the
+diagram is a presentation choice. The column and exact lower row of a consumer
+that joins independent parts are also presentation choices.
+
+Terminal paths meet at one horizontal collector above the end node, mirroring
+the distributor that fans a select node out to its case nodes. The collector
+represents structural completion, not a capture or convergence. Connection
+routes are simple: they do not intersect or overlap themselves. They do not
+cross one another or pass through a non-endpoint node. Meeting at a common
+endpoint or deliberately sharing a collinear segment is not a crossing;
+connections may share such a segment only when they have the same source exit
+or the same destination node. Other connections do not overlap. Connections
+are plain lines without arrowheads. A route contains only straight horizontal
+and vertical segments, so every bend is a right angle.
+
+The synthetic label "end" is the only block-kind caption printed inside a node.
+
+The visual-language contract covers the diagram's nodes, roles, labels, the
+connection end or ends to which each connection label belongs, branch order,
+implicit convergence, dependency reachability, structural completion,
+connections, crossing-free orthogonal routing, top-to-bottom row order, and
+branch column order. Exact dimensions, colors, typography, spacing, and routing
+offsets are presentation choices.
+
+A validated flow whose required connections cannot be drawn under these rules
+has no conforming diagram.
