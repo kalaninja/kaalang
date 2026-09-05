@@ -1,6 +1,6 @@
 //! Places the one authored End below every path that reaches it.
 
-use kaalang_model::Plan;
+use kaalang_model::ExecutionPlan;
 
 use super::{
     Builder, Incoming, NodeId, Placed, Point, compact_points, label::capture_rise, skewer_x,
@@ -18,7 +18,7 @@ impl Builder<'_> {
     pub(super) fn place_end(
         &mut self,
         index: usize,
-        body: &Plan,
+        body: &ExecutionPlan,
         skewer: usize,
         top: i32,
         incoming: Incoming,

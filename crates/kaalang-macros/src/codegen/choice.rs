@@ -1,121 +1,84 @@
-//! Emits a choice's hygienic continuations and its authored dispatch.
+//! Emits a choice's authored dispatch, the continuations of its cases, and the
+//! joins its cases yield into.
+//!
+//! The authored `match` runs first and hands the selected case value out of
+//! its arm; the case continuation runs afterwards. A case value therefore has
+//! to be owned or borrow data that outlives the choice, and match bindings
+//! never reach downstream blocks. The guarded schedule stores the value in the
+//! output slot with the same effect.
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 
-use super::{Bindings, block_body, convergence, input_bindings};
-use kaalang_model::{Block, Branch, Convergence, Flow, choice_match, is_todo_body};
-
-/// The identifiers one choice mints for itself. Every one is created at the
-/// mixed site, so authored code can neither name them nor collide with them.
-struct Names {
-    /// One continuation macro per ordered case.
-    continuations: Vec<Ident>,
-    /// The unit type of the capability. It is neither `Copy` nor `Clone`, so
-    /// a second use of the value is a move error rather than a second case.
-    capability_type: Ident,
-    /// The one value every continuation moves, so at most one case runs.
-    capability: Ident,
-    /// The binding that performs that move, typed so the error names the type.
-    consumed: Ident,
-}
-
-impl Names {
-    fn new(block: &Block, index: usize) -> Self {
-        Self {
-            continuations: (0..block.outputs.len())
-                .map(|case| mint(&format!("__kaalang_continue_{index}_{case}")))
-                .collect(),
-            capability_type: mint(&format!("__FlowContinuationCapability{index}")),
-            capability: mint(&format!("__kaalang_continuation_capability_{index}")),
-            consumed: mint(&format!("__kaalang_consumed_capability_{index}")),
-        }
-    }
-}
+use super::{Bindings, Frame, block_body, input_bindings, join};
+use join::JoinRouting;
+use kaalang_model::{Block, Branch, Flow, Join, choice_match, is_todo_body};
 
 fn mint(name: &str) -> Ident {
     Ident::new(name, Span::mixed_site())
 }
 
-/// Defines one continuation macro per case. Definition-site hygiene keeps the
-/// match bindings of one case out of every other case's downstream blocks.
-fn definitions(
-    block: &Block,
-    bindings: &Bindings,
-    branches: &[TokenStream2],
-    names: &Names,
-) -> Vec<TokenStream2> {
-    let Names {
-        continuations,
-        capability_type,
-        capability,
-        consumed,
-    } = names;
-
-    block
-        .outputs
-        .iter()
-        .zip(branches)
-        .zip(continuations)
-        .map(|((output, path), continuation)| {
-            let output_wire = bindings.wire(output);
-            quote! {
-                macro_rules! #continuation {
-                    ($value:expr) => {{
-                        let #consumed: #capability_type = #capability;
-                        let #output_wire = $value;
-                        #path
-                    }};
-                }
-            }
-        })
-        .collect()
+/// Assigns the selected case value to its output slot inside the arm.
+pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
+    let body = authored_match(
+        block,
+        &super::guarded::inputs(block, bindings),
+        |case, value| {
+            let wire = bindings.wire(&block.outputs[case]);
+            let selected = mint("__kaalang_case_value");
+            let gate = bindings.gate_value(&block.outputs[case], &quote!(#selected));
+            quote!({
+                let #selected = #value;
+                #gate
+                #wire = ::core::option::Option::Some(#selected);
+            })
+        },
+    );
+    quote!(#body;)
 }
 
-/// Emits the match that selects a case and hands control to its continuation:
-/// the authored `match` when the body has one, a case-indexed stub when the
-/// body is still `todo!()`.
-fn dispatch(block: &Block, bindings: &Bindings, names: &Names) -> TokenStream2 {
-    let input_bindings = input_bindings(&block.inputs, bindings);
-    let continuations = &names.continuations;
-
+/// Preserves the authored match in both structured and guarded schedules,
+/// letting the caller decide what each arm evaluates to.
+fn authored_match(
+    block: &Block,
+    input_bindings: &TokenStream2,
+    arm_value: impl Fn(usize, TokenStream2) -> TokenStream2,
+) -> TokenStream2 {
     if is_todo_body(&block.body) {
         let body = block_body(&block.body);
-        let numbered = continuations[..continuations.len() - 1]
-            .iter()
-            .enumerate()
-            .map(|(case, continuation)| quote!(#case => #continuation!(todo!()),));
-        let last = continuations
-            .last()
-            .expect("a choice has at least two cases");
-        return quote! {
+        let numbered = (0..block.outputs.len() - 1).map(|case| {
+            let value = arm_value(case, quote!(todo!()));
+            quote!(#case => #value,)
+        });
+        let last = arm_value(block.outputs.len() - 1, quote!(todo!()));
+        // The braces make the attribute sit on a statement: a join binds the
+        // dispatch as an initializer, where an attribute on a bare expression
+        // is rejected.
+        return quote! {{
             #[allow(clippy::diverging_sub_expression)]
             match {
                 #input_bindings
                 #body
             } {
                 #(#numbered)*
-                _ => #last!(todo!()),
+                _ => #last,
             }
-        };
+        }};
     }
 
     let choice = choice_match(&block.body).expect("choice bodies are validated");
     let match_attrs = &choice.attrs;
     let scrutinee = &choice.expr;
-    let arms = choice
-        .arms
-        .iter()
-        .zip(continuations)
-        .map(|(arm, continuation)| {
-            let attrs = &arm.attrs;
-            let pattern = &arm.pat;
-            let value = &arm.body;
-            quote! {
-                #(#attrs)*
-                #pattern => #continuation!(#value),
-            }
-        });
+    let arms = choice.arms.iter().enumerate().map(|(case, arm)| {
+        let attrs = &arm.attrs;
+        let pattern = &arm.pat;
+        let value = &arm.body;
+        let value = arm_value(case, quote!(#value));
+        quote! {
+            #(#attrs)*
+            #pattern => #value,
+        }
+    });
 
     quote! {
         {
@@ -133,28 +96,56 @@ pub(crate) fn emit(
     bindings: &Bindings,
     index: usize,
     branches: &[Branch],
-    converged: Option<&Convergence>,
+    joins: &[Join],
+    scope: &[Frame<'_>],
 ) -> TokenStream2 {
-    let branches = branches
-        .iter()
-        .map(|branch| super::continuation(flow, branch, bindings))
-        .collect::<Vec<_>>();
     let block = &flow.blocks[index];
-    let names = Names::new(block, index);
-    let definitions = definitions(block, bindings, &branches, &names);
-    let dispatch = dispatch(block, bindings, &names);
-    let Names {
-        capability_type,
-        capability,
-        ..
-    } = &names;
+    let cases = block.outputs.len();
+    let routing = JoinRouting::new(index, joins.len(), branches, scope);
+    let inner = Frame::nest(scope, index, routing.as_ref());
+    let value = mint("__kaalang_case_value");
 
-    let tail = convergence::emit(flow, bindings, dispatch, converged, block.span);
+    // Phase one: the authored match tags the selected case value and drops
+    // its arm, so the value cannot borrow a match binding. Binding the value
+    // first keeps a diverging placeholder out of the tag's argument position.
+    let selected = authored_match(
+        block,
+        &input_bindings(&block.inputs, bindings),
+        |case, arm_value| {
+            let tagged = join::nested(quote!(#value), case, cases);
+            quote!({
+                let #value = #arm_value;
+                #tagged
+            })
+        },
+    );
+    // Phase two: the tag selects the continuation, which binds the output wire.
+    let continuations = branches.iter().enumerate().map(|(case, branch)| {
+        let pattern = join::nested(quote!(#value), case, cases);
+        let wire = bindings.wire(&block.outputs[case]);
+        let gate = bindings.gate(&block.outputs[case]);
+        let path = super::continuation(flow, branch, bindings, &inner);
+        quote! {
+            #pattern => {
+                let #wire = #value;
+                #gate
+                #path
+            }
+        }
+    });
+    let dispatch = quote_spanned! {block.span=>
+        match #selected {
+            #(#continuations)*
+        }
+    };
 
-    quote_spanned! {block.span=>
-        struct #capability_type;
-        let #capability = #capability_type;
-        #(#definitions)*
-        #tail
-    }
+    join::emit(
+        flow,
+        bindings,
+        dispatch,
+        joins,
+        routing.as_ref(),
+        block.span,
+        scope,
+    )
 }

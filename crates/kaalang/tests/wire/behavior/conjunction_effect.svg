@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1112" height="846" viewBox="0 0 1112 846" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for conjunction_effect</title>
+  <desc id="kaalang-description">Nodes: Start: conjunction_effect(left: bool, right: bool, calls: &amp;Cell&lt;[u8; 2]&gt;, effects: &amp;Cell&lt;u8&gt;); Question: Enable the left input.; Question: Enable the right input.; Action: Run when both inputs are enabled.; End. Connections: Start: conjunction_effect(left: bool, right: bool, calls: &amp;Cell&lt;[u8; 2]&gt;, effects: &amp;Cell&lt;u8&gt;) to Question: Enable the left input. handing over left, right, calls, effects, captured as left; Start: conjunction_effect(left: bool, right: bool, calls: &amp;Cell&lt;[u8; 2]&gt;, effects: &amp;Cell&lt;u8&gt;) to Question: Enable the right input. handing over left, right, calls, effects, captured as right; Question: Enable the left input. to Action: Run when both inputs are enabled. handing over a, captured as a, b, effects; Question: Enable the right input. to Action: Run when both inputs are enabled. handing over b, captured as a, b, effects; Action: Run when both inputs are enabled. to End; Question: Enable the left input. to End handing over a; Question: Enable the left input. to End; Question: Enable the right input. to End handing over b; Question: Enable the right input. to End.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 116 L 172 284"/>
+    <path class="edge" d="M 172 116 L 172 236 L 892 236 L 892 284"/>
+    <path class="edge" d="M 172 356 L 172 524"/>
+    <path class="edge" d="M 892 356 L 892 476 L 172 476 L 172 524"/>
+    <path class="edge" d="M 172 588 L 172 756"/>
+    <path class="edge" d="M 172 356 L 172 404 L 360 404 L 360 708 L 172 708 L 172 756"/>
+    <path class="edge" d="M 312 320 L 360 320 L 360 708 L 172 708 L 172 756"/>
+    <path class="edge" d="M 892 356 L 892 708 L 172 708 L 172 756"/>
+    <path class="edge" d="M 1032 320 L 1080 320 L 1080 708 L 172 708 L 172 756"/>
+    <text class="edge-label" x="214" y="276" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
+    <text class="edge-label" x="214" y="134" xml:space="preserve"><tspan x="214" dy="0">left, right, calls, effects</tspan></text>
+    <text class="edge-label" x="934" y="276" xml:space="preserve"><tspan x="934" dy="0">right</tspan></text>
+    <text class="edge-label" x="214" y="134" xml:space="preserve"><tspan x="214" dy="0">left, right, calls, effects</tspan></text>
+    <text class="edge-label" x="214" y="516" xml:space="preserve"><tspan x="214" dy="0">a, b, effects</tspan></text>
+    <text class="edge-label" x="214" y="374" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="edge-label" x="934" y="374" xml:space="preserve"><tspan x="934" dy="0">b</tspan></text>
+    <text class="edge-label" x="214" y="374" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="edge-label" x="934" y="374" xml:space="preserve"><tspan x="934" dy="0">b</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">conjunction_effect(left: bool, </tspan><tspan x="0" dy="18">right: bool, calls: &amp;Cell&lt;[u8; 2]&gt;, </tspan><tspan x="0" dy="18">effects: &amp;Cell&lt;u8&gt;)</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 320)">
+      <title xml:space="preserve">Enable the left input.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enable the left input.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(892 320)">
+      <title xml:space="preserve">Enable the right input.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enable the right input.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 556)">
+      <title xml:space="preserve">Run when both inputs are enabled.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run when both inputs are enabled.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 785)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

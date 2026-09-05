@@ -1,0 +1,5 @@
+error: every kaalang flow input must have a consumer
+ --> tests/empty_flow/compile_fail/uncaptured_flow_input.rs:4:12
+  |
+4 | fn invalid(value: u8) {
+  |            ^^^^^

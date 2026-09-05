@@ -1,0 +1,5 @@
+error: this kaalang execution cannot provide every flow output
+  --> tests/wire/compile_fail/missing_branch_producer.rs:18:6
+   |
+18 |     |result| {};
+   |      ^^^^^^

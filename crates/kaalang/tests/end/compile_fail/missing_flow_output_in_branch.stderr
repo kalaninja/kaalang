@@ -1,0 +1,5 @@
+error: this kaalang execution cannot provide every flow output
+  --> tests/end/compile_fail/missing_flow_output_in_branch.rs:15:6
+   |
+15 |     |result| {};
+   |      ^^^^^^

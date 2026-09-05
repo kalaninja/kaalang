@@ -1,0 +1,5 @@
+error: every kaalang action output must have a consumer
+ --> tests/end/compile_fail/uncaptured_alternative_producer.rs:9:23
+  |
+9 |     |yes| -> (result, stray) { (1, ()) };
+  |                       ^^^^^

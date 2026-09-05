@@ -1,6 +1,6 @@
 //! Routes implicit branch yields into one shared continuation.
 
-use kaalang_model::{Convergence, Plan};
+use kaalang_model::{ExecutionPlan, Join};
 
 use super::{Builder, Incoming, NodeId, Placed, Point, compact_points};
 
@@ -8,14 +8,23 @@ impl Builder<'_> {
     pub(super) fn place_convergence(
         &mut self,
         mut arrivals: Vec<Incoming>,
-        convergence: &Convergence,
+        convergence: &Join,
         bottom: i32,
     ) -> Placed {
         // A convergence nested inside another one yields its value onward
         // instead of reaching an authored block, so its branches keep looking
         // for the shared consumer the outer convergence places.
         let Some(root) = plan_root(&convergence.next) else {
-            return Placed { bottom, arrivals };
+            return Placed {
+                bottom,
+                arrivals: arrivals
+                    .into_iter()
+                    .flat_map(|incoming| {
+                        self.place(&convergence.next, incoming.skewer, bottom, incoming)
+                            .arrivals
+                    })
+                    .collect(),
+            };
         };
 
         debug_assert!(
@@ -59,14 +68,15 @@ impl Builder<'_> {
 
 /// The authored block a convergence continuation starts at, or `None` when it
 /// only yields its value to an enclosing convergence.
-fn plan_root(plan: &Plan) -> Option<NodeId> {
+fn plan_root(plan: &ExecutionPlan) -> Option<NodeId> {
     match plan {
-        Plan::End { body, .. } => plan_root(body),
-        Plan::Action { index, .. } | Plan::Question { index, .. } | Plan::Choice { index, .. } => {
-            Some(NodeId::Block(*index))
-        }
-        Plan::Yield { .. } => None,
-        Plan::EndArrival { .. } => {
+        ExecutionPlan::Guarded { .. } => unreachable!("guarded plans use dependency layout"),
+        ExecutionPlan::End { body, .. } => plan_root(body),
+        ExecutionPlan::Action { index, .. }
+        | ExecutionPlan::Question { index, .. }
+        | ExecutionPlan::Choice { index, .. } => Some(NodeId::Block(*index)),
+        ExecutionPlan::Yield { .. } => None,
+        ExecutionPlan::EndArrival { .. } => {
             unreachable!("a convergence continuation is a shared consumer or a yield")
         }
     }

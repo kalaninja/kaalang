@@ -1,7 +1,7 @@
 //! Owns the connection labels: how much room a pair of them needs, how wide
 //! and tall one is once wrapped, and where each is placed.
 
-use kaalang_model::{BlockKind, Graph};
+use kaalang_model::{BlockKind, SemanticModel};
 use syn::Ident;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -102,10 +102,10 @@ pub(super) fn capture_rise(names: &[String]) -> i32 {
 }
 
 /// Leaves enough room for the largest pair of hand-over and capture labels.
-pub(super) fn vertical_gap(graph: &Graph) -> i32 {
+pub(super) fn vertical_gap(graph: &SemanticModel) -> i32 {
     // ponytail: one global gap keeps routing simple; reserve per-edge gaps if
     // tall diagrams become a practical problem.
-    let source_lines = label_line_count(graph, &graph.flow.sources);
+    let source_lines = label_line_count(graph, &graph.flow.flow_inputs);
     let block_lines = graph.flow.blocks.iter().flat_map(|block| {
         // A question or choice hands over one output per connection, so its
         // gap follows the widest single name, not all of them joined.
@@ -144,7 +144,10 @@ pub(super) fn vertical_gap(graph: &Graph) -> i32 {
     )
 }
 
-fn label_line_count<'a>(graph: &Graph, names: impl IntoIterator<Item = &'a Ident>) -> usize {
+fn label_line_count<'a>(
+    graph: &SemanticModel,
+    names: impl IntoIterator<Item = &'a Ident>,
+) -> usize {
     wrap_wires(&drawn(graph, names)).map_or(0, |lines| lines.len())
 }
 

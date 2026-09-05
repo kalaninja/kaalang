@@ -1,6 +1,6 @@
 //! Places an action on its single continuing skewer.
 
-use kaalang_model::Plan;
+use kaalang_model::ExecutionPlan;
 
 use super::{Builder, Incoming, NODE_LABEL_WIDTH, NODE_WIDTH, Origin, Placed, block_dimensions};
 
@@ -12,7 +12,7 @@ impl Builder<'_> {
     pub(super) fn place_action(
         &mut self,
         index: usize,
-        next: &Plan,
+        next: &ExecutionPlan,
         skewer: usize,
         top: i32,
         incoming: Incoming,

@@ -6,29 +6,36 @@ mod analyze;
 mod choice;
 mod model;
 mod parse;
+mod plan;
 mod resolve;
 
 pub use choice::{choice_match, is_todo_body};
-pub use model::{Block, BlockKind, Branch, Convergence, Flow, Graph, Input, Plan};
+pub use model::{
+    Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, Execution,
+    ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, SemanticModel,
+};
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///
 /// # Errors
 ///
 /// Returns the first violation found while parsing block syntax, resolving
-/// wires to their producers, or walking every path, spanned at the offending
-/// token so callers can report it against the authored source.
-pub fn build(function: &ItemFn) -> Result<Graph> {
+/// wires to their producers, walking every possible execution, or selecting a
+/// lowering order, spanned at the offending token so callers can report it
+/// against the authored source.
+pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     let flow = parse::flow(function)?;
     resolve::flow(&flow)?;
-    let plan = analyze::flow(&flow)?;
+    let executions = analyze::flow(&flow)?;
+    let execution_plan = plan::flow(&flow, &executions);
 
-    Ok(Graph {
+    Ok(SemanticModel {
         name: function.sig.ident.clone(),
         parameters: function.sig.inputs.iter().cloned().collect(),
         return_type: function.sig.output.clone(),
         flow,
-        plan,
+        execution_plan,
+        executions,
     })
 }
 
@@ -36,51 +43,96 @@ pub fn build(function: &ItemFn) -> Result<Graph> {
 mod tests {
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
-    use super::{BlockKind, Plan, build};
+    use super::{
+        BlockKind, BranchSelection, CaptureDependency, CaptureId, ExecutionPlan, ProducerId, build,
+    };
 
-    fn count_block(plan: &Plan, target: usize) -> usize {
+    fn count_block(plan: &ExecutionPlan, target: usize) -> usize {
         match plan {
-            Plan::Action { index, next } => {
+            ExecutionPlan::Guarded { blocks, .. } => usize::from(blocks.contains(&target)),
+            ExecutionPlan::Action { index, next } => {
                 usize::from(*index == target) + count_block(next, target)
             }
-            Plan::Question {
+            ExecutionPlan::Question {
                 index,
                 branches,
-                convergence,
+                join,
             } => {
                 usize::from(*index == target)
                     + branches
                         .iter()
                         .map(|branch| count_block(&branch.plan, target))
                         .sum::<usize>()
-                    + convergence
+                    + join
                         .as_ref()
-                        .map_or(0, |convergence| count_block(&convergence.next, target))
+                        .map_or(0, |join| count_block(&join.next, target))
             }
-            Plan::Choice {
+            ExecutionPlan::Choice {
                 index,
                 branches,
-                convergence,
+                joins,
             } => {
                 usize::from(*index == target)
                     + branches
                         .iter()
                         .map(|branch| count_block(&branch.plan, target))
                         .sum::<usize>()
-                    + convergence
-                        .as_ref()
-                        .map_or(0, |convergence| count_block(&convergence.next, target))
+                    + joins
+                        .iter()
+                        .map(|join| count_block(&join.next, target))
+                        .sum::<usize>()
             }
-            Plan::End { index, body } => usize::from(*index == target) + count_block(body, target),
-            Plan::EndArrival { .. } | Plan::Yield { .. } => 0,
+            ExecutionPlan::End { index, body, .. } => {
+                usize::from(*index == target) + count_block(body, target)
+            }
+            ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => 0,
         }
     }
 
-    fn end_body(plan: &Plan) -> &Plan {
-        let Plan::End { body, .. } = plan else {
-            panic!("the verified plan must be rooted at End")
+    /// Reports whether any part of the plan fell back to the guarded schedule.
+    fn guarded(plan: &ExecutionPlan) -> bool {
+        match plan {
+            ExecutionPlan::Guarded { .. } => true,
+            ExecutionPlan::Action { next, .. } | ExecutionPlan::End { body: next, .. } => {
+                guarded(next)
+            }
+            ExecutionPlan::Question { branches, join, .. } => {
+                branches.iter().any(|branch| guarded(&branch.plan))
+                    || join.as_ref().is_some_and(|join| guarded(&join.next))
+            }
+            ExecutionPlan::Choice {
+                branches, joins, ..
+            } => {
+                branches.iter().any(|branch| guarded(&branch.plan))
+                    || joins.iter().any(|join| guarded(&join.next))
+            }
+            ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => false,
+        }
+    }
+
+    fn fixture(source: &str, flow: &str) -> ItemFn {
+        let file = syn::parse_file(source).expect("the fixture parses");
+        file.items
+            .into_iter()
+            .find_map(|item| match item {
+                syn::Item::Fn(function) if function.sig.ident == flow => Some(function),
+                _ => None,
+            })
+            .expect("the fixture declares its flow")
+    }
+
+    fn end_body(plan: &ExecutionPlan) -> &ExecutionPlan {
+        let ExecutionPlan::End { body, .. } = plan else {
+            panic!("the verified plan must be rooted at end")
         };
         body
+    }
+
+    fn message(function: &ItemFn) -> String {
+        build(function)
+            .err()
+            .expect("the flow is rejected")
+            .to_string()
     }
 
     #[test]
@@ -92,19 +144,22 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("the zero-wire flow is valid");
-        assert!(graph.flow.sources.is_empty());
-        assert_eq!(graph.flow.blocks.len(), 1);
-        assert!(graph.flow.blocks[0].inputs.is_empty());
-        assert!(graph.flow.blocks[0].outputs.is_empty());
+        let model = build(&function).expect("the zero-wire flow is valid");
+        assert!(model.flow.flow_inputs.is_empty());
+        assert_eq!(model.flow.blocks.len(), 1);
+        assert!(model.flow.blocks[0].inputs.is_empty());
+        assert!(model.flow.blocks[0].outputs.is_empty());
+        assert_eq!(model.executions.len(), 1);
+        assert!(model.executions[0].blocks.is_empty());
+        assert!(model.executions[0].dependencies.is_empty());
         assert!(matches!(
-            end_body(&graph.plan),
-            Plan::EndArrival { inputs } if inputs.is_empty()
+            end_body(&model.execution_plan),
+            ExecutionPlan::EndArrival { inputs } if inputs.is_empty()
         ));
     }
 
     #[test]
-    fn wildcard_is_not_a_source_but_underscore_name_is() {
+    fn wildcard_is_not_a_flow_input_but_underscore_name_is() {
         let function: ItemFn = parse_quote! {
             fn discard(_: u8, _value: u8) {
                 #[end]
@@ -112,11 +167,11 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("both ignored parameter forms are valid");
-        assert_eq!(graph.flow.sources.len(), 1);
-        assert_eq!(graph.flow.sources[0], "_value");
+        let model = build(&function).expect("both ignored parameter forms are valid");
+        assert_eq!(model.flow.flow_inputs.len(), 1);
+        assert_eq!(model.flow.flow_inputs[0], "_value");
         assert!(matches!(
-            graph.parameters.as_slice(),
+            model.parameters.as_slice(),
             [FnArg::Typed(wildcard), FnArg::Typed(named)]
                 if matches!(wildcard.pat.as_ref(), Pat::Wild(_))
                     && matches!(named.pat.as_ref(), Pat::Ident(binding) if binding.ident == "_value")
@@ -148,19 +203,19 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("the flow is valid");
-        let choice = &graph.flow.blocks[0];
+        let model = build(&function).expect("the flow is valid");
+        let choice = &model.flow.blocks[0];
 
-        assert_eq!(graph.name, "choose");
-        assert_eq!(graph.parameters.len(), 1);
-        let FnArg::Typed(parameter) = &graph.parameters[0] else {
+        assert_eq!(model.name, "choose");
+        assert_eq!(model.parameters.len(), 1);
+        let FnArg::Typed(parameter) = &model.parameters[0] else {
             panic!("the parameter must be typed")
         };
         let Pat::Ident(parameter) = parameter.pat.as_ref() else {
             panic!("the parameter must retain its authored name")
         };
         assert_eq!(parameter.ident, "input");
-        let ReturnType::Type(_, return_type) = &graph.return_type else {
+        let ReturnType::Type(_, return_type) = &model.return_type else {
             panic!("the return type must be preserved")
         };
         let Type::Path(return_type) = return_type.as_ref() else {
@@ -171,16 +226,17 @@ mod tests {
         assert_eq!(choice.description.as_deref(), Some("  Choose a path  "));
         assert_eq!(choice.case_descriptions, ["Первый", "Second & final"]);
         assert!(matches!(
-            end_body(&graph.plan),
-            Plan::Choice {
-                branches: paths,
+            end_body(&model.execution_plan),
+            ExecutionPlan::Choice {
+                branches,
+                joins,
                 ..
-            } if paths.len() == 2
+            } if branches.len() == 2 && joins.is_empty()
         ));
     }
 
     #[test]
-    fn preserves_path_exclusive_producer_occurrences() {
+    fn records_alternative_producers_against_each_execution() {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
                 #[question("Choose a value")]
@@ -200,14 +256,56 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("the path-exclusive producers are valid");
-        assert_eq!(graph.flow.blocks[1].outputs[0], "selected");
-        assert_eq!(graph.flow.blocks[2].outputs[0], "selected");
-        assert_eq!(graph.flow.blocks[3].inputs[0].ident, "selected");
+        let model = build(&function).expect("the alternative producers are valid");
+        assert_eq!(model.flow.blocks[1].outputs[0], "selected");
+        assert_eq!(model.flow.blocks[2].outputs[0], "selected");
+        assert_eq!(model.flow.blocks[3].inputs[0].ident, "selected");
+
+        let [yes, no] = model.executions.as_slice() else {
+            panic!("a question has two executions")
+        };
+        assert_eq!(
+            yes.branches,
+            [BranchSelection {
+                block: 0,
+                branch: 0
+            }]
+        );
+        assert_eq!(
+            no.branches,
+            [BranchSelection {
+                block: 0,
+                branch: 1
+            }]
+        );
+        assert_eq!(yes.blocks, [0, 1, 3]);
+        assert_eq!(no.blocks, [0, 2, 3]);
+        let shared = CaptureId { block: 3, input: 0 };
+        assert!(yes.dependencies.contains(&CaptureDependency {
+            producer: ProducerId::BlockOutput {
+                block: 1,
+                output: 0
+            },
+            capture: shared,
+        }));
+        assert!(no.dependencies.contains(&CaptureDependency {
+            producer: ProducerId::BlockOutput {
+                block: 2,
+                output: 0
+            },
+            capture: shared,
+        }));
+        assert!(yes.dependencies.contains(&CaptureDependency {
+            producer: ProducerId::BlockOutput {
+                block: 3,
+                output: 0
+            },
+            capture: CaptureId { block: 4, input: 0 },
+        }));
     }
 
     #[test]
-    fn records_one_shared_consumer_and_orders_yields_by_its_inputs() {
+    fn records_one_shared_consumer_and_orders_join_wires_by_producer() {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> (u32, u32) {
                 #[question("Choose values")]
@@ -227,29 +325,117 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("the path-exclusive producers are valid");
-        let Plan::Question {
-            convergence: Some(convergence),
-            ..
-        } = end_body(&graph.plan)
+        let model = build(&function).expect("the alternative producers are valid");
+        let ExecutionPlan::Question {
+            join: Some(join), ..
+        } = end_body(&model.execution_plan)
         else {
-            panic!("the question must record its implicit convergence")
+            panic!("the question must record its join")
         };
 
+        assert_eq!(join.branches, [0, 1]);
         assert_eq!(
-            convergence
-                .wires
+            join.wires
                 .iter()
                 .map(ToString::to_string)
                 .collect::<Vec<_>>(),
-            ["second", "first"]
+            ["first", "second"]
         );
-        assert_eq!(count_block(&graph.plan, 3), 1);
-        assert_eq!(count_block(&graph.plan, 4), 1);
+        assert!(!join.early_return);
+        assert_eq!(count_block(&model.execution_plan, 3), 1);
+        assert_eq!(count_block(&model.execution_plan, 4), 1);
     }
 
     #[test]
-    fn records_nested_convergence_and_early_end_topology() {
+    fn independent_blocks_form_one_execution_and_run_in_authored_order() {
+        let function: ItemFn = parse_quote! {
+            fn pair(input: u32) -> (u32, u32) {
+                #[action("Produce the first result")]
+                |&input| -> first { *input };
+
+                #[action("Produce the second result")]
+                |&input| -> second { *input + 1 };
+
+                #[end]
+                |first, second| {};
+            }
+        };
+
+        let model = build(&function).expect("independent borrowers are valid");
+        assert_eq!(model.executions.len(), 1);
+        assert_eq!(model.executions[0].blocks, [0, 1]);
+        assert!(matches!(
+            end_body(&model.execution_plan),
+            ExecutionPlan::Action { index: 0, next }
+                if matches!(next.as_ref(), ExecutionPlan::Action { index: 1, next }
+                    if matches!(next.as_ref(), ExecutionPlan::EndArrival { inputs } if inputs.len() == 2))
+        ));
+    }
+
+    #[test]
+    fn independent_questions_choose_an_order_that_shares_every_body() {
+        let function: ItemFn = parse_quote! {
+            fn route(left: bool, right: bool) -> u8 {
+                #[question("Choose the left path")]
+                |left| -> (a, b) { left };
+                #[question("Choose the right value")]
+                |right| -> (x, y) { right };
+                #[action("Build the first right value")]
+                |x| -> value { 10u8 };
+                #[action("Build the second right value")]
+                |y| -> value { 20u8 };
+                #[action("Use the left path")]
+                |a, value| -> result { value + 1 };
+                #[action("Use the other left path")]
+                |b, value| -> result { value + 2 };
+                #[end]
+                |result| {};
+            }
+        };
+
+        let model = build(&function).expect("independent questions have a valid lowering order");
+        assert_eq!(model.executions.len(), 4);
+        assert!(matches!(
+            end_body(&model.execution_plan),
+            ExecutionPlan::Question { index: 1, .. }
+        ));
+        for block in 0..model.flow.blocks.len() {
+            assert_eq!(count_block(&model.execution_plan, block), 1);
+        }
+    }
+
+    #[test]
+    fn independent_computation_runs_before_a_question() {
+        let function: ItemFn = parse_quote! {
+            fn route(condition: bool, seed: u32) -> u32 {
+                #[question("Which way?")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Prepare a shared value")]
+                |seed| -> prepared { seed };
+
+                #[action("Use it on the yes branch")]
+                |yes, &prepared| -> result { *prepared };
+
+                #[action("Use it on the no branch")]
+                |no, prepared| -> result { prepared + 1 };
+
+                #[end]
+                |result| {};
+            }
+        };
+
+        let model = build(&function).expect("the flow is valid");
+        assert_eq!(model.executions.len(), 2);
+        assert!(matches!(
+            end_body(&model.execution_plan),
+            ExecutionPlan::Action { index: 1, next }
+                if matches!(next.as_ref(), ExecutionPlan::Question { index: 0, join: None, .. })
+        ));
+    }
+
+    #[test]
+    fn records_nested_join_and_terminal_case_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
                 #[question("Take the branching path?")]
@@ -258,7 +444,7 @@ mod tests {
                 #[choice("Which branch?")]
                 #[case("First")]
                 #[case("Second")]
-                #[case("End")]
+                #[case("Terminal")]
                 |yes, value| -> (first, second, third) {
                     match value {
                         0 => (),
@@ -273,7 +459,7 @@ mod tests {
                 #[action("Build the second value")]
                 |second| -> selected { 2 };
 
-                #[action("Produce the early End result")]
+                #[action("Produce the terminal result")]
                 |third| -> result { 3 };
 
                 #[action("Produce the selected result")]
@@ -287,22 +473,28 @@ mod tests {
             }
         };
 
-        let graph = build(&function).expect("the flow is valid");
-        let Plan::Question {
+        let model = build(&function).expect("the flow is valid");
+        assert_eq!(model.executions.len(), 4);
+        let ExecutionPlan::Question {
             index,
             branches: [yes, no],
-            ..
-        } = end_body(&graph.plan)
+            join: None,
+        } = end_body(&model.execution_plan)
         else {
-            panic!("the root must be a question")
+            panic!("the root must be a question without a join")
         };
         assert_eq!(*index, 0);
-        assert!(matches!(no.plan.as_ref(), Plan::Action { index: 6, .. }));
+        assert!(!yes.early_return);
+        assert!(!no.early_return);
+        assert!(matches!(
+            no.plan.as_ref(),
+            ExecutionPlan::Action { index: 6, .. }
+        ));
 
-        let Plan::Choice {
+        let ExecutionPlan::Choice {
             index,
             branches,
-            convergence: Some(convergence),
+            joins,
         } = yes.plan.as_ref()
         else {
             panic!("the yes branch must contain the choice")
@@ -314,25 +506,442 @@ mod tests {
         assert!(branches[2].early_return);
         assert!(matches!(
             branches[0].plan.as_ref(),
-            Plan::Action { index: 2, next }
-                if matches!(next.as_ref(), Plan::Yield { wires } if wires == &["selected"])
+            ExecutionPlan::Action { index: 2, next }
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["selected"])
         ));
         assert!(matches!(
             branches[1].plan.as_ref(),
-            Plan::Action { index: 3, next }
-                if matches!(next.as_ref(), Plan::Yield { wires } if wires == &["selected"])
+            ExecutionPlan::Action { index: 3, next }
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["selected"])
         ));
         assert!(matches!(
             branches[2].plan.as_ref(),
-            Plan::Action { index: 4, next }
-                if matches!(next.as_ref(), Plan::EndArrival { .. })
+            ExecutionPlan::Action { index: 4, next }
+                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
         ));
-        assert_eq!(convergence.wires, ["selected"]);
+        let [join] = joins.as_slice() else {
+            panic!("the first two cases share one join")
+        };
+        assert_eq!(join.branches, [0, 1]);
+        assert_eq!(join.wires, ["selected"]);
+        assert!(!join.early_return);
         assert!(matches!(
-            convergence.next.as_ref(),
-            Plan::Action { index: 5, next }
-                if matches!(next.as_ref(), Plan::EndArrival { .. })
+            join.next.as_ref(),
+            ExecutionPlan::Action { index: 5, next }
+                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
         ));
-        assert_eq!(count_block(&graph.plan, 7), 1);
+        assert_eq!(count_block(&model.execution_plan, 7), 1);
+    }
+
+    #[test]
+    fn independent_branch_selections_may_meet_in_every_combination() {
+        let function: ItemFn = parse_quote! {
+            fn pair(left: bool, right: bool) -> u8 {
+                #[question("Left?")]
+                |left| -> (a, b) { left };
+                #[question("Right?")]
+                |right| -> (c, d) { right };
+                #[action("AC")]
+                |a, c| -> result { 0u8 };
+                #[action("AD")]
+                |a, d| -> result { 1u8 };
+                #[action("BC")]
+                |b, c| -> result { 2u8 };
+                #[action("BD")]
+                |b, d| -> result { 3u8 };
+                #[end]
+                |result| {};
+            }
+        };
+
+        let model = build(&function).expect("all independent branch combinations are valid");
+        assert_eq!(model.executions.len(), 4);
+        for block in 0..model.flow.blocks.len() {
+            assert_eq!(
+                count_block(&model.execution_plan, block),
+                1,
+                "block {block}"
+            );
+        }
+        for (execution, action) in model.executions.iter().zip(2..6) {
+            assert_eq!(execution.blocks, [0, 1, action]);
+        }
+    }
+
+    #[test]
+    fn independent_branchers_finish_even_without_a_selected_consumer() {
+        let function: ItemFn = parse_quote! {
+            fn both(left: bool, right: bool) {
+                #[question("Left?")]
+                |left| -> (a, _b) { left };
+                #[question("Right?")]
+                |right| -> (c, _d) { right };
+                #[action("Both")]
+                |a, c| -> () {};
+                #[end]
+                || {};
+            }
+        };
+
+        let model = build(&function).expect("an effect may require both independent selections");
+        assert_eq!(model.executions.len(), 4);
+        assert!(
+            model
+                .executions
+                .iter()
+                .all(|execution| execution.blocks.starts_with(&[0, 1]))
+        );
+        for block in 0..model.flow.blocks.len() {
+            assert_eq!(
+                count_block(&model.execution_plan, block),
+                1,
+                "block {block}"
+            );
+        }
+    }
+
+    #[test]
+    fn several_independent_selections_may_share_a_borrowed_output() {
+        let function: ItemFn = parse_quote! {
+            fn both(first: bool, second: bool, third: bool) {
+                #[question("First?")]
+                |first| -> (a, _a_no) { first };
+                #[question("Second?")]
+                |second| -> (b, _b_no) { second };
+                #[question("Third?")]
+                |third| -> (c, _c_no) { third };
+                #[action("First and second")]
+                |&a, b| -> () {};
+                #[action("First and third")]
+                |&a, c| -> () {};
+                #[end]
+                || {};
+            }
+        };
+
+        let model = build(&function).expect("independent effects can borrow one selected output");
+        assert_eq!(model.executions.len(), 8);
+        for block in 0..model.flow.blocks.len() {
+            assert_eq!(
+                count_block(&model.execution_plan, block),
+                1,
+                "block {block}"
+            );
+        }
+    }
+
+    #[test]
+    fn one_choice_may_own_two_joins() {
+        let function: ItemFn = parse_quote! {
+            fn route(value: u8) -> u8 {
+                #[choice("Which group?")]
+                #[case("First of the left group")]
+                #[case("Second of the left group")]
+                #[case("Terminal")]
+                #[case("First of the right group")]
+                #[case("Second of the right group")]
+                |value| -> (a, b, done, c, d) {
+                    match value {
+                        0 => (),
+                        1 => (),
+                        2 => (),
+                        3 => (),
+                        _ => (),
+                    }
+                };
+
+                #[action("Build the left value from a")]
+                |a| -> left { 1 };
+
+                #[action("Build the left value from b")]
+                |b| -> left { 2 };
+
+                #[action("Produce the terminal result")]
+                |done| -> result { 3 };
+
+                #[action("Build the right value from c")]
+                |c| -> right { 4 };
+
+                #[action("Build the right value from d")]
+                |d| -> right { 5 };
+
+                #[action("Use the left value")]
+                |left| -> result { left };
+
+                #[action("Use the right value")]
+                |right| -> result { right };
+
+                #[end]
+                |result| {};
+            }
+        };
+
+        let model = build(&function).expect("two disjoint joins are valid");
+        assert_eq!(model.executions.len(), 5);
+        let ExecutionPlan::Choice {
+            branches, joins, ..
+        } = end_body(&model.execution_plan)
+        else {
+            panic!("the root must be the choice")
+        };
+        assert!(branches[2].early_return);
+        let [left, right] = joins.as_slice() else {
+            panic!("the choice owns two joins")
+        };
+        assert_eq!(left.branches, [0, 1]);
+        assert_eq!(left.wires, ["left"]);
+        assert_eq!(right.branches, [3, 4]);
+        assert_eq!(right.wires, ["right"]);
+        assert!(!left.early_return);
+        assert!(!right.early_return);
+        assert!(matches!(
+            left.next.as_ref(),
+            ExecutionPlan::Action { index: 6, .. }
+        ));
+        assert!(matches!(
+            right.next.as_ref(),
+            ExecutionPlan::Action { index: 7, .. }
+        ));
+        for block in 0..8 {
+            assert_eq!(
+                count_block(&model.execution_plan, block),
+                1,
+                "block {block}"
+            );
+        }
+        assert!(
+            model
+                .executions
+                .iter()
+                .all(|execution| execution.blocks.contains(&0))
+        );
+    }
+
+    /// The structured branch tree shares every body wherever a nested Rust
+    /// scope can express the flow; only independent branchers whose selections
+    /// meet in a consumer need the guarded schedule.
+    #[test]
+    fn fixtures_keep_their_lowering_strategy() {
+        let structured = [
+            (
+                include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
+                "blocked_terminal_crossing",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
+                ),
+                "effect_before_a_nested_terminal_branch",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/independent_questions.rs"),
+                "independent_questions",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/nested_branch_passes_a_case_join.rs"
+                ),
+                "nested_branch_passes_a_case_join",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
+                ),
+                "nested_branch_passes_a_question_join",
+            ),
+            (
+                include_str!("../../kaalang/tests/choice/behavior/anonymous_case_values.rs"),
+                "anonymous_case_values",
+            ),
+            (
+                include_str!("../../kaalang/tests/choice/behavior/borrowed_case_input.rs"),
+                "borrowed_case_input",
+            ),
+        ];
+        for (source, flow) in structured {
+            let model = build(&fixture(source, flow)).expect(flow);
+            assert!(
+                !guarded(&model.execution_plan),
+                "{flow} must stay structured"
+            );
+        }
+
+        let guarded_only = [
+            (
+                include_str!("../../kaalang/tests/wire/behavior/cartesian_questions.rs"),
+                "cartesian_questions",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/cartesian_choices.rs"),
+                "cartesian_choices",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/conjunction_effect.rs"),
+                "conjunction_effect",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/triangle_questions.rs"),
+                "triangle_questions",
+            ),
+        ];
+        for (source, flow) in guarded_only {
+            let model = build(&fixture(source, flow)).expect(flow);
+            assert!(
+                guarded(&model.execution_plan),
+                "{flow} needs the guarded schedule"
+            );
+        }
+    }
+
+    #[test]
+    fn gates_alternative_producers_that_no_binding_unifies() {
+        let unified: ItemFn = parse_quote! {
+            fn choose(condition: bool) -> u32 {
+                #[question("Choose a value")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build the yes value")]
+                |yes| -> (selected, _tag) { (1, 1u8) };
+
+                #[action("Build the no value")]
+                |no| -> (selected, _tag) { (2, 2u8) };
+
+                #[action("Use the selected value")]
+                |selected| -> result { selected };
+
+                #[end]
+                |result| {};
+            }
+        };
+        let ExecutionPlan::End { gates, .. } =
+            build(&unified).expect("the flow is valid").execution_plan
+        else {
+            panic!("the plan is rooted at end")
+        };
+        assert!(
+            gates.is_empty(),
+            "a join tuple already unifies both `_tag` producers"
+        );
+
+        let terminal: ItemFn = parse_quote! {
+            fn choose(condition: bool) -> u32 {
+                #[question("Choose a value")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Build the yes value")]
+                |yes| -> (selected, _tag) { (1, 1u8) };
+
+                #[action("Build the no result")]
+                |no| -> (result, _tag) { (2, 2u8) };
+
+                #[action("Use the selected value")]
+                |selected| -> result { selected };
+
+                #[end]
+                |result| {};
+            }
+        };
+        let ExecutionPlan::End { gates, .. } =
+            build(&terminal).expect("the flow is valid").execution_plan
+        else {
+            panic!("the plan is rooted at end")
+        };
+        assert_eq!(gates, ["_tag"]);
+    }
+
+    #[test]
+    fn rejects_a_conflict_reachable_through_one_order_only() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(x: u32) -> u32 {
+                #[action("Borrow x and produce the trigger")]
+                |&x| -> trigger { *x };
+
+                #[action("Borrow x independently")]
+                |&x| -> other { *x };
+
+                #[action("Consume x once triggered")]
+                |trigger, x| -> result { trigger + x };
+
+                #[end]
+                |result, other| {};
+            }
+        };
+
+        assert_eq!(
+            message(&function),
+            "kaalang blocks that are ready for the same wire `x` must both borrow it; add an explicit dependency"
+        );
+    }
+
+    #[test]
+    fn rejects_a_case_that_enters_two_joins() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(value: u8) {
+                #[choice("Which cases share what?")]
+                #[case("Shares the left step")]
+                #[case("Shares both steps")]
+                #[case("Shares the right step")]
+                |value| -> (a, b, c) {
+                    match value {
+                        0 => (),
+                        1 => (),
+                        _ => (),
+                    }
+                };
+
+                #[action("Left value from a")]
+                |a| -> left { 1 };
+
+                #[action("Both values from b")]
+                |b| -> (left, right) { (2, 3) };
+
+                #[action("Right value from c")]
+                |c| -> right { 4 };
+
+                #[action("Left step")]
+                |left| -> () { drop(left) };
+
+                #[action("Right step")]
+                |right| -> () { drop(right) };
+
+                #[end]
+                || {};
+            }
+        };
+
+        assert_eq!(
+            message(&function),
+            "a kaalang case must not enter two convergence groups"
+        );
+    }
+
+    #[test]
+    fn rejects_a_block_that_would_diverge_again_after_a_join() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(condition: bool) -> u32 {
+                #[question("Which way?")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Yes value")]
+                |yes| -> selected { 1 };
+
+                #[action("No value and a note")]
+                |no| -> (selected, extra) { (2, 7u8) };
+
+                #[action("Shared step")]
+                |selected| -> s { selected * 10 };
+
+                #[action("Note the no branch after the shared step")]
+                |&s, extra| -> () { drop(extra) };
+
+                #[end]
+                |s| {};
+            }
+        };
+
+        assert_eq!(
+            message(&function),
+            "a kaalang block after a convergence point must belong to every branch that converges there"
+        );
     }
 }

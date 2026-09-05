@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1832" height="864" viewBox="0 0 1832 864" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for triangle_questions</title>
+  <desc id="kaalang-description">Nodes: Start: triangle_questions( first: bool, second: bool, third: bool, calls: &amp;Cell&lt;[u8; 3]&gt;, effects: &amp;Cell&lt;[u8; 3]&gt;, ); Question: Enable the first input.; Question: Enable the second input.; Question: Enable the third input.; Action: Use the first and second inputs.; Action: Use the second and third inputs.; Action: Use the first and third inputs.; End. Connections: Start: triangle_questions( first: bool, second: bool, third: bool, calls: &amp;Cell&lt;[u8; 3]&gt;, effects: &amp;Cell&lt;[u8; 3]&gt;, ) to Question: Enable the first input. handing over first, second, third, calls, effects, captured as first; Start: triangle_questions( first: bool, second: bool, third: bool, calls: &amp;Cell&lt;[u8; 3]&gt;, effects: &amp;Cell&lt;[u8; 3]&gt;, ) to Question: Enable the second input. handing over first, second, third, calls, effects, captured as second; Start: triangle_questions( first: bool, second: bool, third: bool, calls: &amp;Cell&lt;[u8; 3]&gt;, effects: &amp;Cell&lt;[u8; 3]&gt;, ) to Question: Enable the third input. handing over first, second, third, calls, effects, captured as third; Question: Enable the first input. to Action: Use the first and second inputs. handing over a; Question: Enable the first input. to Action: Use the first and third inputs. handing over a; Question: Enable the second input. to Action: Use the first and second inputs. handing over b; Question: Enable the second input. to Action: Use the second and third inputs. handing over b; Question: Enable the third input. to Action: Use the second and third inputs. handing over c; Question: Enable the third input. to Action: Use the first and third inputs. handing over c; Action: Use the first and second inputs. to End; Action: Use the second and third inputs. to End; Action: Use the first and third inputs. to End; Question: Enable the first input. to End handing over a; Question: Enable the first input. to End; Question: Enable the second input. to End handing over b; Question: Enable the second input. to End; Question: Enable the third input. to End handing over c; Question: Enable the third input. to End.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 134 L 172 302"/>
+    <path class="edge" d="M 172 134 L 172 254 L 892 254 L 892 302"/>
+    <path class="edge" d="M 172 134 L 172 254 L 1612 254 L 1612 302"/>
+    <path class="edge" d="M 172 374 L 172 542"/>
+    <path class="edge" d="M 172 374 L 172 494 L 1252 494 L 1252 542"/>
+    <path class="edge" d="M 892 374 L 892 482 L 172 482 L 172 542"/>
+    <path class="edge" d="M 892 374 L 892 542"/>
+    <path class="edge" d="M 1612 374 L 1612 482 L 892 482 L 892 542"/>
+    <path class="edge" d="M 1612 374 L 1612 494 L 1252 494 L 1252 542"/>
+    <path class="edge" d="M 172 606 L 172 774"/>
+    <path class="edge" d="M 892 606 L 892 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 1252 606 L 1252 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 172 374 L 172 422 L 360 422 L 360 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 312 338 L 360 338 L 360 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 892 374 L 892 422 L 360 422 L 360 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 1032 338 L 1080 338 L 1080 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 1612 374 L 1612 726 L 172 726 L 172 774"/>
+    <path class="edge" d="M 1752 338 L 1800 338 L 1800 726 L 172 726 L 172 774"/>
+    <text class="edge-label" x="214" y="294" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">first, second, third, calls, effects</tspan></text>
+    <text class="edge-label" x="934" y="294" xml:space="preserve"><tspan x="934" dy="0">second</tspan></text>
+    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">first, second, third, calls, effects</tspan></text>
+    <text class="edge-label" x="1654" y="294" xml:space="preserve"><tspan x="1654" dy="0">third</tspan></text>
+    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">first, second, third, calls, effects</tspan></text>
+    <text class="edge-label" x="214" y="392" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="edge-label" x="934" y="392" xml:space="preserve"><tspan x="934" dy="0">b</tspan></text>
+    <text class="edge-label" x="214" y="392" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="edge-label" x="1654" y="392" xml:space="preserve"><tspan x="1654" dy="0">c</tspan></text>
+    <text class="edge-label" x="934" y="392" xml:space="preserve"><tspan x="934" dy="0">b</tspan></text>
+    <text class="edge-label" x="1654" y="392" xml:space="preserve"><tspan x="1654" dy="0">c</tspan></text>
+    <text class="edge-label" x="214" y="392" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="edge-label" x="934" y="392" xml:space="preserve"><tspan x="934" dy="0">b</tspan></text>
+    <text class="edge-label" x="1654" y="392" xml:space="preserve"><tspan x="1654" dy="0">c</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 83)">
+      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="51"/>
+      <text class="label" y="-21" xml:space="preserve"><tspan x="0" dy="0">triangle_questions( first: bool, </tspan><tspan x="0" dy="18">second: bool, third: bool, calls: </tspan><tspan x="0" dy="18">&amp;Cell&lt;[u8; 3]&gt;, effects: &amp;Cell&lt;[u8; </tspan><tspan x="0" dy="18">3]&gt;, )</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 338)">
+      <title xml:space="preserve">Enable the first input.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enable the first input.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(892 338)">
+      <title xml:space="preserve">Enable the second input.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enable the second input.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(1612 338)">
+      <title xml:space="preserve">Enable the third input.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enable the third input.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 574)">
+      <title xml:space="preserve">Use the first and second inputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the first and second inputs.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 574)">
+      <title xml:space="preserve">Use the second and third inputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the second and third inputs.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 574)">
+      <title xml:space="preserve">Use the first and third inputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the first and third inputs.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 803)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

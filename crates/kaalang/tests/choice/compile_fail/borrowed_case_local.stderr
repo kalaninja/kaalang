@@ -1,0 +1,27 @@
+error[E0597]: `owned` does not live long enough
+  --> tests/choice/compile_fail/borrowed_case_local.rs:12:43
+   |
+ 5 | #[kaalang]
+   | ----------
+   | |        |
+   | |        `owned` dropped here while still borrowed
+   | borrow later used here
+...
+12 |             owned if !owned.is_empty() => &owned,
+   |             -----                         ^^^^^^ borrowed value does not live long enough
+   |             |
+   |             binding `owned` declared here
+
+error[E0597]: `owned` does not live long enough
+  --> tests/choice/compile_fail/borrowed_case_local.rs:13:22
+   |
+ 5 | #[kaalang]
+   | ----------
+   | |        |
+   | |        `owned` dropped here while still borrowed
+   | borrow later used here
+...
+13 |             owned => &owned,
+   |             -----    ^^^^^^ borrowed value does not live long enough
+   |             |
+   |             binding `owned` declared here

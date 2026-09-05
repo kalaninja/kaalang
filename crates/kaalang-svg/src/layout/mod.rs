@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use kaalang_model::{BlockKind, Branch, Convergence, Graph, Plan};
+use kaalang_model::{BlockKind, Branch, ExecutionPlan, Join, JoinTarget, SemanticModel};
 use syn::{Ident, Signature, spanned::Spanned};
 
 mod action;
 mod choice;
 mod convergence;
+mod dependency;
 mod end;
 mod label;
 mod question;
@@ -52,7 +53,7 @@ pub(crate) struct Scene {
     pub(crate) labels: Vec<Label>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum NodeId {
     Start,
     Block(usize),
@@ -114,7 +115,7 @@ pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
     authored.strip_prefix("fn ").unwrap_or(&authored).to_owned()
 }
 
-pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
+pub(crate) fn layout(graph: &SemanticModel, signature: &str) -> Scene {
     let mut builder = Builder {
         graph,
         scene: Scene::default(),
@@ -122,6 +123,9 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
         terminals: Vec::new(),
         vertical_gap: vertical_gap(graph),
     };
+    if dependency::is_graph(&graph.execution_plan) {
+        return dependency::layout(builder, signature);
+    }
 
     let start = builder.add_node(
         NodeId::Start,
@@ -132,7 +136,7 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
     );
     let first_top = builder.bottom_anchor(start).y + builder.vertical_gap;
     builder.place(
-        &graph.plan,
+        &graph.execution_plan,
         0,
         first_top,
         Incoming {
@@ -164,7 +168,7 @@ pub(crate) fn layout(graph: &Graph, signature: &str) -> Scene {
 }
 
 struct Builder<'a> {
-    graph: &'a Graph,
+    graph: &'a SemanticModel,
     scene: Scene,
     indexes: HashMap<NodeId, usize>,
     terminals: Vec<Incoming>,
@@ -172,35 +176,32 @@ struct Builder<'a> {
 }
 
 impl Builder<'_> {
-    fn place(&mut self, plan: &Plan, skewer: usize, top: i32, incoming: Incoming) -> Placed {
+    fn place(
+        &mut self,
+        plan: &ExecutionPlan,
+        skewer: usize,
+        top: i32,
+        incoming: Incoming,
+    ) -> Placed {
         match plan {
-            Plan::End { index, body } => self.place_end(*index, body, skewer, top, incoming),
-            Plan::Action { index, next } => self.place_action(*index, next, skewer, top, incoming),
-            Plan::Question {
+            ExecutionPlan::Guarded { .. } => unreachable!("guarded plans use dependency layout"),
+            ExecutionPlan::End { index, body, .. } => {
+                self.place_end(*index, body, skewer, top, incoming)
+            }
+            ExecutionPlan::Action { index, next } => {
+                self.place_action(*index, next, skewer, top, incoming)
+            }
+            ExecutionPlan::Question {
                 index,
                 branches,
-                convergence,
-            } => self.place_question(
-                *index,
-                branches,
-                convergence.as_ref(),
-                skewer,
-                top,
-                incoming,
-            ),
-            Plan::Choice {
+                join,
+            } => self.place_question(*index, branches, join.as_ref(), skewer, top, incoming),
+            ExecutionPlan::Choice {
                 index,
                 branches,
-                convergence,
-            } => self.place_choice(
-                *index,
-                branches,
-                convergence.as_ref(),
-                skewer,
-                top,
-                incoming,
-            ),
-            Plan::EndArrival { inputs } => {
+                joins,
+            } => self.place_choice(*index, branches, single_join(joins), skewer, top, incoming),
+            ExecutionPlan::EndArrival { inputs } => {
                 // Start reaches End only across a wire End captures: a boundary
                 // that hands nothing over is drawn unconnected, whatever it
                 // declares.
@@ -213,17 +214,21 @@ impl Builder<'_> {
                     arrivals: Vec::new(),
                 }
             }
-            Plan::Yield { .. } => Placed {
+            ExecutionPlan::Yield { join, .. } => Placed {
                 bottom: self.anchor(incoming.origin).y,
-                arrivals: vec![incoming],
+                arrivals: vec![Arrival {
+                    incoming,
+                    join: *join,
+                }],
             },
         }
     }
 
     fn finish_branches(
         &mut self,
+        index: usize,
         placed: Vec<Placed>,
-        convergence: Option<&Convergence>,
+        convergence: Option<&Join>,
     ) -> Placed {
         let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
         // Branch order decides which skewer a shared continuation takes, and a
@@ -233,7 +238,19 @@ impl Builder<'_> {
             .flat_map(|branch| branch.arrivals)
             .collect::<Vec<_>>();
         if let Some(convergence) = convergence {
-            return self.place_convergence(arrivals, convergence, bottom);
+            let target = JoinTarget {
+                block: index,
+                join: 0,
+            };
+            let (local, mut outward): (Vec<_>, Vec<_>) = arrivals
+                .into_iter()
+                .partition(|arrival| arrival.join == target);
+            let local = local.into_iter().map(|arrival| arrival.incoming).collect();
+            let mut placed = self.place_convergence(local, convergence, bottom);
+            outward.append(&mut placed.arrivals);
+            outward.sort_by_key(|arrival| arrival.incoming.skewer);
+            placed.arrivals = outward;
+            return placed;
         }
         // Every branch ended the flow, or they all converge further out.
         Placed { bottom, arrivals }
@@ -344,7 +361,7 @@ impl Builder<'_> {
     /// produces.
     fn handover(&self, from: NodeId, branch: Option<usize>) -> Vec<String> {
         let names: Vec<&Ident> = match from {
-            NodeId::Start => self.graph.flow.sources.iter().collect(),
+            NodeId::Start => self.graph.flow.flow_inputs.iter().collect(),
             NodeId::Case {
                 choice,
                 branch: case,
@@ -453,7 +470,13 @@ struct Placed {
     bottom: i32,
     /// Connections still looking for the shared continuation they enter. A
     /// branch point that has no join of its own hands them outward.
-    arrivals: Vec<Incoming>,
+    arrivals: Vec<Arrival>,
+}
+
+/// One yielded connection waiting for its specific enclosing join.
+struct Arrival {
+    incoming: Incoming,
+    join: JoinTarget,
 }
 
 #[derive(Clone, Copy)]
@@ -484,45 +507,61 @@ enum Side {
     Right,
 }
 
-#[derive(Clone, Copy)]
 struct PlanMetrics {
     span: usize,
-    first_yield: Option<usize>,
+    /// Outward yields and their skewer offsets, in skewer order.
+    yields: Vec<(JoinTarget, usize)>,
 }
 
-fn plan_metrics(plan: &Plan) -> PlanMetrics {
+fn plan_metrics(plan: &ExecutionPlan) -> PlanMetrics {
     match plan {
-        Plan::End { body, .. } => plan_metrics(body),
-        Plan::Action { next, .. } => plan_metrics(next),
-        Plan::Question {
+        ExecutionPlan::Guarded { .. } => unreachable!("guarded plans use dependency layout"),
+        ExecutionPlan::End { body, .. } => plan_metrics(body),
+        ExecutionPlan::Action { next, .. } => plan_metrics(next),
+        ExecutionPlan::Question {
+            index,
             branches,
-            convergence,
-            ..
-        } => branch_metrics(branches, convergence.as_ref()).1,
-        Plan::Choice {
+            join,
+        } => branch_metrics(*index, branches, join.as_ref()).1,
+        ExecutionPlan::Choice {
+            index,
             branches,
-            convergence,
-            ..
-        } => branch_metrics(branches, convergence.as_ref()).1,
-        Plan::EndArrival { .. } => PlanMetrics {
+            joins,
+        } => branch_metrics(*index, branches, single_join(joins)).1,
+        ExecutionPlan::EndArrival { .. } => PlanMetrics {
             span: 1,
-            first_yield: None,
+            yields: Vec::new(),
         },
-        Plan::Yield { .. } => PlanMetrics {
+        ExecutionPlan::Yield { join, .. } => PlanMetrics {
             span: 1,
-            first_yield: Some(0),
+            yields: vec![(*join, 0)],
         },
     }
 }
 
-fn branch_layout(branches: &[Branch], convergence: Option<&Convergence>) -> (Vec<usize>, usize) {
-    let (offsets, metrics) = branch_metrics(branches, convergence);
+/// The skewer layout draws one join per choice; plan 5 replaces it with a
+/// layout that draws every convergence group.
+fn single_join(joins: &[Join]) -> Option<&Join> {
+    match joins {
+        [] => None,
+        [join] => Some(join),
+        _ => unimplemented!("several convergence groups of one choice are drawn by plan 5"),
+    }
+}
+
+fn branch_layout(
+    index: usize,
+    branches: &[Branch],
+    convergence: Option<&Join>,
+) -> (Vec<usize>, usize) {
+    let (offsets, metrics) = branch_metrics(index, branches, convergence);
     (offsets, metrics.span)
 }
 
 fn branch_metrics(
+    index: usize,
     branches: &[Branch],
-    convergence: Option<&Convergence>,
+    convergence: Option<&Join>,
 ) -> (Vec<usize>, PlanMetrics) {
     let children = branches
         .iter()
@@ -535,32 +574,38 @@ fn branch_metrics(
         total += child.span;
     }
     let Some(convergence) = convergence else {
-        let first_yield = children
+        let yields = children
             .iter()
             .zip(&offsets)
-            .find_map(|(child, offset)| child.first_yield.map(|first_yield| offset + first_yield));
+            .flat_map(|(child, offset)| {
+                child
+                    .yields
+                    .iter()
+                    .map(move |(join, skewer)| (*join, offset + skewer))
+            })
+            .collect();
         return (
             offsets,
             PlanMetrics {
                 span: total,
-                first_yield,
+                yields,
             },
         );
     };
 
-    let first = branches
+    let target = JoinTarget {
+        block: index,
+        join: 0,
+    };
+    let continues = |child: &PlanMetrics| child.yields.iter().any(|(join, _)| *join == target);
+    let first = children
         .iter()
-        .position(|branch| !branch.early_return)
+        .position(continues)
         .expect("a convergence has a continuing branch");
-    let last = branches
+    let last = children
         .iter()
-        .rposition(|branch| !branch.early_return)
+        .rposition(continues)
         .expect("a convergence has a continuing branch");
-    debug_assert!(
-        branches[first..=last]
-            .iter()
-            .all(|branch| !branch.early_return)
-    );
 
     let continuing_span = children[first..=last]
         .iter()
@@ -570,7 +615,9 @@ fn branch_metrics(
     // lies inside the first continuing branch rather than on its own skewer
     // when that branch yields from within a nested block.
     let arrival = children[first]
-        .first_yield
+        .yields
+        .iter()
+        .find_map(|(join, skewer)| (*join == target).then_some(*skewer))
         .expect("a continuing branch yields");
     let continuation = plan_metrics(&convergence.next);
     let reserved = (arrival + continuation.span).saturating_sub(continuing_span);
@@ -578,21 +625,36 @@ fn branch_metrics(
         *offset += reserved;
     }
 
-    let first_yield = continuation
-        .first_yield
-        .map(|first_yield| offsets[first] + arrival + first_yield);
+    let mut yields = children
+        .iter()
+        .zip(&offsets)
+        .flat_map(|(child, offset)| {
+            child
+                .yields
+                .iter()
+                .map(move |(join, skewer)| (*join, offset + skewer))
+        })
+        .filter(|(join, _)| *join != target)
+        .chain(
+            continuation
+                .yields
+                .into_iter()
+                .map(|(join, skewer)| (join, offsets[first] + arrival + skewer)),
+        )
+        .collect::<Vec<_>>();
+    yields.sort_by_key(|(_, skewer)| *skewer);
     (
         offsets,
         PlanMetrics {
             span: total + reserved,
-            first_yield,
+            yields,
         },
     )
 }
 
 /// Renders every ordinary wire and every underscore-prefixed wire that a block
 /// uses. Only an unused ignored wire is absent from the flow.
-fn drawn<'a>(graph: &Graph, names: impl IntoIterator<Item = &'a Ident>) -> Vec<String> {
+fn drawn<'a>(graph: &SemanticModel, names: impl IntoIterator<Item = &'a Ident>) -> Vec<String> {
     names
         .into_iter()
         .filter(|name| {

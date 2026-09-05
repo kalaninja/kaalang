@@ -1,26 +1,21 @@
-//! Opens an action and its single continuation frontier.
+//! Produces an action's outputs and validates their capture coverage.
 
-use syn::Result;
+use proc_macro2::Ident;
+use syn::Error;
 
-use super::{
-    Analysis, PathState, Producer,
-    frontier::{WorkKind, WorkPlan},
-};
+use super::{State, Walk};
 
-pub(super) fn enter(
-    analysis: &mut Analysis<'_>,
-    index: usize,
-    state: PathState,
-) -> Result<WorkPlan> {
-    let mut next = analysis.enter(index, state);
-    for output in &analysis.flow.blocks[index].outputs {
-        next.produce(output, Producer::Block(index))?;
+pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
+    let outputs = walk.flow.blocks[block].outputs.len();
+    if (0..outputs).all(|output| walk.produce(&mut state, block, output)) {
+        walk.visit(state);
     }
-    Ok(WorkPlan {
-        kind: WorkKind::Action {
-            index,
-            next: Box::new(analysis.open(next)),
-        },
-        exit: None,
-    })
+}
+
+/// Every ordinary action output needs a consumer in some execution.
+pub(super) fn uncaptured(output: &Ident) -> Error {
+    Error::new(
+        output.span(),
+        "every kaalang action output must have a consumer",
+    )
 }

@@ -1,6 +1,6 @@
 //! Places a choice, its derived case row, and its ordered branches.
 
-use kaalang_model::{Branch, Convergence};
+use kaalang_model::{Branch, Join};
 
 use super::{
     Builder, CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, Incoming, LABEL_FONT, LINE_HEIGHT,
@@ -18,7 +18,7 @@ impl Builder<'_> {
         &mut self,
         index: usize,
         branches: &[Branch],
-        convergence: Option<&Convergence>,
+        convergence: Option<&Join>,
         skewer: usize,
         top: i32,
         incoming: Incoming,
@@ -26,7 +26,7 @@ impl Builder<'_> {
         let select = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, select);
         let block = &self.graph.flow.blocks[index];
-        let (offsets, _) = branch_layout(branches, convergence);
+        let (offsets, _) = branch_layout(index, branches, convergence);
         let mut cases = Vec::with_capacity(branches.len());
         for (branch_index, description) in block.case_descriptions.iter().enumerate() {
             let branch_skewer = skewer + offsets[branch_index];
@@ -74,7 +74,7 @@ impl Builder<'_> {
             ));
         }
 
-        self.finish_branches(placed, convergence)
+        self.finish_branches(index, placed, convergence)
     }
 
     fn align_case_row(&mut self, cases: &[(NodeId, usize)]) {

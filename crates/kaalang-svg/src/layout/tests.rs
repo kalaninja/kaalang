@@ -576,6 +576,29 @@ fn a_nested_branch_point_without_its_own_join_hands_its_tails_outward() {
 }
 
 #[test]
+fn a_nested_branch_bypasses_its_local_join_for_the_outer_continuation() {
+    let scene = scene(
+        include_str!(
+            "../../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
+        ),
+        "nested_branch_passes_a_question_join",
+    );
+    let destinations = |from| {
+        scene
+            .edges
+            .iter()
+            .filter(|edge| edge.from == NodeId::Block(from))
+            .map(|edge| edge.to)
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(destinations(6), [NodeId::Block(8)]);
+    assert_eq!(destinations(5), [NodeId::Block(9)]);
+    assert_eq!(destinations(3), [NodeId::Block(5)]);
+    assert_eq!(destinations(4), [NodeId::Block(5)]);
+}
+
+#[test]
 fn choice_uses_ordered_case_nodes_and_output_only_labels() {
     use NodeId::{Block, Case};
 

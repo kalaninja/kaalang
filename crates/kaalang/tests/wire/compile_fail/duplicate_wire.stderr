@@ -1,4 +1,4 @@
-error: a kaalang wire must not be produced more than once on the same path
+error: a kaalang wire must not be produced more than once in one execution
  --> tests/wire/compile_fail/duplicate_wire.rs:9:17
   |
 9 |     |shared| -> shared { shared };

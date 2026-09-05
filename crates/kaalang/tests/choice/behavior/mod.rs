@@ -1,4 +1,7 @@
+mod anonymous_case_values;
+mod borrowed_case_input;
 mod run_choice;
 mod run_choice_skeleton;
+mod run_choice_skeleton_with_a_shared_consumer;
 mod run_choice_with_guard;
 mod run_choice_with_shadowing;

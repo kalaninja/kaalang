@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="680" viewBox="0 0 704 680" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for captured_in_one_branch</title>
+  <desc id="kaalang-description">Nodes: Start: captured_in_one_branch(condition: bool, extra: u32) -&gt; u32; Action: Prepare a token that only one branch needs.; Question: Use the extra value?; Action: Combine the extra value with the token.; Action: Ignore both.; End. Connections: Start: captured_in_one_branch(condition: bool, extra: u32) -&gt; u32 to Action: Prepare a token that only one branch needs. handing over condition, extra; Action: Prepare a token that only one branch needs. to Question: Use the extra value? handing over token, captured as condition; Question: Use the extra value? to Action: Combine the extra value with the token. handing over yes, captured as yes, extra, token; Question: Use the extra value? to Action: Ignore both. via no; Action: Combine the extra value with the token. to End via result; Action: Ignore both. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 236 L 172 308"/>
+    <path class="edge" d="M 172 380 L 172 452"/>
+    <path class="edge" d="M 312 344 L 532 344 L 532 452"/>
+    <path class="edge" d="M 172 518 L 172 590"/>
+    <path class="edge" d="M 532 516 L 532 558 L 172 558 L 172 590"/>
+    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">condition, extra</tspan></text>
+    <text class="edge-label" x="214" y="300" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="254" xml:space="preserve"><tspan x="214" dy="0">token</tspan></text>
+    <text class="edge-label" x="214" y="444" xml:space="preserve"><tspan x="214" dy="0">yes, extra, token</tspan></text>
+    <text class="edge-label" x="214" y="398" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="edge-label" x="422" y="336" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="edge-label" x="214" y="582" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">captured_in_one_branch(condition: </tspan><tspan x="0" dy="18">bool, extra: u32) -&gt; u32</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 203)">
+      <title xml:space="preserve">Prepare a token that only one branch needs.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare a token that only one </tspan><tspan x="-124" dy="18">branch needs.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 344)">
+      <title xml:space="preserve">Use the extra value?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Use the extra value?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 485)">
+      <title xml:space="preserve">Combine the extra value with the token.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Combine the extra value with the </tspan><tspan x="-124" dy="18">token.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 484)">
+      <title xml:space="preserve">Ignore both.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Ignore both.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 619)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

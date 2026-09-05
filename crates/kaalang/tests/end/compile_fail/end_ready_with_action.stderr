@@ -1,5 +1,0 @@
-error: multiple kaalang blocks are ready at once; add an explicit dependency
- --> tests/end/compile_fail/end_ready_with_action.rs:8:5
-  |
-8 |     #[end]
-  |     ^

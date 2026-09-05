@@ -1,0 +1,5 @@
+error: a kaalang block output must not reuse a flow input name
+ --> tests/wire/compile_fail/flow_input_output_conflict.rs:6:17
+  |
+6 |     |&input| -> input { *input };
+  |                 ^^^^^

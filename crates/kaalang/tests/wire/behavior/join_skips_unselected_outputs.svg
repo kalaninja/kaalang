@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="820" viewBox="0 0 1064 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for join_skips_unselected_outputs</title>
+  <desc id="kaalang-description">Nodes: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8; Question: Choose an outer branch.; Action: Produce the left value.; Question: Select an unused wire.; Action: Produce the right value and an unused alternative.; Action: Use the selected value.; End. Connections: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8 to Question: Choose an outer branch. handing over outer, inner, captured as outer; Question: Choose an outer branch. to Action: Produce the left value. handing over left; Action: Produce the left value. to Question: Select an unused wire. handing over selected, captured as inner; Question: Choose an outer branch. to Action: Produce the right value and an unused alternative. via right; Question: Select an unused wire. to Action: Use the selected value. captured as selected; Question: Select an unused wire. to Action: Use the selected value. captured as selected; Action: Produce the right value and an unused alternative. to Action: Use the selected value. via selected; Action: Use the selected value. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 242 L 172 314"/>
+    <path class="edge" d="M 172 378 L 172 450"/>
+    <path class="edge" d="M 312 206 L 892 206 L 892 314"/>
+    <path class="edge" d="M 172 522 L 172 594"/>
+    <path class="edge" d="M 312 486 L 312 558 L 172 558 L 172 594"/>
+    <path class="edge" d="M 892 380 L 892 558 L 172 558 L 172 594"/>
+    <path class="edge" d="M 172 658 L 172 730"/>
+    <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">outer</tspan></text>
+    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">outer, inner</tspan></text>
+    <text class="edge-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">inner</tspan></text>
+    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="602" y="198" xml:space="preserve"><tspan x="602" dy="0">right</tspan></text>
+    <text class="edge-label" x="214" y="586" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="689" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">join_skips_unselected_outputs(out</tspan><tspan x="0" dy="18">er: bool, inner: bool) -&gt; u8</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 206)">
+      <title xml:space="preserve">Choose an outer branch.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose an outer branch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 346)">
+      <title xml:space="preserve">Produce the left value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the left value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 486)">
+      <title xml:space="preserve">Select an unused wire.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Select an unused wire.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 347)">
+      <title xml:space="preserve">Produce the right value and an unused alternative.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the right value and an </tspan><tspan x="-124" dy="18">unused alternative.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 626)">
+      <title xml:space="preserve">Use the selected value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 759)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

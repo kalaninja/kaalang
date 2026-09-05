@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(input: i32) -> &'static str {
+fn invalid(input: i32) {
     #[choice("What is the sign of the input?")]
     #[case("The input is negative.")]
     #[case("The input is nonnegative.")]
@@ -12,11 +12,11 @@ fn invalid(input: i32) -> &'static str {
         }
     };
 
-    #[action("Produce only the negative result.")]
-    |negative| -> negative_result { "negative" };
+    #[action("Handle only the negative input.")]
+    |negative| -> () { drop(negative) };
 
     #[end]
-    |negative_result| {};
+    || {};
 }
 
 fn main() {}

@@ -1,51 +1,28 @@
-//! Validates one path's arrival at the authored End block.
+//! Resolves the authored end block's captures after computational blocks finish.
 
-use syn::{Error, Result};
+use syn::Error;
 
-use super::{
-    Analysis, PathState,
-    frontier::{WorkKind, WorkPlan},
-};
+use super::{CaptureDependency, CaptureId, State, Walk};
 
-pub(super) fn arrive(
-    analysis: &mut Analysis<'_>,
-    index: usize,
-    state: PathState,
-) -> Result<WorkPlan> {
-    let block = &analysis.flow.blocks[index];
-    let inputs = block
-        .inputs
-        .iter()
-        .map(|input| {
-            state
-                .available
-                .contains_key(&input.ident)
-                .then(|| input.ident.clone())
-                .ok_or_else(|| {
-                    Error::new(
-                        input.ident.span(),
-                        "this kaalang path cannot supply every End input",
-                    )
-                })
-        })
-        .collect::<Result<Vec<_>>>()?;
-    let state = analysis.enter(index, state);
-    if let Some(wire) = analysis
-        .flow
-        .sources
-        .iter()
-        .chain(analysis.flow.blocks.iter().flat_map(|block| &block.outputs))
-        .filter(|wire| !wire.to_string().starts_with('_'))
-        .find_map(|wire| state.unconsumed.get(wire))
-    {
-        return Err(Error::new(
-            wire.span(),
-            "every non-ignored kaalang wire must have a consumer on every path",
-        ));
+pub(super) fn arrive(walk: &mut Walk<'_>, state: &mut State) -> bool {
+    for (index, input) in walk.flow.blocks[walk.end].inputs.iter().enumerate() {
+        let Some(&producer) = state.available.get(&input.ident) else {
+            walk.report(
+                (walk.end, index),
+                Error::new(
+                    input.ident.span(),
+                    "this kaalang execution cannot provide every flow output",
+                ),
+            );
+            return false;
+        };
+        state.dependencies.insert(CaptureDependency {
+            producer,
+            capture: CaptureId {
+                block: walk.end,
+                input: index,
+            },
+        });
     }
-
-    Ok(WorkPlan {
-        kind: WorkKind::EndArrival { inputs },
-        exit: Some(state),
-    })
+    true
 }

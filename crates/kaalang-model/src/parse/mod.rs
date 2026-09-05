@@ -14,16 +14,16 @@ mod choice;
 mod end;
 mod question;
 
-/// Parses a flow function into its source wires and closure-shaped blocks.
+/// Parses a flow function into its named flow inputs and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     Ok(Flow {
-        sources: source_wires(function)?,
+        flow_inputs: flow_inputs(function)?,
         blocks: blocks(&function.block.stmts)?,
     })
 }
 
-/// Extracts simple flow parameters as source wire names.
-fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
+/// Extracts simple flow parameters as named flow inputs.
+fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
     function
         .sig
         .inputs
@@ -32,7 +32,7 @@ fn source_wires(function: &ItemFn) -> Result<Vec<Ident>> {
             FnArg::Typed(argument) => match argument.pat.as_ref() {
                 Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
                 pattern => Some(
-                    simple_binding(pattern, "kaalang flow parameters").map(|source| source.unraw()),
+                    simple_binding(pattern, "kaalang flow parameters").map(|input| input.unraw()),
                 ),
             },
             FnArg::Receiver(receiver) => Some(Err(Error::new(
@@ -450,8 +450,6 @@ fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
     Ok(binding.ident.clone())
 }
 
-/// The analyzer still rejects a zero-output action, so its parsed shape is
-/// asserted here rather than through `build`.
 #[cfg(test)]
 mod tests {
     use syn::{ItemFn, parse_quote};

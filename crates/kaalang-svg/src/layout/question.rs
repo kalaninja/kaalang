@@ -1,6 +1,6 @@
 //! Places a question and its two ordered branches.
 
-use kaalang_model::{Branch, Convergence};
+use kaalang_model::{Branch, Join};
 
 use super::{Builder, Incoming, Origin, Placed, branch_layout};
 
@@ -9,7 +9,7 @@ impl Builder<'_> {
         &mut self,
         index: usize,
         branches: &[Branch; 2],
-        convergence: Option<&Convergence>,
+        convergence: Option<&Join>,
         skewer: usize,
         top: i32,
         incoming: Incoming,
@@ -17,7 +17,7 @@ impl Builder<'_> {
         let node = self.add_authored_node(index, skewer, top);
         self.connect_to_node(incoming, node);
         let branch_top = self.bottom_anchor(node).y + self.vertical_gap;
-        let (offsets, _) = branch_layout(branches, convergence);
+        let (offsets, _) = branch_layout(index, branches, convergence);
         let mut placed = Vec::with_capacity(branches.len());
         for (branch_index, branch) in branches.iter().enumerate() {
             let branch_skewer = skewer + offsets[branch_index];
@@ -38,6 +38,6 @@ impl Builder<'_> {
             ));
         }
 
-        self.finish_branches(placed, convergence)
+        self.finish_branches(index, placed, convergence)
     }
 }

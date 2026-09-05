@@ -210,8 +210,11 @@ whole-body `todo!()` is also a valid placeholder. Match bindings and block
 locals remain scoped to the selected arm and are unavailable to downstream
 blocks; downstream code receives only declared wires.
 
-Each choice branch continuation is entered at most once. Rust ownership rejects
-any extra invocation of a generated continuation.
+The selected arm's value leaves the match before the branch continues. A case
+value is therefore owned or borrows data that outlives the choice, such as a
+borrowed input; it cannot borrow a match binding or another local of its arm.
+Each choice branch continuation is entered at most once and cannot be reached
+from the authored body.
 
 ### 4.4 end
 
@@ -429,7 +432,9 @@ At each convergence point, a logical wire is available exactly when every
 possible execution reaching that point has exactly one available producer for
 it immediately before the point executes. Those producers may be the same
 occurrence or alternative occurrences. Rust checks that alternative values have
-one type.
+one type. A wire that is unavailable at a convergence point in some execution
+reaching it stays unavailable after the point; branches that have converged
+diverge again only through a later question or choice.
 
 Every authored computational block either has no inputs or can become ready from
 flow inputs and earlier block outputs. Every branch reaches the same end block.

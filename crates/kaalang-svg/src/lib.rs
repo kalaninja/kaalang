@@ -187,7 +187,7 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-fn validate_labels(graph: &kaalang_model::Graph) -> Result<(), RenderError> {
+fn validate_labels(graph: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
     for block in &graph.flow.blocks {
         let (line, column) = location(block.span);
         if let Some(character) = block.description.as_deref().and_then(invalid_xml_character) {
@@ -297,7 +297,7 @@ mod tests {
                 name: "invalid".into(),
                 line: 4,
                 column: 16,
-                message: "a kaalang block output must not reuse a source wire name".into(),
+                message: "a kaalang block output must not reuse a flow input name".into(),
             })
         );
     }

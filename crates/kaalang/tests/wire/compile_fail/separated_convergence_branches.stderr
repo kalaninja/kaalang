@@ -1,4 +1,4 @@
-error: a kaalang case that reaches End must not separate cases that enter a shared continuation
+error: branches in a kaalang choice convergence group must be adjacent
  --> tests/wire/compile_fail/separated_convergence_branches.rs:9:24
   |
 9 |     |value| -> (first, done, second) {
