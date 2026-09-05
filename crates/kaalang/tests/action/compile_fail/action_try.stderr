@@ -1,0 +1,5 @@
+error: a kaalang block body must not use the `?` operator
+ --> tests/action/compile_fail/action_try.rs:8:13
+  |
+8 |             value.checked_mul(2)?
+  |             ^^^^^^^^^^^^^^^^^^^^^

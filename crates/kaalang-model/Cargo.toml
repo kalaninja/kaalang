@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 proc-macro2 = { workspace = true }
-syn = { workspace = true }
+syn = { workspace = true, features = ["visit"] }
 
 [lints]
 workspace = true

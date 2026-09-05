@@ -1,0 +1,5 @@
+error: a kaalang choice requires at least one input
+ --> tests/syntax/compile_fail/empty_choice_inputs.rs:8:6
+  |
+8 |     || -> (first, second) {
+  |      ^

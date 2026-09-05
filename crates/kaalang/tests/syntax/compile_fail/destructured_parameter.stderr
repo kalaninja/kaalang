@@ -1,0 +1,5 @@
+error: kaalang flow parameters must use simple identifiers
+ --> tests/syntax/compile_fail/destructured_parameter.rs:4:12
+  |
+4 | fn invalid((left, right): (u32, u32)) -> u32 {
+  |            ^^^^^^^^^^^^^

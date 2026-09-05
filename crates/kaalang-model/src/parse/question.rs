@@ -9,6 +9,7 @@ use crate::model::Block;
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let description = description(syntax.kind_attribute, "kaalang block")?;
     syntax.reject_companions()?;
+    syntax.require_inputs("question")?;
     if syntax.outputs.len() != 2 {
         return Err(Error::new_spanned(
             &syntax.closure.output,

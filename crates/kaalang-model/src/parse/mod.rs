@@ -2,8 +2,9 @@
 
 use proc_macro2::{Ident, Span};
 use syn::{
-    Attribute, Error, Expr, ExprClosure, FnArg, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Result,
-    ReturnType, Stmt, Type, ext::IdentExt, spanned::Spanned,
+    Attribute, Error, Expr, ExprAsync, ExprClosure, ExprReturn, ExprTry, FnArg, Item, ItemFn,
+    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt, Type, ext::IdentExt,
+    spanned::Spanned, visit::Visit,
 };
 
 use crate::model::{Block, BlockKind, Flow, Input};
@@ -76,8 +77,11 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let closure = block_statement(statement)?;
     let (kind, kind_attribute, companions) =
         block_kind(&closure.attrs, closure.inputs_begin.span())?;
-    let (inputs, body) = block_closure(closure, kind)?;
+    let (inputs, body) = block_closure(closure)?;
     let (outputs, output_span) = block_outputs(closure, kind)?;
+    if kind != BlockKind::End {
+        reject_control_transfers(&body)?;
+    }
     let syntax = BlockSyntax {
         kind,
         closure,
@@ -131,6 +135,17 @@ impl<'a> BlockSyntax<'a> {
             Some(companion) => Err(unexpected_companion(companion)),
             None => Ok(()),
         }
+    }
+
+    /// Rejects an empty input list, for a kind that requires one.
+    pub(crate) fn require_inputs(&self, name: &str) -> Result<()> {
+        if self.inputs.is_empty() {
+            return Err(Error::new(
+                self.closure.inputs_end.span(),
+                format!("a kaalang {name} requires at least one input"),
+            ));
+        }
+        Ok(())
     }
 
     /// Turns syntax its own kind has accepted into a flow block.
@@ -248,7 +263,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
 }
 
 /// Extracts inputs and the authored body from a block's closure-shaped syntax.
-fn block_closure(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Input>, Expr)> {
+fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
     if closure.lifetimes.is_some()
         || closure.constness.is_some()
         || closure.asyncness.is_some()
@@ -257,12 +272,6 @@ fn block_closure(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Input>, 
         return Err(Error::new_spanned(
             closure,
             "kaalang block statements do not support `move`, `async`, `const`, or lifetime modifiers",
-        ));
-    }
-    if closure.inputs.is_empty() && kind != BlockKind::End {
-        return Err(Error::new(
-            closure.inputs_end.span(),
-            "a kaalang block requires at least one input",
         ));
     }
 
@@ -305,7 +314,46 @@ fn input(alias: Ident, borrowed: bool) -> Input {
     }
 }
 
+/// Rejects a `return` expression or `?` operator in the body's own control-flow
+/// scope. A nested closure, async block, or item owns its control flow, and macro
+/// token streams are opaque, so the walk stops at each of those.
+fn reject_control_transfers(body: &Expr) -> Result<()> {
+    struct FirstTransfer(Option<Error>);
+
+    impl<'ast> Visit<'ast> for FirstTransfer {
+        fn visit_expr_return(&mut self, expression: &'ast ExprReturn) {
+            self.0.get_or_insert_with(|| {
+                Error::new_spanned(
+                    expression,
+                    "a kaalang block body must not use a `return` expression",
+                )
+            });
+        }
+
+        fn visit_expr_try(&mut self, expression: &'ast ExprTry) {
+            self.0.get_or_insert_with(|| {
+                Error::new_spanned(
+                    expression,
+                    "a kaalang block body must not use the `?` operator",
+                )
+            });
+        }
+
+        fn visit_expr_closure(&mut self, _: &'ast ExprClosure) {}
+
+        fn visit_expr_async(&mut self, _: &'ast ExprAsync) {}
+
+        fn visit_item(&mut self, _: &'ast Item) {}
+    }
+
+    let mut first = FirstTransfer(None);
+    first.visit_expr(body);
+    first.0.map_or(Ok(()), Err)
+}
+
 /// Parses output wire declarations from the closure return position.
+///
+/// The empty tuple `()` declares zero outputs.
 fn block_outputs(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Ident>, Span)> {
     if kind == BlockKind::End {
         return Ok((Vec::new(), closure.output.span()));
@@ -318,7 +366,7 @@ fn block_outputs(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Ident>, 
     };
 
     let outputs = match output.as_ref() {
-        Type::Tuple(tuple) if !tuple.elems.is_empty() => tuple
+        Type::Tuple(tuple) => tuple
             .elems
             .iter()
             .map(output_ident)
@@ -400,4 +448,56 @@ fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
     }
 
     Ok(binding.ident.clone())
+}
+
+/// The analyzer still rejects a zero-output action, so its parsed shape is
+/// asserted here rather than through `build`.
+#[cfg(test)]
+mod tests {
+    use syn::{ItemFn, parse_quote};
+
+    use super::flow;
+
+    #[test]
+    fn empty_output_tuple_declares_zero_outputs() {
+        let function: ItemFn = parse_quote! {
+            fn effects(input: u32) {
+                #[action("Log flow entry.")]
+                || -> () { println!("start") };
+
+                #[action("Consume the input.")]
+                |input| -> () { drop(input) };
+
+                #[end]
+                || {};
+            }
+        };
+
+        let flow = flow(&function).expect("zero-output actions parse");
+        assert!(flow.blocks[0].inputs.is_empty());
+        assert!(flow.blocks[0].outputs.is_empty());
+        assert_eq!(flow.blocks[1].inputs.len(), 1);
+        assert!(flow.blocks[1].outputs.is_empty());
+    }
+
+    #[test]
+    fn empty_output_tuple_on_a_question_reaches_output_count_validation() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(input: u32) -> u32 {
+                #[question("Ask without outputs.")]
+                |&input| -> () { true };
+
+                #[end]
+                |input| {};
+            }
+        };
+
+        let Err(error) = flow(&function) else {
+            panic!("a question with `-> ()` is rejected")
+        };
+        assert_eq!(
+            error.to_string(),
+            "a kaalang question must declare exactly two outputs"
+        );
+    }
 }

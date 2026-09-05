@@ -23,6 +23,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
         .iter()
         .map(|case| description(case, "kaalang choice case"))
         .collect::<Result<Vec<_>>>()?;
+    syntax.require_inputs("choice")?;
     if cases.len() < 2 {
         return Err(Error::new_spanned(
             syntax.kind_attribute,

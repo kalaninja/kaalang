@@ -1,0 +1,5 @@
+error: a kaalang block body must not use the `?` operator
+  --> tests/choice/compile_fail/choice_guard_try.rs:10:24
+   |
+10 |             current if current.checked_sub(1)? > 0 => current,
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^

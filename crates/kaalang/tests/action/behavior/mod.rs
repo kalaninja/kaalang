@@ -1,3 +1,5 @@
+mod establish_order_with_a_unit_wire;
 mod keep_tuple_in_single_output;
 mod run_action;
+mod run_action_without_inputs;
 mod split_nested_tuple;

@@ -1,0 +1,5 @@
+error: a kaalang block body must not use the `?` operator
+ --> tests/question/compile_fail/question_try.rs:6:29
+  |
+6 |     |&value| -> (yes, no) { value.checked_sub(1)? > 0 };
+  |                             ^^^^^^^^^^^^^^^^^^^^^
