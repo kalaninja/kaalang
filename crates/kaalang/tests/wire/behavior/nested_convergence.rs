@@ -19,9 +19,6 @@ fn nested_convergence(outer: bool, inner: bool) -> u32 {
 
     #[action("Use the selected nested value.")]
     |selected| -> result { selected * 10 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

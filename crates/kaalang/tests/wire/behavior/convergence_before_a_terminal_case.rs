@@ -25,9 +25,6 @@ fn convergence_before_a_terminal_case(case: u8) -> u32 {
 
     #[action("Use a value from a continuing branch.")]
     |selected| -> result { selected * 10 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

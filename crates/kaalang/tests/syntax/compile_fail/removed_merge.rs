@@ -4,9 +4,6 @@ use kaalang::kaalang;
 fn invalid(input: u32) -> u32 {
     #[merge]
     |input| -> result {};
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

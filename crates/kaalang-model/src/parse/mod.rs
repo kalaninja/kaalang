@@ -18,7 +18,7 @@ mod question;
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     Ok(Flow {
         flow_inputs: flow_inputs(function)?,
-        blocks: blocks(&function.block.stmts)?,
+        blocks: blocks(function)?,
     })
 }
 
@@ -43,33 +43,18 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
         .collect()
 }
 
-/// Parses every function-body statement as one kaalang block.
-fn blocks(statements: &[Stmt]) -> Result<Vec<Block>> {
-    let blocks = statements
+/// Parses every function-body statement as one kaalang block, then appends the
+/// implicit end block that captures the flow's `result` wire.
+fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
+    let mut blocks = function
+        .block
+        .stmts
         .iter()
         .map(parse_block)
         .collect::<Result<Vec<_>>>()?;
-    let ends = blocks
-        .iter()
-        .enumerate()
-        .filter(|(_, block)| block.kind == BlockKind::End)
-        .collect::<Vec<_>>();
+    blocks.push(end::block(function));
 
-    match ends.as_slice() {
-        [] => Err(Error::new(
-            Span::call_site(),
-            "a kaalang flow requires exactly one End block",
-        )),
-        [(index, end)] if *index + 1 != blocks.len() => Err(Error::new(
-            end.span,
-            "the kaalang End block must be the final statement",
-        )),
-        [_] => Ok(blocks),
-        [_, (_, duplicate), ..] => Err(Error::new(
-            duplicate.span,
-            "a kaalang flow must not declare more than one End block",
-        )),
-    }
+    Ok(blocks)
 }
 
 /// Parses one closure-shaped statement and hands it to its kind's parser.
@@ -78,10 +63,8 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let (kind, kind_attribute, companions) =
         block_kind(&closure.attrs, closure.inputs_begin.span())?;
     let (inputs, body) = block_closure(closure)?;
-    let (outputs, output_span) = block_outputs(closure, kind)?;
-    if kind != BlockKind::End {
-        reject_control_transfers(&body)?;
-    }
+    let (outputs, output_span) = block_outputs(closure)?;
+    reject_control_transfers(&body)?;
     let syntax = BlockSyntax {
         kind,
         closure,
@@ -97,7 +80,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::End => end::parse(syntax),
+        BlockKind::End => unreachable!("the end block is implicit, never parsed"),
     }
 }
 
@@ -250,7 +233,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("action") => Role::Kind(BlockKind::Action),
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
-        Some("end") => Role::Kind(BlockKind::End),
+        Some("end") => return Err(end::authored(attribute.span())),
         Some("case") => Role::Companion,
         Some("doc") => Role::Comment,
         _ => {
@@ -353,11 +336,9 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
 
 /// Parses output wire declarations from the closure return position.
 ///
-/// The empty tuple `()` declares zero outputs.
-fn block_outputs(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Ident>, Span)> {
-    if kind == BlockKind::End {
-        return Ok((Vec::new(), closure.output.span()));
-    }
+/// Every block declares at least one output: a block that produces no wire
+/// could still be ready once the flow's `result` wire is available.
+fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, Span)> {
     let ReturnType::Type(_, output) = &closure.output else {
         return Err(Error::new(
             closure.inputs_end.span(),
@@ -366,6 +347,12 @@ fn block_outputs(closure: &ExprClosure, kind: BlockKind) -> Result<(Vec<Ident>, 
     };
 
     let outputs = match output.as_ref() {
+        Type::Tuple(tuple) if tuple.elems.is_empty() => {
+            return Err(Error::new_spanned(
+                output,
+                "a kaalang block must declare at least one output",
+            ));
+        }
         Type::Tuple(tuple) => tuple
             .elems
             .iter()
@@ -455,47 +442,77 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::flow;
+    use crate::model::{BlockKind, RESULT_WIRE};
 
     #[test]
-    fn empty_output_tuple_declares_zero_outputs() {
+    fn every_flow_ends_with_an_implicit_block_capturing_the_result_wire() {
         let function: ItemFn = parse_quote! {
-            fn effects(input: u32) {
-                #[action("Log flow entry.")]
-                || -> () { println!("start") };
-
-                #[action("Consume the input.")]
-                |input| -> () { drop(input) };
-
-                #[end]
-                || {};
+            fn double(input: u32) -> u32 {
+                #[action("Double the input.")]
+                |input| -> result { input * 2 };
             }
         };
 
-        let flow = flow(&function).expect("zero-output actions parse");
-        assert!(flow.blocks[0].inputs.is_empty());
-        assert!(flow.blocks[0].outputs.is_empty());
-        assert_eq!(flow.blocks[1].inputs.len(), 1);
-        assert!(flow.blocks[1].outputs.is_empty());
+        let flow = flow(&function).expect("the flow parses");
+        let [action, end] = flow.blocks.as_slice() else {
+            panic!("one authored block and the implicit end")
+        };
+        assert_eq!(action.kind, BlockKind::Action);
+        assert_eq!(end.kind, BlockKind::End);
+        assert!(end.outputs.is_empty());
+        assert!(end.description.is_none());
+        let [captured] = end.inputs.as_slice() else {
+            panic!("end captures one wire")
+        };
+        assert!(!captured.borrowed);
+        assert_eq!(captured.ident, RESULT_WIRE);
     }
 
     #[test]
-    fn empty_output_tuple_on_a_question_reaches_output_count_validation() {
+    fn an_authored_end_statement_is_rejected() {
         let function: ItemFn = parse_quote! {
-            fn invalid(input: u32) -> u32 {
-                #[question("Ask without outputs.")]
-                |&input| -> () { true };
+            fn double(input: u32) -> u32 {
+                #[action("Double the input.")]
+                |input| -> result { input * 2 };
 
                 #[end]
-                |input| {};
+                |result| {};
             }
         };
 
-        let Err(error) = flow(&function) else {
-            panic!("a question with `-> ()` is rejected")
-        };
         assert_eq!(
-            error.to_string(),
-            "a kaalang question must declare exactly two outputs"
+            error(&function),
+            "a kaalang flow has no end statement; the block that produces the `result` wire finishes it"
         );
+    }
+
+    #[test]
+    fn an_empty_output_tuple_is_rejected_for_every_block_kind() {
+        let action: ItemFn = parse_quote! {
+            fn effects(input: u32) {
+                #[action("Consume the input without producing a wire.")]
+                |input| -> () { drop(input) };
+            }
+        };
+        let question: ItemFn = parse_quote! {
+            fn invalid(input: u32) -> u32 {
+                #[question("Ask without outputs.")]
+                |&input| -> () { true };
+            }
+        };
+
+        for function in [action, question] {
+            assert_eq!(
+                error(&function),
+                "a kaalang block must declare at least one output"
+            );
+        }
+    }
+
+    fn error(function: &ItemFn) -> String {
+        match flow(function) {
+            Err(error) => error.to_string(),
+            Ok(_) => panic!("the flow is rejected"),
+        }
     }
 }

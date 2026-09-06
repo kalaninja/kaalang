@@ -7,9 +7,6 @@ fn keep_tuple_in_single_output(input: u32) -> (u32, u32) {
 
     #[action("Produce the tuple.")]
     |output| -> result { output };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

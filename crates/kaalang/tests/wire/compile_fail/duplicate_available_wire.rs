@@ -8,8 +8,8 @@ fn invalid(input: u32) -> u32 {
     #[action("Produce the same available wire again.")]
     |&shared| -> shared { *shared };
 
-    #[end]
-    |shared| {};
+    #[action("Use the wire.")]
+    |shared| -> result { shared };
 }
 
 fn main() {}

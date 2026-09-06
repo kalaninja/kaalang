@@ -19,9 +19,6 @@ fn invalid(value: String) -> usize {
 
     #[action("Measure the empty string.")]
     |empty| -> result { empty.len() };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

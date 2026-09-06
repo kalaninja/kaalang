@@ -133,7 +133,7 @@ pub(crate) fn flow(
             let body = self::flow(flow, body, bindings, scope);
             quote!(#gates #body)
         }
-        ExecutionPlan::EndArrival { inputs } => end::arrival(bindings, inputs),
+        ExecutionPlan::EndArrival { result } => end::arrival(bindings, result),
         ExecutionPlan::Yield { wires, join } => join::yield_value(bindings, wires, *join, scope),
     }
 }

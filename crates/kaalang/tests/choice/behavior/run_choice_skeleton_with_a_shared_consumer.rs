@@ -16,9 +16,6 @@ fn run_choice_skeleton_with_a_shared_consumer(value: i32) -> i32 {
 
     #[action("Use the selected magnitude.")]
     |magnitude| -> result { magnitude };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

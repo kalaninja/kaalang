@@ -4,9 +4,6 @@ use kaalang::kaalang;
 fn capture_one(input: u32) -> u32 {
     #[action("Increment the input.")]
     |input| -> result { input + 1 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -17,9 +17,6 @@ fn borrowed_case_input(text: String) -> usize {
 
     #[action("Measure the short text.")]
     |short| -> result { short.len() };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -19,9 +19,6 @@ fn invalid(left: bool, right: bool) -> u8 {
 
     #[action("Combine both no branches.")]
     |b, d| -> result { 3 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

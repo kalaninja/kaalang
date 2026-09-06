@@ -10,9 +10,6 @@ fn capture_alternative(condition: bool) -> u32 {
 
     #[action("Build the no result.")]
     |no| -> result { 29 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

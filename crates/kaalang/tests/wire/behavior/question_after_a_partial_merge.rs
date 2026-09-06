@@ -34,9 +34,6 @@ fn question_after_a_partial_merge(value: u8, flag: bool) -> u8 {
 
     #[action("Keep a small value.")]
     |small, shared| -> result { shared };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

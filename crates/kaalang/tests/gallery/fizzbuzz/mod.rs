@@ -17,19 +17,16 @@ fn fizzbuzz(number: u32) -> String {
     };
 
     #[action("Say FizzBuzz.")]
-    |fizz_buzz| -> word { String::from("FizzBuzz") };
+    |fizz_buzz| -> result { String::from("FizzBuzz") };
 
     #[action("Say Fizz.")]
-    |fizz| -> word { String::from("Fizz") };
+    |fizz| -> result { String::from("Fizz") };
 
     #[action("Say Buzz.")]
-    |buzz| -> word { String::from("Buzz") };
+    |buzz| -> result { String::from("Buzz") };
 
     #[action("Say the number itself.")]
-    |plain| -> word { plain.to_string() };
-
-    #[end]
-    |word| {};
+    |plain| -> result { plain.to_string() };
 }
 
 #[test]

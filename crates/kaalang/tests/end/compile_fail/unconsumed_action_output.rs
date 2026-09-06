@@ -2,11 +2,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(input: u32) {
-    #[action("Produce an unused value.")]
-    |input| -> unused { input };
+    #[action("Produce a used and an unused value.")]
+    |input| -> (used, unused) { (input, input) };
 
-    #[end]
-    || {};
+    #[action("Finish with the used value.")]
+    |used| -> result { used };
 }
 
 fn main() {}

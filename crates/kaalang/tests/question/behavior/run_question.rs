@@ -10,9 +10,6 @@ fn run_question(condition: bool) -> &'static str {
 
     #[action("Produce the no result.")]
     |no| -> result { "no" };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

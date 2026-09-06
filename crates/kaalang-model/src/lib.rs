@@ -167,34 +167,39 @@ mod tests {
     }
 
     #[test]
-    fn zero_wire_flow_has_no_implicit_unit_wire() {
+    fn a_flow_input_named_result_needs_no_computational_block() {
         let function: ItemFn = parse_quote! {
-            fn nothing() {
-                #[end]
-                || {};
-            }
+            fn identity(result: u8) -> u8 {}
         };
 
-        let model = build(&function).expect("the zero-wire flow is valid");
-        assert!(model.flow.flow_inputs.is_empty());
+        let model = build(&function).expect("the zero-computation flow is valid");
+        assert_eq!(model.flow.flow_inputs, ["result"]);
         assert_eq!(model.flow.blocks.len(), 1);
-        assert!(model.flow.blocks[0].inputs.is_empty());
-        assert!(model.flow.blocks[0].outputs.is_empty());
         assert_eq!(model.executions.len(), 1);
         assert!(model.executions[0].blocks.is_empty());
-        assert!(model.executions[0].dependencies.is_empty());
+        assert_eq!(model.executions[0].dependencies.len(), 1);
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::EndArrival { inputs } if inputs.is_empty()
+            ExecutionPlan::EndArrival { result } if result == "result"
         ));
+    }
+
+    #[test]
+    fn a_flow_that_produces_no_result_is_rejected() {
+        assert_eq!(
+            message(&parse_quote! {
+                fn nothing() {}
+            }),
+            "a kaalang flow must produce its `result` wire"
+        );
     }
 
     #[test]
     fn wildcard_is_not_a_flow_input_but_underscore_name_is() {
         let function: ItemFn = parse_quote! {
             fn discard(_: u8, _value: u8) {
-                #[end]
-                || {};
+                #[action("Finish without the flow inputs.")]
+                || -> result {};
             }
         };
 
@@ -228,9 +233,6 @@ mod tests {
 
                 #[action("Use the second path")]
                 |right| -> result { right };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -281,9 +283,6 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { selected };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -350,9 +349,6 @@ mod tests {
 
                 #[action("Use the selected values")]
                 |second, first| -> result { (first, second) };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -387,19 +383,20 @@ mod tests {
                 #[action("Produce the second result")]
                 |&input| -> second { *input + 1 };
 
-                #[end]
-                |first, second| {};
+                #[action("Pair the two results")]
+                |first, second| -> result { (first, second) };
             }
         };
 
         let model = build(&function).expect("independent borrowers are valid");
         assert_eq!(model.executions.len(), 1);
-        assert_eq!(model.executions[0].blocks, [0, 1]);
+        assert_eq!(model.executions[0].blocks, [0, 1, 2]);
         assert!(matches!(
             end_body(&model.execution_plan),
             ExecutionPlan::Action { index: 0, next }
                 if matches!(next.as_ref(), ExecutionPlan::Action { index: 1, next }
-                    if matches!(next.as_ref(), ExecutionPlan::EndArrival { inputs } if inputs.len() == 2))
+                    if matches!(next.as_ref(), ExecutionPlan::Action { index: 2, next }
+                        if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })))
         ));
     }
 
@@ -419,8 +416,6 @@ mod tests {
                 |a, value| -> result { value + 1 };
                 #[action("Use the other left path")]
                 |b, value| -> result { value + 2 };
-                #[end]
-                |result| {};
             }
         };
 
@@ -450,9 +445,6 @@ mod tests {
 
                 #[action("Use it on the no branch")]
                 |no, prepared| -> result { prepared + 1 };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -498,9 +490,6 @@ mod tests {
 
                 #[action("Produce the no-branch result")]
                 |no| -> result { 0 };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -574,28 +563,25 @@ mod tests {
         );
     }
 
+    /// The consumer needs a selected output from each independent question, so
+    /// three of the four executions leave the flow without its `result` wire.
     #[test]
-    fn rejects_a_selected_branch_without_its_consumer() {
-        for name in ["a", "_a"] {
-            let output = syn::Ident::new(name, proc_macro2::Span::call_site());
-            let function: ItemFn = parse_quote! {
-                fn both(left: bool, right: bool) {
-                    #[question("Left?")]
-                    |left| -> (#output, _b) { left };
-                    #[question("Right?")]
-                    |right| -> (c, _d) { right };
-                    #[action("Both")]
-                    |#output, c| -> () {};
-                    #[end]
-                    || {};
-                }
-            };
+    fn rejects_a_conjunction_of_independent_branch_outputs() {
+        let function: ItemFn = parse_quote! {
+            fn both(left: bool, right: bool) -> u8 {
+                #[question("Left?")]
+                |left| -> (a, _b) { left };
+                #[question("Right?")]
+                |right| -> (c, _d) { right };
+                #[action("Both")]
+                |a, c| -> result { 1u8 };
+            }
+        };
 
-            assert_eq!(
-                message(&function),
-                "a kaalang branch output must reach its consumer whenever that output is selected"
-            );
-        }
+        assert_eq!(
+            message(&function),
+            "this kaalang execution does not produce the `result` wire"
+        );
     }
 
     #[test]
@@ -617,7 +603,7 @@ mod tests {
     #[test]
     fn rejects_branch_local_access_to_a_name_with_alternative_producers() {
         let function: ItemFn = parse_quote! {
-            fn route(outer: bool, inner: bool) {
+            fn route(outer: bool, inner: bool) -> u8 {
                 #[question("Choose the source")]
                 |outer| -> (yes, no) { outer };
 
@@ -631,16 +617,13 @@ mod tests {
                 |yes| -> (shared, borrow_gate) { ((), ()) };
 
                 #[action("Consume the nested control")]
-                |shared, branch_gate| -> () {};
+                |shared, branch_gate| -> result { 1u8 };
 
                 #[action("Consume the other nested control")]
-                |skip, branch_gate| -> () {};
+                |skip, branch_gate| -> result { 2u8 };
 
                 #[action("Borrow only the action output")]
-                |&shared, borrow_gate| -> () {};
-
-                #[end]
-                || {};
+                |&shared, borrow_gate| -> result { 3u8 };
             }
         };
 
@@ -690,9 +673,6 @@ mod tests {
 
                 #[action("Use the right value")]
                 |right| -> result { right };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -845,7 +825,6 @@ mod tests {
             include_str!(
                 "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block_by_consumption.rs"
             ),
-            include_str!("../../kaalang/tests/wire/compile_fail/triangle_questions.rs"),
         ] {
             assert_eq!(
                 message(&fixture(source, "invalid")),
@@ -875,7 +854,7 @@ mod tests {
         let source = include_str!("../../kaalang/tests/wire/behavior/independent_entry_blocks.rs");
         assert_groups(
             &fixture(source, "independent_entry_blocks"),
-            &[group(0, &[0, 1], &[3, 4], &[3, 4])],
+            &[group(0, &[0, 1], &[3, 4, 5], &[3, 4])],
         );
     }
 
@@ -924,9 +903,6 @@ mod tests {
 
                 #[action("Use the right value")]
                 |right| -> result { right };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -988,9 +964,6 @@ mod tests {
 
                 #[action("Combine the selected and prepared values")]
                 |selected, prepared| -> result { selected + prepared };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -1037,9 +1010,6 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { selected };
-
-                #[end]
-                |result| {};
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -1065,9 +1035,6 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { selected };
-
-                #[end]
-                |result| {};
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -1089,10 +1056,10 @@ mod tests {
                 |&x| -> other { *x };
 
                 #[action("Consume x once triggered")]
-                |trigger, x| -> result { trigger + x };
+                |trigger, x| -> combined { trigger + x };
 
-                #[end]
-                |result, other| {};
+                #[action("Pair the two values")]
+                |combined, other| -> result { combined + other };
             }
         };
 
@@ -1152,16 +1119,16 @@ mod tests {
         );
     }
 
-    /// The reporting block belongs to the shared continuation, yet an outside
-    /// question decides whether it runs. Past its merge the total is ordinary
-    /// data, so a branch may leave it uncaptured.
+    /// Both reporting blocks belong to the shared continuation, yet an outside
+    /// question decides which of them runs. Past its merge the counted amount
+    /// is ordinary data, so the quiet branch may leave it uncaptured.
     #[test]
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         let source =
             include_str!("../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
         assert_groups(
             &fixture(source, "a_branch_captures_a_merged_value"),
-            &[group(0, &[0, 1], &[3, 5], &[3])],
+            &[group(0, &[0, 1], &[4, 5], &[4, 5])],
         );
     }
 
@@ -1171,7 +1138,7 @@ mod tests {
     #[test]
     fn rejects_a_nested_branch_local_capture_of_a_merged_wire() {
         let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/nested_local_work_after_a_merge.rs"
+            "../../kaalang/tests/wire/compile_fail/nested_local_capture_of_a_merged_wire.rs"
         );
         assert_eq!(
             message(&fixture(source, "invalid")),

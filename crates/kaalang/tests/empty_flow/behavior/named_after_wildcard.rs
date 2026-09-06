@@ -1,10 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn named_after_wildcard<T>(_: (), value: T) -> T {
-    #[end]
-    |value| {};
-}
+fn named_after_wildcard<T>(_: (), result: T) -> T {}
 
 #[test]
 fn end_captures_the_source_by_name() {

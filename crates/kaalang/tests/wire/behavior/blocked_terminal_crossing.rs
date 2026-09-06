@@ -5,8 +5,8 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     #[choice("Choose an outer path.")]
     #[case("Build the left shared value.")]
     #[case("Build the right shared value.")]
-    #[case("Reach the end block after one step.")]
-    #[case("Reach the end block after two steps.")]
+    #[case("Finish after one step.")]
+    #[case("Finish after two steps.")]
     |request| -> (left, right, first, second) {
         match request {
             0 => (),
@@ -59,9 +59,6 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
 
     #[action("Use the result.")]
     |selected| -> result { selected };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

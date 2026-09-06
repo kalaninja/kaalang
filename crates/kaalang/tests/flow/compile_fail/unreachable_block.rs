@@ -6,13 +6,10 @@ fn invalid(input: u32, extra: u32) -> u32 {
     |&input, extra| -> combined { *input + extra };
 
     #[action("Produce the result.")]
-    |&combined| -> finished { *combined };
+    |&combined| -> result { *combined };
 
     #[action("Reuse the already consumed input.")]
     |combined, extra| -> _reused { combined + extra };
-
-    #[end]
-    |finished| {};
 }
 
 fn main() {}

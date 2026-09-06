@@ -4,9 +4,6 @@ use kaalang::kaalang;
 fn capture_explicit_unit(input: ()) {
     #[action("Preserve the explicit unit wire.")]
     |input| -> result { input };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

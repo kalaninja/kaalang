@@ -10,9 +10,6 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Build text.")]
     |no| -> result { "no" };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

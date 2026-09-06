@@ -3,10 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn run_action_without_inputs() -> u32 {
     #[action("Produce the answer without consuming a wire.")]
-    || -> value { 42 };
-
-    #[end]
-    |value| {};
+    || -> result { 42 };
 }
 
 #[test]

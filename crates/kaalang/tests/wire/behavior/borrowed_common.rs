@@ -13,9 +13,6 @@ fn borrowed_common(condition: bool, prefix: String) -> String {
 
     #[action("Use the suffix and the preserved prefix.")]
     |suffix, prefix| -> result { format!("{prefix}:{suffix}") };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

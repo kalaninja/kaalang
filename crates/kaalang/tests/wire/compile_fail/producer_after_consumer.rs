@@ -13,9 +13,6 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Build the later alternative.")]
     |no| -> selected { 2 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

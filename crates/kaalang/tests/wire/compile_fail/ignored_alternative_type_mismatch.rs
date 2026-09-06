@@ -13,9 +13,6 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Use the number.")]
     |number| -> result { number };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

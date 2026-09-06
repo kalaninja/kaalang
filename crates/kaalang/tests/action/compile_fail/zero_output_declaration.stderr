@@ -1,0 +1,5 @@
+error: a kaalang block must declare at least one output
+ --> tests/action/compile_fail/zero_output_declaration.rs:6:16
+  |
+6 |     |input| -> () { input + 1 };
+  |                ^^

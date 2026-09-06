@@ -20,9 +20,6 @@ fn invalid(input: i32) -> &'static str {
 
     #[action("Produce the nonnegative result.")]
     |nonnegative| -> result { "nonnegative" };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

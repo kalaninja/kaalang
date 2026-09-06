@@ -55,9 +55,6 @@ mod tests {
 
                 #[action("Use the selected value")]
                 |selected| -> result { __kaalang_shared_marker(selected) };
-
-                #[end]
-                |result| {};
             }
         };
 
@@ -111,9 +108,6 @@ mod tests {
 
                 #[action("Use the right value")]
                 |right| -> result { __kaalang_right_marker(right) };
-
-                #[end]
-                |result| {};
             }
         };
 

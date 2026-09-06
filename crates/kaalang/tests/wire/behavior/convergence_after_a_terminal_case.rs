@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn convergence_after_a_terminal_case(value: i8) -> &'static str {
     #[choice("Choose a path.")]
-    #[case("Reach the end block directly.")]
+    #[case("Finish without a shared step.")]
     #[case("Build the left value.")]
     #[case("Build the right value.")]
     |value| -> (done, left, right) {
@@ -25,9 +25,6 @@ fn convergence_after_a_terminal_case(value: i8) -> &'static str {
 
     #[action("Use the selected value.")]
     |selected| -> result { selected };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

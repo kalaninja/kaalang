@@ -10,13 +10,13 @@ fn effect_before_a_nested_terminal_branch(
     |outer, &inner| -> (nested, direct) { outer };
 
     #[action("Record an effect independent of both questions.")]
-    |log| -> () { log.push("effect") };
+    |log| -> logged { log.push("effect") };
 
     #[question("Finish early?")]
     |nested, inner| -> (early, late) { inner };
 
     #[action("Produce the early result.")]
-    |early| -> result { 1 };
+    |early, logged| -> result { 1 };
 
     #[action("Build the late value.")]
     |late| -> selected { 2 };
@@ -25,10 +25,7 @@ fn effect_before_a_nested_terminal_branch(
     |direct| -> selected { 3 };
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected * 10 };
-
-    #[end]
-    |result| {};
+    |selected, logged| -> result { selected * 10 };
 }
 
 #[test]

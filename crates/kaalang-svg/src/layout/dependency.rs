@@ -37,8 +37,8 @@ pub(super) fn is_graph(plan: &ExecutionPlan) -> bool {
     }
 }
 
-/// Union of the direct dependencies of each execution, including structural
-/// completion and ordering before implicit wire merges. Reducing each
+/// Union of the direct dependencies of each execution, including the `result`
+/// capture at end and ordering before implicit wire merges. Reducing each
 /// execution separately preserves a connection that is direct in one execution
 /// and redundant in another.
 fn connections(graph: &SemanticModel) -> Vec<Connection> {
@@ -223,7 +223,7 @@ fn place_nodes(
                 builder.add_node(id, NodeKind::Start, signature.to_owned(), column, 0);
             }
             NodeId::Block(index) => {
-                builder.add_authored_node(index, column, 0);
+                builder.add_block_node(index, column, 0);
                 if builder.graph.flow.blocks[index].kind == BlockKind::Choice {
                     occupied
                         .entry(row + 1)
@@ -487,15 +487,13 @@ mod tests {
     #[test]
     fn independent_actions_join_without_duplicate_nodes_or_invented_order() {
         let source = r#"
-            fn both(first: bool, second: bool) {
+            fn both(first: bool, second: bool) -> bool {
                 #[action("Read the first flag")]
                 |first| -> first_value { first };
                 #[action("Read the second flag")]
                 |second| -> second_value { second };
                 #[action("Use both values")]
-                |first_value, second_value| -> () { () };
-                #[end]
-                || {};
+                |first_value, second_value| -> result { first_value && second_value };
             }
         "#;
         let function = syn::parse_str(source).expect("the fixture parses");
@@ -504,7 +502,7 @@ mod tests {
             graph: &graph,
             scene: Scene::default(),
             indexes: HashMap::new(),
-            terminals: Vec::new(),
+            arrivals: Vec::new(),
             vertical_gap: super::super::label::vertical_gap(&graph),
         };
         let scene = layout(builder, "both(first: bool, second: bool)");
@@ -592,39 +590,50 @@ mod tests {
                 |yes| -> (value, yes_work) { (1u8, ()) };
                 #[action("Build no")]
                 |no| -> (value, no_work) { (2u8, ()) };
-                #[action("Use the merged value")]
-                |value| -> result { value };
                 #[question("Finish local yes work")]
-                |yes_work, &local| -> (_yes_a, _yes_b) { *local };
+                |yes_work, &local| -> (done, yes_other) { *local };
+                #[action("Finish the other local yes case")]
+                |yes_other| -> done {};
                 #[choice("Finish local no work")]
                 #[case("First local result")]
                 #[case("Second local result")]
-                |no_work, local| -> (_no_a, _no_b) {
+                |no_work, local| -> (done, no_other) {
                     match local { true => (), false => () }
                 };
-                #[end]
-                |result| {};
+                #[action("Finish the other local no case")]
+                |no_other| -> done {};
+                #[action("Use the merged value")]
+                |value| -> used { value };
+                #[action("Finish once the local work is done")]
+                |used, done| -> result { used };
             }
         };
         let graph = kaalang_model::build(&function).expect("local work finishes before the merge");
         let connections = connections(&graph);
         let rows = rows(&nodes(&graph), &connections);
-        for branch in 0..2 {
-            for from in [NodeId::Block(4), NodeId::Case { choice: 5, branch }] {
-                assert!(connections.contains(&Connection {
-                    from,
-                    branch: Some(branch),
-                    to: NodeId::Block(3),
-                }));
-                assert!(rows[&from] < rows[&NodeId::Block(3)]);
-            }
+        // The local work reaches `result` through `done`, never through the
+        // merged-value consumer, so the merge keeps an ordering connection out
+        // of the branch-local exit that finishes first.
+        for from in [
+            NodeId::Block(3),
+            NodeId::Case {
+                choice: 5,
+                branch: 0,
+            },
+        ] {
+            assert!(connections.contains(&Connection {
+                from,
+                branch: Some(0),
+                to: NodeId::Block(7),
+            }));
+            assert!(rows[&from] < rows[&NodeId::Block(7)]);
         }
         for block in [1, 2] {
             assert!(
                 !connections.contains(&Connection {
                     from: NodeId::Block(block),
                     branch: None,
-                    to: NodeId::Block(3),
+                    to: NodeId::Block(7),
                 }),
                 "local work makes the producer-to-consumer edge redundant"
             );

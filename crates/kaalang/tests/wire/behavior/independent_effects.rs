@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn independent_effects(first: &mut Vec<&'static str>, second: &mut Vec<&'static str>) {
     #[action("Record the first effect.")]
-    |first| -> () { first.push("first") };
+    |first| -> first_done { first.push("first") };
 
     #[action("Record the second effect.")]
-    |second| -> () { second.push("second") };
+    |second| -> second_done { second.push("second") };
 
-    #[end]
-    || {};
+    #[action("Finish once both effects have run.")]
+    |first_done, second_done| -> result {};
 }
 
 #[test]

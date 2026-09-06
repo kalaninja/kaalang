@@ -1,7 +1,13 @@
 error[E0308]: mismatched types
- --> tests/empty_flow/compile_fail/non_unit_return.rs:4:17
+ --> tests/empty_flow/compile_fail/non_unit_return.rs:4:14
   |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
 4 | fn invalid() -> u8 {
-  |    -------      ^^ expected `u8`, found `()`
-  |    |
-  |    implicitly returns `()` as its body has no tail or `return` expression
+  |              ^  -- expected `u8` because of return type
+  |              |
+  |              expected `u8`, found `()`
+5 |     #[action("Produce a unit result.")]
+  |     - this empty block is missing a tail expression
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

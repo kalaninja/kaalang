@@ -1,7 +1,5 @@
-error: a kaalang flow requires exactly one End block
- --> tests/empty_flow/compile_fail/empty_body.rs:3:1
+error: a kaalang flow must produce its `result` wire
+ --> tests/empty_flow/compile_fail/empty_body.rs:4:4
   |
-3 | #[kaalang]
-  | ^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+4 | fn invalid() {}
+  |    ^^^^^^^

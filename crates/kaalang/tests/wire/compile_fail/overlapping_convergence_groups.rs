@@ -1,11 +1,13 @@
 use kaalang::kaalang;
 
+// The left marker merges over the first two cases and the right marker over
+// the last two, so neither merge group contains the other.
 #[kaalang]
-fn invalid(value: u8) {
-    #[choice("Which cases share what?")]
-    #[case("Shares the left step.")]
-    #[case("Shares both steps.")]
-    #[case("Shares the right step.")]
+fn invalid(value: u8) -> u8 {
+    #[choice("Which cases share which marker?")]
+    #[case("Shares the left marker.")]
+    #[case("Shares both markers.")]
+    #[case("Shares the right marker.")]
     |value| -> (a, b, c) {
         match value {
             0 => (),
@@ -14,23 +16,14 @@ fn invalid(value: u8) {
         }
     };
 
-    #[action("Build the left value from a.")]
-    |a| -> left { 1 };
+    #[action("Mark the left group.")]
+    |a| -> (_left, result) { ((), 1u8) };
 
-    #[action("Build both values from b.")]
-    |b| -> (left, right) { (2, 3) };
+    #[action("Mark both groups.")]
+    |b| -> (_left, _right, result) { ((), (), 2u8) };
 
-    #[action("Build the right value from c.")]
-    |c| -> right { 4 };
-
-    #[action("Take the left step.")]
-    |left| -> () { drop(left) };
-
-    #[action("Take the right step.")]
-    |right| -> () { drop(right) };
-
-    #[end]
-    || {};
+    #[action("Mark the right group.")]
+    |c| -> (_right, result) { ((), 3u8) };
 }
 
 fn main() {}

@@ -8,8 +8,8 @@ fn disjoint_ready_blocks(left: u32, right: u32) -> (u32, u32) {
     #[action("Triple the right value.")]
     |right| -> tripled { right * 3 };
 
-    #[end]
-    |doubled, tripled| {};
+    #[action("Pair the two values.")]
+    |doubled, tripled| -> result { (doubled, tripled) };
 }
 
 #[test]

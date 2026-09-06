@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="812" viewBox="0 0 704 812" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="948" viewBox="0 0 704 948" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for independent_entry_blocks</title>
-  <desc id="kaalang-description">Nodes: Start: independent_entry_blocks(condition: bool) -&gt; (u32, u32); Question: Choose the pair.; Action: Build the yes pair.; Action: Build the no pair.; Action: Use the left value.; Action: Use the right value.; End. Connections: Start: independent_entry_blocks(condition: bool) -&gt; (u32, u32) to Question: Choose the pair. via condition; Question: Choose the pair. to Action: Build the yes pair. via yes; Question: Choose the pair. to Action: Build the no pair. via no; Action: Build the yes pair. to Action: Use the left value. handing over left, right, captured as left; Action: Use the left value. to Action: Use the right value. handing over first, captured as right; Action: Build the no pair. to Action: Use the left value. handing over left, right, captured as left; Action: Use the right value. to End handing over second, captured as first, second.</desc>
+  <desc id="kaalang-description">Nodes: Start: independent_entry_blocks(condition: bool) -&gt; (u32, u32); Question: Choose the pair.; Action: Build the yes pair.; Action: Build the no pair.; Action: Use the left value.; Action: Use the right value.; Action: Pair the entry results.; End. Connections: Start: independent_entry_blocks(condition: bool) -&gt; (u32, u32) to Question: Choose the pair. via condition; Question: Choose the pair. to Action: Build the yes pair. via yes; Question: Choose the pair. to Action: Build the no pair. via no; Action: Build the yes pair. to Action: Use the left value. handing over left, right, captured as left; Action: Use the left value. to Action: Use the right value. handing over first, captured as right; Action: Use the right value. to Action: Pair the entry results. handing over second, captured as first, second; Action: Build the no pair. to Action: Use the left value. handing over left, right, captured as left; Action: Pair the entry results. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -19,8 +19,9 @@
     <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
     <path class="edge" d="M 172 378 L 172 450"/>
     <path class="edge" d="M 172 514 L 172 586"/>
-    <path class="edge" d="M 532 378 L 532 414 L 172 414 L 172 450"/>
     <path class="edge" d="M 172 650 L 172 722"/>
+    <path class="edge" d="M 532 378 L 532 414 L 172 414 L 172 450"/>
+    <path class="edge" d="M 172 786 L 172 858"/>
     <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
     <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
     <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
@@ -31,6 +32,7 @@
     <text class="edge-label" x="214" y="532" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
     <text class="edge-label" x="214" y="714" xml:space="preserve"><tspan x="214" dy="0">first, second</tspan></text>
     <text class="edge-label" x="214" y="668" xml:space="preserve"><tspan x="214" dy="0">second</tspan></text>
+    <text class="edge-label" x="214" y="817" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
@@ -62,7 +64,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the right value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 751)">
+    <g class="node action" transform="translate(172 754)">
+      <title xml:space="preserve">Pair the entry results.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Pair the entry results.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 887)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>

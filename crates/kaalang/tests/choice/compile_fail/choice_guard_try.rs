@@ -17,9 +17,6 @@ fn invalid(value: u32) -> u32 {
 
     #[action("Produce the other result.")]
     |other| -> result { 0 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

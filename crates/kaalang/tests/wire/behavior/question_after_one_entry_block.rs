@@ -25,9 +25,6 @@ fn question_after_one_entry_block(condition: bool) -> u32 {
 
     #[action("Combine a small first value with the second.")]
     |small, second| -> result { second };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -1,5 +1,0 @@
-error: a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name
-  --> tests/wire/compile_fail/nested_local_work_after_a_merge.rs:24:6
-   |
-24 |     |stepped, note| -> () { drop((stepped, note)) };
-   |      ^^^^^^^

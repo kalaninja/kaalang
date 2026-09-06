@@ -35,9 +35,6 @@ fn nested_branch_passes_a_case_join(outer: bool, value: u8, inner: bool) -> u8 {
 
     #[action("Take the final step every branch shares.")]
     |ready| -> result { ready + 1 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

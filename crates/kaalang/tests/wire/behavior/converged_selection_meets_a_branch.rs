@@ -18,10 +18,7 @@ fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
     |a, right_value| -> result { right_value.unwrap_or(0) + 10 };
 
     #[action("Skip the work.")]
-    |left_no| -> result { 0 };
-
-    #[end]
-    |result| {};
+    |left_no, right_value| -> result { right_value.map_or(0, |_| 0) };
 }
 
 #[test]

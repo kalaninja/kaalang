@@ -27,9 +27,6 @@ fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
 
     #[action("Use the other left path and the right value.")]
     |b, value| -> result { value + 2 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -7,9 +7,6 @@ fn renders_an_accessible_standalone_svg() {
         fn finish(input: u8) -> u8 {
             #[action("<tag> & value")]
             |input| -> result { input };
-
-            #[end]
-            |result| {};
         }
     "#;
 

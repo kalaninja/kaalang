@@ -19,9 +19,6 @@ fn invalid(condition: bool) -> u32 {
         let word: u16 = shared;
         u32::from(word)
     };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

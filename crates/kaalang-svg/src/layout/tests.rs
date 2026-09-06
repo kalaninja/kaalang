@@ -39,7 +39,7 @@ fn node(scene: &Scene, id: NodeId) -> &Node {
 /// a raw identifier, generics, and a where clause.
 #[test]
 fn a_signature_label_keeps_the_authored_text_without_the_fn_keyword() {
-    let source = r"
+    let source = r#"
         #[kaalang]
         fn boundary<T>(
             _: u8,
@@ -48,10 +48,10 @@ fn a_signature_label_keeps_the_authored_text_without_the_fn_keyword() {
         where
             T: Clone,
         {
-            #[end]
-            |r#type| {};
+            #[action("Pass the raw wire through.")]
+            |r#type| -> result { r#type };
         }
-    ";
+    "#;
     let file = syn::parse_file(source).expect("the fixture parses");
     let syn::Item::Fn(function) = &file.items[0] else {
         unreachable!("the fixture declares a function")
@@ -63,48 +63,30 @@ fn a_signature_label_keeps_the_authored_text_without_the_fn_keyword() {
     );
 }
 
-/// Start reaches End only across a wire End captures. What the boundary
-/// declares does not decide it: a wildcard parameter, a named parameter
-/// left unconsumed, and no parameter at all are drawn the same way.
+/// Start reaches end only across the wire end captures. A zero-computation
+/// flow has one: the flow input named `result`. A flow input nothing captures
+/// leaves start unconnected, whatever the boundary declares.
 #[test]
-fn a_zero_computation_flow_connects_start_to_end_only_through_a_captured_wire() {
-    for parameters in ["", "_: u8", "_value: u8"] {
-        let source = format!(
-            r"
-            #[kaalang]
-            fn boundary({parameters}) {{
-                #[end]
-                || {{}};
-            }}
-        "
-        );
-        let scene = scene(&source, "boundary");
-
-        assert_eq!(
-            scene.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
-            [NodeId::Start, NodeId::Block(0)]
-        );
-        assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
-        assert!(
-            scene.edges.is_empty(),
-            "`{parameters}` hands nothing to End, so nothing connects them"
-        );
-    }
-
-    let scene = scene(
+fn start_reaches_end_only_across_the_result_wire() {
+    let identity = scene(
         r"
             #[kaalang]
-            fn identity<T>(value: T) -> T {
-                #[end]
-                |value| {};
-            }
+            fn identity<T>(result: T) -> T {}
         ",
         "identity",
     );
 
-    assert_eq!(node(&scene, NodeId::Block(0)).kind, NodeKind::End);
     assert_eq!(
-        scene
+        identity
+            .nodes
+            .iter()
+            .map(|node| node.id)
+            .collect::<Vec<_>>(),
+        [NodeId::Start, NodeId::Block(0)]
+    );
+    assert_eq!(node(&identity, NodeId::Block(0)).kind, NodeKind::End);
+    assert_eq!(
+        identity
             .edges
             .iter()
             .map(|edge| (
@@ -117,22 +99,50 @@ fn a_zero_computation_flow_connects_start_to_end_only_through_a_captured_wire() 
         [(
             NodeId::Start,
             NodeId::Block(0),
-            vec![String::from("value")],
-            vec![String::from("value")],
+            vec![String::from("result")],
+            vec![String::from("result")],
         )]
     );
+
+    for parameters in ["", "_: u8", "_value: u8"] {
+        let source = format!(
+            r#"
+            #[kaalang]
+            fn boundary({parameters}) {{
+                #[action("Finish without the flow inputs.")]
+                || -> result {{}};
+            }}
+        "#
+        );
+        let boundary = scene(&source, "boundary");
+
+        let from_start = boundary
+            .edges
+            .iter()
+            .filter(|edge| edge.from == NodeId::Start)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            from_start.len(),
+            1,
+            "`{parameters}` still reaches its action"
+        );
+        assert!(
+            from_start[0].handover.is_empty() && from_start[0].capture.is_empty(),
+            "`{parameters}` hands nothing over, so start labels nothing"
+        );
+    }
 }
 
 #[test]
 fn a_consumed_underscore_wire_keeps_its_name() {
     let scene = scene(
-        r"
+        r#"
             #[kaalang]
             fn identity(_value: u8) -> u8 {
-                #[end]
-                |_value| {};
+                #[action("Keep the underscore wire.")]
+                |_value| -> result { _value };
             }
-        ",
+        "#,
         "identity",
     );
 
@@ -171,9 +181,6 @@ fn a_choice_reserves_no_room_for_its_outputs_joined() {
 
                 #[action("Charlie.")]
                 |{2}| -> result {{}};
-
-                #[end]
-                |result| {{}};
             }}
             "#,
             wires[0], wires[1], wires[2]
@@ -225,8 +232,9 @@ fn wrapping_labels() -> Scene {
                 0
             };
 
-            #[end]
-            |a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines| {};
+            #[action("Finish with the long wire")]
+            |a_deliberately_long_wire_name_that_wraps_the_connection_label_onto_several_lines|
+                -> result { 2 };
         }
     "#;
 
@@ -262,9 +270,6 @@ fn wrapping_shared_label() -> Scene {
 
             #[action("Take the rejected path")]
             |a_rejected_branch_wire_name_long_enough_to_wrap_several_times_beside_its_horizontal_exit| -> result { 0 };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -356,9 +361,6 @@ fn nested_branches_converge_at_their_own_consumers() {
 
             #[action("Produce the result")]
             |outer_value| -> result { outer_value };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -406,9 +408,6 @@ fn implicit_convergence_places_the_shared_consumer_once() {
 
             #[action("Use selected")]
             |selected| -> result { selected };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -490,9 +489,6 @@ fn nested_convergence_routes_every_branch_into_one_consumer() {
 
             #[action("Use selected")]
             |selected| -> result { selected };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -566,9 +562,6 @@ fn a_nested_branch_point_without_its_own_join_hands_its_tails_outward() {
 
             #[action("Use selected")]
             |selected| -> result { selected };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -640,9 +633,6 @@ fn choice_uses_ordered_case_nodes_and_output_only_labels() {
 
             #[action("Build right")]
             |right| -> result { 2 };
-
-            #[end]
-            |result| {};
         }
     "#;
     let scene = scene(source, "choose");
@@ -697,7 +687,7 @@ fn choice_uses_ordered_case_nodes_and_output_only_labels() {
 }
 
 #[test]
-fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
+fn a_terminal_branch_reaches_end_beside_a_convergence() {
     use NodeId::{Block, Case, Start};
 
     let source = r#"
@@ -706,7 +696,7 @@ fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
             #[choice("Choose a path")]
             #[case("Left")]
             #[case("Right")]
-            #[case("Reach End directly")]
+            #[case("Finish in one step")]
             |input| -> (left, right, done) {
                 match input { 0 => (), 1 => (), _ => () }
             };
@@ -722,9 +712,6 @@ fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
 
             #[action("Produce the converged result")]
             |selected| -> result { selected };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -785,30 +772,30 @@ fn a_terminal_sibling_reaches_the_end_beside_a_convergence() {
             (Block(4), Block(5)),
         ]
     );
-    let early_terminal = scene
+    let early_branch = scene
         .edges
         .iter()
         .find(|edge| edge.from == Block(3) && edge.to == Block(5))
-        .expect("the early terminal reaches End");
-    assert_eq!(early_terminal.points.len(), 4);
-    assert_eq!(early_terminal.points[0].x, early_terminal.points[1].x);
-    assert_eq!(early_terminal.points[1].x, node(&scene, Block(3)).x);
-    assert_eq!(early_terminal.points[2].x, node(&scene, Block(5)).x);
+        .expect("the early branch reaches end");
+    assert_eq!(early_branch.points.len(), 4);
+    assert_eq!(early_branch.points[0].x, early_branch.points[1].x);
+    assert_eq!(early_branch.points[1].x, node(&scene, Block(3)).x);
+    assert_eq!(early_branch.points[2].x, node(&scene, Block(5)).x);
 }
 
-/// Terminal branches meet in one collector above End: each
-/// drops onto its shared row, and the collector makes the single descent
+/// Alternative `result` producers meet in one junction above end: each
+/// drops onto its shared row, and the junction makes the single descent
 /// into the node.
 #[test]
-fn terminal_branches_share_one_collector_into_end() {
+fn alternative_producers_share_one_junction_into_end() {
     let source = r#"
         #[kaalang]
         fn partial(input: u8) -> u8 {
             #[choice("Choose a path")]
-            #[case("First End path")]
-            #[case("Second End path")]
-            #[case("Third End path")]
-            #[case("Fourth End path")]
+            #[case("First finish")]
+            #[case("Second finish")]
+            #[case("Third finish")]
+            #[case("Fourth finish")]
             |input| -> (first, second, third, fourth) {
                 match input { 0 => (), 1 => (), 2 => (), _ => () }
             };
@@ -824,9 +811,6 @@ fn terminal_branches_share_one_collector_into_end() {
 
             #[action("Build fourth")]
             |fourth| -> result { 4 };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -836,42 +820,38 @@ fn terminal_branches_share_one_collector_into_end() {
         x: end_top.x,
         y: end_top.y - end_top.height / 2,
     };
-    let terminals = scene
+    let arrivals = scene
         .edges
         .iter()
         .filter(|edge| edge.to == NodeId::Block(5))
         .collect::<Vec<_>>();
 
-    assert_eq!(terminals.len(), 4);
+    assert_eq!(arrivals.len(), 4);
 
-    // Every branch away from the column turns onto the collector, and the
-    // collector makes one descent that the branch already in the column
+    // Every branch away from the column turns onto the junction, and the
+    // junction makes one descent that the branch already in the column
     // drops straight through.
-    let turning = terminals
+    let turning = arrivals
         .iter()
         .filter(|edge| edge.points.len() > 2)
         .collect::<Vec<_>>();
-    let straight = terminals
+    let straight = arrivals
         .iter()
         .find(|edge| edge.points.len() == 2)
-        .expect("the branch above End drops straight in");
+        .expect("the branch above end drops straight in");
 
     assert_eq!(turning.len(), 3);
-    let collector_y = turning[0].points[turning[0].points.len() - 2].y;
+    let junction_y = turning[0].points[turning[0].points.len() - 2].y;
     let descent = [
         Point {
             x: end_top.x,
-            y: collector_y,
+            y: junction_y,
         },
         end_top,
     ];
     for edge in &turning {
         let corner = edge.points[edge.points.len() - 2];
-        assert_eq!(
-            corner.y, collector_y,
-            "{:?} leaves the collector",
-            edge.from
-        );
+        assert_eq!(corner.y, junction_y, "{:?} leaves the junction", edge.from);
         assert_eq!(
             [corner, edge.points[edge.points.len() - 1]],
             descent,
@@ -881,9 +861,9 @@ fn terminal_branches_share_one_collector_into_end() {
     }
     assert_eq!(straight.points[1], end_top);
     assert_eq!(straight.points[0].x, end_top.x);
-    assert!(straight.points[0].y <= collector_y);
+    assert!(straight.points[0].y <= junction_y);
 
-    for edge in terminals {
+    for edge in arrivals {
         for segment in edge.points.windows(2) {
             for node in &scene.nodes {
                 assert!(
@@ -907,7 +887,7 @@ fn a_leading_end_path_keeps_the_shared_continuation_off_its_skewer() {
         #[kaalang]
         fn partial(input: u8) -> u8 {
             #[choice("Choose a path")]
-            #[case("Reach End directly")]
+            #[case("Finish in one step")]
             #[case("Left")]
             #[case("Right")]
             |input| -> (done, left, right) {
@@ -925,9 +905,6 @@ fn a_leading_end_path_keeps_the_shared_continuation_off_its_skewer() {
 
             #[action("Produce the converged result")]
             |selected| -> result { selected };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -948,7 +925,7 @@ fn a_wide_continuation_moves_a_trailing_terminal_past_its_footprint() {
             #[choice("Choose a path")]
             #[case("Left")]
             #[case("Right")]
-            #[case("Reach End directly")]
+            #[case("Finish in one step")]
             |input| -> (left, right, done) {
                 match input { 0 => (), 1 => (), _ => () }
             };
@@ -978,9 +955,6 @@ fn a_wide_continuation_moves_a_trailing_terminal_past_its_footprint() {
 
             #[action("Build wide right")]
             |wide_right| -> result { 6 };
-
-            #[end]
-            |result| {};
         }
     "#;
 
@@ -990,15 +964,15 @@ fn a_wide_continuation_moves_a_trailing_terminal_past_its_footprint() {
         .map(|id| node(&scene, id).x)
         .max()
         .expect("the continuation is drawn");
-    let early_terminal = scene
+    let early_branch = scene
         .edges
         .iter()
         .find(|edge| edge.from == Block(3) && edge.to == Block(8))
-        .expect("the early terminal reaches End");
+        .expect("the early branch reaches end");
 
     assert_eq!(node(&scene, Block(3)).x, skewer_x(3));
     assert!(node(&scene, Block(3)).x > continuation_right);
-    assert_eq!(early_terminal.points[0].x, skewer_x(3));
+    assert_eq!(early_branch.points[0].x, skewer_x(3));
 }
 
 #[test]
@@ -1013,9 +987,6 @@ fn question_keeps_the_first_output_vertical_and_the_second_to_the_right() {
 
             #[action("Produce the rejected result")]
             |rejected| -> result { 0 };
-
-            #[end]
-            |result| {};
         }
     };
     let graph = kaalang_model::build(&function).expect("the flow is valid");
@@ -1058,8 +1029,8 @@ fn a_label_below_a_right_exit_clears_the_node_it_left() {
                 #[action("Work out the answer.")]
                 |other| -> a_long_result_wire_name_that_needs_room {};
 
-                #[end]
-                |a_long_result_wire_name_that_needs_room, extra| {};
+                #[action("Pair the answer with the extra value.")]
+                |a_long_result_wire_name_that_needs_room, extra| -> result { drop(extra) };
             }
         "#,
         "probe",
@@ -1085,37 +1056,26 @@ fn a_label_below_a_right_exit_clears_the_node_it_left() {
     );
 }
 
-/// End's capture label stacks above End inside the gap the collector row
-/// occupies. The collector carries the other branches into End, so the
+/// The end node's capture label stacks above it inside the gap the junction row
+/// occupies. The junction carries the other branches into end, so the
 /// label's halo must not be painted over it.
 #[test]
-fn the_collector_row_clears_the_end_capture_label() {
+fn the_junction_row_clears_the_end_capture_label() {
     let scene = scene(
         r#"
             #[kaalang]
-            fn halo(condition: bool) {
-                #[action("Build the shared values.")]
-                |condition| -> (
-                    gate,
-                    first_shared_wire_name,
-                    second_shared_wire_name,
-                    third_shared_wire_name
-                ) { (condition, 1, 2, 3) };
-
+            fn halo(condition: bool) -> u8 {
                 #[question("Which depth does this take?")]
-                |gate| -> (short, long) { gate };
+                |condition| -> (short, long) { condition };
 
                 #[action("Build the short result.")]
-                |short| -> result {};
+                |short| -> result { 1 };
 
                 #[action("Prepare the long result.")]
-                |long| -> prepared {};
+                |long| -> prepared { 2 };
 
                 #[action("Build the long result.")]
-                |prepared| -> result {};
-
-                #[end]
-                |result, first_shared_wire_name, second_shared_wire_name, third_shared_wire_name| {};
+                |prepared| -> result { prepared };
             }
         "#,
         "halo",
@@ -1125,18 +1085,12 @@ fn the_collector_row_clears_the_end_capture_label() {
         .nodes
         .iter()
         .find(|node| node.kind == NodeKind::End)
-        .expect("End is drawn");
+        .expect("end is drawn");
     let capture = scene
         .labels
         .iter()
-        .find(|label| {
-            label
-                .lines
-                .concat()
-                .starts_with("result, first_shared_wire_name")
-        })
-        .expect("End captures every wire that reaches it");
-    assert!(capture.lines.len() > 2, "the capture label must wrap");
+        .find(|label| label.lines.concat() == "result")
+        .expect("end captures the result wire");
     // `at.y` is the first baseline, so the ink starts half a line above it.
     let label_top = capture.at.y - EDGE_LABEL_FONT / 2 - EDGE_LABEL_HALO;
 
@@ -1148,16 +1102,16 @@ fn the_collector_row_clears_the_end_capture_label() {
             let row = segment[0].y;
             assert!(
                 row < label_top,
-                "a collector row at y={row} is under the capture label at y={label_top}"
+                "a junction row at y={row} is under the capture label at y={label_top}"
             );
         }
     }
 }
 
-/// A terminal leaving a question's right vertex first joins the skewer
+/// An arrival leaving a question's right vertex first joins the skewer
 /// assigned to its branch, then descends without passing through later nodes.
 #[test]
-fn a_terminal_off_a_right_vertex_joins_its_assigned_skewer() {
+fn an_arrival_off_a_right_vertex_joins_its_assigned_skewer() {
     use NodeId::Block;
 
     let scene = scene(
@@ -1165,34 +1119,31 @@ fn a_terminal_off_a_right_vertex_joins_its_assigned_skewer() {
             #[kaalang]
             fn rex(condition: bool) {
                 #[question("Is the short answer enough?")]
-                |condition| -> (more, done) { condition };
+                |condition| -> (more, result) { condition };
 
                 #[action("Work out the answer.")]
-                |more| -> done {};
-
-                #[end]
-                |done| {};
+                |more| -> result {};
             }
         "#,
         "rex",
     );
 
-    let terminal = scene
+    let arrival = scene
         .edges
         .iter()
         .find(|edge| edge.from == Block(0) && edge.to == Block(2))
-        .expect("the right output reaches End");
-    assert_eq!(terminal.points[0].y, terminal.points[1].y);
-    assert_eq!(terminal.points[1].x, skewer_x(1));
+        .expect("the right output reaches end");
+    assert_eq!(arrival.points[0].y, arrival.points[1].y);
+    assert_eq!(arrival.points[1].x, skewer_x(1));
 
-    for segment in terminal.points.windows(2) {
+    for segment in arrival.points.windows(2) {
         for node in &scene.nodes {
-            if node.id != terminal.from && node.id != terminal.to {
+            if node.id != arrival.from && node.id != arrival.to {
                 assert!(
                     !enters_node(segment, node),
-                    "the terminal crosses {:?}: {:?}",
+                    "the arrival crosses {:?}: {:?}",
                     node.id,
-                    terminal.points
+                    arrival.points
                 );
             }
         }
@@ -1202,7 +1153,7 @@ fn a_terminal_off_a_right_vertex_joins_its_assigned_skewer() {
 /// `segments_cross` compares a vertical run against a horizontal one, so
 /// collinear overlap is out of scope. Two overlaps are deliberate: the
 /// connections from a Select share the distributor row, and the connections
-/// into End share the collector row and its descent.
+/// into end share the junction row and its descent.
 #[test]
 fn connections_are_orthogonal_and_free_of_perpendicular_crossings() {
     let source = r#"
@@ -1232,9 +1183,6 @@ fn route(request: u8) -> u8 {
 
 #[action("Reject the application.")]
 |rejected, request| -> result { request };
-
-#[end]
-|result| {};
 }
 "#;
 
@@ -1331,9 +1279,6 @@ fn crossing(request: u8) -> u8 {
 
     #[action("Use the selected result.")]
     |selected| -> result { selected };
-
-    #[end]
-    |result| {};
 }
 "#;
 
@@ -1360,7 +1305,7 @@ fn nested(request: u8) -> u8 {
     #[choice("Choose an outer path.")]
     #[case("Take the nested path.")]
     #[case("Take the direct path.")]
-    #[case("Reach End without joining.")]
+    #[case("Finish without joining.")]
     |request| -> (nested, direct, done) {
         match request {
             0 => (),
@@ -1415,9 +1360,6 @@ fn nested(request: u8) -> u8 {
 
     #[action("Produce the terminal result.")]
     |done| -> result { 8u8 };
-
-    #[end]
-    |result| {};
 }
 "#;
 
@@ -1426,20 +1368,20 @@ fn nested(request: u8) -> u8 {
     // reserves 1 through 4 and the trailing terminal starts at 5.
     assert_eq!(node(&scene, Block(11)).x, skewer_x(1));
     assert_eq!(node(&scene, Block(12)).x, skewer_x(5));
-    let terminal = scene
+    let arrival = scene
         .edges
         .iter()
         .find(|edge| edge.from == Block(12) && edge.to == Block(13))
-        .expect("the trailing terminal reaches End");
+        .expect("the trailing terminal reaches end");
 
-    for segment in terminal.points.windows(2) {
+    for segment in arrival.points.windows(2) {
         for node in &scene.nodes {
-            if node.id != terminal.from && node.id != terminal.to {
+            if node.id != arrival.from && node.id != arrival.to {
                 assert!(
                     !enters_node(segment, node),
-                    "the terminal crosses {:?}: {:?}",
+                    "the arrival crosses {:?}: {:?}",
                     node.id,
-                    terminal.points
+                    arrival.points
                 );
             }
         }

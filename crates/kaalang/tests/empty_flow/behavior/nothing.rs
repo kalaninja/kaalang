@@ -2,11 +2,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn nothing() {
-    #[end]
-    || {};
+    #[action("Finish without doing anything.")]
+    || -> result {};
 }
 
 #[test]
-fn zero_input_end_returns_unit_without_a_wire() {
+fn a_flow_without_wires_still_produces_its_result() {
     nothing();
 }

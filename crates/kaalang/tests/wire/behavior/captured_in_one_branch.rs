@@ -5,17 +5,11 @@ fn captured_in_one_branch(condition: bool, extra: u32) -> u32 {
     #[question("Use the extra value?")]
     |condition| -> (yes, no) { condition };
 
-    #[action("Prepare a token that only one branch needs.")]
-    || -> token { 5 };
+    #[action("Add a fixed amount to the extra value.")]
+    |yes, extra| -> result { extra + 5 };
 
-    #[action("Combine the extra value with the token.")]
-    |yes, extra, token| -> result { extra + token };
-
-    #[action("Ignore both.")]
+    #[action("Ignore the extra value.")]
     |no| -> result { 0 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

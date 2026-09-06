@@ -8,10 +8,7 @@ use kaalang::kaalang;
 #[inline]
 pub fn doubled(value: i32) -> i32 {
     #[action("Double the value.")]
-    |value| -> doubled { value * 2 };
-
-    #[end]
-    |doubled| {};
+    |value| -> result { value * 2 };
 }
 
 fn main() {

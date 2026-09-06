@@ -4,9 +4,6 @@ use kaalang::kaalang;
 fn raw_output_name(value: u8) -> u8 {
     #[action("Preserve the value.")]
     |value| -> r#result { value };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -16,9 +16,6 @@ fn staged_convergence(condition: bool) -> (u32, &'static str) {
 
     #[action("Use the preserved label later.")]
     |doubled, label| -> result { (doubled, label) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

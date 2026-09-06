@@ -120,7 +120,7 @@ pub(crate) fn layout(graph: &SemanticModel, signature: &str) -> Scene {
         graph,
         scene: Scene::default(),
         indexes: HashMap::new(),
-        terminals: Vec::new(),
+        arrivals: Vec::new(),
         vertical_gap: vertical_gap(graph),
     };
     if dependency::is_graph(&graph.execution_plan) {
@@ -147,8 +147,8 @@ pub(crate) fn layout(graph: &SemanticModel, signature: &str) -> Scene {
     );
 
     debug_assert!(
-        builder.terminals.is_empty(),
-        "End is placed outside every path, so its arrivals are all drawn by now"
+        builder.arrivals.is_empty(),
+        "end is placed outside every path, so its arrivals are all drawn by now"
     );
 
     let case_count = graph
@@ -171,7 +171,8 @@ struct Builder<'a> {
     graph: &'a SemanticModel,
     scene: Scene,
     indexes: HashMap<NodeId, usize>,
-    terminals: Vec<Incoming>,
+    /// The `result` hand-overs waiting for the end node, in branch order.
+    arrivals: Vec<Incoming>,
     vertical_gap: i32,
 }
 
@@ -201,14 +202,10 @@ impl Builder<'_> {
                 branches,
                 joins,
             } => self.place_choice(*index, branches, single_join(joins), skewer, top, incoming),
-            ExecutionPlan::EndArrival { inputs } => {
-                // Start reaches End only across a wire End captures: a boundary
-                // that hands nothing over is drawn unconnected, whatever it
-                // declares.
-                let unwired_boundary = inputs.is_empty() && incoming.origin.node == NodeId::Start;
-                if !unwired_boundary {
-                    self.terminals.push(incoming);
-                }
+            ExecutionPlan::EndArrival { .. } => {
+                // Every branch hands the `result` wire over here. Alternative
+                // producers meet at the junction end.rs draws above the node.
+                self.arrivals.push(incoming);
                 Placed {
                     bottom: self.anchor(incoming.origin).y,
                     arrivals: Vec::new(),
@@ -256,7 +253,7 @@ impl Builder<'_> {
         Placed { bottom, arrivals }
     }
 
-    fn add_authored_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
+    fn add_block_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
         let block = &self.graph.flow.blocks[index];
         self.add_node(
             NodeId::Block(index),

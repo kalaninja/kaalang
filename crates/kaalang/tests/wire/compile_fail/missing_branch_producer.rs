@@ -13,9 +13,6 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Use both values.")]
     |selected, continuation| -> result { selected };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

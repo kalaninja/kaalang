@@ -6,25 +6,19 @@ fn a_branch_captures_a_merged_value(amount: u8, verbose: bool) -> u8 {
     |amount| -> (positive, negative) { amount > 0 };
 
     #[action("Take the positive amount.")]
-    |positive| -> counted { 1u8 };
+    |positive| -> (counted, seen) { (11u8, ()) };
 
     #[action("Take the negative amount.")]
-    |negative| -> counted { 0u8 };
-
-    #[action("Total the counted amount.")]
-    |counted| -> total { counted + 10 };
+    |negative| -> (counted, seen) { (10u8, ()) };
 
     #[question("Should the run report anything?")]
     |verbose| -> (report, quiet) { verbose };
 
-    #[action("Report the total.")]
-    |report, total| -> result { total };
+    #[action("Report the counted amount.")]
+    |report, counted| -> result { counted };
 
     #[action("Report nothing.")]
-    |quiet| -> result { 0u8 };
-
-    #[end]
-    |result| {};
+    |quiet, seen| -> result { 0u8 };
 }
 
 #[test]

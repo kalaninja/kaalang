@@ -13,9 +13,6 @@ fn run_choice_skeleton(value: i32) -> &'static str {
 
     #[action("Produce the nonnegative result.")]
     |nonnegative| -> result { todo!() };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

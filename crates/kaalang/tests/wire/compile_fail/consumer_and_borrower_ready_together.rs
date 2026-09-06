@@ -8,8 +8,8 @@ fn invalid(input: u32) -> (u32, u32) {
     #[action("Consume the input while the borrower is ready.")]
     |input| -> second { input };
 
-    #[end]
-    |first, second| {};
+    #[action("Pair the two values.")]
+    |first, second| -> result { (first, second) };
 }
 
 fn main() {}

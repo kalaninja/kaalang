@@ -11,10 +11,10 @@ fn invalid(x: u32) -> (u32, u32) {
     |&x| -> other { *x };
 
     #[action("Consume x once triggered.")]
-    |trigger, x| -> result { trigger + x };
+    |trigger, x| -> combined { trigger + x };
 
-    #[end]
-    |result, other| {};
+    #[action("Pair the two values.")]
+    |combined, other| -> result { (combined, other) };
 }
 
 fn main() {}

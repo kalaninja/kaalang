@@ -125,7 +125,7 @@ struct Builder<'a> {
     merges: &'a [WireMerge],
     order: Vec<usize>,
     /// Producer occurrences that one Rust binding unifies: the alternative
-    /// values a join carries. End's captures form one more class.
+    /// values a join carries. The end block's capture forms one more class.
     classes: Vec<BTreeSet<ProducerId>>,
 }
 
@@ -207,6 +207,7 @@ impl Builder<'_> {
             .collect::<Vec<_>>();
         // Independent computation runs before a question or choice, so a
         // terminal branch never returns while participating work is pending.
+        // The language already guarantees this; the schedule keeps it visible.
         let action = candidates
             .iter()
             .find(|&&block| self.flow.blocks[block].kind == BlockKind::Action);
@@ -348,13 +349,13 @@ impl Builder<'_> {
         }
         let emitted = BTreeSet::new();
         if waiting.is_empty() {
-            let inputs = self.flow.blocks[self.end]
-                .inputs
-                .iter()
-                .map(|input| input.ident.clone())
-                .collect();
+            let [result] = self.flow.blocks[self.end].inputs.as_slice() else {
+                unreachable!("the end block captures exactly one wire")
+            };
             return Ok(Lowered {
-                plan: ExecutionPlan::EndArrival { inputs },
+                plan: ExecutionPlan::EndArrival {
+                    result: result.ident.clone(),
+                },
                 yielding: Vec::new(),
                 emitted,
             });

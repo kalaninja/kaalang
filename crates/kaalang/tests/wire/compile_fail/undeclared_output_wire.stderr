@@ -1,7 +1,7 @@
 error[E0425]: cannot find value `copied` in this scope
   --> tests/wire/compile_fail/undeclared_output_wire.rs:12:45
    |
-12 |     |incremented| -> output { incremented + copied };
+12 |     |incremented| -> result { incremented + copied };
    |                                             ^^^^^^
    |
 help: the binding `copied` is available in a different scope in the same function

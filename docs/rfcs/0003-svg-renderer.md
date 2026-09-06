@@ -41,10 +41,10 @@ several disjoint groups, intervening terminal branches remain between their
 footprints. The core model's adjacency rule ensures that a branch outside a
 convergence group cannot separate two of its members.
 
-To form the collector defined by RFC 0002, each terminal path reaches its
-assigned column, descends to the collector, and follows it into the end node. A
-terminal path already in the end node's column descends straight through the
-collector.
+To draw the implicit merge of alternative `result` producers, each of them
+reaches its assigned column, descends to the merge row, and follows it into the
+end node. A producer already in the end node's column descends straight through
+that row.
 
 ## 3. SVG output
 

@@ -7,9 +7,6 @@ fn invalid(value: i32) -> i32 {
 
     #[action("Produce the result.")]
     |doubled| -> result { doubled };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

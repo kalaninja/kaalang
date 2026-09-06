@@ -17,7 +17,7 @@ impl Builder<'_> {
         top: i32,
         incoming: Incoming,
     ) -> Placed {
-        let node = self.add_authored_node(index, skewer, top);
+        let node = self.add_block_node(index, skewer, top);
         self.connect_to_node(incoming, node);
         self.place(
             next,

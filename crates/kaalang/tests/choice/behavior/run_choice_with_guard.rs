@@ -17,9 +17,6 @@ fn run_choice_with_guard(value: i32) -> i32 {
 
     #[action("Produce the other result.")]
     |other| -> result { 0 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

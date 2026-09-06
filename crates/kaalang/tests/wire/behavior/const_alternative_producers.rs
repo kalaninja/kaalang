@@ -10,9 +10,6 @@ const fn const_alternative_producers(condition: bool) -> u8 {
 
     #[action("Build the no value and an unused marker.")]
     |no| -> (result, _marker) { (2u8, 4u8) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

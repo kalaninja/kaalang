@@ -2,14 +2,14 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn independent_borrowers(input: u32) -> (u32, u32) {
-    #[action("Produce the first result.")]
+    #[action("Produce the first value.")]
     |&input| -> first { *input };
 
-    #[action("Produce the second result.")]
+    #[action("Produce the second value.")]
     |&input| -> second { *input + 1 };
 
-    #[end]
-    |first, second| {};
+    #[action("Pair the two values.")]
+    |first, second| -> result { (first, second) };
 }
 
 #[test]

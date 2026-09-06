@@ -23,7 +23,7 @@ impl Builder<'_> {
         top: i32,
         incoming: Incoming,
     ) -> Placed {
-        let select = self.add_authored_node(index, skewer, top);
+        let select = self.add_block_node(index, skewer, top);
         self.connect_to_node(incoming, select);
         let block = &self.graph.flow.blocks[index];
         let (offsets, _) = branch_layout(index, branches, convergence);

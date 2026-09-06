@@ -13,9 +13,6 @@ fn invalid(value: u32) -> u32 {
 
     #[action("Produce the result.")]
     |doubled| -> result { doubled };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

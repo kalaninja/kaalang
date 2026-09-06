@@ -3,10 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn run_action(input: u32) -> u32 {
     #[action("Increment the input.")]
-    |input| -> output { input + 1 };
-
-    #[end]
-    |output| {};
+    |input| -> result { input + 1 };
 }
 
 #[test]

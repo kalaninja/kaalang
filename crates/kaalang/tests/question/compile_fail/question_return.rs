@@ -15,9 +15,6 @@ fn invalid(value: u32) -> u32 {
 
     #[action("Produce the small result.")]
     |small, value| -> result { value + 1 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

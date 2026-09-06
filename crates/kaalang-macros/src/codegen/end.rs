@@ -1,30 +1,20 @@
-//! Emits the values one branch hands to the authored end block.
+//! Emits the `result` value one branch hands to the implicit end block.
 
 use kaalang_model::Block;
 use proc_macro2::{Ident, TokenStream as TokenStream2};
-use quote::{quote, quote_spanned};
+use quote::quote_spanned;
 
 use super::Bindings;
 
 pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
-    if block.inputs.is_empty() {
-        return TokenStream2::new();
-    }
-    let values = block.inputs.iter().map(|input| {
-        let wire = bindings.wire(&input.ident);
-        quote_spanned!(input.ident.span()=> #wire.take().expect("a validated execution provides every end input"))
-    }).collect::<Vec<_>>();
-    if let [value] = values.as_slice() {
-        quote!(#value)
-    } else {
-        quote!((#(#values,)*))
-    }
+    let [result] = block.inputs.as_slice() else {
+        unreachable!("the end block captures exactly one wire")
+    };
+    let wire = bindings.wire(&result.ident);
+    quote_spanned!(result.ident.span()=> #wire.take().expect("a validated execution provides the `result` wire"))
 }
 
-pub(super) fn arrival(bindings: &Bindings, inputs: &[Ident]) -> TokenStream2 {
-    if inputs.is_empty() {
-        TokenStream2::new()
-    } else {
-        super::join::value(bindings, inputs)
-    }
+pub(super) fn arrival(bindings: &Bindings, result: &Ident) -> TokenStream2 {
+    let wire = bindings.wire_at(result);
+    quote_spanned!(result.span()=> #wire)
 }

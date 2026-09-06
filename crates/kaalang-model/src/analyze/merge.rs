@@ -212,39 +212,52 @@ fn cycle_block(successors: &[BTreeSet<usize>], merge: usize) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
+    use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
-    use crate::{ProducerId, build};
+    use crate::{ProducerId, WireMerge, build};
+
+    fn merge(function: &ItemFn, wire: &str) -> WireMerge {
+        let model = build(function).expect("the flow is valid");
+        model
+            .merges
+            .into_iter()
+            .find(|merge| merge.wire == wire)
+            .unwrap_or_else(|| panic!("the `{wire}` wire merges"))
+    }
+
+    fn error(function: &ItemFn) -> String {
+        match build(function) {
+            Err(error) => error.to_string(),
+            Ok(_) => panic!("the flow is rejected"),
+        }
+    }
+
+    fn output(block: usize, output: usize) -> ProducerId {
+        ProducerId::BlockOutput { block, output }
+    }
 
     #[test]
     fn a_branch_output_and_an_action_output_merge_before_every_capture() {
         let function: ItemFn = parse_quote! {
-            fn invalid(condition: bool) {
+            fn valid(condition: bool) -> u8 {
                 #[question("Which value?")]
                 |condition| -> (shared, no) { condition };
-                #[action("Produce the other value and its local note.")]
-                |no| -> (shared, note) { ((), ()) };
+                #[action("Produce the other value.")]
+                |no| -> shared { () };
                 #[action("Use the merged value.")]
-                |shared| -> ready { () };
-                #[action("Use the local note after the merged value.")]
-                |ready, note| -> () {};
-                #[end]
-                || {};
+                |shared| -> result { 0u8 };
             }
         };
-        match build(&function) {
-            Err(error) => assert_eq!(
-                error.to_string(),
-                "this kaalang block must finish before the `shared` wire merge, but it waits for a value from after that merge"
-            ),
-            Ok(_) => panic!("the local note cannot cross the merge"),
-        }
+        let merge = merge(&function, "shared");
+        assert_eq!(merge.producers, [output(0, 0), output(1, 0)]);
+        assert_eq!(merge.before, [1]);
     }
 
     #[test]
     fn a_merged_branch_output_can_be_borrowed_then_consumed() {
         let function: ItemFn = parse_quote! {
-            fn valid(condition: bool) {
+            fn valid(condition: bool) -> u8 {
                 #[question("Which value?")]
                 |condition| -> (shared, no) { condition };
                 #[action("Produce the other value.")]
@@ -252,53 +265,34 @@ mod tests {
                 #[action("Borrow the merged value.")]
                 |&shared| -> ready { () };
                 #[action("Consume it after the borrow.")]
-                |shared, ready| -> () {};
-                #[end]
-                || {};
+                |shared, ready| -> result { 0u8 };
             }
         };
-        let model = build(&function).expect("a merge provides ordinary data");
-        assert_eq!(model.merges.len(), 1);
-        assert_eq!(model.merges[0].before, [1]);
+        assert_eq!(merge(&function, "shared").before, [1]);
     }
 
     #[test]
     fn unused_alternative_outputs_still_record_a_merge() {
         let function: ItemFn = parse_quote! {
-            fn valid(condition: bool) {
+            fn valid(condition: bool) -> u8 {
                 #[question("Which marker?")]
                 |condition| -> (yes, no) { condition };
                 #[action("First marker.")]
-                |yes| -> _marker { () };
+                |yes| -> (_marker, result) { ((), 1u8) };
                 #[action("Second marker.")]
-                |no| -> _marker { () };
-                #[end]
-                || {};
+                |no| -> (_marker, result) { ((), 2u8) };
             }
         };
-        let model = build(&function).expect("the marker needs no consumer");
-        assert_eq!(model.merges.len(), 1);
-        assert_eq!(model.merges[0].wire, "_marker");
-        assert_eq!(
-            model.merges[0].producers,
-            [
-                ProducerId::BlockOutput {
-                    block: 1,
-                    output: 0
-                },
-                ProducerId::BlockOutput {
-                    block: 2,
-                    output: 0
-                },
-            ]
-        );
-        assert_eq!(model.merges[0].before, [1, 2]);
+        let merge = merge(&function, "_marker");
+        assert_eq!(merge.wire, Ident::new("_marker", merge.wire.span()));
+        assert_eq!(merge.producers, [output(1, 0), output(2, 0)]);
+        assert_eq!(merge.before, [1, 2]);
     }
 
     #[test]
     fn unused_outputs_cannot_merge_nonadjacent_cases() {
         let function: ItemFn = parse_quote! {
-            fn invalid(value: u8) {
+            fn invalid(value: u8) -> u8 {
                 #[choice("Which branch?")]
                 #[case("First")]
                 #[case("Between")]
@@ -306,25 +300,21 @@ mod tests {
                 |value| -> (a, b, c) {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First marker.")] |a| -> _marker { () };
-                #[action("Middle effect.")] |b| -> () {};
-                #[action("Last marker.")] |c| -> _marker { () };
-                #[end] || {};
+                #[action("First marker.")] |a| -> (_marker, result) { ((), 1u8) };
+                #[action("Middle result.")] |b| -> result { 2u8 };
+                #[action("Last marker.")] |c| -> (_marker, result) { ((), 3u8) };
             }
         };
-        match build(&function) {
-            Err(error) => assert_eq!(
-                error.to_string(),
-                "branches in a kaalang choice convergence group must be adjacent"
-            ),
-            Ok(_) => panic!("the unused merge cannot cross the middle case"),
-        }
+        assert_eq!(
+            error(&function),
+            "branches in a kaalang choice convergence group must be adjacent"
+        );
     }
 
     #[test]
     fn unused_outputs_cannot_form_crossing_merge_groups() {
         let function: ItemFn = parse_quote! {
-            fn invalid(value: u8) {
+            fn invalid(value: u8) -> u8 {
                 #[choice("Which branch?")]
                 #[case("Left")]
                 #[case("Both")]
@@ -332,18 +322,14 @@ mod tests {
                 |value| -> (a, b, c) {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("Left marker.")] |a| -> _left { () };
-                #[action("Both markers.")] |b| -> (_left, _right) { ((), ()) };
-                #[action("Right marker.")] |c| -> _right { () };
-                #[end] || {};
+                #[action("Left marker.")] |a| -> (_left, result) { ((), 1u8) };
+                #[action("Both markers.")] |b| -> (_left, _right, result) { ((), (), 2u8) };
+                #[action("Right marker.")] |c| -> (_right, result) { ((), 3u8) };
             }
         };
-        match build(&function) {
-            Err(error) => assert_eq!(
-                error.to_string(),
-                "kaalang choice convergence groups must be disjoint or nested"
-            ),
-            Ok(_) => panic!("the unused merge groups cannot cross"),
-        }
+        assert_eq!(
+            error(&function),
+            "kaalang choice convergence groups must be disjoint or nested"
+        );
     }
 }

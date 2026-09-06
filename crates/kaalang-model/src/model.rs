@@ -6,8 +6,8 @@ use std::cmp::Ordering;
 use proc_macro2::{Ident, Span};
 use syn::{Expr, FnArg, ReturnType};
 
-/// A validated kaalang flow: its authored blocks, every possible execution,
-/// its convergence groups and wire merges, and the verified plan that lowers it.
+/// A validated kaalang flow: its blocks, every possible execution, its
+/// convergence groups and wire merges, and the verified plan that lowers it.
 pub struct SemanticModel {
     /// The authored flow function name.
     pub name: Ident,
@@ -15,7 +15,7 @@ pub struct SemanticModel {
     pub parameters: Vec<FnArg>,
     /// The authored flow return type.
     pub return_type: ReturnType,
-    /// The resolved blocks and wires.
+    /// The resolved blocks and wires, ending with the implicit end block.
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
@@ -28,7 +28,11 @@ pub struct SemanticModel {
     pub merges: Vec<WireMerge>,
 }
 
-/// The semantic role of one authored block.
+/// The logical wire whose value is the flow output. The implicit end block
+/// captures it; no computational block may.
+pub(crate) const RESULT_WIRE: &str = "result";
+
+/// The semantic role of one block. Every kind but `End` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {
     Action,
@@ -37,10 +41,10 @@ pub enum BlockKind {
     End,
 }
 
-/// One authored kaalang block.
+/// One kaalang block: an authored statement, or the implicit end block.
 pub struct Block {
     pub kind: BlockKind,
-    /// The exact authored description, absent for structural blocks.
+    /// The exact authored description, absent for the implicit end block.
     pub description: Option<String>,
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
@@ -198,7 +202,7 @@ pub enum ExecutionPlan {
         /// ordered by first case.
         joins: Vec<Join>,
     },
-    /// The one authored end block and the execution that feeds it.
+    /// The implicit end block and the execution that feeds it.
     End {
         index: usize,
         body: Box<ExecutionPlan>,
@@ -206,8 +210,8 @@ pub enum ExecutionPlan {
         /// unifies; lowering adds a type gate for each.
         gates: Vec<Ident>,
     },
-    /// One branch yields its ordered values to end.
-    EndArrival { inputs: Vec<Ident> },
+    /// One branch hands the `result` wire to end.
+    EndArrival { result: Ident },
     /// The branch yields alternative producer values to a join.
     Yield { wires: Vec<Ident>, join: JoinTarget },
 }

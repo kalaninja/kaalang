@@ -13,9 +13,6 @@ fn several_wires(condition: bool) -> (u32, &'static str) {
 
     #[action("Use both selected values.")]
     |label, number| -> result { (number, label) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

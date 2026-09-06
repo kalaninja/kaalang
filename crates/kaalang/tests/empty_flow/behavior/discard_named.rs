@@ -2,8 +2,8 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn discard_named(_value: u8) {
-    #[end]
-    || {};
+    #[action("Finish without the named flow input.")]
+    || -> result {};
 }
 
 #[test]

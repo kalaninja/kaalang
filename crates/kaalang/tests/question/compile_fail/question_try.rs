@@ -10,9 +10,6 @@ fn invalid(value: u32) -> u32 {
 
     #[action("Produce the no result.")]
     |no, value| -> result { value + 1 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

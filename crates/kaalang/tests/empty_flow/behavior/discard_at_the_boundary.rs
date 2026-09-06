@@ -2,8 +2,8 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn discard_at_the_boundary(_: u8) {
-    #[end]
-    || {};
+    #[action("Finish without the discarded flow input.")]
+    || -> result {};
 }
 
 #[test]

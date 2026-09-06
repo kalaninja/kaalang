@@ -5,9 +5,6 @@ const SOURCE: &str = r#"
 fn route(request: u8) -> u8 {
     #[action("Use the request.")]
     |&request| -> result { request };
-
-    #[end]
-    |result| {};
 }
 "#;
 

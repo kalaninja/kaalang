@@ -131,7 +131,7 @@ mod tests {
         let source = include_str!("../../../kaalang/tests/wire/behavior/captured_in_one_branch.rs");
         assert_eq!(
             fixture(source, "captured_in_one_branch"),
-            [vec![], vec![], vec![0], vec![0]]
+            [vec![], vec![0], vec![0]]
         );
     }
 }

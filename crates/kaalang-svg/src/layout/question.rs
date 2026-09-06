@@ -14,7 +14,7 @@ impl Builder<'_> {
         top: i32,
         incoming: Incoming,
     ) -> Placed {
-        let node = self.add_authored_node(index, skewer, top);
+        let node = self.add_block_node(index, skewer, top);
         self.connect_to_node(incoming, node);
         let branch_top = self.bottom_anchor(node).y + self.vertical_gap;
         let (offsets, _) = branch_layout(index, branches, convergence);

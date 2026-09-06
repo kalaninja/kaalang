@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="956" viewBox="0 0 1064 956" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="958" viewBox="0 0 1064 958" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for join_skips_unselected_outputs</title>
-  <desc id="kaalang-description">Nodes: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8; Question: Choose an outer branch.; Action: Prepare the left branch.; Action: Produce the left value.; Question: Select an unused wire.; Action: Produce the right value and an unused alternative.; Action: Use the selected value.; End. Connections: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8 to Question: Choose an outer branch. handing over outer, inner, captured as outer; Question: Choose an outer branch. to Action: Prepare the left branch. via left; Action: Prepare the left branch. to Action: Produce the left value. handing over probe, left_value, captured as left_value; Action: Produce the left value. to Question: Select an unused wire. handing over selected, captured as probe, inner; Question: Choose an outer branch. to Action: Produce the right value and an unused alternative. via right; Question: Select an unused wire. to Action: Use the selected value. captured as selected; Question: Select an unused wire. to Action: Use the selected value. captured as selected; Action: Produce the right value and an unused alternative. to Action: Use the selected value. via selected; Action: Use the selected value. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8; Question: Choose an outer branch.; Action: Prepare the left branch.; Question: Refine the left branch.; Action: Produce the near left value and an unused alternative.; Action: Produce the far left value.; Action: Produce the right value and an unused alternative.; Action: Use the selected value.; End. Connections: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8 to Question: Choose an outer branch. handing over outer, inner, captured as outer; Question: Choose an outer branch. to Action: Prepare the left branch. via left; Action: Prepare the left branch. to Question: Refine the left branch. handing over probe, left_value, captured as probe, inner; Question: Refine the left branch. to Action: Produce the near left value and an unused alternative. via near; Question: Refine the left branch. to Action: Produce the far left value. via far; Question: Choose an outer branch. to Action: Produce the right value and an unused alternative. via right; Action: Produce the near left value and an unused alternative. to Action: Use the selected value. via selected; Action: Produce the far left value. to Action: Use the selected value. via selected; Action: Produce the right value and an unused alternative. to Action: Use the selected value. via selected; Action: Use the selected value. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -17,22 +17,23 @@
     <path class="edge" d="M 172 98 L 172 170"/>
     <path class="edge" d="M 172 242 L 172 314"/>
     <path class="edge" d="M 172 378 L 172 450"/>
-    <path class="edge" d="M 172 514 L 172 586"/>
+    <path class="edge" d="M 172 522 L 172 594"/>
+    <path class="edge" d="M 312 486 L 532 486 L 532 594"/>
     <path class="edge" d="M 312 206 L 892 206 L 892 314"/>
-    <path class="edge" d="M 172 658 L 172 730"/>
-    <path class="edge" d="M 312 622 L 312 694 L 172 694 L 172 730"/>
-    <path class="edge" d="M 892 380 L 892 694 L 172 694 L 172 730"/>
-    <path class="edge" d="M 172 794 L 172 866"/>
+    <path class="edge" d="M 172 660 L 172 732"/>
+    <path class="edge" d="M 532 658 L 532 696 L 172 696 L 172 732"/>
+    <path class="edge" d="M 892 380 L 892 696 L 172 696 L 172 732"/>
+    <path class="edge" d="M 172 796 L 172 868"/>
     <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">outer</tspan></text>
     <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">outer, inner</tspan></text>
     <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
-    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">left_value</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">probe, inner</tspan></text>
     <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">probe, left_value</tspan></text>
-    <text class="edge-label" x="214" y="578" xml:space="preserve"><tspan x="214" dy="0">probe, inner</tspan></text>
-    <text class="edge-label" x="214" y="532" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="553" xml:space="preserve"><tspan x="214" dy="0">near</tspan></text>
+    <text class="edge-label" x="422" y="478" xml:space="preserve"><tspan x="422" dy="0">far</tspan></text>
     <text class="edge-label" x="602" y="198" xml:space="preserve"><tspan x="602" dy="0">right</tspan></text>
-    <text class="edge-label" x="214" y="722" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
-    <text class="edge-label" x="214" y="825" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="edge-label" x="214" y="724" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="edge-label" x="214" y="827" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
@@ -49,27 +50,32 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the left branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 482)">
-      <title xml:space="preserve">Produce the left value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the left value.</tspan></text>
-    </g>
-    <g class="node question" transform="translate(172 622)">
-      <title xml:space="preserve">Select an unused wire.</title>
+    <g class="node question" transform="translate(172 486)">
+      <title xml:space="preserve">Refine the left branch.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Select an unused wire.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Refine the left branch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 627)">
+      <title xml:space="preserve">Produce the near left value and an unused alternative.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the near left value and an </tspan><tspan x="-124" dy="18">unused alternative.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 626)">
+      <title xml:space="preserve">Produce the far left value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the far left value.</tspan></text>
     </g>
     <g class="node action" transform="translate(892 347)">
       <title xml:space="preserve">Produce the right value and an unused alternative.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the right value and an </tspan><tspan x="-124" dy="18">unused alternative.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 762)">
+    <g class="node action" transform="translate(172 764)">
       <title xml:space="preserve">Use the selected value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 895)">
+    <g class="node end" transform="translate(172 897)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>

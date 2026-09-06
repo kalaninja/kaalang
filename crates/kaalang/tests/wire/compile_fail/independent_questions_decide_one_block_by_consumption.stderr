@@ -1,5 +1,5 @@
 error: this kaalang block must not be decided by two independent questions or choices
-  --> tests/wire/compile_fail/independent_questions_decide_one_block_by_consumption.rs:28:5
+  --> tests/wire/compile_fail/independent_questions_decide_one_block_by_consumption.rs:29:5
    |
-28 |     #[action("Use both remaining tokens.")]
+29 |     #[action("Use both remaining tokens.")]
    |     ^

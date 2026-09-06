@@ -9,10 +9,7 @@ fn invalid(input: u32) -> u32 {
     |copied| -> incremented { copied + 1 };
 
     #[action("Read an output wire omitted from the inputs.")]
-    |incremented| -> output { incremented + copied };
-
-    #[end]
-    |output| {};
+    |incremented| -> result { incremented + copied };
 }
 
 fn main() {}

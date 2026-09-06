@@ -88,19 +88,6 @@ fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
     (!names.is_empty()).then(|| wrap_text(&names.join(", "), EDGE_LABEL_WIDTH, EDGE_LABEL_FONT))
 }
 
-/// How far a node's capture label reaches above its top border, halo included,
-/// or nothing when it captures no wire.
-pub(super) fn capture_rise(names: &[String]) -> i32 {
-    let Some(lines) = wrap_wires(names) else {
-        return 0;
-    };
-
-    LABEL_RISE
-        + (lines.len() as i32 - 1) * EDGE_LINE_HEIGHT
-        + EDGE_LABEL_FONT / 2
-        + 2 * EDGE_LABEL_HALO
-}
-
 /// Leaves enough room for the largest pair of hand-over and capture labels.
 pub(super) fn vertical_gap(graph: &SemanticModel) -> i32 {
     // ponytail: one global gap keeps routing simple; reserve per-edge gaps if

@@ -185,13 +185,9 @@ impl Replay<'_> {
                 self.branch(*index, branches, joins)
             }
             ExecutionPlan::End { body, .. } => self.walk(body),
-            ExecutionPlan::EndArrival { inputs } => {
+            ExecutionPlan::EndArrival { result } => {
                 let end = self.flow.blocks.len() - 1;
-                if !inputs.iter().eq(self.flow.blocks[end]
-                    .inputs
-                    .iter()
-                    .map(|input| &input.ident))
-                {
+                if self.flow.blocks[end].inputs[0].ident != *result {
                     return None;
                 }
                 self.capture(end)?;
@@ -236,6 +232,7 @@ impl Replay<'_> {
 
 #[cfg(test)]
 mod tests {
+    use proc_macro2::Span;
     use syn::parse_quote;
 
     use super::*;
@@ -245,11 +242,11 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn effects() {
                 #[action("First")]
-                || -> () {};
+                || -> first {};
                 #[action("Second")]
-                || -> () {};
-                #[end]
-                || {};
+                || -> second {};
+                #[action("Finish")]
+                |first, second| -> result {};
             }
         })
         .expect("the independent effects are valid");
@@ -261,7 +258,9 @@ mod tests {
         ));
         let incomplete = ExecutionPlan::Action {
             index: 0,
-            next: Box::new(ExecutionPlan::EndArrival { inputs: Vec::new() }),
+            next: Box::new(ExecutionPlan::EndArrival {
+                result: Ident::new("absent", Span::call_site()),
+            }),
         };
         assert!(!plan(
             &model.flow,
@@ -283,8 +282,6 @@ mod tests {
                 |no| -> value { 2u8 };
                 #[action("Use the value")]
                 |value| -> result { value };
-                #[end]
-                |result| {};
             }
         })
         .expect("the alternative producers are valid");
@@ -317,13 +314,13 @@ mod tests {
                 #[action("No value")]
                 |no| -> (value, no_work) { (2u8, ()) };
                 #[action("Use the merged value")]
-                |value| -> result { value };
+                |value| -> used { value };
                 #[action("Finish the yes branch")]
-                |yes_work| -> () {};
+                |yes_work| -> done {};
                 #[action("Finish the no branch")]
-                |no_work| -> () {};
-                #[end]
-                |result| {};
+                |no_work| -> done {};
+                #[action("Finish")]
+                |used, done| -> result { used };
             }
         })
         .expect("branch-local work can finish before the merge");
@@ -334,8 +331,8 @@ mod tests {
             &model.merges
         ));
         let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
-        assert_eq!(ordered, [0, 1, 2, 4, 5, 3]);
-        for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5], false), (ordered, true)] {
+        assert_eq!(ordered, [0, 1, 2, 4, 5, 3, 6]);
+        for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5, 6], false), (ordered, true)] {
             let guarded = ExecutionPlan::Guarded {
                 inputs: model.flow.flow_inputs.clone(),
                 blocks,

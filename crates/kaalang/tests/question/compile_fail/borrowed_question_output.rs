@@ -10,9 +10,6 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Produce the no result.")]
     |no| -> result { 2 };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

@@ -8,8 +8,8 @@ use proc_macro2::Ident;
 use syn::{Error, Result};
 
 use crate::model::{
-    BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution, Flow,
-    ProducerId, WireMerge,
+    Block, BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
+    Flow, ProducerId, WireMerge,
 };
 
 mod action;
@@ -33,6 +33,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     let mut walk = Walk {
         flow,
         end,
+        result: flow.blocks[end].inputs[0].ident.clone(),
         visited: HashSet::new(),
         executions: BTreeSet::new(),
         error: None,
@@ -143,6 +144,8 @@ impl State {
 struct Walk<'a> {
     flow: &'a Flow,
     end: usize,
+    /// The wire the implicit end block captures.
+    result: Ident,
     visited: HashSet<State>,
     executions: BTreeSet<Execution>,
     /// The earliest authored violation so far, keyed by block and occurrence.
@@ -182,6 +185,16 @@ impl Walk<'_> {
         }
         if ready.is_empty() {
             self.finish(state);
+            return;
+        }
+        // The end block is ready with `result`, so no computational block may
+        // still be ready: nothing would order its work before the flow finishes.
+        // The capture-conflict check above closes the other escape, a block that
+        // could only run before the producer by taking a wire away from it.
+        if let Some(&block) = ready.first()
+            && state.available.contains_key(&self.result)
+        {
+            self.report((block, 0), end::still_ready(&self.flow.blocks[block]));
             return;
         }
 
@@ -260,7 +273,7 @@ impl Walk<'_> {
         true
     }
 
-    /// Resolves the end block's inputs and records the completed execution.
+    /// Resolves the end block's `result` capture and records the execution.
     fn finish(&mut self, mut state: State) {
         if !end::arrive(self, &mut state) {
             return;
@@ -290,7 +303,9 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
 }
 
 /// Every named producer occurrence has a capture dependency in at least one
-/// execution unless its name begins with `_`.
+/// execution unless its name begins with `_`. Only the action arm is reached in
+/// practice: an uncaptured question or choice output leaves its execution
+/// without `result`, and the walk reports that first.
 fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let captured = |producer: ProducerId| {
         executions.iter().any(|execution| {
@@ -385,6 +400,9 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
     if let Some((capture, message)) = borrowed.chain(shared).min_by_key(|(capture, _)| *capture) {
         return Err(Error::new(input(capture).ident.span(), message));
     }
+    // No fixture reaches the check below: a branch output left without its
+    // consumer also leaves its execution without `result`, which the walk
+    // reports first. Kept until that is proven rather than observed.
     let missing = captures.iter().filter_map(|(&producer, captures)| {
         let ProducerId::BlockOutput { block, output } = producer else {
             unreachable!("only branch outputs have been collected")

@@ -10,9 +10,6 @@ fn invalid(input: u32) -> u32 {
 
     #[action("Produce the no result.")]
     |no, &input| -> result { *input };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

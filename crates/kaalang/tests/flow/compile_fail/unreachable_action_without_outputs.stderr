@@ -1,5 +1,0 @@
-error: this kaalang block is unreachable
-  --> tests/flow/compile_fail/unreachable_action_without_outputs.rs:11:5
-   |
-11 |     #[action("Reuse the already consumed input without producing a wire.")]
-   |     ^

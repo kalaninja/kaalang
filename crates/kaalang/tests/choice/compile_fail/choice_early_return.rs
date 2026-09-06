@@ -20,9 +20,6 @@ fn invalid(value: u32) -> u32 {
 
     #[action("Produce the positive result.")]
     |positive| -> result { positive };
-
-    #[end]
-    |result| {};
 }
 
 fn main() {}

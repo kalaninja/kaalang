@@ -17,9 +17,6 @@ fn run_choice_with_shadowing(value: i32, selected: Option<i32>) -> (i32, i32) {
 
     #[action("Produce the fallback pair.")]
     |absent, value| -> result { (value, 0) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

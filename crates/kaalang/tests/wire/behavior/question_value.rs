@@ -16,9 +16,6 @@ fn question_value(condition: bool, shared_runs: &mut usize) -> u32 {
         *shared_runs += 1;
         selected
     };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -13,9 +13,6 @@ fn capture_uneven(condition: bool) -> u32 {
 
     #[action("Build the long result.")]
     |prepared| -> result { prepared + 1 };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

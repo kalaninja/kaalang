@@ -25,9 +25,6 @@ fn choice_value(case: u8) -> &'static str {
 
     #[action("Use the selected value.")]
     |selected| -> result { selected };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

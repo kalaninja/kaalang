@@ -2,8 +2,8 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid() -> u8 {
-    #[end]
-    || {};
+    #[action("Produce a unit result.")]
+    || -> result {};
 }
 
 fn main() {}

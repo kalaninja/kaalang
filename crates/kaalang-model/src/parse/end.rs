@@ -1,43 +1,41 @@
-//! End captures ordered result wires and has no computational body.
+//! The implicit end block: every flow finishes by producing its `result` wire.
 
-use syn::{Error, Expr, Meta, Result, ReturnType};
+use proc_macro2::{Ident, Span};
+use syn::{Error, ItemFn, ReturnType, parse_quote, spanned::Spanned};
 
-use super::BlockSyntax;
-use crate::model::Block;
+use crate::model::{Block, BlockKind, Input, RESULT_WIRE};
 
-/// End is structural: a bare attribute, bare inputs, no outputs, and no body.
-pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    if !matches!(&syntax.kind_attribute.meta, Meta::Path(_)) {
-        return Err(Error::new_spanned(
-            syntax.kind_attribute,
-            "`#[end]` does not accept arguments",
-        ));
+/// Builds the end block no flow authors. It captures `result`, declares no
+/// outputs, and has no body. Its span is the declared return type, or the flow
+/// name when the flow returns unit, so a flow that never produces `result`
+/// reports against the contract it fails to meet.
+pub(super) fn block(function: &ItemFn) -> Block {
+    let span = match &function.sig.output {
+        ReturnType::Default => function.sig.ident.span(),
+        output @ ReturnType::Type(..) => output.span(),
+    };
+    let result = Ident::new(RESULT_WIRE, span);
+
+    Block {
+        kind: BlockKind::End,
+        description: None,
+        case_descriptions: Vec::new(),
+        outputs: Vec::new(),
+        output_span: span,
+        inputs: vec![Input {
+            borrowed: false,
+            ident: result.clone(),
+            alias: result,
+        }],
+        body: parse_quote!({}),
+        span,
     }
-    syntax.reject_companions()?;
-    if let Some(borrowed) = syntax.inputs.iter().find(|input| input.borrowed) {
-        return Err(Error::new(
-            borrowed.ident.span(),
-            "kaalang End inputs must be bare identifiers",
-        ));
-    }
-    if !matches!(syntax.closure.output, ReturnType::Default) {
-        return Err(Error::new_spanned(
-            &syntax.closure.output,
-            "a kaalang End block must not declare outputs",
-        ));
-    }
-    validate_body(&syntax.body)?;
-
-    Ok(syntax.into_block(None, Vec::new()))
 }
 
-fn validate_body(body: &Expr) -> Result<()> {
-    let Expr::Block(block) = body else {
-        return Err(Error::new_spanned(body, "a kaalang End body must be empty"));
-    };
-    if !block.attrs.is_empty() || block.label.is_some() || !block.block.stmts.is_empty() {
-        return Err(Error::new_spanned(body, "a kaalang End body must be empty"));
-    }
-
-    Ok(())
+/// Reports the authored `#[end]` statement kaalang no longer has.
+pub(super) fn authored(span: Span) -> Error {
+    Error::new(
+        span,
+        "a kaalang flow has no end statement; the block that produces the `result` wire finishes it",
+    )
 }

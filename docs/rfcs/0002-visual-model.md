@@ -16,8 +16,8 @@ Terms defined by RFC 0001 keep their meanings. The visual language adds the
 following terms:
 
 - a **diagram** is the complete visual representation of one flow;
-- a **node** is a drawn unit that represents all or part of an authored block,
-  except for the synthetic start node;
+- a **node** is a drawn unit that represents all or part of one block, authored
+  or implicit, except for the synthetic start node;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
@@ -32,16 +32,12 @@ following terms:
 - a **row** is a horizontal layout position at which nodes and horizontal
   connection segments may be aligned;
 - a **distributor** is the shared horizontal connection segment from which a
-  select node's branches fan out to its case nodes;
-- a **terminal path** ends at an action exit, question branch exit, or case exit
-  from which no further node representing a computational block is reachable in
-  that execution;
-- a **collector** is the shared horizontal connection segment into which
-  terminal paths gather before the end node.
+  select node's branches fan out to its case nodes.
 
 ## 3. Diagram structure
 
-A diagram contains a visual representation of each authored block. No authored
+A diagram contains a visual representation of each block the flow declares,
+authored or implicit, so the implicit end block has a node like any other. No
 block is duplicated to simplify layout.
 
 Connections and their reachability come from the validated semantic model. They
@@ -63,7 +59,7 @@ visual projections, not additional semantic blocks.
 | **question** | a question block | the block description | elongated hexagon |
 | **select** | a choice block | the choice description | skewed parallelogram |
 | **case** | one case of a choice | the case description | a shape with a lower triangular point |
-| **end** | the end block | the synthetic label "end" | capsule |
+| **end** | the end block | the flow's return type | capsule |
 
 ### 4.1 start
 
@@ -98,29 +94,37 @@ its wire name in either case.
 
 ### 4.6 end
 
-The end node comes from the mandatory authored `#[end]` statement. Because the
-end block has no authored description, its node carries the synthetic lowercase
-label "end". A diagram has no separate return node.
+The end node represents the flow's implicit end block. That block has no
+description, so its node carries the flow's return type instead: the authored
+return type preceded by `->`, and `-> ()` when the function declares none. The
+label is therefore the tail of the start node's signature, and the two read as
+one contract split across the diagram. A diagram has no separate return node.
+
+The end node's label names the type and its incoming connection names the
+`result` wire, so neither repeats the other; section 6 governs that capture
+label exactly as it governs any other node's.
 
 ## 5. Flow inputs and outputs
 
 The start node's signature shows the flow input parameters and, when present,
-the return type that constrains the flow outputs. Every named flow input is also
+the return type that constrains the flow output. Every named flow input is also
 shown as an output of the start node, even if no block captures it. A wildcard
-flow input produces no wire label. Flow outputs appear as input labels at the end
-node.
+flow input produces no wire label. The end node's capture label is the `result`
+wire.
 
 ### 5.1 Zero-computation flow
 
-A zero-computation flow contains the start node and the authored end node. Those
-nodes are connected only when the end block captures a wire provided by a flow
-input; otherwise they are drawn unconnected. Named flow inputs remain visible as
-start node outputs. kaalang does not add an implicit unit-valued wire.
+A zero-computation flow contains the start node and the end node, connected by
+the `result` wire a flow input provides. Other named flow inputs remain visible
+as start node outputs. kaalang does not add an implicit unit-valued wire.
 
 ## 6. Wires and labels
 
 Description labels carry the exact authored text. A presentation may wrap or
-escape that text but must not paraphrase, normalize, or synthesize it.
+escape that text but must not paraphrase, normalize, or synthesize it. No node
+carries a caption naming its block kind. The end node's `-> ()` for an absent
+return type is the one synthesized label, and it states the contract rather
+than paraphrasing authored text.
 
 Every named flow input and every block output is labeled once at the exit that
 provides it, including an intentionally unused wire whose name begins with `_`.
@@ -162,7 +166,9 @@ represented case is selected; the start and end nodes always participate. A
 producer node precedes a consumer node when a capture dependency from the
 represented producer occurrence to that consumer participates in the execution,
 and this order is transitive. A select node precedes its selected case node.
-Every participating node other than start and end also precedes the end node.
+RFC 0001 makes every participating block either the producer of `result` or a
+transitive predecessor of it, so every node representing one precedes the end
+node.
 
 A direct connection joins an exit of a participating source node to a
 participating destination node exactly when the source node precedes the
@@ -200,8 +206,8 @@ its distributor exit and therefore exactly one case. A question exit or a case
 exit has at most one connection: its branch output leads to its one consumer
 or, for a repeated output name, to the implicit wire merge. The merged wire may
 have several consumers, reached from that merge rather than from the exit. An
-unmerged exit with a consumer cannot also take a terminal path when that
-consumer lacks another input; RFC 0001 rejects that flow. A node with several
+unmerged exit leads only to its one consumer; a connection to the end node
+leaves the exit that provides `result`. A node with several
 incoming connections waits for every one that participates in the current
 execution. At a convergence, incoming connections from alternative branches
 never participate together.
@@ -214,16 +220,11 @@ work in the producer branches finishes before the junction, as RFC 0001 defines.
 The junction adds neither a computational block nor a producer occurrence.
 Consumers display the captured logical wire name once.
 
-Consequently, each terminal path is structurally connected to the end node. The
-end node waits for all terminal paths that participate in the current execution;
-of several alternative terminal branches, only the selected one participates.
-A terminal structural connection leaves the exit at which its terminal path
-ends. It neither captures nor consumes a wire absent from the end
-block's inputs. One connection may represent both an end capture and structural
-completion; no duplicate is drawn. If the end block captures a wire from
-alternative producers, it displays that logical wire once, but their terminal
-collection still represents completion. The named alternative outputs also
-have their implicit merge before end; the end node itself is not that merge.
+The end node is an ordinary consumer of the `result` wire. Every connection
+entering it leaves an exit that provides `result`; when that wire has
+alternative producers, those connections meet at its implicit merge above the
+node, exactly as for any other merged wire. The end node displays the logical
+wire `result` once, and it is not itself the merge.
 
 ## 8. Spatial notation
 
@@ -240,25 +241,22 @@ Within those constraints, the relative placement of independent parts of the
 diagram is a presentation choice. The column and exact lower row of a consumer
 that joins independent parts are also presentation choices.
 
-Terminal paths meet at one horizontal collector above the end node, mirroring
-the distributor that fans a select node out to its case nodes. The collector
-represents structural completion, not a capture or convergence. Connection
-routes are simple: they do not intersect or overlap themselves. They do not
-cross one another or pass through a non-endpoint node. Meeting at a common
+Alternative producers of `result` meet at their implicit merge above the end
+node, mirroring the distributor that fans a select node out to its case nodes.
+Connection routes are simple: they do not intersect or overlap themselves. They
+do not cross one another or pass through a non-endpoint node. Meeting at a common
 endpoint or deliberately sharing a collinear segment is not a crossing;
 connections may share such a segment only when they have the same source exit
 or the same destination node. Other connections do not overlap. Connections
 are plain lines without arrowheads. A route contains only straight horizontal
 and vertical segments, so every bend is a right angle.
 
-The synthetic label "end" is the only block-kind caption printed inside a node.
-
 The visual-language contract covers the diagram's nodes, roles, labels, the
 connection end or ends to which each connection label belongs, branch order,
-implicit convergence, dependency reachability, structural completion,
-connections, crossing-free orthogonal routing, top-to-bottom row order, and
-branch column order. Exact dimensions, colors, typography, spacing, and routing
-offsets are presentation choices.
+implicit convergence, dependency reachability, connections, crossing-free
+orthogonal routing, top-to-bottom row order, and branch column order. Exact
+dimensions, colors, typography, spacing, and routing offsets are presentation
+choices.
 
 A validated flow whose required connections cannot be drawn under these rules
 has no conforming diagram.

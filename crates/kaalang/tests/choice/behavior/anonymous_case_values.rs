@@ -34,9 +34,6 @@ fn anonymous_case_values(value: i32) -> i32 {
         };
         result
     };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

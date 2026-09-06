@@ -47,9 +47,6 @@ fn nested_branch_passes_a_question_join(
         outer_runs.set(outer_runs.get() + 1);
         u32::from(ready) + 100
     };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

@@ -20,9 +20,6 @@ async fn send_future_with_alternative_producers(condition: bool) -> u8 {
 
     #[action("Build the no value and a local marker.")]
     |no| -> (result, _marker) { (2u8, Rc::new(4u8)) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

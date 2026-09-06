@@ -1,5 +1,5 @@
-error: this kaalang execution cannot provide every flow output
-  --> tests/wire/compile_fail/consumed_common_wire.rs:18:6
-   |
-18 |     |result| {};
-   |      ^^^^^^
+error: this kaalang execution does not produce the `result` wire
+ --> tests/wire/compile_fail/consumed_common_wire.rs:4:45
+  |
+4 | fn invalid(condition: bool, common: String) -> String {
+  |                                             ^

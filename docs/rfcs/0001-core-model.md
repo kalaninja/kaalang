@@ -17,8 +17,8 @@ to another implementation or wondering whether the two have diverged.
 
 A **flow** is a kaalang computation composed of blocks. Named wires make values
 available to blocks, while questions and choices divide execution into
-alternative branches. Every completed execution reaches the flow's explicit end
-block.
+alternative branches. Every completed execution produces the flow's `result`
+wire, which the implicit end block captures.
 
 In the Rust representation, a flow is written as an ordinary function marked
 with `#[kaalang]`. The attribute validates this representation and lowers it to
@@ -32,10 +32,11 @@ or visualization:
 
 - **flow inputs** are values supplied when a flow begins; named flow inputs
   provide wires;
-- **flow outputs** are the ordered values captured by the end block when a flow
-  finishes;
-- a **block** is one declared unit of a flow; its inputs name the wires it
-  captures, and its outputs name the wires it produces;
+- the **flow output** is the value of the `result` wire, which the implicit end
+  block captures when a flow finishes;
+- a **block** is one unit of a flow; its inputs name the wires it captures, and
+  its outputs name the wires it produces. Every block but the end block is
+  authored;
 - an **input** names an available wire captured by a block; a bare input
   consumes the wire, while a `&` input borrows it;
 - an **output** declares a wire produced by a block;
@@ -102,11 +103,15 @@ A computational block has this common shape:
 
 `#[action]`, `#[question]`, and `#[choice]` each carry one nonempty Rust string
 literal. The string is the block description. A choice also carries two or more
-ordered `#[case("description")]` attributes. The end block uses the bare
-`#[end]` attribute because its behavior is fully structural.
+ordered `#[case("description")]` attributes. The end block is implicit and
+therefore carries no attribute at all.
 
 Source comments remain ordinary Rust comments. Block and case descriptions come
 from their attributes.
+
+Every authored block declares at least one output. A block that produced none
+could never be ordered before the flow finishes, so section 7 would reject it;
+the grammar rejects it first.
 
 `#[kaalang]` consumes the closure-shaped syntax and lowers it to ordinary Rust
 bindings and expressions.
@@ -121,14 +126,14 @@ opaque to this validation.
 
 | Block kind | Meaning | Inputs | Outputs |
 | --- | --- | --- | --- |
-| **action** | performs a computation or effect | zero or more | zero or more |
+| **action** | performs a computation or effect | zero or more | one or more |
 | **question** | evaluates a logical expression and selects one of two branches | one or more | exactly two unit-valued control wires, one per branch |
 | **choice** | selects one of two or more cases and provides a value to the corresponding branch | one or more | one per case, at least two |
-| **end** | the unique block that finishes a flow; its inputs form the flow outputs | zero or more | none |
+| **end** | the implicit block that finishes a flow | the `result` wire | none |
 
 ### 4.1 action
 
-An action evaluates its body and may declare zero or more outputs:
+An action evaluates its body and declares one or more outputs:
 
 ```rust
 #[action("Split the value.")]
@@ -137,25 +142,13 @@ An action evaluates its body and may declare zero or more outputs:
 };
 ```
 
-An action that consumes no wires and performs only an effect may declare neither
-inputs nor outputs:
+With one declared output, the complete body value is bound to that wire. The
+bare `output` and singleton tuple `(output,)` declarations are equivalent. With
+two or more outputs, the body's outer tuple is destructured positionally. Rust
+checks that the body value has the required shape.
 
-```rust
-#[action("Log flow entry.")]
-|| -> () {
-    println!("start")
-};
-```
-
-The `-> ()` declaration means zero outputs and requires the body to evaluate to
-unit. With one declared output, the complete body value is bound to that wire.
-The bare `output` and singleton tuple `(output,)` declarations are equivalent.
-With two or more outputs, the body's outer tuple is destructured positionally.
-Rust checks that the body value has the required shape.
-
-Independent actions may execute in either order. An action can establish an
-order explicitly by producing a named unit-valued wire for a dependent block to
-capture:
+An action that consumes no wires and performs only an effect declares a named
+unit-valued wire, which is also how an action establishes an order explicitly:
 
 ```rust
 #[action("Log flow entry.")]
@@ -164,12 +157,10 @@ capture:
 };
 
 #[action("Continue.")]
-|entered| -> () {
+|entered| -> result {
     continue_work()
 };
 ```
-
-An action never terminates a flow implicitly.
 
 ### 4.2 question
 
@@ -233,29 +224,19 @@ from the authored body.
 
 ### 4.4 end
 
-The end block is the unique structural block at which every completed execution
-finishes:
+Every flow has one implicit end block. It is not authored, and there is no end
+statement. It consumes exactly one wire, `result`, whose value is the flow
+output. Rust checks that value against the function return type, which is `()`
+when the function declares none.
 
-```rust
-#[end]
-|out1, out2, out3| {};
-```
+`result` completes the flow: no computational block captures it. When `result`
+has alternative producers they merge before the end block exactly as any
+repeated output name does (section 6), so a question or choice output may itself
+be named `result`. Whenever execution reaches the end block, exactly one
+producer of `result` must be available.
 
-The end block is the final authored statement. It has no description, outputs,
-or body expressions. Its inputs are bare, consuming identifiers, and its input
-list may be empty.
-
-The end block captures logical wires by name. When a captured wire has
-alternative producers, the available producer is whichever one ran; the
-alternatives do not appear in the `#[end]` syntax. Whenever execution reaches
-the end block, exactly one producer for every captured name must be available.
-
-With zero inputs, the end block captures no flow outputs. With one input, the
-complete wire value is the sole flow output. With two or more inputs, the
-ordered flow outputs form a Rust tuple. Rust checks this value against the
-function return type. Capturing an explicitly produced wire whose Rust type is
-`()` remains distinct from a zero-input end block: the former is a real named
-wire, while the latter captures none.
+A flow returning unit produces a unit-valued `result` like any other wire;
+kaalang has no zero-input end block and no implicit unit wire.
 
 ## 5. Flow inputs and outputs
 
@@ -270,7 +251,7 @@ block or the end block unless its spelling begins with `_`;
 that prefix permits it to have no consumer. This requirement is existential: one
 possible execution establishing the dependency is sufficient, and the wire may
 remain uncaptured in other executions. The function return type is the contract
-for the ordered flow outputs captured by the end block.
+for the `result` wire the end block captures.
 
 ```rust
 use kaalang::kaalang;
@@ -285,9 +266,6 @@ fn decide(request: Request) -> Decision {
 
     #[action("Reject the invalid request.")]
     |invalid, &request| -> result { todo!() };
-
-    #[end]
-    |result| {};
 }
 ```
 
@@ -297,40 +275,43 @@ computational bodies are placeholders. `todo!()` retains its Rust behavior and
 panics if execution reaches it.
 
 The function body contains closure-shaped Rust expression statements. Each
-statement declares one block. Every flow has exactly one end statement, and it
-appears last. Like a Rust tail expression, it may omit its semicolon.
+statement declares one computational block. Like any Rust tail expression, the
+final statement may omit its semicolon.
 
 ### 5.1 Zero-computation flow
 
-A flow may contain no computational blocks, but it still declares its mandatory
-end block:
+A flow contains no computational blocks only when a flow input already provides
+`result`:
+
+```rust
+#[kaalang]
+fn identity<T>(result: T) -> T {}
+```
+
+Any other empty body is invalid, because nothing produces `result`. A flow that
+computes nothing but must still finish declares one action:
 
 ```rust
 #[kaalang]
 fn nothing() {
-    #[end]
-    || {};
+    #[action("Finish without doing anything.")]
+    || -> result {};
 }
 ```
-
-This flow has no flow inputs, flow outputs, or wires. Rust represents the
-function result as `()`, but kaalang does not create an implicit unit-valued
-wire. A completely empty body is invalid because it does not declare an end
-block.
 
 An ignored parameter remains explicit:
 
 ```rust
 #[kaalang]
 fn discard(_value: Value) {
-    #[end]
-    || {};
+    #[action("Finish without the flow input.")]
+    || -> result {};
 }
 
 #[kaalang]
 fn discard_unnamed_input(_: Value) {
-    #[end]
-    || {};
+    #[action("Finish without the flow input.")]
+    || -> result {};
 }
 ```
 
@@ -359,9 +340,14 @@ Raw and ordinary spellings of the same Rust identifier name the same wire, so
 before every consumer of its logical wire; a later producer cannot retroactively
 join a wire that has already appeared as an input.
 
+No computational block captures `result`; the end block consumes it and the
+flow finishes.
+
 Every block-output producer occurrence must have at least one capture dependency
 to a later block or the end block unless its name begins with `_`;
-that prefix permits the occurrence to have no consumer. For action outputs and
+that prefix permits the occurrence to have no consumer. A block all of whose
+outputs may remain uncaptured is still invalid, because nothing would order it
+before the flow finishes (section 7). For action outputs and
 merged wires, this requirement is existential rather than per-execution. A
 question or choice output without alternative producers must be captured by its
 consumer in every execution selecting the output. For such an output, the `_`
@@ -379,9 +365,6 @@ prefix permits no consumer, but does not make an existing consumer optional.
 
 #[action("Use the selected value.")]
 |selected| -> result { use_value(selected) };
-
-#[end]
-|result| {};
 ```
 
 The alternative `selected` outputs merge before the shared consumer. Under
@@ -414,7 +397,7 @@ action capturing the yes outputs of two independent questions is invalid:
 either question can select yes while the other selects no, leaving the selected
 output without its consumer. The flow must express a nested question or converge
 alternative producers before a consumer that needs both results. Silently
-skipping the consumer and taking the selected output straight to end is invalid.
+skipping the consumer is invalid: that branch then produces no `result`.
 Forwarding a branch output through an action does not lift this: the questions
 and choices that decide the action's consumers stay the same (section 7).
 
@@ -466,10 +449,15 @@ that only some branches produce, or a wire that a branch consumed. Independent
 selections meet in one block only through wires that every branch of the
 earlier question or choice provides.
 
-Each computational block executes at most once. The end block is ready when its
-flow outputs are available and no unexecuted computational block is ready. This
-ensures that independent active parts of a flow finish before the end block,
-including when the end block has no inputs.
+Each computational block executes at most once. The end block is ready when
+`result` is available, like any other consumer. A flow in which a computational
+block can be ready at the same time as the end block is invalid: nothing would
+order that block's work before the flow finishes. Together with the
+capture-conflict rule above, this makes every participating block either the
+producer of `result` or a transitive predecessor of it, through capture
+dependencies. Both rules are needed: without the conflict rule a block could
+avoid being ready beside the end block only by taking a wire away from the
+producer's own chain.
 
 Validation computes continuations and convergence groups separately for each
 question and choice. One question or choice may have several convergence groups.
@@ -516,9 +504,9 @@ uncaptured, and a question or choice anywhere in the flow may decide which
 block captures it, exactly as for any other action output.
 
 Every authored computational block either has no inputs or can become ready from
-flow inputs and earlier block outputs. Every branch reaches the same end block.
-Branches may reach the end block after different numbers of computational blocks.
-Neither an action nor an output permitted to remain uncaptured finishes a flow.
+flow inputs and earlier block outputs. Every branch provides `result`, directly
+or through its continuation, and branches may do so after different numbers of
+computational blocks. Only `result` finishes a flow.
 
 ## 8. Grammar
 
@@ -531,7 +519,7 @@ flow_parameter := identifier ":" rust_type | "_" ":" rust_type
 
 action_statement :=
     "#[action(" block_description ")]"
-    "|" input_list? "|" "->" action_output_declaration rust_block ";"
+    "|" input_list? "|" "->" output_declaration rust_block ";"
 
 question_statement :=
     "#[question(" block_description ")]"
@@ -545,33 +533,28 @@ choice_statement :=
         "(" identifier "," identifier ("," identifier)* ")"
         choice_body ";"
 
-end_statement :=
-    "#[end]"
-    "|" end_input_list? "|" "{" "}" ";"?
-
 choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
-action_output_declaration := "()" | output_declaration
 single_output_declaration := identifier | "(" identifier "," ")"
 output_declaration := single_output_declaration | rust_tuple_of_two_or_more_identifiers
 input_list := input ("," input)* ","?
 input := identifier | "&" identifier
-end_input_list := identifier ("," identifier)* ","?
 ```
 
-Every flow has exactly one end statement, and it is the final authored
-statement. The final statement may omit its semicolon. Computational
+There is no end statement: the end block is implicit and `result` names the
+flow output wire. The final statement may omit its semicolon. Computational
 descriptions are nonempty. Questions and choices require a nonempty input list;
-actions and the end block accept an empty one. Choice cases, outputs, and match
-arms have equal counts. Outputs within one declaration are distinct. Repeated
-output names across blocks are valid only when branch analysis proves their
-producers mutually exclusive. Each flow parameter uses `flow_parameter`; a
-method receiver is invalid. Validation rejects `return` expressions and the `?`
-operator in a computational block body's own control-flow scope. It descends
+an action accepts an empty one. Every authored block declares at least one
+output, so `-> ()` is invalid. Choice cases, outputs, and match arms have equal
+counts. Outputs within one declaration are distinct. Repeated output names
+across blocks are valid only when branch analysis proves their producers
+mutually exclusive. Each flow parameter uses `flow_parameter`; a method receiver
+is invalid. Validation rejects `return` expressions and the `?` operator in a
+computational block body's own control-flow scope. It descends
 through ordinary parsed expressions, including choice match scrutinees, guards,
 and arms, but not into nested closures, async blocks, item definitions, or macro
 token streams.
@@ -591,14 +574,13 @@ selected branch. A choice preserves the authored match and passes the selected
 arm value to the corresponding branch. Equally named outputs merge before
 every downstream capture, independently of the consumer's other inputs.
 Lowering preserves the branch-completion order of these implicit merges and
-binds each selected value once. A merge also precedes end when end captures an
-alternatively produced wire; end itself is neither a merge nor a computational
+binds each selected value once. A merge also precedes end when `result` has
+alternative producers; end itself is neither a merge nor a computational
 shared-continuation block.
 
-The end block lowers to an empty Rust body, its one captured wire, or the
-ordered tuple of its captured wires. Rust checks body types, match
-exhaustiveness, ownership, borrows, output patterns, alternative producer types,
-and the flow outputs.
+The end block lowers to the `result` binding as the function's tail expression.
+Rust checks body types, match exhaustiveness, ownership, borrows, output
+patterns, alternative producer types, and the flow output.
 
 kaalang's generated scopes keep omitted wires, consumed wires, match bindings,
 and block locals outside downstream block bodies.

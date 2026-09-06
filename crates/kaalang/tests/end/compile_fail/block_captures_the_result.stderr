@@ -1,0 +1,5 @@
+error: the `result` wire finishes a kaalang flow; no block captures it
+ --> tests/end/compile_fail/block_captures_the_result.rs:9:6
+  |
+9 |     |result| -> doubled { result * 2 };
+  |      ^^^^^^

@@ -4,9 +4,6 @@ use kaalang::kaalang;
 fn raw_ignored_output(value: u8) -> u8 {
     #[action("Preserve the value and ignore the marker.")]
     |value| -> (result, r#_ignored) { (value, ()) };
-
-    #[end]
-    |result| {};
 }
 
 #[test]

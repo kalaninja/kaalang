@@ -1,5 +1,0 @@
-error: this kaalang block must not be decided by two independent questions or choices
-  --> tests/wire/compile_fail/triangle_questions.rs:25:5
-   |
-25 |     #[action("Use the first and second inputs.")]
-   |     ^

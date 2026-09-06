@@ -1,4 +1,4 @@
-//! Serializes the authored End node.
+//! Serializes the implicit end node.
 
 use super::{Node, write_boundary_shape};
 
