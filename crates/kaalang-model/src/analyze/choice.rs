@@ -19,7 +19,7 @@ pub(super) fn uncaptured(output: &Ident) -> Error {
     )
 }
 
-/// A choice's dependency-derived groups are disjoint and adjacent.
+/// Choice groups occupy adjacent cases and may nest, but may not cross.
 pub(super) fn validate_groups(
     outputs: &[Ident],
     groups: &[(Vec<usize>, BTreeSet<usize>)],
@@ -40,10 +40,15 @@ pub(super) fn validate_groups(
             );
         }
         for (other, _) in &groups[position + 1..] {
+            if group.iter().all(|case| other.contains(case))
+                || other.iter().all(|case| group.contains(case))
+            {
+                continue;
+            }
             if let Some(&shared) = group.iter().find(|case| other.contains(case)) {
                 report(
                     shared,
-                    "a kaalang case must not enter two convergence groups",
+                    "kaalang choice convergence groups must be disjoint or nested",
                 );
             }
         }

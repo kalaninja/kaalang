@@ -1,0 +1,5 @@
+error: a kaalang branch output is consumed, never borrowed
+  --> tests/choice/compile_fail/borrowed_choice_output.rs:16:7
+   |
+16 |     |&value| -> result { *value * 2 };
+   |       ^^^^^

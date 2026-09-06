@@ -1,11 +1,11 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn leading_end_path_convergence(value: i8) -> &'static str {
+fn convergence_after_a_terminal_case(value: i8) -> &'static str {
     #[choice("Choose a path.")]
-    #[case("Reach End directly")]
-    #[case("Build the left value")]
-    #[case("Build the right value")]
+    #[case("Reach the end block directly.")]
+    #[case("Build the left value.")]
+    #[case("Build the right value.")]
     |value| -> (done, left, right) {
         match value {
             ..0 => (),
@@ -31,8 +31,8 @@ fn leading_end_path_convergence(value: i8) -> &'static str {
 }
 
 #[test]
-fn two_choice_branches_converge_after_a_leading_end_path() {
-    assert_eq!(leading_end_path_convergence(-1), "done");
-    assert_eq!(leading_end_path_convergence(0), "left");
-    assert_eq!(leading_end_path_convergence(1), "right");
+fn two_choice_branches_converge_after_a_terminal_case() {
+    assert_eq!(convergence_after_a_terminal_case(-1), "done");
+    assert_eq!(convergence_after_a_terminal_case(0), "left");
+    assert_eq!(convergence_after_a_terminal_case(1), "right");
 }

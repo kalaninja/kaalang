@@ -1,0 +1,5 @@
+error: this kaalang block must not be decided by two independent questions or choices
+  --> tests/wire/compile_fail/independent_questions_decide_one_block.rs:19:5
+   |
+19 |     #[action("Do the work.")]
+   |     ^

@@ -11,7 +11,7 @@ use proc_macro2::Ident;
 
 use crate::model::{
     BlockKind, Branch, BranchSelection, Execution, ExecutionPlan, Flow, Join, JoinTarget,
-    ProducerId,
+    ProducerId, WireMerge,
 };
 
 mod choice;
@@ -21,11 +21,13 @@ mod verify;
 /// Builds a lowering plan without imposing additional language restrictions:
 /// the structured branch tree where it can share every body, the guarded
 /// schedule otherwise.
-pub(crate) fn flow(flow: &Flow, executions: &[Execution]) -> ExecutionPlan {
+pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> ExecutionPlan {
     let end = flow.blocks.len() - 1;
     let mut builder = Builder {
         flow,
         end,
+        merges,
+        order: order(flow, executions, merges),
         classes: Vec::new(),
     };
     let all = executions.iter().collect::<Vec<_>>();
@@ -37,25 +39,76 @@ pub(crate) fn flow(flow: &Flow, executions: &[Execution]) -> ExecutionPlan {
             // A structured plan that fails the replay is a builder bug. Debug
             // builds report it; release builds keep the guarded schedule,
             // which stays correct.
-            let verified = verify::plan(flow, &lowered.plan, executions);
+            let verified = verify::plan(flow, &lowered.plan, executions, merges);
             debug_assert!(verified, "a structured plan replays every execution");
             verified
         });
-    let (body, gates) = match structured {
-        Some(lowered) => (lowered.plan, builder.gates(executions)),
-        None => (
-            ExecutionPlan::Guarded {
-                inputs: flow.flow_inputs.clone(),
-                blocks: (0..end).collect(),
-            },
-            Vec::new(),
-        ),
+    let (body, gates) = if let Some(lowered) = structured {
+        (lowered.plan, builder.gates(executions))
+    } else {
+        let body = ExecutionPlan::Guarded {
+            inputs: flow.flow_inputs.clone(),
+            blocks: builder.order,
+        };
+        // The last schedule there is. A wrong order here would silently
+        // reorder effects, so fail the expansion instead of emitting it.
+        assert!(
+            verify::plan(flow, &body, executions, merges),
+            "the lowered plan replays every execution and respects its wire merges"
+        );
+        (body, Vec::new())
     };
     ExecutionPlan::End {
         index: end,
         body: Box::new(body),
         gates,
     }
+}
+
+/// A deterministic order for guarded blocks, including branch-local work that
+/// must finish before a merged wire is captured. The smallest ready block runs
+/// first, over the acyclic graph the analyzer already checked; independent
+/// blocks therefore keep authored order only when nothing reorders them.
+fn order(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Vec<usize> {
+    let end = flow.blocks.len() - 1;
+    let mut before = vec![BTreeSet::new(); end];
+    for dependency in executions
+        .iter()
+        .flat_map(|execution| &execution.dependencies)
+    {
+        if dependency.capture.block < end
+            && let ProducerId::BlockOutput { block, .. } = dependency.producer
+        {
+            before[dependency.capture.block].insert(block);
+        }
+    }
+    for merge in merges {
+        for (block, declaration) in flow.blocks[..end].iter().enumerate() {
+            if declaration
+                .inputs
+                .iter()
+                .any(|input| input.ident == merge.wire)
+            {
+                before[block].extend(&merge.before);
+            }
+        }
+    }
+    let mut ready = before
+        .iter()
+        .enumerate()
+        .filter_map(|(block, predecessors)| predecessors.is_empty().then_some(block))
+        .collect::<BTreeSet<_>>();
+    let mut order = Vec::with_capacity(end);
+    while let Some(block) = ready.pop_first() {
+        order.push(block);
+        for (next, predecessors) in before.iter_mut().enumerate() {
+            if predecessors.remove(&block) && predecessors.is_empty() {
+                ready.insert(next);
+            }
+        }
+    }
+    assert_eq!(order.len(), end, "validated wire merges are acyclic");
+    order
 }
 
 /// The structured branch tree cannot express this part of the flow while
@@ -69,6 +122,8 @@ type Group = (Vec<usize>, BTreeSet<usize>);
 struct Builder<'a> {
     flow: &'a Flow,
     end: usize,
+    merges: &'a [WireMerge],
+    order: Vec<usize>,
     /// Producer occurrences that one Rust binding unifies: the alternative
     /// values a join carries. End's captures form one more class.
     classes: Vec<BTreeSet<ProducerId>>,
@@ -101,12 +156,32 @@ fn producers(execution: &Execution, block: usize) -> impl Iterator<Item = Produc
         .map(|dependency| dependency.producer)
 }
 
-/// A block is ready once every producer it captures in this execution ran.
-fn ready(execution: &Execution, block: usize, done: &BTreeSet<usize>) -> bool {
+/// A block is ready once its producers and the participating branch-local
+/// work before every merged input have run.
+fn ready(
+    flow: &Flow,
+    merges: &[WireMerge],
+    execution: &Execution,
+    block: usize,
+    done: &BTreeSet<usize>,
+) -> bool {
     producers(execution, block).all(|producer| match producer {
         ProducerId::FlowInput(_) => true,
         ProducerId::BlockOutput { block, .. } => done.contains(&block),
-    })
+    }) && merges
+        .iter()
+        .filter(|merge| {
+            flow.blocks[block]
+                .inputs
+                .iter()
+                .any(|input| input.ident == merge.wire)
+        })
+        .all(|merge| {
+            merge
+                .before
+                .iter()
+                .all(|before| !execution.participates(*before) || done.contains(before))
+        })
 }
 
 impl Builder<'_> {
@@ -124,9 +199,10 @@ impl Builder<'_> {
         let candidates = (0..self.end)
             .filter(|block| !done.contains(block) && !forbidden.contains(block))
             .filter(|&block| {
-                executions
-                    .iter()
-                    .all(|execution| execution.participates(block) && ready(execution, block, done))
+                executions.iter().all(|execution| {
+                    execution.participates(block)
+                        && ready(self.flow, self.merges, execution, block, done)
+                })
             })
             .collect::<Vec<_>>();
         // Independent computation runs before a question or choice, so a
@@ -209,7 +285,10 @@ impl Builder<'_> {
                 inputs.insert(name.clone());
             }
         }
-        let blocks = (0..self.end)
+        let blocks = self
+            .order
+            .iter()
+            .copied()
             .filter(|block| {
                 !done.contains(block)
                     && executions

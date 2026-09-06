@@ -1,0 +1,5 @@
+error: a kaalang branch output is captured by at most one block
+  --> tests/wire/compile_fail/branch_output_captured_twice.rs:15:6
+   |
+15 |     |a, d| -> result { 1 };
+   |      ^

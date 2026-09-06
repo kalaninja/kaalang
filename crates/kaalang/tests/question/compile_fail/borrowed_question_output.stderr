@@ -1,0 +1,5 @@
+error: a kaalang branch output is consumed, never borrowed
+ --> tests/question/compile_fail/borrowed_question_output.rs:9:7
+  |
+9 |     |&yes| -> result { 1 };
+  |       ^^^

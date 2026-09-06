@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2192" height="1340" viewBox="0 0 2192 1340" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="832" viewBox="0 0 704 832" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for send_future_with_alternative_producers</title>
-  <desc id="kaalang-description">Nodes: Start: async fn send_future_with_alternative_producers( condition: bool, first: bool, second: bool, third: bool, ) -&gt; u8; Action: Wait before producing any values.; Question: Enable the first independent input.; Question: Enable the second independent input.; Question: Enable the third independent input.; Question: Choose a value.; Action: Use the first and second inputs.; Action: Use the second and third inputs.; Action: Use the first and third inputs.; Action: Build the yes value and a local marker.; Action: Wait again only on the no branch.; Action: Build the no value and a local marker.; End. Connections: Start: async fn send_future_with_alternative_producers( condition: bool, first: bool, second: bool, third: bool, ) -&gt; u8 to Question: Enable the first independent input. handing over condition, first, second, third, captured as first; Start: async fn send_future_with_alternative_producers( condition: bool, first: bool, second: bool, third: bool, ) -&gt; u8 to Question: Enable the second independent input. handing over condition, first, second, third, captured as second; Start: async fn send_future_with_alternative_producers( condition: bool, first: bool, second: bool, third: bool, ) -&gt; u8 to Question: Enable the third independent input. handing over condition, first, second, third, captured as third; Action: Wait before producing any values. to Question: Choose a value. handing over ready, captured as ready, condition; Question: Choose a value. to Action: Build the yes value and a local marker. via yes; Question: Choose a value. to Action: Wait again only on the no branch. via no; Action: Wait again only on the no branch. to Action: Build the no value and a local marker. via waited; Question: Enable the first independent input. to Action: Use the first and second inputs. handing over a; Question: Enable the first independent input. to Action: Use the first and third inputs. handing over a; Question: Enable the second independent input. to Action: Use the first and second inputs. handing over b; Question: Enable the second independent input. to Action: Use the second and third inputs. handing over b; Question: Enable the third independent input. to Action: Use the second and third inputs. handing over c; Question: Enable the third independent input. to Action: Use the first and third inputs. handing over c; Start: async fn send_future_with_alternative_producers( condition: bool, first: bool, second: bool, third: bool, ) -&gt; u8 to Question: Choose a value. handing over condition, first, second, third, captured as ready, condition; Action: Build the no value and a local marker. to End via result; Action: Build the yes value and a local marker. to End via result; Action: Use the first and second inputs. to End captured as result; Action: Use the second and third inputs. to End captured as result; Action: Use the first and third inputs. to End captured as result; Question: Enable the first independent input. to End handing over a, captured as result; Question: Enable the first independent input. to End captured as result; Question: Enable the second independent input. to End handing over b, captured as result; Question: Enable the second independent input. to End captured as result; Question: Enable the third independent input. to End handing over c, captured as result; Question: Enable the third independent input. to End captured as result.</desc>
+  <desc id="kaalang-description">Nodes: Start: async fn send_future_with_alternative_producers(condition: bool) -&gt; u8; Action: Wait before producing any values.; Question: Choose a value.; Action: Wait again only on the yes branch.; Action: Build the yes value and a local marker.; Action: Build the no value and a local marker.; End. Connections: Start: async fn send_future_with_alternative_producers(condition: bool) -&gt; u8 to Action: Wait before producing any values. handing over condition; Action: Wait before producing any values. to Question: Choose a value. handing over ready, captured as ready, condition; Question: Choose a value. to Action: Wait again only on the yes branch. via yes; Action: Wait again only on the yes branch. to Action: Build the yes value and a local marker. via waited; Question: Choose a value. to Action: Build the no value and a local marker. via no; Action: Build the yes value and a local marker. to End via result; Action: Build the no value and a local marker. to End via result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -14,115 +14,52 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="edges">
-    <path class="edge" d="M 172 134 L 172 254 L 532 254 L 532 302"/>
-    <path class="edge" d="M 172 134 L 172 254 L 1252 254 L 1252 302"/>
-    <path class="edge" d="M 172 134 L 172 254 L 1972 254 L 1972 302"/>
-    <path class="edge" d="M 172 366 L 172 542"/>
-    <path class="edge" d="M 172 614 L 172 782"/>
-    <path class="edge" d="M 312 578 L 360 578 L 360 734 L 532 734 L 532 782"/>
-    <path class="edge" d="M 532 846 L 532 1016"/>
-    <path class="edge" d="M 532 374 L 532 494 L 892 494 L 892 542"/>
-    <path class="edge" d="M 532 374 L 532 494 L 1612 494 L 1612 542"/>
-    <path class="edge" d="M 1252 374 L 1252 482 L 892 482 L 892 542"/>
-    <path class="edge" d="M 1252 374 L 1252 542"/>
-    <path class="edge" d="M 1972 374 L 1972 482 L 1252 482 L 1252 542"/>
-    <path class="edge" d="M 1972 374 L 1972 494 L 1612 494 L 1612 542"/>
-    <path class="edge" d="M 172 134 L 172 182 L 360 182 L 360 494 L 172 494 L 172 542"/>
-    <path class="edge" d="M 532 1082 L 532 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 172 848 L 172 1250"/>
-    <path class="edge" d="M 892 606 L 892 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 1252 606 L 1252 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 1612 606 L 1612 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 532 374 L 532 422 L 720 422 L 720 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 672 338 L 720 338 L 720 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 1252 374 L 1252 422 L 1080 422 L 1080 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 1392 338 L 1440 338 L 1440 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 1972 374 L 1972 1202 L 172 1202 L 172 1250"/>
-    <path class="edge" d="M 2112 338 L 2160 338 L 2160 1202 L 172 1202 L 172 1250"/>
-    <text class="edge-label" x="574" y="294" xml:space="preserve"><tspan x="574" dy="0">first</tspan></text>
-    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">condition, first, second, third</tspan></text>
-    <text class="edge-label" x="1294" y="294" xml:space="preserve"><tspan x="1294" dy="0">second</tspan></text>
-    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">condition, first, second, third</tspan></text>
-    <text class="edge-label" x="2014" y="294" xml:space="preserve"><tspan x="2014" dy="0">third</tspan></text>
-    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">condition, first, second, third</tspan></text>
-    <text class="edge-label" x="214" y="534" xml:space="preserve"><tspan x="214" dy="0">ready, condition</tspan></text>
-    <text class="edge-label" x="214" y="384" xml:space="preserve"><tspan x="214" dy="0">ready</tspan></text>
-    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">condition, first, second, third</tspan></text>
-    <text class="edge-label" x="214" y="693" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="edge-label" x="336" y="570" xml:space="preserve"><tspan x="336" dy="0">no</tspan></text>
-    <text class="edge-label" x="574" y="926" xml:space="preserve"><tspan x="574" dy="0">waited</tspan></text>
-    <text class="edge-label" x="574" y="392" xml:space="preserve"><tspan x="574" dy="0">a</tspan></text>
-    <text class="edge-label" x="1294" y="392" xml:space="preserve"><tspan x="1294" dy="0">b</tspan></text>
-    <text class="edge-label" x="574" y="392" xml:space="preserve"><tspan x="574" dy="0">a</tspan></text>
-    <text class="edge-label" x="2014" y="392" xml:space="preserve"><tspan x="2014" dy="0">c</tspan></text>
-    <text class="edge-label" x="1294" y="392" xml:space="preserve"><tspan x="1294" dy="0">b</tspan></text>
-    <text class="edge-label" x="2014" y="392" xml:space="preserve"><tspan x="2014" dy="0">c</tspan></text>
-    <text class="edge-label" x="214" y="1242" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="edge-label" x="574" y="392" xml:space="preserve"><tspan x="574" dy="0">a</tspan></text>
-    <text class="edge-label" x="1294" y="392" xml:space="preserve"><tspan x="1294" dy="0">b</tspan></text>
-    <text class="edge-label" x="2014" y="392" xml:space="preserve"><tspan x="2014" dy="0">c</tspan></text>
+    <path class="edge" d="M 172 116 L 172 188"/>
+    <path class="edge" d="M 172 252 L 172 324"/>
+    <path class="edge" d="M 172 396 L 172 468"/>
+    <path class="edge" d="M 172 532 L 172 604"/>
+    <path class="edge" d="M 312 360 L 532 360 L 532 468"/>
+    <path class="edge" d="M 172 670 L 172 742"/>
+    <path class="edge" d="M 532 534 L 532 710 L 172 710 L 172 742"/>
+    <text class="edge-label" x="214" y="134" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="edge-label" x="214" y="316" xml:space="preserve"><tspan x="214" dy="0">ready, condition</tspan></text>
+    <text class="edge-label" x="214" y="270" xml:space="preserve"><tspan x="214" dy="0">ready</tspan></text>
+    <text class="edge-label" x="214" y="427" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="edge-label" x="214" y="563" xml:space="preserve"><tspan x="214" dy="0">waited</tspan></text>
+    <text class="edge-label" x="422" y="352" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="edge-label" x="214" y="734" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 83)">
-      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="51"/>
-      <text class="label" y="-21" xml:space="preserve"><tspan x="0" dy="0">async fn </tspan><tspan x="0" dy="18">send_future_with_alternative_pro</tspan><tspan x="0" dy="18">ducers( condition: bool, first: bool, </tspan><tspan x="0" dy="18">second: bool, third: bool, ) -&gt; u8</tspan></text>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">async fn </tspan><tspan x="0" dy="18">send_future_with_alternative_pro</tspan><tspan x="0" dy="18">ducers(condition: bool) -&gt; u8</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 334)">
+    <g class="node action" transform="translate(172 220)">
       <title xml:space="preserve">Wait before producing any values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait before producing any values.</tspan></text>
     </g>
-    <g class="node question" transform="translate(532 338)">
-      <title xml:space="preserve">Enable the first independent input.</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Enable the first </tspan><tspan x="0" dy="18">independent input.</tspan></text>
-    </g>
-    <g class="node question" transform="translate(1252 338)">
-      <title xml:space="preserve">Enable the second independent input.</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Enable the second </tspan><tspan x="0" dy="18">independent input.</tspan></text>
-    </g>
-    <g class="node question" transform="translate(1972 338)">
-      <title xml:space="preserve">Enable the third independent input.</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Enable the third </tspan><tspan x="0" dy="18">independent input.</tspan></text>
-    </g>
-    <g class="node question" transform="translate(172 578)">
+    <g class="node question" transform="translate(172 360)">
       <title xml:space="preserve">Choose a value.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 574)">
-      <title xml:space="preserve">Use the first and second inputs.</title>
+    <g class="node action" transform="translate(172 500)">
+      <title xml:space="preserve">Wait again only on the yes branch.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the first and second inputs.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait again only on the yes branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 574)">
-      <title xml:space="preserve">Use the second and third inputs.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the second and third inputs.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(1612 574)">
-      <title xml:space="preserve">Use the first and third inputs.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the first and third inputs.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(172 815)">
+    <g class="node action" transform="translate(172 637)">
       <title xml:space="preserve">Build the yes value and a local marker.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the yes value and a local </tspan><tspan x="-124" dy="18">marker.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 814)">
-      <title xml:space="preserve">Wait again only on the no branch.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait again only on the no branch.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(532 1049)">
+    <g class="node action" transform="translate(532 501)">
       <title xml:space="preserve">Build the no value and a local marker.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the no value and a local </tspan><tspan x="-124" dy="18">marker.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1279)">
+    <g class="node end" transform="translate(172 771)">
       <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
       <text class="label" y="5">End</text>
     </g>

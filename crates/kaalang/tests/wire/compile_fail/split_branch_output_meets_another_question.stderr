@@ -1,0 +1,5 @@
+error: a kaalang branch output must reach its consumer whenever that output is selected
+  --> tests/wire/compile_fail/split_branch_output_meets_another_question.rs:21:21
+   |
+21 |     |a_with_second, b| -> () {};
+   |                     ^

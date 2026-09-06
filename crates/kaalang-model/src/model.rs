@@ -1,5 +1,5 @@
-//! The authored and resolved flow models, the recorded executions, and the
-//! compiler's execution plan.
+//! The authored and resolved flow models, the recorded executions and
+//! convergence groups and wire merges, and the compiler's execution plan.
 
 use std::cmp::Ordering;
 
@@ -7,7 +7,7 @@ use proc_macro2::{Ident, Span};
 use syn::{Expr, FnArg, ReturnType};
 
 /// A validated kaalang flow: its authored blocks, every possible execution,
-/// and the verified plan that lowers it.
+/// its convergence groups and wire merges, and the verified plan that lowers it.
 pub struct SemanticModel {
     /// The authored flow function name.
     pub name: Ident,
@@ -22,6 +22,10 @@ pub struct SemanticModel {
     /// Every possible execution, ordered by branch selections, then blocks,
     /// then capture dependencies.
     pub executions: Vec<Execution>,
+    /// Every continuation group, ordered by branching block, then branch list.
+    pub convergence_groups: Vec<ConvergenceGroup>,
+    /// Implicit junctions of equally named alternative outputs, before captures.
+    pub merges: Vec<WireMerge>,
 }
 
 /// The semantic role of one authored block.
@@ -127,6 +131,39 @@ impl PartialOrd for Execution {
     }
 }
 
+/// A dependency-derived shared continuation of one question or choice.
+/// Its entries are computational blocks after implicit `WireMerge` junctions.
+/// This projection does not prescribe the scopes or joins used by lowering.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConvergenceGroup {
+    pub branching_block: usize,
+    /// Question-output or choice-case positions, in authored order.
+    pub branches: Vec<usize>,
+    /// The shared continuation: the computational blocks whose branch set is
+    /// exactly `branches`, in authored order. The end block never belongs.
+    pub continuation: Vec<usize>,
+    /// The first consumers of the shared continuation, not merge points.
+    /// These are the blocks that no other continuation block precedes in
+    /// any execution, including executions in which the branching block does
+    /// not run. In authored order and never empty: nothing in the continuation
+    /// precedes its first block.
+    pub entries: Vec<usize>,
+}
+
+/// One implicit convergence point for a logical wire. Repeated output names
+/// always join here before any consumer captures the wire. This junction is
+/// neither an authored block nor a new producer occurrence.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WireMerge {
+    pub wire: Ident,
+    pub producers: Vec<ProducerId>,
+    /// Every block whose execution the producer-selecting question or choice
+    /// decides, the producers included. Each must finish before the merge in
+    /// any execution where it participates, so no branch-local value outlives
+    /// its own branch.
+    pub before: Vec<usize>,
+}
+
 /// A verified lowering plan: one permitted serial order of the flow. Every
 /// kaalang invariant already holds, so consumers do not need to walk the
 /// authored flow a second time. Its joins are lowering structure and say
@@ -141,7 +178,8 @@ pub enum ExecutionPlan {
         /// leaves available, with one producer, in every execution entering
         /// this suffix.
         inputs: Vec<Ident>,
-        /// The remaining computational blocks, in authored order.
+        /// The remaining computational blocks, ordered by dependencies and
+        /// implicit wire merges, with authored order breaking ties.
         blocks: Vec<usize>,
     },
     Action {
@@ -191,8 +229,8 @@ pub struct Branch {
 }
 
 /// Logical wire bindings and the continuation shared by the branches that
-/// yield into one join. A join is lowering structure; plan 3's semantic
-/// convergence groups are derived from the executions instead.
+/// yield into one join. A join is lowering structure; the semantic
+/// `ConvergenceGroup` records are derived from the executions instead.
 pub struct Join {
     /// The output positions with at least one yield into this join, in
     /// authored order. Another yield of the same position may pass this join

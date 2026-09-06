@@ -42,7 +42,8 @@ or visualization:
 - a **producer** is one occurrence of a named flow input or block output that
   provides a wire;
 - **alternative producers** provide the same logical wire from mutually
-  exclusive branches; at most one is available in any execution;
+  exclusive branches; their repeated output name always declares one implicit
+  merge before every capture of that name;
 - a **consumer** is a block whose input captures a wire;
 - a **capture** associates a block input with a logical wire; whenever the
   consumer executes, the capture resolves to one available producer occurrence;
@@ -56,11 +57,17 @@ or visualization:
   by block inputs;
 - a **branch** is one alternative continuation selected by a question or
   choice;
+- a **branch output** is a question or choice output; it selects one branch
+  and is consumed by its implicit merge, or, for a name with no alternative
+  producers, by at most one block whenever that output is selected;
 - a **case** describes one branch of a choice and is not itself a block;
 - a **path** is one dependency-ordered chain of blocks through selected
   branches; one execution may contain several paths;
 - **independent blocks** can execute in either order without changing the
   availability of each other's inputs;
+- a question or choice **decides** a block when two executions that select
+  different branches of it, and the same branch of every other question or
+  choice they both run, differ in whether the block executes;
 - the **continuation** of a branch is the set of computational blocks whose
   readiness can transitively depend on that branch's selected output through a
   chain of capture dependencies participating in one possible execution that
@@ -75,9 +82,12 @@ or visualization:
   continuation after a nested question or choice;
 - a **terminal branch** belongs to no convergence group of its own question or
   choice;
-- a **convergence** occurs where the branches of a convergence group enter its
-  shared continuation; a **convergence point** is a block in that continuation
-  that no other block of the continuation precedes.
+- a **merge**, or **convergence point**, is the implicit junction of all
+  alternative producers of one logical wire, before any consumer captures it.
+  It is not an authored block or a new producer occurrence;
+- an **entry block** of a shared continuation has no predecessor in that
+  continuation. Entry blocks consume values after their merges; they are not
+  the convergence points themselves.
 
 ## 3. Block statements
 
@@ -177,8 +187,11 @@ The first output selects the yes/true branch, and the second selects the
 no/false branch. The question body is evaluated exactly once, and its result
 determines which branch is selected.
 
-Question outputs are distinct unit-valued control wires. Downstream blocks list
-the selected control wire and every data wire they need as separate inputs.
+Question outputs are distinct unit-valued control wires. The downstream block
+lists the selected control wire and every data wire it needs as separate inputs.
+A control wire is a branch output: its continuation consumes it whenever the
+output is selected. The continuation is its implicit merge when the name has
+alternative producers, or otherwise at most one capturing block.
 
 ### 4.3 choice
 
@@ -203,7 +216,9 @@ contains its Rust pattern, optional guard, bindings, and value.
 
 The match scrutinee is evaluated exactly once. Unlike question outputs, choice
 outputs are not restricted to `()`, and different outputs may carry different
-Rust types.
+Rust types. Like question outputs, choice outputs are branch outputs: the
+selected case hands its value to its implicit merge, or otherwise at most one
+capturing block. That continuation must execute whenever that case is selected.
 
 An implemented choice body contains exactly one `match` expression. An exact
 whole-body `todo!()` is also a valid placeholder. Match bindings and block
@@ -333,6 +348,12 @@ output name only when they are alternative producers. This is not sequential
 shadowing: one execution cannot produce the same logical wire twice even if the
 earlier value was consumed.
 
+Repeating an output name always declares a merge, including when different
+blocks capture that name or its leading underscore permits it to remain unused.
+Every capture names the merged wire. A consumer's other inputs cannot select a
+particular producer occurrence before the merge. Branch-local values must use
+different names; a local borrow of a repeated name does not bypass its merge.
+
 Raw and ordinary spellings of the same Rust identifier name the same wire, so
 `value` and `r#value` are interchangeable. Every producer occurrence is authored
 before every consumer of its logical wire; a later producer cannot retroactively
@@ -340,9 +361,11 @@ join a wire that has already appeared as an input.
 
 Every block-output producer occurrence must have at least one capture dependency
 to a later block or the end block unless its name begins with `_`;
-that prefix permits the occurrence to have no consumer. This requirement is
-existential rather than per-execution and applies separately to every action,
-question, and choice output occurrence.
+that prefix permits the occurrence to have no consumer. For action outputs and
+merged wires, this requirement is existential rather than per-execution. A
+question or choice output without alternative producers must be captured by its
+consumer in every execution selecting the output. For such an output, the `_`
+prefix permits no consumer, but does not make an existing consumer optional.
 
 ```rust
 #[question("Which value should be used?")]
@@ -361,9 +384,10 @@ question, and choice output occurrence.
 |result| {};
 ```
 
-The shared consumer captures `selected` by name. Under either branch selection
-exactly one producer is available, so the consumer is the implicit convergence
-point and is executed once. kaalang does not have a merge block.
+The alternative `selected` outputs merge before the shared consumer. Under
+either branch selection exactly one producer supplies the merged wire. The
+consumer captures that wire by name and executes once. kaalang has no authored
+merge block.
 
 Each computational block lists every wire available to its body:
 
@@ -376,6 +400,28 @@ Inputs have two forms:
 - `name` consumes the wire in the current execution;
 - `&name` borrows the wire and leaves it available to later blocks in that
   execution.
+
+The outputs of one action appear together: an execution that runs the action
+produces all of them, so they are ordinary data wires that later blocks borrow
+or consume under these rules. The outputs of a question or choice are
+alternatives: an execution produces exactly one of them. A branch output without
+alternative producers is captured by at most one block, which consumes it; a
+borrow or a second consumer would give the selected branch a second continuation.
+
+That consumer must execute whenever the branch output is selected. Its other
+inputs must therefore be available in every such execution. For example, an
+action capturing the yes outputs of two independent questions is invalid:
+either question can select yes while the other selects no, leaving the selected
+output without its consumer. The flow must express a nested question or converge
+alternative producers before a consumer that needs both results. Silently
+skipping the consumer and taking the selected output straight to end is invalid.
+Forwarding a branch output through an action does not lift this: the questions
+and choices that decide the action's consumers stay the same (section 7).
+
+When a branch output shares its name with an alternative producer, its one
+continuation is the implicit merge. Captures after that merge use ordinary
+merged data: they may borrow it or have different consumers in different
+executions. They do not capture the raw branch output.
 
 Every input names a wire provided by a flow input or an earlier block output.
 Questions and choices have at least one input; an action may have none. Duplicate
@@ -408,7 +454,17 @@ input must establish the dependency.
 
 Validation rejects a flow that can make non-independent blocks ready together.
 In particular, two consuming blocks, or a consuming and a borrowing block,
-cannot be ready for the same wire at the same time.
+cannot be ready for the same wire at the same time. This capture-conflict check
+uses ordinary wire availability; implicit merge ordering does not replace an
+explicit dependency between conflicting captures.
+
+The questions and choices that decide a block form a chain: each lies in the
+continuation of a branch of the previous one. Two independent questions or
+choices cannot both decide whether one block executes, whichever way a
+selection withholds an input: a branch output that was not selected, a wire
+that only some branches produce, or a wire that a branch consumed. Independent
+selections meet in one block only through wires that every branch of the
+earlier question or choice provides.
 
 Each computational block executes at most once. The end block is ready when its
 flow outputs are available and no unexecuted computational block is ready. This
@@ -416,25 +472,48 @@ ensures that independent active parts of a flow finish before the end block,
 including when the end block has no inputs.
 
 Validation computes continuations and convergence groups separately for each
-question and choice. One question or choice may have several convergence groups,
-but its distinct groups must be disjoint; overlapping groups are invalid.
+question and choice. One question or choice may have several convergence groups.
+Groups may be disjoint or one may contain the other; partially overlapping
+groups are invalid. This also applies to the producer branches of implicit wire
+merges, even when the merged name is unused. Nesting allows an earlier partial
+merge followed by a merge with the remaining alternatives before end.
 
-The branches of each convergence group converge at that group's convergence
-points. Its shared continuation is represented once in the semantic model, and
-each of its blocks executes at most once.
+The shared continuation of each convergence group is represented once in the
+semantic model, and each of its blocks executes at most once. Its entry blocks
+are consumers after implicit wire merges. One merge can precede several
+consumers, and a consumer can capture several merged wires.
 
 Read in authored choice-case order, the branches of each convergence group are
 adjacent: no case outside the group may separate two of its members. Several
 disjoint groups are valid and may be separated by cases outside either group. A
 question satisfies this rule automatically because it has only two branches.
 
-At each convergence point, a logical wire is available exactly when every
-possible execution reaching that point has exactly one available producer for
-it immediately before the point executes. Those producers may be the same
-occurrence or alternative occurrences. Rust checks that alternative values have
-one type. A wire that is unavailable at a convergence point in some execution
-reaching it stays unavailable after the point; branches that have converged
-diverge again only through a later question or choice.
+An implicit merge closes its producer branches before a consumer may capture
+the merged wire. Consider all executions in which one of that wire's producers
+runs, including executions with no capture. A question or choice selects the
+producer when two executions in this context differ only in its selection
+(using the agreement rule of section 2) and produce different occurrences.
+Every computational block whose participation such a selection decides within
+this context must finish before the merge whenever that block participates.
+This includes work using a value provided by only one producer branch. Such a
+value remains local; it cannot be carried past the merge as a hidden optional
+input. The context excludes executions producing none of the wire's
+occurrences, such as a terminal case outside a partial convergence.
+
+Validation combines capture dependencies with producer-to-merge,
+branch-local-work-to-merge, and merge-to-consumer order. This order must be
+acyclic. A cycle means that completing a producer branch requires a value from
+a merge that already waits for that branch. For example, independently merging
+`left_value` and `right_value` is invalid when left-only work needs the merged
+`right_value` and right-only work needs the merged `left_value`. A one-way use
+of a fully merged value in another question's branch remains valid.
+
+Rust checks that all alternative producers have one type. A branch-local value
+absent on another converging path cannot reappear after convergence: it must
+finish its own branch before the merge, and the merged wire carries nothing of
+it. Past the merge the wire is ordinary data. A later block may leave it
+uncaptured, and a question or choice anywhere in the flow may decide which
+block captures it, exactly as for any other action output.
 
 Every authored computational block either has no inputs or can become ready from
 flow inputs and earlier block outputs. Every branch reaches the same end block.
@@ -509,13 +588,12 @@ An action evaluates its body and binds its value to its outputs when it declares
 any. Independent computational blocks may be lowered in any order allowed by
 their wire dependencies. A question evaluates its body once and executes the
 selected branch. A choice preserves the authored match and passes the selected
-arm value to the corresponding branch. When producer occurrences in sibling
-branches can resolve to the same downstream input, lowering carries the selected
-value along each participating capture dependency. A computational target
-belongs to the shared continuation of the corresponding convergence group and
-binds the logical wire once. The end block instead captures the selected value
-as part of the flow result without becoming a shared continuation or convergence
-point.
+arm value to the corresponding branch. Equally named outputs merge before
+every downstream capture, independently of the consumer's other inputs.
+Lowering preserves the branch-completion order of these implicit merges and
+binds each selected value once. A merge also precedes end when end captures an
+alternatively produced wire; end itself is neither a merge nor a computational
+shared-continuation block.
 
 The end block lowers to an empty Rust body, its one captured wire, or the
 ordered tuple of its captured wires. Rust checks body types, match

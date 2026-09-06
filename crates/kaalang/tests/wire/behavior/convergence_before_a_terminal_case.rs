@@ -1,11 +1,11 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn convergence_at_end(case: u8) -> u32 {
+fn convergence_before_a_terminal_case(case: u8) -> u32 {
     #[choice("Choose whether to continue.")]
-    #[case("First continuing path")]
-    #[case("Second continuing path")]
-    #[case("Direct End path")]
+    #[case("First continuing branch.")]
+    #[case("Second continuing branch.")]
+    #[case("Terminal case.")]
     |case| -> (first, second, done) {
         match case {
             0 => (),
@@ -23,7 +23,7 @@ fn convergence_at_end(case: u8) -> u32 {
     #[action("Produce the direct result.")]
     |done| -> result { 99 };
 
-    #[action("Use a value from a continuing path.")]
+    #[action("Use a value from a continuing branch.")]
     |selected| -> result { selected * 10 };
 
     #[end]
@@ -31,8 +31,8 @@ fn convergence_at_end(case: u8) -> u32 {
 }
 
 #[test]
-fn alternative_paths_converge_at_end() {
-    assert_eq!(convergence_at_end(0), 10);
-    assert_eq!(convergence_at_end(1), 20);
-    assert_eq!(convergence_at_end(2), 99);
+fn branches_converge_before_a_terminal_case() {
+    assert_eq!(convergence_before_a_terminal_case(0), 10);
+    assert_eq!(convergence_before_a_terminal_case(1), 20);
+    assert_eq!(convergence_before_a_terminal_case(2), 99);
 }

@@ -9,10 +9,10 @@ fn invalid(condition: bool) -> u32 {
     |yes| -> (result, stray) { (1, ()) };
 
     #[action("Build the other result and its stray wire.")]
-    |&no| -> (result, stray) { (2, ()) };
+    |no| -> (result, stray, tail) { (2, (), ()) };
 
     #[action("Consume the stray wire only where the no branch is selected.")]
-    |stray, no| -> () { drop((stray, no)) };
+    |stray, tail| -> () { drop((stray, tail)) };
 
     #[end]
     |result| {};

@@ -445,6 +445,25 @@ fn implicit_convergence_places_the_shared_consumer_once() {
             .collect::<Vec<_>>(),
         ["selected", "selected"]
     );
+    let consumer = node(&scene, Block(3));
+    let top = Point {
+        x: consumer.x,
+        y: consumer.y - consumer.height / 2,
+    };
+    assert!(
+        scene
+            .edges
+            .iter()
+            .filter(|edge| edge.to == Block(3))
+            .all(|edge| {
+                let [start, end] = edge
+                    .points
+                    .last_chunk::<2>()
+                    .expect("an arrival has a segment");
+                *end == top && start.x == top.x && start.y < top.y
+            }),
+        "the branches share a nonzero vertical segment above the consumer"
+    );
 }
 
 #[test]
@@ -1466,4 +1485,35 @@ fn segments_cross(first: Point, second: Point, third: Point, fourth: Point) -> b
         && vertical_start.x < horizontal_max
         && vertical_min < horizontal_start.y
         && horizontal_start.y < vertical_max
+}
+
+/// A flow whose alternative producers and conditional await meet again draws
+/// every node once and routes downward without entering an unrelated node.
+#[test]
+fn alternative_producers_draw_unique_nodes_and_clear_routes() {
+    let source = include_str!(
+        "../../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
+    );
+    let scene = scene(source, "send_future_with_alternative_producers");
+
+    let mut drawn = scene.nodes.iter().map(|node| node.id).collect::<Vec<_>>();
+    let count = drawn.len();
+    drawn.sort();
+    drawn.dedup();
+    assert_eq!(drawn.len(), count, "every node is drawn once");
+
+    for edge in &scene.edges {
+        assert!(node(&scene, edge.from).y < node(&scene, edge.to).y);
+        for segment in edge.points.windows(2) {
+            assert!(segment[0].x == segment[1].x || segment[0].y == segment[1].y);
+            assert!(segment[0].y <= segment[1].y);
+            assert!(
+                !scene
+                    .nodes
+                    .iter()
+                    .filter(|node| node.id != edge.from && node.id != edge.to)
+                    .any(|node| enters_node(segment, node))
+            );
+        }
+    }
 }

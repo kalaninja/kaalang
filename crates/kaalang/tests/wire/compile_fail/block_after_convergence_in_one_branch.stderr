@@ -1,4 +1,4 @@
-error: a kaalang block after a convergence point must belong to every branch that converges there
+error: this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge
   --> tests/wire/compile_fail/block_after_convergence_in_one_branch.rs:17:5
    |
 17 |     #[action("Use the note after the shared step.")]

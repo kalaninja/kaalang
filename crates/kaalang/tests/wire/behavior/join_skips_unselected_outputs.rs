@@ -5,11 +5,14 @@ fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     #[question("Choose an outer branch.")]
     |outer| -> (left, right) { outer };
 
+    #[action("Prepare the left branch.")]
+    |left| -> (probe, left_value) { ((), 1u8) };
+
     #[question("Select an unused wire.")]
-    |&left, inner| -> (_unused, _other) { inner };
+    |probe, inner| -> (_unused, _other) { inner };
 
     #[action("Produce the left value.")]
-    |&left| -> selected { 1u8 };
+    |left_value| -> selected { left_value };
 
     #[action("Produce the right value and an unused alternative.")]
     |right| -> (_unused, selected) { ((), 2u8) };

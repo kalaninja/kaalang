@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="822" viewBox="0 0 1064 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_terminal_branch_drops_a_wire</title>
+  <desc id="kaalang-description">Nodes: Start: nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -&gt; u32; Question: Take the nested path?; Action: Prepare the nested values.; Question: Finish early?; Action: Produce the early result without the extra value.; Action: Combine the late result with the extra value.; Action: Produce the direct result.; End. Connections: Start: nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -&gt; u32 to Question: Take the nested path? handing over outer, inner, captured as outer; Question: Take the nested path? to Action: Prepare the nested values. via nested; Action: Prepare the nested values. to Question: Finish early? handing over probe, extra, captured as probe, inner; Question: Finish early? to Action: Produce the early result without the extra value. via early; Question: Finish early? to Action: Combine the late result with the extra value. handing over late, captured as late, extra; Question: Take the nested path? to Action: Produce the direct result. via direct; Action: Produce the early result without the extra value. to End via result; Action: Combine the late result with the extra value. to End via result; Action: Produce the direct result. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 98 L 172 170"/>
+    <path class="edge" d="M 172 242 L 172 314"/>
+    <path class="edge" d="M 172 378 L 172 450"/>
+    <path class="edge" d="M 172 522 L 172 594"/>
+    <path class="edge" d="M 312 486 L 532 486 L 532 594"/>
+    <path class="edge" d="M 312 206 L 892 206 L 892 314"/>
+    <path class="edge" d="M 172 660 L 172 732"/>
+    <path class="edge" d="M 532 660 L 532 700 L 172 700 L 172 732"/>
+    <path class="edge" d="M 892 378 L 892 700 L 172 700 L 172 732"/>
+    <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">outer</tspan></text>
+    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">outer, inner</tspan></text>
+    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
+    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">probe, inner</tspan></text>
+    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">probe, extra</tspan></text>
+    <text class="edge-label" x="214" y="553" xml:space="preserve"><tspan x="214" dy="0">early</tspan></text>
+    <text class="edge-label" x="574" y="586" xml:space="preserve"><tspan x="574" dy="0">late, extra</tspan></text>
+    <text class="edge-label" x="329" y="504" xml:space="preserve"><tspan x="329" dy="0">late</tspan></text>
+    <text class="edge-label" x="602" y="198" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
+    <text class="edge-label" x="214" y="724" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_terminal_branch_drops_a_</tspan><tspan x="0" dy="18">wire(outer: bool, inner: bool) -&gt; u32</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 206)">
+      <title xml:space="preserve">Take the nested path?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the nested path?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 346)">
+      <title xml:space="preserve">Prepare the nested values.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the nested values.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 486)">
+      <title xml:space="preserve">Finish early?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish early?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 627)">
+      <title xml:space="preserve">Produce the early result without the extra value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the early result without </tspan><tspan x="-124" dy="18">the extra value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 627)">
+      <title xml:space="preserve">Combine the late result with the extra value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Combine the late result with the </tspan><tspan x="-124" dy="18">extra value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 346)">
+      <title xml:space="preserve">Produce the direct result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the direct result.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 761)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

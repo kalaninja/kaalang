@@ -196,17 +196,23 @@ node.
 Multiple connections from a start or action exit are ordinary fan-out: each
 represented successor becomes ready according to RFC 0001. A question activates
 exactly one branch-specific exit. A select activates exactly one connection from
-its distributor exit and therefore exactly one case. Multiple connections
-leaving the active question exit or the selected case exit are ordinary fan-out,
-not further branch selection. A node with several incoming connections waits for
-every one that participates in the current execution. At a convergence,
-incoming connections from alternative branches never participate together.
+its distributor exit and therefore exactly one case. A question exit or a case
+exit has at most one connection: its branch output leads to its one consumer
+or, for a repeated output name, to the implicit wire merge. The merged wire may
+have several consumers, reached from that merge rather than from the exit. An
+unmerged exit with a consumer cannot also take a terminal path when that
+consumer lacks another input; RFC 0001 rejects that flow. A node with several
+incoming connections waits for every one that participates in the current
+execution. At a convergence, incoming connections from alternative branches
+never participate together.
 
-kaalang has no merge node or merge icon. The branches of a convergence group
-meet at the nodes representing its convergence points. When a convergence-point
-block captures a logical wire provided by alternative producers, its node
-displays the captured wire name once. No synthetic node is inserted for the
-convergence.
+kaalang has no authored merge block or merge icon. Equally named alternative
+outputs meet at an implicit junction of connections before any consumer of the
+merged wire. The common segment from that junction leads to its consumer or
+consumers; the junction is the convergence point, not a consumer node. Local
+work in the producer branches finishes before the junction, as RFC 0001 defines.
+The junction adds neither a computational block nor a producer occurrence.
+Consumers display the captured logical wire name once.
 
 Consequently, each terminal path is structurally connected to the end node. The
 end node waits for all terminal paths that participate in the current execution;
@@ -216,7 +222,8 @@ ends. It neither captures nor consumes a wire absent from the end
 block's inputs. One connection may represent both an end capture and structural
 completion; no duplicate is drawn. If the end block captures a wire from
 alternative producers, it displays that logical wire once, but their terminal
-collection is not a convergence.
+collection still represents completion. The named alternative outputs also
+have their implicit merge before end; the end node itself is not that merge.
 
 ## 8. Spatial notation
 

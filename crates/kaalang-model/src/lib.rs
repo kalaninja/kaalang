@@ -11,8 +11,8 @@ mod resolve;
 
 pub use choice::{choice_match, is_todo_body};
 pub use model::{
-    Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, Execution,
-    ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, SemanticModel,
+    Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
+    Execution, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, SemanticModel, WireMerge,
 };
 
 /// Builds the validated semantic model for one kaalang flow function.
@@ -20,14 +20,14 @@ pub use model::{
 /// # Errors
 ///
 /// Returns the first violation found while parsing block syntax, resolving
-/// wires to their producers, walking every possible execution, or selecting a
-/// lowering order, spanned at the offending token so callers can report it
+/// wires to their producers, walking every possible execution, or deriving
+/// convergence groups, spanned at the offending token so callers can report it
 /// against the authored source.
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     let flow = parse::flow(function)?;
     resolve::flow(&flow)?;
-    let executions = analyze::flow(&flow)?;
-    let execution_plan = plan::flow(&flow, &executions);
+    let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
+    let execution_plan = plan::flow(&flow, &executions, &merges);
 
     Ok(SemanticModel {
         name: function.sig.ident.clone(),
@@ -36,6 +36,8 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
         flow,
         execution_plan,
         executions,
+        convergence_groups,
+        merges,
     })
 }
 
@@ -44,7 +46,8 @@ mod tests {
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{
-        BlockKind, BranchSelection, CaptureDependency, CaptureId, ExecutionPlan, ProducerId, build,
+        BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, ExecutionPlan,
+        ProducerId, build,
     };
 
     fn count_block(plan: &ExecutionPlan, target: usize) -> usize {
@@ -133,6 +136,34 @@ mod tests {
             .err()
             .expect("the flow is rejected")
             .to_string()
+    }
+
+    fn group(
+        branching_block: usize,
+        branches: &[usize],
+        continuation: &[usize],
+        entries: &[usize],
+    ) -> ConvergenceGroup {
+        ConvergenceGroup {
+            branching_block,
+            branches: branches.to_vec(),
+            continuation: continuation.to_vec(),
+            entries: entries.to_vec(),
+        }
+    }
+
+    /// Builds the flow and checks its exact convergence groups. The end block
+    /// is never a continuation member, so no group may mention the last block.
+    fn assert_groups(function: &ItemFn, expected: &[ConvergenceGroup]) {
+        let model = build(function).expect("the flow is valid");
+        let end = model.flow.blocks.len() - 1;
+        assert_eq!(model.convergence_groups, expected);
+        for recorded in &model.convergence_groups {
+            assert!(
+                !recorded.continuation.contains(&end),
+                "the end block is not a computational continuation member"
+            );
+        }
     }
 
     #[test]
@@ -534,100 +565,89 @@ mod tests {
     }
 
     #[test]
-    fn independent_branch_selections_may_meet_in_every_combination() {
-        let function: ItemFn = parse_quote! {
-            fn pair(left: bool, right: bool) -> u8 {
-                #[question("Left?")]
-                |left| -> (a, b) { left };
-                #[question("Right?")]
-                |right| -> (c, d) { right };
-                #[action("AC")]
-                |a, c| -> result { 0u8 };
-                #[action("AD")]
-                |a, d| -> result { 1u8 };
-                #[action("BC")]
-                |b, c| -> result { 2u8 };
-                #[action("BD")]
-                |b, d| -> result { 3u8 };
-                #[end]
-                |result| {};
-            }
-        };
-
-        let model = build(&function).expect("all independent branch combinations are valid");
-        assert_eq!(model.executions.len(), 4);
-        for block in 0..model.flow.blocks.len() {
-            assert_eq!(
-                count_block(&model.execution_plan, block),
-                1,
-                "block {block}"
-            );
-        }
-        for (execution, action) in model.executions.iter().zip(2..6) {
-            assert_eq!(execution.blocks, [0, 1, action]);
-        }
-    }
-
-    #[test]
-    fn independent_branchers_finish_even_without_a_selected_consumer() {
-        let function: ItemFn = parse_quote! {
-            fn both(left: bool, right: bool) {
-                #[question("Left?")]
-                |left| -> (a, _b) { left };
-                #[question("Right?")]
-                |right| -> (c, _d) { right };
-                #[action("Both")]
-                |a, c| -> () {};
-                #[end]
-                || {};
-            }
-        };
-
-        let model = build(&function).expect("an effect may require both independent selections");
-        assert_eq!(model.executions.len(), 4);
-        assert!(
-            model
-                .executions
-                .iter()
-                .all(|execution| execution.blocks.starts_with(&[0, 1]))
+    fn rejects_a_branch_output_captured_twice() {
+        let source =
+            include_str!("../../kaalang/tests/wire/compile_fail/branch_output_captured_twice.rs");
+        assert_eq!(
+            message(&fixture(source, "invalid")),
+            "a kaalang branch output is captured by at most one block"
         );
-        for block in 0..model.flow.blocks.len() {
+    }
+
+    #[test]
+    fn rejects_a_selected_branch_without_its_consumer() {
+        for name in ["a", "_a"] {
+            let output = syn::Ident::new(name, proc_macro2::Span::call_site());
+            let function: ItemFn = parse_quote! {
+                fn both(left: bool, right: bool) {
+                    #[question("Left?")]
+                    |left| -> (#output, _b) { left };
+                    #[question("Right?")]
+                    |right| -> (c, _d) { right };
+                    #[action("Both")]
+                    |#output, c| -> () {};
+                    #[end]
+                    || {};
+                }
+            };
+
             assert_eq!(
-                count_block(&model.execution_plan, block),
-                1,
-                "block {block}"
+                message(&function),
+                "a kaalang branch output must reach its consumer whenever that output is selected"
             );
         }
     }
 
     #[test]
-    fn several_independent_selections_may_share_a_borrowed_output() {
+    fn rejects_a_borrowed_branch_output() {
+        let question =
+            include_str!("../../kaalang/tests/question/compile_fail/borrowed_question_output.rs");
+        assert_eq!(
+            message(&fixture(question, "invalid")),
+            "a kaalang branch output is consumed, never borrowed"
+        );
+        let choice =
+            include_str!("../../kaalang/tests/choice/compile_fail/borrowed_choice_output.rs");
+        assert_eq!(
+            message(&fixture(choice, "invalid")),
+            "a kaalang branch output is consumed, never borrowed"
+        );
+    }
+
+    #[test]
+    fn rejects_branch_local_access_to_a_name_with_alternative_producers() {
         let function: ItemFn = parse_quote! {
-            fn both(first: bool, second: bool, third: bool) {
-                #[question("First?")]
-                |first| -> (a, _a_no) { first };
-                #[question("Second?")]
-                |second| -> (b, _b_no) { second };
-                #[question("Third?")]
-                |third| -> (c, _c_no) { third };
-                #[action("First and second")]
-                |&a, b| -> () {};
-                #[action("First and third")]
-                |&a, c| -> () {};
+            fn route(outer: bool, inner: bool) {
+                #[question("Choose the source")]
+                |outer| -> (yes, no) { outer };
+
+                #[action("Prepare the nested branch")]
+                |no| -> (trigger, branch_gate) { ((), ()) };
+
+                #[question("Choose the control output")]
+                |trigger, inner| -> (shared, skip) { inner };
+
+                #[action("Produce borrowable data")]
+                |yes| -> (shared, borrow_gate) { ((), ()) };
+
+                #[action("Consume the nested control")]
+                |shared, branch_gate| -> () {};
+
+                #[action("Consume the other nested control")]
+                |skip, branch_gate| -> () {};
+
+                #[action("Borrow only the action output")]
+                |&shared, borrow_gate| -> () {};
+
                 #[end]
                 || {};
             }
         };
 
-        let model = build(&function).expect("independent effects can borrow one selected output");
-        assert_eq!(model.executions.len(), 8);
-        for block in 0..model.flow.blocks.len() {
-            assert_eq!(
-                count_block(&model.execution_plan, block),
-                1,
-                "block {block}"
-            );
-        }
+        assert_eq!(
+            message(&function),
+            "a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name"
+        );
     }
 
     #[test]
@@ -717,9 +737,8 @@ mod tests {
         );
     }
 
-    /// The structured branch tree shares every body wherever a nested Rust
-    /// scope can express the flow; only independent branchers whose selections
-    /// meet in a consumer need the guarded schedule.
+    /// These fixtures lower without guarded schedules. This regression check
+    /// does not establish that every accepted flow has a structured plan.
     #[test]
     fn fixtures_keep_their_lowering_strategy() {
         let structured = [
@@ -729,13 +748,37 @@ mod tests {
             ),
             (
                 include_str!(
+                    "../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"
+                ),
+                "a_branch_captures_a_merged_value",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/captured_in_one_branch.rs"),
+                "captured_in_one_branch",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/converged_selection_meets_a_branch.rs"
+                ),
+                "converged_selection_meets_a_branch",
+            ),
+            (
+                include_str!(
                     "../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
                 ),
                 "effect_before_a_nested_terminal_branch",
             ),
             (
+                include_str!("../../kaalang/tests/wire/behavior/independent_entry_blocks.rs"),
+                "independent_entry_blocks",
+            ),
+            (
                 include_str!("../../kaalang/tests/wire/behavior/independent_questions.rs"),
                 "independent_questions",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
+                "local_work_before_a_wire_merge",
             ),
             (
                 include_str!(
@@ -748,6 +791,22 @@ mod tests {
                     "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
                 ),
                 "nested_branch_passes_a_question_join",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/nested_terminal_branch_drops_a_wire.rs"
+                ),
+                "nested_terminal_branch_drops_a_wire",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs"),
+                "question_after_one_entry_block",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
+                ),
+                "send_future_with_alternative_producers",
             ),
             (
                 include_str!("../../kaalang/tests/choice/behavior/anonymous_case_values.rs"),
@@ -766,31 +825,201 @@ mod tests {
             );
         }
 
-        let guarded_only = [
-            (
-                include_str!("../../kaalang/tests/wire/behavior/cartesian_questions.rs"),
-                "cartesian_questions",
+        // The one flow the branch tree cannot express, and therefore the only
+        // runtime cover for `ExecutionPlan::Guarded`, its codegen, and the
+        // dependency layout. A planner that structured it would orphan all
+        // three with every test still green.
+        let source =
+            include_str!("../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
+        let model = build(&fixture(source, "question_after_a_partial_merge"))
+            .expect("question_after_a_partial_merge");
+        assert!(guarded(&model.execution_plan));
+    }
+
+    #[test]
+    fn rejects_a_block_decided_by_independent_questions() {
+        for source in [
+            include_str!(
+                "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block.rs"
             ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/cartesian_choices.rs"),
-                "cartesian_choices",
+            include_str!(
+                "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block_by_consumption.rs"
             ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/conjunction_effect.rs"),
-                "conjunction_effect",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/triangle_questions.rs"),
-                "triangle_questions",
-            ),
-        ];
-        for (source, flow) in guarded_only {
-            let model = build(&fixture(source, flow)).expect(flow);
-            assert!(
-                guarded(&model.execution_plan),
-                "{flow} needs the guarded schedule"
+            include_str!("../../kaalang/tests/wire/compile_fail/triangle_questions.rs"),
+        ] {
+            assert_eq!(
+                message(&fixture(source, "invalid")),
+                "this kaalang block must not be decided by two independent questions or choices"
             );
         }
+    }
+
+    /// The conditional await and both `Rc` markers lower through the structured
+    /// tree; the markers no common binding unifies still get a type gate.
+    #[test]
+    fn async_fixture_exercises_a_type_gate() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
+        );
+        let model = build(&fixture(source, "send_future_with_alternative_producers"))
+            .expect("the async fixture is valid");
+        assert!(!guarded(&model.execution_plan));
+        let ExecutionPlan::End { gates, .. } = &model.execution_plan else {
+            panic!("the plan is rooted at end")
+        };
+        assert_eq!(gates, &["_marker"]);
+    }
+
+    #[test]
+    fn a_shared_continuation_may_have_two_independent_entries() {
+        let source = include_str!("../../kaalang/tests/wire/behavior/independent_entry_blocks.rs");
+        assert_groups(
+            &fixture(source, "independent_entry_blocks"),
+            &[group(0, &[0, 1], &[3, 4], &[3, 4])],
+        );
+    }
+
+    #[test]
+    fn one_choice_may_own_two_disjoint_groups_around_terminal_cases() {
+        let function: ItemFn = parse_quote! {
+            fn route(value: u8) -> u8 {
+                #[choice("Which group?")]
+                #[case("Terminal before both groups")]
+                #[case("First of the left group")]
+                #[case("Second of the left group")]
+                #[case("Terminal between the groups")]
+                #[case("First of the right group")]
+                #[case("Second of the right group")]
+                |value| -> (first, a, b, between, c, d) {
+                    match value {
+                        0 => (),
+                        1 => (),
+                        2 => (),
+                        3 => (),
+                        4 => (),
+                        _ => (),
+                    }
+                };
+
+                #[action("Produce the first terminal result")]
+                |first| -> result { 0 };
+
+                #[action("Build the left value from a")]
+                |a| -> left { 1 };
+
+                #[action("Build the left value from b")]
+                |b| -> left { 2 };
+
+                #[action("Produce the terminal result between the groups")]
+                |between| -> result { 3 };
+
+                #[action("Build the right value from c")]
+                |c| -> right { 4 };
+
+                #[action("Build the right value from d")]
+                |d| -> right { 5 };
+
+                #[action("Use the left value")]
+                |left| -> result { left };
+
+                #[action("Use the right value")]
+                |right| -> result { right };
+
+                #[end]
+                |result| {};
+            }
+        };
+
+        assert_groups(
+            &function,
+            &[group(0, &[1, 2], &[7], &[7]), group(0, &[4, 5], &[8], &[8])],
+        );
+    }
+
+    #[test]
+    fn nested_questions_each_own_a_group_over_the_shared_consumer() {
+        let source = include_str!("../../kaalang/tests/wire/behavior/nested_convergence.rs");
+        assert_groups(
+            &fixture(source, "nested_convergence"),
+            &[group(0, &[0, 1], &[5], &[5]), group(1, &[0, 1], &[5], &[5])],
+        );
+    }
+
+    #[test]
+    fn branches_of_unequal_depth_have_one_shared_entry() {
+        let source = include_str!("../../kaalang/tests/wire/behavior/uneven_depth.rs");
+        assert_groups(
+            &fixture(source, "uneven_depth"),
+            &[group(0, &[0, 1], &[4], &[4])],
+        );
+    }
+
+    /// The nested question's terminal branch and the independent effect stay
+    /// outside the outer group; the nested question itself forms no group
+    /// because only its late branch reaches the shared consumer.
+    #[test]
+    fn a_continuing_branch_may_hold_a_nested_terminal_branch() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
+        );
+        assert_groups(
+            &fixture(source, "effect_before_a_nested_terminal_branch"),
+            &[group(0, &[0, 1], &[6], &[6])],
+        );
+    }
+
+    /// The independent block feeds both branches and the shared consumer, but
+    /// nothing it does depends on the question, so it stays outside the group.
+    #[test]
+    fn an_independent_block_stays_outside_the_continuation_it_feeds() {
+        let function: ItemFn = parse_quote! {
+            fn route(condition: bool, seed: u32) -> u32 {
+                #[question("Which way?")]
+                |condition| -> (yes, no) { condition };
+
+                #[action("Prepare a shared value")]
+                |seed| -> prepared { seed };
+
+                #[action("Use it on the yes branch")]
+                |yes, &prepared| -> selected { *prepared };
+
+                #[action("Use it on the no branch")]
+                |no, &prepared| -> selected { *prepared + 1 };
+
+                #[action("Combine the selected and prepared values")]
+                |selected, prepared| -> result { selected + prepared };
+
+                #[end]
+                |result| {};
+            }
+        };
+
+        assert_groups(&function, &[group(0, &[0, 1], &[4], &[4])]);
+    }
+
+    #[test]
+    fn a_shared_block_preceded_by_another_is_not_an_entry() {
+        let source = include_str!("../../kaalang/tests/wire/behavior/staged_convergence.rs");
+        assert_groups(
+            &fixture(source, "staged_convergence"),
+            &[group(0, &[0, 1], &[3, 4], &[3])],
+        );
+    }
+
+    #[test]
+    fn alternative_producers_captured_only_by_end_form_no_group() {
+        let source = include_str!("../../kaalang/tests/end/behavior/capture_alternative.rs");
+        assert_groups(&fixture(source, "capture_alternative"), &[]);
+    }
+
+    #[test]
+    fn a_terminal_case_stays_outside_the_group_it_follows() {
+        let source =
+            include_str!("../../kaalang/tests/wire/behavior/convergence_before_a_terminal_case.rs");
+        assert_groups(
+            &fixture(source, "convergence_before_a_terminal_case"),
+            &[group(0, &[0, 1], &[4], &[4])],
+        );
     }
 
     #[test]
@@ -874,74 +1103,79 @@ mod tests {
     }
 
     #[test]
-    fn rejects_a_case_that_enters_two_joins() {
-        let function: ItemFn = parse_quote! {
-            fn invalid(value: u8) {
-                #[choice("Which cases share what?")]
-                #[case("Shares the left step")]
-                #[case("Shares both steps")]
-                #[case("Shares the right step")]
-                |value| -> (a, b, c) {
-                    match value {
-                        0 => (),
-                        1 => (),
-                        _ => (),
-                    }
-                };
-
-                #[action("Left value from a")]
-                |a| -> left { 1 };
-
-                #[action("Both values from b")]
-                |b| -> (left, right) { (2, 3) };
-
-                #[action("Right value from c")]
-                |c| -> right { 4 };
-
-                #[action("Left step")]
-                |left| -> () { drop(left) };
-
-                #[action("Right step")]
-                |right| -> () { drop(right) };
-
-                #[end]
-                || {};
-            }
-        };
-
+    fn rejects_crossing_convergence_groups() {
+        let source =
+            include_str!("../../kaalang/tests/wire/compile_fail/overlapping_convergence_groups.rs");
         assert_eq!(
-            message(&function),
-            "a kaalang case must not enter two convergence groups"
+            message(&fixture(source, "invalid")),
+            "kaalang choice convergence groups must be disjoint or nested"
         );
     }
 
     #[test]
-    fn rejects_a_block_that_would_diverge_again_after_a_join() {
-        let function: ItemFn = parse_quote! {
-            fn invalid(condition: bool) -> u32 {
-                #[question("Which way?")]
-                |condition| -> (yes, no) { condition };
-
-                #[action("Yes value")]
-                |yes| -> selected { 1 };
-
-                #[action("No value and a note")]
-                |no| -> (selected, extra) { (2, 7u8) };
-
-                #[action("Shared step")]
-                |selected| -> s { selected * 10 };
-
-                #[action("Note the no branch after the shared step")]
-                |&s, extra| -> () { drop(extra) };
-
-                #[end]
-                |s| {};
-            }
-        };
-
+    fn rejects_branch_local_work_after_its_merge() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/compile_fail/block_after_convergence_in_one_branch.rs"
+        );
         assert_eq!(
-            message(&function),
-            "a kaalang block after a convergence point must belong to every branch that converges there"
+            message(&fixture(source, "invalid")),
+            "this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge"
+        );
+    }
+
+    /// The question belongs to the wider group, so it is outside the partial
+    /// group's continuation, yet every execution reaching that entry block
+    /// reaches the question too.
+    #[test]
+    fn a_question_of_a_wider_group_may_follow_a_partial_merge() {
+        let source =
+            include_str!("../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
+        assert_groups(
+            &fixture(source, "question_after_a_partial_merge"),
+            &[
+                group(0, &[0, 1], &[3], &[3]),
+                group(0, &[0, 1, 2], &[5, 6, 7], &[5]),
+            ],
+        );
+    }
+
+    /// The question follows only the first of two independent entry blocks,
+    /// yet it belongs to the shared continuation, so the blocks it selects may
+    /// consume the second entry block's output.
+    #[test]
+    fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
+        let source =
+            include_str!("../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs");
+        assert_groups(
+            &fixture(source, "question_after_one_entry_block"),
+            &[group(0, &[0, 1], &[3, 4, 5, 6, 7], &[3, 4])],
+        );
+    }
+
+    /// The reporting block belongs to the shared continuation, yet an outside
+    /// question decides whether it runs. Past its merge the total is ordinary
+    /// data, so a branch may leave it uncaptured.
+    #[test]
+    fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
+        let source =
+            include_str!("../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
+        assert_groups(
+            &fixture(source, "a_branch_captures_a_merged_value"),
+            &[group(0, &[0, 1], &[3, 5], &[3])],
+        );
+    }
+
+    /// The note is produced in two branches, so it merges, and the block that
+    /// captures it is itself branch-local. A nested question does not change
+    /// that: the local value still needs a name of its own.
+    #[test]
+    fn rejects_a_nested_branch_local_capture_of_a_merged_wire() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/compile_fail/nested_local_work_after_a_merge.rs"
+        );
+        assert_eq!(
+            message(&fixture(source, "invalid")),
+            "a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name"
         );
     }
 }

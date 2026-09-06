@@ -1,0 +1,5 @@
+error: a kaalang branch output must reach its consumer whenever that output is selected
+  --> tests/wire/compile_fail/conjunction_of_choices.rs:26:6
+   |
+26 |     |a, b| -> () { assert_eq!(a + b, 11) };
+   |      ^

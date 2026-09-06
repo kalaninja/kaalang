@@ -4,7 +4,7 @@ use kaalang::kaalang;
 fn invalid(value: u8) -> u8 {
     #[choice("Select a branch.")]
     #[case("Take the first branch.")]
-    #[case("Reach End without converging.")]
+    #[case("Reach the end block without converging.")]
     #[case("Take the second branch.")]
     |value| -> (first, done, second) {
         match value {

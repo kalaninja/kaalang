@@ -6,10 +6,15 @@ use proc_macro2::Ident;
 
 use crate::model::{
     BlockKind, Branch, CaptureDependency, CaptureId, Execution, ExecutionPlan, Flow, Join,
-    JoinTarget, ProducerId,
+    JoinTarget, ProducerId, WireMerge,
 };
 
-pub(super) fn plan(flow: &Flow, plan: &ExecutionPlan, executions: &[Execution]) -> bool {
+pub(super) fn plan(
+    flow: &Flow,
+    plan: &ExecutionPlan,
+    executions: &[Execution],
+    merges: &[WireMerge],
+) -> bool {
     let mut bodies = vec![0; flow.blocks.len() - 1];
     count(plan, &mut bodies);
     bodies.iter().all(|&count| count == 1)
@@ -17,6 +22,7 @@ pub(super) fn plan(flow: &Flow, plan: &ExecutionPlan, executions: &[Execution]) 
             let mut replay = Replay {
                 flow,
                 execution,
+                merges,
                 available: flow
                     .flow_inputs
                     .iter()
@@ -90,6 +96,7 @@ enum Exit {
 struct Replay<'a> {
     flow: &'a Flow,
     execution: &'a Execution,
+    merges: &'a [WireMerge],
     available: BTreeMap<Ident, ProducerId>,
     ran: BTreeSet<usize>,
     dependencies: BTreeSet<CaptureDependency>,
@@ -97,6 +104,9 @@ struct Replay<'a> {
 
 impl Replay<'_> {
     fn capture(&mut self, block: usize) -> Option<()> {
+        if !super::ready(self.flow, self.merges, self.execution, block, &self.ran) {
+            return None;
+        }
         for (input, declaration) in self.flow.blocks[block].inputs.iter().enumerate() {
             let producer = *self.available.get(&declaration.ident)?;
             self.dependencies.insert(CaptureDependency {
@@ -243,12 +253,22 @@ mod tests {
             }
         })
         .expect("the independent effects are valid");
-        assert!(plan(&model.flow, &model.execution_plan, &model.executions));
+        assert!(plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
         let incomplete = ExecutionPlan::Action {
             index: 0,
             next: Box::new(ExecutionPlan::EndArrival { inputs: Vec::new() }),
         };
-        assert!(!plan(&model.flow, &incomplete, &model.executions));
+        assert!(!plan(
+            &model.flow,
+            &incomplete,
+            &model.executions,
+            &model.merges
+        ));
     }
 
     #[test]
@@ -278,6 +298,52 @@ mod tests {
             unreachable!()
         };
         join.wires.clear();
-        assert!(!plan(&model.flow, &model.execution_plan, &model.executions));
+        assert!(!plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
+    fn rejects_a_capture_before_branch_local_work_finishes() {
+        let model = crate::build(&parse_quote! {
+            fn choose(flag: bool) -> u8 {
+                #[question("Choose")]
+                |flag| -> (yes, no) { flag };
+                #[action("Yes value")]
+                |yes| -> (value, yes_work) { (1u8, ()) };
+                #[action("No value")]
+                |no| -> (value, no_work) { (2u8, ()) };
+                #[action("Use the merged value")]
+                |value| -> result { value };
+                #[action("Finish the yes branch")]
+                |yes_work| -> () {};
+                #[action("Finish the no branch")]
+                |no_work| -> () {};
+                #[end]
+                |result| {};
+            }
+        })
+        .expect("branch-local work can finish before the merge");
+        assert!(plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+        let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
+        assert_eq!(ordered, [0, 1, 2, 4, 5, 3]);
+        for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5], false), (ordered, true)] {
+            let guarded = ExecutionPlan::Guarded {
+                inputs: model.flow.flow_inputs.clone(),
+                blocks,
+            };
+            assert_eq!(
+                plan(&model.flow, &guarded, &model.executions, &model.merges),
+                valid
+            );
+        }
     }
 }

@@ -38,8 +38,9 @@ pub(super) fn is_graph(plan: &ExecutionPlan) -> bool {
 }
 
 /// Union of the direct dependencies of each execution, including structural
-/// completion. Reducing each execution separately preserves a connection that
-/// is direct in one execution and redundant in another.
+/// completion and ordering before implicit wire merges. Reducing each
+/// execution separately preserves a connection that is direct in one execution
+/// and redundant in another.
 fn connections(graph: &SemanticModel) -> Vec<Connection> {
     let nodes = nodes(graph);
     let indexes = nodes
@@ -57,22 +58,29 @@ fn connections(graph: &SemanticModel) -> Vec<Connection> {
                 .find(|branch| branch.block == block)
                 .map(|branch| branch.branch)
         };
+        let exit = |block: usize| match graph.flow.blocks[block].kind {
+            BlockKind::Action => (NodeId::Block(block), None),
+            BlockKind::Question => (
+                NodeId::Block(block),
+                Some(selected(block).expect("an executed question selects one branch")),
+            ),
+            BlockKind::Choice => {
+                let branch = selected(block).expect("an executed choice selects one case");
+                (
+                    NodeId::Case {
+                        choice: block,
+                        branch,
+                    },
+                    Some(branch),
+                )
+            }
+            BlockKind::End => unreachable!("end has no outgoing connection"),
+        };
         let mut edges = BTreeSet::new();
         for dependency in &execution.dependencies {
             let (from, branch) = match dependency.producer {
                 ProducerId::FlowInput(_) => (NodeId::Start, None),
-                ProducerId::BlockOutput { block, output } => match graph.flow.blocks[block].kind {
-                    BlockKind::Action => (NodeId::Block(block), None),
-                    BlockKind::Question => (NodeId::Block(block), Some(output)),
-                    BlockKind::Choice => (
-                        NodeId::Case {
-                            choice: block,
-                            branch: output,
-                        },
-                        Some(output),
-                    ),
-                    BlockKind::End => unreachable!("end produces no wire"),
-                },
+                ProducerId::BlockOutput { block, .. } => exit(block),
             };
             edges.insert(Connection {
                 from,
@@ -80,36 +88,39 @@ fn connections(graph: &SemanticModel) -> Vec<Connection> {
                 to: NodeId::Block(dependency.capture.block),
             });
         }
-        for &block in &execution.blocks {
-            let from = NodeId::Block(block);
-            match graph.flow.blocks[block].kind {
-                BlockKind::Choice => {
-                    let branch = selected(block).expect("an executed choice selects one case");
-                    let case = NodeId::Case {
-                        choice: block,
+        for merge in &graph.merges {
+            for dependency in execution.dependencies.iter().filter(|dependency| {
+                let capture = dependency.capture;
+                graph.flow.blocks[capture.block].inputs[capture.input].ident == merge.wire
+            }) {
+                for &block in merge
+                    .before
+                    .iter()
+                    .filter(|&&block| execution.participates(block))
+                {
+                    let (from, branch) = exit(block);
+                    edges.insert(Connection {
+                        from,
                         branch,
-                    };
-                    edges.insert(Connection {
-                        from,
-                        branch: None,
-                        to: case,
-                    });
-                    edges.insert(Connection {
-                        from: case,
-                        branch: Some(branch),
-                        to: end,
-                    });
-                }
-                kind => {
-                    edges.insert(Connection {
-                        from,
-                        branch: (kind == BlockKind::Question).then(|| {
-                            selected(block).expect("an executed question selects one branch")
-                        }),
-                        to: end,
+                        to: NodeId::Block(dependency.capture.block),
                     });
                 }
             }
+        }
+        for &block in &execution.blocks {
+            let (from, branch) = exit(block);
+            if matches!(from, NodeId::Case { .. }) {
+                edges.insert(Connection {
+                    from: NodeId::Block(block),
+                    branch: None,
+                    to: from,
+                });
+            }
+            edges.insert(Connection {
+                from,
+                branch,
+                to: end,
+            });
         }
         let mut precedes = vec![vec![false; nodes.len()]; nodes.len()];
         for edge in &edges {
@@ -147,9 +158,22 @@ fn nodes(graph: &SemanticModel) -> Vec<NodeId> {
 
 fn rows(nodes: &[NodeId], connections: &[Connection]) -> HashMap<NodeId, usize> {
     let mut rows = HashMap::new();
-    // The resolver requires every producer before every consumer; each case
-    // follows its own choice in `nodes`, so authored order is topological.
-    for &node in nodes {
+    // A wire merge can order later-authored local work before a consumer.
+    // ponytail: rescanning every connection per pending node is O(nodes² ×
+    // connections); switch to Kahn with in-degree counts, as `plan::order`
+    // does, if diagrams outgrow a few dozen nodes.
+    let mut pending = nodes.iter().copied().collect::<BTreeSet<_>>();
+    while !pending.is_empty() {
+        let node = *pending
+            .iter()
+            .find(|&&node| {
+                connections
+                    .iter()
+                    .filter(|edge| edge.to == node)
+                    .all(|edge| rows.contains_key(&edge.from))
+            })
+            .expect("validated wire merges leave an acyclic visual graph");
+        pending.remove(&node);
         let row = connections
             .iter()
             .filter(|edge| edge.to == node)
@@ -461,15 +485,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn independent_questions_join_without_duplicate_nodes_or_invented_order() {
+    fn independent_actions_join_without_duplicate_nodes_or_invented_order() {
         let source = r#"
             fn both(first: bool, second: bool) {
-                #[question("First flag")]
-                |first| -> (first_yes, _first_no) { first };
-                #[question("Second flag")]
-                |second| -> (second_yes, _second_no) { second };
-                #[action("Use both yes branches")]
-                |first_yes, second_yes| -> () { () };
+                #[action("Read the first flag")]
+                |first| -> first_value { first };
+                #[action("Read the second flag")]
+                |second| -> second_value { second };
+                #[action("Use both values")]
+                |first_value, second_value| -> () { () };
                 #[end]
                 || {};
             }
@@ -505,87 +529,105 @@ mod tests {
         );
     }
 
+    /// The one accepted flow the branch tree cannot express, and therefore the
+    /// only fixture this layout draws. Its routes must stay downward,
+    /// orthogonal and clear of the nodes they pass.
     #[test]
-    fn independent_branch_fixtures_have_unique_nodes_and_clear_routes() {
-        for (source, name) in [
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/cartesian_questions.rs"),
-                "cartesian_questions",
-            ),
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/conjunction_effect.rs"),
-                "conjunction_effect",
-            ),
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/three_independent_questions.rs"),
-                "three_independent_questions",
-            ),
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/cartesian_choices.rs"),
-                "cartesian_choices",
-            ),
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/triangle_questions.rs"),
-                "triangle_questions",
-            ),
-            (
-                include_str!("../../../kaalang/tests/wire/behavior/triangle_choices.rs"),
-                "triangle_choices",
-            ),
-            (
-                include_str!(
-                    "../../../kaalang/tests/wire/behavior/borrowed_case_input_in_a_cartesian_flow.rs"
-                ),
-                "borrowed_case_input_in_a_cartesian_flow",
-            ),
-            (
-                include_str!(
-                    "../../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
-                ),
-                "send_future_with_alternative_producers",
-            ),
-        ] {
-            let file = syn::parse_file(source).expect("the fixture parses");
-            let function = file
-                .items
-                .iter()
-                .find_map(|item| match item {
-                    syn::Item::Fn(function) if function.sig.ident == name => Some(function),
-                    _ => None,
-                })
-                .expect("the fixture declares its flow");
-            let graph =
-                kaalang_model::build(function).unwrap_or_else(|error| panic!("{name}: {error}"));
-            let scene = super::super::layout(&graph, name);
-            assert_eq!(scene.nodes.len(), nodes(&graph).len(), "{name}");
-            for edge in &scene.edges {
-                let from = scene
-                    .nodes
-                    .iter()
-                    .find(|node| node.id == edge.from)
-                    .expect("the origin is drawn");
-                let to = scene
-                    .nodes
-                    .iter()
-                    .find(|node| node.id == edge.to)
-                    .expect("the destination is drawn");
-                assert!(from.y < to.y, "{name}");
-                for segment in edge.points.windows(2) {
-                    assert!(
-                        segment[0].x == segment[1].x || segment[0].y == segment[1].y,
-                        "{name}"
-                    );
-                    assert!(segment[0].y <= segment[1].y, "{name}");
-                    assert!(
-                        !scene
-                            .nodes
-                            .iter()
-                            .filter(|node| node.id != edge.from && node.id != edge.to)
-                            .any(|node| enters(segment[0], segment[1], node)),
-                        "{name}"
-                    );
+    fn the_guarded_fixture_draws_unique_nodes_and_clear_routes() {
+        let source =
+            include_str!("../../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
+        let file = syn::parse_file(source).expect("the fixture parses");
+        let function = file
+            .items
+            .iter()
+            .find_map(|item| match item {
+                syn::Item::Fn(function)
+                    if function.sig.ident == "question_after_a_partial_merge" =>
+                {
+                    Some(function)
                 }
+                _ => None,
+            })
+            .expect("the fixture declares its flow");
+        let graph = kaalang_model::build(function).expect("the fixture is valid");
+        assert!(
+            is_graph(&graph.execution_plan),
+            "the fixture must still reach this layout"
+        );
+        let scene = super::super::layout(&graph, "question_after_a_partial_merge");
+        assert_eq!(scene.nodes.len(), nodes(&graph).len());
+        for edge in &scene.edges {
+            let from = scene
+                .nodes
+                .iter()
+                .find(|node| node.id == edge.from)
+                .expect("the origin is drawn");
+            let to = scene
+                .nodes
+                .iter()
+                .find(|node| node.id == edge.to)
+                .expect("the destination is drawn");
+            assert!(from.y < to.y);
+            for segment in edge.points.windows(2) {
+                assert!(segment[0].x == segment[1].x || segment[0].y == segment[1].y);
+                assert!(segment[0].y <= segment[1].y);
+                assert!(
+                    !scene
+                        .nodes
+                        .iter()
+                        .filter(|node| node.id != edge.from && node.id != edge.to)
+                        .any(|node| enters(segment[0], segment[1], node))
+                );
             }
+        }
+    }
+
+    #[test]
+    fn merged_capture_follows_branch_local_question_and_choice_exits() {
+        let function = syn::parse_quote! {
+            fn choose(condition: bool, local: bool) -> u8 {
+                #[question("Choose a value")]
+                |condition| -> (yes, no) { condition };
+                #[action("Build yes")]
+                |yes| -> (value, yes_work) { (1u8, ()) };
+                #[action("Build no")]
+                |no| -> (value, no_work) { (2u8, ()) };
+                #[action("Use the merged value")]
+                |value| -> result { value };
+                #[question("Finish local yes work")]
+                |yes_work, &local| -> (_yes_a, _yes_b) { *local };
+                #[choice("Finish local no work")]
+                #[case("First local result")]
+                #[case("Second local result")]
+                |no_work, local| -> (_no_a, _no_b) {
+                    match local { true => (), false => () }
+                };
+                #[end]
+                |result| {};
+            }
+        };
+        let graph = kaalang_model::build(&function).expect("local work finishes before the merge");
+        let connections = connections(&graph);
+        let rows = rows(&nodes(&graph), &connections);
+        for branch in 0..2 {
+            for from in [NodeId::Block(4), NodeId::Case { choice: 5, branch }] {
+                assert!(connections.contains(&Connection {
+                    from,
+                    branch: Some(branch),
+                    to: NodeId::Block(3),
+                }));
+                assert!(rows[&from] < rows[&NodeId::Block(3)]);
+            }
+        }
+        for block in [1, 2] {
+            assert!(
+                !connections.contains(&Connection {
+                    from: NodeId::Block(block),
+                    branch: None,
+                    to: NodeId::Block(3),
+                }),
+                "local work makes the producer-to-consumer edge redundant"
+            );
         }
     }
 }

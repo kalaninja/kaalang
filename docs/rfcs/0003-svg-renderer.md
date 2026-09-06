@@ -20,25 +20,26 @@ columns that do not overlap those assigned to other branches of the enclosing
 question or choice.
 
 A **footprint** is the contiguous range of columns reserved by one convergence
-group and its shared continuation. Distinct convergence groups of the same
+group and its shared continuation. Disjoint convergence groups of the same
 question or choice receive disjoint footprints in authored branch order.
+Nested convergence groups of that question or choice may share columns.
 
-When a shared continuation has one convergence point, its node occupies the
+When a shared continuation has one entry block, its node occupies the
 column in which the first branch of its convergence group reaches it. "First"
 follows the branch order defined by RFC 0002. This is normally that branch's own
 column; if the branch contains a nested question or choice, its route may reach
 that node in another column. Other branches of the group route to the same node.
 
-When a shared continuation has several convergence points, the renderer assigns
-their columns deterministically. All convergence-point nodes remain within its
-group's footprint. Every branch of the group routes to every convergence point.
+When a shared continuation has several entry blocks, the renderer assigns
+their columns deterministically. All entry-block nodes remain within its
+group's footprint. Every branch of the group routes to every entry block.
 
 A group's footprint extends from its leftmost occupied column to its rightmost
 occupied column. A terminal sibling branch that precedes the group remains to
 the left of its footprint; one that follows the group remains to its right. With
-several groups, intervening terminal branches remain between their footprints.
-The core model's adjacency rule ensures that a branch outside a convergence
-group cannot separate two of its members.
+several disjoint groups, intervening terminal branches remain between their
+footprints. The core model's adjacency rule ensures that a branch outside a
+convergence group cannot separate two of its members.
 
 To form the collector defined by RFC 0002, each terminal path reaches its
 assigned column, descends to the collector, and follows it into the end node. A

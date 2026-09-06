@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1772" viewBox="0 0 1064 1772" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for question_after_a_partial_merge</title>
+  <desc id="kaalang-description">Nodes: Start: question_after_a_partial_merge(value: u8, flag: bool) -&gt; u8; Choice: Which source?; Case: First source.; Case: Second source.; Case: Third source.; Action: Build the value from the first source.; Action: Build the value from the second source.; Action: Build the value from the third source.; Action: Use the partially merged value.; Question: Is the value large?; Action: Double a large value.; Action: Keep a small value.; End. Connections: Start: question_after_a_partial_merge(value: u8, flag: bool) -&gt; u8 to Choice: Which source? handing over value, flag, captured as value; Choice: Which source? to Case: First source.; Choice: Which source? to Case: Second source.; Choice: Which source? to Case: Third source.; Action: Build the value from the first source. to Action: Use the partially merged value. via partial; Action: Build the value from the second source. to Action: Use the partially merged value. via partial; Action: Use the partially merged value. to Question: Is the value large? handing over shared, captured as flag; Question: Is the value large? to Action: Double a large value. handing over large, captured as large, shared; Question: Is the value large? to Action: Keep a small value. handing over small, captured as small, shared; Case: First source. to Action: Build the value from the first source. via first; Case: Second source. to Action: Build the value from the second source. via second; Case: Third source. to Action: Build the value from the third source. via third; Action: Build the value from the third source. to Question: Is the value large? handing over shared, captured as flag; Action: Double a large value. to End via result; Action: Keep a small value. to End via result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="edges">
+    <path class="edge" d="M 172 98 L 172 266"/>
+    <path class="edge" d="M 172 338 L 172 506"/>
+    <path class="edge" d="M 172 338 L 172 458 L 532 458 L 532 506"/>
+    <path class="edge" d="M 172 338 L 172 458 L 892 458 L 892 506"/>
+    <path class="edge" d="M 172 810 L 172 978"/>
+    <path class="edge" d="M 532 810 L 532 930 L 172 930 L 172 978"/>
+    <path class="edge" d="M 172 1042 L 172 1210"/>
+    <path class="edge" d="M 172 1282 L 172 1450"/>
+    <path class="edge" d="M 312 1246 L 360 1246 L 360 1402 L 532 1402 L 532 1450"/>
+    <path class="edge" d="M 172 576 L 172 744"/>
+    <path class="edge" d="M 532 576 L 532 744"/>
+    <path class="edge" d="M 892 576 L 892 744"/>
+    <path class="edge" d="M 892 810 L 892 1162 L 172 1162 L 172 1210"/>
+    <path class="edge" d="M 172 1514 L 172 1682"/>
+    <path class="edge" d="M 532 1514 L 532 1634 L 172 1634 L 172 1682"/>
+    <text class="edge-label" x="214" y="258" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
+    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">value, flag</tspan></text>
+    <text class="edge-label" x="214" y="970" xml:space="preserve"><tspan x="214" dy="0">partial</tspan></text>
+    <text class="edge-label" x="214" y="1202" xml:space="preserve"><tspan x="214" dy="0">flag</tspan></text>
+    <text class="edge-label" x="214" y="1060" xml:space="preserve"><tspan x="214" dy="0">shared</tspan></text>
+    <text class="edge-label" x="934" y="828" xml:space="preserve"><tspan x="934" dy="0">shared</tspan></text>
+    <text class="edge-label" x="214" y="1442" xml:space="preserve"><tspan x="214" dy="0">large, shared</tspan></text>
+    <text class="edge-label" x="214" y="1300" xml:space="preserve"><tspan x="214" dy="0">large</tspan></text>
+    <text class="edge-label" x="574" y="1442" xml:space="preserve"><tspan x="574" dy="0">small, shared</tspan></text>
+    <text class="edge-label" x="332" y="1264" xml:space="preserve"><tspan x="332" dy="0">small</tspan></text>
+    <text class="edge-label" x="214" y="655" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="edge-label" x="574" y="655" xml:space="preserve"><tspan x="574" dy="0">second</tspan></text>
+    <text class="edge-label" x="934" y="655" xml:space="preserve"><tspan x="934" dy="0">third</tspan></text>
+    <text class="edge-label" x="214" y="1674" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">question_after_a_partial_merge(v</tspan><tspan x="0" dy="18">alue: u8, flag: bool) -&gt; u8</tspan></text>
+    </g>
+    <g class="node choice select" transform="translate(172 302)">
+      <title xml:space="preserve">Which source?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which source?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 541)">
+      <title xml:space="preserve">First source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First source.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 541)">
+      <title xml:space="preserve">Second source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second source.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 541)">
+      <title xml:space="preserve">Third source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 777)">
+      <title xml:space="preserve">Build the value from the first source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the first </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 777)">
+      <title xml:space="preserve">Build the value from the second source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the second </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 777)">
+      <title xml:space="preserve">Build the value from the third source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the third </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1010)">
+      <title xml:space="preserve">Use the partially merged value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the partially merged value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 1246)">
+      <title xml:space="preserve">Is the value large?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the value large?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1482)">
+      <title xml:space="preserve">Double a large value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Double a large value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1482)">
+      <title xml:space="preserve">Keep a small value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep a small value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1711)">
+      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
+      <text class="label" y="5">End</text>
+    </g>
+  </g>
+</svg>

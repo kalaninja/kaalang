@@ -1,0 +1,5 @@
+error: kaalang choice convergence groups must be disjoint or nested
+ --> tests/wire/compile_fail/overlapping_convergence_groups.rs:9:20
+  |
+9 |     |value| -> (a, b, c) {
+  |                    ^

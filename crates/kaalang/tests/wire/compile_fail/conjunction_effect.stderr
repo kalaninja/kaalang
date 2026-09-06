@@ -1,0 +1,5 @@
+error: a kaalang branch output must reach its consumer whenever that output is selected
+  --> tests/wire/compile_fail/conjunction_effect.rs:12:6
+   |
+12 |     |a, b| -> () {};
+   |      ^
