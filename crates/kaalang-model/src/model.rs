@@ -122,6 +122,16 @@ impl Execution {
     pub fn participates(&self, block: usize) -> bool {
         self.blocks.binary_search(&block).is_ok()
     }
+
+    /// The output a question or choice selected here, or `None` for a block
+    /// that does not branch.
+    #[must_use]
+    pub fn selected(&self, block: usize) -> Option<usize> {
+        self.branches
+            .iter()
+            .find(|selection| selection.block == block)
+            .map(|selection| selection.branch)
+    }
 }
 
 impl Ord for Execution {

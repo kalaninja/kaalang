@@ -9,6 +9,32 @@ fn drawn(source: &str) -> Topology {
     )
 }
 
+/// One flow of an authored fixture file. The signature and return type only
+/// label start and end, which no test here reads.
+fn fixture(source: &str, flow: &str) -> Topology {
+    let file = crate::parse_file(source).unwrap();
+    let function = crate::select_flow(&file.items, flow).unwrap();
+    project(&kaalang_model::build(function).unwrap(), "example", "-> u8")
+}
+
+/// Whether any chain of connections leads from one vertex to another.
+fn reaches(topology: &Topology, from: Vertex, to: Vertex) -> bool {
+    let mut frontier = vec![from];
+    let mut seen = BTreeSet::from([from]);
+    while let Some(vertex) = frontier.pop() {
+        if vertex == to {
+            return true;
+        }
+        for connection in topology.outgoing(vertex) {
+            let next = Vertex::from(connection.destination);
+            if seen.insert(next) {
+                frontier.push(next);
+            }
+        }
+    }
+    false
+}
+
 #[test]
 fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
     let topology = drawn(
@@ -82,13 +108,18 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
         let case = NodeId::Case { choice: 0, branch };
         assert!(topology.capture_label(case).is_empty());
         assert_eq!(topology.handover(ExitId::of(case)), [name]);
+        let connection = Connection {
+            source: Source::Exit(distributor),
+            destination: Destination::Node(case),
+        };
         assert_eq!(
             topology.arriving(case).copied().collect::<Vec<_>>(),
-            [Connection {
-                source: Source::Exit(distributor),
-                destination: Destination::Node(case),
-            }]
+            [connection]
         );
+        // The distributor is the fan-out this projection actually produces:
+        // both displayed lists are empty and therefore equal, and RFC 0002 §6
+        // still keeps the two ends apart because the exit has two connections.
+        assert!(!topology.shares_label(&connection));
     }
     assert_eq!(
         topology
@@ -154,19 +185,7 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
 fn a_merge_precedes_the_question_that_selects_its_consumers() {
     let source =
         include_str!("../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
-    let file = syn::parse_file(source).unwrap();
-    let function = file
-        .items
-        .iter()
-        .find_map(|item| match item {
-            syn::Item::Fn(function) if function.sig.ident == "a_branch_captures_a_merged_value" => {
-                Some(function)
-            }
-            _ => None,
-        })
-        .unwrap();
-    let model = kaalang_model::build(function).unwrap();
-    let topology = project(&model, "example", "-> u8");
+    let topology = fixture(source, "a_branch_captures_a_merged_value");
     let question = NodeId::Block(3);
     let connection = Connection {
         source: Source::Junction(0),
@@ -186,4 +205,85 @@ fn a_merge_precedes_the_question_that_selects_its_consumers() {
     );
     assert_eq!(topology.capture(question), ["verbose"]);
     assert!(crate::render_source(source, "a_branch_captures_a_merged_value").is_ok());
+}
+
+/// RFC 0002 §7 gives a question branch or a case exit at most one connection,
+/// however many blocks capture the merged wire: the alternatives meet at the
+/// junction and the common segment leaves it.
+#[test]
+fn a_merged_wire_leaves_each_branch_exit_once() {
+    let two_consumers = drawn(
+        r#"
+        fn example(condition: bool) -> u8 {
+            #[question("Choose a value?")]
+            |condition| -> (yes, no) { condition };
+            #[action("Build the yes value.")]
+            |yes| -> value { 1 };
+            #[action("Build the no value.")]
+            |no| -> value { 2 };
+            #[action("Double the merged value.")]
+            |&value| -> doubled { *value * 2 };
+            #[action("Add both.")]
+            |value, doubled| -> result { value + doubled };
+        }
+    "#,
+    );
+    let only_end = fixture(
+        include_str!("../../../kaalang/tests/end/behavior/capture_alternative.rs"),
+        "capture_alternative",
+    );
+
+    // The consumers of the merged wire; the last block of each flow is end.
+    for (topology, consumers) in [
+        (&two_consumers, &[NodeId::Block(3), NodeId::Block(4)][..]),
+        (&only_end, &[NodeId::Block(3)][..]),
+    ] {
+        for exit in &topology.exits {
+            assert!(
+                topology.leaving(exit.id).count() <= 1,
+                "{:?} leaves more than once",
+                exit.id
+            );
+        }
+        assert_eq!(topology.junctions.len(), 1);
+        assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
+        // One common segment leaves the junction however many blocks capture
+        // the wire; later consumers are reached through the first.
+        assert_eq!(topology.outgoing(Vertex::Junction(0)).count(), 1);
+        for &consumer in consumers {
+            assert!(
+                reaches(topology, Vertex::Junction(0), Vertex::Node(consumer)),
+                "{consumer:?} is not reached from the junction"
+            );
+        }
+    }
+}
+
+/// Plan 04: ordering a branch-local block before a merge invents no hand-over
+/// and no capture. The junction lies on the path from both producers and from
+/// the branch-local note block.
+#[test]
+fn ordering_a_branch_local_block_before_a_merge_invents_no_label() {
+    let topology = fixture(
+        include_str!("../../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
+        "local_work_before_a_wire_merge",
+    );
+    let note = NodeId::Block(4);
+    // `selected` and `noted` arrive from the same two exits, so plan 04 gives
+    // them one junction.
+    assert_eq!(topology.junctions.len(), 1);
+    assert_eq!(topology.junctions[0].wires, ["selected", "noted"]);
+
+    for source in [NodeId::Block(1), NodeId::Block(2), note] {
+        assert!(
+            reaches(&topology, Vertex::Node(source), Vertex::Junction(0)),
+            "{source:?} does not reach the junction"
+        );
+    }
+
+    // The note block keeps its authored labels: the ordering connection adds
+    // neither a hand-over of the merged wire nor a capture of it.
+    assert_eq!(topology.capture(note), ["local_note", "&order"]);
+    assert_eq!(topology.handover(ExitId::of(note)), ["noted"]);
+    assert_eq!(topology.capture(NodeId::Block(3)), ["selected", "&order"]);
 }

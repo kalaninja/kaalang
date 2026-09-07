@@ -52,7 +52,8 @@ pub(crate) fn emit(
         .iter()
         .map(|output| bindings.wire(output))
         .collect::<Vec<_>>();
-    // Zero outputs bind `()`, so Rust rejects a body that is not unit.
+    // Every block declares at least one output, so a lone output binds by
+    // name and two or more bind through a tuple pattern.
     let pattern = if output_wires.len() == 1 {
         let output = output_wires[0];
         quote_spanned!(block.output_span=> #output)

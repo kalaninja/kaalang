@@ -277,16 +277,45 @@ pub(super) fn capture_space(names: &[String]) -> i32 {
         + (lines as i32 - 1) * CONNECTION_LINE_HEIGHT
 }
 
-/// Right and bottom extent of a label, matching how the serializer places it:
-/// centred on `at.x`, its first baseline at `at.y`.
-pub(super) fn label_bounds(label: &Label) -> (i32, i32) {
-    let width = label_width(&label.lines);
+/// The rectangle a label's ink and halo occupy, matching how the serializer
+/// places it: centred on `at.x`, its first baseline at `at.y`. Left, top,
+/// right, bottom, like `Scene::bounds`.
+pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
+    let half = label_width(&label.lines) / 2 + CONNECTION_LABEL_HALO;
     let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * CONNECTION_LINE_HEIGHT;
 
     (
-        label.at.x + width / 2 + CONNECTION_LABEL_HALO,
+        label.at.x - half,
+        label.at.y - CONNECTION_LABEL_FONT - CONNECTION_LABEL_HALO,
+        label.at.x + half,
         last_baseline + CONNECTION_LABEL_FONT / 2 + CONNECTION_LABEL_HALO,
     )
+}
+
+/// Reports the first label that leaves the canvas or reaches into a node.
+///
+/// RFC 0002 §8 keeps every standalone label inside the diagram and clear of the
+/// nodes. `route::verify` holds the connections to their half of that rule;
+/// this holds the labels to theirs, on the same emitted geometry.
+pub(super) fn verify(scene: &Scene) -> Option<String> {
+    for label in &scene.labels {
+        let (left, top, right, bottom) = label_rect(label);
+        let names = label.lines.join(" ");
+        if left < 0 || top < 0 || right > scene.width || bottom > scene.height {
+            return Some(format!("the label `{names}` leaves the canvas"));
+        }
+        for node in &scene.nodes {
+            let (node_left, node_top, node_right, node_bottom) = Scene::bounds(node);
+            if right > node_left && left < node_right && bottom > node_top && top < node_bottom {
+                return Some(format!(
+                    "the label `{names}` reaches into the node `{}`",
+                    node.lines.join(" ")
+                ));
+            }
+        }
+    }
+
+    None
 }
 
 pub(super) fn label_width(lines: &[String]) -> i32 {
@@ -300,4 +329,67 @@ pub(super) fn label_width(lines: &[String]) -> i32 {
         })
         .max()
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::topology::NodeId;
+
+    /// One label of a known width, so a test can put it where it must not be.
+    fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
+        Scene {
+            width: 200,
+            height: 200,
+            topology: Topology {
+                nodes: vec![],
+                exits: vec![],
+                junctions: vec![],
+                connections: vec![],
+                vertices: vec![],
+            },
+            nodes: node
+                .into_iter()
+                .map(|(x, y)| super::super::Node {
+                    id: NodeId::Block(0),
+                    x,
+                    y,
+                    width: 40,
+                    height: 20,
+                    lines: vec!["Do the work.".to_owned()],
+                })
+                .collect(),
+            connections: vec![],
+            labels: vec![Label {
+                lines: vec!["result".to_owned()],
+                at,
+            }],
+        }
+    }
+
+    #[test]
+    fn labels_are_rejected_off_canvas_or_over_a_node() {
+        let inside = Point { x: 100, y: 100 };
+        assert_eq!(verify(&scene(inside, None)), None);
+        // Far enough that the halo clears the node too.
+        assert_eq!(verify(&scene(inside, Some((100, 160)))), None);
+
+        for corner in [
+            Point { x: 2, y: 100 },
+            Point { x: 100, y: 2 },
+            Point { x: 198, y: 100 },
+            Point { x: 100, y: 198 },
+        ] {
+            assert_eq!(
+                verify(&scene(corner, None)).as_deref(),
+                Some("the label `result` leaves the canvas"),
+                "{corner:?}"
+            );
+        }
+
+        assert_eq!(
+            verify(&scene(inside, Some((100, 100)))).as_deref(),
+            Some("the label `result` reaches into the node `Do the work.`")
+        );
+    }
 }

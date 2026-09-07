@@ -33,20 +33,22 @@ impl Placement {
     }
 }
 
+/// Places one projected topology, or reports that it has no top-to-bottom
+/// order at all.
 pub(super) fn place(
     topology: &Topology,
     model: &SemanticModel,
     delays: &BTreeMap<Vertex, usize>,
-) -> Placement {
-    let row = rows(topology, delays);
+) -> Result<Placement, String> {
+    let row = rows(topology, delays)?;
     let rows_used = row.values().copied().max().unwrap_or(0) + 1;
     let footprints = footprints(topology, model);
-    Placement {
+    Ok(Placement {
         column: columns(topology, &footprints, &row, rows_used),
         footprints,
         row,
         rows: rows_used,
-    }
+    })
 }
 
 /// Longest-path ranking: a node sits below every predecessor, a junction below
@@ -57,18 +59,23 @@ pub(super) fn place(
 /// a `delay` when two runs cannot share a row gap, and because a row is derived
 /// from already-delayed predecessors, the delay carries to everything
 /// downstream on its own.
-fn rows(topology: &Topology, delays: &BTreeMap<Vertex, usize>) -> BTreeMap<Vertex, usize> {
+fn rows(
+    topology: &Topology,
+    delays: &BTreeMap<Vertex, usize>,
+) -> Result<BTreeMap<Vertex, usize>, String> {
     let mut rows = BTreeMap::new();
     let mut pending = topology.vertices.iter().copied().collect::<BTreeSet<_>>();
     while !pending.is_empty() {
-        let ready = *pending
-            .iter()
-            .find(|&&vertex| {
-                topology
-                    .incoming(vertex)
-                    .all(|connection| rows.contains_key(&Vertex::from(connection.source)))
-            })
-            .expect("validated wire merges leave an acyclic visual graph");
+        // Validated wire merges leave an acyclic visual graph, so this only
+        // fails on a projection bug. Refuse the diagram rather than abort: the
+        // renderer is also a library and a command-line binary.
+        let Some(&ready) = pending.iter().find(|&&vertex| {
+            topology
+                .incoming(vertex)
+                .all(|connection| rows.contains_key(&Vertex::from(connection.source)))
+        }) else {
+            return Err("the connections form a cycle, so no node can be lowest".to_owned());
+        };
         pending.remove(&ready);
         let row = topology
             .incoming(ready)
@@ -78,7 +85,7 @@ fn rows(topology: &Topology, delays: &BTreeMap<Vertex, usize>) -> BTreeMap<Verte
             .unwrap_or(usize::from(ready != Vertex::Node(NodeId::Start)));
         rows.insert(ready, row + delays.get(&ready).copied().unwrap_or(0));
     }
-    rows
+    Ok(rows)
 }
 
 /// The columns of one brancher's branches, as offsets from its own column. The
@@ -373,4 +380,45 @@ fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
             (start, seen)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A topology of block nodes and the connections between them, as `rows`
+    /// reads them: one exit per source, one vertex per block.
+    fn linked(pairs: &[(usize, usize)]) -> Topology {
+        Topology {
+            nodes: vec![],
+            exits: vec![],
+            junctions: vec![],
+            connections: pairs
+                .iter()
+                .map(|&(from, to)| Connection {
+                    source: Source::Exit(ExitId::of(NodeId::Block(from))),
+                    destination: Destination::Node(NodeId::Block(to)),
+                })
+                .collect(),
+            vertices: pairs
+                .iter()
+                .flat_map(|&(from, to)| [from, to])
+                .map(|block| Vertex::Node(NodeId::Block(block)))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn a_cycle_is_refused_rather_than_ranked() {
+        let chain = rows(&linked(&[(0, 1)]), &BTreeMap::new()).expect("a chain has an order");
+        assert_eq!(chain[&Vertex::Node(NodeId::Block(0))], 1);
+        assert_eq!(chain[&Vertex::Node(NodeId::Block(1))], 2);
+
+        assert_eq!(
+            rows(&linked(&[(0, 1), (1, 0)]), &BTreeMap::new()),
+            Err("the connections form a cycle, so no node can be lowest".to_owned())
+        );
+    }
 }

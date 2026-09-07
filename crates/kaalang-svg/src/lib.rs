@@ -31,12 +31,14 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// The flow is valid, but this layout could not route its connections under
-    /// RFC 0002 §8. This does not make the authored flow invalid or prove that
-    /// no conforming diagram exists.
+    /// The flow is valid, but this layout could not place it under RFC 0002 §8:
+    /// either a connection route or a wire label breaks the spatial contract.
+    /// This does not make the authored flow invalid or prove that no conforming
+    /// diagram exists.
     UnroutableTopology {
         name: String,
-        /// The routing rule the deterministic layout could not meet.
+        /// The spatial rule the deterministic layout could not meet, naming the
+        /// connections, or the label and node, that break it.
         reason: String,
     },
     /// An authored label contains a character that XML 1.0 cannot represent.
@@ -107,7 +109,7 @@ impl Error for RenderError {}
 /// [`RenderError::InvalidLabelCharacter`] when an authored description
 /// contains a character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when the deterministic layout cannot
-/// route every connection under RFC 0002 §8.
+/// route every connection and place every label under RFC 0002 §8.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;

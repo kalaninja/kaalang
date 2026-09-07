@@ -800,9 +800,8 @@ mod tests {
         }
 
         // The one flow the branch tree cannot express, and therefore the only
-        // runtime cover for `ExecutionPlan::Guarded`, its codegen, and the
-        // dependency layout. A planner that structured it would orphan all
-        // three with every test still green.
+        // runtime cover for `ExecutionPlan::Guarded` and its codegen. A planner
+        // that structured it would orphan both with every test still green.
         let source =
             include_str!("../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
         let model = build(&fixture(source, "question_after_a_partial_merge"))

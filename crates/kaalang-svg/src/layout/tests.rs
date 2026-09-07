@@ -7,7 +7,7 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
     let function = crate::select_flow(&file.items, "blocked_terminal_crossing").unwrap();
     let model = kaalang_model::build(function).unwrap();
     let topology = topology::project(&model, "example", "-> u8");
-    let placement = place::place(&topology, &model, &BTreeMap::new());
+    let placement = place::place(&topology, &model, &BTreeMap::new()).unwrap();
     let case = |choice, branch| placement.column(Vertex::Node(NodeId::Case { choice, branch }));
     assert!(
         case(0, 2) > case(6, 3),
@@ -205,9 +205,7 @@ fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
         let scene = layout(&model, "example", "-> u32").unwrap();
 
         for label in &scene.labels {
-            let left = label.at.x - label::label_width(&label.lines) / 2 - CONNECTION_LABEL_HALO;
-            let top = label.at.y - CONNECTION_LABEL_FONT - CONNECTION_LABEL_HALO;
-            let (right, bottom) = label_bounds(label);
+            let (left, top, right, bottom) = label_rect(label);
             for segment in scene
                 .connections
                 .iter()
@@ -280,7 +278,16 @@ fn drawn(source: &str, flow: &str) -> Scene {
     )
     .expect("the fixture has a conforming diagram");
 
-    assert_eq!(route::verify(&scene), None, "{flow} breaks RFC 0002 §8");
+    assert_eq!(
+        route::verify(&scene),
+        None,
+        "{flow}: a connection breaks RFC 0002 §8"
+    );
+    assert_eq!(
+        label::verify(&scene),
+        None,
+        "{flow}: a label breaks RFC 0002 §8"
+    );
     for connection in &scene.connections {
         let [start, .., end] = connection.points[..] else {
             panic!("{flow}: a routed connection has at least two points");
@@ -295,8 +302,10 @@ fn drawn(source: &str, flow: &str) -> Scene {
 }
 
 /// The fixtures whose shapes exercise the routing rules: branches, nested
-/// branches, wire merges, independent roots and ordinary joins.
-const FIXTURES: [(&str, &str); 14] = [
+/// branches, wire merges, independent roots and ordinary joins, plus
+/// `question_after_a_partial_merge`, the only flow lowered as
+/// `ExecutionPlan::Guarded`.
+const FIXTURES: [(&str, &str); 17] = [
     (
         include_str!("../../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
         "blocked_terminal_crossing",
@@ -310,6 +319,10 @@ const FIXTURES: [(&str, &str); 14] = [
             "../../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
         ),
         "effect_before_a_nested_terminal_branch",
+    ),
+    (
+        include_str!("../../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs"),
+        "question_after_a_partial_merge",
     ),
     (
         include_str!("../../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs"),
@@ -352,6 +365,14 @@ const FIXTURES: [(&str, &str); 14] = [
         include_str!("../../../kaalang/tests/choice/behavior/run_choice.rs"),
         "run_choice",
     ),
+    (
+        include_str!("../../../kaalang/tests/wire/behavior/two_convergence_groups.rs"),
+        "two_convergence_groups",
+    ),
+    (
+        include_str!("../../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
+        "two_merges_reach_one_consumer",
+    ),
 ];
 
 const SHARED_INPUTS: &str = r#"
@@ -373,6 +394,54 @@ const SHARED_INPUTS: &str = r#"
         |sum, product| -> result { sum + product };
     }
 "#;
+
+/// RFC 0003 §2: disjoint convergence groups of one brancher receive disjoint
+/// footprints in authored branch order. `two_convergence_groups` shares one
+/// continuation between its first two cases and another between its last two,
+/// so nothing of the late half may sit at or left of the early half.
+#[test]
+fn disjoint_convergence_groups_take_disjoint_footprints() {
+    let scene = drawn(
+        include_str!("../../../kaalang/tests/wire/behavior/two_convergence_groups.rs"),
+        "two_convergence_groups",
+    );
+    let x = |id| scene.node(id).x;
+    let early = [
+        NodeId::Case {
+            choice: 0,
+            branch: 0,
+        },
+        NodeId::Case {
+            choice: 0,
+            branch: 1,
+        },
+        NodeId::Block(1),
+        NodeId::Block(2),
+        NodeId::Block(3),
+    ];
+    let late = [
+        NodeId::Case {
+            choice: 0,
+            branch: 2,
+        },
+        NodeId::Case {
+            choice: 0,
+            branch: 3,
+        },
+        NodeId::Block(4),
+        NodeId::Block(5),
+        NodeId::Block(6),
+    ];
+
+    let early_right = early.into_iter().map(x).max().unwrap();
+    let late_left = late.into_iter().map(x).min().unwrap();
+    assert!(
+        early_right < late_left,
+        "the two footprints overlap: early ends at {early_right}, late starts at {late_left}"
+    );
+    // Each group keeps its own merge; neither continuation is shared.
+    assert_eq!(scene.topology.junctions.len(), 3);
+}
 
 #[test]
 fn independent_producers_and_their_consumers_form_one_sequence() {
@@ -470,6 +539,8 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
     }
 }
 
+/// `drawn` holds every fixture to RFC 0002 §8 already, connections and labels
+/// both; this adds the one thing it does not check, that the canvas exists.
 #[test]
 fn every_drawn_shape_satisfies_the_spatial_contract() {
     for (source, flow) in FIXTURES {
@@ -478,14 +549,6 @@ fn every_drawn_shape_satisfies_the_spatial_contract() {
             scene.width > 0 && scene.height > 0,
             "{flow}: the canvas has no extent"
         );
-    }
-}
-
-#[test]
-fn every_label_stays_inside_the_canvas_and_clear_of_every_node() {
-    for (source, flow) in FIXTURES {
-        let scene = drawn(source, flow);
-        assert_labels_clear_nodes(&scene, flow);
     }
 }
 
@@ -507,7 +570,6 @@ fn long_wire_labels_clear_a_tall_neighbor() {
     );
     let scene = drawn(&source, "example");
     assert!(scene.labels.iter().any(|label| label.lines.len() > 1));
-    assert_labels_clear_nodes(&scene, "long wire beside a tall action");
 }
 
 #[test]
@@ -542,32 +604,7 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
                 })
         })
         .unwrap();
-    assert!(label_bounds(label).1 <= branch.points[0].y);
-    assert_labels_clear_nodes(&scene, "wrapped question label");
-}
-
-fn assert_labels_clear_nodes(scene: &Scene, flow: &str) {
-    for label in &scene.labels {
-        let (right, bottom) = label_bounds(label);
-        let left = label.at.x - (right - label.at.x);
-        let top = label.at.y - CONNECTION_LABEL_FONT;
-        assert!(
-            left >= 0 && top >= 0 && right <= scene.width && bottom <= scene.height,
-            "{flow}: a label leaves the canvas"
-        );
-        for node in &scene.nodes {
-            let (node_left, node_top, node_right, node_bottom) = Scene::bounds(node);
-            let clear = right <= node_left
-                || left >= node_right
-                || bottom <= node_top
-                || top >= node_bottom;
-            assert!(
-                clear,
-                "{flow}: label {:?} at {left},{top}..{right},{bottom} reaches into {:?} at {node_left},{node_top}..{node_right},{node_bottom}",
-                label.lines, node.id
-            );
-        }
-    }
+    assert!(label_rect(label).3 <= branch.points[0].y);
 }
 
 #[test]
@@ -741,8 +778,20 @@ fn the_end_node_is_captioned_with_the_flow_return_type() {
         let end = end_node(&scene);
         assert_eq!(scene.topology.node(end).label, caption, "{flow}");
         // The capture stays on the connection entering end, so the caption
-        // names the type and the connection names the wire.
+        // names the type and the connection names the wire. It is drawn, not
+        // only owned: neither flow merges `result`, so no junction label
+        // stands in for it.
         assert_eq!(scene.topology.capture(end), ["result"], "{flow}");
+        assert!(scene.topology.junctions.is_empty(), "{flow}");
+        assert_eq!(
+            scene
+                .labels
+                .iter()
+                .filter(|label| label.lines == ["result"])
+                .count(),
+            1,
+            "{flow}: the result capture is not drawn once at end"
+        );
     }
 }
 

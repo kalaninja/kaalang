@@ -416,10 +416,8 @@ fn produced(execution: &Execution, producer: ProducerId) -> bool {
     };
     execution.participates(block)
         && execution
-            .branches
-            .iter()
-            .find(|selection| selection.block == block)
-            .is_none_or(|selection| selection.branch == output)
+            .selected(block)
+            .is_none_or(|branch| branch == output)
 }
 
 /// The earliest block that both waits for `merge` and must run before it.

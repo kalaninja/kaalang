@@ -617,17 +617,12 @@ impl Builder<'_> {
             .iter()
             .filter(|&&block| execution.participates(block))
             .flat_map(|&block| {
-                let selected = execution
-                    .branches
-                    .iter()
-                    .find(|selection| selection.block == block);
+                let selected = execution.selected(block);
                 self.flow.blocks[block]
                     .outputs
                     .iter()
                     .enumerate()
-                    .filter(move |(output, _)| {
-                        selected.is_none_or(|selection| selection.branch == *output)
-                    })
+                    .filter(move |(output, _)| selected.is_none_or(|branch| branch == *output))
                     .map(move |(output, name)| (name, ProducerId::BlockOutput { block, output }))
             });
         flow_inputs

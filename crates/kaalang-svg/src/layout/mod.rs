@@ -19,7 +19,7 @@ mod route;
 mod tests;
 mod text;
 
-use label::{label_bounds, vertical_gap};
+use label::{label_rect, vertical_gap};
 use text::wrap_text;
 
 const MARGIN: i32 = 32;
@@ -143,7 +143,7 @@ pub(crate) fn layout(
     let mut shapes: BTreeMap<usize, route::Shape> = BTreeMap::new();
     let mut blocking = String::new();
     for _ in 0..attempts {
-        let placement = place::place(&scene.topology, model, &delays);
+        let placement = place::place(&scene.topology, model, &delays)?;
         scene.nodes = nodes(&scene.topology, &placement);
         let blocked = match route::plan(&scene, &placement, &shapes) {
             Ok(plan) => {
@@ -162,6 +162,12 @@ pub(crate) fn layout(
                 scene.labels = label::place_labels(&scene);
                 scene.indent();
                 scene.fit();
+                // The same final word for the labels. It waits for `indent`
+                // and `fit` because those settle the coordinates and the
+                // canvas the labels are checked against.
+                if let Some(reason) = label::verify(&scene) {
+                    return Err(reason);
+                }
 
                 return Ok(scene);
             }
@@ -215,6 +221,11 @@ fn nodes(topology: &Topology, placement: &place::Placement) -> Vec<Node> {
 
 /// Top edge and height of every row, in row order. A junction row carries no
 /// node, so it is only the lane its routes meet in.
+///
+/// `top` and `capture_space` carry one entry past the last row, the bottom edge
+/// of the diagram, so that the row gap below a row is always addressable as
+/// `row + 1`. No node's capture claims that trailing entry, so it keeps the
+/// default a row without a capture label would have.
 pub(super) struct Rows {
     top: Vec<i32>,
     height: Vec<i32>,
@@ -243,7 +254,7 @@ impl Rows {
 impl Scene {
     fn rows(&self, placement: &place::Placement, plan: &route::Plan) -> Rows {
         let mut height = vec![0; placement.rows];
-        let mut capture_space = vec![LANE; placement.rows];
+        let mut capture_space = vec![LANE; placement.rows + 1];
         for node in &self.nodes {
             let row = placement.row(Vertex::Node(node.id));
             height[row] = height[row].max(node.height);
@@ -251,7 +262,7 @@ impl Scene {
                 capture_space[row].max(label::capture_space(&self.topology.capture_label(node.id)));
         }
         let gap = vertical_gap(&self.topology);
-        let mut top = Vec::with_capacity(placement.rows);
+        let mut top = Vec::with_capacity(placement.rows + 1);
         let mut next = MARGIN;
         for (row, height) in height.iter().enumerate() {
             top.push(next);
@@ -263,6 +274,7 @@ impl Scene {
             };
             next += height + gap.max(routing);
         }
+        top.push(next);
 
         Rows {
             top,
@@ -360,7 +372,7 @@ impl Scene {
             }
         }
         for label in &self.labels {
-            let (label_right, label_bottom) = label_bounds(label);
+            let (.., label_right, label_bottom) = label_rect(label);
             right = right.max(label_right);
             bottom = bottom.max(label_bottom);
         }

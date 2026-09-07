@@ -646,10 +646,10 @@ There is no merge statement.
 name, validates block-local and branch-dependent invariants, and lowers the flow
 to nested Rust `let`, `if`, and `match` expressions.
 
-An action evaluates its body and binds its value to its outputs when it declares
-any. Independent computational blocks may be lowered in any order allowed by
-their wire dependencies. A question evaluates its body once and executes the
-selected branch. A choice preserves the authored match and passes the selected
+An action evaluates its body and binds its value to its outputs. Independent
+computational blocks may be lowered in any order allowed by their wire
+dependencies. A question evaluates its body once and executes the selected
+branch. A choice preserves the authored match and passes the selected
 arm value to the corresponding branch. Equally named outputs merge before
 every downstream capture, independently of the consumer's other inputs.
 Lowering preserves branch completion before a merge and the implicit order of

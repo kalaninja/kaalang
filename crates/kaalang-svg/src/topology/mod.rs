@@ -201,6 +201,11 @@ impl Topology {
 
     /// Equal displayed lists share a label only at the sole connection between
     /// their ends. `name`, `&name`, and the empty-input marker never match.
+    ///
+    /// Only the outdegree check is reached by an authored flow, at a select
+    /// distributor: alternatives meet at a junction, so no node in the current
+    /// fixtures has two incoming connections. RFC 0002 §7 still allows one, and
+    /// the indegree check is kept for it.
     pub(crate) fn shares_label(&self, connection: &Connection) -> bool {
         let (Source::Exit(exit), Destination::Node(node)) =
             (connection.source, connection.destination)
@@ -548,7 +553,7 @@ fn connections(
                             source: exit(
                                 model,
                                 block,
-                                selected(execution, block).unwrap_or_default(),
+                                execution.selected(block).unwrap_or_default(),
                             ),
                             destination: Destination::Junction(junction),
                         }),
@@ -565,7 +570,8 @@ fn connections(
                     source: Source::Exit(ExitId::of(NodeId::Block(choice))),
                     destination: Destination::Node(NodeId::Case {
                         choice,
-                        branch: selected(execution, choice)
+                        branch: execution
+                            .selected(choice)
                             .expect("an executed choice selects one case"),
                     }),
                 }),
@@ -606,7 +612,7 @@ fn serial_connections(
         if model.flow.blocks[block].kind == BlockKind::End {
             continue;
         }
-        let exit = exit(model, block, selected(execution, block).unwrap_or_default());
+        let exit = exit(model, block, execution.selected(block).unwrap_or_default());
         // Branch-local work still owed to the merge keeps the route on the
         // block's own exit; hopping to the junction would invert that order.
         previous = steps
@@ -733,14 +739,6 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .collect()
 }
 
-fn selected(execution: &Execution, block: usize) -> Option<usize> {
-    execution
-        .branches
-        .iter()
-        .find(|selection| selection.block == block)
-        .map(|selection| selection.branch)
-}
-
 /// Reports whether one producer occurrence provides its wire in this execution.
 /// A branch output does so only when its own branch was selected.
 fn produced(model: &SemanticModel, execution: &Execution, producer: ProducerId) -> bool {
@@ -751,7 +749,7 @@ fn produced(model: &SemanticModel, execution: &Execution, producer: ProducerId) 
                 && match model.flow.blocks[block].kind {
                     BlockKind::Action => true,
                     BlockKind::Question | BlockKind::Choice => {
-                        selected(execution, block) == Some(output)
+                        execution.selected(block) == Some(output)
                     }
                     BlockKind::End => unreachable!("end declares no output"),
                 }

@@ -128,13 +128,9 @@ impl Replay<'_> {
             return None;
         }
         self.capture(block)?;
-        let selected = self
-            .execution
-            .branches
-            .iter()
-            .find(|selection| selection.block == block);
+        let selected = self.execution.selected(block);
         for (output, name) in self.flow.blocks[block].outputs.iter().enumerate() {
-            if selected.is_none_or(|selection| selection.branch == output) {
+            if selected.is_none_or(|branch| branch == output) {
                 self.available
                     .insert(name.clone(), ProducerId::BlockOutput { block, output });
             }
@@ -201,12 +197,7 @@ impl Replay<'_> {
     }
 
     fn branch(&mut self, block: usize, branches: &[Branch], joins: &[Join]) -> Option<Exit> {
-        let selected = self
-            .execution
-            .branches
-            .iter()
-            .find(|selection| selection.block == block)?
-            .branch;
+        let selected = self.execution.selected(block)?;
         let outside = self
             .available
             .iter()
