@@ -30,9 +30,10 @@ follows the branch order defined by RFC 0002. This is normally that branch's own
 column; if the branch contains a nested question or choice, its route may reach
 that node in another column. Other branches of the group route to the same node.
 
-When a shared continuation has several entry blocks, the renderer assigns
-their columns deterministically. All entry-block nodes remain within its
-group's footprint. Every branch of the group routes to every entry block.
+When a shared continuation has several independent entry blocks, draw them
+sequentially in the verified execution plan's order. They share the column
+reached by the group's first branch. Other branches meet before the sequence;
+connections carry later captures transitively through it.
 
 A group's footprint extends from its leftmost occupied column to its rightmost
 occupied column. A terminal sibling branch that precedes the group remains to
@@ -41,10 +42,12 @@ several disjoint groups, intervening terminal branches remain between their
 footprints. The core model's adjacency rule ensures that a branch outside a
 convergence group cannot separate two of its members.
 
-To draw the implicit merge of alternative `result` producers, each of them
-reaches its assigned column, descends to the merge row, and follows it into the
-end node. A producer already in the end node's column descends straight through
-that row.
+To draw an implicit merge, each producer descends in its approach column to one
+horizontal merge rail. The junction lies on that rail in the continuation's
+column. A route already in that column ends vertically at the junction; side
+routes end horizontally there, without turning down. The outgoing connection
+alone draws the vertical below the junction. This applies to the `result` merge
+above end as well as merges before computational blocks.
 
 ## 3. SVG output
 

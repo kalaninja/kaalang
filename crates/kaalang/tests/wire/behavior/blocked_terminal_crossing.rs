@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn blocked_terminal_crossing(request: u8) -> u8 {
-    #[choice("Choose an outer path.")]
+    #[choice("Choose an outer case.")]
     #[case("Build the left shared value.")]
     #[case("Build the right shared value.")]
     #[case("Finish after one step.")]
@@ -31,7 +31,7 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     #[action("Produce the second terminal result.")]
     |stepped| -> result { stepped };
 
-    #[choice("Choose an inner path wide enough to block both terminal columns.")]
+    #[choice("Choose an inner case wide enough to block both terminal columns.")]
     #[case("Build A.")]
     #[case("Build B.")]
     #[case("Build C.")]
@@ -62,7 +62,7 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
 }
 
 #[test]
-fn reaches_end_from_every_outer_path() {
+fn reaches_end_from_every_outer_case() {
     assert_eq!(blocked_terminal_crossing(0), 7);
     assert_eq!(blocked_terminal_crossing(1), 8);
     assert_eq!(blocked_terminal_crossing(2), 3);

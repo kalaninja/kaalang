@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="676" viewBox="0 0 704 676" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for capture_uneven</title>
-  <desc id="kaalang-description">Nodes: Start: capture_uneven(condition: bool) -&gt; u32; Question: Choose a path depth.; Action: Build the short result.; Action: Prepare the long result.; Action: Build the long result.; End. Connections: Start: capture_uneven(condition: bool) -&gt; u32 to Question: Choose a path depth. via condition; Question: Choose a path depth. to Action: Build the short result. via short; Question: Choose a path depth. to Action: Prepare the long result. via long; Action: Prepare the long result. to Action: Build the long result. via prepared; Action: Build the short result. to End via result; Action: Build the long result. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: capture_uneven(condition: bool) -&gt; u32 handing over condition; Question: Choose a branch depth. capturing condition handing over short / long; Action: Build the short result. capturing short handing over result; Action: Prepare the long result. capturing long handing over prepared; Action: Build the long result. capturing prepared handing over result; End: u32 capturing result. Connections: Start: capture_uneven(condition: bool) -&gt; u32 to Question: Choose a branch depth.; Question: Choose a branch depth. branch 1 to Action: Build the short result.; Question: Choose a branch depth. branch 2 to Action: Prepare the long result.; Action: Build the short result. to the result merge; Action: Prepare the long result. to Action: Build the long result.; Action: Build the long result. to the result merge; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,18 +13,19 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 242 L 172 314"/>
-    <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="edge" d="M 532 378 L 532 450"/>
-    <path class="edge" d="M 172 378 L 172 586"/>
-    <path class="edge" d="M 532 514 L 532 554 L 172 554 L 172 586"/>
-    <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
-    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">long</tspan></text>
-    <text class="edge-label" x="574" y="409" xml:space="preserve"><tspan x="574" dy="0">prepared</tspan></text>
-    <text class="edge-label" x="214" y="578" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
+    <path class="connection" d="M 172 378 L 172 566"/>
+    <path class="connection" d="M 532 378 L 532 450"/>
+    <path class="connection" d="M 532 514 L 532 566 L 172 566"/>
+    <path class="connection" d="M 172 566 L 172 658"/>
+    <text class="connection-label" x="214" y="584" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
+    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">long</tspan></text>
+    <text class="connection-label" x="574" y="409" xml:space="preserve"><tspan x="574" dy="0">prepared</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
@@ -32,9 +33,9 @@
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">capture_uneven(condition: bool) -&gt; </tspan><tspan x="0" dy="18">u32</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
-      <title xml:space="preserve">Choose a path depth.</title>
+      <title xml:space="preserve">Choose a branch depth.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a path depth.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a branch depth.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 346)">
       <title xml:space="preserve">Build the short result.</title>
@@ -51,9 +52,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the long result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 615)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 687)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

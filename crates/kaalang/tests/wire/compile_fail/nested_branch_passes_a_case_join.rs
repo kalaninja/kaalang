@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn nested_branch_passes_a_case_join(outer: bool, value: u8, inner: bool) -> u8 {
+fn invalid(outer: bool, value: u8, inner: bool) -> u8 {
     #[question("Take the choice?")]
     |outer, &value, &inner| -> (yes, no) { outer };
 
@@ -37,10 +37,4 @@ fn nested_branch_passes_a_case_join(outer: bool, value: u8, inner: bool) -> u8 {
     |ready| -> result { ready + 1 };
 }
 
-#[test]
-fn a_nested_branch_may_pass_its_case_join_toward_an_outer_one() {
-    assert_eq!(nested_branch_passes_a_case_join(true, 0, true), 12);
-    assert_eq!(nested_branch_passes_a_case_join(true, 1, true), 13);
-    assert_eq!(nested_branch_passes_a_case_join(true, 0, false), 101);
-    assert_eq!(nested_branch_passes_a_case_join(false, 0, true), 201);
-}
+fn main() {}

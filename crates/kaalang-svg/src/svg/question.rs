@@ -1,13 +1,12 @@
 //! Serializes a question node.
-
 use std::fmt::Write;
 
 use crate::layout::QUESTION_POINT;
 
 use super::{Node, write_label};
 
-pub(super) fn name(node: &Node) -> String {
-    format!("Question: {}", node.label)
+pub(super) fn name(label: &str) -> String {
+    format!("Question: {label}")
 }
 
 pub(super) fn write(svg: &mut String, node: &Node) {

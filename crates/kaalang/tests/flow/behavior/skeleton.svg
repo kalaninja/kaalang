@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="532" viewBox="0 0 704 532" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="604" viewBox="0 0 704 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for skeleton</title>
-  <desc id="kaalang-description">Nodes: Start: skeleton(seed: u32) -&gt; u32; Question: Accept the seed?; Action: Keep the accepted seed.; Action: Keep the rejected seed.; End. Connections: Start: skeleton(seed: u32) -&gt; u32 to Question: Accept the seed? handing over seed; Question: Accept the seed? to Action: Keep the accepted seed. handing over accepted, captured as accepted, seed; Question: Accept the seed? to Action: Keep the rejected seed. handing over rejected, captured as rejected, seed; Action: Keep the accepted seed. to End via result; Action: Keep the rejected seed. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: skeleton(seed: u32) -&gt; u32 handing over seed; Question: Accept the seed? capturing &amp;seed handing over accepted / rejected; Action: Keep the accepted seed. capturing accepted, seed handing over result; Action: Keep the rejected seed. capturing rejected, seed handing over result; End: u32 capturing result. Connections: Start: skeleton(seed: u32) -&gt; u32 to Question: Accept the seed?; Question: Accept the seed? branch 1 to Action: Keep the accepted seed.; Question: Accept the seed? branch 2 to Action: Keep the rejected seed.; Action: Keep the accepted seed. to the result merge; Action: Keep the rejected seed. to the result merge; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,18 +13,20 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 90 L 172 162"/>
-    <path class="edge" d="M 172 234 L 172 306"/>
-    <path class="edge" d="M 312 198 L 532 198 L 532 306"/>
-    <path class="edge" d="M 172 370 L 172 442"/>
-    <path class="edge" d="M 532 370 L 532 410 L 172 410 L 172 442"/>
-    <text class="edge-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">seed</tspan></text>
-    <text class="edge-label" x="214" y="298" xml:space="preserve"><tspan x="214" dy="0">accepted, seed</tspan></text>
-    <text class="edge-label" x="214" y="252" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
-    <text class="edge-label" x="574" y="298" xml:space="preserve"><tspan x="574" dy="0">rejected, seed</tspan></text>
-    <text class="edge-label" x="342" y="216" xml:space="preserve"><tspan x="342" dy="0">rejected</tspan></text>
-    <text class="edge-label" x="214" y="434" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 312 198 L 532 198 L 532 306"/>
+    <path class="connection" d="M 172 370 L 172 422"/>
+    <path class="connection" d="M 532 370 L 532 422 L 172 422"/>
+    <path class="connection" d="M 172 422 L 172 514"/>
+    <text class="connection-label" x="214" y="440" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">seed</tspan></text>
+    <text class="connection-label" x="214" y="252" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
+    <text class="connection-label" x="354" y="216" xml:space="preserve"><tspan x="354" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="214" y="151" xml:space="preserve"><tspan x="214" dy="0">&amp;seed</tspan></text>
+    <text class="connection-label" x="229" y="295" xml:space="preserve"><tspan x="229" dy="0">accepted, seed</tspan></text>
+    <text class="connection-label" x="587" y="295" xml:space="preserve"><tspan x="587" dy="0">rejected, seed</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">
@@ -46,9 +48,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the rejected seed.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 471)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 543)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

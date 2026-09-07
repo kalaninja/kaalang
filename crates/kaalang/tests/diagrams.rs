@@ -1,7 +1,8 @@
 //! Draws every behavior fixture beside its source, so a change to the model or
 //! the renderer shows up as a diagram diff instead of staying invisible.
 //!
-//! The diagrams are generated, not asserted: `git diff` is the review surface.
+//! Geometry is reviewed in `git diff`. Every behavior fixture must render;
+//! a routing failure cannot silently delete a working diagram.
 
 use std::{
     fs,

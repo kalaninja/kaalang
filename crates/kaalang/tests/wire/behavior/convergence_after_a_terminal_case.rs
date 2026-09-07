@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn convergence_after_a_terminal_case(value: i8) -> &'static str {
-    #[choice("Choose a path.")]
+    #[choice("Choose a branch.")]
     #[case("Finish without a shared step.")]
     #[case("Build the left value.")]
     #[case("Build the right value.")]

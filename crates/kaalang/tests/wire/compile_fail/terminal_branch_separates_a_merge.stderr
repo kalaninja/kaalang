@@ -1,0 +1,5 @@
+error: branches reaching the `shared` wire merge must be adjacent, including nested branches
+  --> tests/wire/compile_fail/terminal_branch_separates_a_merge.rs:15:15
+   |
+15 |     |join| -> shared { 1 };
+   |               ^^^^^^

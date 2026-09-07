@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
-    #[question("Choose a path.")]
+    #[question("Choose a branch.")]
     |condition| -> (yes, no) { condition };
 
     #[action("Borrow the yes output.")]

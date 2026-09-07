@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="682" viewBox="0 0 704 682" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="754" viewBox="0 0 704 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_skeleton</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton(value: i32) -&gt; &amp;&apos;static str; Choice: What is the sign of the value?; Case: The value is negative.; Case: The value is nonnegative.; Action: Produce the negative result.; Action: Produce the nonnegative result.; End. Connections: Start: run_choice_skeleton(value: i32) -&gt; &amp;&apos;static str to Choice: What is the sign of the value? via value; Choice: What is the sign of the value? to Case: The value is negative.; Choice: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Produce the negative result. via negative; Case: The value is nonnegative. to Action: Produce the nonnegative result. via nonnegative; Action: Produce the negative result. to End via result; Action: Produce the nonnegative result. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton(value: i32) -&gt; &amp;&apos;static str handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Produce the negative result. capturing negative handing over result; Action: Produce the nonnegative result. capturing nonnegative handing over result; End: &amp;&apos;static str capturing result. Connections: Start: run_choice_skeleton(value: i32) -&gt; &amp;&apos;static str to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Produce the negative result.; Case: The value is nonnegative. to Action: Produce the nonnegative result.; Action: Produce the negative result. to the result merge; Action: Produce the nonnegative result. to the result merge; the result merge to End: &amp;&apos;static str.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,25 +13,26 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 242 L 172 314"/>
-    <path class="edge" d="M 172 242 L 172 278 L 532 278 L 532 314"/>
-    <path class="edge" d="M 172 384 L 172 456"/>
-    <path class="edge" d="M 532 384 L 532 456"/>
-    <path class="edge" d="M 172 520 L 172 592"/>
-    <path class="edge" d="M 532 520 L 532 560 L 172 560 L 172 592"/>
-    <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
-    <text class="edge-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">negative</tspan></text>
-    <text class="edge-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">nonnegative</tspan></text>
-    <text class="edge-label" x="214" y="584" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
+    <path class="connection" d="M 172 384 L 172 456"/>
+    <path class="connection" d="M 532 384 L 532 456"/>
+    <path class="connection" d="M 172 520 L 172 572"/>
+    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
+    <path class="connection" d="M 172 572 L 172 664"/>
+    <text class="connection-label" x="214" y="590" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
+    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">negative</tspan></text>
+    <text class="connection-label" x="580" y="415" xml:space="preserve"><tspan x="580" dy="0">nonnegative</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">run_choice_skeleton(value: i32) -&gt; </tspan><tspan x="0" dy="18">&amp;&apos;static str</tspan></text>
     </g>
-    <g class="node choice select" transform="translate(172 206)">
+    <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">What is the sign of the value?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">What is the sign of the </tspan><tspan x="0" dy="18">value?</tspan></text>
@@ -56,9 +57,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the nonnegative result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 621)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 693)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; &amp;&apos;static str</tspan></text>
     </g>
   </g>
 </svg>

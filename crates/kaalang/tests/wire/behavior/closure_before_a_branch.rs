@@ -16,7 +16,7 @@ fn closure_before_a_branch(condition: bool, base: u32) -> u32 {
 }
 
 #[test]
-fn an_independent_closure_is_bound_once_before_the_branch() {
+fn the_shared_closure_is_bound_once_before_the_branch() {
     assert_eq!(closure_before_a_branch(true, 10), 11);
     assert_eq!(closure_before_a_branch(false, 10), 9);
 }

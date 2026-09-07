@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="820" viewBox="0 0 1064 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="964" viewBox="0 0 1064 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for convergence_before_a_terminal_case</title>
-  <desc id="kaalang-description">Nodes: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32; Choice: Choose whether to continue.; Case: First continuing branch.; Case: Second continuing branch.; Case: Terminal case.; Action: Build the first value.; Action: Build the second value.; Action: Produce the direct result.; Action: Use a value from a continuing branch.; End. Connections: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32 to Choice: Choose whether to continue. via case; Choice: Choose whether to continue. to Case: First continuing branch.; Choice: Choose whether to continue. to Case: Second continuing branch.; Choice: Choose whether to continue. to Case: Terminal case.; Case: First continuing branch. to Action: Build the first value. via first; Case: Second continuing branch. to Action: Build the second value. via second; Case: Terminal case. to Action: Produce the direct result. via done; Action: Build the first value. to Action: Use a value from a continuing branch. via selected; Action: Build the second value. to Action: Use a value from a continuing branch. via selected; Action: Produce the direct result. to End via result; Action: Use a value from a continuing branch. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32 handing over case; Select: Choose whether to continue. capturing case; Case: First continuing branch. handing over first; Case: Second continuing branch. handing over second; Case: Terminal case. handing over done; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Produce the direct result. capturing done handing over result; Action: Use a value from a continuing branch. capturing selected handing over result; End: u32 capturing result. Connections: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32 to Select: Choose whether to continue.; Select: Choose whether to continue. to Case: First continuing branch.; Select: Choose whether to continue. to Case: Second continuing branch.; Select: Choose whether to continue. to Case: Terminal case.; Case: First continuing branch. to Action: Build the first value.; Case: Second continuing branch. to Action: Build the second value.; Case: Terminal case. to Action: Produce the direct result.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Produce the direct result. to the result merge; Action: Use a value from a continuing branch. to the result merge; the selected merge to Action: Use a value from a continuing branch.; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,31 +13,33 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 242 L 172 314"/>
-    <path class="edge" d="M 172 242 L 172 278 L 532 278 L 532 314"/>
-    <path class="edge" d="M 172 242 L 172 278 L 892 278 L 892 314"/>
-    <path class="edge" d="M 172 384 L 172 456"/>
-    <path class="edge" d="M 532 384 L 532 456"/>
-    <path class="edge" d="M 892 384 L 892 456"/>
-    <path class="edge" d="M 172 520 L 172 592"/>
-    <path class="edge" d="M 532 520 L 532 556 L 172 556 L 172 592"/>
-    <path class="edge" d="M 892 520 L 892 698 L 172 698 L 172 730"/>
-    <path class="edge" d="M 172 658 L 172 730"/>
-    <text class="edge-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">case</tspan></text>
-    <text class="edge-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
-    <text class="edge-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">second</tspan></text>
-    <text class="edge-label" x="934" y="415" xml:space="preserve"><tspan x="934" dy="0">done</tspan></text>
-    <text class="edge-label" x="214" y="584" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
-    <text class="edge-label" x="214" y="722" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 892 294 L 892 314"/>
+    <path class="connection" d="M 172 384 L 172 456"/>
+    <path class="connection" d="M 532 384 L 532 456"/>
+    <path class="connection" d="M 892 384 L 892 456"/>
+    <path class="connection" d="M 172 520 L 172 572"/>
+    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
+    <path class="connection" d="M 892 520 L 892 782 L 172 782"/>
+    <path class="connection" d="M 172 730 L 172 782"/>
+    <path class="connection" d="M 172 572 L 172 664"/>
+    <path class="connection" d="M 172 782 L 172 874"/>
+    <text class="connection-label" x="214" y="590" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="connection-label" x="214" y="800" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">case</tspan></text>
+    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">second</tspan></text>
+    <text class="connection-label" x="934" y="415" xml:space="preserve"><tspan x="934" dy="0">done</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">convergence_before_a_terminal_ca</tspan><tspan x="0" dy="18">se(case: u8) -&gt; u32</tspan></text>
     </g>
-    <g class="node choice select" transform="translate(172 206)">
+    <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Choose whether to continue.</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Choose whether to </tspan><tspan x="0" dy="18">continue.</tspan></text>
@@ -72,14 +74,14 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the direct result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 625)">
+    <g class="node action" transform="translate(172 697)">
       <title xml:space="preserve">Use a value from a continuing branch.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use a value from a continuing </tspan><tspan x="-124" dy="18">branch.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 759)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 903)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

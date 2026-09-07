@@ -8,8 +8,8 @@ fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     #[action("Prepare the left branch.")]
     |left| -> (probe, left_value) { ((), 1u8) };
 
-    #[question("Refine the left branch.")]
-    |probe, inner| -> (near, far) { inner };
+    #[question("Take the far left branch?")]
+    |probe, inner| -> (far, near) { !inner };
 
     #[action("Produce the near left value and an unused alternative.")]
     |near, &left_value| -> (_unused, selected) { ((), *left_value) };

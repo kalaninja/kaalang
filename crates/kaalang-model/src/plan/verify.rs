@@ -104,7 +104,7 @@ struct Replay<'a> {
 
 impl Replay<'_> {
     fn capture(&mut self, block: usize) -> Option<()> {
-        if !super::ready(self.flow, self.merges, self.execution, block, &self.ran) {
+        if !super::ready(self.merges, self.execution, block, &self.ran) {
             return None;
         }
         for (input, declaration) in self.flow.blocks[block].inputs.iter().enumerate() {
@@ -341,6 +341,146 @@ mod tests {
                 plan(&model.flow, &guarded, &model.executions, &model.merges),
                 valid
             );
+        }
+    }
+
+    #[test]
+    fn a_selection_needed_to_produce_a_wire_stays_before_it() {
+        let function: syn::ItemFn = parse_quote! {
+            fn choose(flag: bool) -> u8 {
+                #[question("Prepare a value?")]
+                |flag| -> (yes, no) { flag };
+                #[action("Prepare it on this branch.")]
+                |yes| -> setup { 1u8 };
+                #[action("Use the prepared value.")]
+                |setup| -> result { setup };
+                #[action("Finish without it.")]
+                |no| -> result { 0u8 };
+            }
+        };
+        let model = crate::build(&function).expect("production stays inside its branch");
+        assert!(
+            model
+                .executions
+                .iter()
+                .all(|execution| execution.ordering.is_empty())
+        );
+    }
+
+    #[test]
+    fn a_consumer_selecting_branch_waits_for_an_ordinary_producer() {
+        for selection in [
+            parse_quote! {
+                #[question("Use the setup?")]
+                |flag| -> (yes, no) { flag };
+            },
+            parse_quote! {
+                #[choice("Use the setup?")]
+                #[case("Use it.")]
+                #[case("Skip it.")]
+                |flag| -> (yes, no) { match flag { true => (), false => () } };
+            },
+        ] {
+            // Author the selection first to prove the order comes from the
+            // selected consumer, even when only one branch uses the value.
+            let mut function: syn::ItemFn = parse_quote! {
+                fn choose(flag: bool, seed: u8) -> u8 {
+                    #[question("Use the setup?")]
+                    |flag| -> (yes, no) { flag };
+                    #[action("Prepare the setup.")]
+                    |seed| -> (setup, fallback) { (seed, 0u8) };
+                    #[action("Use it.")]
+                    |yes, setup| -> result { setup };
+                    #[action("Skip it.")]
+                    |no, fallback| -> result { fallback };
+                }
+            };
+            function.block.stmts[0] = selection;
+            let model = crate::build(&function).expect("setup precedes the selection");
+            for execution in &model.executions {
+                assert_eq!(execution.ordering, [(1, 0)]);
+                assert_eq!(
+                    execution
+                        .dependencies
+                        .iter()
+                        .filter(|dependency| dependency.capture.block == 0)
+                        .count(),
+                    1
+                );
+            }
+            assert_eq!(model.flow.blocks[0].inputs.len(), 1);
+            let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
+            assert_eq!(ordered, [1, 0, 2, 3]);
+            for (blocks, valid) in [(vec![0, 1, 2, 3], false), (ordered, true)] {
+                let guarded = ExecutionPlan::Guarded {
+                    inputs: model.flow.flow_inputs.clone(),
+                    blocks,
+                };
+                assert_eq!(
+                    plan(&model.flow, &guarded, &model.executions, &model.merges),
+                    valid
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_consumer_selecting_branch_waits_for_the_merge_without_capturing_it() {
+        for selection in [
+            parse_quote! {
+                #[question("Report the value?")]
+                |report| -> (yes, no) { report };
+            },
+            parse_quote! {
+                #[choice("Choose a report.")]
+                #[case("Report the value.")]
+                #[case("Report nothing.")]
+                |report| -> (yes, no) { match report { true => (), false => () } };
+            },
+        ] {
+            let mut function: syn::ItemFn = parse_quote! {
+                fn choose(report: bool, flag: bool) -> u8 {
+                    #[question("Report the value?")]
+                    |report| -> (yes, no) { report };
+                    #[question("Choose the value.")]
+                    |flag| -> (first, second) { flag };
+                    #[action("First value.")]
+                    |first| -> value { 1u8 };
+                    #[action("Second value.")]
+                    |second| -> value { 2u8 };
+                    #[action("Report it.")]
+                    |yes, value| -> result { value };
+                    #[action("Report nothing.")]
+                    |no, value| -> result { 0u8 };
+                }
+            };
+            function.block.stmts[0] = selection;
+            let model = crate::build(&function).expect("the merge precedes the selection");
+            let merge = model
+                .merges
+                .iter()
+                .find(|merge| merge.wire == "value")
+                .unwrap();
+            assert_eq!(merge.after, [0, 4, 5]);
+            assert_eq!(model.flow.blocks[0].inputs.len(), 1);
+            let group = model
+                .convergence_groups
+                .iter()
+                .find(|group| group.branching_block == 1)
+                .unwrap();
+            assert_eq!(group.entries, [0]);
+            let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
+            assert_eq!(ordered, [1, 2, 3, 0, 4, 5]);
+            for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5], false), (ordered, true)] {
+                let guarded = ExecutionPlan::Guarded {
+                    inputs: model.flow.flow_inputs.clone(),
+                    blocks,
+                };
+                assert_eq!(
+                    plan(&model.flow, &guarded, &model.executions, &model.merges),
+                    valid
+                );
+            }
         }
     }
 }

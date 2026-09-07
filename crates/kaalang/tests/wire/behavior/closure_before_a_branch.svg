@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="678" viewBox="0 0 704 678" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="750" viewBox="0 0 704 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for closure_before_a_branch</title>
-  <desc id="kaalang-description">Nodes: Start: closure_before_a_branch(condition: bool, base: u32) -&gt; u32; Action: Build a handler either branch may consume.; Question: Add or subtract?; Action: Add one.; Action: Subtract one.; End. Connections: Start: closure_before_a_branch(condition: bool, base: u32) -&gt; u32 to Action: Build a handler either branch may consume. handing over condition, base, captured as base; Action: Build a handler either branch may consume. to Question: Add or subtract? handing over handler, captured as condition; Question: Add or subtract? to Action: Add one. handing over add, captured as add, handler; Question: Add or subtract? to Action: Subtract one. handing over subtract, captured as subtract, handler; Action: Add one. to End via result; Action: Subtract one. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: closure_before_a_branch(condition: bool, base: u32) -&gt; u32 handing over condition, base; Question: Add or subtract? capturing condition handing over add / subtract; Action: Build a handler either branch may consume. capturing base handing over handler; Action: Add one. capturing add, handler handing over result; Action: Subtract one. capturing subtract, handler handing over result; End: u32 capturing result. Connections: Start: closure_before_a_branch(condition: bool, base: u32) -&gt; u32 to Action: Build a handler either branch may consume.; Question: Add or subtract? branch 1 to Action: Add one.; Question: Add or subtract? branch 2 to Action: Subtract one.; Action: Build a handler either branch may consume. to Question: Add or subtract?; Action: Add one. to the result merge; Action: Subtract one. to the result merge; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,37 +13,38 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 236 L 172 308"/>
-    <path class="edge" d="M 172 380 L 172 452"/>
-    <path class="edge" d="M 312 344 L 532 344 L 532 452"/>
-    <path class="edge" d="M 172 516 L 172 588"/>
-    <path class="edge" d="M 532 516 L 532 556 L 172 556 L 172 588"/>
-    <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">base</tspan></text>
-    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">condition, base</tspan></text>
-    <text class="edge-label" x="214" y="300" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="edge-label" x="214" y="254" xml:space="preserve"><tspan x="214" dy="0">handler</tspan></text>
-    <text class="edge-label" x="214" y="444" xml:space="preserve"><tspan x="214" dy="0">add, handler</tspan></text>
-    <text class="edge-label" x="214" y="398" xml:space="preserve"><tspan x="214" dy="0">add</tspan></text>
-    <text class="edge-label" x="574" y="444" xml:space="preserve"><tspan x="574" dy="0">subtract, handler</tspan></text>
-    <text class="edge-label" x="343" y="362" xml:space="preserve"><tspan x="343" dy="0">subtract</tspan></text>
-    <text class="edge-label" x="214" y="580" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 380 L 172 452"/>
+    <path class="connection" d="M 312 344 L 532 344 L 532 452"/>
+    <path class="connection" d="M 172 236 L 172 308"/>
+    <path class="connection" d="M 172 516 L 172 568"/>
+    <path class="connection" d="M 532 516 L 532 568 L 172 568"/>
+    <path class="connection" d="M 172 568 L 172 660"/>
+    <text class="connection-label" x="214" y="586" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="229" y="116" xml:space="preserve"><tspan x="229" dy="0">condition, base</tspan></text>
+    <text class="connection-label" x="214" y="398" xml:space="preserve"><tspan x="214" dy="0">add</tspan></text>
+    <text class="connection-label" x="354" y="362" xml:space="preserve"><tspan x="354" dy="0">subtract</tspan></text>
+    <text class="connection-label" x="214" y="254" xml:space="preserve"><tspan x="214" dy="0">handler</tspan></text>
+    <text class="connection-label" x="214" y="297" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">base</tspan></text>
+    <text class="connection-label" x="221" y="441" xml:space="preserve"><tspan x="221" dy="0">add, handler</tspan></text>
+    <text class="connection-label" x="597" y="441" xml:space="preserve"><tspan x="597" dy="0">subtract, handler</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">closure_before_a_branch(condition</tspan><tspan x="0" dy="18">: bool, base: u32) -&gt; u32</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 203)">
-      <title xml:space="preserve">Build a handler either branch may consume.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build a handler either branch may </tspan><tspan x="-124" dy="18">consume.</tspan></text>
-    </g>
     <g class="node question" transform="translate(172 344)">
       <title xml:space="preserve">Add or subtract?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add or subtract?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 203)">
+      <title xml:space="preserve">Build a handler either branch may consume.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build a handler either branch may </tspan><tspan x="-124" dy="18">consume.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 484)">
       <title xml:space="preserve">Add one.</title>
@@ -55,9 +56,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Subtract one.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 617)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 689)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

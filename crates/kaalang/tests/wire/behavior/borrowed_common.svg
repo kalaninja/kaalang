@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="678" viewBox="0 0 704 678" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="750" viewBox="0 0 704 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_common</title>
-  <desc id="kaalang-description">Nodes: Start: borrowed_common(condition: bool, prefix: String) -&gt; String; Question: Choose a suffix.; Action: Build the yes suffix.; Action: Build the no suffix.; Action: Use the suffix and the preserved prefix.; End. Connections: Start: borrowed_common(condition: bool, prefix: String) -&gt; String to Question: Choose a suffix. handing over condition, prefix, captured as condition; Question: Choose a suffix. to Action: Build the yes suffix. via yes; Question: Choose a suffix. to Action: Build the no suffix. via no; Action: Build the yes suffix. to Action: Use the suffix and the preserved prefix. handing over suffix, captured as suffix, prefix; Action: Build the no suffix. to Action: Use the suffix and the preserved prefix. handing over suffix, captured as suffix, prefix; Action: Use the suffix and the preserved prefix. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: borrowed_common(condition: bool, prefix: String) -&gt; String handing over condition, prefix; Question: Choose a suffix. capturing condition handing over yes / no; Action: Build the yes suffix. capturing yes, &amp;prefix handing over suffix; Action: Build the no suffix. capturing no, &amp;prefix handing over suffix; Action: Use the suffix and the preserved prefix. capturing suffix, prefix handing over result; End: String capturing result. Connections: Start: borrowed_common(condition: bool, prefix: String) -&gt; String to Question: Choose a suffix.; Question: Choose a suffix. branch 1 to Action: Build the yes suffix.; Question: Choose a suffix. branch 2 to Action: Build the no suffix.; Action: Build the yes suffix. to the suffix merge; Action: Build the no suffix. to the suffix merge; Action: Use the suffix and the preserved prefix. to End: String; the suffix merge to Action: Use the suffix and the preserved prefix..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,21 +13,23 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 242 L 172 314"/>
-    <path class="edge" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="edge" d="M 172 378 L 172 450"/>
-    <path class="edge" d="M 532 378 L 532 414 L 172 414 L 172 450"/>
-    <path class="edge" d="M 172 516 L 172 588"/>
-    <text class="edge-label" x="214" y="162" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">condition, prefix</tspan></text>
-    <text class="edge-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="edge-label" x="422" y="198" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="edge-label" x="214" y="442" xml:space="preserve"><tspan x="214" dy="0">suffix, prefix</tspan></text>
-    <text class="edge-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">suffix</tspan></text>
-    <text class="edge-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">suffix</tspan></text>
-    <text class="edge-label" x="214" y="547" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
+    <path class="connection" d="M 172 378 L 172 430"/>
+    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
+    <path class="connection" d="M 172 588 L 172 660"/>
+    <path class="connection" d="M 172 430 L 172 522"/>
+    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">suffix</tspan></text>
+    <text class="connection-label" x="214" y="619" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">condition, prefix</tspan></text>
+    <text class="connection-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="354" y="224" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
+    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="221" y="303" xml:space="preserve"><tspan x="221" dy="0">yes, &amp;prefix</tspan></text>
+    <text class="connection-label" x="577" y="303" xml:space="preserve"><tspan x="577" dy="0">no, &amp;prefix</tspan></text>
+    <text class="connection-label" x="226" y="511" xml:space="preserve"><tspan x="226" dy="0">suffix, prefix</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
@@ -49,14 +51,14 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the no suffix.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 483)">
+    <g class="node action" transform="translate(172 555)">
       <title xml:space="preserve">Use the suffix and the preserved prefix.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the suffix and the preserved </tspan><tspan x="-124" dy="18">prefix.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 617)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 689)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; String</tspan></text>
     </g>
   </g>
 </svg>

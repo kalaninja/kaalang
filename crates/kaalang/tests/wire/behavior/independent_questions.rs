@@ -4,7 +4,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
-    #[question("Choose the left path.")]
+    #[question("Choose the left branch.")]
     |left, &calls| -> (a, b) {
         calls.set(calls.get() + 1);
         left
@@ -22,10 +22,10 @@ fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
     #[action("Build the second right value.")]
     |y| -> value { 20u8 };
 
-    #[action("Use the left path and the right value.")]
+    #[action("Use the left branch and the right value.")]
     |a, value| -> result { value + 1 };
 
-    #[action("Use the other left path and the right value.")]
+    #[action("Use the other left branch and the right value.")]
     |b, value| -> result { value + 2 };
 }
 

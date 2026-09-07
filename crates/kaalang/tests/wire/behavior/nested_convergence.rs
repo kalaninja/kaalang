@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn nested_convergence(outer: bool, inner: bool) -> u32 {
-    #[question("Take the nested path?")]
+    #[question("Take the nested branch?")]
     |outer, &inner| -> (nested, direct) { outer };
 
     #[question("Choose the nested value.")]
@@ -22,7 +22,7 @@ fn nested_convergence(outer: bool, inner: bool) -> u32 {
 }
 
 #[test]
-fn nested_paths_converge_once() {
+fn nested_branches_converge_once() {
     assert_eq!(nested_convergence(true, true), 10);
     assert_eq!(nested_convergence(true, false), 20);
     assert_eq!(nested_convergence(false, true), 30);

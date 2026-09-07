@@ -1,0 +1,5 @@
+error: a nested kaalang branch cannot bypass the `shared` wire merge and rejoin at `ready`; merge before or with the enclosing branches
+ --> tests/wire/compile_fail/nested_branch_bypasses_a_merge.rs:8:5
+  |
+8 |     #[question("Join the shared step?")]
+  |     ^

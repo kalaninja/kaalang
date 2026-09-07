@@ -15,7 +15,7 @@ use super::only_difference;
 /// differ in whether the block participates. A question or choice on a path
 /// that one execution cut short runs in only one of the two and takes no part
 /// in the comparison.
-fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<usize>> {
+pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<usize>> {
     (0..flow.blocks.len() - 1)
         .map(|block| {
             let (running, skipping): (Vec<_>, Vec<_>) = executions

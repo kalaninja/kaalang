@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn uneven_depth(condition: bool) -> u32 {
-    #[question("Choose a path depth.")]
+    #[question("Choose a branch depth.")]
     |condition| -> (short, long) { condition };
 
     #[action("Build the short value.")]

@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="694" viewBox="0 0 704 694" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="766" viewBox="0 0 704 766" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_case_input</title>
-  <desc id="kaalang-description">Nodes: Start: borrowed_case_input(text: String) -&gt; usize; Choice: Borrow the text through the choice.; Case: Keep a long text whole.; Case: Keep the first character of a short text.; Action: Measure the long text.; Action: Measure the short text.; End. Connections: Start: borrowed_case_input(text: String) -&gt; usize to Choice: Borrow the text through the choice. handing over text; Choice: Borrow the text through the choice. to Case: Keep a long text whole.; Choice: Borrow the text through the choice. to Case: Keep the first character of a short text.; Case: Keep a long text whole. to Action: Measure the long text. via long; Case: Keep the first character of a short text. to Action: Measure the short text. via short; Action: Measure the long text. to End via result; Action: Measure the short text. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: borrowed_case_input(text: String) -&gt; usize handing over text; Select: Borrow the text through the choice. capturing &amp;text; Case: Keep a long text whole. handing over long; Case: Keep the first character of a short text. handing over short; Action: Measure the long text. capturing long handing over result; Action: Measure the short text. capturing short handing over result; End: usize capturing result. Connections: Start: borrowed_case_input(text: String) -&gt; usize to Select: Borrow the text through the choice.; Select: Borrow the text through the choice. to Case: Keep a long text whole.; Select: Borrow the text through the choice. to Case: Keep the first character of a short text.; Case: Keep a long text whole. to Action: Measure the long text.; Case: Keep the first character of a short text. to Action: Measure the short text.; Action: Measure the long text. to the result merge; Action: Measure the short text. to the result merge; the result merge to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,32 +13,34 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 98 L 172 170"/>
-    <path class="edge" d="M 172 242 L 172 314"/>
-    <path class="edge" d="M 172 242 L 172 278 L 532 278 L 532 314"/>
-    <path class="edge" d="M 172 396 L 172 468"/>
-    <path class="edge" d="M 532 396 L 532 468"/>
-    <path class="edge" d="M 172 532 L 172 604"/>
-    <path class="edge" d="M 532 532 L 532 572 L 172 572 L 172 604"/>
-    <text class="edge-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">text</tspan></text>
-    <text class="edge-label" x="214" y="427" xml:space="preserve"><tspan x="214" dy="0">long</tspan></text>
-    <text class="edge-label" x="574" y="427" xml:space="preserve"><tspan x="574" dy="0">short</tspan></text>
-    <text class="edge-label" x="214" y="596" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 320"/>
+    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
+    <path class="connection" d="M 172 390 L 172 468"/>
+    <path class="connection" d="M 532 396 L 532 468"/>
+    <path class="connection" d="M 172 532 L 172 584"/>
+    <path class="connection" d="M 532 532 L 532 584 L 172 584"/>
+    <path class="connection" d="M 172 584 L 172 676"/>
+    <text class="connection-label" x="214" y="602" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="214" y="424" xml:space="preserve"><tspan x="214" dy="0">long</tspan></text>
+    <text class="connection-label" x="574" y="427" xml:space="preserve"><tspan x="574" dy="0">short</tspan></text>
+    <text class="connection-label" x="214" y="116" xml:space="preserve"><tspan x="214" dy="0">text</tspan></text>
+    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">&amp;text</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">borrowed_case_input(text: </tspan><tspan x="0" dy="18">String) -&gt; usize</tspan></text>
     </g>
-    <g class="node choice select" transform="translate(172 206)">
+    <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Borrow the text through the choice.</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Borrow the text through </tspan><tspan x="0" dy="18">the choice.</tspan></text>
     </g>
     <g class="node case" transform="translate(172 355)">
       <title xml:space="preserve">Keep a long text whole.</title>
-      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Keep a long text whole.</tspan></text>
     </g>
     <g class="node case" transform="translate(532 355)">
@@ -56,9 +58,9 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the short text.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 633)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 705)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>
   </g>
 </svg>

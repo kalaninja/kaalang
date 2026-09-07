@@ -1,5 +1,5 @@
-//! Places implicit wire merges after branch-local computation and before
-//! every capture of the merged name, independently of the lowering plan.
+//! Orders wire production and implicit merges before eligible consumer-selecting
+//! branches, and closes branch-local work before merges, independently of lowering.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -13,7 +13,7 @@ use super::only_difference;
 // ponytail: comparing every pair of producing executions per merge costs
 // O(merges * executions² * blocks); reuse the participation pass or index the
 // executions by selection if flows grow large enough to notice.
-pub(super) fn flow(flow: &Flow, executions: &[Execution]) -> Result<Vec<WireMerge>> {
+pub(super) fn flow(flow: &Flow, executions: &mut [Execution]) -> Result<Vec<WireMerge>> {
     let mut merges = collect(flow);
     let blocks = flow.blocks.len();
     let mut successors = vec![BTreeSet::new(); blocks + merges.len()];
@@ -38,15 +38,7 @@ pub(super) fn flow(flow: &Flow, executions: &[Execution]) -> Result<Vec<WireMerg
             };
             successors[block].insert(node);
         }
-        for (block, declaration) in flow.blocks.iter().enumerate() {
-            if declaration
-                .inputs
-                .iter()
-                .any(|input| input.ident == merge.wire)
-            {
-                successors[node].insert(block);
-            }
-        }
+        successors[node].extend(&merge.after);
         for &block in &before {
             successors[block].insert(node);
         }
@@ -56,12 +48,192 @@ pub(super) fn flow(flow: &Flow, executions: &[Execution]) -> Result<Vec<WireMerg
         merge.before = before;
     }
 
+    // Derive every implicit ordering from the same original graph, before
+    // adding any of them, so neither merge order nor authored order chooses it.
+    let deciders = super::participation::deciders(flow, executions);
+    let block_orders = ordinary_orders(flow, executions, &merges, &successors, &deciders);
+    let branch_orders = merges
+        .iter()
+        .enumerate()
+        .map(|(index, merge)| {
+            merge
+                .after
+                .iter()
+                .filter_map(|&consumer| deciders.get(consumer))
+                .flatten()
+                .copied()
+                .filter(|&brancher| {
+                    // A selection needed to produce or finish this merge stays
+                    // before it. A partial merge must not suppress a selection
+                    // in executions where none of its producers runs.
+                    !reachable(&successors, brancher).contains(&(blocks + index))
+                        && executions
+                            .iter()
+                            .filter(|execution| execution.participates(brancher))
+                            .all(|execution| {
+                                merge
+                                    .producers
+                                    .iter()
+                                    .any(|&producer| produced(execution, producer))
+                            })
+                })
+                .collect::<BTreeSet<_>>()
+        })
+        .collect::<Vec<_>>();
+    for &(before, after) in &block_orders {
+        successors[before].insert(after);
+    }
+    for (index, (merge, branchers)) in merges.iter_mut().zip(branch_orders).enumerate() {
+        successors[blocks + index].extend(&branchers);
+        merge.after.extend(branchers);
+        merge.after.sort_unstable();
+        merge.after.dedup();
+    }
+
     for (block, groups) in groups.into_iter().enumerate() {
         super::choice::validate_groups(
             &flow.blocks[block].outputs,
             &groups.into_iter().collect::<Vec<_>>(),
         )?;
     }
+    validate_order(flow, &merges, &successors, &block_orders)?;
+    validate_nesting(flow, executions, &merges, &successors)?;
+    for execution in executions {
+        execution.ordering = block_orders
+            .iter()
+            .copied()
+            .filter(|&(_, after)| execution.participates(after))
+            .collect();
+    }
+    Ok(merges)
+}
+
+/// Merge groups stay adjacent across nested selections. An outside branch may
+/// leave for end, but cannot rejoin an ordinary continuation after its merge.
+fn validate_nesting(
+    flow: &Flow,
+    executions: &[Execution],
+    merges: &[WireMerge],
+    successors: &[BTreeSet<usize>],
+) -> Result<()> {
+    let contexts = merges
+        .iter()
+        .map(|merge| {
+            let producers = executions
+                .iter()
+                .map(|execution| {
+                    merge
+                        .producers
+                        .iter()
+                        .copied()
+                        .find(|&producer| produced(execution, producer))
+                })
+                .collect::<Vec<_>>();
+            validate_adjacency(executions, merge, &producers)?;
+            Ok(producers
+                .iter()
+                .enumerate()
+                .filter_map(|(index, producer)| producer.is_some().then_some(index))
+                .collect::<BTreeSet<_>>())
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let result = &flow.blocks[flow.blocks.len() - 1].inputs[0].ident;
+    let mut offending = None;
+    for (index, context) in contexts.iter().enumerate() {
+        let following = reachable(successors, flow.blocks.len() + index);
+        for &run in context {
+            for (skip, execution) in executions.iter().enumerate() {
+                if context.contains(&skip) {
+                    continue;
+                }
+                let Some(nested) = only_difference(&executions[run], execution) else {
+                    continue;
+                };
+                // A partial merge entirely within this selection is valid.
+                // An enclosing merge also receives a branch outside it.
+                if context.iter().all(|&e| executions[e].participates(nested)) {
+                    continue;
+                }
+                if let Some(later) = merges.iter().enumerate().position(|(later, merge)| {
+                    &merge.wire != result
+                        && following.contains(&(flow.blocks.len() + later))
+                        && contexts[later].contains(&skip)
+                }) {
+                    let violation = (nested, index, later);
+                    offending = Some(offending.map_or(violation, |old| violation.min(old)));
+                }
+            }
+        }
+    }
+    if let Some((nested, skipped, later)) = offending {
+        let skipped = &merges[skipped].wire;
+        let later = &merges[later].wire;
+        return Err(Error::new(
+            flow.blocks[nested].span,
+            format!(
+                "a nested kaalang branch cannot bypass the `{skipped}` wire merge and rejoin at `{later}`; merge before or with the enclosing branches"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// Unfold only selections that change this wire's producer or its presence.
+/// Earlier independent selections and questions after the merge do not split
+/// its branch interval. Source order puts each deciding ancestor before its
+/// descendants, so their projected traces sort in authored branch order.
+fn validate_adjacency(
+    executions: &[Execution],
+    merge: &WireMerge,
+    producers: &[Option<ProducerId>],
+) -> Result<()> {
+    let mut selectors = BTreeSet::new();
+    for (first, execution) in executions.iter().enumerate() {
+        for (second, other) in executions.iter().enumerate().skip(first + 1) {
+            if producers[first] != producers[second]
+                && let Some(selector) = only_difference(execution, other)
+            {
+                selectors.insert(selector);
+            }
+        }
+    }
+    let mut ordered = (0..executions.len()).collect::<Vec<_>>();
+    ordered.sort_by_cached_key(|&index| {
+        executions[index]
+            .branches
+            .iter()
+            .filter(|selection| selectors.contains(&selection.block))
+            .copied()
+            .collect::<Vec<_>>()
+    });
+    let first = ordered.iter().position(|&index| producers[index].is_some());
+    let last = ordered
+        .iter()
+        .rposition(|&index| producers[index].is_some());
+    if let (Some(first), Some(last)) = (first, last)
+        && ordered[first..=last]
+            .iter()
+            .any(|&index| producers[index].is_none())
+    {
+        let wire = &merge.wire;
+        return Err(Error::new(
+            wire.span(),
+            format!(
+                "branches reaching the `{wire}` wire merge must be adjacent, including nested branches"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// Checks the combined capture, merge, and ordinary-producer order before any
+/// consumer can use it for scheduling or drawing.
+fn validate_order(
+    flow: &Flow,
+    merges: &[WireMerge],
+    successors: &[BTreeSet<usize>],
+    block_orders: &BTreeSet<(usize, usize)>,
+) -> Result<()> {
     // A block that both waits for a merge and must finish before it names the
     // merged wire for a value that never left its own branch. Such a block
     // always closes a cycle too, so this pass runs first: it names the mistake
@@ -73,7 +245,7 @@ pub(super) fn flow(flow: &Flow, executions: &[Execution]) -> Result<Vec<WireMerg
         ));
     }
     for (index, merge) in merges.iter().enumerate() {
-        if let Some(block) = cycle_block(&successors, blocks + index) {
+        if let Some(block) = cycle_block(successors, flow.blocks.len() + index) {
             let wire = &merge.wire;
             return Err(Error::new(
                 flow.blocks[block].span,
@@ -83,7 +255,53 @@ pub(super) fn flow(flow: &Flow, executions: &[Execution]) -> Result<Vec<WireMerg
             ));
         }
     }
-    Ok(merges)
+    for &(before, after) in block_orders {
+        if reachable(successors, after).contains(&before) {
+            return Err(Error::new(
+                flow.blocks[after].span,
+                "implicit kaalang wire ordering must not form a cycle",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Ordinary action outputs obey the same eligibility conditions as merges:
+/// production must exist whenever the selection runs, and must not depend on it.
+fn ordinary_orders(
+    flow: &Flow,
+    executions: &[Execution],
+    merges: &[WireMerge],
+    successors: &[BTreeSet<usize>],
+    deciders: &[BTreeSet<usize>],
+) -> BTreeSet<(usize, usize)> {
+    let mut ordering = BTreeSet::new();
+    for dependency in executions
+        .iter()
+        .flat_map(|execution| &execution.dependencies)
+    {
+        let ProducerId::BlockOutput { block, output } = dependency.producer else {
+            continue;
+        };
+        if flow.blocks[block].kind != BlockKind::Action
+            || merges
+                .iter()
+                .any(|merge| merge.wire == flow.blocks[block].outputs[output])
+        {
+            continue;
+        }
+        for &brancher in deciders.get(dependency.capture.block).into_iter().flatten() {
+            if !reachable(successors, brancher).contains(&block)
+                && executions
+                    .iter()
+                    .filter(|execution| execution.participates(brancher))
+                    .all(|execution| execution.participates(block))
+            {
+                ordering.insert((block, brancher));
+            }
+        }
+    }
+    ordering
 }
 
 /// The input of the earliest branch-local block that captures the merged wire
@@ -171,6 +389,18 @@ fn collect(flow: &Flow) -> Vec<WireMerge> {
         .into_iter()
         .filter(|(_, producers)| producers.len() > 1)
         .map(|(wire, producers)| WireMerge {
+            after: flow
+                .blocks
+                .iter()
+                .enumerate()
+                .filter_map(|(block, declaration)| {
+                    declaration
+                        .inputs
+                        .iter()
+                        .any(|input| input.ident == wire)
+                        .then_some(block)
+                })
+                .collect(),
             wire,
             producers,
             before: Vec::new(),
@@ -198,23 +428,30 @@ fn produced(execution: &Execution, producer: ProducerId) -> bool {
 /// Reporting that block names the offending statement rather than the merged
 /// wire's first producer.
 fn cycle_block(successors: &[BTreeSet<usize>], merge: usize) -> Option<usize> {
+    reachable(successors, merge)
+        .into_iter()
+        .find(|&node| successors[node].contains(&merge))
+}
+
+fn reachable(successors: &[BTreeSet<usize>], start: usize) -> BTreeSet<usize> {
     let mut reached = BTreeSet::new();
-    let mut pending = successors[merge].iter().copied().collect::<Vec<_>>();
+    let mut pending = successors[start].iter().copied().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
         if reached.insert(node) {
             pending.extend(&successors[node]);
         }
     }
     reached
-        .into_iter()
-        .find(|&node| successors[node].contains(&merge))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
+    use super::validate_order;
     use crate::{ProducerId, WireMerge, build};
 
     fn merge(function: &ItemFn, wire: &str) -> WireMerge {
@@ -235,6 +472,111 @@ mod tests {
 
     fn output(block: usize, output: usize) -> ProducerId {
         ProducerId::BlockOutput { block, output }
+    }
+
+    #[test]
+    fn individually_acyclic_orders_can_form_a_cycle_together() {
+        let function: ItemFn = parse_quote! {
+            fn example() {
+                #[action("First step.")] || -> first {};
+                #[action("Second step.")] |first| -> second {};
+                #[action("Finish.")] |second| -> result {};
+            }
+        };
+        let flow = crate::parse::flow(&function).unwrap();
+        // Exercise the defensive validator with a synthetic relation; this is
+        // not a claim that ordinary_orders can derive it from an authored flow.
+        let mut successors = vec![BTreeSet::new(); flow.blocks.len()];
+        successors[0].insert(1);
+        let orders = BTreeSet::from([(1, 2), (2, 0)]);
+        for &(before, after) in &orders {
+            let mut single = successors.clone();
+            single[before].insert(after);
+            validate_order(&flow, &[], &single, &BTreeSet::from([(before, after)]))
+                .expect("either ordering alone is acyclic");
+        }
+        for &(before, after) in &orders {
+            successors[before].insert(after);
+        }
+        assert_eq!(
+            validate_order(&flow, &[], &successors, &orders)
+                .unwrap_err()
+                .to_string(),
+            "implicit kaalang wire ordering must not form a cycle"
+        );
+    }
+
+    #[test]
+    fn an_unrelated_earlier_selection_does_not_split_a_later_partial_merge() {
+        let function: ItemFn = parse_quote! {
+            fn valid(flag: bool, mode: u8) -> u8 {
+                #[question("Choose the seed.")]
+                |flag| -> (yes, no) { flag };
+                #[action("First seed.")] |yes| -> seed { 1u8 };
+                #[action("Second seed.")] |no| -> seed { 2u8 };
+                #[choice("Choose the work.")]
+                #[case("First.")]
+                #[case("Second.")]
+                #[case("Finish.")]
+                |mode| -> (first, second, finish) {
+                    match mode { 0 => (), 1 => (), _ => () }
+                };
+                #[action("First value.")] |first| -> shared { 10u8 };
+                #[action("Second value.")] |second| -> shared { 20u8 };
+                #[action("Finish early.")] |finish, seed| -> result { seed };
+                #[action("Use the value.")] |shared, seed| -> result { shared + seed };
+            }
+        };
+        assert_eq!(
+            merge(&function, "shared").producers,
+            [output(4, 0), output(5, 0)]
+        );
+    }
+
+    #[test]
+    fn an_unused_merge_cannot_skip_a_nested_branch() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(outer: bool, inner: bool) -> u8 {
+                #[question("Take the nested branch?")]
+                |outer| -> (nested, direct) { outer };
+                #[question("Add the marker?")]
+                |nested, inner| -> (mark, skip) { inner };
+                #[action("Mark the first branch.")]
+                |mark| -> (_marker, result) { ((), 1u8) };
+                #[action("Leave the marker absent.")]
+                |skip| -> result { 2u8 };
+                #[action("Mark the last branch.")]
+                |direct| -> (_marker, result) { ((), 3u8) };
+            }
+        };
+        assert_eq!(
+            error(&function),
+            "branches reaching the `_marker` wire merge must be adjacent, including nested branches"
+        );
+    }
+
+    #[test]
+    fn an_inner_merge_may_precede_the_enclosing_merge() {
+        let function: ItemFn = parse_quote! {
+            fn valid(outer: bool, inner: bool) -> u8 {
+                #[question("Take the nested branch?")]
+                |outer| -> (nested, direct) { outer };
+                #[question("Choose the nested value.")]
+                |nested, inner| -> (yes, no) { inner };
+                #[action("Build the yes value.")]
+                |yes| -> refined { 1u8 };
+                #[action("Build the no value.")]
+                |no| -> refined { 2u8 };
+                #[action("Finish the nested branch.")]
+                |refined| -> shared { refined + 10 };
+                #[action("Build the direct value.")]
+                |direct| -> shared { 3u8 };
+                #[action("Use the shared value.")]
+                |shared| -> result { shared };
+            }
+        };
+        assert_eq!(merge(&function, "refined").after, [4]);
+        assert_eq!(merge(&function, "shared").after, [6]);
     }
 
     #[test]

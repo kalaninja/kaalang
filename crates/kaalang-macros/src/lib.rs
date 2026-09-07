@@ -41,6 +41,30 @@ mod tests {
     use super::expand;
 
     #[test]
+    fn a_nested_early_return_needs_no_join_dispatch() {
+        let file = syn::parse_file(include_str!(
+            "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
+        ))
+        .expect("the behavior fixture is valid Rust");
+        let mut function = file
+            .items
+            .into_iter()
+            .find_map(|item| match item {
+                syn::Item::Fn(function)
+                    if function.sig.ident == "nested_branch_passes_a_question_join" =>
+                {
+                    Some(function)
+                }
+                _ => None,
+            })
+            .expect("the fixture declares its flow");
+        let expansion = expand(&mut function).expect("the flow expands").to_string();
+        assert!(expansion.contains("return "));
+        assert!(!expansion.contains("match "));
+        assert!(!expansion.contains(":: core :: result :: Result"));
+    }
+
+    #[test]
     fn emits_a_shared_consumer_body_once() {
         let mut function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {

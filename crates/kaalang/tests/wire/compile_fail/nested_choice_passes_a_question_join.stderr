@@ -1,0 +1,5 @@
+error: branches reaching the `shared` wire merge must be adjacent, including nested branches
+  --> tests/wire/compile_fail/nested_choice_passes_a_question_join.rs:19:15
+   |
+19 |     |join| -> shared { 1 };
+   |               ^^^^^^

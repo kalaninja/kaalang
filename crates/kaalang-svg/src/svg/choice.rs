@@ -1,17 +1,16 @@
-//! Serializes a choice Select node and its derived Case nodes.
-
+//! Serializes a choice's Select node and its derived Case nodes.
 use std::fmt::Write;
 
 use crate::layout::{CASE_TIP_HEIGHT, SELECT_SKEW};
 
 use super::{Node, write_label};
 
-pub(super) fn select_name(node: &Node) -> String {
-    format!("Choice: {}", node.label)
+pub(super) fn select_name(label: &str) -> String {
+    format!("Select: {label}")
 }
 
-pub(super) fn case_name(node: &Node) -> String {
-    format!("Case: {}", node.label)
+pub(super) fn case_name(label: &str) -> String {
+    format!("Case: {label}")
 }
 
 pub(super) fn write_select(svg: &mut String, node: &Node) {

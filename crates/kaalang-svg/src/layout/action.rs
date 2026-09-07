@@ -1,33 +1,9 @@
-//! Places an action on its single continuing skewer.
+//! Sizes an action node.
 
-use kaalang_model::ExecutionPlan;
-
-use super::{Builder, Incoming, NODE_LABEL_WIDTH, NODE_WIDTH, Origin, Placed, block_dimensions};
+use super::{LABEL_FONT, LINE_HEIGHT, NODE_LABEL_WIDTH, NODE_WIDTH, text::wrap_text};
 
 pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
-    block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 64)
-}
-
-impl Builder<'_> {
-    pub(super) fn place_action(
-        &mut self,
-        index: usize,
-        next: &ExecutionPlan,
-        skewer: usize,
-        top: i32,
-        incoming: Incoming,
-    ) -> Placed {
-        let node = self.add_block_node(index, skewer, top);
-        self.connect_to_node(incoming, node);
-        self.place(
-            next,
-            skewer,
-            self.bottom_anchor(node).y + self.vertical_gap,
-            Incoming {
-                origin: Origin::bottom(node),
-                branch: None,
-                skewer,
-            },
-        )
-    }
+    let lines = wrap_text(label, NODE_LABEL_WIDTH, LABEL_FONT);
+    let height = 64.max(30 + lines.len() as i32 * LINE_HEIGHT);
+    (NODE_WIDTH, height, lines)
 }

@@ -54,16 +54,20 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         return Err(error);
     }
 
-    let executions = walk.executions.into_iter().collect::<Vec<_>>();
+    let mut executions = walk.executions.into_iter().collect::<Vec<_>>();
     reachable(flow, &executions)?;
     captured(flow, &executions)?;
     branch_outputs(flow, &executions)?;
     let precedence = executions
         .iter()
-        .map(|execution| predecessors(flow.blocks.len(), execution))
+        .map(|execution| predecessors(flow.blocks.len(), execution, &[]))
         .collect::<Vec<_>>();
     participation::flow(flow, &executions, &precedence)?;
-    let merges = merge::flow(flow, &executions)?;
+    let merges = merge::flow(flow, &mut executions)?;
+    let precedence = executions
+        .iter()
+        .map(|execution| predecessors(flow.blocks.len(), execution, &merges))
+        .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
     Ok((executions, convergence_groups, merges))
 }
@@ -81,26 +85,47 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
     differing.next().is_none().then_some(first)
 }
 
-/// The transitive predecessors of every block in one execution. Authored
-/// order is topological: every producer precedes all its consumers.
-// ponytail: cloning ancestor sets costs O(blocks²) per execution and the
-// caller runs it once per execution; switch to bitsets if flows reach hundreds
-// of blocks with many executions.
-fn predecessors(blocks: usize, execution: &Execution) -> Vec<BTreeSet<usize>> {
+/// The transitive predecessors of every block in one execution. Implicit merge
+/// order can precede an earlier-authored question, so authored order is no
+/// longer topological.
+// ponytail: the closure costs O(blocks³) per execution; switch to a DAG walk
+// if flows reach hundreds of blocks with many executions.
+fn predecessors(
+    blocks: usize,
+    execution: &Execution,
+    merges: &[WireMerge],
+) -> Vec<BTreeSet<usize>> {
     let mut preceding = vec![BTreeSet::new(); blocks];
-    for &block in &execution.blocks {
-        for dependency in execution
-            .dependencies
+    for &(before, after) in &execution.ordering {
+        preceding[after].insert(before);
+    }
+    for dependency in &execution.dependencies {
+        if let ProducerId::BlockOutput { block, .. } = dependency.producer {
+            preceding[dependency.capture.block].insert(block);
+        }
+    }
+    for merge in merges {
+        let before = merge
+            .producers
             .iter()
-            .filter(|d| d.capture.block == block)
-        {
-            if let ProducerId::BlockOutput {
-                block: producer, ..
-            } = dependency.producer
-            {
-                let ancestors = preceding[producer].clone();
-                preceding[block].extend(ancestors);
-                preceding[block].insert(producer);
+            .filter_map(|producer| match producer {
+                ProducerId::BlockOutput { block, .. } => Some(*block),
+                ProducerId::FlowInput(_) => None,
+            })
+            .chain(merge.before.iter().copied())
+            .filter(|&block| execution.participates(block))
+            .collect::<BTreeSet<_>>();
+        for &block in &merge.after {
+            if execution.participates(block) || block == blocks - 1 {
+                preceding[block].extend(&before);
+            }
+        }
+    }
+    for middle in 0..blocks {
+        let ancestors = preceding[middle].clone();
+        for predecessors in &mut preceding {
+            if predecessors.contains(&middle) {
+                predecessors.extend(&ancestors);
             }
         }
     }
@@ -282,6 +307,7 @@ impl Walk<'_> {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
+            ordering: Vec::new(),
         });
     }
 }

@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1168" viewBox="0 0 1424 1168" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="984" viewBox="0 0 1064 984" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_branch_passes_a_question_join</title>
-  <desc id="kaalang-description">Nodes: Start: nested_branch_passes_a_question_join( outer: bool, middle: bool, inner: bool, local_runs: &amp;Cell&lt;u32&gt;, outer_runs: &amp;Cell&lt;u32&gt;, ) -&gt; u32; Question: Take the nested questions?; Question: Refine the local value?; Question: Take the local continuation?; Action: Build the refined local value.; Action: Skip the local continuation.; Action: Build the direct local value.; Action: Run the local continuation and finish.; Action: Build the outer value directly.; Action: Run the outer continuation and finish.; End. Connections: Start: nested_branch_passes_a_question_join( outer: bool, middle: bool, inner: bool, local_runs: &amp;Cell&lt;u32&gt;, outer_runs: &amp;Cell&lt;u32&gt;, ) -&gt; u32 to Question: Take the nested questions? handing over outer, middle, inner, local_runs, outer_runs, captured as outer; Question: Take the nested questions? to Question: Refine the local value? handing over left, captured as left, middle; Question: Refine the local value? to Question: Take the local continuation? handing over refine, captured as refine, inner; Question: Take the local continuation? to Action: Build the refined local value. via join; Question: Take the local continuation? to Action: Skip the local continuation. via skip; Question: Refine the local value? to Action: Build the direct local value. via direct; Action: Build the refined local value. to Action: Run the local continuation and finish. handing over shared, captured as shared, local_runs; Action: Build the direct local value. to Action: Run the local continuation and finish. handing over shared, captured as shared, local_runs; Question: Take the nested questions? to Action: Build the outer value directly. via right; Action: Skip the local continuation. to Action: Run the outer continuation and finish. handing over ready, captured as ready, outer_runs; Action: Build the outer value directly. to Action: Run the outer continuation and finish. handing over ready, captured as ready, outer_runs; Action: Run the local continuation and finish. to End via result; Action: Run the outer continuation and finish. to End via result.</desc>
+  <desc id="kaalang-description">Nodes: Start: nested_branch_passes_a_question_join(refine: bool, finish_early: bool) -&gt; u32 handing over refine, finish_early; Question: Refine the value? capturing refine handing over nested / direct; Question: Finish early? capturing nested, finish_early handing over skip / join; Action: Finish without the shared step. capturing skip handing over result; Action: Build the refined value. capturing join handing over shared; Action: Build the direct value. capturing direct handing over shared; Action: Add ten in the shared step. capturing shared handing over result; End: u32 capturing result. Connections: Start: nested_branch_passes_a_question_join(refine: bool, finish_early: bool) -&gt; u32 to Question: Refine the value?; Question: Refine the value? branch 1 to Question: Finish early?; Question: Refine the value? branch 2 to Action: Build the direct value.; Question: Finish early? branch 1 to Action: Finish without the shared step.; Question: Finish early? branch 2 to Action: Build the refined value.; Action: Finish without the shared step. to the result merge; Action: Build the refined value. to the shared merge; Action: Build the direct value. to the shared merge; Action: Add ten in the shared step. to the result merge; the result merge to End: u32; the shared merge to Action: Add ten in the shared step..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
-      .edge { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .edge-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
@@ -13,91 +13,66 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="edges">
-    <path class="edge" d="M 172 134 L 172 210"/>
-    <path class="edge" d="M 172 282 L 172 358"/>
-    <path class="edge" d="M 172 430 L 172 506"/>
-    <path class="edge" d="M 172 578 L 172 654"/>
-    <path class="edge" d="M 312 542 L 532 542 L 532 654"/>
-    <path class="edge" d="M 312 394 L 892 394 L 892 506"/>
-    <path class="edge" d="M 172 718 L 172 794"/>
-    <path class="edge" d="M 892 570 L 892 756 L 172 756 L 172 794"/>
-    <path class="edge" d="M 312 246 L 1252 246 L 1252 358"/>
-    <path class="edge" d="M 532 718 L 532 936"/>
-    <path class="edge" d="M 1252 422 L 1252 898 L 532 898 L 532 936"/>
-    <path class="edge" d="M 172 860 L 172 1078"/>
-    <path class="edge" d="M 532 1002 L 532 1046 L 172 1046 L 172 1078"/>
-    <text class="edge-label" x="214" y="202" xml:space="preserve"><tspan x="214" dy="0">outer</tspan></text>
-    <text class="edge-label" x="214" y="152" xml:space="preserve"><tspan x="214" dy="0">outer, middle, inner, local_runs, </tspan><tspan x="214" dy="14">outer_runs</tspan></text>
-    <text class="edge-label" x="214" y="350" xml:space="preserve"><tspan x="214" dy="0">left, middle</tspan></text>
-    <text class="edge-label" x="214" y="300" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
-    <text class="edge-label" x="214" y="498" xml:space="preserve"><tspan x="214" dy="0">refine, inner</tspan></text>
-    <text class="edge-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">refine</tspan></text>
-    <text class="edge-label" x="214" y="611" xml:space="preserve"><tspan x="214" dy="0">join</tspan></text>
-    <text class="edge-label" x="422" y="534" xml:space="preserve"><tspan x="422" dy="0">skip</tspan></text>
-    <text class="edge-label" x="602" y="386" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
-    <text class="edge-label" x="214" y="786" xml:space="preserve"><tspan x="214" dy="0">shared, local_runs</tspan></text>
-    <text class="edge-label" x="214" y="736" xml:space="preserve"><tspan x="214" dy="0">shared</tspan></text>
-    <text class="edge-label" x="934" y="588" xml:space="preserve"><tspan x="934" dy="0">shared</tspan></text>
-    <text class="edge-label" x="782" y="238" xml:space="preserve"><tspan x="782" dy="0">right</tspan></text>
-    <text class="edge-label" x="574" y="928" xml:space="preserve"><tspan x="574" dy="0">ready, outer_runs</tspan></text>
-    <text class="edge-label" x="574" y="736" xml:space="preserve"><tspan x="574" dy="0">ready</tspan></text>
-    <text class="edge-label" x="1294" y="440" xml:space="preserve"><tspan x="1294" dy="0">ready</tspan></text>
-    <text class="edge-label" x="214" y="1070" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  <g class="connections">
+    <path class="connection" d="M 172 118 L 172 190"/>
+    <path class="connection" d="M 172 262 L 172 334"/>
+    <path class="connection" d="M 312 226 L 892 226 L 892 338"/>
+    <path class="connection" d="M 172 406 L 172 478"/>
+    <path class="connection" d="M 312 370 L 532 370 L 532 478"/>
+    <path class="connection" d="M 172 542 L 172 802"/>
+    <path class="connection" d="M 532 542 L 532 594"/>
+    <path class="connection" d="M 892 402 L 892 594 L 532 594"/>
+    <path class="connection" d="M 532 750 L 532 802 L 172 802"/>
+    <path class="connection" d="M 172 802 L 172 894"/>
+    <path class="connection" d="M 532 594 L 532 686"/>
+    <text class="connection-label" x="214" y="820" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="574" y="612" xml:space="preserve"><tspan x="574" dy="0">shared</tspan></text>
+    <text class="connection-label" x="602" y="215" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
+    <text class="connection-label" x="214" y="437" xml:space="preserve"><tspan x="214" dy="0">skip</tspan></text>
+    <text class="connection-label" x="422" y="359" xml:space="preserve"><tspan x="422" dy="0">join</tspan></text>
+    <text class="connection-label" x="243" y="136" xml:space="preserve"><tspan x="243" dy="0">refine, finish_early</tspan></text>
+    <text class="connection-label" x="214" y="280" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
+    <text class="connection-label" x="214" y="179" xml:space="preserve"><tspan x="214" dy="0">refine</tspan></text>
+    <text class="connection-label" x="245" y="323" xml:space="preserve"><tspan x="245" dy="0">nested, finish_early</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 83)">
-      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="51"/>
-      <text class="label" y="-21" xml:space="preserve"><tspan x="0" dy="0">nested_branch_passes_a_question_</tspan><tspan x="0" dy="18">join( outer: bool, middle: bool, </tspan><tspan x="0" dy="18">inner: bool, local_runs: &amp;Cell&lt;u32&gt;, </tspan><tspan x="0" dy="18">outer_runs: &amp;Cell&lt;u32&gt;, ) -&gt; u32</tspan></text>
+    <g class="node start" transform="translate(172 75)">
+      <rect class="node-shape" x="-140" y="-43" width="280" height="86" rx="43"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">nested_branch_passes_a_question_</tspan><tspan x="0" dy="18">join(refine: bool, finish_early: bool) </tspan><tspan x="0" dy="18">-&gt; u32</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 246)">
-      <title xml:space="preserve">Take the nested questions?</title>
+    <g class="node question" transform="translate(172 226)">
+      <title xml:space="preserve">Refine the value?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the nested questions?</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Refine the value?</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 394)">
-      <title xml:space="preserve">Refine the local value?</title>
+    <g class="node question" transform="translate(172 370)">
+      <title xml:space="preserve">Finish early?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Refine the local value?</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish early?</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 542)">
-      <title xml:space="preserve">Take the local continuation?</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the local continuation?</tspan></text>
-    </g>
-    <g class="node action" transform="translate(172 686)">
-      <title xml:space="preserve">Build the refined local value.</title>
+    <g class="node action" transform="translate(172 510)">
+      <title xml:space="preserve">Finish without the shared step.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the refined local value.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish without the shared step.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 686)">
-      <title xml:space="preserve">Skip the local continuation.</title>
+    <g class="node action" transform="translate(532 510)">
+      <title xml:space="preserve">Build the refined value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Skip the local continuation.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the refined value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 538)">
-      <title xml:space="preserve">Build the direct local value.</title>
+    <g class="node action" transform="translate(892 370)">
+      <title xml:space="preserve">Build the direct value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct local value.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 827)">
-      <title xml:space="preserve">Run the local continuation and finish.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Run the local continuation and </tspan><tspan x="-124" dy="18">finish.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(1252 390)">
-      <title xml:space="preserve">Build the outer value directly.</title>
+    <g class="node action" transform="translate(532 718)">
+      <title xml:space="preserve">Add ten in the shared step.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the outer value directly.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add ten in the shared step.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 969)">
-      <title xml:space="preserve">Run the outer continuation and finish.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Run the outer continuation and </tspan><tspan x="-124" dy="18">finish.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 1107)">
-      <rect class="node-shape" x="-90" y="-29" width="180" height="58" rx="29"/>
-      <text class="label" y="5">End</text>
+    <g class="node end" transform="translate(172 923)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

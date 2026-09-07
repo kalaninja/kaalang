@@ -40,11 +40,14 @@ A diagram contains a visual representation of each block the flow declares,
 authored or implicit, so the implicit end block has a node like any other. No
 block is duplicated to simplify layout.
 
-Connections and their reachability come from the validated semantic model. They
-preserve execution dependencies and branch routes but add no order between
-independent blocks. Block bodies and source comments do not affect control
-topology. Wire names label connection ends as section 6 sets out, but wires are
-not drawn as separate data connections.
+Connections preserve the validated model's dependencies, implicit wire order,
+and branch routes. The diagram shows the permitted serial order chosen by the
+model's verified execution plan. Independent blocks therefore form a sequence
+on the current column instead of suggesting parallel execution. This displayed
+order adds no capture and is not an additional language dependency: RFC 0001
+still permits other orders of independent ready blocks. Block bodies and source
+comments do not affect control topology. Wire names label connection ends as
+section 6 sets out; wires are not drawn as separate data connections.
 
 ## 4. Node kinds
 
@@ -127,7 +130,8 @@ return type is the one synthesized label, and it states the contract rather
 than paraphrasing authored text.
 
 Every named flow input and every block output is labeled once at the exit that
-provides it, including an intentionally unused wire whose name begins with `_`.
+provides it, or by a shared label as defined below, including an intentionally
+unused wire whose name begins with `_`.
 The labels at one exit form its hand-over. The start node hands over its named
 flow inputs in signature order, an action hands over all its outputs in
 declaration order, and each question branch or case hands over its exact branch
@@ -144,11 +148,27 @@ path without appearing in intermediate hand-overs. This version of the visual
 language does not show wire lifetimes or assign a wire to one particular
 sequence of connections.
 
+A computational node with an incoming connection and no authored inputs shows
+`()` beside its receiving end. This marks an empty capture list, not a wire or
+a unit-valued input: a connection passing through a node does not mean that the
+node captures the preceding hand-over. Start and case nodes have no such label.
+The first computational node also receives a connection from start when it has
+no inputs.
+
 A hand-over and an adjacent capture may share one label only when they are the
 two ends of the same connection, that connection is the only one leaving its
 source exit and the only one entering its destination node, and the two lists
 have the same displayed names in the same order. `name` and `&name` do not
 match. The shared label represents both connection-end labels.
+
+Identical hand-overs from alternative exits may share one label beside their
+merge when each exit has only one outgoing connection and all those connections
+reach that merge. The displayed lists must match in both names and order; a
+different hand-over remains at its own exit. The shared label represents the
+alternative hand-overs, not a new producer at the junction. If the merge has
+one outgoing connection, it is the sole connection entering its consumer, and
+that consumer's capture list matches the shared hand-over, the same label also
+represents the capture. This applies to `result` at the end node as well.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
 the raw and ordinary spellings of one wire name the same wire, and only the
@@ -166,9 +186,29 @@ represented case is selected; the start and end nodes always participate. A
 producer node precedes a consumer node when a capture dependency from the
 represented producer occurrence to that consumer participates in the execution,
 and this order is transitive. A select node precedes its selected case node.
+Wire production and implicit merges also establish the precedence defined by
+RFC 0001 §7, including before a question or choice that selects their consumers
+without capturing the wire itself. These orderings participate in the same
+per-execution reduction as capture dependencies.
 RFC 0001 makes every participating block either the producer of `result` or a
 transitive predecessor of it, so every node representing one precedes the end
 node.
+
+The verified execution plan supplies the serial order of participating blocks.
+For each execution, add precedence from start to its first computational block,
+between consecutive computational blocks, and from the last one to end. A
+question leaves through its selected exit; a choice continues through its
+selected case. With no computational blocks, start leads directly to end.
+These relations participate in the same reduction as dependencies and merges.
+They express the order actually chosen for lowering without inventing captures
+or changing the language's readiness rules.
+
+For example, if two actions independently capture `left` and `right` after a
+merge, draw them in the chosen serial order on the happy path. A connection
+between them does not imply that the second captures the first's output. If a
+zero-input setup action precedes a question capturing `condition`, draw
+`start → setup → question`: the action's capture label is `()`, its hand-over
+still names only `setup`, and the question's capture still names `condition`.
 
 A direct connection joins an exit of a participating source node to a
 participating destination node exactly when the source node precedes the
@@ -194,21 +234,14 @@ represents it. For example, if `P` produces `x`, `A` borrows `x` and produces
 `a`, and `C` captures `x` and `a`, the diagram contains `P → A → C` but no
 direct `P → C` connection.
 
-A zero-input computational node has no incoming connection. The start node may
-be isolated when none of its flow-input wires is captured. Independent parts of
-the diagram remain separate until they reach a shared dependent node or the end
-node.
-
-Multiple connections from a start or action exit are ordinary fan-out: each
-represented successor becomes ready according to RFC 0001. A question activates
-exactly one branch-specific exit. A select activates exactly one connection from
-its distributor exit and therefore exactly one case. A question exit or a case
-exit has at most one connection: its branch output leads to its one consumer
-or, for a repeated output name, to the implicit wire merge. The merged wire may
-have several consumers, reached from that merge rather than from the exit. An
-unmerged exit leads only to its one consumer; a connection to the end node
-leaves the exit that provides `result`. A node with several
-incoming connections waits for every one that participates in the current
+Every computational node is reachable from start, including zero-input actions.
+A start or action exit continues to the next step of the chosen serial order;
+independent consumers are reached transitively through that sequence. These
+connections do not denote parallel execution. A question activates exactly one
+of its two exits; a select activates exactly one outgoing connection from its
+distributor exit and therefore exactly one case. Branch connections retain their
+selected output even when the next step does not capture it directly. A node
+with several incoming connections waits for every one that participates in the current
 execution. At a convergence, incoming connections from alternative branches
 never participate together.
 
@@ -217,6 +250,20 @@ outputs meet at an implicit junction of connections before any consumer of the
 merged wire. The common segment from that junction leads to its consumer or
 consumers; the junction is the convergence point, not a consumer node. Local
 work in the producer branches finishes before the junction, as RFC 0001 defines.
+Nested branches returning to this shared continuation merge before this junction
+or at it; RFC 0001 rejects a branch that bypasses it and rejoins downstream through
+an ordinary wire. A branch ending with `result` may bypass the local junction
+only from outside its group: it cannot separate the converging branches, even
+across nested questions and choices. RFC 0001 validates this branch order before
+layout.
+When the merge implicitly precedes a consumer-selecting question or choice,
+the junction reaches that selection before its consumers. This connection
+adds no capture label to the selection. Connections already represented through
+that selection are omitted by the per-execution transitive reduction.
+Likewise, an ordinary action output used by selected branch actions establishes
+the eligible producer-to-selection order. Its producer sits above the selection;
+the reduction carries its consumers' dependencies through that selection while
+preserving their authored capture labels.
 The junction adds neither a computational block nor a producer occurrence.
 Consumers display the captured logical wire name once.
 
@@ -228,18 +275,24 @@ wire `result` once, and it is not itself the merge.
 
 ## 8. Spatial notation
 
-Along each connection, dependency time runs from top to bottom: the destination
+Along each connection, execution time runs from top to bottom: the destination
 node occupies a lower row than its source node, and the route never moves
-upward. Nodes not ordered by connection reachability may share a row; such
-alignment implies neither execution order nor concurrent execution.
+upward. Nodes on alternative branches may share a row. Independent computation in
+one execution is connected sequentially rather than placed side by side.
 
 The visual language uses columns and rows. Branches are arranged from left to
 right in authored order. The first question output and the first choice case
 continue down the current column; remaining branches appear to their right.
 
-Within those constraints, the relative placement of independent parts of the
-diagram is a presentation choice. The column and exact lower row of a consumer
-that joins independent parts are also presentation choices.
+Consecutive independent blocks continue down the current column. After a
+convergence, its independent entry blocks form a sequence in the column reached
+by the group's first branch. Exact lower rows and routing space remain
+presentation choices.
+
+A convergence group reserves enough columns for its shared continuation,
+including any nested question or choice. Later sibling branches start to the
+right of that whole area, even when the shared continuation is wider than the
+group's incoming branches.
 
 Alternative producers of `result` meet at their implicit merge above the end
 node, mirroring the distributor that fans a select node out to its case nodes.
@@ -250,6 +303,11 @@ connections may share such a segment only when they have the same source exit
 or the same destination node. Other connections do not overlap. Connections
 are plain lines without arrowheads. A route contains only straight horizontal
 and vertical segments, so every bend is a right angle.
+
+At an implicit merge, side routes finish horizontally at the junction on the
+merge rail. The outgoing connection alone owns the vertical below that point:
+an incoming side route must not turn down and overlap that continuation. Routes
+already in the junction's column descend straight to the same point.
 
 The visual-language contract covers the diagram's nodes, roles, labels, the
 connection end or ends to which each connection label belongs, branch order,

@@ -762,12 +762,6 @@ mod tests {
             ),
             (
                 include_str!(
-                    "../../kaalang/tests/wire/behavior/nested_branch_passes_a_case_join.rs"
-                ),
-                "nested_branch_passes_a_case_join",
-            ),
-            (
-                include_str!(
                     "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
                 ),
                 "nested_branch_passes_a_question_join",
@@ -814,6 +808,44 @@ mod tests {
         let model = build(&fixture(source, "question_after_a_partial_merge"))
             .expect("question_after_a_partial_merge");
         assert!(guarded(&model.execution_plan));
+    }
+
+    #[test]
+    fn nested_branches_cannot_separate_a_merge() {
+        for source in [
+            include_str!(
+                "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
+            ),
+            include_str!(
+                "../../kaalang/tests/wire/compile_fail/nested_choice_passes_a_question_join.rs"
+            ),
+            include_str!(
+                "../../kaalang/tests/wire/compile_fail/terminal_branch_separates_a_merge.rs"
+            ),
+        ] {
+            assert_eq!(
+                message(&fixture(source, "invalid")),
+                "branches reaching the `shared` wire merge must be adjacent, including nested branches"
+            );
+        }
+    }
+
+    #[test]
+    fn an_outside_nested_branch_may_finish_but_not_rejoin_an_ordinary_continuation() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
+        );
+        build(&fixture(source, "nested_branch_passes_a_question_join"))
+            .expect("the early result is outside the shared merge");
+
+        let source = include_str!(
+            "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
+        )
+        .replace("(join, skip) { inner }", "(skip, join) { !inner }");
+        assert_eq!(
+            message(&fixture(&source, "invalid")),
+            "a nested kaalang branch cannot bypass the `shared` wire merge and rejoin at `ready`; merge before or with the enclosing branches"
+        );
     }
 
     #[test]
@@ -930,7 +962,7 @@ mod tests {
         );
     }
 
-    /// The nested question's terminal branch and the independent effect stay
+    /// The nested question's terminal branch and the preceding effect stay
     /// outside the outer group; the nested question itself forms no group
     /// because only its late branch reaches the shared consumer.
     #[test]
@@ -944,10 +976,10 @@ mod tests {
         );
     }
 
-    /// The independent block feeds both branches and the shared consumer, but
+    /// The setup block feeds both branches and the shared consumer, but
     /// nothing it does depends on the question, so it stays outside the group.
     #[test]
-    fn an_independent_block_stays_outside_the_continuation_it_feeds() {
+    fn a_setup_block_stays_outside_the_continuation_it_feeds() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
                 #[question("Which way?")]
@@ -1106,9 +1138,8 @@ mod tests {
         );
     }
 
-    /// The question follows only the first of two independent entry blocks,
-    /// yet it belongs to the shared continuation, so the blocks it selects may
-    /// consume the second entry block's output.
+    /// The question captures the first entry's output and implicitly waits for
+    /// the second entry too, because its selected blocks consume that output.
     #[test]
     fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
         let source =
@@ -1119,16 +1150,16 @@ mod tests {
         );
     }
 
-    /// Both reporting blocks belong to the shared continuation, yet an outside
-    /// question decides which of them runs. Past its merge the counted amount
-    /// is ordinary data, so the quiet branch may leave it uncaptured.
+    /// The reporting question follows the merges implicitly and becomes the
+    /// shared continuation's entry. The counted amount remains ordinary data,
+    /// so the quiet branch may leave it uncaptured.
     #[test]
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         let source =
             include_str!("../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
         assert_groups(
             &fixture(source, "a_branch_captures_a_merged_value"),
-            &[group(0, &[0, 1], &[4, 5], &[4, 5])],
+            &[group(0, &[0, 1], &[3, 4, 5], &[3])],
         );
     }
 

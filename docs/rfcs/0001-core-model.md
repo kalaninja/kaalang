@@ -71,8 +71,9 @@ or visualization:
   choice they both run, differ in whether the block executes;
 - the **continuation** of a branch is the set of computational blocks whose
   readiness can transitively depend on that branch's selected output through a
-  chain of capture dependencies participating in one possible execution that
-  selects the branch; the end block is not part of a continuation;
+  chain of capture dependencies and implicit wire order participating in one
+  possible execution that selects the branch; the end block is not part of a
+  continuation;
 - relative to one question or choice, the **branch set** of a downstream block
   is the exact set of its branches whose continuations contain that block;
 - a **convergence group** is a branch set containing at least two branches;
@@ -427,9 +428,10 @@ and relies on Rust inference.
 
 ## 7. Execution and implicit convergence
 
-A computational block is ready when all its inputs are available. An action
-with no inputs is ready when the flow begins. At each execution step, any ready
-computational block may execute. Ready blocks are independent when executing
+A computational block is ready when all its inputs are available and the
+implicit wire order described below is satisfied. An action with no inputs is
+ready when the flow begins. At each execution step, any ready computational
+block may execute. Ready blocks are independent when executing
 one cannot change the availability of another's inputs. Independent ready
 blocks may execute in any order; kaalang does not thereby guarantee concurrent
 execution. If order matters, a wire from one block's output to another block's
@@ -438,13 +440,14 @@ input must establish the dependency.
 Validation rejects a flow that can make non-independent blocks ready together.
 In particular, two consuming blocks, or a consuming and a borrowing block,
 cannot be ready for the same wire at the same time. This capture-conflict check
-uses ordinary wire availability; implicit merge ordering does not replace an
+uses ordinary wire availability; implicit wire ordering does not replace an
 explicit dependency between conflicting captures.
 
-The questions and choices that decide a block form a chain: each lies in the
-continuation of a branch of the previous one. Two independent questions or
-choices cannot both decide whether one block executes, whichever way a
-selection withholds an input: a branch output that was not selected, a wire
+The questions and choices that decide a block form a chain through capture
+dependencies: each lies downstream of a branch of the previous one. Implicit
+wire order does not make otherwise independent deciders a valid chain. Two
+independent questions or choices cannot both decide whether one block executes,
+whichever way a selection withholds an input: a branch output that was not selected, a wire
 that only some branches produce, or a wire that a branch consumed. Independent
 selections meet in one block only through wires that every branch of the
 earlier question or choice provides.
@@ -474,7 +477,49 @@ consumers, and a consumer can capture several merged wires.
 Read in authored choice-case order, the branches of each convergence group are
 adjacent: no case outside the group may separate two of its members. Several
 disjoint groups are valid and may be separated by cases outside either group. A
-question satisfies this rule automatically because it has only two branches.
+question's own two branches satisfy this local rule automatically; nested
+selections still obey the rule below.
+
+Adjacency also applies across nested questions and choices: branches producing
+a merged wire must form one uninterrupted interval in authored branch order.
+A branch that does not produce the wire cannot separate two that do, even if
+it finishes with `result`. This rule also applies to unused merged names.
+Selections unrelated to which producer supplies the wire, or whether it is
+supplied at all, do not split the interval.
+
+The interval is defined over the selections that affect the wire's production.
+For each execution, record its producer occurrence, or absence. A question or
+choice affects this record when two executions differ only at that selection
+under section 2's agreement rule and have different records. Retain only these
+selections in each execution's branch trace, in authored block order. Order the
+traces lexicographically by authored branch order, which places each deciding
+ancestor before its descendants. The traces with a producer occurrence must
+occupy consecutive positions in this order. Unrelated selections before or
+after a completed merge therefore do not affect adjacency.
+
+For example, nested exits ordered `skip, join`, followed by the outer `direct`
+branch, allow `join` and `direct` to merge into `shared` while `skip` finishes
+with `result`. Ordering them `join, skip, direct` is invalid: `skip` separates
+the two producers of `shared`.
+
+Nested convergence must not bypass an enclosing convergence and rejoin its
+ordinary continuation farther downstream. More precisely, reject a flow when:
+
+- two executions differ only at a question or choice `Q` (using the agreement
+  rule of section 2), and only one produces an occurrence of a merged wire `a`;
+- some producing execution of `a` does not run `Q`, so this merge also receives
+  a branch outside `Q`;
+- the execution bypassing `a` produces an occurrence of another merged wire
+  `b`, ordered after the merge of `a` by the combined wire order below, and `b`
+  is not `result`.
+
+Thus nested branches returning to the enclosing shared continuation must
+converge before it or together with it. A branch may instead finish with
+`result`, after its own local work, without returning to that continuation,
+provided it lies outside the earlier merge's branch interval.
+Partial merges inside one question or choice and a new selection after a
+completed merge remain valid. This is a language restriction, independent of
+whether a renderer can route a particular diagram.
 
 An implicit merge closes its producer branches before a consumer may capture
 the merged wire. Consider all executions in which one of that wire's producers
@@ -488,9 +533,43 @@ value remains local; it cannot be carried past the merge as a hidden optional
 input. The context excludes executions producing none of the wire's
 occurrences, such as a terminal case outside a partial convergence.
 
+An implicit merge also precedes a question or choice that decides whether one
+of its consumers executes, when both of these conditions hold:
+
+- every execution that runs the question or choice produces one of the merged
+  wire's occurrences;
+- capture dependencies and existing merge-to-consumer and branch-completion
+  order do not require that question or choice to precede the merge.
+
+The second condition keeps a selection needed to produce or complete the merge
+before it. The first keeps a partial merge from suppressing a selection in an
+execution where the merged wire does not exist. Derive all such orderings from
+the original dependencies and merges together, before adding any of them;
+authored statement order must not decide which ordering wins.
+
+For example, if one question's branches produce `counted` and `seen`, and a
+second question selects between actions that capture those merged values, both
+merges finish before the second question evaluates its body. Its authored
+inputs need not mention either value. This is an execution dependency, not an
+implicit capture: it neither exposes another wire in the question's body nor
+borrows or consumes it. The second question belongs to the first question's
+shared continuation.
+
+The same rule applies to an ordinary, unmerged action output: its producer
+precedes a question or choice deciding whether one of its consumers executes,
+provided the producer runs in every execution running that selection and the
+original capture and merge order does not place the selection before the
+producer. Derive these orderings together with the merge orderings, from the
+same original dependencies. They add no capture and do not depend on authored
+statement order. For example, an action preparing `setup` precedes the question
+whose branch actions borrow `setup`, even when the question captures only
+`condition`. Two actions merely sharing consumers remain independent.
+
 Validation combines capture dependencies with producer-to-merge,
-branch-local-work-to-merge, and merge-to-consumer order. This order must be
-acyclic. A cycle means that completing a producer branch requires a value from
+branch-local-work-to-merge, merge-to-consumer, and the inferred
+merge-to-question-or-choice and ordinary-producer-to-question-or-choice order.
+This order must be acyclic. A cycle means
+that completing a producer branch requires a value from
 a merge that already waits for that branch. For example, independently merging
 `left_value` and `right_value` is invalid when left-only work needs the merged
 `right_value` and right-only work needs the merged `left_value`. A one-way use
@@ -573,9 +652,10 @@ their wire dependencies. A question evaluates its body once and executes the
 selected branch. A choice preserves the authored match and passes the selected
 arm value to the corresponding branch. Equally named outputs merge before
 every downstream capture, independently of the consumer's other inputs.
-Lowering preserves the branch-completion order of these implicit merges and
-binds each selected value once. A merge also precedes end when `result` has
-alternative producers; end itself is neither a merge nor a computational
+Lowering preserves branch completion before a merge and the implicit order of
+wire production before a consumer-selecting question or choice, and binds each
+selected value once. A merge also precedes end when `result` has alternative producers; end
+itself is neither a merge nor a computational
 shared-continuation block.
 
 The end block lowers to the `result` binding as the function's tail expression.

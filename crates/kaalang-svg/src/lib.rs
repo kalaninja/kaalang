@@ -7,6 +7,7 @@ use syn::{File, Item, ItemFn, Meta};
 
 mod layout;
 mod svg;
+mod topology;
 
 /// An error produced while selecting, validating, or rendering a kaalang flow.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,6 +30,14 @@ pub enum RenderError {
         line: usize,
         column: usize,
         message: String,
+    },
+    /// The flow is valid, but this layout could not route its connections under
+    /// RFC 0002 §8. This does not make the authored flow invalid or prove that
+    /// no conforming diagram exists.
+    UnroutableTopology {
+        name: String,
+        /// The routing rule the deterministic layout could not meet.
+        reason: String,
     },
     /// An authored label contains a character that XML 1.0 cannot represent.
     InvalidLabelCharacter {
@@ -68,6 +77,9 @@ impl fmt::Display for RenderError {
                 formatter,
                 "invalid kaalang flow `{name}` at {line}:{column}: {message}"
             ),
+            Self::UnroutableTopology { name, reason } => {
+                write!(formatter, "could not route kaalang flow `{name}`: {reason}")
+            }
             Self::InvalidLabelCharacter {
                 character,
                 line,
@@ -92,17 +104,25 @@ impl Error for RenderError {}
 /// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
 /// `flow_name` does not name exactly one top-level `#[kaalang]` function,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
-/// and [`RenderError::InvalidLabelCharacter`] when an authored description
-/// contains a character XML 1.0 cannot represent.
+/// [`RenderError::InvalidLabelCharacter`] when an authored description
+/// contains a character XML 1.0 cannot represent, and
+/// [`RenderError::UnroutableTopology`] when the deterministic layout cannot
+/// route every connection under RFC 0002 §8.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
-    let graph = kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
-    validate_labels(&graph)?;
+    let model = kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
+    validate_labels(&model)?;
     let signature = layout::signature_text(source, &function.sig);
-    let scene = layout::layout(&graph, &signature);
+    let return_type = layout::return_text(source, &function.sig.output);
+    let scene = layout::layout(&model, &signature, &return_type).map_err(|reason| {
+        RenderError::UnroutableTopology {
+            name: flow_name.to_owned(),
+            reason,
+        }
+    })?;
 
-    Ok(svg::serialize(&scene, &graph.name.to_string()))
+    Ok(svg::serialize(&scene, &model.name.to_string()))
 }
 
 /// Names every top-level `#[kaalang]` function in a UTF-8 Rust source file, in
@@ -187,8 +207,8 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-fn validate_labels(graph: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
-    for block in &graph.flow.blocks {
+fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
+    for block in &model.flow.blocks {
         let (line, column) = location(block.span);
         if let Some(character) = block.description.as_deref().and_then(invalid_xml_character) {
             return Err(RenderError::InvalidLabelCharacter {

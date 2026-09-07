@@ -6,10 +6,10 @@ fn effect_before_a_nested_terminal_branch(
     inner: bool,
     log: &mut Vec<&'static str>,
 ) -> u32 {
-    #[question("Take the nested path?")]
+    #[question("Take the nested branch?")]
     |outer, &inner| -> (nested, direct) { outer };
 
-    #[action("Record an effect independent of both questions.")]
+    #[action("Record the effect before branching.")]
     |log| -> logged { log.push("effect") };
 
     #[question("Finish early?")]

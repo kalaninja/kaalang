@@ -72,6 +72,11 @@ pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) 
 fn order(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Vec<usize> {
     let end = flow.blocks.len() - 1;
     let mut before = vec![BTreeSet::new(); end];
+    for execution in executions {
+        for &(producer, brancher) in &execution.ordering {
+            before[brancher].insert(producer);
+        }
+    }
     for dependency in executions
         .iter()
         .flat_map(|execution| &execution.dependencies)
@@ -83,14 +88,17 @@ fn order(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Vec<usi
         }
     }
     for merge in merges {
-        for (block, declaration) in flow.blocks[..end].iter().enumerate() {
-            if declaration
-                .inputs
-                .iter()
-                .any(|input| input.ident == merge.wire)
-            {
-                before[block].extend(&merge.before);
-            }
+        for &block in merge.after.iter().filter(|&&block| block < end) {
+            before[block].extend(&merge.before);
+            before[block].extend(
+                merge
+                    .producers
+                    .iter()
+                    .filter_map(|producer| match producer {
+                        ProducerId::BlockOutput { block, .. } => Some(*block),
+                        ProducerId::FlowInput(_) => None,
+                    }),
+            );
         }
     }
     let mut ready = before
@@ -157,9 +165,9 @@ fn producers(execution: &Execution, block: usize) -> impl Iterator<Item = Produc
 }
 
 /// A block is ready once its producers and the participating branch-local
-/// work before every merged input have run.
+/// work before every merge it waits for have run, including implicit ordering
+/// before a consumer-selecting question or choice.
 fn ready(
-    flow: &Flow,
     merges: &[WireMerge],
     execution: &Execution,
     block: usize,
@@ -168,20 +176,26 @@ fn ready(
     producers(execution, block).all(|producer| match producer {
         ProducerId::FlowInput(_) => true,
         ProducerId::BlockOutput { block, .. } => done.contains(&block),
-    }) && merges
+    }) && execution
+        .ordering
         .iter()
-        .filter(|merge| {
-            flow.blocks[block]
-                .inputs
-                .iter()
-                .any(|input| input.ident == merge.wire)
-        })
-        .all(|merge| {
-            merge
-                .before
-                .iter()
-                .all(|before| !execution.participates(*before) || done.contains(before))
-        })
+        .filter(|&&(_, after)| after == block)
+        .all(|&(before, _)| done.contains(&before))
+        && merges
+            .iter()
+            .filter(|merge| merge.after.contains(&block))
+            .all(|merge| {
+                merge
+                    .before
+                    .iter()
+                    .all(|before| !execution.participates(*before) || done.contains(before))
+                    && merge.producers.iter().all(|producer| match producer {
+                        ProducerId::BlockOutput { block, .. } => {
+                            !execution.participates(*block) || done.contains(block)
+                        }
+                        ProducerId::FlowInput(_) => true,
+                    })
+            })
 }
 
 impl Builder<'_> {
@@ -200,8 +214,7 @@ impl Builder<'_> {
             .filter(|block| !done.contains(block) && !forbidden.contains(block))
             .filter(|&block| {
                 executions.iter().all(|execution| {
-                    execution.participates(block)
-                        && ready(self.flow, self.merges, execution, block, done)
+                    execution.participates(block) && ready(self.merges, execution, block, done)
                 })
             })
             .collect::<Vec<_>>();

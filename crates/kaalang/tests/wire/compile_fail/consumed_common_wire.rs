@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(condition: bool, common: String) -> String {
-    #[question("Choose a path.")]
+    #[question("Choose a branch.")]
     |condition| -> (yes, no) { condition };
 
     #[action("Consume the common wire.")]

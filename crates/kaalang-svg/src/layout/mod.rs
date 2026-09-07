@@ -1,15 +1,20 @@
-use std::collections::HashMap;
+//! Places the visual topology on rows and columns, routes its connections, and
+//! positions the labels its exits and nodes own.
 
-use kaalang_model::{BlockKind, Branch, ExecutionPlan, Join, JoinTarget, SemanticModel};
-use syn::{Ident, Signature, spanned::Spanned};
+use std::collections::BTreeMap;
+
+use kaalang_model::SemanticModel;
+use syn::{ReturnType, Signature, spanned::Spanned};
+use unicode_segmentation::UnicodeSegmentation;
+
+use crate::topology::{self, Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
 
 mod action;
 mod choice;
-mod convergence;
-mod dependency;
-mod end;
 mod label;
+mod place;
 mod question;
+mod route;
 #[cfg(test)]
 mod tests;
 mod text;
@@ -18,7 +23,7 @@ use label::{label_bounds, vertical_gap};
 use text::wrap_text;
 
 const MARGIN: i32 = 32;
-const SKEWER_WIDTH: i32 = 360;
+const COLUMN_WIDTH: i32 = 360;
 const MIN_VERTICAL_GAP: i32 = 72;
 const NODE_WIDTH: i32 = 280;
 const CASE_WIDTH: i32 = 240;
@@ -28,15 +33,17 @@ pub(crate) const SELECT_SKEW: i32 = 24;
 /// Font size of a node label. The serializer writes the stylesheet from this,
 /// so measurement and rendering cannot disagree.
 pub(crate) const LABEL_FONT: i32 = 14;
-/// Font size of an edge label, written into the stylesheet the same way.
-pub(crate) const EDGE_LABEL_FONT: i32 = 12;
+/// Font size of a connection label, written into the stylesheet the same way.
+pub(crate) const CONNECTION_LABEL_FONT: i32 = 12;
 /// Baseline-to-baseline distance between the lines of a node label.
 pub(crate) const LINE_HEIGHT: i32 = 18;
-/// Baseline-to-baseline distance between the lines of an edge label.
-pub(crate) const EDGE_LINE_HEIGHT: i32 = 14;
-/// Width of the halo an edge label paints behind itself to stay readable where
-/// it crosses a connection. Also written into the stylesheet.
-pub(crate) const EDGE_LABEL_HALO: i32 = 5;
+/// Baseline-to-baseline distance between the lines of a connection label.
+pub(crate) const CONNECTION_LINE_HEIGHT: i32 = 14;
+/// Width of the halo a connection label paints behind itself to stay readable
+/// where it crosses a connection. Also written into the stylesheet.
+pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
+/// Distance between two horizontal runs sharing one row gap.
+const LANE: i32 = 20;
 /// Text budget inside a rectangular node.
 const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 32;
 /// Branch icons lose horizontal space to their slanted sides.
@@ -44,36 +51,21 @@ const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
 /// Text budget inside a case icon.
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 
-#[derive(Default)]
 pub(crate) struct Scene {
     pub(crate) width: i32,
     pub(crate) height: i32,
+    /// The projection this scene places. Node roles and the labels the exits
+    /// and nodes own are read from here rather than copied.
+    pub(crate) topology: Topology,
     pub(crate) nodes: Vec<Node>,
-    pub(crate) edges: Vec<Edge>,
+    pub(crate) connections: Vec<Connection>,
     pub(crate) labels: Vec<Label>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum NodeId {
-    Start,
-    Block(usize),
-    Case { choice: usize, branch: usize },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum NodeKind {
-    Start,
-    Action,
-    Question,
-    Choice,
-    Case,
-    End,
-}
-
+/// One placed node. Its role and caption stay in the topology; only geometry
+/// and the wrapped caption lines live here.
 pub(crate) struct Node {
     pub(crate) id: NodeId,
-    pub(crate) kind: NodeKind,
-    pub(crate) label: String,
     pub(crate) x: i32,
     pub(crate) y: i32,
     pub(crate) width: i32,
@@ -87,19 +79,17 @@ pub(crate) struct Point {
     pub(crate) y: i32,
 }
 
-pub(crate) struct Edge {
-    pub(crate) from: NodeId,
-    pub(crate) to: NodeId,
-    /// The logical wire names the origin hands over here.
-    pub(crate) handover: Vec<String>,
-    /// The logical wire names the destination captures.
-    pub(crate) capture: Vec<String>,
+/// One routed connection. It owns no label: a hand-over belongs to the exit it
+/// leaves and a capture to the node it reaches.
+pub(crate) struct Connection {
+    pub(crate) source: Source,
+    pub(crate) destination: Destination,
     pub(crate) points: Vec<Point>,
 }
 
-/// One placed connection label, wrapped during layout so the canvas can be
-/// sized around it. `at` is the first line's baseline, so the serializer writes
-/// the block without deciding where it sits.
+/// One placed label, wrapped during layout so the canvas can be sized around
+/// it. `at` is the first line's baseline, so the serializer writes the block
+/// without deciding where it sits.
 pub(crate) struct Label {
     pub(crate) lines: Vec<String>,
     pub(crate) at: Point,
@@ -115,294 +105,197 @@ pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
     authored.strip_prefix("fn ").unwrap_or(&authored).to_owned()
 }
 
-pub(crate) fn layout(graph: &SemanticModel, signature: &str) -> Scene {
-    let mut builder = Builder {
-        graph,
-        scene: Scene::default(),
-        indexes: HashMap::new(),
-        arrivals: Vec::new(),
-        vertical_gap: vertical_gap(graph),
+/// The end node's caption: the authored return type preceded by `->`, and
+/// `-> ()` when the function declares none. RFC 0002 §4.6 makes it the tail of
+/// the start node's contract rather than a block-kind word.
+pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
+    match output {
+        ReturnType::Default => "-> ()".to_owned(),
+        ReturnType::Type(..) => source[output.span().byte_range()]
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" "),
+    }
+}
+
+/// Lays out one validated flow, or reports that this layout could not route its
+/// connections under RFC 0002 §8.
+pub(crate) fn layout(
+    model: &SemanticModel,
+    signature: &str,
+    return_type: &str,
+) -> Result<Scene, String> {
+    let topology = topology::project(model, signature, return_type);
+    let attempts = 4 * topology.connections.len() + 8;
+    let mut scene = Scene {
+        width: 0,
+        height: 0,
+        nodes: Vec::new(),
+        connections: Vec::new(),
+        labels: Vec::new(),
+        topology,
     };
-    if dependency::is_graph(&graph.execution_plan) {
-        return dependency::layout(builder, signature);
-    }
 
-    let start = builder.add_node(
-        NodeId::Start,
-        NodeKind::Start,
-        signature.to_owned(),
-        0,
-        MARGIN,
-    );
-    let first_top = builder.bottom_anchor(start).y + builder.vertical_gap;
-    builder.place(
-        &graph.execution_plan,
-        0,
-        first_top,
-        Incoming {
-            origin: Origin::bottom(start),
-            branch: None,
-            skewer: 0,
-        },
-    );
-
-    debug_assert!(
-        builder.arrivals.is_empty(),
-        "end is placed outside every path, so its arrivals are all drawn by now"
-    );
-
-    let case_count = graph
-        .flow
-        .blocks
-        .iter()
-        .map(|block| block.case_descriptions.len())
-        .sum::<usize>();
-    debug_assert_eq!(
-        builder.scene.nodes.len(),
-        graph.flow.blocks.len() + case_count + 1
-    );
-
-    builder.place_labels();
-    builder.fit_scene();
-    builder.scene
-}
-
-struct Builder<'a> {
-    graph: &'a SemanticModel,
-    scene: Scene,
-    indexes: HashMap<NodeId, usize>,
-    /// The `result` hand-overs waiting for the end node, in branch order.
-    arrivals: Vec<Incoming>,
-    vertical_gap: i32,
-}
-
-impl Builder<'_> {
-    fn place(
-        &mut self,
-        plan: &ExecutionPlan,
-        skewer: usize,
-        top: i32,
-        incoming: Incoming,
-    ) -> Placed {
-        match plan {
-            ExecutionPlan::Guarded { .. } => unreachable!("guarded plans use dependency layout"),
-            ExecutionPlan::End { index, body, .. } => {
-                self.place_end(*index, body, skewer, top, incoming)
-            }
-            ExecutionPlan::Action { index, next } => {
-                self.place_action(*index, next, skewer, top, incoming)
-            }
-            ExecutionPlan::Question {
-                index,
-                branches,
-                join,
-            } => self.place_question(*index, branches, join.as_ref(), skewer, top, incoming),
-            ExecutionPlan::Choice {
-                index,
-                branches,
-                joins,
-            } => self.place_choice(*index, branches, single_join(joins), skewer, top, incoming),
-            ExecutionPlan::EndArrival { .. } => {
-                // Every branch hands the `result` wire over here. Alternative
-                // producers meet at the junction end.rs draws above the node.
-                self.arrivals.push(incoming);
-                Placed {
-                    bottom: self.anchor(incoming.origin).y,
-                    arrivals: Vec::new(),
+    // Routing asks for more room rather than settling for a crossing: a lower
+    // row for a destination, or a column of its own for a run. Both only ever
+    // add room, so the loop cannot cycle.
+    let mut delays = BTreeMap::new();
+    let mut shapes: BTreeMap<usize, route::Shape> = BTreeMap::new();
+    let mut blocking = String::new();
+    for _ in 0..attempts {
+        let placement = place::place(&scene.topology, model, &delays);
+        scene.nodes = nodes(&scene.topology, &placement);
+        let blocked = match route::plan(&scene, &placement, &shapes) {
+            Ok(plan) => {
+                let rows = scene.rows(&placement, &plan);
+                scene.lift(&placement, &rows);
+                scene.connections = route::emit(&scene, &placement, &plan, &rows);
+                // The final word on RFC 0002 §8. The planner reasons over
+                // columns and lanes; this reads the emitted geometry, so it
+                // catches anything the planner does not model. It is a refusal
+                // rather than another rung of the ladder because the two are
+                // not proven equivalent: a disagreement means the planner is
+                // wrong, and no amount of extra room would make it right.
+                if let Some(reason) = route::verify(&scene) {
+                    return Err(reason);
                 }
+                scene.labels = label::place_labels(&scene);
+                scene.indent();
+                scene.fit();
+
+                return Ok(scene);
             }
-            ExecutionPlan::Yield { join, .. } => Placed {
-                bottom: self.anchor(incoming.origin).y,
-                arrivals: vec![Arrival {
-                    incoming,
-                    join: *join,
-                }],
-            },
+            Err(blocked) => blocked,
+        };
+        // Each blocked run climbs the same ladder: turn sideways later, then
+        // take a column of its own, then drop another row. Every rung only adds
+        // room, so the ladder ends.
+        let route::Blocked { connection, reason } = blocked;
+        blocking = reason;
+        let wire = scene.topology.connections[connection];
+        let destination = Vertex::from(wire.destination);
+        let span = placement.row(destination) - placement.row(Vertex::from(wire.source));
+        // A run into a junction already descends in its own column, so
+        // deferring it changes nothing; it climbs straight to the next rung.
+        let into_junction = matches!(wire.destination, Destination::Junction(_));
+        let shape = shapes.entry(connection).or_default();
+        match *shape {
+            // A run confined to one row gap has nowhere else to turn, so its
+            // destination drops a row and the run gains a gap of its own.
+            _ if span < 2 => *delays.entry(destination).or_insert(0) += 1,
+            route::Shape::Direct if into_junction => *shape = route::Shape::Aside,
+            route::Shape::Direct => *shape = route::Shape::Deferred,
+            route::Shape::Deferred => *shape = route::Shape::Aside,
+            route::Shape::Aside => *delays.entry(destination).or_insert(0) += 1,
         }
     }
 
-    fn finish_branches(
-        &mut self,
-        index: usize,
-        placed: Vec<Placed>,
-        convergence: Option<&Join>,
-    ) -> Placed {
-        let bottom = placed.iter().map(|branch| branch.bottom).max().unwrap_or(0);
-        // Branch order decides which skewer a shared continuation takes, and a
-        // nested branch point hands its own arrivals up in that same order.
-        let arrivals = placed
-            .into_iter()
-            .flat_map(|branch| branch.arrivals)
-            .collect::<Vec<_>>();
-        if let Some(convergence) = convergence {
-            let target = JoinTarget {
-                block: index,
-                join: 0,
+    Err(format!("routing attempts exhausted: {blocking}"))
+}
+
+/// Every node at its column, with its own dimensions. Rows are added once the
+/// row gaps are known, so the vertical position waits for the routing plan.
+fn nodes(topology: &Topology, placement: &place::Placement) -> Vec<Node> {
+    topology
+        .nodes
+        .iter()
+        .map(|node| {
+            let (width, height, lines) = node_dimensions(node.kind, &node.label);
+            Node {
+                id: node.id,
+                x: column_x(placement.column(Vertex::Node(node.id))),
+                y: 0,
+                width,
+                height,
+                lines,
+            }
+        })
+        .collect()
+}
+
+/// Top edge and height of every row, in row order. A junction row carries no
+/// node, so it is only the lane its routes meet in.
+pub(super) struct Rows {
+    top: Vec<i32>,
+    height: Vec<i32>,
+    /// Space between the last horizontal arrival and the following node row.
+    capture_space: Vec<i32>,
+}
+
+impl Rows {
+    fn top(&self, row: usize) -> i32 {
+        self.top[row]
+    }
+
+    /// Packs horizontal runs toward the following row, leaving the spare room
+    /// below the producers rather than pressing the merge against their exits.
+    pub(super) fn lane_y(&self, gap: usize, lane: usize, lanes: usize) -> i32 {
+        self.top[gap + 1] - self.capture_space[gap + 1] - (lanes - lane - 1) as i32 * LANE
+    }
+
+    /// A junction row carries no node, so the routes that meet there meet on
+    /// the row's own line.
+    pub(super) fn junction_y(&self, row: usize) -> i32 {
+        self.top[row]
+    }
+}
+
+impl Scene {
+    fn rows(&self, placement: &place::Placement, plan: &route::Plan) -> Rows {
+        let mut height = vec![0; placement.rows];
+        let mut capture_space = vec![LANE; placement.rows];
+        for node in &self.nodes {
+            let row = placement.row(Vertex::Node(node.id));
+            height[row] = height[row].max(node.height);
+            capture_space[row] =
+                capture_space[row].max(label::capture_space(&self.topology.capture_label(node.id)));
+        }
+        let gap = vertical_gap(&self.topology);
+        let mut top = Vec::with_capacity(placement.rows);
+        let mut next = MARGIN;
+        for (row, height) in height.iter().enumerate() {
+            top.push(next);
+            let lanes = plan.lanes_in(row) as i32;
+            let routing = if lanes == 0 {
+                0
+            } else {
+                2 * LANE + (lanes - 1) * LANE + capture_space[row + 1]
             };
-            let (local, mut outward): (Vec<_>, Vec<_>) = arrivals
-                .into_iter()
-                .partition(|arrival| arrival.join == target);
-            let local = local.into_iter().map(|arrival| arrival.incoming).collect();
-            let mut placed = self.place_convergence(local, convergence, bottom);
-            outward.append(&mut placed.arrivals);
-            outward.sort_by_key(|arrival| arrival.incoming.skewer);
-            placed.arrivals = outward;
-            return placed;
+            next += height + gap.max(routing);
         }
-        // Every branch ended the flow, or they all converge further out.
-        Placed { bottom, arrivals }
+
+        Rows {
+            top,
+            height,
+            capture_space,
+        }
     }
 
-    fn add_block_node(&mut self, index: usize, skewer: usize, top: i32) -> NodeId {
-        let block = &self.graph.flow.blocks[index];
-        self.add_node(
-            NodeId::Block(index),
-            match block.kind {
-                BlockKind::Action => NodeKind::Action,
-                BlockKind::Question => NodeKind::Question,
-                BlockKind::Choice => NodeKind::Choice,
-                BlockKind::End => NodeKind::End,
-            },
-            block.description.clone().unwrap_or_default(),
-            skewer,
-            top,
+    /// Centres every node on its row, once the rows have their heights.
+    fn lift(&mut self, placement: &place::Placement, rows: &Rows) {
+        for node in &mut self.nodes {
+            let row = placement.row(Vertex::Node(node.id));
+            node.y = rows.top(row) + rows.height[row] / 2;
+        }
+    }
+
+    pub(crate) fn node(&self, id: NodeId) -> &Node {
+        self.nodes
+            .iter()
+            .find(|node| node.id == id)
+            .expect("every projected node is placed")
+    }
+
+    pub(super) const fn bounds(node: &Node) -> (i32, i32, i32, i32) {
+        (
+            node.x - node.width / 2,
+            node.y - node.height / 2,
+            node.x + node.width / 2,
+            node.y + node.height / 2,
         )
     }
 
-    fn add_node(
-        &mut self,
-        id: NodeId,
-        kind: NodeKind,
-        label: String,
-        skewer: usize,
-        top: i32,
-    ) -> NodeId {
-        debug_assert!(!self.indexes.contains_key(&id));
-        let (width, height, lines) = node_dimensions(kind, &label);
-        let index = self.scene.nodes.len();
-        self.scene.nodes.push(Node {
-            id,
-            kind,
-            label,
-            x: skewer_x(skewer),
-            y: top + height / 2,
-            width,
-            height,
-            lines,
-        });
-        self.indexes.insert(id, index);
-        id
-    }
-
-    fn connect_to_node(&mut self, incoming: Incoming, to: NodeId) {
-        let start = self.anchor(incoming.origin);
-        let end = self.top_anchor(to);
-        let points = match incoming.origin.side {
-            Side::Right => compact_points([
-                start,
-                Point {
-                    x: end.x,
-                    y: start.y,
-                },
-                end,
-            ]),
-            Side::Bottom if start.x == end.x => vec![start, end],
-            Side::Bottom => {
-                let middle_y = i32::midpoint(start.y, end.y);
-                compact_points([
-                    start,
-                    Point {
-                        x: start.x,
-                        y: middle_y,
-                    },
-                    Point {
-                        x: end.x,
-                        y: middle_y,
-                    },
-                    end,
-                ])
-            }
-        };
-        self.connect(incoming, to, points);
-    }
-
-    /// Records one connection with the wire names each of its ends names, which
-    /// `place_labels` turns into the drawn labels once every node is placed.
-    fn connect(&mut self, incoming: Incoming, to: NodeId, points: Vec<Point>) {
-        let handover = self.handover(incoming.origin.node, incoming.branch);
-        let capture = self.capture(to);
-        self.connect_points(incoming.origin.node, to, handover, capture, points);
-    }
-
-    fn connect_points(
-        &mut self,
-        from: NodeId,
-        to: NodeId,
-        handover: Vec<String>,
-        capture: Vec<String>,
-        points: Vec<Point>,
-    ) {
-        debug_assert!(points.len() >= 2);
-        self.scene.edges.push(Edge {
-            from,
-            to,
-            handover,
-            capture,
-            points,
-        });
-    }
-
-    /// The wire names a node hands over on one connection leaving it. A
-    /// question hands over the single output its branch carries; a case hands
-    /// over the choice output it stands for; every other node hands over all it
-    /// produces.
-    fn handover(&self, from: NodeId, branch: Option<usize>) -> Vec<String> {
-        let names: Vec<&Ident> = match from {
-            NodeId::Start => self.graph.flow.flow_inputs.iter().collect(),
-            NodeId::Case {
-                choice,
-                branch: case,
-            } => {
-                vec![&self.graph.flow.blocks[choice].outputs[case]]
-            }
-            NodeId::Block(index) => {
-                let outputs = &self.graph.flow.blocks[index].outputs;
-                match branch {
-                    Some(branch) => vec![&outputs[branch]],
-                    None => outputs.iter().collect(),
-                }
-            }
-        };
-
-        drawn(self.graph, names)
-    }
-
-    /// The wire names a node captures. Only consuming inputs count: a borrow
-    /// reads its wire where it lies and leaves it on the flow, so it is a data
-    /// dependency, which the visual graph does not draw. A case captures
-    /// nothing of its own: it stands for one output of the choice above it.
-    fn capture(&self, to: NodeId) -> Vec<String> {
-        match to {
-            NodeId::Start | NodeId::Case { .. } => Vec::new(),
-            NodeId::Block(index) => drawn(
-                self.graph,
-                self.graph.flow.blocks[index]
-                    .inputs
-                    .iter()
-                    .filter(|input| !input.borrowed)
-                    .map(|input| &input.ident),
-            ),
-        }
-    }
-
-    fn anchor(&self, origin: Origin) -> Point {
-        match origin.side {
-            Side::Bottom => self.bottom_anchor(origin.node),
-            Side::Right => self.right_anchor(origin.node),
-        }
-    }
-
-    fn top_anchor(&self, id: NodeId) -> Point {
+    pub(super) fn top_anchor(&self, id: NodeId) -> Point {
         let node = self.node(id);
         Point {
             x: node.x,
@@ -410,282 +303,117 @@ impl Builder<'_> {
         }
     }
 
-    fn bottom_anchor(&self, id: NodeId) -> Point {
-        let node = self.node(id);
-        Point {
-            x: node.x,
-            y: node.y + node.height / 2,
+    /// Where one exit's connections leave the node boundary.
+    pub(super) fn exit_anchor(&self, exit: ExitId) -> Point {
+        let node = self.node(exit.node);
+        match self.topology.node(exit.node).kind {
+            NodeKind::Question => question::exit_anchor(
+                node,
+                exit.branch.expect("a question exit belongs to a branch"),
+            ),
+            _ => Point {
+                x: node.x,
+                y: node.y + node.height / 2,
+            },
         }
     }
 
-    fn right_anchor(&self, id: NodeId) -> Point {
-        let node = self.node(id);
-        Point {
-            x: node.x + node.width / 2,
-            y: node.y,
+    /// Slides the whole scene right when a route left the diagram on the left
+    /// to get out of another's way, so the canvas still starts at the origin.
+    fn indent(&mut self) {
+        let left = self
+            .connections
+            .iter()
+            .flat_map(|connection| &connection.points)
+            .map(|point| point.x)
+            .min()
+            .unwrap_or(MARGIN)
+            .min(MARGIN);
+        if left >= MARGIN {
+            return;
+        }
+
+        let shift = MARGIN - left;
+        for node in &mut self.nodes {
+            node.x += shift;
+        }
+        for connection in &mut self.connections {
+            for point in &mut connection.points {
+                point.x += shift;
+            }
+        }
+        for label in &mut self.labels {
+            label.at.x += shift;
         }
     }
 
-    fn node(&self, id: NodeId) -> &Node {
-        &self.scene.nodes[self.indexes[&id]]
-    }
-
-    fn fit_scene(&mut self) {
+    fn fit(&mut self) {
         let (mut right, mut bottom) = (0, 0);
-        for node in &self.scene.nodes {
+        for node in &self.nodes {
             right = right.max(node.x + node.width / 2);
             bottom = bottom.max(node.y + node.height / 2);
         }
-        for edge in &self.scene.edges {
-            for point in &edge.points {
+        for connection in &self.connections {
+            for point in &connection.points {
                 right = right.max(point.x);
                 bottom = bottom.max(point.y);
             }
         }
-        for label in &self.scene.labels {
+        for label in &self.labels {
             let (label_right, label_bottom) = label_bounds(label);
             right = right.max(label_right);
             bottom = bottom.max(label_bottom);
         }
-        self.scene.width = right + MARGIN;
-        self.scene.height = bottom + MARGIN;
+        self.width = right + MARGIN;
+        self.height = bottom + MARGIN;
     }
 }
 
-/// A connection that has left its origin and awaits the node it enters.
-#[derive(Clone, Copy)]
-struct Incoming {
-    origin: Origin,
-    /// The branch this connection left on, which decides how much of a
-    /// branching origin's output tuple it hands over. `None` for a node that
-    /// hands over everything it produces.
-    branch: Option<usize>,
-    skewer: usize,
-}
-
-struct Placed {
-    bottom: i32,
-    /// Connections still looking for the shared continuation they enter. A
-    /// branch point that has no join of its own hands them outward.
-    arrivals: Vec<Arrival>,
-}
-
-/// One yielded connection waiting for its specific enclosing join.
-struct Arrival {
-    incoming: Incoming,
-    join: JoinTarget,
-}
-
-#[derive(Clone, Copy)]
-struct Origin {
-    node: NodeId,
-    side: Side,
-}
-
-impl Origin {
-    const fn bottom(node: NodeId) -> Self {
-        Self {
-            node,
-            side: Side::Bottom,
-        }
-    }
-
-    const fn right(node: NodeId) -> Self {
-        Self {
-            node,
-            side: Side::Right,
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-enum Side {
-    Bottom,
-    Right,
-}
-
-struct PlanMetrics {
-    span: usize,
-    /// Outward yields and their skewer offsets, in skewer order.
-    yields: Vec<(JoinTarget, usize)>,
-}
-
-fn plan_metrics(plan: &ExecutionPlan) -> PlanMetrics {
-    match plan {
-        ExecutionPlan::Guarded { .. } => unreachable!("guarded plans use dependency layout"),
-        ExecutionPlan::End { body, .. } => plan_metrics(body),
-        ExecutionPlan::Action { next, .. } => plan_metrics(next),
-        ExecutionPlan::Question {
-            index,
-            branches,
-            join,
-        } => branch_metrics(*index, branches, join.as_ref()).1,
-        ExecutionPlan::Choice {
-            index,
-            branches,
-            joins,
-        } => branch_metrics(*index, branches, single_join(joins)).1,
-        ExecutionPlan::EndArrival { .. } => PlanMetrics {
-            span: 1,
-            yields: Vec::new(),
-        },
-        ExecutionPlan::Yield { join, .. } => PlanMetrics {
-            span: 1,
-            yields: vec![(*join, 0)],
-        },
-    }
-}
-
-/// The skewer layout draws one join per choice; plan 5 replaces it with a
-/// layout that draws every convergence group.
-fn single_join(joins: &[Join]) -> Option<&Join> {
-    match joins {
-        [] => None,
-        [join] => Some(join),
-        _ => unimplemented!("several convergence groups of one choice are drawn by plan 5"),
-    }
-}
-
-fn branch_layout(
-    index: usize,
-    branches: &[Branch],
-    convergence: Option<&Join>,
-) -> (Vec<usize>, usize) {
-    let (offsets, metrics) = branch_metrics(index, branches, convergence);
-    (offsets, metrics.span)
-}
-
-fn branch_metrics(
-    index: usize,
-    branches: &[Branch],
-    convergence: Option<&Join>,
-) -> (Vec<usize>, PlanMetrics) {
-    let children = branches
-        .iter()
-        .map(|branch| plan_metrics(&branch.plan))
-        .collect::<Vec<_>>();
-    let mut offsets = Vec::with_capacity(children.len());
-    let mut total = 0;
-    for child in &children {
-        offsets.push(total);
-        total += child.span;
-    }
-    let Some(convergence) = convergence else {
-        let yields = children
-            .iter()
-            .zip(&offsets)
-            .flat_map(|(child, offset)| {
-                child
-                    .yields
-                    .iter()
-                    .map(move |(join, skewer)| (*join, offset + skewer))
-            })
-            .collect();
-        return (
-            offsets,
-            PlanMetrics {
-                span: total,
-                yields,
-            },
-        );
-    };
-
-    let target = JoinTarget {
-        block: index,
-        join: 0,
-    };
-    let continues = |child: &PlanMetrics| child.yields.iter().any(|(join, _)| *join == target);
-    let first = children
-        .iter()
-        .position(continues)
-        .expect("a convergence has a continuing branch");
-    let last = children
-        .iter()
-        .rposition(continues)
-        .expect("a convergence has a continuing branch");
-
-    let continuing_span = children[first..=last]
-        .iter()
-        .map(|child| child.span)
-        .sum::<usize>();
-    // The continuation is drawn on the skewer the first arrival reaches, which
-    // lies inside the first continuing branch rather than on its own skewer
-    // when that branch yields from within a nested block.
-    let arrival = children[first]
-        .yields
-        .iter()
-        .find_map(|(join, skewer)| (*join == target).then_some(*skewer))
-        .expect("a continuing branch yields");
-    let continuation = plan_metrics(&convergence.next);
-    let reserved = (arrival + continuation.span).saturating_sub(continuing_span);
-    for offset in &mut offsets[last + 1..] {
-        *offset += reserved;
-    }
-
-    let mut yields = children
-        .iter()
-        .zip(&offsets)
-        .flat_map(|(child, offset)| {
-            child
-                .yields
-                .iter()
-                .map(move |(join, skewer)| (*join, offset + skewer))
-        })
-        .filter(|(join, _)| *join != target)
-        .chain(
-            continuation
-                .yields
-                .into_iter()
-                .map(|(join, skewer)| (join, offsets[first] + arrival + skewer)),
-        )
-        .collect::<Vec<_>>();
-    yields.sort_by_key(|(_, skewer)| *skewer);
-    (
-        offsets,
-        PlanMetrics {
-            span: total + reserved,
-            yields,
-        },
-    )
-}
-
-/// Renders every ordinary wire and every underscore-prefixed wire that a block
-/// uses. Only an unused ignored wire is absent from the flow.
-fn drawn<'a>(graph: &SemanticModel, names: impl IntoIterator<Item = &'a Ident>) -> Vec<String> {
-    names
-        .into_iter()
-        .filter(|name| {
-            !name.to_string().starts_with('_')
-                || graph
-                    .flow
-                    .blocks
-                    .iter()
-                    .any(|block| block.inputs.iter().any(|input| input.ident == **name))
-        })
-        .map(ToString::to_string)
-        .collect()
-}
-
-fn skewer_x(skewer: usize) -> i32 {
-    MARGIN + NODE_WIDTH / 2 + skewer as i32 * SKEWER_WIDTH
-}
-
-fn compact_points(points: impl IntoIterator<Item = Point>) -> Vec<Point> {
-    let mut points = Vec::from_iter(points);
-    points.dedup();
-    points
+fn column_x(column: usize) -> i32 {
+    MARGIN + NODE_WIDTH / 2 + column as i32 * COLUMN_WIDTH
 }
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
-        NodeKind::End => end::dimensions(),
-        NodeKind::Start => block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 58),
+        NodeKind::Start | NodeKind::End => capsule_dimensions(label),
         NodeKind::Action => action::dimensions(label),
-        NodeKind::Question | NodeKind::Choice => {
+        NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
         }
         NodeKind::Case => choice::case_dimensions(label),
     }
+}
+
+/// Fits each line inside the curved ends, not just the capsule's bounding box.
+/// SVG clamps the horizontal radius once the capsule grows taller than wide,
+/// so those tall capsules use the corresponding ellipse bound instead.
+fn capsule_dimensions(label: &str) -> (i32, i32, Vec<String>) {
+    let (width, mut height, lines) = block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 58);
+    let first_baseline = 15 - lines.len() as i32 * LINE_HEIGHT / 2;
+    for (index, line) in lines.iter().enumerate() {
+        let line_width = text::text_width(&line.graphemes(true).collect::<Vec<_>>(), LABEL_FONT);
+        let x = f64::from(line_width) / 2.0 + 4.0;
+        let baseline = first_baseline + index as i32 * LINE_HEIGHT;
+        let y = f64::from(
+            (baseline - LABEL_FONT)
+                .abs()
+                .max((baseline + LABEL_FONT / 3).abs()),
+        ) + 4.0;
+        let inset = f64::from(width) / 2.0 - x;
+        // The corner fits when (radius - inset)^2 + y^2 <= radius^2.
+        let required = if y <= inset {
+            2.0 * y
+        } else {
+            inset + y * y / inset
+        };
+        let required = if required <= f64::from(width) {
+            required
+        } else {
+            2.0 * y / (1.0 - (2.0 * x / f64::from(width)).powi(2)).sqrt()
+        };
+        height = height.max(2 * (required / 2.0).ceil() as i32);
+    }
+    (width, height, lines)
 }
 
 fn block_dimensions(

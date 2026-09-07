@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn capture_uneven(condition: bool) -> u32 {
-    #[question("Choose a path depth.")]
+    #[question("Choose a branch depth.")]
     |condition| -> (short, long) { condition };
 
     #[action("Build the short result.")]
@@ -16,7 +16,7 @@ fn capture_uneven(condition: bool) -> u32 {
 }
 
 #[test]
-fn paths_may_reach_end_at_different_depths() {
+fn branches_may_reach_end_at_different_depths() {
     assert_eq!(capture_uneven(true), 5);
     assert_eq!(capture_uneven(false), 8);
 }

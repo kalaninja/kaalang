@@ -20,7 +20,7 @@ pub struct SemanticModel {
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
     /// Every possible execution, ordered by branch selections, then blocks,
-    /// then capture dependencies.
+    /// then capture dependencies and implicit block order.
     pub executions: Vec<Execution>,
     /// Every continuation group, ordered by branching block, then branch list.
     pub convergence_groups: Vec<ConvergenceGroup>,
@@ -101,7 +101,7 @@ pub struct BranchSelection {
 }
 
 /// One possible execution: the computational blocks that participate, the
-/// branches it selects, and every capture dependency it establishes. Start and
+/// branches it selects, its capture dependencies, and implicit block order. Start and
 /// end participate implicitly. The serial order in which independent blocks
 /// happened to run is not part of an execution; every vector is sorted and
 /// deduplicated.
@@ -110,6 +110,10 @@ pub struct Execution {
     pub blocks: Vec<usize>,
     pub branches: Vec<BranchSelection>,
     pub dependencies: Vec<CaptureDependency>,
+    /// Implicit block order, as `(before, after)` pairs: an action producing an
+    /// ordinary wire precedes a selection deciding its consumers. These pairs add
+    /// no capture and are sorted and deduplicated like capture dependencies.
+    pub ordering: Vec<(usize, usize)>,
 }
 
 impl Execution {
@@ -126,6 +130,7 @@ impl Ord for Execution {
             .cmp(&other.branches)
             .then_with(|| self.blocks.cmp(&other.blocks))
             .then_with(|| self.dependencies.cmp(&other.dependencies))
+            .then_with(|| self.ordering.cmp(&other.ordering))
     }
 }
 
@@ -166,6 +171,10 @@ pub struct WireMerge {
     /// any execution where it participates, so no branch-local value outlives
     /// its own branch.
     pub before: Vec<usize>,
+    /// Blocks ordered after this merge, in authored order: its consumers and
+    /// eligible questions or choices that decide them. An implicit ordering does
+    /// not add a capture to the branching block.
+    pub after: Vec<usize>,
 }
 
 /// A verified lowering plan: one permitted serial order of the flow. Every
@@ -183,7 +192,7 @@ pub enum ExecutionPlan {
         /// this suffix.
         inputs: Vec<Ident>,
         /// The remaining computational blocks, ordered by dependencies and
-        /// implicit wire merges, with authored order breaking ties.
+        /// implicit wire order, with authored order breaking ties.
         blocks: Vec<usize>,
     },
     Action {

@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn order_the_flow_output(input: u32) -> (u32, u32, u32) {
+fn order_the_result_wire(input: u32) -> (u32, u32, u32) {
     #[action("Build three values.")]
     |input| -> (first, second, third) { (input, input + 1, input + 2) };
 
@@ -10,6 +10,6 @@ fn order_the_flow_output(input: u32) -> (u32, u32, u32) {
 }
 
 #[test]
-fn one_block_orders_the_flow_output() {
-    assert_eq!(order_the_flow_output(1), (3, 1, 2));
+fn one_block_orders_the_result_wire() {
+    assert_eq!(order_the_result_wire(1), (3, 1, 2));
 }
