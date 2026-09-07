@@ -10,7 +10,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_model::{BlockKind, SemanticModel};
 
-use crate::topology::{Connection, Destination, ExitId, NodeId, Source, Topology, Vertex};
+use crate::topology::{
+    Connection, Destination, ExitId, NodeId, Source, Topology, Vertex, choice, question,
+};
 
 pub(super) struct Placement {
     row: BTreeMap<Vertex, usize>,
@@ -307,15 +309,9 @@ fn branch_sets(
     (0..model.flow.blocks[block].outputs.len())
         .map(|branch| {
             let heads: Vec<Vertex> = match model.flow.blocks[block].kind {
-                BlockKind::Choice => vec![Vertex::Node(NodeId::Case {
-                    choice: block,
-                    branch,
-                })],
+                BlockKind::Choice => vec![Vertex::Node(choice::case(block, branch))],
                 _ => topology
-                    .leaving(ExitId {
-                        node: NodeId::Block(block),
-                        branch: Some(branch),
-                    })
+                    .leaving(question::exit(block, branch))
                     .map(|connection| Vertex::from(connection.destination))
                     .collect(),
             };

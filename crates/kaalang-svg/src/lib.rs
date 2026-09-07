@@ -220,6 +220,9 @@ fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderErr
                 context: "block description".to_owned(),
             });
         }
+        // Only a choice is projected with case nodes, so only a choice reaches
+        // the diagram with case labels; the parser leaves this list empty for
+        // every other kind.
         for (case_index, description) in block.case_descriptions.iter().enumerate() {
             if let Some(character) = invalid_xml_character(description) {
                 return Err(RenderError::InvalidLabelCharacter {

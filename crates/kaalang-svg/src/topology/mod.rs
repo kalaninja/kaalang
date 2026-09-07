@@ -10,8 +10,13 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::{BlockKind, Execution, ExecutionPlan, Input, ProducerId, SemanticModel};
+use kaalang_model::{Block, BlockKind, Execution, ExecutionPlan, Input, ProducerId, SemanticModel};
 use syn::Ident;
+
+mod action;
+pub(crate) mod choice;
+mod end;
+pub(crate) mod question;
 
 /// One drawn unit: the synthetic start node, one block of the flow, or one case
 /// derived from a choice. `Flow::blocks` carries the implicit end block last, so
@@ -163,7 +168,9 @@ impl Topology {
         self.exits
             .iter()
             .find(|owner| owner.id == exit)
-            .map_or(&[], |owner| owner.handover.as_slice())
+            .expect("every addressed exit is projected")
+            .handover
+            .as_slice()
     }
 
     pub(crate) fn capture(&self, node: NodeId) -> &[String] {
@@ -223,12 +230,31 @@ impl Topology {
 /// Builds the topology of one validated flow. `signature` labels the start node
 /// and `return_type` captions end, both taken from the authored source text.
 pub(crate) fn project(model: &SemanticModel, signature: &str, return_type: &str) -> Topology {
+    let mut nodes = vec![Node {
+        id: NodeId::Start,
+        kind: NodeKind::Start,
+        label: signature.to_owned(),
+        capture: Vec::new(),
+    }];
+    let mut exits = vec![Exit {
+        id: ExitId::of(NodeId::Start),
+        handover: names(&model.flow.flow_inputs),
+    }];
+    for (index, block) in model.flow.blocks.iter().enumerate() {
+        match block.kind {
+            BlockKind::Action => action::project(index, block, &mut nodes, &mut exits),
+            BlockKind::Question => question::project(index, block, &mut nodes, &mut exits),
+            BlockKind::Choice => choice::project(index, block, &mut nodes, &mut exits),
+            BlockKind::End => end::project(index, block, return_type, &mut nodes),
+        }
+    }
+
     let merges = merges(model);
-    let vertices = vertices(model, merges.len());
+    let vertices = vertices(&nodes, merges.len());
     let connections = connections(model, &merges, &vertices);
     Topology {
-        nodes: nodes(model, signature, return_type),
-        exits: exits(model),
+        nodes,
+        exits,
         connections,
         junctions: merges
             .iter()
@@ -265,7 +291,7 @@ fn merges(model: &SemanticModel) -> Vec<Vec<usize>> {
             .collect::<BTreeMap<usize, Option<usize>>>();
         for &producer in &merge.producers {
             if let ProducerId::BlockOutput { block, output } = producer {
-                let branch = !matches!(model.flow.blocks[block].kind, BlockKind::Action);
+                let branch = branches(model.flow.blocks[block].kind);
                 entries.insert(block, branch.then_some(output));
             }
         }
@@ -343,45 +369,42 @@ fn consumers<'a>(model: &'a SemanticModel, wire: &'a Ident) -> impl Iterator<Ite
         .map(|(index, _)| index)
 }
 
-fn nodes(model: &SemanticModel, signature: &str, return_type: &str) -> Vec<Node> {
-    let mut nodes = vec![Node {
-        id: NodeId::Start,
-        kind: NodeKind::Start,
-        label: signature.to_owned(),
-        capture: Vec::new(),
-    }];
-    for (index, block) in model.flow.blocks.iter().enumerate() {
-        nodes.push(Node {
-            id: NodeId::Block(index),
-            kind: match block.kind {
-                BlockKind::Action => NodeKind::Action,
-                BlockKind::Question => NodeKind::Question,
-                BlockKind::Choice => NodeKind::Select,
-                BlockKind::End => NodeKind::End,
-            },
-            // The end block has no description, so its node carries the flow's
-            // return type instead, as RFC 0002 §4.6 requires.
-            label: match block.kind {
-                BlockKind::End => return_type.to_owned(),
-                _ => block.description.clone().unwrap_or_default(),
-            },
-            capture: block.inputs.iter().map(captured).collect(),
-        });
-        for (branch, description) in block.case_descriptions.iter().enumerate() {
-            nodes.push(Node {
-                id: NodeId::Case {
-                    choice: index,
-                    branch,
-                },
-                kind: NodeKind::Case,
-                label: description.clone(),
-                // A case stands for one output of the choice above it and
-                // captures nothing of its own.
-                capture: Vec::new(),
-            });
-        }
+/// One exit per branch output, each handing over the single output it carries.
+/// `exit` names the id the kind gives one branch, which is the only part that
+/// differs between a question and a choice.
+fn branch_exits(
+    index: usize,
+    block: &Block,
+    exit: fn(usize, usize) -> ExitId,
+) -> impl Iterator<Item = Exit> {
+    block
+        .outputs
+        .iter()
+        .enumerate()
+        .map(move |(branch, output)| Exit {
+            id: exit(index, branch),
+            handover: vec![output.to_string()],
+        })
+}
+
+/// Whether this kind scopes its outputs per branch, so an output is provided
+/// only on the branch selected and each branch owns its own exit.
+fn branches(kind: BlockKind) -> bool {
+    match kind {
+        BlockKind::Action => false,
+        BlockKind::Question | BlockKind::Choice => true,
+        BlockKind::End => unreachable!("end declares no output"),
     }
-    nodes
+}
+
+/// The node and captures common to every flow block.
+fn block_node(index: usize, block: &Block, kind: NodeKind) -> Node {
+    Node {
+        id: NodeId::Block(index),
+        kind,
+        label: block.description.clone().unwrap_or_default(),
+        capture: block.inputs.iter().map(captured).collect(),
+    }
 }
 
 /// A consuming input reads as `name` and a borrowing one as `&name`, so the two
@@ -392,54 +415,6 @@ fn captured(input: &Input) -> String {
     } else {
         input.ident.to_string()
     }
-}
-
-fn exits(model: &SemanticModel) -> Vec<Exit> {
-    let mut exits = vec![Exit {
-        id: ExitId::of(NodeId::Start),
-        handover: names(&model.flow.flow_inputs),
-    }];
-    for (index, block) in model.flow.blocks.iter().enumerate() {
-        match block.kind {
-            BlockKind::Action => exits.push(Exit {
-                id: ExitId::of(NodeId::Block(index)),
-                handover: names(&block.outputs),
-            }),
-            BlockKind::Question => exits.extend(block.outputs.iter().enumerate().map(
-                |(branch, output)| Exit {
-                    id: ExitId {
-                        node: NodeId::Block(index),
-                        branch: Some(branch),
-                    },
-                    handover: vec![output.to_string()],
-                },
-            )),
-            BlockKind::Choice => {
-                // The case row belongs to the select above it, so its
-                // distributor names nothing: each branch output is handed over
-                // at its own case exit.
-                exits.push(Exit {
-                    id: ExitId::of(NodeId::Block(index)),
-                    handover: Vec::new(),
-                });
-                exits.extend(
-                    block
-                        .outputs
-                        .iter()
-                        .enumerate()
-                        .map(|(branch, output)| Exit {
-                            id: ExitId::of(NodeId::Case {
-                                choice: index,
-                                branch,
-                            }),
-                            handover: vec![output.to_string()],
-                        }),
-                );
-            }
-            BlockKind::End => {}
-        }
-    }
-    exits
 }
 
 fn names(idents: &[Ident]) -> Vec<String> {
@@ -550,11 +525,7 @@ fn connections(
                         .iter()
                         .filter(|&&block| execution.participates(block))
                         .map(|&block| Connection {
-                            source: exit(
-                                model,
-                                block,
-                                execution.selected(block).unwrap_or_default(),
-                            ),
+                            source: selected_exit(model, execution, block),
                             destination: Destination::Junction(junction),
                         }),
                 );
@@ -566,15 +537,7 @@ fn connections(
                 .blocks
                 .iter()
                 .filter(|&&block| model.flow.blocks[block].kind == BlockKind::Choice)
-                .map(|&choice| Connection {
-                    source: Source::Exit(ExitId::of(NodeId::Block(choice))),
-                    destination: Destination::Node(NodeId::Case {
-                        choice,
-                        branch: execution
-                            .selected(choice)
-                            .expect("an executed choice selects one case"),
-                    }),
-                }),
+                .map(|&block| choice::connection(block, execution)),
         );
 
         union.extend(reduce(&direct, vertices));
@@ -612,7 +575,7 @@ fn serial_connections(
         if model.flow.blocks[block].kind == BlockKind::End {
             continue;
         }
-        let exit = exit(model, block, execution.selected(block).unwrap_or_default());
+        let exit = selected_exit(model, execution, block);
         // Branch-local work still owed to the merge keeps the route on the
         // block's own exit; hopping to the junction would invert that order.
         previous = steps
@@ -691,18 +654,16 @@ fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     }
 }
 
-fn vertices(model: &SemanticModel, junctions: usize) -> Vec<Vertex> {
-    let mut vertices = vec![Vertex::Node(NodeId::Start)];
-    for (index, block) in model.flow.blocks.iter().enumerate() {
-        vertices.push(Vertex::Node(NodeId::Block(index)));
-        vertices.extend((0..block.case_descriptions.len()).map(|branch| {
-            Vertex::Node(NodeId::Case {
-                choice: index,
-                branch,
-            })
-        }));
-    }
-    vertices.extend((0..junctions).map(Vertex::Junction));
+fn vertices(nodes: &[Node], junctions: usize) -> Vec<Vertex> {
+    let vertices: Vec<Vertex> = nodes
+        .iter()
+        .map(|node| Vertex::Node(node.id))
+        .chain((0..junctions).map(Vertex::Junction))
+        .collect();
+    // `reduce` looks a vertex up by binary search, which is unspecified rather
+    // than loud on an unsorted list, so every projection must push its nodes in
+    // `NodeId::key` order.
+    debug_assert!(vertices.is_sorted(), "vertices must stay sorted");
     vertices
 }
 
@@ -746,13 +707,8 @@ fn produced(model: &SemanticModel, execution: &Execution, producer: ProducerId) 
         ProducerId::FlowInput(_) => true,
         ProducerId::BlockOutput { block, output } => {
             execution.participates(block)
-                && match model.flow.blocks[block].kind {
-                    BlockKind::Action => true,
-                    BlockKind::Question | BlockKind::Choice => {
-                        execution.selected(block) == Some(output)
-                    }
-                    BlockKind::End => unreachable!("end declares no output"),
-                }
+                && (!branches(model.flow.blocks[block].kind)
+                    || execution.selected(block) == Some(output))
         }
     }
 }
@@ -768,19 +724,27 @@ fn source(model: &SemanticModel, producer: ProducerId) -> Source {
     }
 }
 
+/// The exit the selected route leaves `block` by. A brancher that takes part
+/// has recorded the branch it took; every other kind has one exit, which carries
+/// every output it provides.
+fn selected_exit(model: &SemanticModel, execution: &Execution, block: usize) -> Source {
+    let output = if branches(model.flow.blocks[block].kind) {
+        execution
+            .selected(block)
+            .expect("a participating brancher selects a branch")
+    } else {
+        0
+    };
+    exit(model, block, output)
+}
+
 fn exit(model: &SemanticModel, block: usize, output: usize) -> Source {
-    match model.flow.blocks[block].kind {
-        BlockKind::Action => Source::Exit(ExitId::of(NodeId::Block(block))),
-        BlockKind::Question => Source::Exit(ExitId {
-            node: NodeId::Block(block),
-            branch: Some(output),
-        }),
-        BlockKind::Choice => Source::Exit(ExitId::of(NodeId::Case {
-            choice: block,
-            branch: output,
-        })),
+    Source::Exit(match model.flow.blocks[block].kind {
+        BlockKind::Action => action::exit(block),
+        BlockKind::Question => question::exit(block, output),
+        BlockKind::Choice => choice::exit(block, output),
         BlockKind::End => unreachable!("end has no exit"),
-    }
+    })
 }
 
 #[cfg(test)]
