@@ -44,15 +44,9 @@ struct Options {
 }
 
 fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Options, String> {
-    let mut arguments = arguments.into_iter();
-    let _program = arguments.next();
-    let mut arguments = arguments.peekable();
-    if arguments
-        .peek()
-        .is_some_and(|argument| argument == "kaalang")
-    {
-        arguments.next();
-    }
+    // Skip the program name, then the `kaalang` word cargo inserts.
+    let mut arguments = arguments.into_iter().skip(1).peekable();
+    arguments.next_if(|argument| argument == "kaalang");
     if arguments.next().as_deref() != Some(OsStr::new("diagram")) {
         return Err(USAGE.to_owned());
     }
