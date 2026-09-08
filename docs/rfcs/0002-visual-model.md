@@ -1,7 +1,6 @@
 # RFC 0002: kaalang Visual Language
 
 - Status: accepted design draft
-- Visual language version: `0.1`
 
 ## 1. Overview
 
@@ -105,21 +104,17 @@ one contract split across the diagram. A diagram has no separate return node.
 
 The end node's label names the type and its incoming connection names the
 `result` wire, so neither repeats the other; section 6 governs that capture
-label exactly as it governs any other node's.
+label exactly as it governs any other node's. The end node is an ordinary
+consumer: alternative producers of `result` merge above it (section 7), and it
+is not itself the merge.
 
 ## 5. Flow inputs and outputs
 
 The start node's signature shows the flow input parameters and, when present,
 the return type that constrains the flow output. Every named flow input is also
 shown as an output of the start node, even if no block captures it. A wildcard
-flow input produces no wire label. The end node's capture label is the `result`
-wire.
-
-### 5.1 Zero-computation flow
-
-A zero-computation flow contains the start node and the end node, connected by
-the `result` wire a flow input provides. Other named flow inputs remain visible
-as start node outputs. kaalang does not add an implicit unit-valued wire.
+flow input produces no wire label. A zero-computation flow is the start node
+connected to the end node by the `result` wire a flow input provides.
 
 ## 6. Wires and labels
 
@@ -236,26 +231,20 @@ direct `P → C` connection.
 
 Every computational node is reachable from start, including zero-input actions.
 A start or action exit continues to the next step of the chosen serial order;
-independent consumers are reached transitively through that sequence. These
-connections do not denote parallel execution. A question activates exactly one
-of its two exits; a select activates exactly one outgoing connection from its
-distributor exit and therefore exactly one case. Branch connections retain their
-selected output even when the next step does not capture it directly. A node
-with several incoming connections waits for every one that participates in the current
-execution. At a convergence, incoming connections from alternative branches
-never participate together.
+independent consumers are reached transitively through that sequence. A question
+activates exactly one of its two exits; a select activates exactly one outgoing
+connection from its distributor exit and therefore exactly one case. Branch
+connections retain their selected output even when the next step does not
+capture it directly. A node with several incoming connections waits for every
+one that participates in the current execution. At a convergence, incoming
+connections from alternative branches never participate together.
 
 kaalang has no authored merge block or merge icon. Equally named alternative
 outputs meet at an implicit junction of connections before any consumer of the
 merged wire. The common segment from that junction leads to its consumer or
-consumers; the junction is the convergence point, not a consumer node. Local
-work in the producer branches finishes before the junction, as RFC 0001 defines.
-Nested branches returning to this shared continuation merge before this junction
-or at it; RFC 0001 rejects a branch that bypasses it and rejoins downstream through
-an ordinary wire. A branch ending with `result` may bypass the local junction
-only from outside its group: it cannot separate the converging branches, even
-across nested questions and choices. RFC 0001 validates this branch order before
-layout.
+consumers; the junction is the convergence point, not a consumer node. Which
+branches converge there, what finishes before it, and what may bypass it are
+RFC 0001 §7's rules; the diagram draws them and adds none.
 When the merge implicitly precedes a consumer-selecting question or choice,
 the junction reaches that selection before its consumers. This connection
 adds no capture label to the selection. Connections already represented through
@@ -267,18 +256,11 @@ preserving their authored capture labels.
 The junction adds neither a computational block nor a producer occurrence.
 Consumers display the captured logical wire name once.
 
-The end node is an ordinary consumer of the `result` wire. Every connection
-entering it leaves an exit that provides `result`; when that wire has
-alternative producers, those connections meet at its implicit merge above the
-node, exactly as for any other merged wire. The end node displays the logical
-wire `result` once, and it is not itself the merge.
-
 ## 8. Spatial notation
 
 Along each connection, execution time runs from top to bottom: the destination
 node occupies a lower row than its source node, and the route never moves
-upward. Nodes on alternative branches may share a row. Independent computation in
-one execution is connected sequentially rather than placed side by side.
+upward. Nodes on alternative branches may share a row.
 
 The visual language uses columns and rows. Branches are arranged from left to
 right in authored order. The first question output and the first choice case

@@ -39,15 +39,11 @@ A group's footprint extends from its leftmost occupied column to its rightmost
 occupied column. A terminal sibling branch that precedes the group remains to
 the left of its footprint; one that follows the group remains to its right. With
 several disjoint groups, intervening terminal branches remain between their
-footprints. The core model's adjacency rule ensures that a branch outside a
-convergence group cannot separate two of its members.
+footprints.
 
-To draw an implicit merge, each producer descends in its approach column to one
-horizontal merge rail. The junction lies on that rail in the continuation's
-column. A route already in that column ends vertically at the junction; side
-routes end horizontally there, without turning down. The outgoing connection
-alone draws the vertical below the junction. This applies to the `result` merge
-above end as well as merges before computational blocks.
+To draw an implicit merge, including the `result` merge above end, each producer
+descends in its approach column to one horizontal merge rail whose junction lies
+in the continuation's column; routes meet it as RFC 0002 §8 requires.
 
 ## 3. SVG output
 

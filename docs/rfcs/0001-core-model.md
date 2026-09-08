@@ -1,8 +1,6 @@
 # RFC 0001: kaalang Core Model
 
 - Status: accepted design draft
-- Model version: `0.1`
-- Implementation target: Rust
 
 ## 1. Overview
 
@@ -179,11 +177,9 @@ The first output selects the yes/true branch, and the second selects the
 no/false branch. The question body is evaluated exactly once, and its result
 determines which branch is selected.
 
-Question outputs are distinct unit-valued control wires. The downstream block
-lists the selected control wire and every data wire it needs as separate inputs.
-A control wire is a branch output: its continuation consumes it whenever the
-output is selected. The continuation is its implicit merge when the name has
-alternative producers, or otherwise at most one capturing block.
+Question outputs are distinct unit-valued control wires and branch outputs
+(section 6). The downstream block lists the selected control wire and every data
+wire it needs as separate inputs.
 
 ### 4.3 choice
 
@@ -208,9 +204,7 @@ contains its Rust pattern, optional guard, bindings, and value.
 
 The match scrutinee is evaluated exactly once. Unlike question outputs, choice
 outputs are not restricted to `()`, and different outputs may carry different
-Rust types. Like question outputs, choice outputs are branch outputs: the
-selected case hands its value to its implicit merge, or otherwise at most one
-capturing block. That continuation must execute whenever that case is selected.
+Rust types. Like question outputs, they are branch outputs (section 6).
 
 An implemented choice body contains exactly one `match` expression. An exact
 whole-body `todo!()` is also a valid placeholder. Match bindings and block
@@ -247,12 +241,9 @@ and discards a flow input and provides no wire. Other parameter patterns,
 including modified bindings and destructuring patterns, are invalid, as is a
 method receiver.
 
-Every named flow-input producer must have at least one capture dependency to a
-block or the end block unless its spelling begins with `_`;
-that prefix permits it to have no consumer. This requirement is existential: one
-possible execution establishing the dependency is sufficient, and the wire may
-remain uncaptured in other executions. The function return type is the contract
-for the `result` wire the end block captures.
+A named flow input is a producer occurrence and follows section 6's capture
+requirement. The function return type is the contract for the `result` wire the
+end block captures.
 
 ```rust
 use kaalang::kaalang;
@@ -344,15 +335,16 @@ join a wire that has already appeared as an input.
 No computational block captures `result`; the end block consumes it and the
 flow finishes.
 
-Every block-output producer occurrence must have at least one capture dependency
-to a later block or the end block unless its name begins with `_`;
-that prefix permits the occurrence to have no consumer. A block all of whose
-outputs may remain uncaptured is still invalid, because nothing would order it
-before the flow finishes (section 7). For action outputs and
-merged wires, this requirement is existential rather than per-execution. A
-question or choice output without alternative producers must be captured by its
-consumer in every execution selecting the output. For such an output, the `_`
-prefix permits no consumer, but does not make an existing consumer optional.
+Every producer occurrence, a named flow input or a block output, must have at
+least one capture dependency to a later block or the end block unless its name
+begins with `_`; that prefix permits the occurrence to have no consumer. A block
+all of whose outputs may remain uncaptured is still invalid, because nothing
+would order it before the flow finishes (section 7). For flow inputs, action
+outputs, and merged wires, this requirement is existential rather than
+per-execution: one possible execution establishing the dependency is sufficient.
+A question or choice output without alternative producers must be captured by
+its consumer in every execution selecting the output. For such an output, the
+`_` prefix permits no consumer, but does not make an existing consumer optional.
 
 ```rust
 #[question("Which value should be used?")]
@@ -474,20 +466,12 @@ semantic model, and each of its blocks executes at most once. Its entry blocks
 are consumers after implicit wire merges. One merge can precede several
 consumers, and a consumer can capture several merged wires.
 
-Read in authored choice-case order, the branches of each convergence group are
-adjacent: no case outside the group may separate two of its members. Several
-disjoint groups are valid and may be separated by cases outside either group. A
-question's own two branches satisfy this local rule automatically; nested
-selections still obey the rule below.
-
-Adjacency also applies across nested questions and choices: branches producing
-a merged wire must form one uninterrupted interval in authored branch order.
-A branch that does not produce the wire cannot separate two that do, even if
-it finishes with `result`. This rule also applies to unused merged names.
-Selections unrelated to which producer supplies the wire, or whether it is
-supplied at all, do not split the interval.
-
-The interval is defined over the selections that affect the wire's production.
+The branches of a convergence group are adjacent in authored branch order,
+within one choice and across nested questions and choices alike: a branch that
+does not produce a merged wire cannot separate two that do, even if it finishes
+with `result`, and this holds for unused merged names too. Several disjoint
+groups may be separated by branches outside either group. Precisely, the
+interval is defined over the selections that affect the wire's production.
 For each execution, record its producer occurrence, or absence. A question or
 choice affects this record when two executions differ only at that selection
 under section 2's agreement rule and have different records. Retain only these
@@ -624,21 +608,10 @@ input_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-There is no end statement: the end block is implicit and `result` names the
-flow output wire. The final statement may omit its semicolon. Computational
-descriptions are nonempty. Questions and choices require a nonempty input list;
-an action accepts an empty one. Every authored block declares at least one
-output, so `-> ()` is invalid. Choice cases, outputs, and match arms have equal
-counts. Outputs within one declaration are distinct. Repeated output names
-across blocks are valid only when branch analysis proves their producers
-mutually exclusive. Each flow parameter uses `flow_parameter`; a method receiver
-is invalid. Validation rejects `return` expressions and the `?` operator in a
-computational block body's own control-flow scope. It descends
-through ordinary parsed expressions, including choice match scrutinees, guards,
-and arms, but not into nested closures, async blocks, item definitions, or macro
-token streams.
-
-There is no merge statement.
+Outputs within one declaration are distinct, and `-> ()` declares none. Every
+other constraint the grammar leaves open is stated with its rule: descriptions
+and control transfers in section 3, block kinds and the implicit end block in
+section 4, flow parameters in section 5, and repeated output names in section 6.
 
 ## 9. Validation and execution
 
