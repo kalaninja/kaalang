@@ -102,12 +102,14 @@ fn write_wire_label(svg: &mut String, label: &Label) {
         svg,
         "    <text class=\"connection-label\" x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">"
     );
-    for (index, line) in label.lines.iter().enumerate() {
-        let dy = if index == 0 {
-            0
-        } else {
-            CONNECTION_LINE_HEIGHT
-        };
+    write_lines(svg, &label.lines, x, CONNECTION_LINE_HEIGHT);
+}
+
+/// Writes the lines of one `<text>` as `<tspan>`s and closes it. The first line
+/// sits on the text's own baseline; each later one drops by `line_height`.
+fn write_lines(svg: &mut String, lines: &[String], x: i32, line_height: i32) {
+    for (index, line) in lines.iter().enumerate() {
+        let dy = if index == 0 { 0 } else { line_height };
         emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
     }
     emit!(svg, "</text>");
@@ -262,11 +264,7 @@ fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32) {
         svg,
         "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
-    for (index, line) in node.lines.iter().enumerate() {
-        let dy = if index == 0 { 0 } else { LINE_HEIGHT };
-        emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
-    }
-    emit!(svg, "</text>");
+    write_lines(svg, &node.lines, x, LINE_HEIGHT);
 }
 
 const fn node_class(kind: NodeKind) -> &'static str {

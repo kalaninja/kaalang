@@ -87,11 +87,8 @@ pub(crate) enum Source {
 }
 
 /// Where a connection ends: a node, or the junction a producer branch enters.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Destination {
-    Node(NodeId),
-    Junction(usize),
-}
+/// Every destination is a vertex of the precedence graph, so it is that type.
+pub(crate) type Destination = Vertex;
 
 /// RFC 0002 §7 identifies a connection by its source exit and its destination,
 /// so connections leaving distinct exits of one node stay distinct even when
@@ -158,12 +155,6 @@ impl Topology {
             .filter(move |connection| connection.source == Source::Exit(exit))
     }
 
-    pub(crate) fn arriving(&self, node: NodeId) -> impl Iterator<Item = &Connection> {
-        self.connections
-            .iter()
-            .filter(move |connection| connection.destination == Destination::Node(node))
-    }
-
     pub(crate) fn handover(&self, exit: ExitId) -> &[String] {
         self.exits
             .iter()
@@ -186,7 +177,7 @@ impl Topology {
                 projected.kind,
                 NodeKind::Action | NodeKind::Question | NodeKind::Select
             )
-            && self.arriving(node).next().is_some()
+            && self.incoming(Vertex::Node(node)).next().is_some()
         {
             vec!["()".to_owned()]
         } else {
@@ -197,7 +188,7 @@ impl Topology {
     pub(crate) fn incoming(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
         self.connections
             .iter()
-            .filter(move |connection| Vertex::from(connection.destination) == vertex)
+            .filter(move |connection| connection.destination == vertex)
     }
 
     pub(crate) fn outgoing(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
@@ -223,7 +214,7 @@ impl Topology {
         // the exits if a diagram ever outgrows a few dozen connections.
         self.handover(exit) == self.capture_label(node)
             && self.leaving(exit).count() == 1
-            && self.arriving(node).count() == 1
+            && self.incoming(Vertex::Node(node)).count() == 1
     }
 }
 
@@ -300,7 +291,7 @@ fn merges(model: &SemanticModel) -> Vec<Vec<usize>> {
             .filter(|(block, _)| {
                 !entries
                     .keys()
-                    .any(|other| other != *block && precedes[block].contains(other))
+                    .any(|other| other != *block && precedes[**block].contains(other))
             })
             .map(|(block, output)| (*block, *output))
             .collect::<BTreeSet<_>>()
@@ -322,24 +313,16 @@ fn merges(model: &SemanticModel) -> Vec<Vec<usize>> {
 /// Which blocks each block precedes, over every execution's capture dependencies
 /// and implicit block order. Used to tell which of a merge's antecedents actually arrive at
 /// it and which reach it through another.
-fn precedes(model: &SemanticModel) -> BTreeMap<usize, BTreeSet<usize>> {
+fn precedes(model: &SemanticModel) -> Vec<BTreeSet<usize>> {
     let blocks = model.flow.blocks.len();
-    let mut later = (0..blocks)
-        .map(|block| (block, BTreeSet::new()))
-        .collect::<BTreeMap<usize, BTreeSet<usize>>>();
+    let mut later = vec![BTreeSet::new(); blocks];
     for execution in &model.executions {
         for &(before, after) in &execution.ordering {
-            later
-                .get_mut(&before)
-                .expect("every block has a precedence entry")
-                .insert(after);
+            later[before].insert(after);
         }
         for dependency in &execution.dependencies {
             if let ProducerId::BlockOutput { block, .. } = dependency.producer {
-                later
-                    .get_mut(&block)
-                    .expect("every block has a precedence entry")
-                    .insert(dependency.capture.block);
+                later[block].insert(dependency.capture.block);
             }
         }
     }
@@ -347,12 +330,9 @@ fn precedes(model: &SemanticModel) -> BTreeMap<usize, BTreeSet<usize>> {
     // want successor sets instead.
     for middle in 0..blocks {
         for block in 0..blocks {
-            if later[&block].contains(&middle) {
-                let reachable = later[&middle].clone();
-                later
-                    .get_mut(&block)
-                    .expect("every block has a precedence entry")
-                    .extend(reachable);
+            if later[block].contains(&middle) {
+                let reachable = later[middle].clone();
+                later[block].extend(reachable);
             }
         }
     }
@@ -436,15 +416,6 @@ impl From<Source> for Vertex {
         match source {
             Source::Exit(exit) => Self::Node(exit.node),
             Source::Junction(junction) => Self::Junction(junction),
-        }
-    }
-}
-
-impl From<Destination> for Vertex {
-    fn from(destination: Destination) -> Self {
-        match destination {
-            Destination::Node(node) => Self::Node(node),
-            Destination::Junction(junction) => Self::Junction(junction),
         }
     }
 }
@@ -679,7 +650,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
     };
     let mut precedes = vec![vec![false; count]; count];
     for connection in direct {
-        precedes[index(connection.source.into())][index(connection.destination.into())] = true;
+        precedes[index(connection.source.into())][index(connection.destination)] = true;
     }
     for middle in 0..count {
         for from in 0..count {
@@ -694,7 +665,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .copied()
         .filter(|connection| {
             let from = index(connection.source.into());
-            let to = index(connection.destination.into());
+            let to = index(connection.destination);
             !(0..count).any(|middle| precedes[from][middle] && precedes[middle][to])
         })
         .collect()

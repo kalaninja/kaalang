@@ -98,10 +98,7 @@ pub(crate) struct Label {
 /// The authored flow signature, minus `fn`, with every whitespace run collapsed
 /// so a signature written across source lines wraps on the label's own terms.
 pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
-    let authored = source[signature.span().byte_range()]
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ");
+    let authored = collapsed(source, signature.span());
     authored.strip_prefix("fn ").unwrap_or(&authored).to_owned()
 }
 
@@ -111,11 +108,16 @@ pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
 pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
     match output {
         ReturnType::Default => "-> ()".to_owned(),
-        ReturnType::Type(..) => source[output.span().byte_range()]
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" "),
+        ReturnType::Type(..) => collapsed(source, output.span()),
     }
+}
+
+/// The authored text under a span with every whitespace run collapsed to one space.
+fn collapsed(source: &str, span: proc_macro2::Span) -> String {
+    source[span.byte_range()]
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Lays out one validated flow, or reports that this layout could not route its
@@ -179,7 +181,7 @@ pub(crate) fn layout(
         let route::Blocked { connection, reason } = blocked;
         blocking = reason;
         let wire = scene.topology.connections[connection];
-        let destination = Vertex::from(wire.destination);
+        let destination = wire.destination;
         let span = placement.row(destination) - placement.row(Vertex::from(wire.source));
         // A run into a junction already descends in its own column, so
         // deferring it changes nothing; it climbs straight to the next rung.
@@ -234,10 +236,6 @@ pub(super) struct Rows {
 }
 
 impl Rows {
-    fn top(&self, row: usize) -> i32 {
-        self.top[row]
-    }
-
     /// Packs horizontal runs toward the following row, leaving the spare room
     /// below the producers rather than pressing the merge against their exits.
     pub(super) fn lane_y(&self, gap: usize, lane: usize, lanes: usize) -> i32 {
@@ -270,7 +268,7 @@ impl Scene {
             let routing = if lanes == 0 {
                 0
             } else {
-                2 * LANE + (lanes - 1) * LANE + capture_space[row + 1]
+                (lanes + 1) * LANE + capture_space[row + 1]
             };
             next += height + gap.max(routing);
         }
@@ -287,7 +285,7 @@ impl Scene {
     fn lift(&mut self, placement: &place::Placement, rows: &Rows) {
         for node in &mut self.nodes {
             let row = placement.row(Vertex::Node(node.id));
-            node.y = rows.top(row) + rows.height[row] / 2;
+            node.y = rows.top[row] + rows.height[row] / 2;
         }
     }
 

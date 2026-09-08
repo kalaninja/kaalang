@@ -26,7 +26,7 @@ fn reaches(topology: &Topology, from: Vertex, to: Vertex) -> bool {
             return true;
         }
         for connection in topology.outgoing(vertex) {
-            let next = Vertex::from(connection.destination);
+            let next = connection.destination;
             if seen.insert(next) {
                 frontier.push(next);
             }
@@ -66,7 +66,7 @@ fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
         );
     }
     assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
-    assert_eq!(topology.arriving(NodeId::Block(2)).count(), 1);
+    assert_eq!(topology.incoming(Vertex::Node(NodeId::Block(2))).count(), 1);
     assert!(topology.connections.contains(&Connection {
         source: Source::Junction(0),
         destination: Destination::Node(NodeId::Block(2)),
@@ -113,7 +113,10 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             destination: Destination::Node(case),
         };
         assert_eq!(
-            topology.arriving(case).copied().collect::<Vec<_>>(),
+            topology
+                .incoming(Vertex::Node(case))
+                .copied()
+                .collect::<Vec<_>>(),
             [connection]
         );
         // The distributor is the fan-out this projection actually produces:
@@ -193,7 +196,10 @@ fn a_merge_precedes_the_question_that_selects_its_consumers() {
     };
     assert_eq!(topology.junctions[0].wires, ["counted", "seen"]);
     assert_eq!(
-        topology.arriving(question).copied().collect::<Vec<_>>(),
+        topology
+            .incoming(Vertex::Node(question))
+            .copied()
+            .collect::<Vec<_>>(),
         [connection]
     );
     assert_eq!(

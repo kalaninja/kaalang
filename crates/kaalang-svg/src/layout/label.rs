@@ -79,7 +79,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         let mut outgoing = topology.outgoing(Vertex::Junction(junction));
         if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
             && outgoing.next().is_none()
-            && topology.arriving(node).count() == 1
+            && topology.incoming(Vertex::Node(node)).count() == 1
             && topology.capture(node) == merge.wires
         {
             merged_captures.insert(node);
@@ -98,9 +98,14 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     }
 
     for connection in &shared {
-        let (at, stack, clear) = centre_of(scene.connections.iter().find(|placed| {
-            placed.source == connection.source && placed.destination == connection.destination
-        }));
+        let placed = scene
+            .connections
+            .iter()
+            .find(|placed| {
+                placed.source == connection.source && placed.destination == connection.destination
+            })
+            .expect("every projected connection is routed");
+        let (at, stack, clear) = centre_of(placed);
         labels.extend(wire_label(
             &topology.capture_label(node_of(connection.destination)),
             at,
@@ -172,14 +177,9 @@ fn merge_anchor(scene: &Scene, junction: usize) -> Point {
 
 /// The middle of the run a connection leaves on, beside the wire rather than
 /// over it, for the label both of its ends agree on.
-fn centre_of(connection: Option<&Connection>) -> (Point, Stack, i32) {
-    let Some([start, next]) = connection.map(|connection| {
-        let [start, next, ..] = connection.points[..] else {
-            unreachable!("a routed connection has at least two points")
-        };
-        [start, next]
-    }) else {
-        unreachable!("every projected connection is routed")
+fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
+    let [start, next, ..] = connection.points[..] else {
+        unreachable!("a routed connection has at least two points")
     };
     if start.y == next.y {
         return (

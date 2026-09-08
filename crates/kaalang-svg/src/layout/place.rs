@@ -192,20 +192,18 @@ fn preferred(
 
     // RFC 0002 §8 puts branches in authored order left to right, so a branch's
     // own column decides where its successor goes; only a node no branch
-    // reaches falls back to its leftmost predecessor.
-    let mut arrivals = topology.incoming(Vertex::Node(node)).peekable();
-    if arrivals.peek().is_none() {
-        return 0;
-    }
+    // reaches falls back to its leftmost predecessor, and a root to column 0.
+    let arrival = |connection| arrives_from(topology, columns, footprints, connection);
     let branches = topology
         .incoming(Vertex::Node(node))
         .filter(|connection| from_branch(connection.source))
-        .map(|connection| arrives_from(topology, columns, footprints, connection))
+        .map(arrival)
         .min();
 
     branches.unwrap_or_else(|| {
-        arrivals
-            .map(|connection| arrives_from(topology, columns, footprints, connection))
+        topology
+            .incoming(Vertex::Node(node))
+            .map(arrival)
             .min()
             .unwrap_or(0)
     })
@@ -312,7 +310,7 @@ fn branch_sets(
                 BlockKind::Choice => vec![Vertex::Node(choice::case(block, branch))],
                 _ => topology
                     .leaving(question::exit(block, branch))
-                    .map(|connection| Vertex::from(connection.destination))
+                    .map(|connection| connection.destination)
                     .collect(),
             };
             heads
@@ -367,7 +365,7 @@ fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
             let mut frontier = vec![start];
             while let Some(vertex) = frontier.pop() {
                 for connection in topology.outgoing(vertex) {
-                    let next = Vertex::from(connection.destination);
+                    let next = connection.destination;
                     if seen.insert(next) {
                         frontier.push(next);
                     }

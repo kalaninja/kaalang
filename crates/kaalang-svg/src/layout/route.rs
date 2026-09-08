@@ -111,7 +111,7 @@ pub(super) fn plan(
         .enumerate()
         .map(|(index, wire)| {
             let source = Vertex::from(wire.source);
-            let destination = Vertex::from(wire.destination);
+            let destination = wire.destination;
             let shape = shapes.get(&index).copied().unwrap_or_default();
             // A descent through an intermediate row needs a column free of
             // nodes there. Try the arrival column, then the departure column,
@@ -211,7 +211,7 @@ fn own_columns(
         let mut lane = if free.is_some() {
             placement
                 .column(Vertex::from(scene.topology.connections[index].source))
-                .min(placement.column(Vertex::from(scene.topology.connections[index].destination)))
+                .min(placement.column(scene.topology.connections[index].destination))
         } else {
             0
         };
@@ -455,7 +455,7 @@ pub(super) fn emit(
                     junction_point(scene, placement, plan, rows, junction)
                 }
             };
-            let end = match Vertex::from(wire.destination) {
+            let end = match wire.destination {
                 Vertex::Node(node) => scene.top_anchor(node),
                 Vertex::Junction(junction) => {
                     junction_point(scene, placement, plan, rows, junction)
@@ -745,7 +745,7 @@ fn name(scene: &Scene, connection: usize) -> String {
     format!(
         "[{end_from}{branch} -> {end_to}]",
         end_from = end(Vertex::from(wire.source)),
-        end_to = end(Vertex::from(wire.destination))
+        end_to = end(wire.destination)
     )
 }
 

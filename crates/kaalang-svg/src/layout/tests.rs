@@ -1,10 +1,20 @@
 use super::*;
 
+/// The source of `crates/kaalang/tests/<dir>/<stem>.rs` and the flow named after it.
+macro_rules! fixture {
+    ($dir:literal, $stem:literal) => {
+        (
+            include_str!(concat!("../../../kaalang/tests/", $dir, "/", $stem, ".rs")),
+            $stem,
+        )
+    };
+}
+
 #[test]
 fn terminal_cases_start_beyond_the_whole_shared_brancher() {
-    let source = include_str!("../../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs");
+    let (source, flow) = fixture!("wire/behavior", "blocked_terminal_crossing");
     let file = crate::parse_file(source).unwrap();
-    let function = crate::select_flow(&file.items, "blocked_terminal_crossing").unwrap();
+    let function = crate::select_flow(&file.items, flow).unwrap();
     let model = kaalang_model::build(function).unwrap();
     let topology = topology::project(&model, "example", "-> u8");
     let placement = place::place(&topology, &model, &BTreeMap::new()).unwrap();
@@ -15,7 +25,7 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
     );
     assert!(case(0, 3) > case(0, 2));
 
-    let scene = drawn(source, "blocked_terminal_crossing");
+    let scene = drawn((source, flow));
     let inner_right = scene
         .node(NodeId::Case {
             choice: 6,
@@ -29,14 +39,11 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
 
 #[test]
 fn side_routes_end_horizontally_at_the_merge() {
-    let source = include_str!(
-        "../../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-    );
-    for (source, flow) in FIXTURES
-        .into_iter()
-        .chain([(source, "nested_branch_passes_a_question_join")])
-    {
-        let scene = drawn(source, flow);
+    for (source, flow) in FIXTURES.into_iter().chain([fixture!(
+        "wire/behavior",
+        "nested_branch_passes_a_question_join"
+    )]) {
+        let scene = drawn((source, flow));
         for incoming in &scene.connections {
             let Destination::Junction(junction) = incoming.destination else {
                 continue;
@@ -66,12 +73,10 @@ fn side_routes_end_horizontally_at_the_merge() {
 
 #[test]
 fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
-    let source =
-        include_str!("../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
-    let file = crate::parse_file(source).unwrap();
-    let function = crate::select_flow(&file.items, "a_branch_captures_a_merged_value").unwrap();
-    let model = kaalang_model::build(function).unwrap();
-    let scene = layout(&model, "example", "-> u8").unwrap();
+    let scene = drawn(fixture!(
+        "wire/behavior",
+        "a_branch_captures_a_merged_value"
+    ));
     let main_x = scene.node(NodeId::Start).x;
 
     for block in [0, 3] {
@@ -149,7 +154,6 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
         assert!(labels[0].at.y > merge_line[0].y);
         assert!(labels[0].at.y < common.points.last().unwrap().y);
     }
-    assert_eq!(route::verify(&scene), None);
 }
 
 #[test]
@@ -187,22 +191,11 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
 
 #[test]
 fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
-    for (name, source) in [
-        (
-            "a_branch_captures_a_merged_value",
-            include_str!(
-                "../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"
-            ),
-        ),
-        (
-            "nested_convergence",
-            include_str!("../../../kaalang/tests/wire/behavior/nested_convergence.rs"),
-        ),
+    for (source, name) in [
+        fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
+        fixture!("wire/behavior", "nested_convergence"),
     ] {
-        let file = crate::parse_file(source).unwrap();
-        let function = crate::select_flow(&file.items, name).unwrap();
-        let model = kaalang_model::build(function).unwrap();
-        let scene = layout(&model, "example", "-> u32").unwrap();
+        let scene = drawn((source, name));
 
         for label in &scene.labels {
             let (left, top, right, bottom) = label_rect(label);
@@ -266,7 +259,7 @@ fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
 
 /// Lays out one flow and holds it to RFC 0002 §8 before returning it, so every
 /// test built on this helper carries the whole spatial contract with it.
-fn drawn(source: &str, flow: &str) -> Scene {
+fn drawn((source, flow): (&str, &str)) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares the flow");
     let model = kaalang_model::build(function).expect("the fixture is a valid flow");
@@ -306,73 +299,23 @@ fn drawn(source: &str, flow: &str) -> Scene {
 /// `question_after_a_partial_merge`, the only flow lowered as
 /// `ExecutionPlan::Guarded`.
 const FIXTURES: [(&str, &str); 17] = [
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
-        "blocked_terminal_crossing",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/closure_before_a_branch.rs"),
-        "closure_before_a_branch",
-    ),
-    (
-        include_str!(
-            "../../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
-        ),
-        "effect_before_a_nested_terminal_branch",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs"),
-        "question_after_a_partial_merge",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs"),
-        "question_after_one_entry_block",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/shared_setup.rs"),
-        "shared_setup",
-    ),
+    fixture!("wire/behavior", "blocked_terminal_crossing"),
+    fixture!("wire/behavior", "closure_before_a_branch"),
+    fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
+    fixture!("wire/behavior", "question_after_a_partial_merge"),
+    fixture!("wire/behavior", "question_after_one_entry_block"),
+    fixture!("wire/behavior", "shared_setup"),
     (SHARED_INPUTS, "shared_inputs"),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"),
-        "a_branch_captures_a_merged_value",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/independent_questions.rs"),
-        "independent_questions",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/independent_entry_blocks.rs"),
-        "independent_entry_blocks",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
-        "local_work_before_a_wire_merge",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/nested_convergence.rs"),
-        "nested_convergence",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/staged_convergence.rs"),
-        "staged_convergence",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/disjoint_ready_blocks.rs"),
-        "disjoint_ready_blocks",
-    ),
-    (
-        include_str!("../../../kaalang/tests/choice/behavior/run_choice.rs"),
-        "run_choice",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/two_convergence_groups.rs"),
-        "two_convergence_groups",
-    ),
-    (
-        include_str!("../../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
-        "two_merges_reach_one_consumer",
-    ),
+    fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
+    fixture!("wire/behavior", "independent_questions"),
+    fixture!("wire/behavior", "independent_entry_blocks"),
+    fixture!("wire/behavior", "local_work_before_a_wire_merge"),
+    fixture!("wire/behavior", "nested_convergence"),
+    fixture!("wire/behavior", "staged_convergence"),
+    fixture!("wire/behavior", "disjoint_ready_blocks"),
+    fixture!("choice/behavior", "run_choice"),
+    fixture!("wire/behavior", "two_convergence_groups"),
+    fixture!("wire/behavior", "two_merges_reach_one_consumer"),
 ];
 
 const SHARED_INPUTS: &str = r#"
@@ -401,10 +344,7 @@ const SHARED_INPUTS: &str = r#"
 /// so nothing of the late half may sit at or left of the early half.
 #[test]
 fn disjoint_convergence_groups_take_disjoint_footprints() {
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/wire/behavior/two_convergence_groups.rs"),
-        "two_convergence_groups",
-    );
+    let scene = drawn(fixture!("wire/behavior", "two_convergence_groups"));
     let x = |id| scene.node(id).x;
     let early = [
         NodeId::Case {
@@ -445,7 +385,7 @@ fn disjoint_convergence_groups_take_disjoint_footprints() {
 
 #[test]
 fn independent_producers_and_their_consumers_form_one_sequence() {
-    let scene = drawn(SHARED_INPUTS, "shared_inputs");
+    let scene = drawn((SHARED_INPUTS, "shared_inputs"));
     assert_main_sequence(&scene, &[0, 1, 2, 3, 4, 5]);
     assert!(scene.topology.capture(NodeId::Block(1)).is_empty());
     assert_eq!(scene.topology.capture_label(NodeId::Block(1)), ["()"]);
@@ -459,10 +399,7 @@ fn independent_producers_and_their_consumers_form_one_sequence() {
 
 #[test]
 fn independent_entry_blocks_continue_on_the_main_column_before_a_question() {
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs"),
-        "question_after_one_entry_block",
-    );
+    let scene = drawn(fixture!("wire/behavior", "question_after_one_entry_block"));
     assert_main_sequence(&scene, &[3, 4, 5]);
     assert_eq!(
         scene.topology.handover(ExitId::of(NodeId::Block(3))),
@@ -498,10 +435,7 @@ fn assert_main_sequence(scene: &Scene, blocks: &[usize]) {
 
 #[test]
 fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/wire/behavior/shared_setup.rs"),
-        "shared_setup",
-    );
+    let scene = drawn(fixture!("wire/behavior", "shared_setup"));
     let setup = scene.node(NodeId::Block(0));
     let question = scene.node(NodeId::Block(1));
     assert_eq!(setup.x, scene.node(NodeId::Start).x);
@@ -525,7 +459,10 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
         .unwrap();
     assert_eq!(input.destination, Destination::Node(setup.id));
     assert!(input.points.iter().all(|point| point.x == setup.x));
-    assert_eq!(scene.topology.arriving(question.id).count(), 1);
+    assert_eq!(
+        scene.topology.incoming(Vertex::Node(question.id)).count(),
+        1
+    );
     let empty = scene
         .labels
         .iter()
@@ -535,7 +472,13 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
     assert!(empty[0].at.y < scene.top_anchor(setup.id).y);
     assert!(empty[0].at.y > input.points[0].y);
     for consumer in [2, 3] {
-        assert_eq!(scene.topology.arriving(NodeId::Block(consumer)).count(), 1);
+        assert_eq!(
+            scene
+                .topology
+                .incoming(Vertex::Node(NodeId::Block(consumer)))
+                .count(),
+            1
+        );
     }
 }
 
@@ -544,7 +487,7 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
 #[test]
 fn every_drawn_shape_satisfies_the_spatial_contract() {
     for (source, flow) in FIXTURES {
-        let scene = drawn(source, flow);
+        let scene = drawn((source, flow));
         assert!(
             scene.width > 0 && scene.height > 0,
             "{flow}: the canvas has no extent"
@@ -568,13 +511,13 @@ fn long_wire_labels_clear_a_tall_neighbor() {
     "#,
         "A tall description.\n".repeat(16)
     );
-    let scene = drawn(&source, "example");
+    let scene = drawn((&source, "example"));
     assert!(scene.labels.iter().any(|label| label.lines.len() > 1));
 }
 
 #[test]
 fn a_wrapped_question_label_stays_above_its_horizontal_run() {
-    let scene = drawn(
+    let scene = drawn((
         r#"
         #[kaalang]
         fn example(condition: bool) -> u8 {
@@ -587,7 +530,7 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
         }
     "#,
         "example",
-    );
+    ));
     let label = scene
         .labels
         .iter()
@@ -610,10 +553,7 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
 #[test]
 fn an_unused_hand_over_stays_visible_above_an_empty_capture() {
     // The transit connection does not make the action capture `_value`.
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/empty_flow/behavior/discard_named.rs"),
-        "discard_named",
-    );
+    let scene = drawn(fixture!("empty_flow/behavior", "discard_named"));
     assert_eq!(
         scene.topology.handover(ExitId::of(NodeId::Start)),
         ["_value"]
@@ -640,10 +580,7 @@ fn the_same_flow_renders_to_the_same_bytes() {
 
 #[test]
 fn independent_roots_and_their_join_share_the_main_column() {
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/wire/behavior/disjoint_ready_blocks.rs"),
-        "disjoint_ready_blocks",
-    );
+    let scene = drawn(fixture!("wire/behavior", "disjoint_ready_blocks"));
     assert_main_sequence(&scene, &[0, 1, 2, 3]);
 }
 
@@ -676,7 +613,7 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
             |one, two, three| -> result { one + two + three };
         }
     "#;
-    let scene = drawn(source, "serial");
+    let scene = drawn((source, "serial"));
     assert_main_sequence(&scene, &[0, 1, 2, 3, 4, 5, 6, 7]);
     for consumer in [3, 4, 5] {
         assert_eq!(
@@ -690,7 +627,7 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
 #[test]
 fn branches_run_left_to_right_from_their_branchers_own_column() {
     for (source, flow) in FIXTURES {
-        let scene = drawn(source, flow);
+        let scene = drawn((source, flow));
         for node in &scene.topology.nodes {
             let NodeId::Block(block) = node.id else {
                 continue;
@@ -762,19 +699,14 @@ fn end_node(scene: &Scene) -> NodeId {
 #[test]
 fn the_end_node_is_captioned_with_the_flow_return_type() {
     // A declared return type verbatim, and `-> ()` when the flow declares none.
-    for (source, flow, caption) in [
+    for ((source, flow), caption) in [
         (
-            include_str!("../../../kaalang/tests/end/behavior/order_the_result_wire.rs"),
-            "order_the_result_wire",
+            fixture!("end/behavior", "order_the_result_wire"),
             "-> (u32, u32, u32)",
         ),
-        (
-            include_str!("../../../kaalang/tests/empty_flow/behavior/nothing.rs"),
-            "nothing",
-            "-> ()",
-        ),
+        (fixture!("empty_flow/behavior", "nothing"), "-> ()"),
     ] {
-        let scene = drawn(source, flow);
+        let scene = drawn((source, flow));
         let end = end_node(&scene);
         assert_eq!(scene.topology.node(end).label, caption, "{flow}");
         // The capture stays on the connection entering end, so the caption
@@ -797,10 +729,7 @@ fn the_end_node_is_captioned_with_the_flow_return_type() {
 
 #[test]
 fn a_long_return_type_wraps_inside_the_end_node() {
-    let scene = drawn(
-        include_str!("../../../kaalang/tests/end/behavior/wrap_a_long_return_type.rs"),
-        "wrap_a_long_return_type",
-    );
+    let scene = drawn(fixture!("end/behavior", "wrap_a_long_return_type"));
     let end = scene.node(end_node(&scene));
     assert!(
         end.lines.len() > 1,
@@ -824,7 +753,7 @@ fn capsule_captions_fit_the_curved_outline() {
             .join(", ");
         let source =
             format!("#[kaalang] fn capsule(result: ({return_type})) -> ({return_type}) {{}}");
-        let scene = drawn(&source, "capsule");
+        let scene = drawn((&source, "capsule"));
         for id in [NodeId::Start, end_node(&scene)] {
             let node = scene.node(id);
             let ry = f64::from(node.height / 2);
