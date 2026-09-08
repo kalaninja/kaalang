@@ -4,10 +4,10 @@
 
 ## 1. Overview
 
-kaalang's visual language represents the [core model](0001-core-model.md)
-defined by RFC 0001. A diagram is a projection of the validated semantic model
-and represents the same flow semantics. It does not introduce a separate
-execution model.
+kaalang's visual language represents the flows defined by
+[RFC 0001](0001-language.md). A diagram is a projection of the validated
+semantic model and represents the same flow semantics. It does not introduce a
+separate execution model.
 
 ## 2. Terminology
 

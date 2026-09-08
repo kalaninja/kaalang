@@ -1,4 +1,4 @@
-# RFC 0001: kaalang Core Model
+# RFC 0001: kaalang Language
 
 - Status: accepted design draft
 
@@ -18,10 +18,14 @@ available to blocks, while questions and choices divide execution into
 alternative branches. Every completed execution produces the flow's `result`
 wire, which the implicit end block captures.
 
-In the Rust representation, a flow is written as an ordinary function marked
-with `#[kaalang]`. The attribute validates this representation and lowers it to
-ordinary Rust control flow. Wire dependencies determine which blocks are ready;
-independent ready blocks may execute in any order.
+A flow is written as an ordinary Rust function marked with `#[kaalang]`.
+Wire dependencies determine which blocks are ready; independent ready blocks
+may execute in any order.
+
+This RFC defines kaalang's syntax and semantics. [RFC 0004: kaalang Rust
+Lowering](0004-rust-lowering.md) describes how the language is translated to
+Rust, and [RFC 0002: kaalang Visual Language](0002-visual-language.md) defines
+its visual representation.
 
 ## 2. Terminology
 
@@ -111,9 +115,6 @@ from their attributes.
 Every authored block declares at least one output. A block that produced none
 could never be ordered before the flow finishes, so section 7 would reject it;
 the grammar rejects it first.
-
-`#[kaalang]` consumes the closure-shaped syntax and lowers it to ordinary Rust
-bindings and expressions.
 
 An authored computational block body must not use a `return` expression or the
 `?` operator in its own control-flow scope; it can complete only by normal
@@ -207,9 +208,10 @@ outputs are not restricted to `()`, and different outputs may carry different
 Rust types. Like question outputs, they are branch outputs (section 6).
 
 An implemented choice body contains exactly one `match` expression. An exact
-whole-body `todo!()` is also a valid placeholder. Match bindings and block
-locals remain scoped to the selected arm and are unavailable to downstream
-blocks; downstream code receives only declared wires.
+whole-body `todo!()` is also a valid placeholder; every downstream branch still
+undergoes type checking. Match bindings and block locals remain scoped to the
+selected arm and are unavailable to downstream blocks; downstream code receives
+only declared wires.
 
 The selected arm's value leaves the match before the branch continues. A case
 value is therefore owned or borrows data that outlives the choice, such as a
@@ -235,8 +237,8 @@ kaalang has no zero-input end block and no implicit unit wire.
 
 ## 5. Flow inputs and outputs
 
-In the Rust representation, function parameters declare flow inputs. Parameters
-written as simple identifiers provide wires. A wildcard parameter (`_`) accepts
+Function parameters declare flow inputs. Parameters written as simple
+identifiers provide wires. A wildcard parameter (`_`) accepts
 and discards a flow input and provides no wire. Other parameter patterns,
 including modified bindings and destructuring patterns, are invalid, as is a
 method receiver.
@@ -265,6 +267,12 @@ The two actions are alternative producers of the logical `result` wire. The end
 block captures whichever producer ran. The example is a complete flow whose
 computational bodies are placeholders. `todo!()` retains its Rust behavior and
 panics if execution reaches it.
+
+Unreachable-code warnings remain visible for unfinished flows. An author who
+wants to silence them while filling in the bodies writes
+`#[allow(unreachable_code)]` on the function. [RFC 0004
+§6](0004-rust-lowering.md#6-placeholders-and-function-attributes) describes how
+lowering preserves placeholders and function attributes.
 
 The function body contains closure-shaped Rust expression statements. Each
 statement declares one computational block. Like any Rust tail expression, the
@@ -414,9 +422,9 @@ receives local bindings only for its listed inputs, so omitted and consumed
 wires are out of scope. Rust locals declared inside a block remain local to that
 body and may reuse a wire's spelling without changing wire resolution.
 
-Rust checks concrete wire types, moves, borrows, alternative producer type
-agreement, and output destructuring. kaalang keeps types out of wire declarations
-and relies on Rust inference.
+Rust checks block body types, concrete wire types, moves, borrows, match
+exhaustiveness, alternative producer type agreement, and output destructuring.
+kaalang keeps types out of wire declarations and relies on Rust inference.
 
 ## 7. Execution and implicit convergence
 
@@ -612,39 +620,3 @@ Outputs within one declaration are distinct, and `-> ()` declares none. Every
 other constraint the grammar leaves open is stated with its rule: descriptions
 and control transfers in section 3, block kinds and the implicit end block in
 section 4, flow parameters in section 5, and repeated output names in section 6.
-
-## 9. Validation and execution
-
-`#[kaalang]` parses block syntax, groups producer occurrences by logical wire
-name, validates block-local and branch-dependent invariants, and lowers the flow
-to nested Rust `let`, `if`, and `match` expressions.
-
-An action evaluates its body and binds its value to its outputs. Independent
-computational blocks may be lowered in any order allowed by their wire
-dependencies. A question evaluates its body once and executes the selected
-branch. A choice preserves the authored match and passes the selected
-arm value to the corresponding branch. Equally named outputs merge before
-every downstream capture, independently of the consumer's other inputs.
-Lowering preserves branch completion before a merge and the implicit order of
-wire production before a consumer-selecting question or choice, and binds each
-selected value once. A merge also precedes end when `result` has alternative producers; end
-itself is neither a merge nor a computational
-shared-continuation block.
-
-The end block lowers to the `result` binding as the function's tail expression.
-Rust checks body types, match exhaustiveness, ownership, borrows, output
-patterns, alternative producer types, and the flow output.
-
-kaalang's generated scopes keep omitted wires, consumed wires, match bindings,
-and block locals outside downstream block bodies.
-
-An authored `todo!()` remains in the lowered body. A choice placeholder still
-type-checks every downstream branch, and execution panics if it reaches the
-placeholder.
-
-A placeholder diverges, so Rust reports every block lowered after it as
-unreachable code. `#[kaalang]` does not suppress this: an unfinished flow is
-meant to be visible, and a workspace that denies warnings rejects one until its
-placeholders are written. An author who wants the flow quiet while filling it in
-writes `#[allow(unreachable_code)]` on the function, which `#[kaalang]` re-emits
-with the function's other attributes.

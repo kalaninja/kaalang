@@ -1,7 +1,7 @@
 # RFC 0003: kaalang SVG Renderer
 
 - Status: accepted design draft
-- Visual language: [RFC 0002](0002-visual-model.md)
+- Visual language: [RFC 0002](0002-visual-language.md)
 - Artifact target: SVG
 
 ## 1. Overview

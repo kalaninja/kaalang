@@ -327,7 +327,7 @@ mod tests {
         );
     }
 
-    /// The core model rejects this before `layout` can receive a plan that
+    /// Language validation rejects this before `layout` can receive a plan that
     /// repeats the shared consumer.
     #[test]
     fn rejects_a_late_alternative_producer_before_layout() {
