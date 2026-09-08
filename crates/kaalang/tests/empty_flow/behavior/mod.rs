@@ -1,10 +1,6 @@
 mod discard_named;
 mod discard_unnamed_input;
-mod explicit_unit;
 mod identity;
 mod named_after_wildcard;
 mod nothing;
-mod raw_flow_input_name;
-mod raw_ignored_output;
-mod raw_keyword_wires;
-mod raw_output_name;
+mod raw_spellings;

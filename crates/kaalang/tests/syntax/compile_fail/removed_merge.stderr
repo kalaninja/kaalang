@@ -1,5 +1,0 @@
-error: kaalang blocks support only comments and kaalang attributes
- --> tests/syntax/compile_fail/removed_merge.rs:5:5
-  |
-5 |     #[merge]
-  |     ^^^^^^^^

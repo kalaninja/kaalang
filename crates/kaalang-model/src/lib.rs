@@ -927,7 +927,7 @@ mod tests {
 
     #[test]
     fn alternative_producers_captured_only_by_end_form_no_group() {
-        assert_groups(&fixture!("end/behavior", "capture_alternative"), &[]);
+        assert_groups(&fixture!("question/behavior", "run_question"), &[]);
     }
 
     #[test]

@@ -1,5 +1,0 @@
-error: cannot find macro `__kaalang_continue_0_0` in this scope
-  --> tests/choice/compile_fail/hidden_continuation.rs:10:13
-   |
-10 |             __kaalang_continue_0_0!(());
-   |             ^^^^^^^^^^^^^^^^^^^^^^

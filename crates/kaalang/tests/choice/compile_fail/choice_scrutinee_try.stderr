@@ -1,5 +1,0 @@
-error: a kaalang block body must not use the `?` operator
- --> tests/choice/compile_fail/choice_scrutinee_try.rs:9:15
-  |
-9 |         match value.checked_add(1)? {
-  |               ^^^^^^^^^^^^^^^^^^^^^

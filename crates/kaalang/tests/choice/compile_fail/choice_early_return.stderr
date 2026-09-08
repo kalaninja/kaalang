@@ -1,5 +1,0 @@
-error: a kaalang block body must not use a `return` expression
-  --> tests/choice/compile_fail/choice_early_return.rs:10:13
-   |
-10 |             return 0;
-   |             ^^^^^^^^

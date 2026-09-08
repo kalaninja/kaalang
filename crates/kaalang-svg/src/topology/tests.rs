@@ -235,8 +235,8 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     "#,
     );
     let only_end = fixture(
-        include_str!("../../../kaalang/tests/end/behavior/capture_alternative.rs"),
-        "capture_alternative",
+        include_str!("../../../kaalang/tests/question/behavior/run_question.rs"),
+        "run_question",
     );
 
     // The consumers of the merged wire; the last block of each flow is end.

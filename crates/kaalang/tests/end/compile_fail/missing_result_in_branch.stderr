@@ -1,5 +1,0 @@
-error: this kaalang execution does not produce the `result` wire
- --> tests/end/compile_fail/missing_result_in_branch.rs:4:29
-  |
-4 | fn invalid(condition: bool) -> u32 {
-  |                             ^

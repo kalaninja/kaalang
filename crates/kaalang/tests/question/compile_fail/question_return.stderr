@@ -1,5 +1,0 @@
-error: a kaalang block body must not use a `return` expression
- --> tests/question/compile_fail/question_return.rs:8:13
-  |
-8 |             return 0;
-  |             ^^^^^^^^

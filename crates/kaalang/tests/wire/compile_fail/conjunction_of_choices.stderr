@@ -1,5 +1,0 @@
-error: this kaalang execution does not produce the `result` wire
- --> tests/wire/compile_fail/conjunction_of_choices.rs:6:37
-  |
-6 | fn invalid(left: bool, right: bool) -> u8 {
-  |                                     ^

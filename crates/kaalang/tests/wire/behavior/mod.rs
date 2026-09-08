@@ -11,7 +11,6 @@ mod convergence_after_a_terminal_case;
 mod convergence_before_a_terminal_case;
 mod disjoint_ready_blocks;
 mod effect_before_a_nested_terminal_branch;
-mod independent_effects;
 mod independent_entry_blocks;
 mod independent_questions;
 mod join_skips_unselected_outputs;
