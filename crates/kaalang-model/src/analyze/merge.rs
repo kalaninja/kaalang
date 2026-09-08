@@ -450,6 +450,7 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::validate_order;
+    use crate::tests::message as error;
     use crate::{ProducerId, WireMerge, build};
 
     fn merge(function: &ItemFn, wire: &str) -> WireMerge {
@@ -459,13 +460,6 @@ mod tests {
             .into_iter()
             .find(|merge| merge.wire == wire)
             .unwrap_or_else(|| panic!("the `{wire}` wire merges"))
-    }
-
-    fn error(function: &ItemFn) -> String {
-        match build(function) {
-            Err(error) => error.to_string(),
-            Ok(_) => panic!("the flow is rejected"),
-        }
     }
 
     fn output(block: usize, output: usize) -> ProducerId {

@@ -46,7 +46,8 @@ pub(super) fn plan(
         })
 }
 
-fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
+/// Counts how many times the plan emits each computational block.
+pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
     match plan {
         ExecutionPlan::Guarded { blocks, .. } => {
             for &block in blocks {

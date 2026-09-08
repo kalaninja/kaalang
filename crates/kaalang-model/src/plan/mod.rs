@@ -16,7 +16,7 @@ use crate::model::{
 
 mod choice;
 mod question;
-mod verify;
+pub(crate) mod verify;
 
 /// Builds a lowering plan without imposing additional language restrictions:
 /// the structured branch tree where it can share every body, the guarded

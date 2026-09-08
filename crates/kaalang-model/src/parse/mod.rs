@@ -417,24 +417,20 @@ pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String
 
 /// Extracts an unmodified identifier binding, as authored, from a Rust pattern.
 fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
-    let Pat::Ident(binding) = pattern else {
-        return Err(Error::new_spanned(
+    match pattern {
+        Pat::Ident(binding)
+            if binding.attrs.is_empty()
+                && binding.by_ref.is_none()
+                && binding.mutability.is_none()
+                && binding.subpat.is_none() =>
+        {
+            Ok(binding.ident.clone())
+        }
+        _ => Err(Error::new_spanned(
             pattern,
             format!("{subject} must use simple identifiers"),
-        ));
-    };
-    if !binding.attrs.is_empty()
-        || binding.by_ref.is_some()
-        || binding.mutability.is_some()
-        || binding.subpat.is_some()
-    {
-        return Err(Error::new_spanned(
-            pattern,
-            format!("{subject} must use simple identifiers"),
-        ));
+        )),
     }
-
-    Ok(binding.ident.clone())
 }
 
 #[cfg(test)]

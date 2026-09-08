@@ -67,24 +67,13 @@ pub(super) fn flow(
 
 #[cfg(test)]
 mod tests {
-    use syn::ItemFn;
-
     use super::deciders;
     use crate::build;
 
     /// The questions deciding each computational block of one fixture, in
     /// authored order.
     fn fixture(source: &str, flow: &str) -> Vec<Vec<usize>> {
-        let file = syn::parse_file(source).expect("the fixture parses");
-        let function: ItemFn = file
-            .items
-            .into_iter()
-            .find_map(|item| match item {
-                syn::Item::Fn(function) if function.sig.ident == flow => Some(function),
-                _ => None,
-            })
-            .expect("the fixture declares its flow");
-        let model = build(&function).expect("the fixture is valid");
+        let model = build(&crate::tests::fixture(source, flow)).expect("the fixture is valid");
         deciders(&model.flow, &model.executions)
             .into_iter()
             .map(|deciders| deciders.into_iter().collect())

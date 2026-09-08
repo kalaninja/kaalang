@@ -1,8 +1,6 @@
 //! The authored and resolved flow models, the recorded executions and
 //! convergence groups and wire merges, and the compiler's execution plan.
 
-use std::cmp::Ordering;
-
 use proc_macro2::{Ident, Span};
 use syn::{Expr, FnArg, ReturnType};
 
@@ -104,11 +102,11 @@ pub struct BranchSelection {
 /// branches it selects, its capture dependencies, and implicit block order. Start and
 /// end participate implicitly. The serial order in which independent blocks
 /// happened to run is not part of an execution; every vector is sorted and
-/// deduplicated.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// deduplicated. Field order is the derived sort order: branch selections first.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Execution {
-    pub blocks: Vec<usize>,
     pub branches: Vec<BranchSelection>,
+    pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
     /// Implicit block order, as `(before, after)` pairs: an action producing an
     /// ordinary wire precedes a selection deciding its consumers. These pairs add
@@ -131,22 +129,6 @@ impl Execution {
             .iter()
             .find(|selection| selection.block == block)
             .map(|selection| selection.branch)
-    }
-}
-
-impl Ord for Execution {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.branches
-            .cmp(&other.branches)
-            .then_with(|| self.blocks.cmp(&other.blocks))
-            .then_with(|| self.dependencies.cmp(&other.dependencies))
-            .then_with(|| self.ordering.cmp(&other.ordering))
-    }
-}
-
-impl PartialOrd for Execution {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }
 

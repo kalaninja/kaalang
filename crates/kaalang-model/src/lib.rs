@@ -47,49 +47,28 @@ mod tests {
 
     use super::{
         BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, ExecutionPlan,
-        ProducerId, build,
+        ProducerId, SemanticModel, build,
     };
 
-    fn count_block(plan: &ExecutionPlan, target: usize) -> usize {
-        match plan {
-            ExecutionPlan::Guarded { blocks, .. } => usize::from(blocks.contains(&target)),
-            ExecutionPlan::Action { index, next } => {
-                usize::from(*index == target) + count_block(next, target)
-            }
-            ExecutionPlan::Question {
-                index,
-                branches,
-                join,
-            } => {
-                usize::from(*index == target)
-                    + branches
-                        .iter()
-                        .map(|branch| count_block(&branch.plan, target))
-                        .sum::<usize>()
-                    + join
-                        .as_ref()
-                        .map_or(0, |join| count_block(&join.next, target))
-            }
-            ExecutionPlan::Choice {
-                index,
-                branches,
-                joins,
-            } => {
-                usize::from(*index == target)
-                    + branches
-                        .iter()
-                        .map(|branch| count_block(&branch.plan, target))
-                        .sum::<usize>()
-                    + joins
-                        .iter()
-                        .map(|join| count_block(&join.next, target))
-                        .sum::<usize>()
-            }
-            ExecutionPlan::End { index, body, .. } => {
-                usize::from(*index == target) + count_block(body, target)
-            }
-            ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => 0,
+    /// The flow declared by `crates/kaalang/tests/<dir>/<stem>.rs`, named after the file.
+    macro_rules! fixture {
+        ($dir:literal, $stem:literal) => {
+            fixture(
+                include_str!(concat!("../../kaalang/tests/", $dir, "/", $stem, ".rs")),
+                $stem,
+            )
+        };
+    }
+
+    /// How many times the plan emits one block. The end block is emitted once
+    /// when the plan is rooted at it.
+    fn count_block(model: &SemanticModel, target: usize) -> usize {
+        let mut bodies = vec![0; model.flow.blocks.len()];
+        crate::plan::verify::count(&model.execution_plan, &mut bodies);
+        if let ExecutionPlan::End { index, .. } = &model.execution_plan {
+            bodies[*index] += 1;
         }
+        bodies[target]
     }
 
     /// Reports whether any part of the plan fell back to the guarded schedule.
@@ -113,7 +92,8 @@ mod tests {
         }
     }
 
-    fn fixture(source: &str, flow: &str) -> ItemFn {
+    /// The flow named `flow` in a fixture file's source.
+    pub(crate) fn fixture(source: &str, flow: &str) -> ItemFn {
         let file = syn::parse_file(source).expect("the fixture parses");
         file.items
             .into_iter()
@@ -131,7 +111,8 @@ mod tests {
         body
     }
 
-    fn message(function: &ItemFn) -> String {
+    /// The message a rejected flow is built with.
+    pub(crate) fn message(function: &ItemFn) -> String {
         build(function)
             .err()
             .expect("the flow is rejected")
@@ -369,8 +350,8 @@ mod tests {
             ["first", "second"]
         );
         assert!(!join.early_return);
-        assert_eq!(count_block(&model.execution_plan, 3), 1);
-        assert_eq!(count_block(&model.execution_plan, 4), 1);
+        assert_eq!(count_block(&model, 3), 1);
+        assert_eq!(count_block(&model, 4), 1);
     }
 
     #[test]
@@ -426,7 +407,7 @@ mod tests {
             ExecutionPlan::Question { index: 1, .. }
         ));
         for block in 0..model.flow.blocks.len() {
-            assert_eq!(count_block(&model.execution_plan, block), 1);
+            assert_eq!(count_block(&model, block), 1);
         }
     }
 
@@ -550,7 +531,7 @@ mod tests {
             ExecutionPlan::Action { index: 5, next }
                 if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
         ));
-        assert_eq!(count_block(&model.execution_plan, 7), 1);
+        assert_eq!(count_block(&model, 7), 1);
     }
 
     #[test]
@@ -703,11 +684,7 @@ mod tests {
             ExecutionPlan::Action { index: 7, .. }
         ));
         for block in 0..8 {
-            assert_eq!(
-                count_block(&model.execution_plan, block),
-                1,
-                "block {block}"
-            );
+            assert_eq!(count_block(&model, block), 1, "block {block}");
         }
         assert!(
             model
@@ -722,77 +699,24 @@ mod tests {
     #[test]
     fn fixtures_keep_their_lowering_strategy() {
         let structured = [
-            (
-                include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
-                "blocked_terminal_crossing",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"
-                ),
-                "a_branch_captures_a_merged_value",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/captured_in_one_branch.rs"),
-                "captured_in_one_branch",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/converged_selection_meets_a_branch.rs"
-                ),
-                "converged_selection_meets_a_branch",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
-                ),
-                "effect_before_a_nested_terminal_branch",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/independent_entry_blocks.rs"),
-                "independent_entry_blocks",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/independent_questions.rs"),
-                "independent_questions",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
-                "local_work_before_a_wire_merge",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-                ),
-                "nested_branch_passes_a_question_join",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/nested_terminal_branch_drops_a_wire.rs"
-                ),
-                "nested_terminal_branch_drops_a_wire",
-            ),
-            (
-                include_str!("../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs"),
-                "question_after_one_entry_block",
-            ),
-            (
-                include_str!(
-                    "../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
-                ),
-                "send_future_with_alternative_producers",
-            ),
-            (
-                include_str!("../../kaalang/tests/choice/behavior/anonymous_case_values.rs"),
-                "anonymous_case_values",
-            ),
-            (
-                include_str!("../../kaalang/tests/choice/behavior/borrowed_case_input.rs"),
-                "borrowed_case_input",
-            ),
+            fixture!("wire/behavior", "blocked_terminal_crossing"),
+            fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
+            fixture!("wire/behavior", "captured_in_one_branch"),
+            fixture!("wire/behavior", "converged_selection_meets_a_branch"),
+            fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
+            fixture!("wire/behavior", "independent_entry_blocks"),
+            fixture!("wire/behavior", "independent_questions"),
+            fixture!("wire/behavior", "local_work_before_a_wire_merge"),
+            fixture!("wire/behavior", "nested_branch_passes_a_question_join"),
+            fixture!("wire/behavior", "nested_terminal_branch_drops_a_wire"),
+            fixture!("wire/behavior", "question_after_one_entry_block"),
+            fixture!("wire/behavior", "send_future_with_alternative_producers"),
+            fixture!("choice/behavior", "anonymous_case_values"),
+            fixture!("choice/behavior", "borrowed_case_input"),
         ];
-        for (source, flow) in structured {
-            let model = build(&fixture(source, flow)).expect(flow);
+        for function in structured {
+            let flow = function.sig.ident.to_string();
+            let model = build(&function).expect(&flow);
             assert!(
                 !guarded(&model.execution_plan),
                 "{flow} must stay structured"
@@ -802,9 +726,7 @@ mod tests {
         // The one flow the branch tree cannot express, and therefore the only
         // runtime cover for `ExecutionPlan::Guarded` and its codegen. A planner
         // that structured it would orphan both with every test still green.
-        let source =
-            include_str!("../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
-        let model = build(&fixture(source, "question_after_a_partial_merge"))
+        let model = build(&fixture!("wire/behavior", "question_after_a_partial_merge"))
             .expect("question_after_a_partial_merge");
         assert!(guarded(&model.execution_plan));
     }
@@ -831,11 +753,11 @@ mod tests {
 
     #[test]
     fn an_outside_nested_branch_may_finish_but_not_rejoin_an_ordinary_continuation() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-        );
-        build(&fixture(source, "nested_branch_passes_a_question_join"))
-            .expect("the early result is outside the shared merge");
+        build(&fixture!(
+            "wire/behavior",
+            "nested_branch_passes_a_question_join"
+        ))
+        .expect("the early result is outside the shared merge");
 
         let source = include_str!(
             "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
@@ -868,11 +790,11 @@ mod tests {
     /// tree; the markers no common binding unifies still get a type gate.
     #[test]
     fn async_fixture_exercises_a_type_gate() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/behavior/send_future_with_alternative_producers.rs"
-        );
-        let model = build(&fixture(source, "send_future_with_alternative_producers"))
-            .expect("the async fixture is valid");
+        let model = build(&fixture!(
+            "wire/behavior",
+            "send_future_with_alternative_producers"
+        ))
+        .expect("the async fixture is valid");
         assert!(!guarded(&model.execution_plan));
         let ExecutionPlan::End { gates, .. } = &model.execution_plan else {
             panic!("the plan is rooted at end")
@@ -882,9 +804,8 @@ mod tests {
 
     #[test]
     fn a_shared_continuation_may_have_two_independent_entries() {
-        let source = include_str!("../../kaalang/tests/wire/behavior/independent_entry_blocks.rs");
         assert_groups(
-            &fixture(source, "independent_entry_blocks"),
+            &fixture!("wire/behavior", "independent_entry_blocks"),
             &[group(0, &[0, 1], &[3, 4, 5], &[3, 4])],
         );
     }
@@ -945,18 +866,16 @@ mod tests {
 
     #[test]
     fn nested_questions_each_own_a_group_over_the_shared_consumer() {
-        let source = include_str!("../../kaalang/tests/wire/behavior/nested_convergence.rs");
         assert_groups(
-            &fixture(source, "nested_convergence"),
+            &fixture!("wire/behavior", "nested_convergence"),
             &[group(0, &[0, 1], &[5], &[5]), group(1, &[0, 1], &[5], &[5])],
         );
     }
 
     #[test]
     fn branches_of_unequal_depth_have_one_shared_entry() {
-        let source = include_str!("../../kaalang/tests/wire/behavior/uneven_depth.rs");
         assert_groups(
-            &fixture(source, "uneven_depth"),
+            &fixture!("wire/behavior", "uneven_depth"),
             &[group(0, &[0, 1], &[4], &[4])],
         );
     }
@@ -966,11 +885,8 @@ mod tests {
     /// because only its late branch reaches the shared consumer.
     #[test]
     fn a_continuing_branch_may_hold_a_nested_terminal_branch() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/behavior/effect_before_a_nested_terminal_branch.rs"
-        );
         assert_groups(
-            &fixture(source, "effect_before_a_nested_terminal_branch"),
+            &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
             &[group(0, &[0, 1], &[6], &[6])],
         );
     }
@@ -1003,25 +919,21 @@ mod tests {
 
     #[test]
     fn a_shared_block_preceded_by_another_is_not_an_entry() {
-        let source = include_str!("../../kaalang/tests/wire/behavior/staged_convergence.rs");
         assert_groups(
-            &fixture(source, "staged_convergence"),
+            &fixture!("wire/behavior", "staged_convergence"),
             &[group(0, &[0, 1], &[3, 4], &[3])],
         );
     }
 
     #[test]
     fn alternative_producers_captured_only_by_end_form_no_group() {
-        let source = include_str!("../../kaalang/tests/end/behavior/capture_alternative.rs");
-        assert_groups(&fixture(source, "capture_alternative"), &[]);
+        assert_groups(&fixture!("end/behavior", "capture_alternative"), &[]);
     }
 
     #[test]
     fn a_terminal_case_stays_outside_the_group_it_follows() {
-        let source =
-            include_str!("../../kaalang/tests/wire/behavior/convergence_before_a_terminal_case.rs");
         assert_groups(
-            &fixture(source, "convergence_before_a_terminal_case"),
+            &fixture!("wire/behavior", "convergence_before_a_terminal_case"),
             &[group(0, &[0, 1], &[4], &[4])],
         );
     }
@@ -1126,10 +1038,8 @@ mod tests {
     /// reaches the question too.
     #[test]
     fn a_question_of_a_wider_group_may_follow_a_partial_merge() {
-        let source =
-            include_str!("../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs");
         assert_groups(
-            &fixture(source, "question_after_a_partial_merge"),
+            &fixture!("wire/behavior", "question_after_a_partial_merge"),
             &[
                 group(0, &[0, 1], &[3], &[3]),
                 group(0, &[0, 1, 2], &[5, 6, 7], &[5]),
@@ -1141,10 +1051,8 @@ mod tests {
     /// the second entry too, because its selected blocks consume that output.
     #[test]
     fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
-        let source =
-            include_str!("../../kaalang/tests/wire/behavior/question_after_one_entry_block.rs");
         assert_groups(
-            &fixture(source, "question_after_one_entry_block"),
+            &fixture!("wire/behavior", "question_after_one_entry_block"),
             &[group(0, &[0, 1], &[3, 4, 5, 6, 7], &[3, 4])],
         );
     }
@@ -1154,10 +1062,8 @@ mod tests {
     /// so the quiet branch may leave it uncaptured.
     #[test]
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
-        let source =
-            include_str!("../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
         assert_groups(
-            &fixture(source, "a_branch_captures_a_merged_value"),
+            &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
             &[group(0, &[0, 1], &[3, 4, 5], &[3])],
         );
     }
