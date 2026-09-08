@@ -107,11 +107,7 @@ pub(super) fn value(bindings: &Bindings, wires: &[Ident]) -> TokenStream2 {
         .iter()
         .map(|wire| bindings.wire_at(wire))
         .collect::<Vec<_>>();
-    match wires.as_slice() {
-        [] => quote!(()),
-        [wire] => quote_spanned!(wire.span()=> #wire),
-        wires => quote!((#(#wires,)*)),
-    }
+    super::tuple(Span::call_site(), &wires)
 }
 
 /// The value a yield hands to its join, wrapped in the join's variant and then
@@ -155,7 +151,8 @@ pub(super) fn emit(
             return branch;
         };
         let pattern = value(bindings, &join.wires);
-        let continuation = continuation(flow, bindings, join, scope);
+        let continuation =
+            super::continuation(flow, &join.next, join.early_return, bindings, scope);
         return quote_spanned! {span=>
             let #pattern = #branch;
             #continuation
@@ -166,7 +163,8 @@ pub(super) fn emit(
         .enumerate()
         .map(|(index, join)| {
             let pattern = routing.variant(value(bindings, &join.wires), index);
-            let continuation = continuation(flow, bindings, join, scope);
+            let continuation =
+                super::continuation(flow, &join.next, join.early_return, bindings, scope);
             quote!(#pattern => { #continuation },)
         })
         .collect::<Vec<_>>();
@@ -180,19 +178,5 @@ pub(super) fn emit(
         match #branch {
             #(#arms)*
         }
-    }
-}
-
-fn continuation(
-    flow: &Flow,
-    bindings: &Bindings,
-    join: &Join,
-    scope: &[Frame<'_>],
-) -> TokenStream2 {
-    let body = super::flow(flow, &join.next, bindings, scope);
-    if join.early_return {
-        quote!(return { #body })
-    } else {
-        body
     }
 }

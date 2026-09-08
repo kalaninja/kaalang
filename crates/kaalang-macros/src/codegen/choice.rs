@@ -14,8 +14,9 @@ use super::{Bindings, Frame, block_body, input_bindings, join};
 use join::JoinRouting;
 use kaalang_model::{Block, Branch, Flow, Join, choice_match, is_todo_body};
 
-fn mint(name: &str) -> Ident {
-    Ident::new(name, Span::mixed_site())
+/// The hygienic binding that carries the selected case value out of its arm.
+fn case_value() -> Ident {
+    Ident::new("__kaalang_case_value", Span::mixed_site())
 }
 
 /// Assigns the selected case value to its output slot inside the arm.
@@ -25,7 +26,7 @@ pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
         &super::guarded::inputs(block, bindings),
         |case, value| {
             let wire = bindings.wire(&block.outputs[case]);
-            let selected = mint("__kaalang_case_value");
+            let selected = case_value();
             let gate = bindings.gate_value(&block.outputs[case], &quote!(#selected));
             quote!({
                 let #selected = #value;
@@ -103,7 +104,7 @@ pub(crate) fn emit(
     let cases = block.outputs.len();
     let routing = JoinRouting::new(index, joins.len(), branches, scope);
     let inner = Frame::nest(scope, index, routing.as_ref());
-    let value = mint("__kaalang_case_value");
+    let value = case_value();
 
     // Phase one: the authored match tags the selected case value and drops
     // its arm, so the value cannot borrow a match binding. Binding the value
@@ -124,7 +125,7 @@ pub(crate) fn emit(
         let pattern = join::nested(quote!(#value), case, cases);
         let wire = bindings.wire(&block.outputs[case]);
         let gate = bindings.gate(&block.outputs[case]);
-        let path = super::continuation(flow, branch, bindings, &inner);
+        let path = super::continuation(flow, &branch.plan, branch.early_return, bindings, &inner);
         quote! {
             #pattern => {
                 let #wire = #value;

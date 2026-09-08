@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::{Expr, FnArg, ItemFn, Pat, ext::IdentExt};
 
-use kaalang_model::{Branch, ExecutionPlan, Flow, Input, SemanticModel};
+use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
 
 mod action;
 mod choice;
@@ -85,8 +85,10 @@ impl Bindings {
             return TokenStream2::new();
         };
         let check = Ident::new("__kaalang_same_type", Span::mixed_site());
-        // Keep the helper item outside authored scopes. The function marker
-        // carries the type without inheriting its auto traits across awaits.
+        // Keep the helper item outside authored scopes: item names resolve at
+        // the call site even under mixed-site hygiene, so a flow-level item
+        // would be reachable from an authored body. The function marker carries
+        // the type without inheriting its auto traits across awaits.
         let declaration = quote! {
             const fn #check<T: ?Sized>(_: &::core::marker::PhantomData<fn(&T)>, _: &T) {}
         };
@@ -103,6 +105,15 @@ impl Bindings {
         quote! {
             #(let #gates = ::core::marker::PhantomData;)*
         }
+    }
+}
+
+/// Binds one ident bare and several as a tuple pattern or value.
+pub(crate) fn tuple(span: Span, idents: &[Ident]) -> TokenStream2 {
+    match idents {
+        [] => quote_spanned!(span=> ()),
+        [ident] => quote_spanned!(span=> #ident),
+        idents => quote_spanned!(span=> (#(#idents,)*)),
     }
 }
 
@@ -138,18 +149,19 @@ pub(crate) fn flow(
     }
 }
 
-/// A branch that ends the flow returns outright when a sibling yields to a
-/// join, because the enclosing expression then carries the yielded value.
-/// Branch plans must be lowered through this function, never through `flow`,
-/// which would drop that early return.
+/// A branch or join continuation that ends the flow returns outright when a
+/// sibling yields to a join, because the enclosing expression then carries the
+/// yielded value. Branch and join plans must be lowered through this function,
+/// never through `flow`, which would drop that early return.
 fn continuation(
     flow: &Flow,
-    branch: &Branch,
+    plan: &ExecutionPlan,
+    early_return: bool,
     bindings: &Bindings,
     scope: &[Frame<'_>],
 ) -> TokenStream2 {
-    let tokens = self::flow(flow, &branch.plan, bindings, scope);
-    if branch.early_return {
+    let tokens = self::flow(flow, plan, bindings, scope);
+    if early_return {
         quote!(return { #tokens })
     } else {
         tokens

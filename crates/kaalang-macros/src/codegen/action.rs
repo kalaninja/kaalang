@@ -20,11 +20,7 @@ pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
             )
         })
         .collect::<Vec<_>>();
-    let pattern = if let [value] = values.as_slice() {
-        quote_spanned!(block.output_span=> #value)
-    } else {
-        quote_spanned!(block.output_span=> (#(#values,)*))
-    };
+    let pattern = super::tuple(block.output_span, &values);
     let outputs = block.outputs.iter().zip(values).map(|(output, value)| {
         let wire = bindings.wire(output);
         let gate = bindings.gate_value(output, &quote!(#value));
@@ -50,16 +46,9 @@ pub(crate) fn emit(
     let output_wires = block
         .outputs
         .iter()
-        .map(|output| bindings.wire(output))
+        .map(|output| bindings.wire(output).clone())
         .collect::<Vec<_>>();
-    // Every block declares at least one output, so a lone output binds by
-    // name and two or more bind through a tuple pattern.
-    let pattern = if output_wires.len() == 1 {
-        let output = output_wires[0];
-        quote_spanned!(block.output_span=> #output)
-    } else {
-        quote_spanned!(block.output_span=> (#(#output_wires,)*))
-    };
+    let pattern = super::tuple(block.output_span, &output_wires);
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
 
     quote_spanned! {block.span=>

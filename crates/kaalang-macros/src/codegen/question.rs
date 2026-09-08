@@ -35,8 +35,9 @@ pub(crate) fn emit(
     let joins = converged.map_or(&[][..], std::slice::from_ref);
     let names = join::JoinRouting::new(index, joins.len(), branches, scope);
     let inner = Frame::nest(scope, index, names.as_ref());
-    let yes_path = super::continuation(flow, &branches[0], bindings, &inner);
-    let no_path = super::continuation(flow, &branches[1], bindings, &inner);
+    let [yes_path, no_path] = branches.each_ref().map(|branch| {
+        super::continuation(flow, &branch.plan, branch.early_return, bindings, &inner)
+    });
     let block = &flow.blocks[index];
     let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
