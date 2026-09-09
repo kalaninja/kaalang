@@ -48,7 +48,8 @@ in the continuation's column; routes meet it as RFC 0002 §8 requires.
 ## 3. SVG output
 
 The renderer produces standalone SVG with embedded styles and no JavaScript,
-external fonts, or external rendering programs. It uses a monochrome style. The
+external fonts, or external rendering programs. It lightly tints nodes by block
+kind while retaining shape and labels as independent type indicators. The
 presentation choices left open by RFC 0002 are internal to the renderer and may
 change without changing the visual language.
 

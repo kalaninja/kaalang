@@ -55,6 +55,10 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .connection-label {{ fill: currentColor; font-size: {CONNECTION_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {CONNECTION_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
       .parameter-link {{ fill: none; stroke: currentColor; stroke-width: 1.75; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape {{ fill: #f0f9ff; }}
+      .action .node-shape {{ fill: #f8fafc; }}
+      .question .node-shape {{ fill: #fffbeb; }}
+      .select .node-shape, .case .node-shape {{ fill: #f5f3ff; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
       .action .label, .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}

@@ -49,6 +49,12 @@ fn renders_an_accessible_standalone_svg() {
     assert_eq!(svg.matches(r#"class="parameter-panel""#).count(), 1);
     assert!(svg.contains(">seed: u8</tspan><tspan"));
     assert!(svg.contains(">_spare: u8</tspan></text>"));
+    assert!(svg.contains(
+        ".start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }"
+    ));
+    assert!(svg.contains(".action .node-shape { fill: #f8fafc; }"));
+    assert!(svg.contains(".question .node-shape { fill: #fffbeb; }"));
+    assert!(svg.contains(".select .node-shape, .case .node-shape { fill: #f5f3ff; }"));
 }
 
 #[test]
