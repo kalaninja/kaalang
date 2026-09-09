@@ -87,7 +87,68 @@ fn rows(
             .unwrap_or(usize::from(ready != Vertex::Node(NodeId::Start)));
         rows.insert(ready, row + delays.get(&ready).copied().unwrap_or(0));
     }
+    align_merge_producers(topology, &mut rows);
     Ok(rows)
+}
+
+/// A pair of alternative blocks reached directly from a question and a merge
+/// of question branches finish on the same row. That internal junction must not
+/// make the two outcomes look sequential.
+fn align_merge_producers(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
+    for (junction, merge) in topology.junctions.iter().enumerate() {
+        let producers = topology
+            .incoming(Vertex::Junction(junction))
+            .filter_map(|connection| match connection.source {
+                Source::Exit(exit)
+                    if exit.branch.is_none() && topology.handover(exit) == merge.wires =>
+                {
+                    Some(Vertex::Node(exit.node))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let follows = |producer: Vertex, source: fn(Source) -> bool| {
+            topology
+                .incoming(producer)
+                .any(|connection| source(connection.source))
+        };
+        let follows_question_merge = |producer| {
+            topology.incoming(producer).any(|connection| {
+                let Source::Junction(inner) = connection.source else {
+                    return false;
+                };
+                topology
+                    .incoming(Vertex::Junction(inner))
+                    .all(|incoming| matches!(incoming.source, Source::Exit(exit) if exit.branch.is_some()))
+            })
+        };
+        if producers.len() != 2
+            || topology.incoming(Vertex::Junction(junction)).count() != 2
+            || producers
+                .iter()
+                .filter(|&&producer| follows_question_merge(producer))
+                .count()
+                != 1
+            || producers
+                .iter()
+                .filter(|&&producer| {
+                    follows(
+                        producer,
+                        |source| matches!(source, Source::Exit(exit) if exit.branch.is_some()),
+                    )
+                })
+                .count()
+                != 1
+        {
+            continue;
+        }
+        let Some(row) = producers.iter().map(|producer| rows[producer]).max() else {
+            continue;
+        };
+        for producer in producers {
+            rows.insert(producer, row);
+        }
+    }
 }
 
 /// The columns of one brancher's branches, as offsets from its own column. The

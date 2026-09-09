@@ -1,11 +1,12 @@
 //! Routes every connection as a plain orthogonal run and then checks the
 //! result against RFC 0002 §8.
 //!
-//! A route descends in its exit's column, crosses each row gap it needs sideways
-//! in one lane, and enters its destination from above. Two connections may share a
-//! run only when they leave one exit or reach one destination, which is what
-//! draws a fan-out, a select's distributor and a wire merge as one bundle rather
-//! than as routes hidden behind each other.
+//! A route descends in its exit's column, except that a question's side exit may
+//! join a merge column immediately. It crosses each row gap it needs sideways in
+//! one lane and enters its destination from above. Two connections may share a run
+//! only when they leave one exit or reach one destination, which is what draws a
+//! fan-out, a select's distributor and a wire merge as one bundle rather than as
+//! routes hidden behind each other.
 //!
 //! The lanes of one row gap are not guessed. A horizontal run that passes over
 //! another route's descent must lie below it, and one that passes over another
@@ -120,7 +121,7 @@ pub(super) fn plan(
             let bottom = placement.row(destination);
             let free_of_nodes =
                 |column| (top + 1..bottom).all(|row| !taken.contains(&(row, column)));
-            let departure = departure_column(placement, wire.source);
+            let departure = departure_column(placement, wire.source, wire.destination);
             let start = column_x(departure);
             let end = arrival_x(scene, placement, destination);
             let waypoint = match shape {
@@ -423,7 +424,16 @@ fn bundled(scene: &Scene, left: usize, right: usize) -> bool {
     pair.0.source == pair.1.source || pair.0.destination == pair.1.destination
 }
 
-fn departure_column(placement: &Placement, source: Source) -> usize {
+fn departure_column(placement: &Placement, source: Source, destination: Destination) -> usize {
+    if let (Source::Exit(exit), Destination::Junction(junction)) = (source, destination) {
+        let merge = placement.column(Vertex::Junction(junction));
+        if exit.branch.is_some_and(|branch| branch > 0)
+            && placement.column(Vertex::Node(exit.node)) < merge
+        {
+            return merge;
+        }
+    }
+
     match source {
         Source::Exit(exit) => placement.exit_column(exit),
         Source::Junction(junction) => placement.column(Vertex::Junction(junction)),
@@ -468,7 +478,7 @@ pub(super) fn emit(
             let mut points = vec![
                 start,
                 Point {
-                    x: column_x(departure_column(placement, wire.source)),
+                    x: column_x(departure_column(placement, wire.source, wire.destination)),
                     y: start.y,
                 },
             ];
@@ -577,10 +587,9 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             return Some("a connection overlaps itself".to_owned());
         }
         if matches!(connection.destination, Destination::Junction(_))
-            && connection
-                .points
-                .windows(2)
-                .any(|segment| segment[0].x != segment[1].x)
+            && connection.points.windows(2).any(|segment| {
+                segment[0].x != segment[1].x && segment[0].y > connection.points[0].y
+            })
             && connection.points[connection.points.len() - 2].y
                 != connection.points[connection.points.len() - 1].y
         {
@@ -840,5 +849,21 @@ mod tests {
         assert_eq!(verify(&scene), None);
         scene.connections[1].source = Source::Exit(ExitId::of(NodeId::Block(1)));
         assert_eq!(verify(&scene).as_deref(), Some("two connections cross"));
+    }
+
+    #[test]
+    fn a_branch_may_turn_into_the_merge_column_at_its_source() {
+        let mut scene = routes(&[&[(0, 0), (4, 0), (4, 8)]]);
+        scene.connections[0].destination = Destination::Junction(0);
+        assert_eq!(verify(&scene), None);
+
+        scene.connections[0].points = [(0, 0), (0, 4), (4, 4), (4, 8)]
+            .into_iter()
+            .map(|(x, y)| Point { x, y })
+            .collect();
+        assert_eq!(
+            verify(&scene).as_deref(),
+            Some("a merge side route turns downward before its endpoint")
+        );
     }
 }

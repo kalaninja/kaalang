@@ -2,4 +2,5 @@
 //! names and carries the diagram it draws to beside it.
 
 mod fizzbuzz;
+mod logical_formulas;
 mod swap;

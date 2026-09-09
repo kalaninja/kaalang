@@ -257,6 +257,34 @@ fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
     }
 }
 
+#[test]
+fn nested_question_side_branches_share_their_merge_column() {
+    let scene = drawn(fixture!("gallery/logical_formulas", "and"));
+    let junction = scene
+        .topology
+        .junctions
+        .iter()
+        .position(|junction| junction.wires == ["false_result"])
+        .unwrap();
+    let rail = scene.node(NodeId::Start).x + COLUMN_WIDTH;
+    let incoming = scene
+        .connections
+        .iter()
+        .filter(|connection| connection.destination == Destination::Junction(junction))
+        .collect::<Vec<_>>();
+
+    assert_eq!(incoming.len(), 3);
+    assert!(
+        incoming
+            .iter()
+            .all(|connection| connection.points[1..].iter().all(|point| point.x == rail))
+    );
+    assert_eq!(
+        scene.node(NodeId::Block(3)).y,
+        scene.node(NodeId::Block(4)).y
+    );
+}
+
 /// Lays out one flow and holds it to RFC 0002 §8 before returning it, so every
 /// test built on this helper carries the whole spatial contract with it.
 fn drawn((source, flow): (&str, &str)) -> Scene {
