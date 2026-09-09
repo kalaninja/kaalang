@@ -251,9 +251,8 @@ fn branch_label(description: &str, at: Point, stack: Stack, clear: i32) -> Label
 
 fn place_label(lines: Vec<String>, kind: LabelKind, at: Point, stack: Stack, clear: i32) -> Label {
     let below_first = (lines.len() as i32 - 1) * kind.line_height();
-    let x = at
-        .x
-        .max(clear + label_width(&lines, kind.font_size()) / 2 + CONNECTION_LABEL_HALO + CLEARANCE);
+    let x = (at.x - label_width(&lines, kind.font_size()) / 2)
+        .max(clear + CONNECTION_LABEL_HALO + CLEARANCE);
 
     Label {
         kind,
@@ -331,17 +330,17 @@ pub(super) fn capture_space(names: &[String]) -> i32 {
 }
 
 /// The rectangle a label's ink and halo occupy, matching how the serializer
-/// places it: centred on `at.x`, its first baseline at `at.y`. Left, top,
+/// places it: starting at `at.x`, its first baseline at `at.y`. Left, top,
 /// right, bottom, like `Scene::bounds`.
 pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
     let font_size = label.kind.font_size();
-    let half = label_width(&label.lines, font_size) / 2 + CONNECTION_LABEL_HALO;
+    let width = label_width(&label.lines, font_size);
     let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * label.kind.line_height();
 
     (
-        label.at.x - half,
+        label.at.x - CONNECTION_LABEL_HALO,
         label.at.y - font_size - CONNECTION_LABEL_HALO,
-        label.at.x + half,
+        label.at.x + width + CONNECTION_LABEL_HALO,
         last_baseline + font_size / 2 + CONNECTION_LABEL_HALO,
     )
 }

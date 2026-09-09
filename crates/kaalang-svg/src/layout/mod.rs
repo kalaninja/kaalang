@@ -107,8 +107,8 @@ pub(crate) struct Connection {
 }
 
 /// One placed label, wrapped during layout so the canvas can be sized around
-/// it. `at` is the first line's baseline, so the serializer writes the block
-/// without deciding where it sits.
+/// it. `at` is the left end of the first line's baseline, so the serializer
+/// writes the block without deciding where it sits.
 pub(crate) struct Label {
     pub(crate) kind: LabelKind,
     pub(crate) lines: Vec<String>,

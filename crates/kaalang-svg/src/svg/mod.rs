@@ -52,7 +52,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     <style>
       svg {{ color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }}
       .connection {{ fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }}
-      .connection-label {{ fill: currentColor; font-size: {CONNECTION_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {CONNECTION_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
+      .connection-label {{ fill: currentColor; font-size: {CONNECTION_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {CONNECTION_LABEL_HALO}px; stroke-linejoin: round; text-anchor: start; }}
       .parameter-link {{ fill: none; stroke: currentColor; stroke-width: 1.75; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape {{ fill: #f0f9ff; }}

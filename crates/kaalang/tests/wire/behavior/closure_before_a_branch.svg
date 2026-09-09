@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -26,14 +26,14 @@
     <path class="connection" d="M 172 516 L 172 568"/>
     <path class="connection" d="M 532 516 L 532 568 L 172 568"/>
     <path class="connection" d="M 172 568 L 172 660"/>
-    <text class="connection-label" x="229" y="112" xml:space="preserve"><tspan x="229" dy="0">condition, base</tspan></text>
-    <text class="connection-label" x="207" y="254" xml:space="preserve"><tspan x="207" dy="0">handler</tspan></text>
-    <text class="connection-label" x="195" y="398" xml:space="preserve"><tspan x="195" dy="0">add</tspan></text>
-    <text class="connection-label" x="351" y="362" xml:space="preserve"><tspan x="351" dy="0">subtract</tspan></text>
-    <text class="connection-label" x="198" y="159" xml:space="preserve"><tspan x="198" dy="0">base</tspan></text>
-    <text class="connection-label" x="212" y="297" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
-    <text class="connection-label" x="221" y="441" xml:space="preserve"><tspan x="221" dy="0">add, handler</tspan></text>
-    <text class="connection-label" x="597" y="441" xml:space="preserve"><tspan x="597" dy="0">subtract, handler</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, base</tspan></text>
+    <text class="connection-label" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">handler</tspan></text>
+    <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">add</tspan></text>
+    <text class="connection-label" x="325" y="362" xml:space="preserve"><tspan x="325" dy="0">subtract</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">base</tspan></text>
+    <text class="connection-label" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label" x="185" y="441" xml:space="preserve"><tspan x="185" dy="0">add, handler</tspan></text>
+    <text class="connection-label" x="545" y="441" xml:space="preserve"><tspan x="545" dy="0">subtract, handler</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

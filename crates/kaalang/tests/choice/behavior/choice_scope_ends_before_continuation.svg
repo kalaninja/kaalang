@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -28,14 +28,14 @@
     <path class="connection" d="M 172 716 L 172 775"/>
     <path class="connection" d="M 532 716 L 532 775 L 172 775"/>
     <path class="connection" d="M 172 775 L 172 874"/>
-    <text class="connection-label" x="264" y="125" xml:space="preserve"><tspan x="264" dy="0">condition, cell, evaluations</tspan></text>
-    <text class="connection-label" x="220" y="277" xml:space="preserve"><tspan x="220" dy="0">input_guard</tspan></text>
-    <text class="connection-label" x="207" y="583" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
-    <text class="connection-label" x="558" y="589" xml:space="preserve"><tspan x="558" dy="0">text</tspan></text>
-    <text class="connection-label" x="195" y="184" xml:space="preserve"><tspan x="195" dy="0">cell</tspan></text>
-    <text class="connection-label" x="269" y="313" xml:space="preserve"><tspan x="269" dy="0">condition, input_guard, cell, </tspan><tspan x="269" dy="14">evaluations</tspan></text>
-    <text class="connection-label" x="221" y="639" xml:space="preserve"><tspan x="221" dy="0">number, cell</tspan></text>
-    <text class="connection-label" x="572" y="639" xml:space="preserve"><tspan x="572" dy="0">text, cell</tspan></text>
+    <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">condition, cell, evaluations</tspan></text>
+    <text class="connection-label" x="185" y="277" xml:space="preserve"><tspan x="185" dy="0">input_guard</tspan></text>
+    <text class="connection-label" x="185" y="583" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
+    <text class="connection-label" x="545" y="589" xml:space="preserve"><tspan x="545" dy="0">text</tspan></text>
+    <text class="connection-label" x="185" y="184" xml:space="preserve"><tspan x="185" dy="0">cell</tspan></text>
+    <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">condition, input_guard, cell, </tspan><tspan x="185" dy="14">evaluations</tspan></text>
+    <text class="connection-label" x="185" y="639" xml:space="preserve"><tspan x="185" dy="0">number, cell</tspan></text>
+    <text class="connection-label" x="545" y="639" xml:space="preserve"><tspan x="545" dy="0">text, cell</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>

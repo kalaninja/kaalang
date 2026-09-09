@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -40,19 +40,19 @@
     <path class="connection" d="M 892 1014 L 892 1066 L 172 1066"/>
     <path class="connection" d="M 172 572 L 172 664"/>
     <path class="connection" d="M 172 1066 L 172 1158"/>
-    <text class="connection-label" x="200" y="590" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
-    <text class="connection-label" x="188" y="415" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
-    <text class="connection-label" x="548" y="415" xml:space="preserve"><tspan x="548" dy="0">b</tspan></text>
-    <text class="connection-label" x="908" y="415" xml:space="preserve"><tspan x="908" dy="0">c</tspan></text>
-    <text class="connection-label" x="224" y="112" xml:space="preserve"><tspan x="224" dy="0">first, second</tspan></text>
-    <text class="connection-label" x="188" y="896" xml:space="preserve"><tspan x="188" dy="0">x</tspan></text>
-    <text class="connection-label" x="548" y="896" xml:space="preserve"><tspan x="548" dy="0">y</tspan></text>
-    <text class="connection-label" x="908" y="896" xml:space="preserve"><tspan x="908" dy="0">z</tspan></text>
-    <text class="connection-label" x="200" y="159" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="205" y="653" xml:space="preserve"><tspan x="205" dy="0">second</tspan></text>
-    <text class="connection-label" x="207" y="939" xml:space="preserve"><tspan x="207" dy="0">x, value</tspan></text>
-    <text class="connection-label" x="567" y="939" xml:space="preserve"><tspan x="567" dy="0">y, value</tspan></text>
-    <text class="connection-label" x="927" y="939" xml:space="preserve"><tspan x="927" dy="0">z, value</tspan></text>
+    <text class="connection-label" x="185" y="590" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="415" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="545" y="415" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
+    <text class="connection-label" x="905" y="415" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">first, second</tspan></text>
+    <text class="connection-label" x="185" y="896" xml:space="preserve"><tspan x="185" dy="0">x</tspan></text>
+    <text class="connection-label" x="545" y="896" xml:space="preserve"><tspan x="545" dy="0">y</tspan></text>
+    <text class="connection-label" x="905" y="896" xml:space="preserve"><tspan x="905" dy="0">z</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="185" y="653" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="939" xml:space="preserve"><tspan x="185" dy="0">x, value</tspan></text>
+    <text class="connection-label" x="545" y="939" xml:space="preserve"><tspan x="545" dy="0">y, value</tspan></text>
+    <text class="connection-label" x="905" y="939" xml:space="preserve"><tspan x="905" dy="0">z, value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

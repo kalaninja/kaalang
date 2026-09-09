@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -26,16 +26,16 @@
     <path class="connection" d="M 172 644 L 172 716"/>
     <path class="connection" d="M 172 780 L 172 852"/>
     <path class="connection" d="M 172 916 L 172 988"/>
-    <text class="connection-label" x="219" y="112" xml:space="preserve"><tspan x="219" dy="0">type, count</tspan></text>
-    <text class="connection-label" x="222" y="252" xml:space="preserve"><tspan x="222" dy="0">incremented</tspan></text>
-    <text class="connection-label" x="203" y="524" xml:space="preserve"><tspan x="203" dy="0">length</tspan></text>
-    <text class="connection-label" x="217" y="662" xml:space="preserve"><tspan x="217" dy="0">text, total</tspan></text>
-    <text class="connection-label" x="215" y="159" xml:space="preserve"><tspan x="215" dy="0">mut count</tspan></text>
-    <text class="connection-label" x="215" y="295" xml:space="preserve"><tspan x="215" dy="0">&amp;mut type</tspan></text>
-    <text class="connection-label" x="201" y="431" xml:space="preserve"><tspan x="201" dy="0">&amp;type</tspan></text>
-    <text class="connection-label" x="274" y="567" xml:space="preserve"><tspan x="274" dy="0">mut type, count, incremented</tspan></text>
-    <text class="connection-label" x="252" y="705" xml:space="preserve"><tspan x="252" dy="0">&amp;mut text, &amp;mut total</tspan></text>
-    <text class="connection-label" x="240" y="841" xml:space="preserve"><tspan x="240" dy="0">text, total, length</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">type, count</tspan></text>
+    <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">incremented</tspan></text>
+    <text class="connection-label" x="185" y="524" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
+    <text class="connection-label" x="185" y="662" xml:space="preserve"><tspan x="185" dy="0">text, total</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut count</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">&amp;mut type</tspan></text>
+    <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">&amp;type</tspan></text>
+    <text class="connection-label" x="185" y="567" xml:space="preserve"><tspan x="185" dy="0">mut type, count, incremented</tspan></text>
+    <text class="connection-label" x="185" y="705" xml:space="preserve"><tspan x="185" dy="0">&amp;mut text, &amp;mut total</tspan></text>
+    <text class="connection-label" x="185" y="841" xml:space="preserve"><tspan x="185" dy="0">text, total, length</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

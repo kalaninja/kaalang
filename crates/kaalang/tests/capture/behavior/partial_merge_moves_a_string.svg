@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -33,18 +33,18 @@
     <path class="connection" d="M 172 938 L 172 1010"/>
     <path class="connection" d="M 172 574 L 172 666"/>
     <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="205" y="592" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
-    <text class="connection-label" x="205" y="800" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
-    <text class="connection-label" x="225" y="112" xml:space="preserve"><tspan x="225" dy="0">source, order</tspan></text>
-    <text class="connection-label" x="200" y="402" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="565" y="402" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
-    <text class="connection-label" x="920" y="402" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
-    <text class="connection-label" x="205" y="159" xml:space="preserve"><tspan x="205" dy="0">source</tspan></text>
-    <text class="connection-label" x="224" y="445" xml:space="preserve"><tspan x="224" dy="0">first, &amp;order</tspan></text>
-    <text class="connection-label" x="589" y="445" xml:space="preserve"><tspan x="589" dy="0">second, &amp;order</tspan></text>
-    <text class="connection-label" x="229" y="655" xml:space="preserve"><tspan x="229" dy="0">partial, &amp;order</tspan></text>
-    <text class="connection-label" x="944" y="445" xml:space="preserve"><tspan x="944" dy="0">third, &amp;order</tspan></text>
-    <text class="connection-label" x="229" y="863" xml:space="preserve"><tspan x="229" dy="0">shared, &amp;order</tspan></text>
+    <text class="connection-label" x="185" y="592" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label" x="185" y="800" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">source, order</tspan></text>
+    <text class="connection-label" x="185" y="402" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="402" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="905" y="402" xml:space="preserve"><tspan x="905" dy="0">third</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
+    <text class="connection-label" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first, &amp;order</tspan></text>
+    <text class="connection-label" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">second, &amp;order</tspan></text>
+    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">partial, &amp;order</tspan></text>
+    <text class="connection-label" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">third, &amp;order</tspan></text>
+    <text class="connection-label" x="185" y="863" xml:space="preserve"><tspan x="185" dy="0">shared, &amp;order</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

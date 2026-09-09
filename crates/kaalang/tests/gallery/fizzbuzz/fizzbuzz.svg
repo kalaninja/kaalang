@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -33,11 +33,11 @@
     <path class="connection" d="M 892 512 L 892 564 L 172 564"/>
     <path class="connection" d="M 1252 512 L 1252 564 L 172 564"/>
     <path class="connection" d="M 172 564 L 172 656"/>
-    <text class="connection-label" x="207" y="121" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
-    <text class="connection-label" x="213" y="407" xml:space="preserve"><tspan x="213" dy="0">fizz_buzz</tspan></text>
-    <text class="connection-label" x="557" y="407" xml:space="preserve"><tspan x="557" dy="0">fizz</tspan></text>
-    <text class="connection-label" x="918" y="407" xml:space="preserve"><tspan x="918" dy="0">buzz</tspan></text>
-    <text class="connection-label" x="1278" y="407" xml:space="preserve"><tspan x="1278" dy="0">plain</tspan></text>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
+    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">fizz_buzz</tspan></text>
+    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">fizz</tspan></text>
+    <text class="connection-label" x="905" y="407" xml:space="preserve"><tspan x="905" dy="0">buzz</tspan></text>
+    <text class="connection-label" x="1265" y="407" xml:space="preserve"><tspan x="1265" dy="0">plain</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>

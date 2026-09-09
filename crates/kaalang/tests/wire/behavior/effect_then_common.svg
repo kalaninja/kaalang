@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -28,15 +28,15 @@
     <path class="connection" d="M 172 714 L 172 786"/>
     <path class="connection" d="M 172 850 L 172 922"/>
     <path class="connection" d="M 172 558 L 172 650"/>
-    <text class="connection-label" x="197" y="121" xml:space="preserve"><tspan x="197" dy="0">flag</tspan></text>
-    <text class="connection-label" x="195" y="265" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
-    <text class="connection-label" x="422" y="187" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="218" y="388" xml:space="preserve"><tspan x="218" dy="0">value, local</tspan></text>
-    <text class="connection-label" x="560" y="388" xml:space="preserve"><tspan x="560" dy="0">value</tspan></text>
-    <text class="connection-label" x="203" y="732" xml:space="preserve"><tspan x="203" dy="0">stamp</tspan></text>
-    <text class="connection-label" x="198" y="431" xml:space="preserve"><tspan x="198" dy="0">local</tspan></text>
-    <text class="connection-label" x="188" y="639" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
-    <text class="connection-label" x="223" y="775" xml:space="preserve"><tspan x="223" dy="0">value, stamp</tspan></text>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
+    <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="416" y="187" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">value, local</tspan></text>
+    <text class="connection-label" x="545" y="388" xml:space="preserve"><tspan x="545" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="732" xml:space="preserve"><tspan x="185" dy="0">stamp</tspan></text>
+    <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">local</tspan></text>
+    <text class="connection-label" x="185" y="639" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="775" xml:space="preserve"><tspan x="185" dy="0">value, stamp</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>

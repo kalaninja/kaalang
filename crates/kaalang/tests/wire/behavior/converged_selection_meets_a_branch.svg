@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -30,16 +30,16 @@
     <path class="connection" d="M 532 730 L 532 782 L 172 782"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="219" y="448" xml:space="preserve"><tspan x="219" dy="0">right_value</tspan></text>
-    <text class="connection-label" x="188" y="273" xml:space="preserve"><tspan x="188" dy="0">b</tspan></text>
-    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">right_no</tspan></text>
-    <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="188" y="612" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
-    <text class="connection-label" x="347" y="576" xml:space="preserve"><tspan x="347" dy="0">left_no</tspan></text>
-    <text class="connection-label" x="200" y="159" xml:space="preserve"><tspan x="200" dy="0">right</tspan></text>
-    <text class="connection-label" x="197" y="511" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
-    <text class="connection-label" x="226" y="655" xml:space="preserve"><tspan x="226" dy="0">a, right_value</tspan></text>
-    <text class="connection-label" x="605" y="655" xml:space="preserve"><tspan x="605" dy="0">left_no, right_value</tspan></text>
+    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">right_value</tspan></text>
+    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">b</tspan></text>
+    <text class="connection-label" x="397" y="195" xml:space="preserve"><tspan x="397" dy="0">right_no</tspan></text>
+    <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <text class="connection-label" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="325" y="576" xml:space="preserve"><tspan x="325" dy="0">left_no</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
+    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">a, right_value</tspan></text>
+    <text class="connection-label" x="545" y="655" xml:space="preserve"><tspan x="545" dy="0">left_no, right_value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

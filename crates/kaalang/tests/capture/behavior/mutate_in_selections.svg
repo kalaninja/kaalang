@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -31,17 +31,17 @@
     <path class="connection" d="M 892 400 L 892 736 L 172 736"/>
     <path class="connection" d="M 172 894 L 172 966"/>
     <path class="connection" d="M 172 736 L 172 828"/>
-    <text class="connection-label" x="210" y="754" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
-    <text class="connection-label" x="602" y="213" xml:space="preserve"><tspan x="602" dy="0">no</tspan></text>
-    <text class="connection-label" x="238" y="121" xml:space="preserve"><tspan x="238" dy="0">text, count, mode</tspan></text>
-    <text class="connection-label" x="195" y="278" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
-    <text class="connection-label" x="200" y="564" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="565" y="564" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
-    <text class="connection-label" x="250" y="177" xml:space="preserve"><tspan x="250" dy="0">&amp;mut text, mut count</tspan></text>
-    <text class="connection-label" x="263" y="321" xml:space="preserve"><tspan x="263" dy="0">yes, &amp;mut text, mut mode</tspan></text>
-    <text class="connection-label" x="249" y="607" xml:space="preserve"><tspan x="249" dy="0">mut first, &amp;mut text</tspan></text>
-    <text class="connection-label" x="613" y="607" xml:space="preserve"><tspan x="613" dy="0">mut second, &amp;mut text</tspan></text>
-    <text class="connection-label" x="227" y="817" xml:space="preserve"><tspan x="227" dy="0">text, selected</tspan></text>
+    <text class="connection-label" x="185" y="754" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="596" y="213" xml:space="preserve"><tspan x="596" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">text, count, mode</tspan></text>
+    <text class="connection-label" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="185" y="564" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="564" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">&amp;mut text, mut count</tspan></text>
+    <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">yes, &amp;mut text, mut mode</tspan></text>
+    <text class="connection-label" x="185" y="607" xml:space="preserve"><tspan x="185" dy="0">mut first, &amp;mut text</tspan></text>
+    <text class="connection-label" x="545" y="607" xml:space="preserve"><tspan x="545" dy="0">mut second, &amp;mut text</tspan></text>
+    <text class="connection-label" x="185" y="817" xml:space="preserve"><tspan x="185" dy="0">text, selected</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>

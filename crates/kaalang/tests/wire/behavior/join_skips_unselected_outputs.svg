@@ -5,7 +5,7 @@
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
-      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
       .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
@@ -30,20 +30,20 @@
     <path class="connection" d="M 892 380 L 892 850 L 172 850"/>
     <path class="connection" d="M 172 1006 L 172 1078"/>
     <path class="connection" d="M 172 850 L 172 942"/>
-    <text class="connection-label" x="197" y="273" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
-    <text class="connection-label" x="602" y="195" xml:space="preserve"><tspan x="602" dy="0">right</tspan></text>
-    <text class="connection-label" x="221" y="112" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
-    <text class="connection-label" x="236" y="397" xml:space="preserve"><tspan x="236" dy="0">probe, left_value</tspan></text>
-    <text class="connection-label" x="195" y="542" xml:space="preserve"><tspan x="195" dy="0">far</tspan></text>
-    <text class="connection-label" x="338" y="506" xml:space="preserve"><tspan x="338" dy="0">near</tspan></text>
-    <text class="connection-label" x="597" y="816" xml:space="preserve"><tspan x="597" dy="0">_unused, selected</tspan></text>
-    <text class="connection-label" x="210" y="678" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
-    <text class="connection-label" x="957" y="398" xml:space="preserve"><tspan x="957" dy="0">_unused, selected</tspan></text>
-    <text class="connection-label" x="201" y="159" xml:space="preserve"><tspan x="201" dy="0">outer</tspan></text>
-    <text class="connection-label" x="221" y="441" xml:space="preserve"><tspan x="221" dy="0">probe, inner</tspan></text>
-    <text class="connection-label" x="596" y="721" xml:space="preserve"><tspan x="596" dy="0">near, &amp;left_value</tspan></text>
-    <text class="connection-label" x="233" y="585" xml:space="preserve"><tspan x="233" dy="0">far, &amp;left_value</tspan></text>
-    <text class="connection-label" x="210" y="931" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="587" y="195" xml:space="preserve"><tspan x="587" dy="0">right</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">outer, inner</tspan></text>
+    <text class="connection-label" x="185" y="397" xml:space="preserve"><tspan x="185" dy="0">probe, left_value</tspan></text>
+    <text class="connection-label" x="185" y="542" xml:space="preserve"><tspan x="185" dy="0">far</tspan></text>
+    <text class="connection-label" x="325" y="506" xml:space="preserve"><tspan x="325" dy="0">near</tspan></text>
+    <text class="connection-label" x="545" y="816" xml:space="preserve"><tspan x="545" dy="0">_unused, selected</tspan></text>
+    <text class="connection-label" x="185" y="678" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="905" y="398" xml:space="preserve"><tspan x="905" dy="0">_unused, selected</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">outer</tspan></text>
+    <text class="connection-label" x="185" y="441" xml:space="preserve"><tspan x="185" dy="0">probe, inner</tspan></text>
+    <text class="connection-label" x="545" y="721" xml:space="preserve"><tspan x="545" dy="0">near, &amp;left_value</tspan></text>
+    <text class="connection-label" x="185" y="585" xml:space="preserve"><tspan x="185" dy="0">far, &amp;left_value</tspan></text>
+    <text class="connection-label" x="185" y="931" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

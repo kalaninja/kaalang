@@ -92,6 +92,31 @@ fn mutable_captures_keep_their_modifiers_in_labels_and_descriptions() {
 }
 
 #[test]
+fn wire_labels_on_a_vertical_route_share_a_start_anchor() {
+    let svg = render_source(
+        include_str!("../../kaalang/tests/capture/behavior/mutate_wires.rs"),
+        "mutate_wires",
+    )
+    .unwrap();
+    let style = svg
+        .lines()
+        .find(|line| line.contains(".connection-label {"))
+        .unwrap();
+    assert!(style.contains("text-anchor: start;"));
+
+    let positions = svg
+        .lines()
+        .filter_map(|line| {
+            line.trim()
+                .strip_prefix(r#"<text class="connection-label" x=""#)
+        })
+        .map(|label| label.split_once('"').unwrap().0)
+        .collect::<Vec<_>>();
+    assert!(positions.len() > 1);
+    assert!(positions.iter().all(|x| *x == positions[0]));
+}
+
+#[test]
 fn terminal_cases_render_beside_a_wide_shared_continuation() {
     let svg = render_source(
         include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
