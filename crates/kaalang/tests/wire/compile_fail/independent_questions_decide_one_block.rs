@@ -1,8 +1,8 @@
 use kaalang::kaalang;
 
 // Every branch notes its answer and every combination reaches the result, but
-// the block that uses both notes still runs only when two independent
-// questions both select yes.
+// the second question opens its own branches while the first question's are
+// still separate, which is the only way two selections could decide one block.
 #[kaalang]
 fn invalid(left: bool, right: bool) -> u8 {
     #[question("Left enabled?")]

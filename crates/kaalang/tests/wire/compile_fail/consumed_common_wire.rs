@@ -1,5 +1,7 @@
 use kaalang::kaalang;
 
+// kaalang accepts the structure: the yes branch takes the common wire and the
+// no branch only borrows it. Rust reports the use after that move.
 #[kaalang]
 fn invalid(condition: bool, common: String) -> String {
     #[question("Choose a branch.")]

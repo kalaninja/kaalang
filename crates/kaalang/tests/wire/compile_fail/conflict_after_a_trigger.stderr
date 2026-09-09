@@ -1,5 +1,0 @@
-error: kaalang blocks that are ready for the same wire `x` must both borrow it; add an explicit dependency
-  --> tests/wire/compile_fail/conflict_after_a_trigger.rs:13:5
-   |
-13 |     #[action("Consume x once triggered.")]
-   |     ^

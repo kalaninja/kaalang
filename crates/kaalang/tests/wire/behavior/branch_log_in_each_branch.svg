@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for branch_log_in_each_branch</title>
+  <desc id="kaalang-description">Nodes: Start: branch_log_in_each_branch(condition: bool, value: String) -&gt; usize handing over condition, value; Question: Log the value? capturing condition handing over yes / no; Action: Log. capturing yes, &amp;value handing over logged; Action: Transform after logging. capturing logged, value handing over result; Action: Transform without logging. capturing no, value handing over result; End: usize capturing result. Connections: Start: branch_log_in_each_branch(condition: bool, value: String) -&gt; usize to Question: Log the value?; Question: Log the value? branch 1 to Action: Log.; Question: Log the value? branch 2 to Action: Transform without logging.; Action: Log. to Action: Transform after logging.; Action: Transform after logging. to the result merge; Action: Transform without logging. to the result merge; the result merge to End: usize.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
+    <path class="connection" d="M 172 378 L 172 450"/>
+    <path class="connection" d="M 172 514 L 172 566"/>
+    <path class="connection" d="M 532 378 L 532 566 L 172 566"/>
+    <path class="connection" d="M 172 566 L 172 658"/>
+    <text class="connection-label" x="214" y="584" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="231" y="116" xml:space="preserve"><tspan x="231" dy="0">condition, value</tspan></text>
+    <text class="connection-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="354" y="224" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
+    <text class="connection-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">logged</tspan></text>
+    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="217" y="303" xml:space="preserve"><tspan x="217" dy="0">yes, &amp;value</tspan></text>
+    <text class="connection-label" x="222" y="439" xml:space="preserve"><tspan x="222" dy="0">logged, value</tspan></text>
+    <text class="connection-label" x="574" y="303" xml:space="preserve"><tspan x="574" dy="0">no, value</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">branch_log_in_each_branch(conditi</tspan><tspan x="0" dy="18">on: bool, value: String) -&gt; usize</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 206)">
+      <title xml:space="preserve">Log the value?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Log the value?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 346)">
+      <title xml:space="preserve">Log.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Log.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 482)">
+      <title xml:space="preserve">Transform after logging.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Transform after logging.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 346)">
+      <title xml:space="preserve">Transform without logging.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Transform without logging.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 687)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
+    </g>
+  </g>
+</svg>

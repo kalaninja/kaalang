@@ -1,11 +1,8 @@
-error[E0308]: `if` and `else` have incompatible types
+error[E0308]: mismatched types
   --> tests/wire/compile_fail/incompatible_alternative_types.rs:12:13
    |
  3 | #[kaalang]
    | ---------- in this attribute macro expansion
-...
- 9 |     |yes| -> selected { 1_u32 };
-   |              -------- expected because of this
 ...
 12 |     |no| -> selected { "no" };
    |             ^^^^^^^^ expected `u32`, found `&str`

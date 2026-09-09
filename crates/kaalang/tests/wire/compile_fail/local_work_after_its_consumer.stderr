@@ -1,0 +1,5 @@
+error: this kaalang block must finish before the `selected` wire merge; declare it above the blocks that capture the merged wire
+  --> tests/wire/compile_fail/local_work_after_its_consumer.rs:19:5
+   |
+19 |     #[action("Record the note after leaving the yes branch.")]
+   |     ^

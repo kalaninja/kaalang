@@ -11,8 +11,8 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     syntax.reject_companions()?;
     syntax.require_inputs("question")?;
     if syntax.outputs.len() != 2 {
-        return Err(Error::new_spanned(
-            &syntax.closure.output,
+        return Err(Error::new(
+            syntax.output_span,
             "a kaalang question must declare exactly two outputs",
         ));
     }

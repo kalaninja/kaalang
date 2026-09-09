@@ -2,11 +2,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
-    #[question("Which width?")]
-    |condition| -> (narrow, wide) { condition };
-
     #[action("Produce one shared default.")]
     || -> shared { Default::default() };
+
+    #[question("Which width?")]
+    |condition| -> (narrow, wide) { condition };
 
     #[action("Use it as a byte.")]
     |narrow, shared| -> result {

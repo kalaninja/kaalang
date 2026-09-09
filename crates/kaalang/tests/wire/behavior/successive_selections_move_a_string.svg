@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1254" viewBox="0 0 704 1254" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for successive_selections_move_a_string</title>
+  <desc id="kaalang-description">Nodes: Start: successive_selections_move_a_string(condition: bool, long: bool) -&gt; usize handing over condition, long; Question: Which text? capturing condition handing over first / second; Action: Build the first text. capturing first handing over text; Action: Build the second text. capturing second handing over text; Action: Measure the merged text. capturing text handing over length; Question: Is it long enough? capturing &amp;length, long handing over yes / no; Action: Keep the length. capturing yes, length handing over selected; Action: Scale the short length. capturing no, length handing over selected; Action: Finish with the selected length. capturing selected handing over result; End: usize capturing result. Connections: Start: successive_selections_move_a_string(condition: bool, long: bool) -&gt; usize to Question: Which text?; Question: Which text? branch 1 to Action: Build the first text.; Question: Which text? branch 2 to Action: Build the second text.; Action: Build the first text. to the text merge; Action: Build the second text. to the text merge; Action: Measure the merged text. to Question: Is it long enough?; Question: Is it long enough? branch 1 to Action: Keep the length.; Question: Is it long enough? branch 2 to Action: Scale the short length.; Action: Keep the length. to the selected merge; Action: Scale the short length. to the selected merge; Action: Finish with the selected length. to End: usize; the text merge to Action: Measure the merged text.; the selected merge to Action: Finish with the selected length..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <path class="connection" d="M 172 116 L 172 188"/>
+    <path class="connection" d="M 172 260 L 172 332"/>
+    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
+    <path class="connection" d="M 172 396 L 172 448"/>
+    <path class="connection" d="M 532 396 L 532 448 L 172 448"/>
+    <path class="connection" d="M 172 604 L 172 676"/>
+    <path class="connection" d="M 172 748 L 172 820"/>
+    <path class="connection" d="M 312 712 L 532 712 L 532 820"/>
+    <path class="connection" d="M 172 884 L 172 936"/>
+    <path class="connection" d="M 532 884 L 532 936 L 172 936"/>
+    <path class="connection" d="M 172 1092 L 172 1164"/>
+    <path class="connection" d="M 172 448 L 172 540"/>
+    <path class="connection" d="M 172 936 L 172 1028"/>
+    <text class="connection-label" x="214" y="466" xml:space="preserve"><tspan x="214" dy="0">text</tspan></text>
+    <text class="connection-label" x="214" y="954" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
+    <text class="connection-label" x="214" y="291" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
+    <text class="connection-label" x="214" y="1123" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="228" y="134" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
+    <text class="connection-label" x="214" y="622" xml:space="preserve"><tspan x="214" dy="0">length</tspan></text>
+    <text class="connection-label" x="214" y="766" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="354" y="730" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
+    <text class="connection-label" x="214" y="177" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="222" y="665" xml:space="preserve"><tspan x="222" dy="0">&amp;length, long</tspan></text>
+    <text class="connection-label" x="217" y="809" xml:space="preserve"><tspan x="217" dy="0">yes, length</tspan></text>
+    <text class="connection-label" x="574" y="809" xml:space="preserve"><tspan x="574" dy="0">no, length</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">successive_selections_move_a_str</tspan><tspan x="0" dy="18">ing(condition: bool, long: bool) -&gt; </tspan><tspan x="0" dy="18">usize</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
+      <title xml:space="preserve">Which text?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which text?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 364)">
+      <title xml:space="preserve">Build the first text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 364)">
+      <title xml:space="preserve">Build the second text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 572)">
+      <title xml:space="preserve">Measure the merged text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the merged text.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 712)">
+      <title xml:space="preserve">Is it long enough?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it long enough?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 852)">
+      <title xml:space="preserve">Keep the length.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the length.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 852)">
+      <title xml:space="preserve">Scale the short length.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Scale the short length.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1060)">
+      <title xml:space="preserve">Finish with the selected length.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish with the selected length.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1193)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
+    </g>
+  </g>
+</svg>

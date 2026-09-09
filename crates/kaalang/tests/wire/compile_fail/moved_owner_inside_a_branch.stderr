@@ -1,0 +1,20 @@
+error[E0505]: cannot move out of value because it is borrowed
+  --> tests/wire/compile_fail/moved_owner_inside_a_branch.rs:17:6
+   |
+ 5 | #[kaalang]
+   | ---------- in this attribute macro expansion
+...
+14 |     |&text| -> view { text.as_str() };
+   |       ---- borrow of value occurs here
+...
+17 |     |text| -> length { text.len() };
+   |      ^^^^ move out of value occurs here
+...
+20 |     |view| {
+   |      ---- borrow later used here
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+   |
+14 |     |&text.clone()| -> view { text.as_str() };
+   |           ++++++++

@@ -1,0 +1,27 @@
+error[E0382]: use of moved value
+  --> tests/wire/compile_fail/generic_reuse_without_copy.rs:10:6
+   |
+ 4 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 5 | fn invalid<T>(value: T) -> (T, T) {
+   |               ----- move occurs because value has type `T`, which does not implement the `Copy` trait
+ 6 |     #[action("Take the value.")]
+ 7 |     |value| -> first { value };
+   |      ----- value moved here
+...
+10 |     |value| -> second { value };
+   |      ^^^^^ value used here after move
+   |
+help: if `T` implemented `Clone`, you could clone the value
+  --> tests/wire/compile_fail/generic_reuse_without_copy.rs:5:12
+   |
+ 5 | fn invalid<T>(value: T) -> (T, T) {
+   |            ^ consider constraining this type parameter with `Clone`
+ 6 |     #[action("Take the value.")]
+ 7 |     |value| -> first { value };
+   |      ----- you could clone this value
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider restricting type parameter `T` with trait `Copy`
+   |
+ 5 | fn invalid<T: Copy>(value: T) -> (T, T) {
+   |             ++++++

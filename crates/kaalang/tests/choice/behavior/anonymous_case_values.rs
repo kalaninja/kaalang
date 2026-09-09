@@ -1,8 +1,3 @@
-use std::{
-    pin::pin,
-    task::{Context, Poll, Waker},
-};
-
 use kaalang::kaalang;
 
 #[kaalang]
@@ -23,17 +18,11 @@ fn anonymous_case_values(value: i32) -> i32 {
     #[action("Run the doubling.")]
     |double| -> selected { double() };
 
-    #[action("Capture the selected value in an async block.")]
-    |selected| -> pending { async move { selected + 1 } };
+    #[action("Capture the selected value in a closure.")]
+    |selected| -> increment { move || selected + 1 };
 
-    #[action("Resolve the async block.")]
-    |pending| -> result {
-        let pending = pin!(pending);
-        let Poll::Ready(result) = pending.poll(&mut Context::from_waker(Waker::noop())) else {
-            unreachable!("an async block without await points resolves on its first poll")
-        };
-        result
-    };
+    #[action("Run the selected closure.")]
+    |increment| -> result { increment() };
 }
 
 #[test]

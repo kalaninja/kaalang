@@ -1,0 +1,5 @@
+error: this kaalang block runs while the branches of the choice `Which source?` are still separate; give it an input from one branch, or merge those branches above it
+  --> tests/wire/compile_fail/selections_meet_after_disjoint_merges.rs:33:5
+   |
+33 |     #[question("Report?")]
+   |     ^

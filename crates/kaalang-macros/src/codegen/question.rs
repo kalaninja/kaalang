@@ -1,28 +1,10 @@
 //! Emits the `if` that carries a question's two branches.
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{quote, quote_spanned};
+use quote::quote_spanned;
 
-use super::{Bindings, Frame, block_body, input_bindings, join};
-use kaalang_model::{Block, Branch, Flow, Join};
-
-pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
-    let inputs = super::guarded::inputs(block, bindings);
-    let body = block_body(&block.body);
-    let yes = bindings.wire(&block.outputs[0]);
-    let no = bindings.wire(&block.outputs[1]);
-    let yes_gate = bindings.gate_value(&block.outputs[0], &quote!(()));
-    let no_gate = bindings.gate_value(&block.outputs[1], &quote!(()));
-    quote_spanned! {block.span=>
-        if { #inputs #body } {
-            #yes_gate
-            #yes = ::core::option::Option::Some(());
-        } else {
-            #no_gate
-            #no = ::core::option::Option::Some(());
-        }
-    }
-}
+use super::{Bindings, block_body, input_bindings, join};
+use kaalang_model::{Branch, Flow, Join};
 
 pub(crate) fn emit(
     flow: &Flow,
@@ -30,14 +12,11 @@ pub(crate) fn emit(
     index: usize,
     branches: &[Branch; 2],
     converged: Option<&Join>,
-    scope: &[Frame<'_>],
 ) -> TokenStream2 {
     let joins = converged.map_or(&[][..], std::slice::from_ref);
-    let names = join::JoinRouting::new(index, joins.len(), branches, scope);
-    let inner = Frame::nest(scope, index, names.as_ref());
-    let [yes_path, no_path] = branches.each_ref().map(|branch| {
-        super::continuation(flow, &branch.plan, branch.early_return, bindings, &inner)
-    });
+    let [yes_path, no_path] = branches
+        .each_ref()
+        .map(|branch| super::flow(flow, &branch.plan, bindings));
     let block = &flow.blocks[index];
     let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
@@ -60,13 +39,5 @@ pub(crate) fn emit(
         }
     };
 
-    join::emit(
-        flow,
-        bindings,
-        question,
-        joins,
-        names.as_ref(),
-        block.span,
-        scope,
-    )
+    join::emit(flow, bindings, index, joins, question)
 }

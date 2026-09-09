@@ -1,5 +1,0 @@
-error: this kaalang block can still be ready once the `result` wire is available; its work must reach `result`
- --> tests/end/compile_fail/block_ready_with_the_result.rs:8:5
-  |
-8 |     #[action("Work that never reaches the result.")]
-  |     ^

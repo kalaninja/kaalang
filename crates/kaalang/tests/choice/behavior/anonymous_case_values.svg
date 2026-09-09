@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="1028" viewBox="0 0 704 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for anonymous_case_values</title>
-  <desc id="kaalang-description">Nodes: Start: anonymous_case_values(value: i32) -&gt; i32 handing over value; Select: Which transformation? capturing value; Case: Negate the value. handing over negate; Case: Double the value. handing over double; Action: Run the negation. capturing negate handing over selected; Action: Run the doubling. capturing double handing over selected; Action: Capture the selected value in an async block. capturing selected handing over pending; Action: Resolve the async block. capturing pending handing over result; End: i32 capturing result. Connections: Start: anonymous_case_values(value: i32) -&gt; i32 to Select: Which transformation?; Select: Which transformation? to Case: Negate the value.; Select: Which transformation? to Case: Double the value.; Case: Negate the value. to Action: Run the negation.; Case: Double the value. to Action: Run the doubling.; Action: Run the negation. to the selected merge; Action: Run the doubling. to the selected merge; Action: Capture the selected value in an async block. to Action: Resolve the async block.; Action: Resolve the async block. to End: i32; the selected merge to Action: Capture the selected value in an async block..</desc>
+  <desc id="kaalang-description">Nodes: Start: anonymous_case_values(value: i32) -&gt; i32 handing over value; Select: Which transformation? capturing value; Case: Negate the value. handing over negate; Case: Double the value. handing over double; Action: Run the negation. capturing negate handing over selected; Action: Run the doubling. capturing double handing over selected; Action: Capture the selected value in a closure. capturing selected handing over increment; Action: Run the selected closure. capturing increment handing over result; End: i32 capturing result. Connections: Start: anonymous_case_values(value: i32) -&gt; i32 to Select: Which transformation?; Select: Which transformation? to Case: Negate the value.; Select: Which transformation? to Case: Double the value.; Case: Negate the value. to Action: Run the negation.; Case: Double the value. to Action: Run the doubling.; Action: Run the negation. to the selected merge; Action: Run the doubling. to the selected merge; Action: Capture the selected value in a closure. to Action: Run the selected closure.; Action: Run the selected closure. to End: i32; the selected merge to Action: Capture the selected value in a closure..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -28,7 +28,7 @@
     <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
     <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">negate</tspan></text>
     <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">double</tspan></text>
-    <text class="connection-label" x="214" y="761" xml:space="preserve"><tspan x="214" dy="0">pending</tspan></text>
+    <text class="connection-label" x="215" y="761" xml:space="preserve"><tspan x="215" dy="0">increment</tspan></text>
     <text class="connection-label" x="214" y="897" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
@@ -62,14 +62,14 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the doubling.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 697)">
-      <title xml:space="preserve">Capture the selected value in an async block.</title>
+      <title xml:space="preserve">Capture the selected value in a closure.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Capture the selected value in an </tspan><tspan x="-124" dy="18">async block.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Capture the selected value in a </tspan><tspan x="-124" dy="18">closure.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 834)">
-      <title xml:space="preserve">Resolve the async block.</title>
+      <title xml:space="preserve">Run the selected closure.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Resolve the async block.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the selected closure.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 967)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

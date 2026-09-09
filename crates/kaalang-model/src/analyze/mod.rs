@@ -1,8 +1,8 @@
-//! Walks every possible execution of a flow, proving the execution invariants
-//! of RFC 0001 and recording the executions, capture dependencies, and
-//! convergence groups that the rest of the compiler relies on.
+//! Walks every possible execution of a flow in source order, proving the
+//! execution invariants of RFC 0001 and recording the executions, capture
+//! dependencies, and convergence groups that the rest of the compiler relies on.
 
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
 use syn::{Error, Result};
@@ -18,15 +18,16 @@ mod convergence;
 mod end;
 mod merge;
 mod participation;
+mod placement;
 mod question;
 
-/// Explores every branch selection and every permitted order of ready
-/// computational blocks. Returns the executions and convergence groups in
-/// canonical order, or the earliest authored violation: a walk error first,
-/// then an unreachable block, then a producer occurrence that no execution
-/// captures, then an invalid branch-output continuation, then a block decided
-/// by independent questions or choices, then an invalid wire merge or
-/// shared continuation.
+/// Walks the blocks in source order under every branch selection. Returns the
+/// executions and convergence groups in canonical order, or the earliest
+/// authored violation: a walk error first, then a block placed inside open
+/// branches, then an execution without `result`, then an unreachable block,
+/// then a producer occurrence that no execution captures, then an invalid
+/// branch-output continuation, then a block decided by independent questions
+/// or choices, then an invalid wire merge or shared continuation.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
     let end = flow.blocks.len() - 1;
     debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
@@ -34,42 +35,63 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         flow,
         end,
         result: flow.blocks[end].inputs[0].ident.clone(),
-        visited: HashSet::new(),
         executions: BTreeSet::new(),
         error: None,
+        incomplete: None,
     };
-    walk.visit(State {
-        available: flow
-            .flow_inputs
-            .iter()
-            .enumerate()
-            .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
-            .collect(),
-        produced: flow.flow_inputs.iter().cloned().collect(),
-        executed: BTreeSet::new(),
-        branches: BTreeSet::new(),
-        dependencies: BTreeSet::new(),
-    });
+    walk.visit(
+        0,
+        State {
+            available: flow
+                .flow_inputs
+                .iter()
+                .enumerate()
+                .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
+                .collect(),
+            produced: flow.flow_inputs.iter().cloned().collect(),
+            executed: BTreeSet::new(),
+            branches: BTreeSet::new(),
+            dependencies: BTreeSet::new(),
+        },
+    );
     if let Some((_, error)) = walk.error {
         return Err(error);
     }
 
-    let mut executions = walk.executions.into_iter().collect::<Vec<_>>();
+    let executions = walk.executions.into_iter().collect::<Vec<_>>();
+    let mut merges = merge::collect(flow);
+    let owners = merge::completion(flow, &executions, &mut merges);
+    placement::flow(flow, &executions, &merges, &owners)?;
+    if let Some(error) = walk.incomplete {
+        return Err(error);
+    }
     reachable(flow, &executions)?;
     captured(flow, &executions)?;
     branch_outputs(flow, &executions)?;
-    let precedence = executions
+    let captures = executions
         .iter()
         .map(|execution| predecessors(flow.blocks.len(), execution, &[]))
         .collect::<Vec<_>>();
-    participation::flow(flow, &executions, &precedence)?;
-    let merges = merge::flow(flow, &mut executions)?;
+    participation::flow(flow, &executions, &captures)?;
+    let merges = merge::flow(flow, &executions, merges, owners)?;
     let precedence = executions
         .iter()
         .map(|execution| predecessors(flow.blocks.len(), execution, &merges))
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
     Ok((executions, convergence_groups, merges))
+}
+
+/// Reports whether one producer occurrence provides its wire in this execution.
+/// A branch output does so only when its own branch was selected.
+fn produced(execution: &Execution, producer: ProducerId) -> bool {
+    let ProducerId::BlockOutput { block, output } = producer else {
+        return false;
+    };
+    execution.participates(block)
+        && execution
+            .selected(block)
+            .is_none_or(|branch| branch == output)
 }
 
 /// The one question or choice that both executions run with different
@@ -85,9 +107,9 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
     differing.next().is_none().then_some(first)
 }
 
-/// The transitive predecessors of every block in one execution. Implicit merge
-/// order can precede an earlier-authored question, so authored order is no
-/// longer topological.
+/// The transitive predecessors of every block in one execution: its capture
+/// dependencies together with the branch-local work and producers each wire
+/// merge closes before its consumers.
 // ponytail: the closure costs O(blocks³) per execution; switch to a DAG walk
 // if flows reach hundreds of blocks with many executions.
 fn predecessors(
@@ -96,9 +118,6 @@ fn predecessors(
     merges: &[WireMerge],
 ) -> Vec<BTreeSet<usize>> {
     let mut preceding = vec![BTreeSet::new(); blocks];
-    for &(before, after) in &execution.ordering {
-        preceding[after].insert(before);
-    }
     for dependency in &execution.dependencies {
         if let ProducerId::BlockOutput { block, .. } = dependency.producer {
             preceding[dependency.capture.block].insert(block);
@@ -132,12 +151,12 @@ fn predecessors(
     preceding
 }
 
-/// One point of one execution. Every component is kept in stable order, so
-/// two serial orders of independent blocks reach the same state and the walk
-/// visits it once.
-#[derive(Clone, PartialEq, Eq, Hash)]
+/// One point of one execution, reached after the blocks above the current
+/// source position have had their turn.
+#[derive(Clone)]
 struct State {
-    /// Every wire a block may still capture, with the occurrence providing it.
+    /// Every wire this execution has provided, with the occurrence providing
+    /// it. A bare capture does not remove it: Rust owns move checking.
     available: BTreeMap<Ident, ProducerId>,
     /// Every wire name this execution has produced, flow inputs included.
     produced: BTreeSet<Ident>,
@@ -147,7 +166,7 @@ struct State {
 }
 
 impl State {
-    /// Records the capture dependencies of a block and consumes its bare inputs.
+    /// Records the capture dependencies of a participating block.
     fn enter(&mut self, flow: &Flow, block: usize) {
         for (index, input) in flow.blocks[block].inputs.iter().enumerate() {
             let producer = self.available[&input.ident];
@@ -158,9 +177,6 @@ impl State {
                     input: index,
                 },
             });
-            if !input.borrowed {
-                self.available.remove(&input.ident);
-            }
         }
         self.executed.insert(block);
     }
@@ -171,10 +187,12 @@ struct Walk<'a> {
     end: usize,
     /// The wire the implicit end block captures.
     result: Ident,
-    visited: HashSet<State>,
     executions: BTreeSet<Execution>,
     /// The earliest authored violation so far, keyed by block and occurrence.
     error: Option<((usize, usize), Error)>,
+    /// An execution that reaches the end of the flow without `result`. Reported
+    /// after branch placement, which explains such an execution more directly.
+    incomplete: Option<Error>,
 }
 
 impl Walk<'_> {
@@ -188,50 +206,34 @@ impl Walk<'_> {
         }
     }
 
-    // ponytail: every subset of independent blocks is a distinct state, so the
-    // walk is exponential in their number; flows are small enough that a
-    // smarter partial-order reduction has not been worth it.
-    fn visit(&mut self, state: State) {
-        if !self.visited.insert(state.clone()) {
-            return;
-        }
-        let ready = self.ready(&state);
-        if let Some((block, wire)) = self.conflict(&ready) {
-            self.report(
-                (block, 0),
-                Error::new(
-                    self.flow.blocks[block].span,
-                    format!(
-                        "kaalang blocks that are ready for the same wire `{wire}` must both borrow it; add an explicit dependency"
-                    ),
-                ),
-            );
-            return;
-        }
-        if ready.is_empty() {
+    /// Gives each block from `index` on its turn, in source order. A block
+    /// whose inputs this execution has all provided participates; the others
+    /// belong to branches this execution did not select.
+    fn visit(&mut self, index: usize, mut state: State) {
+        if index == self.end {
             self.finish(state);
             return;
         }
-        // The end block is ready with `result`, so no computational block may
-        // still be ready: nothing would order its work before the flow finishes.
-        // The capture-conflict check above closes the other escape, a block that
-        // could only run before the producer by taking a wire away from it.
-        if let Some(&block) = ready.first()
-            && state.available.contains_key(&self.result)
+        let block = &self.flow.blocks[index];
+        if !block
+            .inputs
+            .iter()
+            .all(|input| state.available.contains_key(&input.ident))
         {
-            self.report((block, 0), end::still_ready(&self.flow.blocks[block]));
+            self.visit(index + 1, state);
             return;
         }
-
-        for &block in &ready {
-            let mut next = state.clone();
-            next.enter(self.flow, block);
-            match self.flow.blocks[block].kind {
-                BlockKind::Action => action::visit(self, block, next),
-                BlockKind::Question => question::visit(self, block, &next),
-                BlockKind::Choice => choice::visit(self, block, &next),
-                BlockKind::End => unreachable!("end is never in the ready set"),
-            }
+        // `result` finishes an execution, so nothing participating may follow it.
+        if state.available.contains_key(&self.result) {
+            self.report((index, 0), end::after_result(block));
+            return;
+        }
+        state.enter(self.flow, index);
+        match block.kind {
+            BlockKind::Action => action::visit(self, index, state),
+            BlockKind::Question => question::visit(self, index, &state),
+            BlockKind::Choice => choice::visit(self, index, &state),
+            BlockKind::End => unreachable!("the end block closes the walk"),
         }
     }
 
@@ -244,39 +246,9 @@ impl Walk<'_> {
                 branch: output,
             });
             if self.produce(&mut branch, block, output) {
-                self.visit(branch);
+                self.visit(block + 1, branch);
             }
         }
-    }
-
-    /// The unexecuted computational blocks whose inputs are all available.
-    fn ready(&self, state: &State) -> Vec<usize> {
-        (0..self.end)
-            .filter(|block| {
-                !state.executed.contains(block)
-                    && self.flow.blocks[*block]
-                        .inputs
-                        .iter()
-                        .all(|input| state.available.contains_key(&input.ident))
-            })
-            .collect()
-    }
-
-    /// Two ready blocks may share an input only when both borrow it. Reports
-    /// the earliest authored block that conflicts with an earlier ready block.
-    fn conflict(&self, ready: &[usize]) -> Option<(usize, Ident)> {
-        for (position, &later) in ready.iter().enumerate() {
-            for &earlier in &ready[..position] {
-                for first in &self.flow.blocks[earlier].inputs {
-                    for second in &self.flow.blocks[later].inputs {
-                        if first.ident == second.ident && !(first.borrowed && second.borrowed) {
-                            return Some((later, second.ident.clone()));
-                        }
-                    }
-                }
-            }
-        }
-        None
     }
 
     /// Makes one output available unless this execution already produced its name.
@@ -307,7 +279,6 @@ impl Walk<'_> {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
-            ordering: Vec::new(),
         });
     }
 }

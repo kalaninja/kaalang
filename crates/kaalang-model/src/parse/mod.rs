@@ -16,6 +16,12 @@ mod question;
 
 /// Parses a flow function into its named flow inputs and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
+    if let Some(asyncness) = &function.sig.asyncness {
+        return Err(Error::new(
+            asyncness.span(),
+            "kaalang 0.1 does not support async flows",
+        ));
+    }
     Ok(Flow {
         flow_inputs: flow_inputs(function)?,
         blocks: blocks(function)?,
@@ -258,12 +264,21 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
         ));
     }
 
+    // With the output arrow optional, an unbraced body would otherwise parse.
+    let body = closure.body.as_ref();
+    if !matches!(body, Expr::Block(block) if block.attrs.is_empty() && block.label.is_none()) {
+        return Err(Error::new_spanned(
+            body,
+            "a kaalang block body must be a braced block",
+        ));
+    }
+
     let inputs = closure
         .inputs
         .iter()
         .map(block_input)
         .collect::<Result<_>>()?;
-    Ok((inputs, closure.body.as_ref().clone()))
+    Ok((inputs, body.clone()))
 }
 
 /// Parses one consuming or borrowing block input.
@@ -336,23 +351,16 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
 
 /// Parses output wire declarations from the closure return position.
 ///
-/// Every block declares at least one output: a block that produces no wire
-/// could still be ready once the flow's `result` wire is available.
+/// An omitted arrow and `-> ()` both declare no wires. The span they report is
+/// the closing bar and the empty tuple respectively, so a kind that requires
+/// outputs still points at the declaration.
 fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, Span)> {
     let ReturnType::Type(_, output) = &closure.output else {
-        return Err(Error::new(
-            closure.inputs_end.span(),
-            "a kaalang block must declare its outputs after `->`",
-        ));
+        return Ok((Vec::new(), closure.inputs_end.span()));
     };
 
     let outputs = match output.as_ref() {
-        Type::Tuple(tuple) if tuple.elems.is_empty() => {
-            return Err(Error::new_spanned(
-                output,
-                "a kaalang block must declare at least one output",
-            ));
-        }
+        Type::Tuple(tuple) if tuple.elems.is_empty() => Vec::new(),
         Type::Tuple(tuple) => tuple
             .elems
             .iter()
@@ -483,13 +491,48 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_output_tuple_is_rejected_for_every_block_kind() {
-        let action: ItemFn = parse_quote! {
-            fn effects(input: u32) {
-                #[action("Consume the input without producing a wire.")]
-                |input| -> () { drop(input) };
+    fn an_action_may_declare_no_outputs_in_either_spelling() {
+        for function in [
+            parse_quote! {
+                fn effects(input: u32) {
+                    #[action("Take the input without producing a wire.")]
+                    |input| -> () { drop(input) };
+                    #[action("Finish.")]
+                    || -> result {};
+                }
+            },
+            parse_quote! {
+                fn effects(input: u32) {
+                    #[action("Take the input without producing a wire.")]
+                    |input| { drop(input) };
+                    #[action("Finish.")]
+                    || -> result {};
+                }
+            },
+        ] {
+            let flow: ItemFn = function;
+            let flow = super::flow(&flow).expect("an action may declare no outputs");
+            assert!(flow.blocks[0].outputs.is_empty());
+        }
+    }
+
+    #[test]
+    fn an_unbraced_body_is_rejected() {
+        let function: ItemFn = parse_quote! {
+            fn invalid(input: u32) -> u32 {
+                #[action("Double the input.")]
+                |input| input * 2;
             }
         };
+
+        assert_eq!(
+            error(&function),
+            "a kaalang block body must be a braced block"
+        );
+    }
+
+    #[test]
+    fn an_empty_output_tuple_is_rejected_for_a_question_and_a_choice() {
         let question: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
                 #[question("Ask without outputs.")]
@@ -510,12 +553,14 @@ mod tests {
             }
         };
 
-        for function in [action, question, choice] {
-            assert_eq!(
-                error(&function),
-                "a kaalang block must declare at least one output"
-            );
-        }
+        assert_eq!(
+            error(&question),
+            "a kaalang question must declare exactly two outputs"
+        );
+        assert_eq!(
+            error(&choice),
+            "a kaalang choice must declare exactly one output for each case"
+        );
     }
 
     fn error(function: &ItemFn) -> String {

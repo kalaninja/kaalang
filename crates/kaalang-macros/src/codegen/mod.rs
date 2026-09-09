@@ -11,11 +11,8 @@ use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
 mod action;
 mod choice;
 mod end;
-mod guarded;
 mod join;
 mod question;
-
-pub(crate) use join::Frame;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -88,7 +85,7 @@ impl Bindings {
         // Keep the helper item outside authored scopes: item names resolve at
         // the call site even under mixed-site hygiene, so a flow-level item
         // would be reachable from an authored body. The function marker carries
-        // the type without inheriting its auto traits across awaits.
+        // the inferred type without storing a value of it.
         let declaration = quote! {
             const fn #check<T: ?Sized>(_: &::core::marker::PhantomData<fn(&T)>, _: &T) {}
         };
@@ -118,53 +115,27 @@ pub(crate) fn tuple(span: Span, idents: &[Ident]) -> TokenStream2 {
 }
 
 /// Emits the Rust that runs one verified plan. The plan already proves every
-/// kaalang invariant, so nothing here reports an error to the author. `scope`
-/// lists the questions and choices enclosing the plan, outermost first.
-pub(crate) fn flow(
-    flow: &Flow,
-    plan: &ExecutionPlan,
-    bindings: &Bindings,
-    scope: &[Frame<'_>],
-) -> TokenStream2 {
+/// kaalang invariant, including the destination of every branch exit.
+pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
-        ExecutionPlan::Action { index, next } => action::emit(flow, bindings, *index, next, scope),
-        ExecutionPlan::Guarded { inputs, blocks } => guarded::emit(flow, bindings, inputs, blocks),
+        ExecutionPlan::Action { index, next } => action::emit(flow, bindings, *index, next),
         ExecutionPlan::Question {
             index,
             branches,
             join,
-        } => question::emit(flow, bindings, *index, branches, join.as_ref(), scope),
+        } => question::emit(flow, bindings, *index, branches, join.as_ref()),
         ExecutionPlan::Choice {
             index,
             branches,
             joins,
-        } => choice::emit(flow, bindings, *index, branches, joins, scope),
+        } => choice::emit(flow, bindings, *index, branches, joins),
         ExecutionPlan::End { body, .. } => {
             let gates = bindings.gate_declarations();
-            let body = self::flow(flow, body, bindings, scope);
+            let body = self::flow(flow, body, bindings);
             quote!(#gates #body)
         }
         ExecutionPlan::EndArrival { result } => end::arrival(bindings, result),
-        ExecutionPlan::Yield { wires, join } => join::yield_value(bindings, wires, *join, scope),
-    }
-}
-
-/// A branch or join continuation that ends the flow returns outright when a
-/// sibling yields to a join, because the enclosing expression then carries the
-/// yielded value. Branch and join plans must be lowered through this function,
-/// never through `flow`, which would drop that early return.
-fn continuation(
-    flow: &Flow,
-    plan: &ExecutionPlan,
-    early_return: bool,
-    bindings: &Bindings,
-    scope: &[Frame<'_>],
-) -> TokenStream2 {
-    let tokens = self::flow(flow, plan, bindings, scope);
-    if early_return {
-        quote!(return { #tokens })
-    } else {
-        tokens
+        ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     }
 }
 
@@ -180,11 +151,15 @@ pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
 }
 
 /// Emits block-local aliases for explicitly listed input wires.
+///
+/// Each alias reads the wire at the capture's own span. Rust owns move and
+/// borrow checking, so its diagnostics must name the block that took the value
+/// rather than the one that produced it.
 pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
     let bindings = inputs.iter().map(|input| {
         // The alias keeps the authored spelling, so a wire named `r#type` binds.
         let alias = &input.alias;
-        let wire = bindings.wire(&input.ident);
+        let wire = bindings.wire_at(&input.ident);
         let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
         quote_spanned!(alias.span()=>
             #[allow(unused_variables, clippy::let_unit_value)]

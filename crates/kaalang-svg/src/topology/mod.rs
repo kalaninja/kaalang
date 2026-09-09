@@ -4,8 +4,8 @@
 //!
 //! RFC 0002 §7 defines the drawn connections as the union, over every possible
 //! execution, of the direct precedence between participating nodes. This module
-//! preserves the model's dependencies and merges, using its verified execution
-//! plan to put independent computation in the same serial order as codegen.
+//! preserves the model's dependencies and merges, reading its verified
+//! execution plan for the same source order codegen emits.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -197,8 +197,10 @@ impl Topology {
             .filter(move |connection| Vertex::from(connection.source) == vertex)
     }
 
-    /// Equal displayed lists share a label only at the sole connection between
-    /// their ends. `name`, `&name`, and the empty-input marker never match.
+    /// Equal, nonempty displayed lists share a label only at the sole connection
+    /// between their ends. `name`, `&name`, and the empty-input marker never
+    /// match, and an exit handing over nothing shares no label with a node that
+    /// shows no capture list either.
     ///
     /// Only the outdegree check is reached by an authored flow, at a select
     /// distributor: alternatives meet at a junction, so no node in the current
@@ -212,7 +214,8 @@ impl Topology {
         };
         // ponytail: two scans of every connection per label; keep counts beside
         // the exits if a diagram ever outgrows a few dozen connections.
-        self.handover(exit) == self.capture_label(node)
+        !self.handover(exit).is_empty()
+            && self.handover(exit) == self.capture_label(node)
             && self.leaving(exit).count() == 1
             && self.incoming(Vertex::Node(node)).count() == 1
     }
@@ -317,9 +320,6 @@ fn precedes(model: &SemanticModel) -> Vec<BTreeSet<usize>> {
     let blocks = model.flow.blocks.len();
     let mut later = vec![BTreeSet::new(); blocks];
     for execution in &model.executions {
-        for &(before, after) in &execution.ordering {
-            later[before].insert(after);
-        }
         for dependency in &execution.dependencies {
             if let ProducerId::BlockOutput { block, .. } = dependency.producer {
                 later[block].insert(dependency.capture.block);
@@ -518,11 +518,11 @@ fn connections(
 
 /// The selected serial route before capture dependencies and merges are added.
 ///
-/// Where the step just taken provides a merged wire, the route continues from
-/// that wire's junction rather than from the block's own exit: the alternatives
-/// rejoin there, and one connection carries on. Continuing from each producer
-/// instead would run the spine past the junction, leaving the merge a parallel
-/// path beside it that no lane order can separate.
+/// Where the step just taken completes a merged wire's branch-local work, the
+/// route continues from that wire's junction rather than from the block's own
+/// exit: the alternatives rejoin there, and one connection carries on.
+/// Continuing from each producer instead would run the spine past the junction,
+/// leaving the merge a parallel path beside it that no lane order can separate.
 fn serial_connections(
     model: &SemanticModel,
     execution: &Execution,
@@ -551,22 +551,24 @@ fn serial_connections(
         // block's own exit; hopping to the junction would invert that order.
         previous = steps
             .peek()
-            .and_then(|&next| junction_after(model, merges, exit, next))
+            .and_then(|&next| junction_after(model, execution, merges, block, next))
             .map_or(exit, Source::Junction);
     }
     direct
 }
 
-/// The junction the route may continue from after leaving `exit`: one this exit
-/// provides, which `next` is not owed branch-local work before. An exit feeding
-/// several junctions continues from the first, which is enough: the others keep
-/// their own producer connections either way.
+/// The junction the route may continue from after `block`: one this execution
+/// reaches, whose last producer or branch-local block has just finished. An
+/// exit feeding several junctions continues from the first, which is enough:
+/// the others keep their own producer connections either way.
 fn junction_after(
     model: &SemanticModel,
+    execution: &Execution,
     merges: &[Vec<usize>],
-    exit: Source,
+    block: usize,
     next: usize,
 ) -> Option<usize> {
+    let exit = selected_exit(model, execution, block);
     merges.iter().position(|group| {
         group
             .iter()
@@ -576,17 +578,21 @@ fn junction_after(
                     && merge
                         .producers
                         .iter()
-                        .any(|&producer| source(model, producer) == exit)
+                        .any(|&producer| produced(model, execution, producer))
+                    && (merge.before.contains(&block)
+                        || merge
+                            .producers
+                            .iter()
+                            .any(|&producer| source(model, producer) == exit))
             })
     })
 }
 
 /// Each body occurs once in the verified plan. Visiting branches before their
-/// joins gives the actual run order when filtered by an execution's participants,
-/// including guarded suffixes and branches yielding to an outer join.
+/// joins gives the source order when filtered by an execution's participants,
+/// including branches yielding to an outer join.
 fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     match plan {
-        ExecutionPlan::Guarded { blocks, .. } => order.extend(blocks),
         ExecutionPlan::Action { index, next } => {
             order.push(*index);
             serial_order(next, order);

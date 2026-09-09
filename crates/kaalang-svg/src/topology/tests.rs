@@ -185,7 +185,7 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
 }
 
 #[test]
-fn a_merge_precedes_the_question_that_selects_its_consumers() {
+fn a_merge_written_above_a_question_reaches_it_first() {
     let source =
         include_str!("../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs");
     let topology = fixture(source, "a_branch_captures_a_merged_value");
@@ -265,18 +265,18 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     }
 }
 
-/// Plan 04: ordering a branch-local block before a merge invents no hand-over
-/// and no capture. The junction lies on the path from both producers and from
-/// the branch-local note block.
+/// A branch-local block written above a merge invents no hand-over and no
+/// capture. The junction lies on the path from both producers and from the
+/// branch-local note block.
 #[test]
-fn ordering_a_branch_local_block_before_a_merge_invents_no_label() {
+fn a_branch_local_block_before_a_merge_invents_no_label() {
     let topology = fixture(
         include_str!("../../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
         "local_work_before_a_wire_merge",
     );
-    let note = NodeId::Block(4);
-    // `selected` and `noted` arrive from the same two exits, so plan 04 gives
-    // them one junction.
+    let note = NodeId::Block(3);
+    // `selected` and `noted` arrive from the same two exits, so they share one
+    // junction.
     assert_eq!(topology.junctions.len(), 1);
     assert_eq!(topology.junctions[0].wires, ["selected", "noted"]);
 
@@ -287,9 +287,9 @@ fn ordering_a_branch_local_block_before_a_merge_invents_no_label() {
         );
     }
 
-    // The note block keeps its authored labels: the ordering connection adds
+    // The note block keeps its authored labels: reaching the junction adds
     // neither a hand-over of the merged wire nor a capture of it.
     assert_eq!(topology.capture(note), ["local_note", "&order"]);
     assert_eq!(topology.handover(ExitId::of(note)), ["noted"]);
-    assert_eq!(topology.capture(NodeId::Block(3)), ["selected", "&order"]);
+    assert_eq!(topology.capture(NodeId::Block(4)), ["selected", "&order"]);
 }

@@ -1,5 +1,0 @@
-error: this kaalang block must finish before the `left_value` wire merge, but it waits for a value from after that merge
-  --> tests/wire/compile_fail/crossed_convergences.rs:25:5
-   |
-25 |     #[action("Use the right value inside the left branch.")]
-   |     ^

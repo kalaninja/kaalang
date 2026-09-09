@@ -1,7 +1,9 @@
 use kaalang::kaalang;
 
-// The work needs both selected outputs, so three of the four executions leave
-// the flow without its `result` wire.
+// The flow breaks two rules at once. The second question opens its branches
+// while the first question's are still separate, and the work needing both
+// selected outputs leaves three of the four executions without a `result`
+// wire. Branch placement is the diagnostic reported.
 #[kaalang]
 fn invalid(left: bool, right: bool) -> u8 {
     #[question("Enable the left input.")]

@@ -30,8 +30,8 @@ follows the branch order defined by RFC 0002. This is normally that branch's own
 column; if the branch contains a nested question or choice, its route may reach
 that node in another column. Other branches of the group route to the same node.
 
-When a shared continuation has several independent entry blocks, draw them
-sequentially in the verified execution plan's order. They share the column
+When a shared continuation has several entry blocks, draw them sequentially in
+source order. They share the column
 reached by the group's first branch. Other branches meet before the sequence;
 connections carry later captures transitively through it.
 

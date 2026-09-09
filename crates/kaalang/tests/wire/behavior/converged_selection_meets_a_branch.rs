@@ -2,9 +2,6 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
-    #[question("Left enabled?")]
-    |left| -> (a, left_no) { left };
-
     #[question("Right enabled?")]
     |right| -> (b, right_no) { right };
 
@@ -13,6 +10,9 @@ fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
 
     #[action("Provide no right value.")]
     |right_no| -> right_value { None };
+
+    #[question("Left enabled?")]
+    |left| -> (a, left_no) { left };
 
     #[action("Work with the right value.")]
     |a, right_value| -> result { right_value.unwrap_or(0) + 10 };

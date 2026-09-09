@@ -8,7 +8,7 @@ use super::{State, Walk};
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
     let outputs = walk.flow.blocks[block].outputs.len();
     if (0..outputs).all(|output| walk.produce(&mut state, block, output)) {
-        walk.visit(state);
+        walk.visit(block + 1, state);
     }
 }
 

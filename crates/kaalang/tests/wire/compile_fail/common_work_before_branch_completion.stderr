@@ -1,0 +1,5 @@
+error: this kaalang block runs while the branches of the question `Choose the value.` are still separate; give it an input from one branch, or merge those branches above it
+  --> tests/wire/compile_fail/common_work_before_branch_completion.rs:14:5
+   |
+14 |     #[action("Common effect.")]
+   |     ^

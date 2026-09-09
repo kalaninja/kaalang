@@ -19,8 +19,8 @@ alternative branches. Every completed execution produces the flow's `result`
 wire, which the implicit end block captures.
 
 A flow is written as an ordinary Rust function marked with `#[kaalang]`.
-Wire dependencies determine which blocks are ready; independent ready blocks
-may execute in any order.
+Source order is execution order: each block runs where it is written, in every
+execution that reaches it.
 
 This RFC defines kaalang's syntax and semantics. [RFC 0004: kaalang Rust
 Lowering](0004-rust-lowering.md) describes how the language is translated to
@@ -39,8 +39,8 @@ or visualization:
 - a **block** is one unit of a flow; its inputs name the wires it captures, and
   its outputs name the wires it produces. Every block but the end block is
   authored;
-- an **input** names an available wire captured by a block; a bare input
-  consumes the wire, while a `&` input borrows it;
+- an **input** names an available wire captured by a block; a bare input binds
+  the wire's value, while a `&` input binds a shared reference to it;
 - an **output** declares a wire produced by a block;
 - a **producer** is one occurrence of a named flow input or block output that
   provides a wire;
@@ -52,9 +52,9 @@ or visualization:
   consumer executes, the capture resolves to one available producer occurrence;
 - a **capture dependency** exists from a producer occurrence to a consumer when
   at least one possible execution can resolve one of the consumer's captures to
-  that occurrence. Such an execution respects branch selection, wire
-  availability, and consumption; an equal wire name alone does not establish a
-  capture dependency. The dependency participates in every execution where that
+  that occurrence. Such an execution respects branch selection and wire
+  availability; an equal wire name alone does not establish a capture
+  dependency. The dependency participates in every execution where that
   resolution occurs;
 - a **wire** is a named value provided by a producer and available for capture
   by block inputs;
@@ -64,16 +64,16 @@ or visualization:
   and is consumed by its implicit merge, or, for a name with no alternative
   producers, by at most one block whenever that output is selected;
 - a **case** describes one branch of a choice and is not itself a block;
-- a **path** is one dependency-ordered chain of blocks through selected
-  branches; one execution may contain several paths;
-- **independent blocks** can execute in either order without changing the
-  availability of each other's inputs;
+- the **branch ancestry** of a block is the set of branches it belongs to: a
+  block belongs to a branch when it captures that branch's output, or a wire
+  produced by a block that belongs to the branch. A wire with alternative
+  producers carries only the ancestry all of them share;
 - a question or choice **decides** a block when two executions that select
   different branches of it, and the same branch of every other question or
   choice they both run, differ in whether the block executes;
 - the **continuation** of a branch is the set of computational blocks whose
-  readiness can transitively depend on that branch's selected output through a
-  chain of capture dependencies and implicit wire order participating in one
+  participation can transitively depend on that branch's selected output
+  through a chain of capture dependencies and wire merges participating in one
   possible execution that selects the branch; the end block is not part of a
   continuation;
 - relative to one question or choice, the **branch set** of a downstream block
@@ -112,28 +112,29 @@ therefore carries no attribute at all.
 Source comments remain ordinary Rust comments. Block and case descriptions come
 from their attributes.
 
-Every authored block declares at least one output. A block that produced none
-could never be ordered before the flow finishes, so section 7 would reject it;
-the grammar rejects it first.
+An action may declare no outputs; a question and a choice must declare theirs.
+An omitted arrow and `-> ()` both declare none, and the body of such a block
+must evaluate to `()`, which Rust checks. The braces are never optional:
+`|input| expr;` is rejected.
 
 An authored computational block body must not use a `return` expression or the
 `?` operator in its own control-flow scope; it can complete only by normal
-evaluation. Occurrences inside a nested closure, async block, or item definition
-belong to that nested Rust construct and are permitted. Macro token streams are
-opaque to this validation.
+evaluation. Occurrences inside a nested Rust construct with its own
+control-flow scope, such as a closure or item definition, belong to that
+construct and are permitted. Macro token streams are opaque to this validation.
 
 ## 4. Block kinds
 
 | Block kind | Meaning | Inputs | Outputs |
 | --- | --- | --- | --- |
-| **action** | performs a computation or effect | zero or more | one or more |
+| **action** | performs a computation or effect | zero or more | zero or more |
 | **question** | evaluates a logical expression and selects one of two branches | one or more | exactly two unit-valued control wires, one per branch |
 | **choice** | selects one of two or more cases and provides a value to the corresponding branch | one or more | one per case, at least two |
 | **end** | the implicit block that finishes a flow | the `result` wire | none |
 
 ### 4.1 action
 
-An action evaluates its body and declares one or more outputs:
+An action evaluates its body and declares zero or more outputs:
 
 ```rust
 #[action("Split the value.")]
@@ -147,8 +148,18 @@ bare `output` and singleton tuple `(output,)` declarations are equivalent. With
 two or more outputs, the body's outer tuple is destructured positionally. Rust
 checks that the body value has the required shape.
 
-An action that consumes no wires and performs only an effect declares a named
-unit-valued wire, which is also how an action establishes an order explicitly:
+An action that only performs an effect declares no outputs. Its body evaluates
+to `()`, and the block hands nothing over:
+
+```rust
+#[action("Log the value.")]
+|&value| {
+    println!("{value}")
+};
+```
+
+A named unit-valued output remains useful when a later block in the same branch
+has to capture something the effect provides:
 
 ```rust
 #[action("Log flow entry.")]
@@ -236,6 +247,9 @@ A flow returning unit produces a unit-valued `result` like any other wire;
 kaalang has no zero-input end block and no implicit unit wire.
 
 ## 5. Flow inputs and outputs
+
+kaalang v0.1 supports synchronous Rust functions, including `const fn`.
+An `async fn` cannot declare a flow.
 
 Function parameters declare flow inputs. Parameters written as simple
 identifiers provide wires. A wildcard parameter (`_`) accepts
@@ -326,14 +340,19 @@ logical wire.
 
 A logical wire normally has one producer. Several blocks may declare the same
 output name only when they are alternative producers. This is not sequential
-shadowing: one execution cannot produce the same logical wire twice even if the
-earlier value was consumed.
+shadowing: one execution cannot produce the same logical wire twice, whatever a
+block did with the earlier value.
 
 Repeating an output name always declares a merge, including when different
 blocks capture that name or its leading underscore permits it to remain unused.
 Every capture names the merged wire. A consumer's other inputs cannot select a
 particular producer occurrence before the merge. Branch-local values must use
 different names; a local borrow of a repeated name does not bypass its merge.
+
+The selected value passes into the merge's shared lexical scope even when no
+later block captures it. A leading underscore only permits a missing capture;
+it does not suppress the merge or shorten the value's scope. Outputs with
+different names remain distinct branch-local values.
 
 Raw and ordinary spellings of the same Rust identifier name the same wire, so
 `value` and `r#value` are interchangeable. Every producer occurrence is authored
@@ -346,8 +365,9 @@ flow finishes.
 Every producer occurrence, a named flow input or a block output, must have at
 least one capture dependency to a later block or the end block unless its name
 begins with `_`; that prefix permits the occurrence to have no consumer. A block
-all of whose outputs may remain uncaptured is still invalid, because nothing
-would order it before the flow finishes (section 7). For flow inputs, action
+may leave every output uncaptured, and an action may declare none at all: source
+order places it whether or not anything reads what it provides. For flow inputs,
+action
 outputs, and merged wires, this requirement is existential rather than
 per-execution: one possible execution establishing the dependency is sufficient.
 A question or choice output without alternative producers must be captured by
@@ -381,9 +401,29 @@ Each computational block lists every wire available to its body:
 
 Inputs have two forms:
 
-- `name` consumes the wire in the current execution;
-- `&name` borrows the wire and leaves it available to later blocks in that
-  execution.
+- `name` binds the wire's value by ordinary Rust assignment, so a `Copy` type
+  copies and any other type moves;
+- `&name` binds a shared reference to the wire.
+
+The end of a borrowing block ends its input alias. The underlying owner follows
+the scope of its wire binding. A value created only inside one branch and not
+carried out through the merge remains local to that branch; any remaining owned
+value is dropped when the branch scope ends. Its scope is not extended to keep
+a derived reference alive. Rust rejects a reference crossing the merge when
+its owner remains inside the finished branch.
+
+An owner bound before a selection remains in its enclosing scope and is not
+transferred again by that selection's merge. An owner carried through a merge
+is available in its shared continuation, whether or not it is captured there.
+An owner from a partial merge stays in that partial continuation's scope unless
+the same name has alternatives reaching the wider merge. Values without those
+alternatives end with the partial scope.
+
+For release earlier than scope exit, capture the resource by value and
+explicitly drop it before the operation that needs it released. Rust rejects
+the move if a live output still borrows the resource. Capturing a
+branch-specific resource in a common action still requires it to be provided
+wherever that action executes.
 
 The outputs of one action appear together: an execution that runs the action
 produces all of them, so they are ordinary data wires that later blocks borrow
@@ -417,50 +457,56 @@ same-named downstream input does not depend on a particular producer occurrence
 unless some possible execution can reach the consumer with that occurrence's
 value available.
 
-Consumption is a kaalang rule independent of Rust's `Copy` trait. A block body
-receives local bindings only for its listed inputs, so omitted and consumed
+A block body receives local bindings only for its listed inputs, so omitted
 wires are out of scope. Rust locals declared inside a block remain local to that
 body and may reuse a wire's spelling without changing wire resolution.
 
-Rust checks block body types, concrete wire types, moves, borrows, match
-exhaustiveness, alternative producer type agreement, and output destructuring.
-kaalang keeps types out of wire declarations and relies on Rust inference.
+Rust checks block body types, concrete wire types, repeated uses, moves,
+borrows, match exhaustiveness, alternative producer type agreement, and output
+destructuring. kaalang keeps types out of wire declarations and relies on Rust
+inference. It does not detect `Copy`, insert clones, or order a borrowing
+capture against a consuming one.
 
 ## 7. Execution and implicit convergence
 
-A computational block is ready when all its inputs are available and the
-implicit wire order described below is satisfied. An action with no inputs is
-ready when the flow begins. At each execution step, any ready computational
-block may execute. Ready blocks are independent when executing
-one cannot change the availability of another's inputs. Independent ready
-blocks may execute in any order; kaalang does not thereby guarantee concurrent
-execution. If order matters, a wire from one block's output to another block's
-input must establish the dependency.
+Source order is the order of block declarations in the flow body. For each
+branch selection, every participating block executes once in that order. The
+compiler neither rearranges blocks nor stops an execution early to hide later
+participating work.
 
-Validation rejects a flow that can make non-independent blocks ready together.
-In particular, two consuming blocks, or a consuming and a borrowing block,
-cannot be ready for the same wire at the same time. This capture-conflict check
-uses ordinary wire availability; implicit wire ordering does not replace an
-explicit dependency between conflicting captures.
+Named flow-input producers participate in every execution. A block participates
+when every one of its inputs has a participating earlier producer, so a block
+with no inputs participates wherever it is written. All outputs of a
+participating action participate together, while a participating question or
+choice provides only its selected output. Two participating producers of one
+logical wire are an error, even when the wire is unused.
 
-The questions and choices that decide a block form a chain through capture
-dependencies: each lies downstream of a branch of the previous one. Implicit
-wire order does not make otherwise independent deciders a valid chain. Two
+Every authored computational block participates in at least one execution, and
+each participating block executes once.
+
+After a question or choice selects a branch, every participating block declared
+below it must belong to that branch, by the branch ancestry of section 2, until
+a merge joins the selected branch with the others or `result` finishes the
+execution. Shared inputs do not attach a block to a selected branch, and source
+position does not supply missing ancestry. The rule applies to actions,
+questions, and choices alike: a second selection cannot start while the first
+selection's branches remain open. Branch membership and completed merges are
+checked per execution, so interleaved declarations from mutually exclusive
+branches do not conflict merely because of their source positions.
+
+The author writes separate blocks inside the branches, arranges a wire merge
+before the common work, or moves that work above the selection when its
+dependencies and Rust ownership permit. The compiler performs none of those
+rewrites, and it neither attaches common work to all open branches nor resumes
+those branches after a shared block.
+
+Consequently, the questions and choices that decide a block form a chain through
+capture dependencies: each lies downstream of a branch of the previous one. Two
 independent questions or choices cannot both decide whether one block executes,
-whichever way a selection withholds an input: a branch output that was not selected, a wire
-that only some branches produce, or a wire that a branch consumed. Independent
-selections meet in one block only through wires that every branch of the
-earlier question or choice provides.
-
-Each computational block executes at most once. The end block is ready when
-`result` is available, like any other consumer. A flow in which a computational
-block can be ready at the same time as the end block is invalid: nothing would
-order that block's work before the flow finishes. Together with the
-capture-conflict rule above, this makes every participating block either the
-producer of `result` or a transitive predecessor of it, through capture
-dependencies. Both rules are needed: without the conflict rule a block could
-avoid being ready beside the end block only by taking a wire away from the
-producer's own chain.
+whichever way a selection withholds an input. A partial merge admits only work
+belonging to the branches it joins. Two disjoint partial merges do not permit a
+common action or independent selection shared by both groups; a merge must join
+the groups before their common work can run.
 
 Validation computes continuations and convergence groups separately for each
 question and choice. One question or choice may have several convergence groups.
@@ -514,8 +560,10 @@ completed merge remain valid. This is a language restriction, independent of
 whether a renderer can route a particular diagram.
 
 An implicit merge closes its producer branches before a consumer may capture
-the merged wire. Consider all executions in which one of that wire's producers
-runs, including executions with no capture. A question or choice selects the
+the merged wire, and source order must already say so: every block a merge
+waits for is declared above every block that captures the merged wire.
+Consider all executions in which one of that wire's producers runs, including
+executions with no capture. A question or choice selects the
 producer when two executions in this context differ only in its selection
 (using the agreement rule of section 2) and produce different occurrences.
 Every computational block whose participation such a selection decides within
@@ -525,43 +573,9 @@ value remains local; it cannot be carried past the merge as a hidden optional
 input. The context excludes executions producing none of the wire's
 occurrences, such as a terminal case outside a partial convergence.
 
-An implicit merge also precedes a question or choice that decides whether one
-of its consumers executes, when both of these conditions hold:
-
-- every execution that runs the question or choice produces one of the merged
-  wire's occurrences;
-- capture dependencies and existing merge-to-consumer and branch-completion
-  order do not require that question or choice to precede the merge.
-
-The second condition keeps a selection needed to produce or complete the merge
-before it. The first keeps a partial merge from suppressing a selection in an
-execution where the merged wire does not exist. Derive all such orderings from
-the original dependencies and merges together, before adding any of them;
-authored statement order must not decide which ordering wins.
-
-For example, if one question's branches produce `counted` and `seen`, and a
-second question selects between actions that capture those merged values, both
-merges finish before the second question evaluates its body. Its authored
-inputs need not mention either value. This is an execution dependency, not an
-implicit capture: it neither exposes another wire in the question's body nor
-borrows or consumes it. The second question belongs to the first question's
-shared continuation.
-
-The same rule applies to an ordinary, unmerged action output: its producer
-precedes a question or choice deciding whether one of its consumers executes,
-provided the producer runs in every execution running that selection and the
-original capture and merge order does not place the selection before the
-producer. Derive these orderings together with the merge orderings, from the
-same original dependencies. They add no capture and do not depend on authored
-statement order. For example, an action preparing `setup` precedes the question
-whose branch actions borrow `setup`, even when the question captures only
-`condition`. Two actions merely sharing consumers remain independent.
-
 Validation combines capture dependencies with producer-to-merge,
-branch-local-work-to-merge, merge-to-consumer, and the inferred
-merge-to-question-or-choice and ordinary-producer-to-question-or-choice order.
-This order must be acyclic. A cycle means
-that completing a producer branch requires a value from
+branch-local-work-to-merge, and merge-to-consumer order. This order must be
+acyclic. A cycle means that completing a producer branch requires a value from
 a merge that already waits for that branch. For example, independently merging
 `left_value` and `right_value` is invalid when left-only work needs the merged
 `right_value` and right-only work needs the merged `left_value`. A one-way use
@@ -574,10 +588,11 @@ it. Past the merge the wire is ordinary data. A later block may leave it
 uncaptured, and a question or choice anywhere in the flow may decide which
 block captures it, exactly as for any other action output.
 
-Every authored computational block either has no inputs or can become ready from
-flow inputs and earlier block outputs. Every branch provides `result`, directly
-or through its continuation, and branches may do so after different numbers of
-computational blocks. Only `result` finishes a flow.
+`result` is the only way to finish an execution, and its producer is the last
+participating computational block in source order; statements below it belong to
+other branches. Every branch provides `result`, directly or through its
+continuation, and branches may do so after different numbers of computational
+blocks.
 
 ## 8. Grammar
 
@@ -590,7 +605,7 @@ flow_parameter := identifier ":" rust_type | "_" ":" rust_type
 
 action_statement :=
     "#[action(" block_description ")]"
-    "|" input_list? "|" "->" output_declaration rust_block ";"
+    "|" input_list? "|" ("->" output_declaration)? rust_block ";"
 
 question_statement :=
     "#[question(" block_description ")]"
@@ -611,12 +626,15 @@ case_attribute := "#[case(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
 single_output_declaration := identifier | "(" identifier "," ")"
-output_declaration := single_output_declaration | rust_tuple_of_two_or_more_identifiers
+output_declaration :=
+    single_output_declaration | rust_tuple_of_two_or_more_identifiers | "(" ")"
 input_list := input ("," input)* ","?
 input := identifier | "&" identifier
 ```
 
-Outputs within one declaration are distinct, and `-> ()` declares none. Every
+Outputs within one declaration are distinct. An omitted arrow and `-> ()` both
+declare none, which only an action may do. Every
 other constraint the grammar leaves open is stated with its rule: descriptions
 and control transfers in section 3, block kinds and the implicit end block in
-section 4, flow parameters in section 5, and repeated output names in section 6.
+section 4, function forms and flow parameters in section 5, and repeated output
+names in section 6.

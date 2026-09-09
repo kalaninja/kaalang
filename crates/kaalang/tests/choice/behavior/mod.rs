@@ -1,5 +1,6 @@
 mod anonymous_case_values;
 mod borrowed_case_input;
+mod choice_scope_ends_before_continuation;
 mod run_choice;
 mod run_choice_skeleton;
 mod run_choice_skeleton_with_a_shared_consumer;

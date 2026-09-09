@@ -1,5 +1,5 @@
-error: this kaalang execution does not produce the `result` wire
- --> tests/wire/compile_fail/conjunction_effect.rs:6:37
-  |
-6 | fn invalid(left: bool, right: bool) -> u8 {
-  |                                     ^
+error: this kaalang block runs while the branches of the question `Enable the left input.` are still separate; give it an input from one branch, or merge those branches above it
+  --> tests/wire/compile_fail/conjunction_effect.rs:12:5
+   |
+12 |     #[question("Enable the right input.")]
+   |     ^

@@ -1,9 +1,9 @@
-//! Selects one permitted serial order of the recorded executions and builds the
-//! lowering plan: which blocks run inside a branch, which run once after
-//! branches join, and which alternative values each join carries.
+//! Builds the lowering plan over the validated source order: which blocks run
+//! inside a branch, which run once after branches join, and which alternative
+//! values each join carries.
 //!
 //! Joins are lowering structure. Execution validation owns semantic convergence;
-//! a flow that cannot share every body in nested branches uses guarded blocks.
+//! the branch rule of RFC 0001 §7 is what guarantees a nested branch tree exists.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -18,110 +18,42 @@ mod choice;
 mod question;
 pub(crate) mod verify;
 
-/// Builds a lowering plan without imposing additional language restrictions:
-/// the structured branch tree where it can share every body, the guarded
-/// schedule otherwise.
+/// Builds the nested branch tree the validated flow lowers to. Every accepted
+/// flow has one, so a failure here is a compiler bug rather than a rejected
+/// program.
 pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> ExecutionPlan {
     let end = flow.blocks.len() - 1;
     let mut builder = Builder {
         flow,
         end,
         merges,
-        order: order(flow, executions, merges),
         classes: Vec::new(),
     };
     let all = executions.iter().collect::<Vec<_>>();
-    let structured = builder
+    let lowered = builder
         .lower(&all, &BTreeSet::new(), &BTreeSet::new(), &[])
-        .ok()
-        .filter(|lowered| lowered.yielding.is_empty())
-        .filter(|lowered| {
-            // A structured plan that fails the replay is a builder bug. Debug
-            // builds report it; release builds keep the guarded schedule,
-            // which stays correct.
-            let verified = verify::plan(flow, &lowered.plan, executions, merges);
-            debug_assert!(verified, "a structured plan replays every execution");
-            verified
-        });
-    let (body, gates) = if let Some(lowered) = structured {
-        (lowered.plan, builder.gates(executions))
-    } else {
-        let body = ExecutionPlan::Guarded {
-            inputs: flow.flow_inputs.clone(),
-            blocks: builder.order,
-        };
-        // The last schedule there is. A wrong order here would silently
-        // reorder effects, so fail the expansion instead of emitting it.
-        assert!(
-            verify::plan(flow, &body, executions, merges),
-            "the lowered plan replays every execution and respects its wire merges"
-        );
-        (body, Vec::new())
-    };
+        .expect("a validated flow lowers to nested branches");
+    assert!(
+        lowered.yielding.is_empty(),
+        "every execution of a validated flow reaches end"
+    );
+    // A wrong plan would silently reorder effects, so fail the expansion
+    // instead of emitting it.
+    assert!(
+        verify::plan(flow, &lowered.plan, executions, merges),
+        "the lowered plan replays every execution and respects its wire merges"
+    );
     ExecutionPlan::End {
         index: end,
-        body: Box::new(body),
-        gates,
+        body: Box::new(lowered.plan),
+        gates: builder.gates(executions),
     }
 }
 
-/// A deterministic order for guarded blocks, including branch-local work that
-/// must finish before a merged wire is captured. The smallest ready block runs
-/// first, over the acyclic graph the analyzer already checked; independent
-/// blocks therefore keep authored order only when nothing reorders them.
-fn order(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Vec<usize> {
-    let end = flow.blocks.len() - 1;
-    let mut before = vec![BTreeSet::new(); end];
-    for execution in executions {
-        for &(producer, brancher) in &execution.ordering {
-            before[brancher].insert(producer);
-        }
-    }
-    for dependency in executions
-        .iter()
-        .flat_map(|execution| &execution.dependencies)
-    {
-        if dependency.capture.block < end
-            && let ProducerId::BlockOutput { block, .. } = dependency.producer
-        {
-            before[dependency.capture.block].insert(block);
-        }
-    }
-    for merge in merges {
-        for &block in merge.after.iter().filter(|&&block| block < end) {
-            before[block].extend(&merge.before);
-            before[block].extend(
-                merge
-                    .producers
-                    .iter()
-                    .filter_map(|producer| match producer {
-                        ProducerId::BlockOutput { block, .. } => Some(*block),
-                        ProducerId::FlowInput(_) => None,
-                    }),
-            );
-        }
-    }
-    let mut ready = before
-        .iter()
-        .enumerate()
-        .filter_map(|(block, predecessors)| predecessors.is_empty().then_some(block))
-        .collect::<BTreeSet<_>>();
-    let mut order = Vec::with_capacity(end);
-    while let Some(block) = ready.pop_first() {
-        order.push(block);
-        for (next, predecessors) in before.iter_mut().enumerate() {
-            if predecessors.remove(&block) && predecessors.is_empty() {
-                ready.insert(next);
-            }
-        }
-    }
-    assert_eq!(order.len(), end, "validated wire merges are acyclic");
-    order
-}
-
-/// The structured branch tree cannot express this part of the flow while
-/// emitting every body once; the caller falls back to a guarded schedule. The
-/// analyzer has already reported every language violation.
+/// The branch tree cannot express this part of the flow while emitting every
+/// body once. The branch rule rules that out for an accepted flow, so reaching
+/// it marks a compiler bug.
+#[derive(Debug)]
 struct Unstructured;
 
 /// The branches whose executions share a set of blocks, with those blocks.
@@ -131,7 +63,6 @@ struct Builder<'a> {
     flow: &'a Flow,
     end: usize,
     merges: &'a [WireMerge],
-    order: Vec<usize>,
     /// Producer occurrences that one Rust binding unifies: the alternative
     /// values a join carries. The end block's capture forms one more class.
     classes: Vec<BTreeSet<ProducerId>>,
@@ -153,6 +84,10 @@ struct Lowered<'e> {
 struct Scope {
     block: usize,
     groups: Vec<BTreeSet<usize>>,
+    /// The first join a yield from here may target. A branch may enter any of
+    /// them; a join's own continuation may only hand on to a later one, which
+    /// keeps the chain of nested joins acyclic.
+    from: usize,
 }
 
 /// The producers one block captures in one execution.
@@ -164,10 +99,9 @@ fn producers(execution: &Execution, block: usize) -> impl Iterator<Item = Produc
         .map(|dependency| dependency.producer)
 }
 
-/// A block is ready once its producers and the participating branch-local
-/// work before every merge it waits for have run, including implicit ordering
-/// before a consumer-selecting question or choice.
-fn ready(
+/// A block is settled once its producers and the participating branch-local
+/// work before every merge it captures have run.
+fn settled(
     merges: &[WireMerge],
     execution: &Execution,
     block: usize,
@@ -176,26 +110,21 @@ fn ready(
     producers(execution, block).all(|producer| match producer {
         ProducerId::FlowInput(_) => true,
         ProducerId::BlockOutput { block, .. } => done.contains(&block),
-    }) && execution
-        .ordering
+    }) && merges
         .iter()
-        .filter(|&&(_, after)| after == block)
-        .all(|&(before, _)| done.contains(&before))
-        && merges
-            .iter()
-            .filter(|merge| merge.after.contains(&block))
-            .all(|merge| {
-                merge
-                    .before
-                    .iter()
-                    .all(|before| !execution.participates(*before) || done.contains(before))
-                    && merge.producers.iter().all(|producer| match producer {
-                        ProducerId::BlockOutput { block, .. } => {
-                            !execution.participates(*block) || done.contains(block)
-                        }
-                        ProducerId::FlowInput(_) => true,
-                    })
-            })
+        .filter(|merge| merge.after.contains(&block))
+        .all(|merge| {
+            merge
+                .before
+                .iter()
+                .all(|before| !execution.participates(*before) || done.contains(before))
+                && merge.producers.iter().all(|producer| match producer {
+                    ProducerId::BlockOutput { block, .. } => {
+                        !execution.participates(*block) || done.contains(block)
+                    }
+                    ProducerId::FlowInput(_) => true,
+                })
+        })
 }
 
 impl Builder<'_> {
@@ -214,20 +143,19 @@ impl Builder<'_> {
             .filter(|block| !done.contains(block) && !forbidden.contains(block))
             .filter(|&block| {
                 executions.iter().all(|execution| {
-                    execution.participates(block) && ready(self.merges, execution, block, done)
+                    execution.participates(block) && settled(self.merges, execution, block, done)
                 })
             })
             .collect::<Vec<_>>();
-        // Independent computation runs before a question or choice, so a
-        // terminal branch never returns while participating work is pending.
-        // The language already guarantees this; the schedule keeps it visible.
-        let action = candidates
-            .iter()
-            .find(|&&block| self.flow.blocks[block].kind == BlockKind::Action);
-        if let Some(&block) = action {
-            let mut done = done.clone();
-            done.insert(block);
-            let mut next = self.lower(executions, &done, forbidden, scopes)?;
+        // Source order is the execution order, so the next block to emit is the
+        // first one every execution here still has to run.
+        let Some(&block) = candidates.first() else {
+            return self.leaf(executions, done, forbidden, scopes);
+        };
+        let mut next_done = done.clone();
+        next_done.insert(block);
+        if self.flow.blocks[block].kind == BlockKind::Action {
+            let mut next = self.lower(executions, &next_done, forbidden, scopes)?;
             next.emitted.insert(block);
             return Ok(Lowered {
                 plan: ExecutionPlan::Action {
@@ -238,86 +166,7 @@ impl Builder<'_> {
                 emitted: next.emitted,
             });
         }
-
-        // Authored order breaks ties only between branchers whose continuations
-        // can be shared. A later independent brancher may have to run first.
-        // ponytail: failed orders may require factorial search; memoize failed
-        // lowering states if large flows make this costly.
-        let mut rejected = false;
-        for block in candidates {
-            let mut next_done = done.clone();
-            next_done.insert(block);
-            let classes = self.classes.len();
-            if let Ok(lowered) = self.branch(block, executions, &next_done, forbidden, scopes) {
-                return Ok(lowered);
-            }
-            self.classes.truncate(classes);
-            rejected = true;
-        }
-        let structured = if rejected {
-            Err(Unstructured)
-        } else {
-            self.leaf(executions, done, forbidden, scopes)
-        };
-        match structured {
-            Err(Unstructured) if forbidden.is_empty() => {
-                self.guarded(executions, done).ok_or(Unstructured)
-            }
-            result => result,
-        }
-    }
-
-    /// Keeps structured prefixes in their Rust scopes and guards only a suffix
-    /// whose existing inputs are available in every execution entering it.
-    fn guarded<'e>(
-        &self,
-        executions: &[&'e Execution],
-        done: &BTreeSet<usize>,
-    ) -> Option<Lowered<'e>> {
-        let available = executions
-            .iter()
-            .map(|execution| self.available(execution, done))
-            .collect::<Vec<_>>();
-        let mut inputs = BTreeSet::new();
-        for (execution, current) in executions.iter().zip(&available) {
-            for dependency in &execution.dependencies {
-                if done.contains(&dependency.capture.block) {
-                    continue;
-                }
-                let name = match dependency.producer {
-                    ProducerId::FlowInput(input) => &self.flow.flow_inputs[input],
-                    ProducerId::BlockOutput { block, output } if done.contains(&block) => {
-                        &self.flow.blocks[block].outputs[output]
-                    }
-                    ProducerId::BlockOutput { .. } => continue,
-                };
-                if current.get(name) != Some(&dependency.producer)
-                    || available.iter().any(|state| !state.contains_key(name))
-                {
-                    return None;
-                }
-                inputs.insert(name.clone());
-            }
-        }
-        let blocks = self
-            .order
-            .iter()
-            .copied()
-            .filter(|block| {
-                !done.contains(block)
-                    && executions
-                        .iter()
-                        .any(|execution| execution.participates(*block))
-            })
-            .collect::<Vec<_>>();
-        Some(Lowered {
-            emitted: blocks.iter().copied().collect(),
-            plan: ExecutionPlan::Guarded {
-                inputs: inputs.into_iter().collect(),
-                blocks,
-            },
-            yielding: Vec::new(),
-        })
+        self.branch(block, executions, &next_done, forbidden, scopes)
     }
 
     /// No block can run here: the executions yield to the innermost enclosing
@@ -345,8 +194,10 @@ impl Builder<'_> {
             scope
                 .groups
                 .iter()
-                .position(|group| !group.is_disjoint(&waiting))
-                .map(|join| JoinTarget {
+                .enumerate()
+                .skip(scope.from)
+                .find(|(_, group)| !group.is_disjoint(&waiting))
+                .map(|(join, _)| JoinTarget {
                     block: scope.block,
                     join,
                 })
@@ -416,6 +267,7 @@ impl Builder<'_> {
         inner_scopes.push(Scope {
             block,
             groups: groups.iter().map(|(_, blocks)| blocks.clone()).collect(),
+            from: 0,
         });
         let mut branches = selections
             .iter()
@@ -426,7 +278,7 @@ impl Builder<'_> {
         for branch in &branches {
             emitted.extend(&branch.emitted);
         }
-        let (mut joins, mut yielding) = self.join(
+        let (joins, mut yielding) = self.join(
             block,
             &groups,
             &mut branches,
@@ -445,17 +297,9 @@ impl Builder<'_> {
             }));
         }
 
-        // An arm that reaches end returns outright when a sibling arm yields.
-        // `join` left each join's flag at "its continuation yields".
-        let arms_yield = !yielding.is_empty();
-        for join in &mut joins {
-            join.early_return = arms_yield && !join.early_return;
-        }
-        let any_branch_yields = branches.iter().any(|branch| !branch.yielding.is_empty());
         let branches = branches
             .into_iter()
             .map(|branch| Branch {
-                early_return: any_branch_yields && branch.yielding.is_empty(),
                 plan: Box::new(branch.plan),
             })
             .collect::<Vec<_>>();
@@ -474,7 +318,8 @@ impl Builder<'_> {
 
     /// Blocks that two or more branches run are shared: they run once after
     /// the join of exactly those branches, never inside one of them. Groups the
-    /// shared blocks by that set of branches, ordered by first branch.
+    /// shared blocks by that set of branches, innermost first: a contained
+    /// branch set is strictly smaller, so it joins before the one containing it.
     fn groups(
         &self,
         block: usize,
@@ -497,18 +342,23 @@ impl Builder<'_> {
                 groups.entry(members).or_default().insert(candidate);
             }
         }
-        let groups = groups.into_iter().collect::<Vec<_>>();
+        let mut groups = groups.into_iter().collect::<Vec<_>>();
+        groups.sort_by(|(left, _), (right, _)| {
+            left.len().cmp(&right.len()).then_with(|| left.cmp(right))
+        });
         if self.flow.blocks[block].kind == BlockKind::Choice && !choice::joinable(&groups) {
             return Err(Unstructured);
         }
         Ok(groups)
     }
 
-    /// Lowers one join per group of branches that share computation. The
-    /// executions that wait for a group's blocks yield its wires; the shared
-    /// continuation then runs once. Returns the joins, each flagged with
-    /// whether its continuation yields, and the executions that leave the
-    /// continuations toward an enclosing join.
+    /// Lowers one join per group of branches that share computation, innermost
+    /// first. The executions that wait for a group's blocks yield its wires;
+    /// the shared continuation then runs once. A contained group's continuation
+    /// hands its value to the group containing it, so the later group's blocks
+    /// stay forbidden inside the earlier continuation and reachable from it as
+    /// a further join of this block. Returns the joins and the executions that
+    /// leave their continuations toward an enclosing join.
     #[allow(clippy::too_many_arguments)]
     fn join<'e>(
         &mut self,
@@ -522,7 +372,7 @@ impl Builder<'_> {
     ) -> Result<(Vec<Join>, Vec<&'e Execution>), Unstructured> {
         let mut joined = done.clone();
         joined.extend(emitted.iter());
-        let mut joins = Vec::with_capacity(groups.len());
+        let mut joins = Vec::<Join>::with_capacity(groups.len());
         let mut yielding = Vec::new();
         for (join, (members, blocks)) in groups.iter().enumerate() {
             let executions = members
@@ -534,33 +384,55 @@ impl Builder<'_> {
                         .any(|&candidate| execution.participates(candidate))
                 })
                 .collect::<Vec<_>>();
-            let wires = self.join_wires(&executions, &joined);
+            let wires = self.join_wires(&executions, &joined, done);
             let target = JoinTarget { block, join };
-            for &branch in members {
-                fill_yields(&mut branches[branch].plan, &wires, target);
+            // A yield into this join sits in a member branch or in the
+            // continuation of a group this one contains.
+            for branch in branches.iter_mut() {
+                fill_yields(&mut branch.plan, &wires, target);
             }
-            let next = self.lower(&executions, &joined, forbidden, scopes)?;
+            for earlier in &mut joins {
+                fill_yields(&mut earlier.next, &wires, target);
+            }
+            let later = groups[join + 1..]
+                .iter()
+                .flat_map(|(_, blocks)| blocks.iter().copied())
+                .collect::<BTreeSet<_>>();
+            let inner_forbidden = forbidden.union(&later).copied().collect::<BTreeSet<_>>();
+            let mut inner_scopes = scopes.to_vec();
+            inner_scopes.push(Scope {
+                block,
+                groups: groups.iter().map(|(_, blocks)| blocks.clone()).collect(),
+                from: join + 1,
+            });
+            let next = self.lower(&executions, &joined, &inner_forbidden, &inner_scopes)?;
             emitted.extend(&next.emitted);
-            // Recorded as "the continuation yields" until `branch` knows every
-            // sibling arm and settles the early return.
-            let next_yields = !next.yielding.is_empty();
-            yielding.extend(next.yielding);
+            joined.extend(&next.emitted);
+            // An execution the continuation hands to a later join of this block
+            // has not left the brancher.
+            yielding.extend(
+                next.yielding
+                    .into_iter()
+                    .filter(|execution| !later.iter().any(|&block| execution.participates(block))),
+            );
             joins.push(Join {
                 branches: members.clone(),
                 wires,
                 next: Box::new(next.plan),
-                early_return: next_yields,
             });
         }
         Ok((joins, yielding))
     }
 
-    /// The logical wires a join carries: available in every execution that
-    /// reaches it, from producers that differ between those executions. A wire
-    /// with one producer everywhere is already bound before the branch: a block
-    /// emitted inside a branch runs only in that branch's executions, and a
-    /// join has at least two member branches.
-    fn join_wires(&mut self, executions: &[&Execution], done: &BTreeSet<usize>) -> Vec<Ident> {
+    /// Carries every merged wire not already bound outside this brancher,
+    /// including unused wires whose values must live in the shared scope.
+    /// Producer history from an earlier join does not require another transfer.
+    fn join_wires(
+        &mut self,
+        executions: &[&Execution],
+        done: &BTreeSet<usize>,
+        outside: &BTreeSet<usize>,
+    ) -> Vec<Ident> {
         let available = executions
             .iter()
             .map(|execution| self.available(execution, done))
@@ -580,7 +452,12 @@ impl Builder<'_> {
             let Some(&earliest) = producers.first() else {
                 continue;
             };
-            if producers.len() < 2 {
+            if producers.len() < 2
+                || producers.iter().all(|producer| match producer {
+                    ProducerId::FlowInput(_) => true,
+                    ProducerId::BlockOutput { block, .. } => outside.contains(block),
+                })
+            {
                 continue;
             }
             self.classes.push(producers);
@@ -591,22 +468,13 @@ impl Builder<'_> {
     }
 
     /// Every wire a block may still capture in one execution once `done` ran:
-    /// provided by a flow input or a done block and not consumed by a done block.
+    /// provided by a flow input or a done block. A bare capture does not remove
+    /// one; Rust reports a use after a move.
     fn available(
         &self,
         execution: &Execution,
         done: &BTreeSet<usize>,
     ) -> BTreeMap<Ident, ProducerId> {
-        let consumed = execution
-            .dependencies
-            .iter()
-            .filter(|dependency| {
-                let capture = dependency.capture;
-                done.contains(&capture.block)
-                    && !self.flow.blocks[capture.block].inputs[capture.input].borrowed
-            })
-            .map(|dependency| dependency.producer)
-            .collect::<BTreeSet<_>>();
         let flow_inputs = self
             .flow
             .flow_inputs
@@ -627,7 +495,6 @@ impl Builder<'_> {
             });
         flow_inputs
             .chain(outputs)
-            .filter(|(_, producer)| !consumed.contains(producer))
             .map(|(name, producer)| (name.clone(), producer))
             .collect()
     }
@@ -701,8 +568,6 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
                 })
                 .collect();
         }
-        ExecutionPlan::Guarded { .. }
-        | ExecutionPlan::EndArrival { .. }
-        | ExecutionPlan::Yield { .. } => {}
+        ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => {}
     }
 }

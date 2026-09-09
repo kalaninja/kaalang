@@ -4,14 +4,13 @@
 //! The authored `match` runs first and hands the selected case value out of
 //! its arm; the case continuation runs afterwards. A case value therefore has
 //! to be owned or borrow data that outlives the choice, and match bindings
-//! never reach downstream blocks. The guarded schedule stores the value in the
-//! output slot with the same effect.
+//! never reach downstream blocks.
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
-use quote::{quote, quote_spanned};
+use quote::quote;
+use syn::Lifetime;
 
-use super::{Bindings, Frame, block_body, input_bindings, join};
-use join::JoinRouting;
+use super::{Bindings, block_body, input_bindings, join};
 use kaalang_model::{Block, Branch, Flow, Join, choice_match, is_todo_body};
 
 /// The hygienic binding that carries the selected case value out of its arm.
@@ -19,27 +18,8 @@ fn case_value() -> Ident {
     Ident::new("__kaalang_case_value", Span::mixed_site())
 }
 
-/// Assigns the selected case value to its output slot inside the arm.
-pub(super) fn guarded(block: &Block, bindings: &Bindings) -> TokenStream2 {
-    let body = authored_match(
-        block,
-        &super::guarded::inputs(block, bindings),
-        |case, value| {
-            let wire = bindings.wire(&block.outputs[case]);
-            let selected = case_value();
-            let gate = bindings.gate_value(&block.outputs[case], &quote!(#selected));
-            quote!({
-                let #selected = #value;
-                #gate
-                #wire = ::core::option::Option::Some(#selected);
-            })
-        },
-    );
-    quote!(#body;)
-}
-
-/// Preserves the authored match in both structured and guarded schedules,
-/// letting the caller decide what each arm evaluates to.
+/// Rebuilds the authored match, letting the caller decide what each arm
+/// evaluates to.
 fn authored_match(
     block: &Block,
     input_bindings: &TokenStream2,
@@ -98,55 +78,44 @@ pub(crate) fn emit(
     index: usize,
     branches: &[Branch],
     joins: &[Join],
-    scope: &[Frame<'_>],
 ) -> TokenStream2 {
     let block = &flow.blocks[index];
     let cases = block.outputs.len();
-    let routing = JoinRouting::new(index, joins.len(), branches, scope);
-    let inner = Frame::nest(scope, index, routing.as_ref());
     let value = case_value();
+    let labels = (0..cases)
+        .map(|case| {
+            Lifetime::new(
+                &format!("'__kaalang_case_{index}_{case}"),
+                Span::mixed_site(),
+            )
+        })
+        .collect::<Vec<_>>();
 
-    // Phase one: the authored match tags the selected case value and drops
-    // its arm, so the value cannot borrow a match binding. Binding the value
-    // first keeps a diverging placeholder out of the tag's argument position.
-    let selected = authored_match(
+    // Each arm exits to its own binding, ending the match and input scopes
+    // before its continuation. Separate labels allow different output types.
+    let mut dispatch = authored_match(
         block,
         &input_bindings(&block.inputs, bindings),
         |case, arm_value| {
-            let tagged = join::nested(quote!(#value), case, cases);
+            let label = &labels[case];
             quote!({
                 let #value = #arm_value;
-                #tagged
+                break #label #value;
             })
         },
     );
-    // Phase two: the tag selects the continuation, which binds the output wire.
-    let continuations = branches.iter().enumerate().map(|(case, branch)| {
-        let pattern = join::nested(quote!(#value), case, cases);
+    // Each continuation leaves for a join or returns the flow result, so it
+    // cannot fall through into the continuation of a different case.
+    for (case, branch) in branches.iter().enumerate() {
+        let label = &labels[case];
         let wire = bindings.wire(&block.outputs[case]);
         let gate = bindings.gate(&block.outputs[case]);
-        let path = super::continuation(flow, &branch.plan, branch.early_return, bindings, &inner);
-        quote! {
-            #pattern => {
-                let #wire = #value;
-                #gate
-                #path
-            }
-        }
-    });
-    let dispatch = quote_spanned! {block.span=>
-        match #selected {
-            #(#continuations)*
-        }
-    };
-
-    join::emit(
-        flow,
-        bindings,
-        dispatch,
-        joins,
-        routing.as_ref(),
-        block.span,
-        scope,
-    )
+        let path = super::flow(flow, &branch.plan, bindings);
+        dispatch = quote! {
+            let #wire = #label: { #dispatch };
+            #gate
+            #path
+        };
+    }
+    join::emit(flow, bindings, index, joins, dispatch)
 }

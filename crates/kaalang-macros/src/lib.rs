@@ -26,7 +26,7 @@ pub fn kaalang(attributes: TokenStream, item: TokenStream) -> TokenStream {
 fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let model = kaalang_model::build(function)?;
     let bindings = codegen::Bindings::new(&model);
-    let body = codegen::flow(&model.flow, &model.execution_plan, &bindings, &[]);
+    let body = codegen::flow(&model.flow, &model.execution_plan, &bindings);
 
     codegen::rename_flow_inputs(function, &bindings);
     *function.block = syn::parse2(quote!({ #body }))?;
@@ -36,32 +36,49 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
 
 #[cfg(test)]
 mod tests {
-    use syn::{ItemFn, parse_quote};
+    use quote::format_ident;
+    use syn::{Expr, ItemFn, Stmt, parse_quote, visit::Visit};
 
     use super::expand;
 
-    #[test]
-    fn a_nested_early_return_needs_no_join_dispatch() {
-        let file = syn::parse_file(include_str!(
-            "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-        ))
-        .expect("the behavior fixture is valid Rust");
-        let mut function = file
+    fn fixture(source: &str, name: &str) -> ItemFn {
+        syn::parse_file(source)
+            .expect("the behavior fixture is valid Rust")
             .items
             .into_iter()
             .find_map(|item| match item {
-                syn::Item::Fn(function)
-                    if function.sig.ident == "nested_branch_passes_a_question_join" =>
-                {
-                    Some(function)
-                }
+                syn::Item::Fn(function) if function.sig.ident == name => Some(function),
                 _ => None,
             })
-            .expect("the fixture declares its flow");
+            .expect("the fixture declares its flow")
+    }
+
+    fn branching_matches(function: &ItemFn) -> usize {
+        struct Count(usize);
+        impl<'ast> Visit<'ast> for Count {
+            fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+                self.0 += usize::from(expression.arms.len() > 1);
+                syn::visit::visit_expr_match(self, expression);
+            }
+        }
+        let mut count = Count(0);
+        count.visit_item_fn(function);
+        count.0
+    }
+
+    #[test]
+    fn a_nested_early_return_needs_no_join_dispatch() {
+        let mut function = fixture(
+            include_str!(
+                "../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
+            ),
+            "nested_branch_passes_a_question_join",
+        );
         let expansion = expand(&mut function).expect("the flow expands").to_string();
         assert!(expansion.contains("return "));
-        assert!(!expansion.contains("match "));
-        assert!(!expansion.contains(":: core :: result :: Result"));
+        assert_eq!(branching_matches(&function), 0);
+        assert!(!expansion.contains("Result"));
+        assert!(!expansion.contains("Option"));
     }
 
     #[test]
@@ -83,6 +100,44 @@ mod tests {
         };
 
         let expansion = expand(&mut function).expect("the flow expands").to_string();
+        assert_eq!(expansion.matches("__kaalang_shared_marker").count(), 1);
+        assert_eq!(branching_matches(&function), 0);
+        assert!(!expansion.contains("Result"));
+        assert!(!expansion.contains("Option"));
+    }
+
+    #[test]
+    fn a_choice_dispatches_once_without_a_case_tag() {
+        let mut function: ItemFn = parse_quote! {
+            fn choose(input: Option<String>) -> usize {
+                #[choice("Was text supplied?")]
+                #[case("Text")]
+                #[case("Absent")]
+                |input| -> (text, absent) {
+                    match input {
+                        Some(value) => value,
+                        None => 0u8,
+                    }
+                };
+
+                #[action("Measure the text")]
+                |text| -> selected { text.len() };
+
+                #[action("Use the fallback")]
+                |absent| -> selected { absent as usize };
+
+                #[action("Finish")]
+                |selected| -> result { __kaalang_shared_marker(selected) };
+            }
+        };
+        let expansion = expand(&mut function).expect("the flow expands").to_string();
+        assert_eq!(branching_matches(&function), 1);
+        assert!(!expansion.contains("Result"));
+        assert_eq!(
+            expansion.matches("Option").count(),
+            1,
+            "only the authored input"
+        );
         assert_eq!(expansion.matches("__kaalang_shared_marker").count(), 1);
     }
 
@@ -143,10 +198,61 @@ mod tests {
         ] {
             assert_eq!(expansion.matches(marker).count(), 1, "{marker}");
         }
-        // Case tags and join variants are standard `Result` values, so the
-        // expansion declares no item that could shadow one in an authored body.
+        // The choice's authored match is the only dispatch. Labels add no
+        // routing value or type item that could shadow an authored one.
+        assert_eq!(branching_matches(&function), 1);
         assert!(!expansion.contains("enum "));
         assert!(!expansion.contains("struct "));
-        assert!(expansion.contains(":: core :: result :: Result :: Ok"));
+        assert!(!expansion.contains("Result"));
+        assert!(!expansion.contains("Option"));
+    }
+
+    #[test]
+    fn nested_partial_joins_emit_each_body_once_without_routing_values() {
+        for (source, name) in [
+            (
+                include_str!("../../kaalang/tests/wire/behavior/const_partial_merge.rs"),
+                "const_partial_merge",
+            ),
+            (
+                include_str!(
+                    "../../kaalang/tests/wire/behavior/const_borrowed_input_partial_merge.rs"
+                ),
+                "const_borrowed_input_partial_merge",
+            ),
+            (
+                include_str!("../../kaalang/tests/wire/behavior/nested_partial_merges.rs"),
+                "nested_partial_merges",
+            ),
+        ] {
+            let mut function = fixture(source, name);
+            let is_const = function.sig.constness.is_some();
+            let mut markers = Vec::new();
+            for (index, statement) in function.block.stmts.iter_mut().enumerate() {
+                let Stmt::Expr(Expr::Closure(closure), _) = statement else {
+                    panic!("each fixture statement declares a block");
+                };
+                let Expr::Block(body) = closure.body.as_mut() else {
+                    panic!("each block has a braced body");
+                };
+                let marker = format_ident!("__kaalang_body_marker_{index}");
+                if let [Stmt::Expr(Expr::Match(selection), _)] = body.block.stmts.as_mut_slice() {
+                    // A choice still contains exactly its authored match.
+                    let scrutinee = &selection.expr;
+                    selection.expr = parse_quote!({ #marker(); #scrutinee });
+                } else {
+                    body.block.stmts.insert(0, parse_quote!(#marker();));
+                }
+                markers.push(format!("{marker} ("));
+            }
+            let expansion = expand(&mut function).expect("the flow expands").to_string();
+            assert_eq!(branching_matches(&function), 1, "{name}");
+            assert_eq!(expansion.contains("const fn"), is_const, "{name}");
+            assert!(!expansion.contains("Result"), "{name}");
+            assert!(!expansion.contains("Option"), "{name}");
+            for marker in markers {
+                assert_eq!(expansion.matches(&marker).count(), 1, "{name}: {marker}");
+            }
+        }
     }
 }

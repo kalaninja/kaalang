@@ -1,5 +1,8 @@
 //! Checks that the questions and choices deciding whether a block executes
 //! form a chain of nested selections rather than independent ones.
+//!
+//! Branch placement rejects independent selections even after disjoint partial
+//! merges. This pass retains a direct check of the capture-ancestry invariant.
 
 use std::collections::BTreeSet;
 
@@ -36,8 +39,7 @@ pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<us
 /// The deciders of one block are pairwise dependent: one lies in the
 /// continuation of a branch of the other. Two independent selections would
 /// withhold the block's inputs in a way none of its own decisions explains,
-/// whether by leaving a branch output unselected, a wire unproduced, or a wire
-/// consumed.
+/// whether by leaving a branch output unselected or a wire unproduced.
 pub(super) fn flow(
     flow: &Flow,
     executions: &[Execution],
@@ -109,12 +111,12 @@ mod tests {
         assert_eq!(
             fixture(source, "converged_selection_meets_a_branch"),
             [
-                vec![],  // left enabled?
                 vec![],  // right enabled?
-                vec![1], // provide the right value
-                vec![1], // provide no right value
-                vec![0], // work with the right value
-                vec![0], // skip the work
+                vec![0], // provide the right value
+                vec![0], // provide no right value
+                vec![],  // left enabled?
+                vec![3], // work with the right value
+                vec![3], // skip the work
             ]
         );
         let source = include_str!("../../../kaalang/tests/wire/behavior/captured_in_one_branch.rs");

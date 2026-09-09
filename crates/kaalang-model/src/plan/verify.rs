@@ -30,6 +30,7 @@ pub(super) fn plan(
                     .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
                     .collect(),
                 ran: BTreeSet::new(),
+                last: None,
                 dependencies: BTreeSet::new(),
             };
             matches!(replay.walk(plan), Some(Exit::End))
@@ -49,11 +50,6 @@ pub(super) fn plan(
 /// Counts how many times the plan emits each computational block.
 pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
     match plan {
-        ExecutionPlan::Guarded { blocks, .. } => {
-            for &block in blocks {
-                bodies[block] += 1;
-            }
-        }
         ExecutionPlan::Action { index, next } => {
             bodies[*index] += 1;
             count(next, bodies);
@@ -100,12 +96,16 @@ struct Replay<'a> {
     merges: &'a [WireMerge],
     available: BTreeMap<Ident, ProducerId>,
     ran: BTreeSet<usize>,
+    /// The block this execution entered last. Source order is the execution
+    /// order, so `ran` alone would not catch a plan that emits the same set of
+    /// blocks in another sequence.
+    last: Option<usize>,
     dependencies: BTreeSet<CaptureDependency>,
 }
 
 impl Replay<'_> {
     fn capture(&mut self, block: usize) -> Option<()> {
-        if !super::ready(self.merges, self.execution, block, &self.ran) {
+        if !super::settled(self.merges, self.execution, block, &self.ran) {
             return None;
         }
         for (input, declaration) in self.flow.blocks[block].inputs.iter().enumerate() {
@@ -114,9 +114,6 @@ impl Replay<'_> {
                 producer,
                 capture: CaptureId { block, input },
             });
-            if !declaration.borrowed {
-                self.available.remove(&declaration.ident);
-            }
         }
         Some(())
     }
@@ -124,10 +121,12 @@ impl Replay<'_> {
     fn enter(&mut self, block: usize, kind: BlockKind) -> Option<()> {
         if self.flow.blocks[block].kind != kind
             || !self.execution.participates(block)
+            || self.last.is_some_and(|last| block <= last)
             || !self.ran.insert(block)
         {
             return None;
         }
+        self.last = Some(block);
         self.capture(block)?;
         let selected = self.execution.selected(block);
         for (output, name) in self.flow.blocks[block].outputs.iter().enumerate() {
@@ -141,26 +140,6 @@ impl Replay<'_> {
 
     fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
-            ExecutionPlan::Guarded { inputs, blocks } => {
-                if !inputs
-                    .iter()
-                    .all(|input| self.available.contains_key(input))
-                {
-                    return None;
-                }
-                self.available.retain(|wire, _| inputs.contains(wire));
-                for &block in blocks {
-                    if self.flow.blocks[block]
-                        .inputs
-                        .iter()
-                        .all(|input| self.available.contains_key(&input.ident))
-                    {
-                        self.enter(block, self.flow.blocks[block].kind)?;
-                    }
-                }
-                self.capture(self.flow.blocks.len() - 1)?;
-                Some(Exit::End)
-            }
             ExecutionPlan::Action { index, next } => {
                 self.enter(*index, BlockKind::Action)?;
                 self.walk(next)
@@ -197,6 +176,8 @@ impl Replay<'_> {
         }
     }
 
+    /// A join's continuation may hand its value to a later join of the same
+    /// block, so one branch can pass through several of them in turn.
     fn branch(&mut self, block: usize, branches: &[Branch], joins: &[Join]) -> Option<Exit> {
         let selected = self.execution.selected(block)?;
         let outside = self
@@ -207,18 +188,22 @@ impl Replay<'_> {
             })
             .map(|(wire, _)| wire.clone())
             .collect::<BTreeSet<_>>();
-        match self.walk(&branches.get(selected)?.plan)? {
-            Exit::Yield(target) if target.block == block => {
-                let join = joins.get(target.join)?;
-                if !join.branches.contains(&selected) {
-                    return None;
-                }
-                self.available
-                    .retain(|wire, _| outside.contains(wire) || join.wires.contains(wire));
-                self.walk(&join.next)
+        let mut exit = self.walk(&branches.get(selected)?.plan)?;
+        let mut entered = None;
+        while let Exit::Yield(target) = exit {
+            if target.block != block || entered.is_some_and(|last| target.join <= last) {
+                break;
             }
-            exit => Some(exit),
+            let join = joins.get(target.join)?;
+            if !join.branches.contains(&selected) {
+                return None;
+            }
+            self.available
+                .retain(|wire, _| outside.contains(wire) || join.wires.contains(wire));
+            entered = Some(target.join);
+            exit = self.walk(&join.next)?;
         }
+        Some(exit)
     }
 }
 
@@ -296,8 +281,41 @@ mod tests {
     }
 
     #[test]
-    fn rejects_a_capture_before_branch_local_work_finishes() {
+    fn rejects_a_plan_that_reorders_two_blocks() {
         let model = crate::build(&parse_quote! {
+            fn effects() {
+                #[action("First")]
+                || -> first {};
+                #[action("Second")]
+                || -> second {};
+                #[action("Finish")]
+                |first, second| -> result {};
+            }
+        })
+        .expect("the effects are valid");
+        let reordered = ExecutionPlan::Action {
+            index: 1,
+            next: Box::new(ExecutionPlan::Action {
+                index: 0,
+                next: Box::new(ExecutionPlan::Action {
+                    index: 2,
+                    next: Box::new(ExecutionPlan::EndArrival {
+                        result: Ident::new("result", Span::call_site()),
+                    }),
+                }),
+            }),
+        };
+        assert!(!plan(
+            &model.flow,
+            &reordered,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
+    fn rejects_a_capture_before_branch_local_work_finishes() {
+        let mut function: syn::ItemFn = parse_quote! {
             fn choose(flag: bool) -> u8 {
                 #[question("Choose")]
                 |flag| -> (yes, no) { flag };
@@ -305,174 +323,144 @@ mod tests {
                 |yes| -> (value, yes_work) { (1u8, ()) };
                 #[action("No value")]
                 |no| -> (value, no_work) { (2u8, ()) };
-                #[action("Use the merged value")]
-                |value| -> used { value };
                 #[action("Finish the yes branch")]
                 |yes_work| -> done {};
                 #[action("Finish the no branch")]
                 |no_work| -> done {};
+                #[action("Use the merged value")]
+                |value| -> used { value };
                 #[action("Finish")]
                 |used, done| -> result { used };
             }
-        })
-        .expect("branch-local work can finish before the merge");
+        };
+        let model = crate::build(&function).expect("branch-local work finishes above the capture");
         assert!(plan(
             &model.flow,
             &model.execution_plan,
             &model.executions,
             &model.merges
         ));
-        let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
-        assert_eq!(ordered, [0, 1, 2, 4, 5, 3, 6]);
-        for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5, 6], false), (ordered, true)] {
-            let guarded = ExecutionPlan::Guarded {
-                inputs: model.flow.flow_inputs.clone(),
-                blocks,
-            };
-            assert_eq!(
-                plan(&model.flow, &guarded, &model.executions, &model.merges),
-                valid
-            );
-        }
-    }
 
-    #[test]
-    fn a_selection_needed_to_produce_a_wire_stays_before_it() {
-        let function: syn::ItemFn = parse_quote! {
-            fn choose(flag: bool) -> u8 {
-                #[question("Prepare a value?")]
-                |flag| -> (yes, no) { flag };
-                #[action("Prepare it on this branch.")]
-                |yes| -> setup { 1u8 };
-                #[action("Use the prepared value.")]
-                |setup| -> result { setup };
-                #[action("Finish without it.")]
-                |no| -> result { 0u8 };
-            }
-        };
-        let model = crate::build(&function).expect("production stays inside its branch");
-        assert!(
-            model
-                .executions
-                .iter()
-                .all(|execution| execution.ordering.is_empty())
+        // Capturing the merged value above the branch-local work it waits for
+        // leaves that work with nowhere to run.
+        function.block.stmts.swap(3, 5);
+        function.block.stmts.swap(4, 5);
+        assert_eq!(
+            crate::tests::message(&function),
+            "this kaalang block must finish before the `value` wire merge; declare it above the blocks that capture the merged wire"
         );
     }
 
     #[test]
-    fn a_consumer_selecting_branch_waits_for_an_ordinary_producer() {
-        for selection in [
-            parse_quote! {
-                #[question("Use the setup?")]
-                |flag| -> (yes, no) { flag };
-            },
-            parse_quote! {
-                #[choice("Use the setup?")]
-                #[case("Use it.")]
-                #[case("Skip it.")]
-                |flag| -> (yes, no) { match flag { true => (), false => () } };
-            },
-        ] {
-            // Author the selection first to prove the order comes from the
-            // selected consumer, even when only one branch uses the value.
-            let mut function: syn::ItemFn = parse_quote! {
-                fn choose(flag: bool, seed: u8) -> u8 {
+    fn a_selection_deciding_a_consumer_follows_the_producer_in_source_order() {
+        for (kind, selection) in [
+            (
+                "question",
+                parse_quote! {
                     #[question("Use the setup?")]
                     |flag| -> (yes, no) { flag };
+                },
+            ),
+            (
+                "choice",
+                parse_quote! {
+                    #[choice("Use the setup?")]
+                    #[case("Use it.")]
+                    #[case("Skip it.")]
+                    |flag| -> (yes, no) { match flag { true => (), false => () } };
+                },
+            ),
+        ] {
+            let mut function: syn::ItemFn = parse_quote! {
+                fn choose(flag: bool, seed: u8) -> u8 {
                     #[action("Prepare the setup.")]
                     |seed| -> (setup, fallback) { (seed, 0u8) };
+                    #[question("Use the setup?")]
+                    |flag| -> (yes, no) { flag };
                     #[action("Use it.")]
                     |yes, setup| -> result { setup };
                     #[action("Skip it.")]
                     |no, fallback| -> result { fallback };
                 }
             };
-            function.block.stmts[0] = selection;
-            let model = crate::build(&function).expect("setup precedes the selection");
+            function.block.stmts[1] = selection;
+            let model = crate::build(&function).expect("the setup is prepared above the selection");
+            assert_eq!(model.flow.blocks[1].inputs.len(), 1);
             for execution in &model.executions {
-                assert_eq!(execution.ordering, [(1, 0)]);
                 assert_eq!(
-                    execution
-                        .dependencies
-                        .iter()
-                        .filter(|dependency| dependency.capture.block == 0)
-                        .count(),
-                    1
+                    execution.blocks,
+                    [
+                        0,
+                        1,
+                        if execution.branches[0].branch == 0 {
+                            2
+                        } else {
+                            3
+                        }
+                    ]
                 );
             }
-            assert_eq!(model.flow.blocks[0].inputs.len(), 1);
-            let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
-            assert_eq!(ordered, [1, 0, 2, 3]);
-            for (blocks, valid) in [(vec![0, 1, 2, 3], false), (ordered, true)] {
-                let guarded = ExecutionPlan::Guarded {
-                    inputs: model.flow.flow_inputs.clone(),
-                    blocks,
-                };
-                assert_eq!(
-                    plan(&model.flow, &guarded, &model.executions, &model.merges),
-                    valid
-                );
-            }
+            assert!(plan(
+                &model.flow,
+                &model.execution_plan,
+                &model.executions,
+                &model.merges
+            ));
+
+            // The selection opens its branches before the shared setup runs.
+            function.block.stmts.swap(0, 1);
+            assert_eq!(
+                crate::tests::message(&function),
+                crate::tests::branch_placement(kind, "Use the setup?")
+            );
         }
     }
 
     #[test]
-    fn a_consumer_selecting_branch_waits_for_the_merge_without_capturing_it() {
-        for selection in [
-            parse_quote! {
+    fn a_merge_completes_above_the_selection_that_decides_its_consumers() {
+        let mut function: syn::ItemFn = parse_quote! {
+            fn choose(report: bool, flag: bool) -> u8 {
+                #[question("Choose the value.")]
+                |flag| -> (first, second) { flag };
+                #[action("First value.")]
+                |first| -> value { 1u8 };
+                #[action("Second value.")]
+                |second| -> value { 2u8 };
                 #[question("Report the value?")]
                 |report| -> (yes, no) { report };
-            },
-            parse_quote! {
-                #[choice("Choose a report.")]
-                #[case("Report the value.")]
-                #[case("Report nothing.")]
-                |report| -> (yes, no) { match report { true => (), false => () } };
-            },
-        ] {
-            let mut function: syn::ItemFn = parse_quote! {
-                fn choose(report: bool, flag: bool) -> u8 {
-                    #[question("Report the value?")]
-                    |report| -> (yes, no) { report };
-                    #[question("Choose the value.")]
-                    |flag| -> (first, second) { flag };
-                    #[action("First value.")]
-                    |first| -> value { 1u8 };
-                    #[action("Second value.")]
-                    |second| -> value { 2u8 };
-                    #[action("Report it.")]
-                    |yes, value| -> result { value };
-                    #[action("Report nothing.")]
-                    |no, value| -> result { 0u8 };
-                }
-            };
-            function.block.stmts[0] = selection;
-            let model = crate::build(&function).expect("the merge precedes the selection");
-            let merge = model
-                .merges
-                .iter()
-                .find(|merge| merge.wire == "value")
-                .unwrap();
-            assert_eq!(merge.after, [0, 4, 5]);
-            assert_eq!(model.flow.blocks[0].inputs.len(), 1);
-            let group = model
-                .convergence_groups
-                .iter()
-                .find(|group| group.branching_block == 1)
-                .unwrap();
-            assert_eq!(group.entries, [0]);
-            let ordered = super::super::order(&model.flow, &model.executions, &model.merges);
-            assert_eq!(ordered, [1, 2, 3, 0, 4, 5]);
-            for (blocks, valid) in [(vec![0, 1, 2, 3, 4, 5], false), (ordered, true)] {
-                let guarded = ExecutionPlan::Guarded {
-                    inputs: model.flow.flow_inputs.clone(),
-                    blocks,
-                };
-                assert_eq!(
-                    plan(&model.flow, &guarded, &model.executions, &model.merges),
-                    valid
-                );
+                #[action("Report it.")]
+                |yes, value| -> result { value };
+                #[action("Report nothing.")]
+                |no, value| -> result { 0u8 };
             }
-        }
+        };
+        let model = crate::build(&function).expect("the merge completes above the selection");
+        let merge = model
+            .merges
+            .iter()
+            .find(|merge| merge.wire == "value")
+            .expect("the `value` wire merges");
+        assert_eq!(merge.after, [4, 5]);
+        let group = model
+            .convergence_groups
+            .iter()
+            .find(|group| group.branching_block == 0)
+            .expect("the first question owns a group");
+        assert_eq!(group.continuation, [4, 5]);
+        assert!(plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+
+        // Asking first leaves the second question inside the open branches.
+        function.block.stmts.swap(0, 3);
+        function.block.stmts.swap(1, 3);
+        function.block.stmts.swap(2, 3);
+        assert_eq!(
+            crate::tests::message(&function),
+            crate::tests::branch_placement("question", "Report the value?")
+        );
     }
 }

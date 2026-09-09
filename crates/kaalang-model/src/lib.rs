@@ -71,27 +71,6 @@ mod tests {
         bodies[target]
     }
 
-    /// Reports whether any part of the plan fell back to the guarded schedule.
-    fn guarded(plan: &ExecutionPlan) -> bool {
-        match plan {
-            ExecutionPlan::Guarded { .. } => true,
-            ExecutionPlan::Action { next, .. } | ExecutionPlan::End { body: next, .. } => {
-                guarded(next)
-            }
-            ExecutionPlan::Question { branches, join, .. } => {
-                branches.iter().any(|branch| guarded(&branch.plan))
-                    || join.as_ref().is_some_and(|join| guarded(&join.next))
-            }
-            ExecutionPlan::Choice {
-                branches, joins, ..
-            } => {
-                branches.iter().any(|branch| guarded(&branch.plan))
-                    || joins.iter().any(|join| guarded(&join.next))
-            }
-            ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => false,
-        }
-    }
-
     /// The flow named `flow` in a fixture file's source.
     pub(crate) fn fixture(source: &str, flow: &str) -> ItemFn {
         let file = syn::parse_file(source).expect("the fixture parses");
@@ -117,6 +96,13 @@ mod tests {
             .err()
             .expect("the flow is rejected")
             .to_string()
+    }
+
+    /// The diagnostic every flow that opens a second branch too early reports.
+    pub(crate) fn branch_placement(kind: &str, description: &str) -> String {
+        format!(
+            "this kaalang block runs while the branches of the {kind} `{description}` are still separate; give it an input from one branch, or merge those branches above it"
+        )
     }
 
     fn group(
@@ -349,13 +335,12 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["first", "second"]
         );
-        assert!(!join.early_return);
         assert_eq!(count_block(&model, 3), 1);
         assert_eq!(count_block(&model, 4), 1);
     }
 
     #[test]
-    fn independent_blocks_form_one_execution_and_run_in_authored_order() {
+    fn blocks_sharing_no_wire_form_one_execution_in_source_order() {
         let function: ItemFn = parse_quote! {
             fn pair(input: u32) -> (u32, u32) {
                 #[action("Produce the first result")]
@@ -381,18 +366,20 @@ mod tests {
         ));
     }
 
+    /// The second question opens its branches only once the first question's
+    /// branches have merged, so both bodies are still emitted once.
     #[test]
-    fn independent_questions_choose_an_order_that_shares_every_body() {
+    fn successive_questions_share_every_body() {
         let function: ItemFn = parse_quote! {
             fn route(left: bool, right: bool) -> u8 {
-                #[question("Choose the left path")]
-                |left| -> (a, b) { left };
                 #[question("Choose the right value")]
                 |right| -> (x, y) { right };
                 #[action("Build the first right value")]
                 |x| -> value { 10u8 };
                 #[action("Build the second right value")]
                 |y| -> value { 20u8 };
+                #[question("Choose the left path")]
+                |left| -> (a, b) { left };
                 #[action("Use the left path")]
                 |a, value| -> result { value + 1 };
                 #[action("Use the other left path")]
@@ -400,11 +387,11 @@ mod tests {
             }
         };
 
-        let model = build(&function).expect("independent questions have a valid lowering order");
+        let model = build(&function).expect("the merged value precedes the second question");
         assert_eq!(model.executions.len(), 4);
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::Question { index: 1, .. }
+            ExecutionPlan::Question { index: 0, .. }
         ));
         for block in 0..model.flow.blocks.len() {
             assert_eq!(count_block(&model, block), 1);
@@ -412,14 +399,14 @@ mod tests {
     }
 
     #[test]
-    fn independent_computation_runs_before_a_question() {
+    fn shared_computation_runs_where_it_is_written() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
-                #[question("Which way?")]
-                |condition| -> (yes, no) { condition };
-
                 #[action("Prepare a shared value")]
                 |seed| -> prepared { seed };
+
+                #[question("Which way?")]
+                |condition| -> (yes, no) { condition };
 
                 #[action("Use it on the yes branch")]
                 |yes, &prepared| -> result { *prepared };
@@ -433,8 +420,8 @@ mod tests {
         assert_eq!(model.executions.len(), 2);
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::Action { index: 1, next }
-                if matches!(next.as_ref(), ExecutionPlan::Question { index: 0, join: None, .. })
+            ExecutionPlan::Action { index: 0, next }
+                if matches!(next.as_ref(), ExecutionPlan::Question { index: 1, join: None, .. })
         ));
     }
 
@@ -485,8 +472,6 @@ mod tests {
             panic!("the root must be a question without a join")
         };
         assert_eq!(*index, 0);
-        assert!(!yes.early_return);
-        assert!(!no.early_return);
         assert!(matches!(
             no.plan.as_ref(),
             ExecutionPlan::Action { index: 6, .. }
@@ -502,9 +487,6 @@ mod tests {
         };
         assert_eq!(*index, 1);
         assert_eq!(branches.len(), 3);
-        assert!(!branches[0].early_return);
-        assert!(!branches[1].early_return);
-        assert!(branches[2].early_return);
         assert!(matches!(
             branches[0].plan.as_ref(),
             ExecutionPlan::Action { index: 2, next }
@@ -525,7 +507,6 @@ mod tests {
         };
         assert_eq!(join.branches, [0, 1]);
         assert_eq!(join.wires, ["selected"]);
-        assert!(!join.early_return);
         assert!(matches!(
             join.next.as_ref(),
             ExecutionPlan::Action { index: 5, next }
@@ -544,8 +525,9 @@ mod tests {
         );
     }
 
-    /// The consumer needs a selected output from each independent question, so
-    /// three of the four executions leave the flow without its `result` wire.
+    /// The second question opens its own branches while the first question's
+    /// are still separate, which is reported before the three executions that
+    /// would leave the flow without its `result` wire.
     #[test]
     fn rejects_a_conjunction_of_independent_branch_outputs() {
         let function: ItemFn = parse_quote! {
@@ -559,10 +541,7 @@ mod tests {
             }
         };
 
-        assert_eq!(
-            message(&function),
-            "this kaalang execution does not produce the `result` wire"
-        );
+        assert_eq!(message(&function), branch_placement("question", "Left?"));
     }
 
     #[test]
@@ -665,7 +644,11 @@ mod tests {
         else {
             panic!("the root must be the choice")
         };
-        assert!(branches[2].early_return);
+        assert!(matches!(
+            branches[2].plan.as_ref(),
+            ExecutionPlan::Action { index: 3, next }
+                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
+        ));
         let [left, right] = joins.as_slice() else {
             panic!("the choice owns two joins")
         };
@@ -673,8 +656,6 @@ mod tests {
         assert_eq!(left.wires, ["left"]);
         assert_eq!(right.branches, [3, 4]);
         assert_eq!(right.wires, ["right"]);
-        assert!(!left.early_return);
-        assert!(!right.early_return);
         assert!(matches!(
             left.next.as_ref(),
             ExecutionPlan::Action { index: 6, .. }
@@ -692,43 +673,6 @@ mod tests {
                 .iter()
                 .all(|execution| execution.blocks.contains(&0))
         );
-    }
-
-    /// These fixtures lower without guarded schedules. This regression check
-    /// does not establish that every accepted flow has a structured plan.
-    #[test]
-    fn fixtures_keep_their_lowering_strategy() {
-        let structured = [
-            fixture!("wire/behavior", "blocked_terminal_crossing"),
-            fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
-            fixture!("wire/behavior", "captured_in_one_branch"),
-            fixture!("wire/behavior", "converged_selection_meets_a_branch"),
-            fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
-            fixture!("wire/behavior", "independent_entry_blocks"),
-            fixture!("wire/behavior", "independent_questions"),
-            fixture!("wire/behavior", "local_work_before_a_wire_merge"),
-            fixture!("wire/behavior", "nested_branch_passes_a_question_join"),
-            fixture!("wire/behavior", "nested_terminal_branch_drops_a_wire"),
-            fixture!("wire/behavior", "question_after_one_entry_block"),
-            fixture!("wire/behavior", "send_future_with_alternative_producers"),
-            fixture!("choice/behavior", "anonymous_case_values"),
-            fixture!("choice/behavior", "borrowed_case_input"),
-        ];
-        for function in structured {
-            let flow = function.sig.ident.to_string();
-            let model = build(&function).expect(&flow);
-            assert!(
-                !guarded(&model.execution_plan),
-                "{flow} must stay structured"
-            );
-        }
-
-        // The one flow the branch tree cannot express, and therefore the only
-        // runtime cover for `ExecutionPlan::Guarded` and its codegen. A planner
-        // that structured it would orphan both with every test still green.
-        let model = build(&fixture!("wire/behavior", "question_after_a_partial_merge"))
-            .expect("question_after_a_partial_merge");
-        assert!(guarded(&model.execution_plan));
     }
 
     #[test]
@@ -769,37 +713,17 @@ mod tests {
         );
     }
 
+    /// Two selections can only decide one block while both are open, which the
+    /// branch rule rejects at the second one.
     #[test]
-    fn rejects_a_block_decided_by_independent_questions() {
-        for source in [
-            include_str!(
-                "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block.rs"
-            ),
-            include_str!(
-                "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block_by_consumption.rs"
-            ),
-        ] {
-            assert_eq!(
-                message(&fixture(source, "invalid")),
-                "this kaalang block must not be decided by two independent questions or choices"
-            );
-        }
-    }
-
-    /// The conditional await and both `Rc` markers lower through the structured
-    /// tree; the markers no common binding unifies still get a type gate.
-    #[test]
-    fn async_fixture_exercises_a_type_gate() {
-        let model = build(&fixture!(
-            "wire/behavior",
-            "send_future_with_alternative_producers"
-        ))
-        .expect("the async fixture is valid");
-        assert!(!guarded(&model.execution_plan));
-        let ExecutionPlan::End { gates, .. } = &model.execution_plan else {
-            panic!("the plan is rooted at end")
-        };
-        assert_eq!(gates, &["_marker"]);
+    fn rejects_a_second_selection_inside_open_branches() {
+        let source = include_str!(
+            "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block.rs"
+        );
+        assert_eq!(
+            message(&fixture(source, "invalid")),
+            branch_placement("question", "Left enabled?")
+        );
     }
 
     #[test]
@@ -887,7 +811,7 @@ mod tests {
     fn a_continuing_branch_may_hold_a_nested_terminal_branch() {
         assert_groups(
             &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
-            &[group(0, &[0, 1], &[6], &[6])],
+            &[group(1, &[0, 1], &[6], &[6])],
         );
     }
 
@@ -897,11 +821,11 @@ mod tests {
     fn a_setup_block_stays_outside_the_continuation_it_feeds() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
-                #[question("Which way?")]
-                |condition| -> (yes, no) { condition };
-
                 #[action("Prepare a shared value")]
                 |seed| -> prepared { seed };
+
+                #[question("Which way?")]
+                |condition| -> (yes, no) { condition };
 
                 #[action("Use it on the yes branch")]
                 |yes, &prepared| -> selected { *prepared };
@@ -914,7 +838,7 @@ mod tests {
             }
         };
 
-        assert_groups(&function, &[group(0, &[0, 1], &[4], &[4])]);
+        assert_groups(&function, &[group(1, &[0, 1], &[4], &[4])]);
     }
 
     #[test]
@@ -960,10 +884,7 @@ mod tests {
         else {
             panic!("the plan is rooted at end")
         };
-        assert!(
-            gates.is_empty(),
-            "a join tuple already unifies both `_tag` producers"
-        );
+        assert!(gates.is_empty(), "the join also unifies the unused wire");
 
         let terminal: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
@@ -986,30 +907,6 @@ mod tests {
             panic!("the plan is rooted at end")
         };
         assert_eq!(gates, ["_tag"]);
-    }
-
-    #[test]
-    fn rejects_a_conflict_reachable_through_one_order_only() {
-        let function: ItemFn = parse_quote! {
-            fn invalid(x: u32) -> u32 {
-                #[action("Borrow x and produce the trigger")]
-                |&x| -> trigger { *x };
-
-                #[action("Borrow x independently")]
-                |&x| -> other { *x };
-
-                #[action("Consume x once triggered")]
-                |trigger, x| -> combined { trigger + x };
-
-                #[action("Pair the two values")]
-                |combined, other| -> result { combined + other };
-            }
-        };
-
-        assert_eq!(
-            message(&function),
-            "kaalang blocks that are ready for the same wire `x` must both borrow it; add an explicit dependency"
-        );
     }
 
     #[test]
@@ -1064,7 +961,7 @@ mod tests {
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         assert_groups(
             &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
-            &[group(0, &[0, 1], &[3, 4, 5], &[3])],
+            &[group(0, &[0, 1], &[4, 5], &[4, 5])],
         );
     }
 

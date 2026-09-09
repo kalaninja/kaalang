@@ -1,5 +1,0 @@
-error: kaalang blocks that are ready for the same wire `input` must both borrow it; add an explicit dependency
- --> tests/wire/compile_fail/consumers_ready_together.rs:8:5
-  |
-8 |     #[action("Consume the input again.")]
-  |     ^

@@ -13,17 +13,16 @@ fn local_work_before_a_wire_merge(condition: bool, order: &Cell<u8>) -> u32 {
     #[action("Build the no value, which has no note to record.")]
     |no| -> (selected, noted) { (34, ()) };
 
+    // The yes branch still owes this note to the `selected` merge, so it is
+    // written above the block that captures the merged value.
+    #[action("Record the note before leaving the yes branch.")]
+    |local_note, &order| -> noted { order.set(order.get() * 10 + local_note) };
+
     #[action("Use the merged value.")]
     |selected, &order| -> used {
         order.set(order.get() * 10 + 2);
         selected * 2
     };
-
-    // Authored after its consumer on purpose: only the merge before `selected`
-    // orders this block ahead of the block above, so the recorded order proves
-    // the rule rather than the authored sequence.
-    #[action("Record the note before leaving the yes branch.")]
-    |local_note, &order| -> noted { order.set(order.get() * 10 + local_note) };
 
     #[action("Finish once the merged value and the note are both in.")]
     |used, noted| -> result { used };

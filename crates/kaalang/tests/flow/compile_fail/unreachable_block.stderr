@@ -1,5 +1,5 @@
 error: this kaalang block is unreachable
-  --> tests/flow/compile_fail/unreachable_block.rs:11:5
+  --> tests/flow/compile_fail/unreachable_block.rs:17:5
    |
-11 |     #[action("Reuse the already consumed input.")]
+17 |     #[action("Combine two markers no execution provides together.")]
    |     ^

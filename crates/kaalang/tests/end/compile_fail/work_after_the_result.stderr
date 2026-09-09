@@ -1,0 +1,5 @@
+error: this kaalang block runs after the `result` wire finishes its execution; declare it above the block producing `result`
+ --> tests/end/compile_fail/work_after_the_result.rs:9:5
+  |
+9 |     #[action("Work written below the result.")]
+  |     ^

@@ -1,0 +1,5 @@
+error: this kaalang block runs while the branches of the question `Which way?` are still separate; give it an input from one branch, or merge those branches above it
+  --> tests/wire/compile_fail/stamp_inside_open_branches.rs:11:5
+   |
+11 |     #[action("Stamp.")]
+   |     ^

@@ -1,0 +1,5 @@
+error: kaalang 0.1 does not support async flows
+ --> tests/flow/compile_fail/async_flow.rs:4:1
+  |
+4 | async fn invalid(result: u32) -> u32 {}
+  | ^^^^^

@@ -1,5 +1,19 @@
-error: this kaalang execution does not produce the `result` wire
- --> tests/wire/compile_fail/consumed_common_wire.rs:4:45
-  |
-4 | fn invalid(condition: bool, common: String) -> String {
-  |                                             ^
+error[E0382]: use of moved value
+  --> tests/wire/compile_fail/consumed_common_wire.rs:17:16
+   |
+ 5 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 6 | fn invalid(condition: bool, common: String) -> String {
+   |                             ------ move occurs because value has type `String`, which does not implement the `Copy` trait
+...
+11 |     |yes, common| -> selected { common };
+   |           ------ value moved here
+...
+17 |     |selected, common| -> result { format!("{common}:{selected}") };
+   |                ^^^^^^ value used here after move
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+   |
+11 |     |yes, common.clone()| -> selected { common };
+   |                 ++++++++

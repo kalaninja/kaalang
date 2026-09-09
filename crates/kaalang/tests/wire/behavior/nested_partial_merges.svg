@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1306" viewBox="0 0 1424 1306" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_partial_merges</title>
+  <desc id="kaalang-description">Nodes: Start: nested_partial_merges(source: u8) -&gt; u8 handing over source; Select: Which source? capturing source; Case: First. handing over a; Case: Second. handing over b; Case: Third. handing over c; Case: Fourth. handing over d; Action: First value. capturing a handing over ab; Action: Second value. capturing b handing over ab; Action: Close the first pair. capturing ab handing over abc; Action: Third value. capturing c handing over abc; Action: Close the first three. capturing abc handing over abcd; Action: Fourth value. capturing d handing over abcd; Action: Finish. capturing abcd handing over result; End: u8 capturing result. Connections: Start: nested_partial_merges(source: u8) -&gt; u8 to Select: Which source?; Select: Which source? to Case: First.; Select: Which source? to Case: Second.; Select: Which source? to Case: Third.; Select: Which source? to Case: Fourth.; Case: First. to Action: First value.; Case: Second. to Action: Second value.; Case: Third. to Action: Third value.; Case: Fourth. to Action: Fourth value.; Action: First value. to the ab merge; Action: Second value. to the ab merge; Action: Close the first pair. to the abc merge; Action: Third value. to the abc merge; Action: Close the first three. to the abcd merge; Action: Fourth value. to the abcd merge; Action: Finish. to End: u8; the ab merge to Action: Close the first pair.; the abc merge to Action: Close the first three.; the abcd merge to Action: Finish..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 892 294 L 892 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 1252 294 L 1252 314"/>
+    <path class="connection" d="M 172 384 L 172 456"/>
+    <path class="connection" d="M 532 384 L 532 456"/>
+    <path class="connection" d="M 892 384 L 892 456"/>
+    <path class="connection" d="M 1252 384 L 1252 456"/>
+    <path class="connection" d="M 172 520 L 172 572"/>
+    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
+    <path class="connection" d="M 172 728 L 172 780"/>
+    <path class="connection" d="M 892 520 L 892 780 L 172 780"/>
+    <path class="connection" d="M 172 936 L 172 988"/>
+    <path class="connection" d="M 1252 520 L 1252 988 L 172 988"/>
+    <path class="connection" d="M 172 1144 L 172 1216"/>
+    <path class="connection" d="M 172 572 L 172 664"/>
+    <path class="connection" d="M 172 780 L 172 872"/>
+    <path class="connection" d="M 172 988 L 172 1080"/>
+    <text class="connection-label" x="214" y="590" xml:space="preserve"><tspan x="214" dy="0">ab</tspan></text>
+    <text class="connection-label" x="214" y="798" xml:space="preserve"><tspan x="214" dy="0">abc</tspan></text>
+    <text class="connection-label" x="214" y="1006" xml:space="preserve"><tspan x="214" dy="0">abcd</tspan></text>
+    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">source</tspan></text>
+    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">b</tspan></text>
+    <text class="connection-label" x="934" y="415" xml:space="preserve"><tspan x="934" dy="0">c</tspan></text>
+    <text class="connection-label" x="1294" y="415" xml:space="preserve"><tspan x="1294" dy="0">d</tspan></text>
+    <text class="connection-label" x="214" y="1175" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_partial_merges(source: u8) </tspan><tspan x="0" dy="18">-&gt; u8</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 206)">
+      <title xml:space="preserve">Which source?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which source?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 349)">
+      <title xml:space="preserve">First.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 349)">
+      <title xml:space="preserve">Second.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 349)">
+      <title xml:space="preserve">Third.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 349)">
+      <title xml:space="preserve">Fourth.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Fourth.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 488)">
+      <title xml:space="preserve">First value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">First value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 488)">
+      <title xml:space="preserve">Second value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Second value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 696)">
+      <title xml:space="preserve">Close the first pair.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the first pair.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 488)">
+      <title xml:space="preserve">Third value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Third value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 904)">
+      <title xml:space="preserve">Close the first three.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the first three.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 488)">
+      <title xml:space="preserve">Fourth value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Fourth value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1112)">
+      <title xml:space="preserve">Finish.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1245)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u8</tspan></text>
+    </g>
+  </g>
+</svg>

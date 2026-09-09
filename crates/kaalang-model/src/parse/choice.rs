@@ -31,8 +31,8 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
         ));
     }
     if cases.len() != syntax.outputs.len() {
-        return Err(Error::new_spanned(
-            &syntax.closure.output,
+        return Err(Error::new(
+            syntax.output_span,
             "a kaalang choice must declare exactly one output for each case",
         ));
     }

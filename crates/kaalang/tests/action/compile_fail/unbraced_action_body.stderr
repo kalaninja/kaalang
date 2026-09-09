@@ -1,0 +1,5 @@
+error: a kaalang block body must be a braced block
+ --> tests/action/compile_fail/unbraced_action_body.rs:7:13
+  |
+7 |     |input| input * 2;
+  |             ^^^^^^^^^

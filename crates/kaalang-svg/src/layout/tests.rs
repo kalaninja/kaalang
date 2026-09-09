@@ -295,9 +295,9 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
 }
 
 /// The fixtures whose shapes exercise the routing rules: branches, nested
-/// branches, wire merges, independent roots and ordinary joins, plus
-/// `question_after_a_partial_merge`, the only flow lowered as
-/// `ExecutionPlan::Guarded`.
+/// branches, wire merges, separate roots and ordinary joins, plus
+/// `question_after_a_partial_merge`, whose partial merge joins inside a wider
+/// one.
 const FIXTURES: [(&str, &str); 17] = [
     fixture!("wire/behavior", "blocked_terminal_crossing"),
     fixture!("wire/behavior", "closure_before_a_branch"),
@@ -312,7 +312,7 @@ const FIXTURES: [(&str, &str); 17] = [
     fixture!("wire/behavior", "local_work_before_a_wire_merge"),
     fixture!("wire/behavior", "nested_convergence"),
     fixture!("wire/behavior", "staged_convergence"),
-    fixture!("wire/behavior", "disjoint_ready_blocks"),
+    fixture!("wire/behavior", "blocks_without_shared_wires"),
     fixture!("choice/behavior", "run_choice"),
     fixture!("wire/behavior", "two_convergence_groups"),
     fixture!("wire/behavior", "two_merges_reach_one_consumer"),
@@ -407,6 +407,32 @@ fn independent_entry_blocks_continue_on_the_main_column_before_a_question() {
     );
     assert_eq!(scene.topology.capture(NodeId::Block(4)), ["right"]);
     assert_eq!(scene.topology.capture(NodeId::Block(5)), ["first"]);
+}
+
+#[test]
+fn a_branch_effect_reaches_the_merge_before_common_work() {
+    let scene = drawn(fixture!("wire/behavior", "effect_then_common"));
+    let topology = &scene.topology;
+    let effect = ExitId::of(NodeId::Block(2));
+    let stamp = Vertex::Node(NodeId::Block(4));
+    assert_eq!(topology.junctions.len(), 1);
+    assert_eq!(topology.junctions[0].wires, ["value"]);
+    assert!(topology.handover(effect).is_empty());
+    assert_eq!(
+        topology.leaving(effect).copied().collect::<Vec<_>>(),
+        [crate::topology::Connection {
+            source: Source::Exit(effect),
+            destination: Destination::Junction(0),
+        }]
+    );
+    assert_eq!(
+        topology.incoming(stamp).copied().collect::<Vec<_>>(),
+        [crate::topology::Connection {
+            source: Source::Junction(0),
+            destination: stamp,
+        }]
+    );
+    assert_eq!(topology.capture_label(NodeId::Block(4)), ["()"]);
 }
 
 /// A serial stretch stays on the happy path, with one straight connection
@@ -579,8 +605,8 @@ fn the_same_flow_renders_to_the_same_bytes() {
 }
 
 #[test]
-fn independent_roots_and_their_join_share_the_main_column() {
-    let scene = drawn(fixture!("wire/behavior", "disjoint_ready_blocks"));
+fn separate_roots_and_their_consumer_share_the_main_column() {
+    let scene = drawn(fixture!("wire/behavior", "blocks_without_shared_wires"));
     assert_main_sequence(&scene, &[0, 1, 2, 3]);
 }
 

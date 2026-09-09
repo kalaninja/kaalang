@@ -99,19 +99,16 @@ pub struct BranchSelection {
 }
 
 /// One possible execution: the computational blocks that participate, the
-/// branches it selects, its capture dependencies, and implicit block order. Start and
-/// end participate implicitly. The serial order in which independent blocks
-/// happened to run is not part of an execution; every vector is sorted and
-/// deduplicated. Field order is the derived sort order: branch selections first.
+/// branches it selects, and its capture dependencies. Start and end participate
+/// implicitly. Source order is the order the blocks run in, so an execution
+/// records which of them take part rather than a schedule; every vector is
+/// sorted and deduplicated. Field order is the derived sort order: branch
+/// selections first.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Implicit block order, as `(before, after)` pairs: an action producing an
-    /// ordinary wire precedes a selection deciding its consumers. These pairs add
-    /// no capture and are sorted and deduplicated like capture dependencies.
-    pub ordering: Vec<(usize, usize)>,
 }
 
 impl Execution {
@@ -163,9 +160,8 @@ pub struct WireMerge {
     /// any execution where it participates, so no branch-local value outlives
     /// its own branch.
     pub before: Vec<usize>,
-    /// Blocks ordered after this merge, in authored order: its consumers and
-    /// eligible questions or choices that decide them. An implicit ordering does
-    /// not add a capture to the branching block.
+    /// Its consumers, in source order. Every block in `before` is declared
+    /// above every one of them.
     pub after: Vec<usize>,
 }
 
@@ -174,19 +170,6 @@ pub struct WireMerge {
 /// authored flow a second time. Its joins are lowering structure and say
 /// nothing about semantic convergence groups.
 pub enum ExecutionPlan {
-    /// Runs each authored block once when its captures are available. This
-    /// schedule represents dependency graphs that cannot share every body in
-    /// nested Rust branches; lowering keeps a slot for each logical wire.
-    Guarded {
-        /// The wires already bound when the schedule starts: the flow inputs
-        /// for a whole-flow schedule, or the bindings a structured prefix
-        /// leaves available, with one producer, in every execution entering
-        /// this suffix.
-        inputs: Vec<Ident>,
-        /// The remaining computational blocks, ordered by dependencies and
-        /// implicit wire order, with authored order breaking ties.
-        blocks: Vec<usize>,
-    },
     Action {
         index: usize,
         next: Box<ExecutionPlan>,
@@ -228,9 +211,6 @@ pub struct JoinTarget {
 /// One verified branch continuation.
 pub struct Branch {
     pub plan: Box<ExecutionPlan>,
-    /// Set when a sibling yields to a join, which forces this branch to return
-    /// its end value rather than yield it to the enclosing expression.
-    pub early_return: bool,
 }
 
 /// Logical wire bindings and the continuation shared by the branches that
@@ -245,7 +225,4 @@ pub struct Join {
     /// Logical wire names, ordered by their first authored producer.
     pub wires: Vec<Ident>,
     pub next: Box<ExecutionPlan>,
-    /// Set when a sibling join of the same block yields to an enclosing join
-    /// while this continuation reaches end.
-    pub early_return: bool,
 }

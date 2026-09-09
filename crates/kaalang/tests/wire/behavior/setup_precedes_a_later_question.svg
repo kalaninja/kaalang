@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="770" viewBox="0 0 704 770" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for setup_precedes_a_later_question</title>
-  <desc id="kaalang-description">Nodes: Start: setup_precedes_a_later_question(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u8 handing over condition, order; Question: Take the short branch? capturing condition, &amp;order handing over short / long; Action: Prepare the shared setup. capturing &amp;order handing over setup; Action: Use the setup on the short branch. capturing short, &amp;setup handing over result; Action: Use the setup on the long branch. capturing long, &amp;setup handing over result; End: u8 capturing result. Connections: Start: setup_precedes_a_later_question(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u8 to Action: Prepare the shared setup.; Question: Take the short branch? branch 1 to Action: Use the setup on the short branch.; Question: Take the short branch? branch 2 to Action: Use the setup on the long branch.; Action: Prepare the shared setup. to Question: Take the short branch?; Action: Use the setup on the short branch. to the result merge; Action: Use the setup on the long branch. to the result merge; the result merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: setup_precedes_a_later_question(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u8 handing over condition, order; Action: Prepare the shared setup. capturing &amp;order handing over setup; Question: Take the short branch? capturing condition, &amp;order handing over short / long; Action: Use the setup on the short branch. capturing short, &amp;setup handing over result; Action: Use the setup on the long branch. capturing long, &amp;setup handing over result; End: u8 capturing result. Connections: Start: setup_precedes_a_later_question(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u8 to Action: Prepare the shared setup.; Action: Prepare the shared setup. to Question: Take the short branch?; Question: Take the short branch? branch 1 to Action: Use the setup on the short branch.; Question: Take the short branch? branch 2 to Action: Use the setup on the long branch.; Action: Use the setup on the short branch. to the result merge; Action: Use the setup on the long branch. to the result merge; the result merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -15,19 +15,19 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <path class="connection" d="M 172 120 L 172 192"/>
+    <path class="connection" d="M 172 256 L 172 328"/>
     <path class="connection" d="M 172 400 L 172 472"/>
     <path class="connection" d="M 312 364 L 532 364 L 532 472"/>
-    <path class="connection" d="M 172 256 L 172 328"/>
     <path class="connection" d="M 172 536 L 172 588"/>
     <path class="connection" d="M 532 536 L 532 588 L 172 588"/>
     <path class="connection" d="M 172 588 L 172 680"/>
     <text class="connection-label" x="214" y="606" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="138" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
+    <text class="connection-label" x="214" y="274" xml:space="preserve"><tspan x="214" dy="0">setup</tspan></text>
     <text class="connection-label" x="214" y="418" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
     <text class="connection-label" x="354" y="382" xml:space="preserve"><tspan x="354" dy="0">long</tspan></text>
-    <text class="connection-label" x="214" y="274" xml:space="preserve"><tspan x="214" dy="0">setup</tspan></text>
-    <text class="connection-label" x="236" y="317" xml:space="preserve"><tspan x="236" dy="0">condition, &amp;order</tspan></text>
     <text class="connection-label" x="214" y="181" xml:space="preserve"><tspan x="214" dy="0">&amp;order</tspan></text>
+    <text class="connection-label" x="236" y="317" xml:space="preserve"><tspan x="236" dy="0">condition, &amp;order</tspan></text>
     <text class="connection-label" x="225" y="461" xml:space="preserve"><tspan x="225" dy="0">short, &amp;setup</tspan></text>
     <text class="connection-label" x="581" y="461" xml:space="preserve"><tspan x="581" dy="0">long, &amp;setup</tspan></text>
   </g>
@@ -36,15 +36,15 @@
       <rect class="node-shape" x="-140" y="-44" width="280" height="88" rx="44"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">setup_precedes_a_later_question(c</tspan><tspan x="0" dy="18">ondition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; </tspan><tspan x="0" dy="18">u8</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 364)">
-      <title xml:space="preserve">Take the short branch?</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the short branch?</tspan></text>
-    </g>
     <g class="node action" transform="translate(172 224)">
       <title xml:space="preserve">Prepare the shared setup.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the shared setup.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 364)">
+      <title xml:space="preserve">Take the short branch?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the short branch?</tspan></text>
     </g>
     <g class="node action" transform="translate(172 504)">
       <title xml:space="preserve">Use the setup on the short branch.</title>

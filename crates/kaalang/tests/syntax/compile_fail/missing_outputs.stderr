@@ -1,5 +1,5 @@
-error: a kaalang block must declare its outputs after `->`
- --> tests/syntax/compile_fail/missing_outputs.rs:6:12
+error: a kaalang block body must be a braced block
+ --> tests/syntax/compile_fail/missing_outputs.rs:7:14
   |
-6 |     |&input| true;
-  |            ^
+7 |     |&input| true;
+  |              ^^^^

@@ -1,0 +1,5 @@
+error: this kaalang block runs while the branches of the question `Log the value?` are still separate; give it an input from one branch, or merge those branches above it
+  --> tests/wire/compile_fail/branch_log_without_merge.rs:15:5
+   |
+15 |     #[action("Transform.")]
+   |     ^

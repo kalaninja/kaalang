@@ -1,24 +1,21 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(left: bool, right: bool) -> u8 {
-    #[question("Choose the left branch.")]
-    |left| -> (a, b) { left };
+fn invalid(condition: bool) -> u8 {
+    #[question("Choose the branch.")]
+    |condition| -> (yes, no) { condition };
 
-    #[question("Choose the right branch.")]
-    |right| -> (c, d) { right };
+    #[action("Start the yes branch.")]
+    |yes| -> first { 1u8 };
 
-    #[action("Combine both yes branches.")]
-    |a, c| -> result { 0 };
+    #[action("Start the yes branch a second time.")]
+    |yes| -> second { 2u8 };
 
-    #[action("Combine yes and no.")]
-    |a, d| -> result { 1 };
+    #[action("Finish the yes branch.")]
+    |first, second| -> result { first + second };
 
-    #[action("Combine no and yes.")]
-    |b, c| -> result { 2 };
-
-    #[action("Combine both no branches.")]
-    |b, d| -> result { 3 };
+    #[action("Finish the no branch.")]
+    |no| -> result { 0u8 };
 }
 
 fn main() {}

@@ -6,11 +6,11 @@ fn effect_before_a_nested_terminal_branch(
     inner: bool,
     log: &mut Vec<&'static str>,
 ) -> u32 {
-    #[question("Take the nested branch?")]
-    |outer, &inner| -> (nested, direct) { outer };
-
     #[action("Record the effect before branching.")]
     |log| -> logged { log.push("effect") };
+
+    #[question("Take the nested branch?")]
+    |outer, &inner| -> (nested, direct) { outer };
 
     #[question("Finish early?")]
     |nested, inner| -> (early, late) { inner };

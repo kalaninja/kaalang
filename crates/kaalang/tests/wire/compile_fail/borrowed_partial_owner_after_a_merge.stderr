@@ -1,0 +1,17 @@
+error[E0716]: temporary value dropped while borrowed
+  --> tests/wire/compile_fail/borrowed_partial_owner_after_a_merge.rs:20:16
+   |
+ 5 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 6 | fn invalid(source: u8) -> usize {
+ 7 |     #[choice("Which source?")]
+   |     - temporary value is freed at the end of this statement
+...
+20 |     |first| -> text { String::from("abc") };
+   |                ^^^^ creates a temporary value which is freed while still in use
+...
+26 |     |&text| -> view { text.as_str() };
+   |                ---- borrow later stored here
+   |
+   = note: consider using a `let` binding to create a longer lived value
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
