@@ -258,6 +258,23 @@ fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
 }
 
 #[test]
+fn labels_beside_one_connection_align_by_their_left_edge() {
+    let scene = drawn(fixture!("choice/behavior", "run_choice"));
+    let left = |text: &str| {
+        label_rect(
+            scene
+                .labels
+                .iter()
+                .find(|label| label.lines == [text])
+                .unwrap(),
+        )
+        .0
+    };
+
+    assert_eq!(left("value, branch_action_count"), left("value"));
+}
+
+#[test]
 fn nested_question_side_branches_share_their_merge_column() {
     let scene = drawn(fixture!("gallery/logical_formulas", "and"));
     let junction = scene

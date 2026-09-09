@@ -26,15 +26,15 @@
     <path class="connection" d="M 532 942 L 532 994 L 172 994"/>
     <path class="connection" d="M 172 994 L 172 1086"/>
     <path class="connection" d="M 532 786 L 532 878"/>
-    <text class="connection-label" x="214" y="1012" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="574" y="804" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
+    <text class="connection-label" x="203" y="1012" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="570" y="804" xml:space="preserve"><tspan x="570" dy="0">selected</tspan></text>
     <text class="connection-label" x="602" y="407" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
     <text class="connection-label" x="422" y="551" xml:space="preserve"><tspan x="422" dy="0">late</tspan></text>
     <text class="connection-label" x="233" y="190" xml:space="preserve"><tspan x="233" dy="0">outer, inner, log</tspan></text>
-    <text class="connection-label" x="214" y="328" xml:space="preserve"><tspan x="214" dy="0">logged</tspan></text>
-    <text class="connection-label" x="214" y="472" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
-    <text class="connection-label" x="214" y="616" xml:space="preserve"><tspan x="214" dy="0">early</tspan></text>
-    <text class="connection-label" x="214" y="233" xml:space="preserve"><tspan x="214" dy="0">log</tspan></text>
+    <text class="connection-label" x="203" y="328" xml:space="preserve"><tspan x="203" dy="0">logged</tspan></text>
+    <text class="connection-label" x="205" y="472" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
+    <text class="connection-label" x="200" y="616" xml:space="preserve"><tspan x="200" dy="0">early</tspan></text>
+    <text class="connection-label" x="193" y="233" xml:space="preserve"><tspan x="193" dy="0">log</tspan></text>
     <text class="connection-label" x="224" y="371" xml:space="preserve"><tspan x="224" dy="0">outer, &amp;inner</tspan></text>
     <text class="connection-label" x="224" y="515" xml:space="preserve"><tspan x="224" dy="0">nested, inner</tspan></text>
     <text class="connection-label" x="222" y="659" xml:space="preserve"><tspan x="222" dy="0">early, logged</tspan></text>

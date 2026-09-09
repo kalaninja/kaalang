@@ -26,14 +26,14 @@
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
     <text class="connection-label" x="225" y="448" xml:space="preserve"><tspan x="225" dy="0">counted, seen</tspan></text>
-    <text class="connection-label" x="214" y="800" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">positive</tspan></text>
+    <text class="connection-label" x="203" y="800" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="209" y="273" xml:space="preserve"><tspan x="209" dy="0">positive</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">negative</tspan></text>
     <text class="connection-label" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">amount, verbose</tspan></text>
-    <text class="connection-label" x="214" y="612" xml:space="preserve"><tspan x="214" dy="0">report</tspan></text>
-    <text class="connection-label" x="354" y="576" xml:space="preserve"><tspan x="354" dy="0">quiet</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">amount</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">verbose</tspan></text>
+    <text class="connection-label" x="205" y="612" xml:space="preserve"><tspan x="205" dy="0">report</tspan></text>
+    <text class="connection-label" x="340" y="576" xml:space="preserve"><tspan x="340" dy="0">quiet</tspan></text>
+    <text class="connection-label" x="207" y="159" xml:space="preserve"><tspan x="207" dy="0">amount</tspan></text>
+    <text class="connection-label" x="208" y="511" xml:space="preserve"><tspan x="208" dy="0">verbose</tspan></text>
     <text class="connection-label" x="232" y="655" xml:space="preserve"><tspan x="232" dy="0">report, counted</tspan></text>
     <text class="connection-label" x="577" y="655" xml:space="preserve"><tspan x="577" dy="0">quiet, seen</tspan></text>
   </g>

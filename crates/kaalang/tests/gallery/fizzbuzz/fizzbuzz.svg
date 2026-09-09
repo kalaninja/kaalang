@@ -28,12 +28,12 @@
     <path class="connection" d="M 892 512 L 892 564 L 172 564"/>
     <path class="connection" d="M 1252 512 L 1252 564 L 172 564"/>
     <path class="connection" d="M 172 564 L 172 656"/>
-    <text class="connection-label" x="214" y="582" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="121" xml:space="preserve"><tspan x="214" dy="0">number</tspan></text>
-    <text class="connection-label" x="214" y="407" xml:space="preserve"><tspan x="214" dy="0">fizz_buzz</tspan></text>
-    <text class="connection-label" x="574" y="407" xml:space="preserve"><tspan x="574" dy="0">fizz</tspan></text>
-    <text class="connection-label" x="934" y="407" xml:space="preserve"><tspan x="934" dy="0">buzz</tspan></text>
-    <text class="connection-label" x="1294" y="407" xml:space="preserve"><tspan x="1294" dy="0">plain</tspan></text>
+    <text class="connection-label" x="203" y="582" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="207" y="121" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
+    <text class="connection-label" x="213" y="407" xml:space="preserve"><tspan x="213" dy="0">fizz_buzz</tspan></text>
+    <text class="connection-label" x="557" y="407" xml:space="preserve"><tspan x="557" dy="0">fizz</tspan></text>
+    <text class="connection-label" x="918" y="407" xml:space="preserve"><tspan x="918" dy="0">buzz</tspan></text>
+    <text class="connection-label" x="1278" y="407" xml:space="preserve"><tspan x="1278" dy="0">plain</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

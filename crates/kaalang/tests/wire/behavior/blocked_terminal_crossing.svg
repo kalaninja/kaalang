@@ -44,19 +44,19 @@
     <path class="connection" d="M 172 562 L 172 736"/>
     <path class="connection" d="M 172 1358 L 172 1450"/>
     <path class="connection" d="M 172 1150 L 172 1242"/>
-    <text class="connection-label" x="214" y="580" xml:space="preserve"><tspan x="214" dy="0">shared</tspan></text>
-    <text class="connection-label" x="214" y="1376" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="1168" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">request</tspan></text>
-    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
-    <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">right</tspan></text>
-    <text class="connection-label" x="1654" y="415" xml:space="preserve"><tspan x="1654" dy="0">first</tspan></text>
-    <text class="connection-label" x="2014" y="415" xml:space="preserve"><tspan x="2014" dy="0">second</tspan></text>
-    <text class="connection-label" x="2014" y="555" xml:space="preserve"><tspan x="2014" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="214" y="993" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
-    <text class="connection-label" x="574" y="993" xml:space="preserve"><tspan x="574" dy="0">b</tspan></text>
-    <text class="connection-label" x="934" y="993" xml:space="preserve"><tspan x="934" dy="0">c</tspan></text>
-    <text class="connection-label" x="1294" y="993" xml:space="preserve"><tspan x="1294" dy="0">d</tspan></text>
+    <text class="connection-label" x="205" y="580" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
+    <text class="connection-label" x="203" y="1376" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="210" y="1168" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="208" y="129" xml:space="preserve"><tspan x="208" dy="0">request</tspan></text>
+    <text class="connection-label" x="197" y="415" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
+    <text class="connection-label" x="560" y="415" xml:space="preserve"><tspan x="560" dy="0">right</tspan></text>
+    <text class="connection-label" x="1640" y="415" xml:space="preserve"><tspan x="1640" dy="0">first</tspan></text>
+    <text class="connection-label" x="2005" y="415" xml:space="preserve"><tspan x="2005" dy="0">second</tspan></text>
+    <text class="connection-label" x="2008" y="555" xml:space="preserve"><tspan x="2008" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="188" y="993" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
+    <text class="connection-label" x="548" y="993" xml:space="preserve"><tspan x="548" dy="0">b</tspan></text>
+    <text class="connection-label" x="908" y="993" xml:space="preserve"><tspan x="908" dy="0">c</tspan></text>
+    <text class="connection-label" x="1268" y="993" xml:space="preserve"><tspan x="1268" dy="0">d</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

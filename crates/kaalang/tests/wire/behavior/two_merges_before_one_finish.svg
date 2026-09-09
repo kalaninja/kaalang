@@ -26,16 +26,16 @@
     <path class="connection" d="M 172 938 L 172 1010"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">counted</tspan></text>
-    <text class="connection-label" x="214" y="800" xml:space="preserve"><tspan x="214" dy="0">seen</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">left_yes</tspan></text>
+    <text class="connection-label" x="208" y="448" xml:space="preserve"><tspan x="208" dy="0">counted</tspan></text>
+    <text class="connection-label" x="198" y="800" xml:space="preserve"><tspan x="198" dy="0">seen</tspan></text>
+    <text class="connection-label" x="210" y="273" xml:space="preserve"><tspan x="210" dy="0">left_yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">left_no</tspan></text>
-    <text class="connection-label" x="214" y="625" xml:space="preserve"><tspan x="214" dy="0">right_yes</tspan></text>
+    <text class="connection-label" x="213" y="625" xml:space="preserve"><tspan x="213" dy="0">right_yes</tspan></text>
     <text class="connection-label" x="422" y="547" xml:space="preserve"><tspan x="422" dy="0">right_no</tspan></text>
-    <text class="connection-label" x="214" y="969" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="969" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">right</tspan></text>
+    <text class="connection-label" x="197" y="159" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
+    <text class="connection-label" x="200" y="511" xml:space="preserve"><tspan x="200" dy="0">right</tspan></text>
     <text class="connection-label" x="225" y="863" xml:space="preserve"><tspan x="225" dy="0">counted, seen</tspan></text>
   </g>
   <g class="nodes">

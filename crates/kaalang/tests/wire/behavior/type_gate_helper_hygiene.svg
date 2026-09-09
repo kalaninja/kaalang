@@ -20,12 +20,12 @@
     <path class="connection" d="M 172 378 L 172 430"/>
     <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
     <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <text class="connection-label" x="233" y="396" xml:space="preserve"><tspan x="233" dy="0">result, _marker</tspan></text>
     <text class="connection-label" x="593" y="396" xml:space="preserve"><tspan x="593" dy="0">result, _marker</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="511" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

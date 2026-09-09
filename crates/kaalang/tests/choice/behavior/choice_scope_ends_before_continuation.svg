@@ -23,15 +23,15 @@
     <path class="connection" d="M 172 756 L 172 815"/>
     <path class="connection" d="M 532 756 L 532 815 L 172 815"/>
     <path class="connection" d="M 172 815 L 172 914"/>
-    <text class="connection-label" x="214" y="833" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="833" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="264" y="174" xml:space="preserve"><tspan x="264" dy="0">condition, cell, evaluations</tspan></text>
     <text class="connection-label" x="220" y="317" xml:space="preserve"><tspan x="220" dy="0">input_guard</tspan></text>
-    <text class="connection-label" x="214" y="623" xml:space="preserve"><tspan x="214" dy="0">number</tspan></text>
-    <text class="connection-label" x="574" y="629" xml:space="preserve"><tspan x="574" dy="0">text</tspan></text>
-    <text class="connection-label" x="214" y="224" xml:space="preserve"><tspan x="214" dy="0">cell</tspan></text>
+    <text class="connection-label" x="207" y="623" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
+    <text class="connection-label" x="558" y="629" xml:space="preserve"><tspan x="558" dy="0">text</tspan></text>
+    <text class="connection-label" x="195" y="224" xml:space="preserve"><tspan x="195" dy="0">cell</tspan></text>
     <text class="connection-label" x="269" y="353" xml:space="preserve"><tspan x="269" dy="0">condition, input_guard, cell, </tspan><tspan x="269" dy="14">evaluations</tspan></text>
     <text class="connection-label" x="221" y="679" xml:space="preserve"><tspan x="221" dy="0">number, cell</tspan></text>
-    <text class="connection-label" x="574" y="679" xml:space="preserve"><tspan x="574" dy="0">text, cell</tspan></text>
+    <text class="connection-label" x="572" y="679" xml:space="preserve"><tspan x="572" dy="0">text, cell</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 94)">

@@ -25,19 +25,19 @@
     <path class="connection" d="M 172 994 L 172 1066"/>
     <path class="connection" d="M 172 1130 L 172 1202"/>
     <path class="connection" d="M 172 838 L 172 930"/>
-    <text class="connection-label" x="214" y="856" xml:space="preserve"><tspan x="214" dy="0">taken</tspan></text>
-    <text class="connection-label" x="214" y="1161" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="201" y="856" xml:space="preserve"><tspan x="201" dy="0">taken</tspan></text>
+    <text class="connection-label" x="203" y="1161" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="224" y="116" xml:space="preserve"><tspan x="224" dy="0">condition, log</tspan></text>
-    <text class="connection-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="354" y="360" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="532" xml:space="preserve"><tspan x="214" dy="0">marked</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">&amp;log</tspan></text>
+    <text class="connection-label" x="195" y="396" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="331" y="360" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
+    <text class="connection-label" x="207" y="532" xml:space="preserve"><tspan x="207" dy="0">marked</tspan></text>
+    <text class="connection-label" x="197" y="159" xml:space="preserve"><tspan x="197" dy="0">&amp;log</tspan></text>
     <text class="connection-label" x="228" y="295" xml:space="preserve"><tspan x="228" dy="0">condition, &amp;log</tspan></text>
-    <text class="connection-label" x="214" y="439" xml:space="preserve"><tspan x="214" dy="0">yes, &amp;log</tspan></text>
+    <text class="connection-label" x="210" y="439" xml:space="preserve"><tspan x="210" dy="0">yes, &amp;log</tspan></text>
     <text class="connection-label" x="226" y="575" xml:space="preserve"><tspan x="226" dy="0">&amp;marked, &amp;log</tspan></text>
     <text class="connection-label" x="223" y="711" xml:space="preserve"><tspan x="223" dy="0">marked, &amp;log</tspan></text>
-    <text class="connection-label" x="574" y="439" xml:space="preserve"><tspan x="574" dy="0">no, &amp;log</tspan></text>
-    <text class="connection-label" x="214" y="919" xml:space="preserve"><tspan x="214" dy="0">&amp;log</tspan></text>
+    <text class="connection-label" x="567" y="439" xml:space="preserve"><tspan x="567" dy="0">no, &amp;log</tspan></text>
+    <text class="connection-label" x="197" y="919" xml:space="preserve"><tspan x="197" dy="0">&amp;log</tspan></text>
     <text class="connection-label" x="217" y="1055" xml:space="preserve"><tspan x="217" dy="0">taken, &amp;log</tspan></text>
   </g>
   <g class="nodes">

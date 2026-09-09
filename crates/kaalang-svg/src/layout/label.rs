@@ -24,8 +24,6 @@ use super::{
 /// A label beside a vertical run must fit before the next column's node,
 /// including clearance and its halo on both sides.
 const LABEL_WIDTH: i32 = COLUMN_WIDTH - NODE_WIDTH / 2 - 2 * (CONNECTION_LABEL_HALO + CLEARANCE);
-/// Sideways offset of a label from the run it names.
-const ASIDE: i32 = 42;
 /// Clear space between a label's halo and the vertical run or node beside it.
 const CLEARANCE: i32 = 8;
 /// Rise of a label above a horizontal run or a node's top border. Enough for
@@ -94,7 +92,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         labels.extend(wire_label(
             &merge.wires,
             Point {
-                x: anchor.x + ASIDE,
+                x: anchor.x,
                 y: anchor.y + DROP,
             },
             Stack::Below,
@@ -145,7 +143,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         labels.extend(wire_label(
             &topology.capture_label(node.id),
             Point {
-                x: anchor.x + ASIDE,
+                x: anchor.x,
                 y: anchor.y - RISE,
             },
             Stack::Above,
@@ -165,10 +163,7 @@ fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_h
         };
         labels.push(branch_label(
             description,
-            Point {
-                x: anchor.x + ASIDE,
-                y,
-            },
+            Point { x: anchor.x, y },
             stack,
             anchor.x,
         ));
@@ -176,7 +171,7 @@ fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_h
         labels.extend(wire_label(
             &exit.handover,
             Point {
-                x: anchor.x + ASIDE,
+                x: anchor.x,
                 y: anchor.y + DROP,
             },
             Stack::Below,
@@ -222,7 +217,7 @@ fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
 
     (
         Point {
-            x: start.x + ASIDE,
+            x: start.x,
             y: i32::midpoint(start.y, next.y) - BASELINE,
         },
         Stack::Around,

@@ -17,9 +17,9 @@
     <path class="connection" d="M 172 98 L 172 170"/>
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 370 L 172 442"/>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">input</tspan></text>
-    <text class="connection-label" x="214" y="265" xml:space="preserve"><tspan x="214" dy="0">doubled</tspan></text>
-    <text class="connection-label" x="214" y="401" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">input</tspan></text>
+    <text class="connection-label" x="207" y="265" xml:space="preserve"><tspan x="207" dy="0">doubled</tspan></text>
+    <text class="connection-label" x="203" y="401" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

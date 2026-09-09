@@ -15,7 +15,7 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <path class="connection" d="M 172 98 L 172 170"/>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="129" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

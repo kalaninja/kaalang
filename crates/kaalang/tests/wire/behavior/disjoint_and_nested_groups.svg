@@ -37,16 +37,16 @@
     <path class="connection" d="M 172 780 L 172 872"/>
     <path class="connection" d="M 172 988 L 172 1080"/>
     <path class="connection" d="M 1252 572 L 1252 664"/>
-    <text class="connection-label" x="214" y="590" xml:space="preserve"><tspan x="214" dy="0">ab</tspan></text>
-    <text class="connection-label" x="214" y="798" xml:space="preserve"><tspan x="214" dy="0">abc</tspan></text>
-    <text class="connection-label" x="214" y="1006" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="1294" y="590" xml:space="preserve"><tspan x="1294" dy="0">de</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">source</tspan></text>
-    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
-    <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">b</tspan></text>
-    <text class="connection-label" x="934" y="415" xml:space="preserve"><tspan x="934" dy="0">c</tspan></text>
-    <text class="connection-label" x="1294" y="415" xml:space="preserve"><tspan x="1294" dy="0">d</tspan></text>
-    <text class="connection-label" x="1654" y="415" xml:space="preserve"><tspan x="1654" dy="0">e</tspan></text>
+    <text class="connection-label" x="191" y="590" xml:space="preserve"><tspan x="191" dy="0">ab</tspan></text>
+    <text class="connection-label" x="195" y="798" xml:space="preserve"><tspan x="195" dy="0">abc</tspan></text>
+    <text class="connection-label" x="203" y="1006" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="1271" y="590" xml:space="preserve"><tspan x="1271" dy="0">de</tspan></text>
+    <text class="connection-label" x="205" y="129" xml:space="preserve"><tspan x="205" dy="0">source</tspan></text>
+    <text class="connection-label" x="188" y="415" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
+    <text class="connection-label" x="548" y="415" xml:space="preserve"><tspan x="548" dy="0">b</tspan></text>
+    <text class="connection-label" x="908" y="415" xml:space="preserve"><tspan x="908" dy="0">c</tspan></text>
+    <text class="connection-label" x="1268" y="415" xml:space="preserve"><tspan x="1268" dy="0">d</tspan></text>
+    <text class="connection-label" x="1628" y="415" xml:space="preserve"><tspan x="1628" dy="0">e</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -26,16 +26,16 @@
     <path class="connection" d="M 172 938 L 172 1010"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">factor</tspan></text>
-    <text class="connection-label" x="214" y="800" xml:space="preserve"><tspan x="214" dy="0">base</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">scaled</tspan></text>
+    <text class="connection-label" x="205" y="448" xml:space="preserve"><tspan x="205" dy="0">factor</tspan></text>
+    <text class="connection-label" x="198" y="800" xml:space="preserve"><tspan x="198" dy="0">base</tspan></text>
+    <text class="connection-label" x="203" y="273" xml:space="preserve"><tspan x="203" dy="0">scaled</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">plain</tspan></text>
-    <text class="connection-label" x="214" y="625" xml:space="preserve"><tspan x="214" dy="0">shifted</tspan></text>
+    <text class="connection-label" x="207" y="625" xml:space="preserve"><tspan x="207" dy="0">shifted</tspan></text>
     <text class="connection-label" x="422" y="547" xml:space="preserve"><tspan x="422" dy="0">centred</tspan></text>
-    <text class="connection-label" x="214" y="969" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="969" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="224" y="116" xml:space="preserve"><tspan x="224" dy="0">scale, offset</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">scale</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">offset</tspan></text>
+    <text class="connection-label" x="200" y="159" xml:space="preserve"><tspan x="200" dy="0">scale</tspan></text>
+    <text class="connection-label" x="205" y="511" xml:space="preserve"><tspan x="205" dy="0">offset</tspan></text>
     <text class="connection-label" x="222" y="863" xml:space="preserve"><tspan x="222" dy="0">factor, base</tspan></text>
   </g>
   <g class="nodes">

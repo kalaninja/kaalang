@@ -24,17 +24,17 @@
     <path class="connection" d="M 172 860 L 172 932"/>
     <path class="connection" d="M 172 704 L 172 796"/>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="891" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="891" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="226" y="116" xml:space="preserve"><tspan x="226" dy="0">condition, cell</tspan></text>
-    <text class="connection-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">guard</tspan></text>
-    <text class="connection-label" x="214" y="532" xml:space="preserve"><tspan x="214" dy="0">size</tspan></text>
-    <text class="connection-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">size</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="303" xml:space="preserve"><tspan x="214" dy="0">yes, cell</tspan></text>
-    <text class="connection-label" x="214" y="439" xml:space="preserve"><tspan x="214" dy="0">&amp;guard</tspan></text>
-    <text class="connection-label" x="214" y="575" xml:space="preserve"><tspan x="214" dy="0">guard</tspan></text>
-    <text class="connection-label" x="214" y="785" xml:space="preserve"><tspan x="214" dy="0">size, cell</tspan></text>
+    <text class="connection-label" x="195" y="260" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="201" y="396" xml:space="preserve"><tspan x="201" dy="0">guard</tspan></text>
+    <text class="connection-label" x="197" y="532" xml:space="preserve"><tspan x="197" dy="0">size</tspan></text>
+    <text class="connection-label" x="557" y="396" xml:space="preserve"><tspan x="557" dy="0">size</tspan></text>
+    <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="209" y="303" xml:space="preserve"><tspan x="209" dy="0">yes, cell</tspan></text>
+    <text class="connection-label" x="205" y="439" xml:space="preserve"><tspan x="205" dy="0">&amp;guard</tspan></text>
+    <text class="connection-label" x="201" y="575" xml:space="preserve"><tspan x="201" dy="0">guard</tspan></text>
+    <text class="connection-label" x="211" y="785" xml:space="preserve"><tspan x="211" dy="0">size, cell</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

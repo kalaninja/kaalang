@@ -21,15 +21,15 @@
     <path class="connection" d="M 532 398 L 532 450 L 172 450"/>
     <path class="connection" d="M 172 606 L 172 678"/>
     <path class="connection" d="M 172 450 L 172 542"/>
-    <text class="connection-label" x="214" y="637" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="637" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="226" y="134" xml:space="preserve"><tspan x="226" dy="0">condition, cell</tspan></text>
-    <text class="connection-label" x="214" y="278" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="354" y="242" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
+    <text class="connection-label" x="195" y="278" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="331" y="242" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
     <text class="connection-label" x="239" y="415" xml:space="preserve"><tspan x="239" dy="0">_yes_guard, ready</tspan></text>
     <text class="connection-label" x="595" y="416" xml:space="preserve"><tspan x="595" dy="0">_no_guard, ready</tspan></text>
-    <text class="connection-label" x="214" y="177" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="322" xml:space="preserve"><tspan x="214" dy="0">yes, cell</tspan></text>
-    <text class="connection-label" x="574" y="321" xml:space="preserve"><tspan x="574" dy="0">no, cell</tspan></text>
+    <text class="connection-label" x="212" y="177" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="209" y="322" xml:space="preserve"><tspan x="209" dy="0">yes, cell</tspan></text>
+    <text class="connection-label" x="566" y="321" xml:space="preserve"><tspan x="566" dy="0">no, cell</tspan></text>
     <text class="connection-label" x="216" y="531" xml:space="preserve"><tspan x="216" dy="0">ready, cell</tspan></text>
   </g>
   <g class="nodes">

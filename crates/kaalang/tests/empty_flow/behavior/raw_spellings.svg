@@ -18,9 +18,9 @@
     <path class="connection" d="M 172 236 L 172 308"/>
     <path class="connection" d="M 172 372 L 172 444"/>
     <text class="connection-label" x="217" y="129" xml:space="preserve"><tspan x="217" dy="0">type, value</tspan></text>
-    <text class="connection-label" x="214" y="403" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="403" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="254" xml:space="preserve"><tspan x="233" dy="0">match, _ignored</tspan></text>
-    <text class="connection-label" x="214" y="297" xml:space="preserve"><tspan x="214" dy="0">match</tspan></text>
+    <text class="connection-label" x="203" y="297" xml:space="preserve"><tspan x="203" dy="0">match</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -21,13 +21,13 @@
     <path class="connection" d="M 172 516 L 172 568"/>
     <path class="connection" d="M 532 516 L 532 568 L 172 568"/>
     <path class="connection" d="M 172 568 L 172 660"/>
-    <text class="connection-label" x="214" y="586" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="586" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="229" y="116" xml:space="preserve"><tspan x="229" dy="0">condition, base</tspan></text>
-    <text class="connection-label" x="214" y="254" xml:space="preserve"><tspan x="214" dy="0">handler</tspan></text>
-    <text class="connection-label" x="214" y="398" xml:space="preserve"><tspan x="214" dy="0">add</tspan></text>
-    <text class="connection-label" x="354" y="362" xml:space="preserve"><tspan x="354" dy="0">subtract</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">base</tspan></text>
-    <text class="connection-label" x="214" y="297" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="207" y="254" xml:space="preserve"><tspan x="207" dy="0">handler</tspan></text>
+    <text class="connection-label" x="195" y="398" xml:space="preserve"><tspan x="195" dy="0">add</tspan></text>
+    <text class="connection-label" x="351" y="362" xml:space="preserve"><tspan x="351" dy="0">subtract</tspan></text>
+    <text class="connection-label" x="198" y="159" xml:space="preserve"><tspan x="198" dy="0">base</tspan></text>
+    <text class="connection-label" x="212" y="297" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="221" y="441" xml:space="preserve"><tspan x="221" dy="0">add, handler</tspan></text>
     <text class="connection-label" x="597" y="441" xml:space="preserve"><tspan x="597" dy="0">subtract, handler</tspan></text>
   </g>

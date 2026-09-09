@@ -21,12 +21,12 @@
     <path class="connection" d="M 172 536 L 172 588"/>
     <path class="connection" d="M 532 536 L 532 588 L 172 588"/>
     <path class="connection" d="M 172 588 L 172 680"/>
-    <text class="connection-label" x="214" y="606" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="606" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="138" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
-    <text class="connection-label" x="214" y="274" xml:space="preserve"><tspan x="214" dy="0">setup</tspan></text>
-    <text class="connection-label" x="214" y="418" xml:space="preserve"><tspan x="214" dy="0">short</tspan></text>
-    <text class="connection-label" x="354" y="382" xml:space="preserve"><tspan x="354" dy="0">long</tspan></text>
-    <text class="connection-label" x="214" y="181" xml:space="preserve"><tspan x="214" dy="0">&amp;order</tspan></text>
+    <text class="connection-label" x="201" y="274" xml:space="preserve"><tspan x="201" dy="0">setup</tspan></text>
+    <text class="connection-label" x="201" y="418" xml:space="preserve"><tspan x="201" dy="0">short</tspan></text>
+    <text class="connection-label" x="337" y="382" xml:space="preserve"><tspan x="337" dy="0">long</tspan></text>
+    <text class="connection-label" x="205" y="181" xml:space="preserve"><tspan x="205" dy="0">&amp;order</tspan></text>
     <text class="connection-label" x="236" y="317" xml:space="preserve"><tspan x="236" dy="0">condition, &amp;order</tspan></text>
     <text class="connection-label" x="225" y="461" xml:space="preserve"><tspan x="225" dy="0">short, &amp;setup</tspan></text>
     <text class="connection-label" x="581" y="461" xml:space="preserve"><tspan x="581" dy="0">long, &amp;setup</tspan></text>

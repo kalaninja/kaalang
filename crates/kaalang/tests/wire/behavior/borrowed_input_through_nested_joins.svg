@@ -26,15 +26,15 @@
     <path class="connection" d="M 172 960 L 172 1032"/>
     <path class="connection" d="M 172 596 L 172 688"/>
     <path class="connection" d="M 172 804 L 172 896"/>
-    <text class="connection-label" x="214" y="614" xml:space="preserve"><tspan x="214" dy="0">partial</tspan></text>
-    <text class="connection-label" x="214" y="822" xml:space="preserve"><tspan x="214" dy="0">view</tspan></text>
+    <text class="connection-label" x="205" y="614" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
+    <text class="connection-label" x="199" y="822" xml:space="preserve"><tspan x="199" dy="0">view</tspan></text>
     <text class="connection-label" x="602" y="217" xml:space="preserve"><tspan x="602" dy="0">fallback</tspan></text>
     <text class="connection-label" x="422" y="361" xml:space="preserve"><tspan x="422" dy="0">skip</tspan></text>
-    <text class="connection-label" x="214" y="991" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="991" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="238" y="138" xml:space="preserve"><tspan x="238" dy="0">outer, inner, text</tspan></text>
-    <text class="connection-label" x="214" y="282" xml:space="preserve"><tspan x="214" dy="0">nested</tspan></text>
-    <text class="connection-label" x="214" y="426" xml:space="preserve"><tspan x="214" dy="0">borrow</tspan></text>
-    <text class="connection-label" x="214" y="181" xml:space="preserve"><tspan x="214" dy="0">outer</tspan></text>
+    <text class="connection-label" x="205" y="282" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
+    <text class="connection-label" x="207" y="426" xml:space="preserve"><tspan x="207" dy="0">borrow</tspan></text>
+    <text class="connection-label" x="201" y="181" xml:space="preserve"><tspan x="201" dy="0">outer</tspan></text>
     <text class="connection-label" x="224" y="325" xml:space="preserve"><tspan x="224" dy="0">nested, inner</tspan></text>
     <text class="connection-label" x="227" y="469" xml:space="preserve"><tspan x="227" dy="0">borrow, &amp;text</tspan></text>
   </g>

@@ -16,8 +16,8 @@
   <g class="connections">
     <path class="connection" d="M 172 134 L 172 206"/>
     <path class="connection" d="M 172 270 L 172 342"/>
-    <text class="connection-label" x="214" y="165" xml:space="preserve"><tspan x="214" dy="0">input</tspan></text>
-    <text class="connection-label" x="214" y="301" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="200" y="165" xml:space="preserve"><tspan x="200" dy="0">input</tspan></text>
+    <text class="connection-label" x="203" y="301" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 83)">

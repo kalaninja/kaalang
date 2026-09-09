@@ -22,13 +22,13 @@
     <path class="connection" d="M 172 586 L 172 658"/>
     <path class="connection" d="M 172 722 L 172 794"/>
     <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">flag</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="200" y="448" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="197" y="129" xml:space="preserve"><tspan x="197" dy="0">flag</tspan></text>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="753" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="604" xml:space="preserve"><tspan x="214" dy="0">stamp</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">()</tspan></text>
+    <text class="connection-label" x="203" y="753" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="604" xml:space="preserve"><tspan x="203" dy="0">stamp</tspan></text>
+    <text class="connection-label" x="188" y="511" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
     <text class="connection-label" x="223" y="647" xml:space="preserve"><tspan x="223" dy="0">value, stamp</tspan></text>
   </g>
   <g class="nodes">

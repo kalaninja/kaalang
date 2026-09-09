@@ -21,12 +21,12 @@
     <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
     <path class="connection" d="M 172 588 L 172 660"/>
     <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">suffix</tspan></text>
-    <text class="connection-label" x="214" y="619" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="448" xml:space="preserve"><tspan x="203" dy="0">suffix</tspan></text>
+    <text class="connection-label" x="203" y="619" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">condition, prefix</tspan></text>
-    <text class="connection-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="354" y="224" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="260" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="331" y="224" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
+    <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="221" y="303" xml:space="preserve"><tspan x="221" dy="0">yes, &amp;prefix</tspan></text>
     <text class="connection-label" x="577" y="303" xml:space="preserve"><tspan x="577" dy="0">no, &amp;prefix</tspan></text>
     <text class="connection-label" x="226" y="511" xml:space="preserve"><tspan x="226" dy="0">suffix, prefix</tspan></text>

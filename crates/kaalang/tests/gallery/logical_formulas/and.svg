@@ -26,15 +26,15 @@
     <path class="connection" d="M 532 594 L 532 666"/>
     <path class="connection" d="M 172 782 L 172 874"/>
     <text class="connection-label" x="582" y="612" xml:space="preserve"><tspan x="582" dy="0">false_result</tspan></text>
-    <text class="connection-label" x="214" y="800" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">a, b, c</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="214" y="254" xml:space="preserve"><tspan x="214" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="354" y="186" xml:space="preserve"><tspan x="354" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="214" y="398" xml:space="preserve"><tspan x="214" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="354" y="330" xml:space="preserve"><tspan x="354" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="214" y="542" xml:space="preserve"><tspan x="214" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="354" y="474" xml:space="preserve"><tspan x="354" dy="0">No</tspan></text>
-    <text class="connection-label" x="214" y="151" xml:space="preserve"><tspan x="214" dy="0">a</tspan></text>
+    <text class="connection-label" x="203" y="800" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="202" y="108" xml:space="preserve"><tspan x="202" dy="0">a, b, c</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="254" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="186" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="398" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="330" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="542" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="474" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label" x="188" y="151" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
     <text class="connection-label" x="215" y="295" xml:space="preserve"><tspan x="215" dy="0">check_b, b</tspan></text>
     <text class="connection-label" x="215" y="439" xml:space="preserve"><tspan x="215" dy="0">check_c, c</tspan></text>
   </g>

@@ -22,9 +22,9 @@
     <path class="connection" d="M 172 520 L 172 572"/>
     <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
     <path class="connection" d="M 172 572 L 172 664"/>
-    <text class="connection-label" x="214" y="590" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
-    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">negative</tspan></text>
+    <text class="connection-label" x="203" y="590" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="210" y="415" xml:space="preserve"><tspan x="210" dy="0">negative</tspan></text>
     <text class="connection-label" x="580" y="415" xml:space="preserve"><tspan x="580" dy="0">nonnegative</tspan></text>
   </g>
   <g class="nodes">

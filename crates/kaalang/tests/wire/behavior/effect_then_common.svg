@@ -23,15 +23,15 @@
     <path class="connection" d="M 172 722 L 172 794"/>
     <path class="connection" d="M 172 858 L 172 930"/>
     <path class="connection" d="M 172 566 L 172 658"/>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">flag</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="197" y="129" xml:space="preserve"><tspan x="197" dy="0">flag</tspan></text>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="889" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="889" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="218" y="396" xml:space="preserve"><tspan x="218" dy="0">value, local</tspan></text>
-    <text class="connection-label" x="574" y="396" xml:space="preserve"><tspan x="574" dy="0">value</tspan></text>
-    <text class="connection-label" x="214" y="740" xml:space="preserve"><tspan x="214" dy="0">stamp</tspan></text>
-    <text class="connection-label" x="214" y="439" xml:space="preserve"><tspan x="214" dy="0">local</tspan></text>
-    <text class="connection-label" x="214" y="647" xml:space="preserve"><tspan x="214" dy="0">()</tspan></text>
+    <text class="connection-label" x="560" y="396" xml:space="preserve"><tspan x="560" dy="0">value</tspan></text>
+    <text class="connection-label" x="203" y="740" xml:space="preserve"><tspan x="203" dy="0">stamp</tspan></text>
+    <text class="connection-label" x="198" y="439" xml:space="preserve"><tspan x="198" dy="0">local</tspan></text>
+    <text class="connection-label" x="188" y="647" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
     <text class="connection-label" x="223" y="783" xml:space="preserve"><tspan x="223" dy="0">value, stamp</tspan></text>
   </g>
   <g class="nodes">

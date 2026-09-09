@@ -21,15 +21,15 @@
     <path class="connection" d="M 172 514 L 172 566"/>
     <path class="connection" d="M 532 378 L 532 566 L 172 566"/>
     <path class="connection" d="M 172 566 L 172 658"/>
-    <text class="connection-label" x="214" y="584" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="584" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="231" y="116" xml:space="preserve"><tspan x="231" dy="0">condition, value</tspan></text>
-    <text class="connection-label" x="214" y="260" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="354" y="224" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="396" xml:space="preserve"><tspan x="214" dy="0">logged</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="260" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="331" y="224" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
+    <text class="connection-label" x="203" y="396" xml:space="preserve"><tspan x="203" dy="0">logged</tspan></text>
+    <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="217" y="303" xml:space="preserve"><tspan x="217" dy="0">yes, &amp;value</tspan></text>
     <text class="connection-label" x="222" y="439" xml:space="preserve"><tspan x="222" dy="0">logged, value</tspan></text>
-    <text class="connection-label" x="574" y="303" xml:space="preserve"><tspan x="574" dy="0">no, value</tspan></text>
+    <text class="connection-label" x="570" y="303" xml:space="preserve"><tspan x="570" dy="0">no, value</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -27,16 +27,16 @@
     <path class="connection" d="M 172 1092 L 172 1164"/>
     <path class="connection" d="M 172 448 L 172 540"/>
     <path class="connection" d="M 172 936 L 172 1028"/>
-    <text class="connection-label" x="214" y="466" xml:space="preserve"><tspan x="214" dy="0">text</tspan></text>
-    <text class="connection-label" x="214" y="954" xml:space="preserve"><tspan x="214" dy="0">selected</tspan></text>
-    <text class="connection-label" x="214" y="291" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="connection-label" x="198" y="466" xml:space="preserve"><tspan x="198" dy="0">text</tspan></text>
+    <text class="connection-label" x="210" y="954" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="200" y="291" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
-    <text class="connection-label" x="214" y="1123" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="1123" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="228" y="134" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
-    <text class="connection-label" x="214" y="622" xml:space="preserve"><tspan x="214" dy="0">length</tspan></text>
-    <text class="connection-label" x="214" y="766" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="354" y="730" xml:space="preserve"><tspan x="354" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="177" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="203" y="622" xml:space="preserve"><tspan x="203" dy="0">length</tspan></text>
+    <text class="connection-label" x="195" y="766" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="331" y="730" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
+    <text class="connection-label" x="212" y="177" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="222" y="665" xml:space="preserve"><tspan x="222" dy="0">&amp;length, long</tspan></text>
     <text class="connection-label" x="217" y="809" xml:space="preserve"><tspan x="217" dy="0">yes, length</tspan></text>
     <text class="connection-label" x="574" y="809" xml:space="preserve"><tspan x="574" dy="0">no, length</tspan></text>

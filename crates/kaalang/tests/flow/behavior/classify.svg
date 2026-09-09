@@ -23,14 +23,14 @@
     <path class="connection" d="M 172 778 L 172 830"/>
     <path class="connection" d="M 532 778 L 532 830 L 172 830"/>
     <path class="connection" d="M 172 830 L 172 922"/>
-    <text class="connection-label" x="214" y="848" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="848" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="217" y="257" xml:space="preserve"><tspan x="217" dy="0">normalized</tspan></text>
     <text class="connection-label" x="216" y="108" xml:space="preserve"><tspan x="216" dy="0">seed, limit</tspan></text>
     <text class="connection-label" x="216" y="380" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="214" y="516" xml:space="preserve"><tspan x="214" dy="0">total</tspan></text>
-    <text class="connection-label" x="214" y="660" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
-    <text class="connection-label" x="354" y="624" xml:space="preserve"><tspan x="354" dy="0">rejected</tspan></text>
-    <text class="connection-label" x="214" y="151" xml:space="preserve"><tspan x="214" dy="0">&amp;seed</tspan></text>
+    <text class="connection-label" x="200" y="516" xml:space="preserve"><tspan x="200" dy="0">total</tspan></text>
+    <text class="connection-label" x="211" y="660" xml:space="preserve"><tspan x="211" dy="0">accepted</tspan></text>
+    <text class="connection-label" x="350" y="624" xml:space="preserve"><tspan x="350" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="201" y="151" xml:space="preserve"><tspan x="201" dy="0">&amp;seed</tspan></text>
     <text class="connection-label" x="237" y="423" xml:space="preserve"><tspan x="237" dy="0">left, right, &amp;limit</tspan></text>
     <text class="connection-label" x="225" y="559" xml:space="preserve"><tspan x="225" dy="0">&amp;total, &amp;limit</tspan></text>
     <text class="connection-label" x="231" y="703" xml:space="preserve"><tspan x="231" dy="0">accepted, total</tspan></text>

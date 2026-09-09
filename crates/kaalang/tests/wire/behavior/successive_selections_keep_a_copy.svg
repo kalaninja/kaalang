@@ -27,16 +27,16 @@
     <path class="connection" d="M 172 1076 L 172 1148"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 918 L 172 1010"/>
-    <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">seed</tspan></text>
+    <text class="connection-label" x="198" y="448" xml:space="preserve"><tspan x="198" dy="0">seed</tspan></text>
     <text class="connection-label" x="222" y="936" xml:space="preserve"><tspan x="222" dy="0">include_seed</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="connection-label" x="200" y="273" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
-    <text class="connection-label" x="214" y="761" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="195" y="761" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="683" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="1107" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="1107" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="228" y="116" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
-    <text class="connection-label" x="214" y="604" xml:space="preserve"><tspan x="214" dy="0">scaled</tspan></text>
-    <text class="connection-label" x="214" y="159" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
+    <text class="connection-label" x="203" y="604" xml:space="preserve"><tspan x="203" dy="0">scaled</tspan></text>
+    <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="222" y="647" xml:space="preserve"><tspan x="222" dy="0">&amp;scaled, long</tspan></text>
     <text class="connection-label" x="262" y="999" xml:space="preserve"><tspan x="262" dy="0">include_seed, scaled, seed</tspan></text>
   </g>

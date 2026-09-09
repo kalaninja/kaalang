@@ -18,11 +18,11 @@
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 370 L 172 442"/>
     <path class="connection" d="M 172 506 L 172 578"/>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
-    <text class="connection-label" x="214" y="537" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="252" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
-    <text class="connection-label" x="214" y="388" xml:space="preserve"><tspan x="214" dy="0">second</tspan></text>
-    <text class="connection-label" x="214" y="295" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
+    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="203" y="537" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="200" y="252" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="205" y="388" xml:space="preserve"><tspan x="205" dy="0">second</tspan></text>
+    <text class="connection-label" x="200" y="295" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
     <text class="connection-label" x="224" y="431" xml:space="preserve"><tspan x="224" dy="0">first, second</tspan></text>
   </g>
   <g class="nodes">

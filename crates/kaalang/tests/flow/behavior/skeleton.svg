@@ -20,11 +20,11 @@
     <path class="connection" d="M 172 370 L 172 422"/>
     <path class="connection" d="M 532 370 L 532 422 L 172 422"/>
     <path class="connection" d="M 172 422 L 172 514"/>
-    <text class="connection-label" x="214" y="440" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">seed</tspan></text>
-    <text class="connection-label" x="214" y="252" xml:space="preserve"><tspan x="214" dy="0">accepted</tspan></text>
-    <text class="connection-label" x="354" y="216" xml:space="preserve"><tspan x="354" dy="0">rejected</tspan></text>
-    <text class="connection-label" x="214" y="151" xml:space="preserve"><tspan x="214" dy="0">&amp;seed</tspan></text>
+    <text class="connection-label" x="203" y="440" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="198" y="108" xml:space="preserve"><tspan x="198" dy="0">seed</tspan></text>
+    <text class="connection-label" x="211" y="252" xml:space="preserve"><tspan x="211" dy="0">accepted</tspan></text>
+    <text class="connection-label" x="350" y="216" xml:space="preserve"><tspan x="350" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="201" y="151" xml:space="preserve"><tspan x="201" dy="0">&amp;seed</tspan></text>
     <text class="connection-label" x="229" y="295" xml:space="preserve"><tspan x="229" dy="0">accepted, seed</tspan></text>
     <text class="connection-label" x="587" y="295" xml:space="preserve"><tspan x="587" dy="0">rejected, seed</tspan></text>
   </g>

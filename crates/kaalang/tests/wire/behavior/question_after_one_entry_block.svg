@@ -28,17 +28,17 @@
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 1056 L 172 1148"/>
     <text class="connection-label" x="216" y="448" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="214" y="1074" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="203" y="1074" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="604" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
-    <text class="connection-label" x="214" y="740" xml:space="preserve"><tspan x="214" dy="0">second</tspan></text>
-    <text class="connection-label" x="214" y="884" xml:space="preserve"><tspan x="214" dy="0">large</tspan></text>
-    <text class="connection-label" x="354" y="848" xml:space="preserve"><tspan x="354" dy="0">small</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">left</tspan></text>
-    <text class="connection-label" x="214" y="647" xml:space="preserve"><tspan x="214" dy="0">right</tspan></text>
-    <text class="connection-label" x="214" y="783" xml:space="preserve"><tspan x="214" dy="0">first</tspan></text>
+    <text class="connection-label" x="200" y="604" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="205" y="740" xml:space="preserve"><tspan x="205" dy="0">second</tspan></text>
+    <text class="connection-label" x="200" y="884" xml:space="preserve"><tspan x="200" dy="0">large</tspan></text>
+    <text class="connection-label" x="340" y="848" xml:space="preserve"><tspan x="340" dy="0">small</tspan></text>
+    <text class="connection-label" x="197" y="511" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
+    <text class="connection-label" x="200" y="647" xml:space="preserve"><tspan x="200" dy="0">right</tspan></text>
+    <text class="connection-label" x="200" y="783" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="224" y="927" xml:space="preserve"><tspan x="224" dy="0">large, second</tspan></text>
     <text class="connection-label" x="584" y="927" xml:space="preserve"><tspan x="584" dy="0">small, second</tspan></text>
   </g>

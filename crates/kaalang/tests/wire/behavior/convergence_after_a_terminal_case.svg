@@ -27,12 +27,12 @@
     <path class="connection" d="M 532 728 L 532 780 L 172 780"/>
     <path class="connection" d="M 172 780 L 172 872"/>
     <path class="connection" d="M 532 572 L 532 664"/>
-    <text class="connection-label" x="214" y="798" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="574" y="590" xml:space="preserve"><tspan x="574" dy="0">selected</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
-    <text class="connection-label" x="214" y="415" xml:space="preserve"><tspan x="214" dy="0">done</tspan></text>
-    <text class="connection-label" x="574" y="415" xml:space="preserve"><tspan x="574" dy="0">left</tspan></text>
-    <text class="connection-label" x="934" y="415" xml:space="preserve"><tspan x="934" dy="0">right</tspan></text>
+    <text class="connection-label" x="203" y="798" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="570" y="590" xml:space="preserve"><tspan x="570" dy="0">selected</tspan></text>
+    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="198" y="415" xml:space="preserve"><tspan x="198" dy="0">done</tspan></text>
+    <text class="connection-label" x="557" y="415" xml:space="preserve"><tspan x="557" dy="0">left</tspan></text>
+    <text class="connection-label" x="920" y="415" xml:space="preserve"><tspan x="920" dy="0">right</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

@@ -25,12 +25,12 @@
     <path class="connection" d="M 532 538 L 532 590 L 172 590"/>
     <path class="connection" d="M 892 538 L 892 590 L 172 590"/>
     <path class="connection" d="M 172 590 L 172 682"/>
-    <text class="connection-label" x="214" y="608" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
+    <text class="connection-label" x="203" y="608" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="266" y="134" xml:space="preserve"><tspan x="266" dy="0">value, branch_action_count</tspan></text>
-    <text class="connection-label" x="214" y="420" xml:space="preserve"><tspan x="214" dy="0">negative</tspan></text>
-    <text class="connection-label" x="574" y="420" xml:space="preserve"><tspan x="574" dy="0">zero</tspan></text>
-    <text class="connection-label" x="934" y="420" xml:space="preserve"><tspan x="934" dy="0">positive</tspan></text>
-    <text class="connection-label" x="214" y="177" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
+    <text class="connection-label" x="210" y="420" xml:space="preserve"><tspan x="210" dy="0">negative</tspan></text>
+    <text class="connection-label" x="558" y="420" xml:space="preserve"><tspan x="558" dy="0">zero</tspan></text>
+    <text class="connection-label" x="929" y="420" xml:space="preserve"><tspan x="929" dy="0">positive</tspan></text>
+    <text class="connection-label" x="200" y="177" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
     <text class="connection-label" x="276" y="463" xml:space="preserve"><tspan x="276" dy="0">negative, branch_action_count</tspan></text>
     <text class="connection-label" x="624" y="463" xml:space="preserve"><tspan x="624" dy="0">zero, branch_action_count</tspan></text>
     <text class="connection-label" x="995" y="463" xml:space="preserve"><tspan x="995" dy="0">positive, branch_action_count</tspan></text>

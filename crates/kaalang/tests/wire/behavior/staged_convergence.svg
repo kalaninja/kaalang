@@ -23,12 +23,12 @@
     <path class="connection" d="M 172 722 L 172 794"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <text class="connection-label" x="224" y="448" xml:space="preserve"><tspan x="224" dy="0">number, label</tspan></text>
-    <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
+    <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="214" y="753" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
-    <text class="connection-label" x="214" y="604" xml:space="preserve"><tspan x="214" dy="0">doubled</tspan></text>
-    <text class="connection-label" x="214" y="511" xml:space="preserve"><tspan x="214" dy="0">number</tspan></text>
+    <text class="connection-label" x="203" y="753" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="207" y="604" xml:space="preserve"><tspan x="207" dy="0">doubled</tspan></text>
+    <text class="connection-label" x="207" y="511" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
     <text class="connection-label" x="224" y="647" xml:space="preserve"><tspan x="224" dy="0">doubled, label</tspan></text>
   </g>
   <g class="nodes">
