@@ -25,7 +25,6 @@
     <path class="connection" d="M 172 588 L 172 680"/>
     <text class="connection-label" x="195" y="291" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="203" y="913" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="134" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
     <text class="connection-label" x="245" y="415" xml:space="preserve"><tspan x="245" dy="0">selected, local_note</tspan></text>
     <text class="connection-label" x="591" y="416" xml:space="preserve"><tspan x="591" dy="0">selected, noted</tspan></text>

@@ -18,7 +18,6 @@
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 370 L 172 442"/>
     <path class="connection" d="M 172 508 L 172 580"/>
-    <text class="connection-label" x="203" y="539" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="198" y="116" xml:space="preserve"><tspan x="198" dy="0">text</tspan></text>
     <text class="connection-label" x="229" y="252" xml:space="preserve"><tspan x="229" dy="0">length, trigger</tspan></text>
     <text class="connection-label" x="203" y="388" xml:space="preserve"><tspan x="203" dy="0">empty</tspan></text>

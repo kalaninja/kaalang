@@ -21,7 +21,6 @@
     <path class="connection" d="M 172 536 L 172 588"/>
     <path class="connection" d="M 532 536 L 532 588 L 172 588"/>
     <path class="connection" d="M 172 588 L 172 680"/>
-    <text class="connection-label" x="203" y="606" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="138" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
     <text class="connection-label" x="201" y="274" xml:space="preserve"><tspan x="201" dy="0">setup</tspan></text>
     <text class="connection-label" x="201" y="418" xml:space="preserve"><tspan x="201" dy="0">short</tspan></text>

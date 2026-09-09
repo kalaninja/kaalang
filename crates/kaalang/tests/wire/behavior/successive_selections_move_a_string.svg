@@ -31,7 +31,6 @@
     <text class="connection-label" x="210" y="954" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
     <text class="connection-label" x="200" y="291" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
-    <text class="connection-label" x="203" y="1123" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="228" y="134" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
     <text class="connection-label" x="203" y="622" xml:space="preserve"><tspan x="203" dy="0">length</tspan></text>
     <text class="connection-label" x="195" y="766" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>

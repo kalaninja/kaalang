@@ -32,7 +32,6 @@
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">left_no</tspan></text>
     <text class="connection-label" x="213" y="625" xml:space="preserve"><tspan x="213" dy="0">right_yes</tspan></text>
     <text class="connection-label" x="422" y="547" xml:space="preserve"><tspan x="422" dy="0">right_no</tspan></text>
-    <text class="connection-label" x="203" y="969" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
     <text class="connection-label" x="197" y="159" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
     <text class="connection-label" x="200" y="511" xml:space="preserve"><tspan x="200" dy="0">right</tspan></text>

@@ -26,7 +26,6 @@
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
     <text class="connection-label" x="219" y="448" xml:space="preserve"><tspan x="219" dy="0">right_value</tspan></text>
-    <text class="connection-label" x="203" y="800" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="188" y="273" xml:space="preserve"><tspan x="188" dy="0">b</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">right_no</tspan></text>
     <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>

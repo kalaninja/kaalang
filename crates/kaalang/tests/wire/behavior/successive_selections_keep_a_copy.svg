@@ -33,7 +33,6 @@
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
     <text class="connection-label" x="195" y="761" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="683" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="203" y="1107" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="228" y="116" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
     <text class="connection-label" x="203" y="604" xml:space="preserve"><tspan x="203" dy="0">scaled</tspan></text>
     <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>

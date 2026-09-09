@@ -20,7 +20,6 @@
     <path class="connection" d="M 172 380 L 172 432"/>
     <path class="connection" d="M 532 379 L 532 432 L 172 432"/>
     <path class="connection" d="M 172 432 L 172 524"/>
-    <text class="connection-label" x="203" y="450" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <text class="connection-label" x="233" y="116" xml:space="preserve"><tspan x="233" dy="0">condition, extra</tspan></text>
     <text class="connection-label" x="195" y="260" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>

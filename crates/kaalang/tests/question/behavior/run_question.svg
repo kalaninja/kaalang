@@ -20,7 +20,6 @@
     <path class="connection" d="M 172 378 L 172 430"/>
     <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
     <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="203" y="448" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="262" y="262" xml:space="preserve"><tspan x="262" dy="0">The condition is false.</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="400" y="194" xml:space="preserve"><tspan x="400" dy="0">The condition is true.</tspan></text>

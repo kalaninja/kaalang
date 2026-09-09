@@ -45,7 +45,6 @@
     <path class="connection" d="M 172 1358 L 172 1450"/>
     <path class="connection" d="M 172 1150 L 172 1242"/>
     <text class="connection-label" x="205" y="580" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
-    <text class="connection-label" x="203" y="1376" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="210" y="1168" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
     <text class="connection-label" x="208" y="129" xml:space="preserve"><tspan x="208" dy="0">request</tspan></text>
     <text class="connection-label" x="197" y="415" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>

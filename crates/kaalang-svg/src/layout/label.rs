@@ -229,6 +229,11 @@ fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
 /// Wrapping an empty label would yield one blank line, so every caller needs
 /// the same guard.
 fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
+    let names = names
+        .iter()
+        .filter(|name| name.as_str() != "result")
+        .cloned()
+        .collect::<Vec<_>>();
     (!names.is_empty()).then(|| wrap_text(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
 }
 

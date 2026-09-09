@@ -18,7 +18,6 @@
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 370 L 172 442"/>
     <path class="connection" d="M 172 506 L 172 578"/>
-    <text class="connection-label" x="203" y="537" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
     <text class="connection-label" x="207" y="252" xml:space="preserve"><tspan x="207" dy="0">doubled</tspan></text>
     <text class="connection-label" x="205" y="388" xml:space="preserve"><tspan x="205" dy="0">tripled</tspan></text>

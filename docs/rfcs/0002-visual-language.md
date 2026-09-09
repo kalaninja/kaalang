@@ -103,11 +103,11 @@ return type preceded by `->`, and `-> ()` when the function declares none. The
 label is therefore the tail of the start node's signature, and the two read as
 one contract split across the diagram. A diagram has no separate return node.
 
-The end node's label names the type and its incoming connection names the
-`result` wire, so neither repeats the other; section 6 governs that capture
-label exactly as it governs any other node's. The end node is an ordinary
-consumer: alternative producers of `result` merge above it (section 7), and it
-is not itself the merge.
+The end node's label names the type. Its incoming connection does not name the
+`result` wire: every connection reaching end carries that wire, so the endpoint
+already identifies it. The end node remains an ordinary consumer: alternative
+producers of `result` merge above it (section 7), and it is not itself the
+merge.
 
 ## 5. Flow inputs and outputs
 
@@ -129,17 +129,19 @@ An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
 is shared with a later capture or moved to an implicit merge.
 
-Every named flow input and every block output is labeled once at the exit that
-provides it, or by a shared label as defined below, except for a question output
-replaced by its branch description. This includes an intentionally unused wire
-whose name begins with `_`. The labels at one exit form its hand-over. The start
-node hands over its named flow inputs in signature order, an action hands over
-all its outputs in declaration order, and an undescribed question branch or case
-hands over its exact branch output. An action declaring no outputs therefore
-hands over nothing: its exit carries no label and the connection to the next
-node is unlabeled at that end. A hand-over names newly provided wires only; it
-neither lists wires that remain available nor implies that the next node
-captures every named wire.
+Every named flow input and every block output except `result` is labeled once at
+the exit that provides it, or by a shared label as defined below, except for a
+question output replaced by its branch description. The `result` wire and its
+terminal merge are unlabeled because every route carrying it finishes at end.
+When `result` is one part of a multi-output hand-over, the other outputs remain
+labeled in declaration order. This includes an intentionally unused wire whose
+name begins with `_`. The labels at one exit form its hand-over. The start node
+hands over its named flow inputs in signature order, an action hands over all
+its labeled outputs in declaration order, and an undescribed question branch or
+case hands over its labeled branch output. An action declaring no labeled
+outputs therefore carries no hand-over label. A hand-over names newly provided
+wires only; it neither lists wires that remain available nor implies that the
+next node captures every named wire.
 
 Every block input is labeled beside its receiving node. An input binding the
 wire's value is shown as `name`, while a borrowed input is shown as `&name`. The
@@ -172,7 +174,8 @@ different hand-over remains at its own exit. The shared label represents the
 alternative hand-overs, not a new producer at the junction. If the merge has one
 outgoing connection, it is the sole connection entering its consumer, and that
 consumer's capture list matches the shared hand-over, the same label also
-represents the capture. This applies to `result` at the end node as well.
+represents the capture. The terminal `result` merge is instead unlabeled, as
+described above.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
 the raw and ordinary spellings of one wire name the same wire, and only the

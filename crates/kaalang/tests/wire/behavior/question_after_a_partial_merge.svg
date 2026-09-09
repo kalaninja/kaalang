@@ -34,7 +34,6 @@
     <path class="connection" d="M 172 1134 L 172 1226"/>
     <text class="connection-label" x="205" y="592" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
     <text class="connection-label" x="205" y="800" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
-    <text class="connection-label" x="203" y="1152" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="200" y="415" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="565" y="415" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
     <text class="connection-label" x="920" y="415" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>

@@ -17,7 +17,6 @@
     <path class="connection" d="M 172 90 L 172 162"/>
     <path class="connection" d="M 172 226 L 172 298"/>
     <text class="connection-label" x="195" y="121" xml:space="preserve"><tspan x="195" dy="0">a, b</tspan></text>
-    <text class="connection-label" x="203" y="257" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

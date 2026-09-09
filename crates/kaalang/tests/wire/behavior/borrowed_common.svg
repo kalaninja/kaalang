@@ -22,7 +22,6 @@
     <path class="connection" d="M 172 588 L 172 660"/>
     <path class="connection" d="M 172 430 L 172 522"/>
     <text class="connection-label" x="203" y="448" xml:space="preserve"><tspan x="203" dy="0">suffix</tspan></text>
-    <text class="connection-label" x="203" y="619" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">condition, prefix</tspan></text>
     <text class="connection-label" x="195" y="260" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="331" y="224" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>

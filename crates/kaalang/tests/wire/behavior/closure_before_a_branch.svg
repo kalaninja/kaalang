@@ -21,7 +21,6 @@
     <path class="connection" d="M 172 516 L 172 568"/>
     <path class="connection" d="M 532 516 L 532 568 L 172 568"/>
     <path class="connection" d="M 172 568 L 172 660"/>
-    <text class="connection-label" x="203" y="586" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="229" y="116" xml:space="preserve"><tspan x="229" dy="0">condition, base</tspan></text>
     <text class="connection-label" x="207" y="254" xml:space="preserve"><tspan x="207" dy="0">handler</tspan></text>
     <text class="connection-label" x="195" y="398" xml:space="preserve"><tspan x="195" dy="0">add</tspan></text>

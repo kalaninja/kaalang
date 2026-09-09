@@ -21,7 +21,6 @@
     <path class="connection" d="M 172 514 L 172 566"/>
     <path class="connection" d="M 532 514 L 532 566 L 172 566"/>
     <path class="connection" d="M 172 566 L 172 658"/>
-    <text class="connection-label" x="203" y="584" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="422" y="331" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
     <text class="connection-label" x="197" y="116" xml:space="preserve"><tspan x="197" dy="0">flag</tspan></text>
     <text class="connection-label" x="203" y="252" xml:space="preserve"><tspan x="203" dy="0">stamp</tspan></text>

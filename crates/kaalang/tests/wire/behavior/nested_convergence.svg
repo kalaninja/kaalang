@@ -28,7 +28,6 @@
     <text class="connection-label" x="602" y="195" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
     <text class="connection-label" x="213" y="417" xml:space="preserve"><tspan x="213" dy="0">inner_yes</tspan></text>
     <text class="connection-label" x="422" y="339" xml:space="preserve"><tspan x="422" dy="0">inner_no</tspan></text>
-    <text class="connection-label" x="203" y="761" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="221" y="116" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
     <text class="connection-label" x="205" y="260" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
     <text class="connection-label" x="224" y="159" xml:space="preserve"><tspan x="224" dy="0">outer, &amp;inner</tspan></text>

@@ -32,7 +32,6 @@
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">plain</tspan></text>
     <text class="connection-label" x="207" y="625" xml:space="preserve"><tspan x="207" dy="0">shifted</tspan></text>
     <text class="connection-label" x="422" y="547" xml:space="preserve"><tspan x="422" dy="0">centred</tspan></text>
-    <text class="connection-label" x="203" y="969" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="224" y="116" xml:space="preserve"><tspan x="224" dy="0">scale, offset</tspan></text>
     <text class="connection-label" x="200" y="159" xml:space="preserve"><tspan x="200" dy="0">scale</tspan></text>
     <text class="connection-label" x="205" y="511" xml:space="preserve"><tspan x="205" dy="0">offset</tspan></text>

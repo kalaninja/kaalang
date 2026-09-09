@@ -39,7 +39,6 @@
     <path class="connection" d="M 1252 572 L 1252 664"/>
     <text class="connection-label" x="191" y="590" xml:space="preserve"><tspan x="191" dy="0">ab</tspan></text>
     <text class="connection-label" x="195" y="798" xml:space="preserve"><tspan x="195" dy="0">abc</tspan></text>
-    <text class="connection-label" x="203" y="1006" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="1271" y="590" xml:space="preserve"><tspan x="1271" dy="0">de</tspan></text>
     <text class="connection-label" x="205" y="129" xml:space="preserve"><tspan x="205" dy="0">source</tspan></text>
     <text class="connection-label" x="188" y="415" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>

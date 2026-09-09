@@ -27,7 +27,6 @@
     <path class="connection" d="M 172 850 L 172 942"/>
     <text class="connection-label" x="197" y="273" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
     <text class="connection-label" x="602" y="195" xml:space="preserve"><tspan x="602" dy="0">right</tspan></text>
-    <text class="connection-label" x="203" y="1037" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="221" y="116" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
     <text class="connection-label" x="236" y="397" xml:space="preserve"><tspan x="236" dy="0">probe, left_value</tspan></text>
     <text class="connection-label" x="195" y="542" xml:space="preserve"><tspan x="195" dy="0">far</tspan></text>

@@ -22,7 +22,6 @@
     <path class="connection" d="M 172 538 L 172 590"/>
     <path class="connection" d="M 532 538 L 532 590 L 172 590"/>
     <path class="connection" d="M 172 590 L 172 682"/>
-    <text class="connection-label" x="203" y="608" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="229" y="134" xml:space="preserve"><tspan x="229" dy="0">value, selected</tspan></text>
     <text class="connection-label" x="229" y="420" xml:space="preserve"><tspan x="229" dy="0">selected_value</tspan></text>
     <text class="connection-label" x="565" y="420" xml:space="preserve"><tspan x="565" dy="0">absent</tspan></text>

@@ -26,7 +26,6 @@
     <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="203" y="753" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="203" y="396" xml:space="preserve"><tspan x="203" dy="0">owner</tspan></text>
     <text class="connection-label" x="207" y="439" xml:space="preserve"><tspan x="207" dy="0">&amp;owner</tspan></text>
   </g>

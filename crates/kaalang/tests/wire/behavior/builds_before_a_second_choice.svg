@@ -36,7 +36,6 @@
     <path class="connection" d="M 172 572 L 172 664"/>
     <path class="connection" d="M 172 1066 L 172 1158"/>
     <text class="connection-label" x="200" y="590" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
-    <text class="connection-label" x="203" y="1084" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="188" y="415" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
     <text class="connection-label" x="548" y="415" xml:space="preserve"><tspan x="548" dy="0">b</tspan></text>
     <text class="connection-label" x="908" y="415" xml:space="preserve"><tspan x="908" dy="0">c</tspan></text>

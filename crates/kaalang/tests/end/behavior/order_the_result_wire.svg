@@ -18,7 +18,6 @@
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 370 L 172 442"/>
     <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">input</tspan></text>
-    <text class="connection-label" x="203" y="401" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="243" y="252" xml:space="preserve"><tspan x="243" dy="0">first, second, third</tspan></text>
     <text class="connection-label" x="243" y="295" xml:space="preserve"><tspan x="243" dy="0">third, first, second</tspan></text>
   </g>

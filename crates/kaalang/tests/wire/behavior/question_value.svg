@@ -24,7 +24,6 @@
     <text class="connection-label" x="210" y="448" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
     <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="203" y="617" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="253" y="116" xml:space="preserve"><tspan x="253" dy="0">condition, shared_runs</tspan></text>
     <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="251" y="511" xml:space="preserve"><tspan x="251" dy="0">selected, shared_runs</tspan></text>

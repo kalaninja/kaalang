@@ -25,7 +25,6 @@
     <path class="connection" d="M 532 750 L 532 802 L 172 802"/>
     <path class="connection" d="M 172 802 L 172 894"/>
     <path class="connection" d="M 532 594 L 532 686"/>
-    <text class="connection-label" x="203" y="820" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="565" y="612" xml:space="preserve"><tspan x="565" dy="0">shared</tspan></text>
     <text class="connection-label" x="602" y="215" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
     <text class="connection-label" x="197" y="437" xml:space="preserve"><tspan x="197" dy="0">skip</tspan></text>

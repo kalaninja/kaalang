@@ -23,7 +23,6 @@
     <path class="connection" d="M 172 756 L 172 815"/>
     <path class="connection" d="M 532 756 L 532 815 L 172 815"/>
     <path class="connection" d="M 172 815 L 172 914"/>
-    <text class="connection-label" x="203" y="833" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="264" y="174" xml:space="preserve"><tspan x="264" dy="0">condition, cell, evaluations</tspan></text>
     <text class="connection-label" x="220" y="317" xml:space="preserve"><tspan x="220" dy="0">input_guard</tspan></text>
     <text class="connection-label" x="207" y="623" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>

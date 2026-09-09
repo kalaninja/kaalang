@@ -25,7 +25,6 @@
     <path class="connection" d="M 532 538 L 532 590 L 172 590"/>
     <path class="connection" d="M 892 538 L 892 590 L 172 590"/>
     <path class="connection" d="M 172 590 L 172 682"/>
-    <text class="connection-label" x="203" y="608" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="266" y="134" xml:space="preserve"><tspan x="266" dy="0">value, branch_action_count</tspan></text>
     <text class="connection-label" x="210" y="420" xml:space="preserve"><tspan x="210" dy="0">negative</tspan></text>
     <text class="connection-label" x="558" y="420" xml:space="preserve"><tspan x="558" dy="0">zero</tspan></text>

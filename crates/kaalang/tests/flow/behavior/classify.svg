@@ -23,7 +23,6 @@
     <path class="connection" d="M 172 778 L 172 830"/>
     <path class="connection" d="M 532 778 L 532 830 L 172 830"/>
     <path class="connection" d="M 172 830 L 172 922"/>
-    <text class="connection-label" x="203" y="848" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="217" y="257" xml:space="preserve"><tspan x="217" dy="0">normalized</tspan></text>
     <text class="connection-label" x="216" y="108" xml:space="preserve"><tspan x="216" dy="0">seed, limit</tspan></text>
     <text class="connection-label" x="216" y="380" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>

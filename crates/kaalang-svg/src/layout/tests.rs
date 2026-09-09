@@ -150,6 +150,10 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
             .iter()
             .filter(|label| label.lines == [name.clone()])
             .collect::<Vec<_>>();
+        if name == "result" {
+            assert!(labels.is_empty(), "the result merge is labeled");
+            continue;
+        }
         assert_eq!(labels.len(), 1, "one shared label for {name}");
         assert!(labels[0].at.y > merge_line[0].y);
         assert!(labels[0].at.y < common.points.last().unwrap().y);
@@ -818,7 +822,7 @@ fn end_node(scene: &Scene) -> NodeId {
 }
 
 #[test]
-fn the_end_node_is_captioned_with_the_flow_return_type() {
+fn the_end_node_names_only_the_flow_return_type() {
     // A declared return type verbatim, and `-> ()` when the flow declares none.
     for ((source, flow), caption) in [
         (
@@ -826,24 +830,20 @@ fn the_end_node_is_captioned_with_the_flow_return_type() {
             "-> (u32, u32, u32)",
         ),
         (fixture!("empty_flow/behavior", "nothing"), "-> ()"),
+        (fixture!("end/behavior", "capture_from_a_branch"), "-> ()"),
     ] {
         let scene = drawn((source, flow));
         let end = end_node(&scene);
         assert_eq!(scene.topology.node(end).label, caption, "{flow}");
-        // The capture stays on the connection entering end, so the caption
-        // names the type and the connection names the wire. It is drawn, not
-        // only owned: neither flow merges `result`, so no junction label
-        // stands in for it.
+        // The semantic capture remains available to the accessible description,
+        // but the terminal route makes the `result` wire visually obvious.
         assert_eq!(scene.topology.capture(end), ["result"], "{flow}");
-        assert!(scene.topology.junctions.is_empty(), "{flow}");
-        assert_eq!(
+        assert!(
             scene
                 .labels
                 .iter()
-                .filter(|label| label.lines == ["result"])
-                .count(),
-            1,
-            "{flow}: the result capture is not drawn once at end"
+                .all(|label| !label.lines.join(" ").contains("result")),
+            "{flow}: the result wire is labeled"
         );
     }
 }

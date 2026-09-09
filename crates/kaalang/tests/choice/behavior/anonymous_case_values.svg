@@ -29,7 +29,6 @@
     <text class="connection-label" x="205" y="415" xml:space="preserve"><tspan x="205" dy="0">negate</tspan></text>
     <text class="connection-label" x="563" y="415" xml:space="preserve"><tspan x="563" dy="0">double</tspan></text>
     <text class="connection-label" x="215" y="761" xml:space="preserve"><tspan x="215" dy="0">increment</tspan></text>
-    <text class="connection-label" x="203" y="897" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">

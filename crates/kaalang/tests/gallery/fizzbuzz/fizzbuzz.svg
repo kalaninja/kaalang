@@ -28,7 +28,6 @@
     <path class="connection" d="M 892 512 L 892 564 L 172 564"/>
     <path class="connection" d="M 1252 512 L 1252 564 L 172 564"/>
     <path class="connection" d="M 172 564 L 172 656"/>
-    <text class="connection-label" x="203" y="582" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="207" y="121" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
     <text class="connection-label" x="213" y="407" xml:space="preserve"><tspan x="213" dy="0">fizz_buzz</tspan></text>
     <text class="connection-label" x="557" y="407" xml:space="preserve"><tspan x="557" dy="0">fizz</tspan></text>

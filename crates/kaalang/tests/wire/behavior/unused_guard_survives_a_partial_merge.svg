@@ -30,7 +30,6 @@
     <path class="connection" d="M 172 802 L 172 894"/>
     <text class="connection-label" x="213" y="820" xml:space="preserve"><tspan x="213" dy="0">borrowed</tspan></text>
     <text class="connection-label" x="929" y="433" xml:space="preserve"><tspan x="929" dy="0">fallback</tspan></text>
-    <text class="connection-label" x="203" y="991" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="219" y="134" xml:space="preserve"><tspan x="219" dy="0">source, cell</tspan></text>
     <text class="connection-label" x="200" y="420" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="565" y="420" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>

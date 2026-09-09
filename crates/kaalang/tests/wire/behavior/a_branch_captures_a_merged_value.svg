@@ -26,7 +26,6 @@
     <path class="connection" d="M 172 430 L 172 522"/>
     <path class="connection" d="M 172 782 L 172 874"/>
     <text class="connection-label" x="225" y="448" xml:space="preserve"><tspan x="225" dy="0">counted, seen</tspan></text>
-    <text class="connection-label" x="203" y="800" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="209" y="273" xml:space="preserve"><tspan x="209" dy="0">positive</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">negative</tspan></text>
     <text class="connection-label" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">amount, verbose</tspan></text>

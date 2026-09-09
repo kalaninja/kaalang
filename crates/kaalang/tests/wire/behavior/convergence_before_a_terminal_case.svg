@@ -28,7 +28,6 @@
     <path class="connection" d="M 172 572 L 172 664"/>
     <path class="connection" d="M 172 782 L 172 874"/>
     <text class="connection-label" x="210" y="590" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
-    <text class="connection-label" x="203" y="800" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="198" y="129" xml:space="preserve"><tspan x="198" dy="0">case</tspan></text>
     <text class="connection-label" x="200" y="415" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="565" y="415" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>

@@ -23,9 +23,8 @@
     <text class="connection-label" x="212" y="147" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="195" y="291" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="233" y="416" xml:space="preserve"><tspan x="233" dy="0">result, _marker</tspan></text>
-    <text class="connection-label" x="593" y="416" xml:space="preserve"><tspan x="593" dy="0">result, _marker</tspan></text>
-    <text class="connection-label" x="203" y="531" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
+    <text class="connection-label" x="210" y="416" xml:space="preserve"><tspan x="210" dy="0">_marker</tspan></text>
+    <text class="connection-label" x="570" y="416" xml:space="preserve"><tspan x="570" dy="0">_marker</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 74)">

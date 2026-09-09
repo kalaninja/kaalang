@@ -27,7 +27,6 @@
     <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="203" y="889" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="200" y="604" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="205" y="740" xml:space="preserve"><tspan x="205" dy="0">second</tspan></text>
     <text class="connection-label" x="197" y="511" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>

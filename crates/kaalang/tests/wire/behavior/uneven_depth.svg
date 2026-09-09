@@ -27,7 +27,6 @@
     <text class="connection-label" x="201" y="265" xml:space="preserve"><tspan x="201" dy="0">short</tspan></text>
     <text class="connection-label" x="422" y="187" xml:space="preserve"><tspan x="422" dy="0">long</tspan></text>
     <text class="connection-label" x="571" y="401" xml:space="preserve"><tspan x="571" dy="0">prepared</tspan></text>
-    <text class="connection-label" x="203" y="745" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">

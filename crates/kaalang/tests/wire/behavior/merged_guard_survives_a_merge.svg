@@ -22,7 +22,6 @@
     <path class="connection" d="M 172 606 L 172 678"/>
     <path class="connection" d="M 172 448 L 172 540"/>
     <text class="connection-label" x="201" y="466" xml:space="preserve"><tspan x="201" dy="0">guard</tspan></text>
-    <text class="connection-label" x="203" y="637" xml:space="preserve"><tspan x="203" dy="0">result</tspan></text>
     <text class="connection-label" x="226" y="134" xml:space="preserve"><tspan x="226" dy="0">condition, cell</tspan></text>
     <text class="connection-label" x="195" y="278" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="331" y="242" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
