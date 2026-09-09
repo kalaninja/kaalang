@@ -91,8 +91,9 @@ types.
 ## 3. Questions, merges, and execution order
 
 A question becomes an `if` whose condition evaluates the input aliases and
-authored body once. Its two arms bind the selected unit-valued control wire and
-execute the corresponding continuation.
+authored body once. Its true arm binds the output position carrying `#[yes]` and
+executes that continuation; its false arm does the same for `#[no]`. With no
+answer attributes, these are the first and second positions respectively.
 
 A merge uses a labeled block as an ordinary `let` initializer. Each incoming
 branch transfers its selected producer values with `break 'join values`; several

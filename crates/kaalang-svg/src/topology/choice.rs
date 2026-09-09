@@ -35,6 +35,7 @@ pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits:
     exits.push(Exit {
         id: distributor(index),
         handover: Vec::new(),
+        branch_description: None,
     });
     exits.extend(branch_exits(index, block, exit));
 }

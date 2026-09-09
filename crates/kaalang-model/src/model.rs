@@ -44,6 +44,8 @@ pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for the implicit end block.
     pub description: Option<String>,
+    /// A question's two answers, positionally paired with its outputs.
+    pub question_branches: Vec<QuestionBranch>,
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
     pub outputs: Vec<Ident>,
@@ -51,6 +53,14 @@ pub struct Block {
     pub inputs: Vec<Input>,
     pub body: Expr,
     pub span: Span,
+}
+
+/// One positional branch of a question.
+pub struct QuestionBranch {
+    /// Whether a true question body selects this branch.
+    pub is_yes: bool,
+    /// Its optional authored description.
+    pub description: Option<String>,
 }
 
 /// One consuming or borrowing block input.

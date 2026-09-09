@@ -35,10 +35,14 @@ pub(crate) const SELECT_SKEW: i32 = 24;
 pub(crate) const LABEL_FONT: i32 = 14;
 /// Font size of a connection label, written into the stylesheet the same way.
 pub(crate) const CONNECTION_LABEL_FONT: i32 = 12;
+/// Font size of an authored question-branch description.
+pub(crate) const BRANCH_LABEL_FONT: i32 = 14;
 /// Baseline-to-baseline distance between the lines of a node label.
 pub(crate) const LINE_HEIGHT: i32 = 18;
 /// Baseline-to-baseline distance between the lines of a connection label.
 pub(crate) const CONNECTION_LINE_HEIGHT: i32 = 14;
+/// Baseline-to-baseline distance between question-branch description lines.
+pub(crate) const BRANCH_LINE_HEIGHT: i32 = 18;
 /// Width of the halo a connection label paints behind itself to stay readable
 /// where it crosses a connection. Also written into the stylesheet.
 pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
@@ -91,8 +95,31 @@ pub(crate) struct Connection {
 /// it. `at` is the first line's baseline, so the serializer writes the block
 /// without deciding where it sits.
 pub(crate) struct Label {
+    pub(crate) kind: LabelKind,
     pub(crate) lines: Vec<String>,
     pub(crate) at: Point,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum LabelKind {
+    Wire,
+    Branch,
+}
+
+impl LabelKind {
+    pub(crate) const fn font_size(self) -> i32 {
+        match self {
+            Self::Wire => CONNECTION_LABEL_FONT,
+            Self::Branch => BRANCH_LABEL_FONT,
+        }
+    }
+
+    pub(crate) const fn line_height(self) -> i32 {
+        match self {
+            Self::Wire => CONNECTION_LINE_HEIGHT,
+            Self::Branch => BRANCH_LINE_HEIGHT,
+        }
+    }
 }
 
 /// The authored flow signature, minus `fn`, with every whitespace run collapsed

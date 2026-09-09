@@ -1,0 +1,5 @@
+error: a kaalang question must declare exactly one `#[yes]` and one `#[no]` attribute, or neither
+ --> tests/question/compile_fail/duplicate_branch_attribute.rs:5:5
+  |
+5 |     #[question("Choose a branch.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -9,6 +9,7 @@ pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits:
     exits.push(Exit {
         id: exit(index),
         handover: names(&block.outputs),
+        branch_description: None,
     });
 }
 

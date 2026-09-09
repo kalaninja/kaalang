@@ -1,0 +1,5 @@
+error: a kaalang question branch description must be a string literal
+ --> tests/question/compile_fail/invalid_branch_attribute_arguments.rs:6:5
+  |
+6 |     #[yes(description)]
+  |     ^^^^^^^^^^^^^^^^^^^

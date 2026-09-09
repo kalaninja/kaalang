@@ -105,12 +105,13 @@ A computational block has this common shape:
 ```
 
 `#[action]`, `#[question]`, and `#[choice]` each carry one nonempty Rust string
-literal. The string is the block description. A choice also carries two or more
-ordered `#[case("description")]` attributes. The end block is implicit and
-therefore carries no attribute at all.
+literal. The string is the block description. A question may carry an ordered
+`#[yes]` and `#[no]` pair, each optionally containing a nonempty branch
+description. A choice carries two or more ordered `#[case("description")]`
+attributes. The end block is implicit and therefore carries no attribute at all.
 
-Source comments remain ordinary Rust comments. Block and case descriptions come
-from their attributes.
+Source comments remain ordinary Rust comments. Block, question-branch, and case
+descriptions come from their attributes.
 
 An action may declare no outputs; a question and a choice must declare theirs.
 An omitted arrow and `-> ()` both declare none, and the body of such a block
@@ -180,14 +181,29 @@ branches:
 
 ```rust
 #[question("Is the request eligible?")]
+#[no("Reject the request.")]
+#[yes("Continue processing.")]
+|valid, &request, &policy| -> (ineligible, eligible) {
+    request.age_days <= policy.window_days
+};
+```
+
+Answer attributes and outputs correspond by position. The `#[yes]` output is
+selected when the question body evaluates to true, and the `#[no]` output when
+it evaluates to false. The attributes may appear in either order. Omitting both
+is equivalent to writing `#[yes]` followed by `#[no]`, preserving the concise
+form:
+
+```rust
+#[question("Is the request eligible?")]
 |valid, &request, &policy| -> (eligible, ineligible) {
     request.age_days <= policy.window_days
 };
 ```
 
-The first output selects the yes/true branch, and the second selects the
-no/false branch. The question body is evaluated exactly once, and its result
-determines which branch is selected.
+If either answer attribute is written, both must be present exactly once. A
+branch description is optional, but when present it is one nonempty Rust string
+literal. The question body is evaluated exactly once.
 
 Question outputs are distinct unit-valued control wires and branch outputs
 (section 6). The downstream block lists the selected control wire and every data
@@ -608,8 +624,12 @@ action_statement :=
 
 question_statement :=
     "#[question(" block_description ")]"
+    question_answers?
     "|" input_list "|" "->"
         "(" identifier "," identifier ")" rust_block ";"
+
+question_answers :=
+    yes_attribute no_attribute | no_attribute yes_attribute
 
 choice_statement :=
     "#[choice(" block_description ")]"
@@ -622,6 +642,8 @@ choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"
+yes_attribute := "#[yes]" | "#[yes(" block_description ")]"
+no_attribute := "#[no]" | "#[no(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
 single_output_declaration := identifier | "(" identifier "," ")"

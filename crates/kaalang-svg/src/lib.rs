@@ -233,6 +233,21 @@ fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderErr
                 });
             }
         }
+        for (branch, description) in block
+            .question_branches
+            .iter()
+            .enumerate()
+            .filter_map(|(branch, answer)| answer.description.as_deref().map(|text| (branch, text)))
+        {
+            if let Some(character) = invalid_xml_character(description) {
+                return Err(RenderError::InvalidLabelCharacter {
+                    character,
+                    line,
+                    column,
+                    context: format!("question branch {} description", branch + 1),
+                });
+            }
+        }
     }
 
     Ok(())
@@ -385,6 +400,21 @@ fn invalid(condition: bool) -> u32 {
                 line: 3,
                 column: 5,
                 context: "case 2 description".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn reports_an_invalid_question_branch_description() {
+        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    |condition| -> (yes, no) { condition };\n    #[action(\"Yes\")]\n    |yes| -> result { 1 };\n    #[action(\"No\")]\n    |no| -> result { 0 };\n}\n";
+
+        assert_eq!(
+            render_source(source, "invalid"),
+            Err(RenderError::InvalidLabelCharacter {
+                character: '\0',
+                line: 3,
+                column: 5,
+                context: "question branch 1 description".into(),
             })
         );
     }

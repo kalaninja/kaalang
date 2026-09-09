@@ -1,0 +1,5 @@
+error: a kaalang question branch requires a non-empty description
+ --> tests/question/compile_fail/empty_branch_description.rs:6:11
+  |
+6 |     #[yes("")]
+  |           ^^

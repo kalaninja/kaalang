@@ -12,11 +12,12 @@ use std::collections::BTreeSet;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::topology::{Destination, Source, Topology, Vertex};
+use crate::topology::{Destination, Exit, Source, Topology, Vertex};
 
 use super::{
-    COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CONNECTION_LINE_HEIGHT, Connection,
-    Label, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Scene,
+    BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO,
+    CONNECTION_LINE_HEIGHT, Connection, Label, LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point,
+    Scene,
     text::{text_width, wrap_text},
 };
 
@@ -31,8 +32,12 @@ const CLEARANCE: i32 = 8;
 /// the halo to clear the border too, so a capture never paints over the node it
 /// belongs to.
 const RISE: i32 = CONNECTION_LABEL_FONT / 2 + CONNECTION_LABEL_HALO;
+/// Rise of a larger question-branch description above its horizontal exit.
+const BRANCH_RISE: i32 = BRANCH_LABEL_FONT / 2 + CONNECTION_LABEL_HALO;
 /// Drop of a hand-over label below the exit it leaves by.
 const DROP: i32 = 18;
+/// Drop of a larger question-branch description below its exit.
+const BRANCH_DROP: i32 = 20;
 /// Lifts a baseline so a label's ink straddles the point it marks.
 const BASELINE: i32 = 5;
 
@@ -98,6 +103,11 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     }
 
     for connection in &shared {
+        if let Source::Exit(exit) = connection.source
+            && topology.exit(exit).branch_description.is_some()
+        {
+            continue;
+        }
         let placed = scene
             .connections
             .iter()
@@ -115,23 +125,12 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     }
 
     for exit in &topology.exits {
-        if merged_exits.contains(&exit.id)
-            || shared
-                .iter()
-                .any(|connection| connection.source == Source::Exit(exit.id))
-        {
-            continue;
-        }
-        let anchor = scene.exit_anchor(exit.id);
-        labels.extend(wire_label(
-            &exit.handover,
-            Point {
-                x: anchor.x + ASIDE,
-                y: anchor.y + DROP,
-            },
-            Stack::Below,
-            anchor.x,
-        ));
+        let shared_handover = shared
+            .iter()
+            .any(|connection| connection.source == Source::Exit(exit.id));
+        let skip_handover = merged_exits.contains(&exit.id)
+            || (shared_handover && exit.branch_description.is_none());
+        place_exit_labels(&mut labels, exit, scene.exit_anchor(exit.id), skip_handover);
     }
 
     for node in &topology.nodes {
@@ -155,6 +154,35 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     }
 
     labels
+}
+
+fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_handover: bool) {
+    if let Some(description) = &exit.branch_description {
+        let (y, stack) = if exit.id.branch == Some(0) {
+            (anchor.y + BRANCH_DROP, Stack::Below)
+        } else {
+            (anchor.y - BRANCH_RISE, Stack::Above)
+        };
+        labels.push(branch_label(
+            description,
+            Point {
+                x: anchor.x + ASIDE,
+                y,
+            },
+            stack,
+            anchor.x,
+        ));
+    } else if !skip_handover {
+        labels.extend(wire_label(
+            &exit.handover,
+            Point {
+                x: anchor.x + ASIDE,
+                y: anchor.y + DROP,
+            },
+            Stack::Below,
+            anchor.x,
+        ));
+    }
 }
 
 fn node_of(destination: Destination) -> crate::topology::NodeId {
@@ -213,11 +241,22 @@ fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
 /// the halo, stays clear of the adjacent vertical run or node boundary.
 fn wire_label(names: &[String], at: Point, stack: Stack, clear: i32) -> Option<Label> {
     let lines = wrap_wires(names)?;
-    let below_first = (lines.len() as i32 - 1) * CONNECTION_LINE_HEIGHT;
-    let x =
-        at.x.max(clear + label_width(&lines) / 2 + CONNECTION_LABEL_HALO + CLEARANCE);
+    Some(place_label(lines, LabelKind::Wire, at, stack, clear))
+}
 
-    Some(Label {
+fn branch_label(description: &str, at: Point, stack: Stack, clear: i32) -> Label {
+    let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
+    place_label(lines, LabelKind::Branch, at, stack, clear)
+}
+
+fn place_label(lines: Vec<String>, kind: LabelKind, at: Point, stack: Stack, clear: i32) -> Label {
+    let below_first = (lines.len() as i32 - 1) * kind.line_height();
+    let x = at
+        .x
+        .max(clear + label_width(&lines, kind.font_size()) / 2 + CONNECTION_LABEL_HALO + CLEARANCE);
+
+    Label {
+        kind,
         at: Point {
             x,
             y: at.y
@@ -228,7 +267,7 @@ fn wire_label(names: &[String], at: Point, stack: Stack, clear: i32) -> Option<L
                 },
         },
         lines,
-    })
+    }
 }
 
 /// Leaves enough room in every row gap for a hand-over below one node and a
@@ -236,32 +275,46 @@ fn wire_label(names: &[String], at: Point, stack: Stack, clear: i32) -> Option<L
 pub(super) fn vertical_gap(topology: &Topology) -> i32 {
     // ponytail: one global gap keeps routing simple; reserve per-row gaps if
     // tall diagrams become a practical problem.
-    let lines = topology
+    let gap = topology
         .exits
         .iter()
-        .map(|exit| label_line_count(&exit.handover))
-        .chain(
-            topology
-                .nodes
-                .iter()
-                .map(|node| label_line_count(&topology.capture_label(node.id))),
-        )
+        .map(|exit| match exit.branch_description.as_deref() {
+            Some(description) => {
+                vertical_label_gap(branch_label_line_count(description), LabelKind::Branch)
+            }
+            None => vertical_label_gap(label_line_count(&exit.handover), LabelKind::Wire),
+        })
+        .chain(topology.nodes.iter().map(|node| {
+            vertical_label_gap(
+                label_line_count(&topology.capture_label(node.id)),
+                LabelKind::Wire,
+            )
+        }))
         .max()
-        .unwrap_or(0) as i32;
-    if lines == 0 {
-        return MIN_VERTICAL_GAP;
-    }
+        .unwrap_or(0);
+    MIN_VERTICAL_GAP.max(gap)
+}
 
-    MIN_VERTICAL_GAP.max(
-        DROP + RISE
-            + CONNECTION_LABEL_FONT
-            + 2 * CONNECTION_LABEL_HALO
-            + 2 * (lines - 1) * CONNECTION_LINE_HEIGHT,
-    )
+fn vertical_label_gap(lines: usize, kind: LabelKind) -> i32 {
+    if lines == 0 {
+        return 0;
+    }
+    let drop = match kind {
+        LabelKind::Wire => DROP,
+        LabelKind::Branch => BRANCH_DROP,
+    };
+    drop + RISE
+        + kind.font_size()
+        + 2 * CONNECTION_LABEL_HALO
+        + 2 * (lines as i32 - 1) * kind.line_height()
 }
 
 fn label_line_count(names: &[String]) -> usize {
     wrap_wires(names).map_or(0, |lines| lines.len())
+}
+
+fn branch_label_line_count(description: &str) -> usize {
+    wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size()).len()
 }
 
 /// Space above a node that its capture label and halo occupy. Horizontal
@@ -281,14 +334,15 @@ pub(super) fn capture_space(names: &[String]) -> i32 {
 /// places it: centred on `at.x`, its first baseline at `at.y`. Left, top,
 /// right, bottom, like `Scene::bounds`.
 pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
-    let half = label_width(&label.lines) / 2 + CONNECTION_LABEL_HALO;
-    let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * CONNECTION_LINE_HEIGHT;
+    let font_size = label.kind.font_size();
+    let half = label_width(&label.lines, font_size) / 2 + CONNECTION_LABEL_HALO;
+    let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * label.kind.line_height();
 
     (
         label.at.x - half,
-        label.at.y - CONNECTION_LABEL_FONT - CONNECTION_LABEL_HALO,
+        label.at.y - font_size - CONNECTION_LABEL_HALO,
         label.at.x + half,
-        last_baseline + CONNECTION_LABEL_FONT / 2 + CONNECTION_LABEL_HALO,
+        last_baseline + font_size / 2 + CONNECTION_LABEL_HALO,
     )
 }
 
@@ -318,15 +372,10 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
     None
 }
 
-pub(super) fn label_width(lines: &[String]) -> i32 {
+fn label_width(lines: &[String], font_size: i32) -> i32 {
     lines
         .iter()
-        .map(|line| {
-            text_width(
-                &line.graphemes(true).collect::<Vec<_>>(),
-                CONNECTION_LABEL_FONT,
-            )
-        })
+        .map(|line| text_width(&line.graphemes(true).collect::<Vec<_>>(), font_size))
         .max()
         .unwrap_or_default()
 }
@@ -361,6 +410,7 @@ mod tests {
                 .collect(),
             connections: vec![],
             labels: vec![Label {
+                kind: LabelKind::Wire,
                 lines: vec!["result".to_owned()],
                 at,
             }],

@@ -12,7 +12,8 @@ mod resolve;
 pub use choice::{choice_match, is_todo_body};
 pub use model::{
     Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
-    Execution, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, SemanticModel, WireMerge,
+    Execution, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, QuestionBranch,
+    SemanticModel, WireMerge,
 };
 
 /// Builds the validated semantic model for one kaalang flow function.

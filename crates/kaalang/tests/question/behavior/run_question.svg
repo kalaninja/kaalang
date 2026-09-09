@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="612" viewBox="0 0 704 612" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_question</title>
-  <desc id="kaalang-description">Nodes: Start: run_question(condition: bool) -&gt; &amp;&apos;static str handing over condition; Question: Take the yes branch? capturing condition handing over yes / no; Action: Produce the yes result. capturing yes handing over result; Action: Produce the no result. capturing no handing over result; End: &amp;&apos;static str capturing result. Connections: Start: run_question(condition: bool) -&gt; &amp;&apos;static str to Question: Take the yes branch?; Question: Take the yes branch? branch 1 to Action: Produce the yes result.; Question: Take the yes branch? branch 2 to Action: Produce the no result.; Action: Produce the yes result. to the result merge; Action: Produce the no result. to the result merge; the result merge to End: &amp;&apos;static str.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_question(condition: bool) -&gt; &amp;&apos;static str handing over condition; Question: Take the yes branch? capturing condition handing over no / yes described as branch 1: The condition is false. / branch 2: The condition is true.; Action: Produce the no result. capturing no handing over result; Action: Produce the yes result. capturing yes handing over result; End: &amp;&apos;static str capturing result. Connections: Start: run_question(condition: bool) -&gt; &amp;&apos;static str to Question: Take the yes branch?; Question: Take the yes branch? branch 1 to Action: Produce the no result.; Question: Take the yes branch? branch 2 to Action: Produce the yes result.; Action: Produce the no result. to the result merge; Action: Produce the yes result. to the result merge; the result merge to End: &amp;&apos;static str.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,8 +22,8 @@
     <path class="connection" d="M 172 430 L 172 522"/>
     <text class="connection-label" x="214" y="448" xml:space="preserve"><tspan x="214" dy="0">result</tspan></text>
     <text class="connection-label" x="214" y="129" xml:space="preserve"><tspan x="214" dy="0">condition</tspan></text>
-    <text class="connection-label" x="214" y="273" xml:space="preserve"><tspan x="214" dy="0">yes</tspan></text>
-    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="262" y="262" xml:space="preserve"><tspan x="262" dy="0">The condition is false.</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="400" y="194" xml:space="preserve"><tspan x="400" dy="0">The condition is true.</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
@@ -36,14 +36,14 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the yes branch?</tspan></text>
     </g>
     <g class="node action" transform="translate(172 346)">
-      <title xml:space="preserve">Produce the yes result.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the yes result.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(532 346)">
       <title xml:space="preserve">Produce the no result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the no result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 346)">
+      <title xml:space="preserve">Produce the yes result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the yes result.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 551)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

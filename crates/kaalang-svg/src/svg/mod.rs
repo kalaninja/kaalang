@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
 use crate::layout::{
-    CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CONNECTION_LINE_HEIGHT, Connection, LABEL_FONT,
-    LINE_HEIGHT, Label, Node, Point, Scene,
+    CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection, LABEL_FONT, LINE_HEIGHT, Label,
+    LabelKind, Node, Point, Scene,
 };
 use crate::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
@@ -68,7 +68,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     }
     // After the routes, so a label's halo covers the connections it crosses.
     for label in &scene.labels {
-        write_wire_label(&mut svg, label);
+        write_connection_label(&mut svg, label);
     }
     svg.push_str("  </g>\n  <g class=\"nodes\">\n");
     for node in &scene.nodes {
@@ -96,13 +96,18 @@ fn write_connection(svg: &mut String, connection: &Connection) {
     emit!(svg, "\"/>");
 }
 
-fn write_wire_label(svg: &mut String, label: &Label) {
+fn write_connection_label(svg: &mut String, label: &Label) {
     let Point { x, y } = label.at;
-    emit_inline!(
-        svg,
-        "    <text class=\"connection-label\" x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">"
-    );
-    write_lines(svg, &label.lines, x, CONNECTION_LINE_HEIGHT);
+    let class = match label.kind {
+        LabelKind::Wire => "connection-label",
+        LabelKind::Branch => "connection-label branch-label",
+    };
+    emit_inline!(svg, "    <text class=\"{class}\"");
+    if matches!(label.kind, LabelKind::Branch) {
+        emit_inline!(svg, " style=\"font-size: {}px\"", label.kind.font_size());
+    }
+    emit_inline!(svg, " x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">");
+    write_lines(svg, &label.lines, x, label.kind.line_height());
 }
 
 /// Writes the lines of one `<text>` as `<tspan>`s and closes it. The first line
@@ -141,6 +146,26 @@ fn describe(scene: &Scene) -> String {
             if !handovers.is_empty() {
                 described.push_str(" handing over ");
                 described.push_str(&handovers.join(" / "));
+            }
+            let branch_descriptions = topology
+                .exits
+                .iter()
+                .filter(|exit| exit.id.node == node.id)
+                .filter_map(|exit| {
+                    exit.branch_description.as_ref().map(|description| {
+                        format!(
+                            "branch {}: {description}",
+                            exit.id
+                                .branch
+                                .expect("only question branches have descriptions")
+                                + 1
+                        )
+                    })
+                })
+                .collect::<Vec<_>>();
+            if !branch_descriptions.is_empty() {
+                described.push_str(" described as ");
+                described.push_str(&branch_descriptions.join(" / "));
             }
             described
         })

@@ -19,6 +19,7 @@ pub(super) fn block(function: &ItemFn) -> Block {
     Block {
         kind: BlockKind::End,
         description: None,
+        question_branches: Vec::new(),
         case_descriptions: Vec::new(),
         outputs: Vec::new(),
         output_span: span,

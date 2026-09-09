@@ -105,11 +105,11 @@ pub(crate) struct BlockSyntax<'a> {
 
 impl<'a> BlockSyntax<'a> {
     /// Returns the companion attributes this kind accepts, rejecting any other.
-    pub(crate) fn accept_companions(&self, accepted: &str) -> Result<Vec<&'a Attribute>> {
+    pub(crate) fn accept_companions(&self, accepted: &[&str]) -> Result<Vec<&'a Attribute>> {
         self.companions
             .iter()
             .map(|companion| {
-                if companion.path().is_ident(accepted) {
+                if accepted.iter().any(|name| companion.path().is_ident(name)) {
                     Ok(*companion)
                 } else {
                     Err(unexpected_companion(companion))
@@ -146,6 +146,7 @@ impl<'a> BlockSyntax<'a> {
         Block {
             kind: self.kind,
             description,
+            question_branches: Vec::new(),
             case_descriptions,
             outputs: self.outputs,
             output_span: self.output_span,
@@ -207,7 +208,11 @@ fn block_kind(
             }
             Role::Kind(kind) => declared = Some((kind, attribute)),
             Role::Companion if declared.is_none() => {
-                return Err(choice::case_before_choice(attribute));
+                return Err(if attribute.path().is_ident("case") {
+                    choice::case_before_choice(attribute)
+                } else {
+                    question::answer_before_question(attribute)
+                });
             }
             Role::Companion => companions.push(attribute),
             Role::Comment => {}
@@ -240,7 +245,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
         Some("end") => return Err(end::authored(attribute.span())),
-        Some("case") => Role::Companion,
+        Some("case" | "yes" | "no") => Role::Companion,
         Some("doc") => Role::Comment,
         _ => {
             return Err(Error::new_spanned(
@@ -561,6 +566,39 @@ mod tests {
             error(&choice),
             "a kaalang choice must declare exactly one output for each case"
         );
+    }
+
+    #[test]
+    fn question_answers_follow_their_attribute_order() {
+        let function: ItemFn = parse_quote! {
+            fn decide(input: bool) -> u8 {
+                #[question("Decide.")]
+                #[no("Use the fallback.")]
+                #[yes]
+                |input| -> (fallback, proceed) { input };
+            }
+        };
+        let parsed = flow(&function).expect("the answer attributes are valid");
+        let branches = &parsed.blocks[0].question_branches;
+
+        assert_eq!(branches.len(), 2);
+        assert!(!branches[0].is_yes);
+        assert_eq!(
+            branches[0].description.as_deref(),
+            Some("Use the fallback.")
+        );
+        assert!(branches[1].is_yes);
+        assert!(branches[1].description.is_none());
+
+        let implicit: ItemFn = parse_quote! {
+            fn decide(input: bool) -> u8 {
+                #[question("Decide.")]
+                |input| -> (proceed, fallback) { input };
+            }
+        };
+        let parsed = flow(&implicit).expect("questions keep their implicit yes-no order");
+        assert!(parsed.blocks[0].question_branches[0].is_yes);
+        assert!(!parsed.blocks[0].question_branches[1].is_yes);
     }
 
     fn error(function: &ItemFn) -> String {

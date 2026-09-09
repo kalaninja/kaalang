@@ -1,0 +1,5 @@
+error: `#[yes]` is not valid on this kind of kaalang block
+ --> tests/question/compile_fail/question_branch_on_action.rs:6:5
+  |
+6 |     #[yes]
+  |     ^^^^^^

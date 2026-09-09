@@ -75,9 +75,10 @@ An action block becomes one action node.
 
 ### 4.3 question
 
-A question block becomes one question node. Its branches preserve their
-positional meaning from RFC 0001: the first output is yes/true and the second is
-no/false. The diagram does not add `yes` or `no` labels.
+A question block becomes one question node. Its answer attributes, outputs, and
+branches preserve their positional order from RFC 0001. Each branch is labeled
+with its authored description when present, otherwise with its output name. The
+diagram does not synthesize `yes` or `no` labels.
 
 ### 4.4 select
 
@@ -124,16 +125,21 @@ carries a caption naming its block kind. The end node's `-> ()` for an absent
 return type is the one synthesized label, and it states the contract rather than
 paraphrasing authored text.
 
+An authored question-branch description replaces that branch's output hand-over
+label. It appears beside the branch's exit and remains there when the connection
+is shared with a later capture or moved to an implicit merge.
+
 Every named flow input and every block output is labeled once at the exit that
-provides it, or by a shared label as defined below, including an intentionally
-unused wire whose name begins with `_`. The labels at one exit form its
-hand-over. The start node hands over its named flow inputs in signature order,
-an action hands over all its outputs in declaration order, and each question
-branch or case hands over its exact branch output. An action declaring no
-outputs therefore hands over nothing: its exit carries no label and the
-connection to the next node is unlabeled at that end. A hand-over names newly
-provided wires only; it neither lists wires that remain available nor implies
-that the next node captures every named wire.
+provides it, or by a shared label as defined below, except for a question output
+replaced by its branch description. This includes an intentionally unused wire
+whose name begins with `_`. The labels at one exit form its hand-over. The start
+node hands over its named flow inputs in signature order, an action hands over
+all its outputs in declaration order, and an undescribed question branch or case
+hands over its exact branch output. An action declaring no outputs therefore
+hands over nothing: its exit carries no label and the connection to the next
+node is unlabeled at that end. A hand-over names newly provided wires only; it
+neither lists wires that remain available nor implies that the next node
+captures every named wire.
 
 Every block input is labeled beside its receiving node. An input binding the
 wire's value is shown as `name`, while a borrowed input is shown as `&name`. The
@@ -259,8 +265,9 @@ node occupies a lower row than its source node, and the route never moves
 upward. Nodes on alternative branches may share a row.
 
 The visual language uses columns and rows. Branches are arranged from left to
-right in authored order. The first question output and the first choice case
-continue down the current column; remaining branches appear to their right.
+right in authored order: question answer/output order and choice case order. The
+first question output and the first choice case continue down the current
+column; remaining branches appear to their right.
 
 Consecutive blocks continue down the current column. After a convergence, the
 entry blocks of its shared continuation form a sequence in the column reached by

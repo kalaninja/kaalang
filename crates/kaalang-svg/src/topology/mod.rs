@@ -115,6 +115,8 @@ pub(crate) struct Node {
 pub(crate) struct Exit {
     pub(crate) id: ExitId,
     pub(crate) handover: Vec<String>,
+    /// An optional authored description of a question branch.
+    pub(crate) branch_description: Option<String>,
 }
 
 /// One implicit convergence point. A junction adds no block, no producer
@@ -156,12 +158,14 @@ impl Topology {
     }
 
     pub(crate) fn handover(&self, exit: ExitId) -> &[String] {
+        self.exit(exit).handover.as_slice()
+    }
+
+    pub(crate) fn exit(&self, exit: ExitId) -> &Exit {
         self.exits
             .iter()
             .find(|owner| owner.id == exit)
             .expect("every addressed exit is projected")
-            .handover
-            .as_slice()
     }
 
     pub(crate) fn capture(&self, node: NodeId) -> &[String] {
@@ -233,6 +237,7 @@ pub(crate) fn project(model: &SemanticModel, signature: &str, return_type: &str)
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
         handover: names(&model.flow.flow_inputs),
+        branch_description: None,
     }];
     for (index, block) in model.flow.blocks.iter().enumerate() {
         match block.kind {
@@ -364,6 +369,7 @@ fn branch_exits(
         .map(move |(branch, output)| Exit {
             id: exit(index, branch),
             handover: vec![output.to_string()],
+            branch_description: None,
         })
 }
 

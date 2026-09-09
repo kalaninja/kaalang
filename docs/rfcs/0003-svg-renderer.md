@@ -59,6 +59,12 @@ no other renderer-specific rewrite. Other long labels also wrap to their
 allotted width. Wrapping breaks only between grapheme clusters; an otherwise
 unbreakable word is split rather than drawn outside its node.
 
+A question-branch description uses its own branch-label style beside the exit
+and replaces the output label. Its font is larger than a wire label's font, and
+layout uses that size when wrapping text and placing the following row. The
+first branch's description hangs below its downward exit; the second branch's
+description sits above its horizontal exit.
+
 ## 4. Library interface
 
 The library entry point is:

@@ -577,6 +577,56 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
 }
 
 #[test]
+fn a_right_question_branch_description_replaces_its_output_above_the_connection() {
+    let scene = drawn((
+        r#"
+        #[kaalang]
+        fn example(condition: bool) -> u8 {
+            #[question("Choose a branch.")]
+            #[no]
+            #[yes("Take the longer continuation description that must wrap beside the branch.")]
+            |condition| -> (fallback, proceed) { condition };
+            #[action("Use the fallback.")]
+            |fallback| -> result { 0 };
+            #[action("Proceed.")]
+            |proceed| -> result { 1 };
+        }
+    "#,
+        "example",
+    ));
+    let question = scene.node(NodeId::Block(0));
+    assert_eq!(scene.node(NodeId::Block(1)).x, question.x);
+    assert!(scene.node(NodeId::Block(2)).x > question.x);
+
+    let branch_labels = scene
+        .labels
+        .iter()
+        .filter(|label| matches!(label.kind, LabelKind::Branch))
+        .collect::<Vec<_>>();
+    assert_eq!(branch_labels.len(), 1);
+    assert!(branch_labels[0].lines.len() > 1);
+    assert!(scene.labels.iter().all(|label| label.lines != ["proceed"]));
+    assert!(
+        scene
+            .labels
+            .iter()
+            .any(|label| { matches!(label.kind, LabelKind::Wire) && label.lines == ["fallback"] })
+    );
+    let connection = scene
+        .connections
+        .iter()
+        .find(|connection| {
+            connection.source
+                == Source::Exit(ExitId {
+                    node: NodeId::Block(0),
+                    branch: Some(1),
+                })
+        })
+        .unwrap();
+    assert!(label_rect(branch_labels[0]).3 <= connection.points[0].y);
+}
+
+#[test]
 fn an_unused_hand_over_stays_visible_above_an_empty_capture() {
     // The transit connection does not make the action capture `_value`.
     let scene = drawn(fixture!("empty_flow/behavior", "discard_named"));

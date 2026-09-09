@@ -14,16 +14,21 @@ pub(crate) fn emit(
     converged: Option<&Join>,
 ) -> TokenStream2 {
     let joins = converged.map_or(&[][..], std::slice::from_ref);
-    let [yes_path, no_path] = branches
-        .each_ref()
-        .map(|branch| super::flow(flow, &branch.plan, bindings));
     let block = &flow.blocks[index];
+    let yes = block
+        .question_branches
+        .iter()
+        .position(|branch| branch.is_yes)
+        .expect("a question declares one yes branch");
+    let no = 1 - yes;
+    let yes_path = super::flow(flow, &branches[yes].plan, bindings);
+    let no_path = super::flow(flow, &branches[no].plan, bindings);
     let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
-    let yes_wire = bindings.wire(&block.outputs[0]);
-    let no_wire = bindings.wire(&block.outputs[1]);
-    let yes_gate = bindings.gate(&block.outputs[0]);
-    let no_gate = bindings.gate(&block.outputs[1]);
+    let yes_wire = bindings.wire(&block.outputs[yes]);
+    let no_wire = bindings.wire(&block.outputs[no]);
+    let yes_gate = bindings.gate(&block.outputs[yes]);
+    let no_gate = bindings.gate(&block.outputs[no]);
     // The expansion context keeps lints such as `clippy::redundant_else` off a
     // branch that returns early; `located_at` keeps the authored position.
     let span = Span::mixed_site().located_at(block.span);
