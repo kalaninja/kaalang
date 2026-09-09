@@ -9,35 +9,33 @@ fn nested_partial_merges(source: u8) -> u8 {
     #[case("Second.")]
     #[case("Third.")]
     #[case("Fourth.")]
-    |source| -> (a, b, c, d) {
-        match source {
-            0 => (),
-            1 => (),
-            2 => (),
-            _ => (),
-        }
+    let (a, b, c, d) = |source| match source {
+        0 => (),
+        1 => (),
+        2 => (),
+        _ => (),
     };
 
     #[action("First value.")]
-    |a| -> ab { 1u8 };
+    let ab = |a| 1u8;
 
     #[action("Second value.")]
-    |b| -> ab { 2u8 };
+    let ab = |b| 2u8;
 
     #[action("Close the first pair.")]
-    |ab| -> abc { ab + 10 };
+    let abc = |ab| ab + 10;
 
     #[action("Third value.")]
-    |c| -> abc { 3u8 };
+    let abc = |c| 3u8;
 
     #[action("Close the first three.")]
-    |abc| -> abcd { abc + 100 };
+    let abcd = |abc| abc + 100;
 
     #[action("Fourth value.")]
-    |d| -> abcd { 4u8 };
+    let abcd = |d| 4u8;
 
     #[action("Finish.")]
-    |abcd| -> result { abcd };
+    let result = |abcd| abcd;
 }
 
 #[test]

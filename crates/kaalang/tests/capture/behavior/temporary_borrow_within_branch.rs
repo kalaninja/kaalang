@@ -5,19 +5,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn temporary_borrow_within_branch(condition: bool) -> usize {
     #[question("Build the temporary text?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Borrow the temporary text.")]
-    |yes| -> owner { &String::from("abc") };
+    let owner = |yes| &String::from("abc");
 
     #[action("Measure the borrowed text.")]
-    |&owner| -> size { owner.len() };
+    let size = |&owner| owner.len();
 
     #[action("Use an empty size.")]
-    |no| -> size { 0usize };
+    let size = |no| 0usize;
 
     #[action("Finish with the merged size.")]
-    |size| -> result { size };
+    let result = |size| size;
 }
 
 #[test]

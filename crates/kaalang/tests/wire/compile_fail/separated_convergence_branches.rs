@@ -6,7 +6,7 @@ fn invalid(value: u8) -> u8 {
     #[case("Take the first branch.")]
     #[case("Finish without converging.")]
     #[case("Take the second branch.")]
-    |value| -> (first, done, second) {
+    let (first, done, second) = |value| {
         match value {
             0 => (),
             1 => (),
@@ -15,16 +15,16 @@ fn invalid(value: u8) -> u8 {
     };
 
     #[action("Build the first value.")]
-    |first| -> selected { 1 };
+    let selected = |first| { 1 };
 
     #[action("Produce the direct result.")]
-    |done| -> result { 2 };
+    let result = |done| { 2 };
 
     #[action("Build the second value.")]
-    |second| -> selected { 3 };
+    let selected = |second| { 3 };
 
     #[action("Produce the selected result.")]
-    |selected| -> result { selected };
+    let result = |selected| { selected };
 }
 
 fn main() {}

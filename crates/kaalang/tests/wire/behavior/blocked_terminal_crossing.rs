@@ -7,58 +7,54 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     #[case("Build the right shared value.")]
     #[case("Finish after one step.")]
     #[case("Finish after two steps.")]
-    |request| -> (left, right, first, second) {
-        match request {
-            0 => (),
-            1 => (),
-            2 => (),
-            _ => (),
-        }
+    let (left, right, first, second) = |request| match request {
+        0 => (),
+        1 => (),
+        2 => (),
+        _ => (),
     };
 
     #[action("Build the left shared value.")]
-    |left| -> shared { 1u8 };
+    let shared = |left| 1u8;
 
     #[action("Build the right shared value.")]
-    |right| -> shared { 2u8 };
+    let shared = |right| 2u8;
 
     #[action("Produce the first terminal result.")]
-    |first| -> result { 3u8 };
+    let result = |first| 3u8;
 
     #[action("Take one more step toward the second terminal result.")]
-    |second| -> stepped { 4u8 };
+    let stepped = |second| 4u8;
 
     #[action("Produce the second terminal result.")]
-    |stepped| -> result { stepped };
+    let result = |stepped| stepped;
 
     #[choice("Choose an inner case wide enough to block both terminal columns.")]
     #[case("Build A.")]
     #[case("Build B.")]
     #[case("Build C.")]
     #[case("Build D.")]
-    |shared| -> (a, b, c, d) {
-        match shared {
-            0 => (),
-            1 => (),
-            2 => (),
-            _ => (),
-        }
+    let (a, b, c, d) = |shared| match shared {
+        0 => (),
+        1 => (),
+        2 => (),
+        _ => (),
     };
 
     #[action("Build result A.")]
-    |a| -> selected { 6u8 };
+    let selected = |a| 6u8;
 
     #[action("Build result B.")]
-    |b| -> selected { 7u8 };
+    let selected = |b| 7u8;
 
     #[action("Build result C.")]
-    |c| -> selected { 8u8 };
+    let selected = |c| 8u8;
 
     #[action("Build result D.")]
-    |d| -> selected { 9u8 };
+    let selected = |d| 9u8;
 
     #[action("Use the result.")]
-    |selected| -> result { selected };
+    let result = |selected| selected;
 }
 
 #[test]

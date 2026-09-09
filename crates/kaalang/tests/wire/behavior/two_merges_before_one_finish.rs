@@ -5,25 +5,25 @@ use kaalang::kaalang;
 #[kaalang]
 fn two_merges_before_one_finish(left: bool, right: bool) -> u8 {
     #[question("Left enabled?")]
-    |left| -> (left_yes, left_no) { left };
+    let (left_yes, left_no) = |left| left;
 
     #[action("Left value.")]
-    |left_yes| -> counted { 1u8 };
+    let counted = |left_yes| 1u8;
 
     #[action("Other left value.")]
-    |left_no| -> counted { 2u8 };
+    let counted = |left_no| 2u8;
 
     #[question("Right enabled?")]
-    |right| -> (right_yes, right_no) { right };
+    let (right_yes, right_no) = |right| right;
 
     #[action("Right value.")]
-    |right_yes| -> seen { 10u8 };
+    let seen = |right_yes| 10u8;
 
     #[action("Other right value.")]
-    |right_no| -> seen { 20u8 };
+    let seen = |right_no| 20u8;
 
     #[action("Finish with both merged values.")]
-    |counted, seen| -> result { counted + seen };
+    let result = |counted, seen| counted + seen;
 }
 
 #[test]

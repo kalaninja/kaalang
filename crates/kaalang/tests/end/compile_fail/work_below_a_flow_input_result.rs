@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(result: u32, other: u32) -> u32 {
     #[action("Work below the flow input.")]
-    |other| -> _stray { other };
+    let _stray = |other| { other };
 }
 
 fn main() {}

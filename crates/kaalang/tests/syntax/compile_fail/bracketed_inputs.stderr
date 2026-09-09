@@ -1,5 +1,5 @@
 error: kaalang block inputs must contain only `name`, `mut name`, `&name`, or `&mut name`
- --> tests/syntax/compile_fail/bracketed_inputs.rs:6:6
+ --> tests/syntax/compile_fail/bracketed_inputs.rs:6:19
   |
-6 |     |[input]| -> output { input };
-  |      ^^^^^^^
+6 |     let output = |[input]| { input };
+  |                   ^^^^^^^

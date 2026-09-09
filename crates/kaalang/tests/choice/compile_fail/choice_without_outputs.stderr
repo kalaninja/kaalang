@@ -1,5 +1,5 @@
 error: a kaalang choice must declare exactly one output for each case
- --> tests/choice/compile_fail/choice_without_outputs.rs:9:17
+ --> tests/choice/compile_fail/choice_without_outputs.rs:9:9
   |
-9 |     |&input| -> () {
-  |                 ^^
+9 |     let () = |&input| {
+  |         ^^

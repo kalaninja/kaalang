@@ -3,19 +3,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Choose a branch.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the value, a stray wire, and the settled marker.")]
-    |yes| -> (value, stray, settled) { (1, (), ()) };
+    let (value, stray, settled) = |yes| { (1, (), ()) };
 
     #[action("Build the other value, its stray wire, and a tail.")]
-    |no| -> (value, stray, tail) { (2, (), ()) };
+    let (value, stray, tail) = |no| { (2, (), ()) };
 
     #[action("Consume the stray wire only where the no branch is selected.")]
-    |stray, tail| -> settled { drop((stray, tail)) };
+    let settled = |stray, tail| { drop((stray, tail)) };
 
     #[action("Use the value once both branches have settled.")]
-    |value, settled| -> result { value };
+    let result = |value, settled| { value };
 }
 
 fn main() {}

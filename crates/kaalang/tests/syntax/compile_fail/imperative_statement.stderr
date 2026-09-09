@@ -1,5 +1,5 @@
 error: a kaalang flow body may contain only attributed block statements
  --> tests/syntax/compile_fail/imperative_statement.rs:6:5
   |
-6 |     let output = input;
-  |     ^^^^^^^^^^^^^^^^^^^
+6 |     drop(input);
+  |     ^^^^^^^^^^^^

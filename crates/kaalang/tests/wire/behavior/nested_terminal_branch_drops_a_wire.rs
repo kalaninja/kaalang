@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -> u32 {
     #[question("Take the nested branch?")]
-    |outer, &inner| -> (nested, direct) { outer };
+    let (nested, direct) = |outer, &inner| outer;
 
     #[action("Prepare the nested values.")]
-    |nested| -> (probe, extra) { (1, 10) };
+    let (probe, extra) = |nested| (1, 10);
 
     #[question("Finish early?")]
-    |probe, inner| -> (early, late) { inner };
+    let (early, late) = |probe, inner| inner;
 
     #[action("Produce the early result without the extra value.")]
-    |early| -> result { 1 };
+    let result = |early| 1;
 
     #[action("Combine the late result with the extra value.")]
-    |late, extra| -> result { 2 + extra };
+    let result = |late, extra| 2 + extra;
 
     #[action("Produce the direct result.")]
-    |direct| -> result { 3 };
+    let result = |direct| 3;
 }
 
 #[test]

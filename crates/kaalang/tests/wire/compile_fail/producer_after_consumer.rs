@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Choose a value.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the first value.")]
-    |yes| -> selected { 1 };
+    let selected = |yes| { 1 };
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected };
+    let result = |selected| { selected };
 
     #[action("Build the later alternative.")]
-    |no| -> selected { 2 };
+    let selected = |no| { 2 };
 }
 
 fn main() {}

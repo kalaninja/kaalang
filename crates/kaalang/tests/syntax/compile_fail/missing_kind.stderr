@@ -1,5 +1,5 @@
 error: a kaalang block must declare its kind, such as `#[action("description")]`
  --> tests/syntax/compile_fail/missing_kind.rs:5:5
   |
-5 |     |value| -> doubled { value * 2 };
-  |     ^
+5 |     let doubled = |value| { value * 2 };
+  |     ^^^

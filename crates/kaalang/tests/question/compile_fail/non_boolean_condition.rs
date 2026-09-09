@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(input: u32) -> u32 {
     #[question("Is the input nonzero?")]
-    |&input| -> (yes, no) { *input };
+    let (yes, no) = |&input| { *input };
 
     #[action("Produce the yes result.")]
-    |yes, &input| -> result { *input };
+    let result = |yes, &input| { *input };
 
     #[action("Produce the no result.")]
-    |no, &input| -> result { *input };
+    let result = |no, &input| { *input };
 }
 
 fn main() {}

@@ -4,13 +4,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn generic_reuse_with_copy<T: Copy>(value: T) -> (T, T) {
     #[action("Take the value.")]
-    |value| -> first { value };
+    let first = |value| value;
 
     #[action("Take the value again.")]
-    |value| -> second { value };
+    let second = |value| value;
 
     #[action("Pair the two values.")]
-    |first, second| -> result { (first, second) };
+    let result = |first, second| (first, second);
 }
 
 #[test]

@@ -1,0 +1,5 @@
+error: a mutable capture requires the output wire to be declared with `mut`
+  --> tests/capture/compile_fail/immutable_merged_output.rs:15:11
+   |
+15 |     |&mut value| { *value += 1 };
+   |           ^^^^^

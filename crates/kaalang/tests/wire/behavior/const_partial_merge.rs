@@ -8,28 +8,26 @@ const fn const_partial_merge(source: u8) -> u8 {
     #[case("First source.")]
     #[case("Second source.")]
     #[case("Third source.")]
-    |source| -> (first, second, third) {
-        match source {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (first, second, third) = |source| match source {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Build the value from the first source.")]
-    |first| -> partial { 10u8 };
+    let partial = |first| 10u8;
 
     #[action("Build the value from the second source.")]
-    |second| -> partial { 20u8 };
+    let partial = |second| 20u8;
 
     #[action("Add one to the partially merged value.")]
-    |partial| -> shared { partial + 1 };
+    let shared = |partial| partial + 1;
 
     #[action("Build the value from the third source.")]
-    |third| -> shared { 30u8 };
+    let shared = |third| 30u8;
 
     #[action("Double the merged value.")]
-    |shared| -> result { shared * 2 };
+    let result = |shared| shared * 2;
 }
 
 #[test]

@@ -1,25 +1,25 @@
+#![deny(unused_mut)]
+
 use kaalang::kaalang;
 
 #[kaalang]
 fn mutate_merged_branch_outputs(condition: bool, mode: bool) -> usize {
     #[question("Provide the value directly?")]
-    |condition| -> (selected, choose) { condition };
+    let (mut selected, choose) = |condition| condition;
 
     #[choice("Choose the alternative producer.")]
     #[case("Provide the value directly.")]
     #[case("Produce it in an action.")]
-    |choose, mode| -> (selected, prepare) {
-        match mode {
-            true => (),
-            false => (),
-        }
+    let (mut selected, prepare) = |choose, mode| match mode {
+        true => (),
+        false => (),
     };
 
     #[action("Produce the final alternative.")]
-    |prepare| -> selected {};
+    let mut selected = |prepare| {};
 
     #[action("Mutate only after the branch outputs merge.")]
-    |&mut selected| -> result {
+    let result = |&mut selected| {
         *selected = ();
         1
     };

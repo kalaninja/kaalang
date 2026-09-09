@@ -4,13 +4,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn borrow_within_branch(condition: bool) -> usize {
     #[question("Build the text?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build text.")]
-    |yes| -> text { String::from("hello") };
+    let text = |yes| String::from("hello");
 
     #[action("Borrow text.")]
-    |&text| -> view { text.as_str() };
+    let view = |&text| text.as_str();
 
     #[action("Log the view.")]
     |view| {
@@ -18,10 +18,10 @@ fn borrow_within_branch(condition: bool) -> usize {
     };
 
     #[action("Finish yes.")]
-    |text| -> result { text.len() };
+    let result = |text| text.len();
 
     #[action("Finish no.")]
-    |no| -> result { 0 };
+    let result = |no| 0;
 }
 
 #[test]

@@ -6,7 +6,7 @@ fn invalid(input: i32) -> &'static str {
     #[case("The input is negative.")]
     #[case("The input is zero.")]
     #[case("The input is positive.")]
-    |input| -> (negative, zero, positive) {
+    let (negative, zero, positive) = |input| {
         match input {
             ..0 => (),
             _ => (),
@@ -14,13 +14,13 @@ fn invalid(input: i32) -> &'static str {
     };
 
     #[action("Produce the negative result.")]
-    |negative| -> negative_result { "negative" };
+    let negative_result = |negative| { "negative" };
 
     #[action("Produce the zero result.")]
-    |zero| -> zero_result { "zero" };
+    let zero_result = |zero| { "zero" };
 
     #[action("Produce the positive result.")]
-    |positive| -> positive_result { "positive" };
+    let positive_result = |positive| { "positive" };
 }
 
 fn main() {}

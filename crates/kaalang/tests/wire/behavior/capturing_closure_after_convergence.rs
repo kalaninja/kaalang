@@ -3,19 +3,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn capturing_closure_after_convergence(condition: bool) -> u32 {
     #[question("Which base?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes base.")]
-    |yes| -> base { 10 };
+    let base = |yes| 10;
 
     #[action("Build the no base.")]
-    |no| -> base { 20 };
+    let base = |no| 20;
 
     #[action("Capture the selected base in a closure.")]
-    |base| -> add { move |delta: u32| base + delta };
+    let add = |base| move |delta: u32| base + delta;
 
     #[action("Apply the closure.")]
-    |add| -> result { add(1) };
+    let result = |add| add(1);
 }
 
 #[test]

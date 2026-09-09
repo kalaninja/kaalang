@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn a_branch_captures_a_merged_value(amount: u8, verbose: bool) -> u8 {
     #[question("Is the amount positive?")]
-    |amount| -> (positive, negative) { amount > 0 };
+    let (positive, negative) = |amount| amount > 0;
 
     #[action("Take the positive amount.")]
-    |positive| -> (counted, seen) { (11u8, ()) };
+    let (counted, seen) = |positive| (11u8, ());
 
     #[action("Take the negative amount.")]
-    |negative| -> (counted, seen) { (10u8, ()) };
+    let (counted, seen) = |negative| (10u8, ());
 
     #[question("Should the run report anything?")]
-    |verbose| -> (report, quiet) { verbose };
+    let (report, quiet) = |verbose| verbose;
 
     #[action("Report the counted amount.")]
-    |report, counted| -> result { counted };
+    let result = |report, counted| counted;
 
     #[action("Report nothing.")]
-    |quiet, seen| -> result { 0u8 };
+    let result = |quiet, seen| 0u8;
 }
 
 #[test]

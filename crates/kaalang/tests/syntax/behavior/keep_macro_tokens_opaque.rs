@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn keep_macro_tokens_opaque() -> &'static str {
     #[action("Spell the keyword instead of using it.")]
-    || -> result { stringify!(return) };
+    let result = || stringify!(return);
 }
 
 #[test]

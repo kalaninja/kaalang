@@ -86,16 +86,16 @@ mod tests {
         let mut function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
                 #[question("Choose a value")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes value")]
-                |yes| -> selected { 1 };
+                let selected = |yes| { 1 };
 
                 #[action("Build the no value")]
-                |no| -> selected { 2 };
+                let selected = |no| { 2 };
 
                 #[action("Use the selected value")]
-                |selected| -> result { __kaalang_shared_marker(selected) };
+                let result = |selected| { __kaalang_shared_marker(selected) };
             }
         };
 
@@ -113,7 +113,7 @@ mod tests {
                 #[choice("Was text supplied?")]
                 #[case("Text")]
                 #[case("Absent")]
-                |input| -> (text, absent) {
+                let (text, absent) = |input| {
                     match input {
                         Some(value) => value,
                         None => 0u8,
@@ -121,13 +121,13 @@ mod tests {
                 };
 
                 #[action("Measure the text")]
-                |text| -> selected { text.len() };
+                let selected = |text| { text.len() };
 
                 #[action("Use the fallback")]
-                |absent| -> selected { absent as usize };
+                let selected = |absent| { absent as usize };
 
                 #[action("Finish")]
-                |selected| -> result { __kaalang_shared_marker(selected) };
+                let result = |selected| { __kaalang_shared_marker(selected) };
             }
         };
         let expansion = expand(&mut function).expect("the flow expands").to_string();
@@ -151,7 +151,7 @@ mod tests {
                 #[case("Terminal")]
                 #[case("First of the right group")]
                 #[case("Second of the right group")]
-                |value, &condition| -> (a, b, done, c, d) {
+                let (a, b, done, c, d) = |value, &condition| {
                     match value {
                         0 => (),
                         1 => (),
@@ -162,31 +162,31 @@ mod tests {
                 };
 
                 #[action("Build the left value from a")]
-                |a| -> left { 1 };
+                let left = |a| { 1 };
 
                 #[action("Build the left value from b")]
-                |b| -> left { 2 };
+                let left = |b| { 2 };
 
                 #[action("Produce the terminal result")]
-                |done| -> result { __kaalang_terminal_marker(3) };
+                let result = |done| { __kaalang_terminal_marker(3) };
 
                 #[question("Refine the right group")]
-                |c, condition| -> (yes, no) { condition };
+                let (yes, no) = |c, condition| { condition };
 
                 #[action("Build the right value on yes")]
-                |yes| -> right { 4 };
+                let right = |yes| { 4 };
 
                 #[action("Build the right value on no")]
-                |no| -> right { 5 };
+                let right = |no| { 5 };
 
                 #[action("Build the right value from d")]
-                |d| -> right { 6 };
+                let right = |d| { 6 };
 
                 #[action("Use the left value")]
-                |left| -> result { __kaalang_left_marker(left) };
+                let result = |left| { __kaalang_left_marker(left) };
 
                 #[action("Use the right value")]
-                |right| -> result { __kaalang_right_marker(right) };
+                let result = |right| { __kaalang_right_marker(right) };
             }
         };
 
@@ -229,11 +229,20 @@ mod tests {
             let is_const = function.sig.constness.is_some();
             let mut markers = Vec::new();
             for (index, statement) in function.block.stmts.iter_mut().enumerate() {
-                let Stmt::Expr(Expr::Closure(closure), _) = statement else {
-                    panic!("each fixture statement declares a block");
+                let expression = match statement {
+                    Stmt::Local(local) => local.init.as_mut().unwrap().expr.as_mut(),
+                    Stmt::Expr(expression, _) => expression,
+                    _ => panic!("each fixture statement declares a block"),
                 };
+                let Expr::Closure(closure) = expression else {
+                    panic!("each block has a closure initializer");
+                };
+                if !matches!(closure.body.as_ref(), Expr::Block(_)) {
+                    let expression = &closure.body;
+                    closure.body = parse_quote!({ #expression });
+                }
                 let Expr::Block(body) = closure.body.as_mut() else {
-                    panic!("each block has a braced body");
+                    unreachable!("the body has been wrapped in a block");
                 };
                 let marker = format_ident!("__kaalang_body_marker_{index}");
                 if let [Stmt::Expr(Expr::Match(selection), _)] = body.block.stmts.as_mut_slice() {

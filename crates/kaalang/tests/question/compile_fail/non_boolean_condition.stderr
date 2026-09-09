@@ -1,5 +1,5 @@
 error[E0308]: mismatched types
- --> tests/question/compile_fail/non_boolean_condition.rs:6:29
+ --> tests/question/compile_fail/non_boolean_condition.rs:6:32
   |
-6 |     |&input| -> (yes, no) { *input };
-  |                             ^^^^^^ expected `bool`, found `u32`
+6 |     let (yes, no) = |&input| { *input };
+  |                                ^^^^^^ expected `bool`, found `u32`

@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 const fn const_alternative_producers(condition: bool) -> u8 {
     #[question("Choose a value.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes value and an unused marker.")]
-    |yes| -> (result, _marker) { (1u8, 3u8) };
+    let (result, _marker) = |yes| (1u8, 3u8);
 
     #[action("Build the no value and an unused marker.")]
-    |no| -> (result, _marker) { (2u8, 4u8) };
+    let (result, _marker) = |no| (2u8, 4u8);
 }
 
 #[test]

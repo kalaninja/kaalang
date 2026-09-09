@@ -7,26 +7,24 @@ fn fizzbuzz(number: u32) -> String {
     #[case("Only three divides it.")]
     #[case("Only five divides it.")]
     #[case("Neither divides it.")]
-    |number| -> (fizz_buzz, fizz, buzz, plain) {
-        match (number % 3, number % 5) {
-            (0, 0) => (),
-            (0, _) => (),
-            (_, 0) => (),
-            _ => number,
-        }
+    let (fizz_buzz, fizz, buzz, plain) = |number| match (number % 3, number % 5) {
+        (0, 0) => (),
+        (0, _) => (),
+        (_, 0) => (),
+        _ => number,
     };
 
     #[action("Say FizzBuzz.")]
-    |fizz_buzz| -> result { String::from("FizzBuzz") };
+    let result = |fizz_buzz| String::from("FizzBuzz");
 
     #[action("Say Fizz.")]
-    |fizz| -> result { String::from("Fizz") };
+    let result = |fizz| String::from("Fizz");
 
     #[action("Say Buzz.")]
-    |buzz| -> result { String::from("Buzz") };
+    let result = |buzz| String::from("Buzz");
 
     #[action("Say the number itself.")]
-    |plain| -> result { plain.to_string() };
+    let result = |plain| plain.to_string();
 }
 
 #[test]

@@ -1,5 +1,5 @@
 error: a kaalang block input must name a flow input or an earlier block output
- --> tests/wire/compile_fail/unknown_input.rs:6:6
+ --> tests/wire/compile_fail/unknown_input.rs:6:19
   |
-6 |     |future| -> result { future };
-  |      ^^^^^^
+6 |     let result = |future| { future };
+  |                   ^^^^^^

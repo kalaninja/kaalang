@@ -11,7 +11,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_model::{Block, BlockKind, Execution, ExecutionPlan, Input, ProducerId, SemanticModel};
-use syn::Ident;
+use syn::{FnArg, Ident, Pat, PatIdent, ext::IdentExt};
 
 mod action;
 pub(crate) mod choice;
@@ -236,7 +236,19 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
     }];
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
-        handover: names(&model.flow.flow_inputs),
+        handover: model
+            .parameters
+            .iter()
+            .filter_map(|parameter| {
+                let FnArg::Typed(parameter) = parameter else {
+                    return None;
+                };
+                let Pat::Ident(binding) = parameter.pat.as_ref() else {
+                    return None;
+                };
+                Some(provided(binding))
+            })
+            .collect(),
         branch_description: None,
     }];
     for (index, block) in model.flow.blocks.iter().enumerate() {
@@ -260,7 +272,14 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
             .map(|group| Junction {
                 wires: group
                     .iter()
-                    .map(|&merge| model.merges[merge].wire.to_string())
+                    .map(|&merge| {
+                        let ProducerId::BlockOutput { block, output } =
+                            model.merges[merge].producers[0]
+                        else {
+                            unreachable!("a wire merge combines block outputs")
+                        };
+                        provided(model.flow.blocks[block].output_binding(output))
+                    })
                     .collect(),
             })
             .collect(),
@@ -366,9 +385,9 @@ fn branch_exits(
         .outputs
         .iter()
         .enumerate()
-        .map(move |(branch, output)| Exit {
+        .map(move |(branch, _)| Exit {
             id: exit(index, branch),
-            handover: vec![output.to_string()],
+            handover: vec![provided(block.output_binding(branch))],
             branch_description: None,
         })
 }
@@ -393,16 +412,20 @@ fn block_node(index: usize, block: &Block, kind: NodeKind) -> Node {
     }
 }
 
-/// Capture modifiers distinguish borrowing and mutable inputs from a bare
-/// hand-over, so only an unmodified value capture can share its label.
+/// Capture modifiers distinguish the four authored input forms.
 fn captured(input: &Input) -> String {
     let borrow = if input.borrowed { "&" } else { "" };
     let mutable = if input.mutable { "mut " } else { "" };
     format!("{borrow}{mutable}{}", input.ident)
 }
 
-fn names(idents: &[Ident]) -> Vec<String> {
-    idents.iter().map(ToString::to_string).collect()
+fn provided(binding: &PatIdent) -> String {
+    let mutable = if binding.mutability.is_some() {
+        "mut "
+    } else {
+        ""
+    };
+    format!("{mutable}{}", binding.ident.unraw())
 }
 
 /// A vertex of the precedence graph. Junctions take part so that a route

@@ -5,24 +5,22 @@ fn anonymous_case_values(value: i32) -> i32 {
     #[choice("Which transformation?")]
     #[case("Negate the value.")]
     #[case("Double the value.")]
-    |value| -> (negate, double) {
-        match value {
-            ..0 => move || -value,
-            _ => move || value * 2,
-        }
+    let (negate, double) = |value| match value {
+        ..0 => move || -value,
+        _ => move || value * 2,
     };
 
     #[action("Run the negation.")]
-    |negate| -> selected { negate() };
+    let selected = |negate| negate();
 
     #[action("Run the doubling.")]
-    |double| -> selected { double() };
+    let selected = |double| double();
 
     #[action("Capture the selected value in a closure.")]
-    |selected| -> increment { move || selected + 1 };
+    let increment = |selected| move || selected + 1;
 
     #[action("Run the selected closure.")]
-    |increment| -> result { increment() };
+    let result = |increment| increment();
 }
 
 #[test]

@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn unused_mutable_capture(value: u8) -> u8 {
     #[action("Leave the authored mutable binding unchanged.")]
-    |mut value| -> result { value };
+    let result = |mut value| { value };
 }
 
 fn main() {}

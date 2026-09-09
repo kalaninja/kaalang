@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn question_value(condition: bool, shared_runs: &mut usize) -> u32 {
     #[question("Choose a value.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes value.")]
-    |yes| -> selected { 11 };
+    let selected = |yes| 11;
 
     #[action("Build the no value.")]
-    |no| -> selected { 29 };
+    let selected = |no| 29;
 
     #[action("Use the selected value once.")]
-    |selected, shared_runs| -> result {
+    let result = |selected, shared_runs| {
         *shared_runs += 1;
         selected
     };

@@ -5,22 +5,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Choose a value.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the yes value and local note.")]
-    |yes| -> (selected, local_note) { (21, 1u8) };
+    let (selected, local_note) = |yes| { (21, 1u8) };
 
     #[action("Build the no value, which has no note to record.")]
-    |no| -> (selected, noted) { (34, ()) };
+    let (selected, noted) = |no| { (34, ()) };
 
     #[action("Use the merged value.")]
-    |selected| -> used { selected * 2 };
+    let used = |selected| { selected * 2 };
 
     #[action("Record the note after leaving the yes branch.")]
-    |local_note| -> noted { let _ = local_note; };
+    let noted = |local_note| { let _ = local_note; };
 
     #[action("Finish.")]
-    |used, noted| -> result { used };
+    let result = |used, noted| { used };
 }
 
 fn main() {}

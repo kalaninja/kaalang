@@ -8,7 +8,7 @@ const SOURCE: &str = r#"
         #[choice("Pick a lane.")]
         #[case("The near lane.")]
         #[case("The far lane.")]
-        |seed| -> (near, far) {
+        let (near, far) = |seed| {
             match seed {
                 0 => (),
                 _ => (),
@@ -16,19 +16,19 @@ const SOURCE: &str = r#"
         };
 
         #[action("Split <the> near lane & measure it.")]
-        |near| -> (width, depth) { (1u8, 2u8) };
+        let (width, depth) = |near| { (1u8, 2u8) };
 
         #[action("Measure the width.")]
-        |&width| -> measured { *width };
+        let measured = |&width| { *width };
 
         #[action("Gauge the depth.")]
-        |depth| -> gauged { depth };
+        let gauged = |depth| { depth };
 
         #[action("Finish from the near lane.")]
-        |measured, gauged| -> result { measured + gauged };
+        let result = |measured, gauged| { measured + gauged };
 
         #[action("Finish from the far lane.")]
-        |far| -> result { 9u8 };
+        let result = |far| { 9u8 };
     }
 "#;
 

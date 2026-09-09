@@ -4,10 +4,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(input: u32, other: u32) -> u32 {
     #[action("Produce the result.")]
-    |input| -> result { input };
+    let result = |input| { input };
 
     #[action("Work written below the result.")]
-    |other| -> _stray { other };
+    let _stray = |other| { other };
 }
 
 fn main() {}

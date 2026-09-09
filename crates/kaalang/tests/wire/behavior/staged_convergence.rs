@@ -3,19 +3,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn staged_convergence(condition: bool) -> (u32, &'static str) {
     #[question("Choose two values.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes values.")]
-    |yes| -> (number, label) { (1, "yes") };
+    let (number, label) = |yes| (1, "yes");
 
     #[action("Build the no values.")]
-    |no| -> (number, label) { (2, "no") };
+    let (number, label) = |no| (2, "no");
 
     #[action("Use the number first.")]
-    |number| -> doubled { number * 2 };
+    let doubled = |number| number * 2;
 
     #[action("Use the preserved label later.")]
-    |doubled, label| -> result { (doubled, label) };
+    let result = |doubled, label| (doubled, label);
 }
 
 #[test]

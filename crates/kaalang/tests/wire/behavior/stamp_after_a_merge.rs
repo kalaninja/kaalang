@@ -4,19 +4,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn stamp_after_a_merge(flag: bool) -> u8 {
     #[question("Which value?")]
-    |flag| -> (yes, no) { flag };
+    let (yes, no) = |flag| flag;
 
     #[action("Build the yes value.")]
-    |yes| -> value { 1u8 };
+    let value = |yes| 1u8;
 
     #[action("Build the no value.")]
-    |no| -> value { 2u8 };
+    let value = |no| 2u8;
 
     #[action("Stamp.")]
-    || -> stamp { 10u8 };
+    let stamp = || 10u8;
 
     #[action("Finish.")]
-    |value, stamp| -> result { value + stamp };
+    let result = |value, stamp| value + stamp;
 }
 
 #[test]

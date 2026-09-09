@@ -4,13 +4,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn skeleton(seed: u32) -> u32 {
     #[question("Accept the seed?")]
-    |&seed| -> (accepted, rejected) { todo!() };
+    let (accepted, rejected) = |&seed| todo!();
 
     #[action("Keep the accepted seed.")]
-    |accepted, seed| -> result { todo!() };
+    let result = |accepted, seed| todo!();
 
     #[action("Keep the rejected seed.")]
-    |rejected, seed| -> result { todo!() };
+    let result = |rejected, seed| todo!();
 }
 
 #[test]

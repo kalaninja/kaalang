@@ -1,6 +1,5 @@
-error: a kaalang block must have the form `|inputs| -> outputs { body }`
- --> tests/syntax/compile_fail/non_closure_initializer.rs:5:5
+error: a kaalang block initializer must have the form `|inputs| { body }`
+ --> tests/syntax/compile_fail/non_closure_initializer.rs:6:18
   |
-5 | /     #[action("Copy the input without a closure-shaped block.")]
-6 | |     input;
-  | |_________^
+6 |     let result = input;
+  |                  ^^^^^

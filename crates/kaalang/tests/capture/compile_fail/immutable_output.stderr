@@ -1,0 +1,5 @@
+error: a mutable capture requires the output wire to be declared with `mut`
+ --> tests/capture/compile_fail/immutable_output.rs:9:11
+  |
+9 |     |&mut text| { text.clear() };
+  |           ^^^^

@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn several_wires(condition: bool) -> (u32, &'static str) {
     #[question("Choose a pair.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes pair.")]
-    |yes| -> (number, label) { (1, "yes") };
+    let (number, label) = |yes| (1, "yes");
 
     #[action("Build the no pair.")]
-    |no| -> (number, label) { (2, "no") };
+    let (number, label) = |no| (2, "no");
 
     #[action("Use both selected values.")]
-    |label, number| -> result { (number, label) };
+    let result = |label, number| (number, label);
 }
 
 #[test]

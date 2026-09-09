@@ -7,25 +7,25 @@ fn effect_before_a_nested_terminal_branch(
     log: &mut Vec<&'static str>,
 ) -> u32 {
     #[action("Record the effect before branching.")]
-    |log| -> logged { log.push("effect") };
+    let logged = |log| log.push("effect");
 
     #[question("Take the nested branch?")]
-    |outer, &inner| -> (nested, direct) { outer };
+    let (nested, direct) = |outer, &inner| outer;
 
     #[question("Finish early?")]
-    |nested, inner| -> (early, late) { inner };
+    let (early, late) = |nested, inner| inner;
 
     #[action("Produce the early result.")]
-    |early, logged| -> result { 1 };
+    let result = |early, logged| 1;
 
     #[action("Build the late value.")]
-    |late| -> selected { 2 };
+    let selected = |late| 2;
 
     #[action("Build the direct value.")]
-    |direct| -> selected { 3 };
+    let selected = |direct| 3;
 
     #[action("Use the selected value.")]
-    |selected, logged| -> result { selected * 10 };
+    let result = |selected, logged| selected * 10;
 }
 
 #[test]

@@ -9,32 +9,30 @@ fn two_convergence_groups(quarter: u8) -> u32 {
     #[case("The second quarter.")]
     #[case("The third quarter.")]
     #[case("The fourth quarter.")]
-    |quarter| -> (first, second, third, fourth) {
-        match quarter {
-            0 => (),
-            1 => (),
-            2 => (),
-            _ => (),
-        }
+    let (first, second, third, fourth) = |quarter| match quarter {
+        0 => (),
+        1 => (),
+        2 => (),
+        _ => (),
     };
 
     #[action("Open the early half.")]
-    |first| -> early { 1u32 };
+    let early = |first| 1u32;
 
     #[action("Open the early half the other way.")]
-    |second| -> early { 2u32 };
+    let early = |second| 2u32;
 
     #[action("Close the early half.")]
-    |early| -> result { early + 10 };
+    let result = |early| early + 10;
 
     #[action("Open the late half.")]
-    |third| -> late { 3u32 };
+    let late = |third| 3u32;
 
     #[action("Open the late half the other way.")]
-    |fourth| -> late { 4u32 };
+    let late = |fourth| 4u32;
 
     #[action("Close the late half.")]
-    |late| -> result { late + 20 };
+    let result = |late| late + 20;
 }
 
 #[test]

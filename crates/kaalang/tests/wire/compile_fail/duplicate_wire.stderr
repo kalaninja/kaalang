@@ -1,5 +1,5 @@
 error: a kaalang wire must not be produced more than once in one execution
- --> tests/wire/compile_fail/duplicate_wire.rs:9:17
+ --> tests/wire/compile_fail/duplicate_wire.rs:9:9
   |
-9 |     |shared| -> shared { shared };
-  |                 ^^^^^^
+9 |     let shared = |shared| { shared };
+  |         ^^^^^^

@@ -5,16 +5,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> usize {
     #[question("Build the text?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build text.")]
-    |yes| -> text { String::from("hello") };
+    let text = |yes| { String::from("hello") };
 
     #[action("Borrow text.")]
-    |&text| -> view { text.as_str() };
+    let view = |&text| { text.as_str() };
 
     #[action("Measure the text.")]
-    |text| -> length { text.len() };
+    let length = |text| { text.len() };
 
     #[action("Log the view.")]
     |view| {
@@ -22,10 +22,10 @@ fn invalid(condition: bool) -> usize {
     };
 
     #[action("Finish yes.")]
-    |length| -> result { length };
+    let result = |length| { length };
 
     #[action("Finish no.")]
-    |no| -> result { 0 };
+    let result = |no| { 0 };
 }
 
 fn main() {}

@@ -5,28 +5,30 @@ use kaalang::kaalang;
 #[kaalang]
 fn successive_selections_keep_a_copy(condition: bool, long: bool) -> u32 {
     #[question("Which seed?")]
-    |condition| -> (first, second) { condition };
+    let (first, second) = |condition| condition;
 
     #[action("Build the first seed.")]
-    |first| -> seed { 3u32 };
+    let seed = |first| 3u32;
 
     #[action("Build the second seed.")]
-    |second| -> seed { 2u32 };
+    let seed = |second| 2u32;
 
     #[action("Scale the merged seed.")]
-    |seed| -> scaled { seed * 10 };
+    let scaled = |seed| seed * 10;
 
     #[question("Is it large?")]
-    |&scaled, long| -> (yes, no) { long && *scaled > 20 };
+    let (yes, no) = |&scaled, long| long && *scaled > 20;
 
     #[action("Include the original seed.")]
-    |yes| -> include_seed { true };
+    let include_seed = |yes| true;
 
     #[action("Use the scaled value alone.")]
-    |no| -> include_seed { false };
+    let include_seed = |no| false;
 
     #[action("Finish with the selected adjustment.")]
-    |include_seed, scaled, seed| -> result { if include_seed { scaled + seed } else { scaled } };
+    let result = |include_seed, scaled, seed| {
+        if include_seed { scaled + seed } else { scaled }
+    };
 }
 
 #[test]

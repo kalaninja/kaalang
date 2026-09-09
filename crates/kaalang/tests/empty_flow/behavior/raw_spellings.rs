@@ -6,10 +6,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn raw_spellings(r#type: u8, value: u8) -> u8 {
     #[action("Combine the keyword-named input with the plain one.")]
-    |r#type, r#value| -> (r#match, r#_ignored) { (r#type + value, ()) };
+    let (r#match, r#_ignored) = |r#type, r#value| (r#type + value, ());
 
     #[action("Preserve the renamed value.")]
-    |r#match| -> r#result { r#match };
+    let r#result = |r#match| r#match;
 }
 
 #[test]

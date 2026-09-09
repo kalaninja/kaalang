@@ -7,20 +7,20 @@ use kaalang::kaalang;
 #[kaalang]
 fn branch_guard_drops_at_a_merge(condition: bool, cell: &RefCell<usize>) -> usize {
     #[question("Measure the cell?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Borrow the cell and read its size.")]
-    |yes, cell| -> (_yes_guard, ready) {
+    let (_yes_guard, ready) = |yes, cell| {
         let guard = cell.borrow_mut();
         let size = *guard;
         (guard, size)
     };
 
     #[action("Borrow the cell and use the fallback size.")]
-    |no, cell| -> (_no_guard, ready) { (cell.borrow_mut(), 8usize) };
+    let (_no_guard, ready) = |no, cell| (cell.borrow_mut(), 8usize);
 
     #[action("Mutate the cell after the merge.")]
-    |ready, cell| -> result {
+    let result = |ready, cell| {
         *cell.borrow_mut() += 1;
         ready
     };

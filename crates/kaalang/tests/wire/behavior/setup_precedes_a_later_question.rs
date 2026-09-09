@@ -7,22 +7,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn setup_precedes_a_later_question(condition: bool, order: &Cell<u8>) -> u8 {
     #[action("Prepare the shared setup.")]
-    |&order| -> setup {
+    let setup = |&order| {
         order.set(order.get() * 10 + 1);
         7u8
     };
 
     #[question("Take the short branch?")]
-    |condition, &order| -> (short, long) {
+    let (short, long) = |condition, &order| {
         order.set(order.get() * 10 + 2);
         condition
     };
 
     #[action("Use the setup on the short branch.")]
-    |short, &setup| -> result { setup + 1 };
+    let result = |short, &setup| setup + 1;
 
     #[action("Use the setup on the long branch.")]
-    |long, &setup| -> result { setup + 2 };
+    let result = |long, &setup| setup + 2;
 }
 
 #[test]

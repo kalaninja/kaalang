@@ -6,16 +6,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) -> u64 {
     #[question("Which way?")]
-    |flag| -> (yes, no) { flag };
+    let (yes, no) = |flag| { flag };
 
     #[action("Stamp.")]
-    || -> stamp { 7u64 };
+    let stamp = || { 7u64 };
 
     #[action("Finish yes.")]
-    |yes, stamp| -> result { stamp };
+    let result = |yes, stamp| { stamp };
 
     #[action("Finish no.")]
-    |no, stamp| -> result { stamp + 1 };
+    let result = |no, stamp| { stamp + 1 };
 }
 
 fn main() {}

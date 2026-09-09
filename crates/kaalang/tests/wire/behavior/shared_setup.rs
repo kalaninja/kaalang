@@ -5,16 +5,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn shared_setup(condition: bool) -> u32 {
     #[action("Prepare the shared setup.")]
-    || -> setup { 10u32 };
+    let setup = || 10u32;
 
     #[question("Take the short branch?")]
-    |condition| -> (short, long) { condition };
+    let (short, long) = |condition| condition;
 
     #[action("Use the setup on the short branch.")]
-    |short, &setup| -> result { setup + 1 };
+    let result = |short, &setup| setup + 1;
 
     #[action("Use the setup on the long branch.")]
-    |long, &setup| -> result { setup + 2 };
+    let result = |long, &setup| setup + 2;
 }
 
 #[test]

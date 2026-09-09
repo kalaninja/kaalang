@@ -5,18 +5,16 @@ fn run_choice_with_guard(value: i32) -> i32 {
     #[choice("Is the value a positive even number?")]
     #[case("The value is positive and even.")]
     #[case("The value is not positive and even.")]
-    |value| -> (positive_even, other) {
-        match value {
-            matched @ 1.. if matched % 2 == 0 => matched,
-            _ => (),
-        }
+    let (positive_even, other) = |value| match value {
+        matched @ 1.. if matched % 2 == 0 => matched,
+        _ => (),
     };
 
     #[action("Produce the positive-even result.")]
-    |positive_even| -> result { positive_even };
+    let result = |positive_even| positive_even;
 
     #[action("Produce the other result.")]
-    |other| -> result { 0 };
+    let result = |other| 0;
 }
 
 #[test]

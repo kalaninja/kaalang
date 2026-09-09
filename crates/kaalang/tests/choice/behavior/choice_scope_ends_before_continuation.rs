@@ -12,36 +12,34 @@ fn choice_scope_ends_before_continuation(
     evaluations: &Cell<usize>,
 ) -> usize {
     #[action("Borrow the cell before choosing.")]
-    |cell| -> input_guard { cell.borrow() };
+    let input_guard = |cell| cell.borrow();
 
     #[choice("Which increment should be applied?")]
     #[case("Use the next value.")]
     #[case("Use the fallback word's length.")]
-    |condition, input_guard, cell, evaluations| -> (number, text) {
-        match {
-            evaluations.set(evaluations.get() + 1);
-            (condition, cell.borrow())
-        } {
-            (true, selected) => {
-                assert_eq!(*selected, *input_guard);
-                *selected + 1
-            }
-            (false, selected) => {
-                assert_eq!(*selected, *input_guard);
-                "fallback"
-            }
+    let (number, text) = |condition, input_guard, cell, evaluations| match {
+        evaluations.set(evaluations.get() + 1);
+        (condition, cell.borrow())
+    } {
+        (true, selected) => {
+            assert_eq!(*selected, *input_guard);
+            *selected + 1
+        }
+        (false, selected) => {
+            assert_eq!(*selected, *input_guard);
+            "fallback"
         }
     };
 
     #[action("Apply the numeric increment after leaving the choice.")]
-    |number, cell| -> result {
+    let result = |number, cell| {
         let mut value = cell.borrow_mut();
         *value += number;
         *value
     };
 
     #[action("Apply the text length after leaving the choice.")]
-    |text, cell| -> result {
+    let result = |text, cell| {
         let mut value = cell.borrow_mut();
         *value += text.len();
         *value

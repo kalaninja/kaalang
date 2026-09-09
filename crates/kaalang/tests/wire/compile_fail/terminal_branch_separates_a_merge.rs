@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(refine: bool, finish_early: bool) -> u32 {
     #[question("Refine the value?")]
-    |refine| -> (nested, direct) { refine };
+    let (nested, direct) = |refine| { refine };
 
     #[question("Finish early?")]
-    |nested, finish_early| -> (join, skip) { !finish_early };
+    let (join, skip) = |nested, finish_early| { !finish_early };
 
     #[action("Finish without the shared step.")]
-    |skip| -> result { 100 };
+    let result = |skip| { 100 };
 
     #[action("Build the refined value.")]
-    |join| -> shared { 1 };
+    let shared = |join| { 1 };
 
     #[action("Build the direct value.")]
-    |direct| -> shared { 2 };
+    let shared = |direct| { 2 };
 
     #[action("Add ten in the shared step.")]
-    |shared| -> result { shared + 10 };
+    let result = |shared| { shared + 10 };
 }
 
 fn main() {}

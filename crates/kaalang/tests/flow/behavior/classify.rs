@@ -3,25 +3,25 @@ use kaalang::kaalang;
 #[kaalang]
 fn classify(seed: u32, limit: u32) -> u32 {
     #[action("Normalize the seed.")]
-    |&seed| -> (normalized,) { *seed };
+    let normalized = |&seed| *seed;
 
     #[action("Split the seed.")]
-    |normalized| -> (left, right) { (normalized, normalized + 1) };
+    let (left, right) = |normalized| (normalized, normalized + 1);
 
     #[action("Add the values.")]
-    |left, right, &limit| -> total {
+    let total = |left, right, &limit| {
         let subtotal = left + right;
         subtotal + *limit
     };
 
     #[question("Is the total above the limit?")]
-    |&total, &limit| -> (accepted, rejected) { *total > *limit };
+    let (accepted, rejected) = |&total, &limit| *total > *limit;
 
     #[action("Keep the accepted total.")]
-    |accepted, total| -> result { total };
+    let result = |accepted, total| total;
 
     #[action("Keep the rejected total.")]
-    |rejected, total| -> result { total };
+    let result = |rejected, total| total;
 }
 
 #[test]

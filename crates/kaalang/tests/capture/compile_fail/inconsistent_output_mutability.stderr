@@ -1,0 +1,5 @@
+error: alternative producers of a kaalang wire must declare the same mutability
+  --> tests/capture/compile_fail/inconsistent_output_mutability.rs:12:10
+   |
+12 |     let (r#_value, result) = |no| { (2, 2) };
+   |          ^^^^^^^^

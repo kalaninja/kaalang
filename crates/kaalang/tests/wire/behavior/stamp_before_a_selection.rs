@@ -6,16 +6,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn stamp_before_a_selection(flag: bool) -> u64 {
     #[action("Stamp.")]
-    || -> stamp { 7u64 };
+    let stamp = || 7u64;
 
     #[question("Which way?")]
-    |flag| -> (yes, no) { flag };
+    let (yes, no) = |flag| flag;
 
     #[action("Finish with the stamp.")]
-    |yes, stamp| -> result { stamp };
+    let result = |yes, stamp| stamp;
 
     #[action("Finish without it.")]
-    |no| -> result { 0 };
+    let result = |no| 0;
 }
 
 #[test]

@@ -7,28 +7,28 @@ use kaalang::kaalang;
 #[kaalang]
 fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
     #[question("Choose the right value.")]
-    |right, &calls| -> (x, y) {
+    let (x, y) = |right, &calls| {
         calls.set(calls.get() + 1);
         right
     };
 
     #[action("Build the first right value.")]
-    |x| -> value { 10u8 };
+    let value = |x| 10u8;
 
     #[action("Build the second right value.")]
-    |y| -> value { 20u8 };
+    let value = |y| 20u8;
 
     #[question("Choose the left branch.")]
-    |left, &calls| -> (a, b) {
+    let (a, b) = |left, &calls| {
         calls.set(calls.get() + 1);
         left
     };
 
     #[action("Use the left branch and the right value.")]
-    |a, value| -> result { value + 1 };
+    let result = |a, value| value + 1;
 
     #[action("Use the other left branch and the right value.")]
-    |b, value| -> result { value + 2 };
+    let result = |b, value| value + 2;
 }
 
 #[test]

@@ -5,28 +5,28 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool, long: bool) -> usize {
     #[question("Which text?")]
-    |condition| -> (first, second) { condition };
+    let (first, second) = |condition| { condition };
 
     #[action("Build the first text.")]
-    |first| -> text { String::from("abc") };
+    let text = |first| { String::from("abc") };
 
     #[action("Build the second text.")]
-    |second| -> text { String::from("de") };
+    let text = |second| { String::from("de") };
 
     #[action("Measure the merged text.")]
-    |text| -> length { text.len() };
+    let length = |text| { text.len() };
 
     #[question("Is it long enough?")]
-    |&length, long| -> (yes, no) { long && *length > 2 };
+    let (yes, no) = |&length, long| { long && *length > 2 };
 
     #[action("Keep the length.")]
-    |yes, length| -> selected { length };
+    let selected = |yes, length| { length };
 
     #[action("Report nothing.")]
-    |no, length| -> selected { length };
+    let selected = |no, length| { length };
 
     #[action("Use the moved text after the join.")]
-    |selected, text| -> result { selected + text.len() };
+    let result = |selected, text| { selected + text.len() };
 }
 
 fn main() {}

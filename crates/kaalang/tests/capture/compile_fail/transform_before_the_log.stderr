@@ -6,8 +6,8 @@ error[E0382]: borrow of moved value
  5 | fn invalid(value: String) -> usize {
    |            ----- move occurs because value has type `String`, which does not implement the `Copy` trait
  6 |     #[action("Transform the value into its length.")]
- 7 |     |value| -> length { value.len() };
-   |      ----- value moved here
+ 7 |     let length = |value| { value.len() };
+   |                   ----- value moved here
 ...
 10 |     |&value| {
    |       ^^^^^ value borrowed here after move
@@ -15,5 +15,5 @@ error[E0382]: borrow of moved value
    = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider cloning the value if the performance cost is acceptable
    |
- 7 |     |value.clone()| -> length { value.len() };
-   |           ++++++++
+ 7 |     let length = |value.clone()| { value.len() };
+   |                        ++++++++

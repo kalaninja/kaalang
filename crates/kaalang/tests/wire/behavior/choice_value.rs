@@ -6,25 +6,23 @@ fn choice_value(case: u8) -> &'static str {
     #[case("First")]
     #[case("Second")]
     #[case("Third")]
-    |case| -> (first, second, third) {
-        match case {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (first, second, third) = |case| match case {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Build the first value.")]
-    |first| -> selected { "first" };
+    let selected = |first| "first";
 
     #[action("Build the second value.")]
-    |second| -> selected { "second" };
+    let selected = |second| "second";
 
     #[action("Build the third value.")]
-    |third| -> selected { "third" };
+    let selected = |third| "third";
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected };
+    let result = |selected| selected;
 }
 
 #[test]

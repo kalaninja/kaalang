@@ -5,28 +5,28 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(outer: bool, late: bool) -> u8 {
     #[question("Take the nested part?")]
-    |outer| -> (nested, direct) { outer };
+    let (nested, direct) = |outer| { outer };
 
     #[question("Converge late?")]
-    |nested, late| -> (early, delayed) { late };
+    let (early, delayed) = |nested, late| { late };
 
     #[action("Build the shared value early.")]
-    |early| -> (shared, early_gate) { (1u8, ()) };
+    let (shared, early_gate) = |early| { (1u8, ()) };
 
     #[action("Build the shared value late.")]
-    |delayed| -> (shared, late_gate) { (2u8, ()) };
+    let (shared, late_gate) = |delayed| { (2u8, ()) };
 
     #[action("Build the shared value directly.")]
-    |direct| -> (shared, direct_gate) { (3u8, ()) };
+    let (shared, direct_gate) = |direct| { (3u8, ()) };
 
     #[action("Use the shared value inside the early branch.")]
-    |shared, early_gate| -> result { shared };
+    let result = |shared, early_gate| { shared };
 
     #[action("Use the shared value inside the late branch.")]
-    |shared, late_gate| -> result { shared };
+    let result = |shared, late_gate| { shared };
 
     #[action("Use the shared value in the direct branch.")]
-    |shared, direct_gate| -> result { shared };
+    let result = |shared, direct_gate| { shared };
 }
 
 fn main() {}

@@ -3,25 +3,25 @@ use kaalang::kaalang;
 #[kaalang]
 fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     #[question("Choose an outer branch.")]
-    |outer| -> (left, right) { outer };
+    let (left, right) = |outer| outer;
 
     #[action("Prepare the left branch.")]
-    |left| -> (probe, left_value) { ((), 1u8) };
+    let (probe, left_value) = |left| ((), 1u8);
 
     #[question("Take the far left branch?")]
-    |probe, inner| -> (far, near) { !inner };
+    let (far, near) = |probe, inner| !inner;
 
     #[action("Produce the near left value and an unused alternative.")]
-    |near, &left_value| -> (_unused, selected) { ((), *left_value) };
+    let (_unused, selected) = |near, &left_value| ((), *left_value);
 
     #[action("Produce the far left value.")]
-    |far, &left_value| -> selected { *left_value };
+    let selected = |far, &left_value| *left_value;
 
     #[action("Produce the right value and an unused alternative.")]
-    |right| -> (_unused, selected) { ((), 2u8) };
+    let (_unused, selected) = |right| ((), 2u8);
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected };
+    let result = |selected| selected;
 }
 
 #[test]

@@ -5,19 +5,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u8 {
     #[question("Choose a value.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the yes value and local gate.")]
-    |yes| -> (value, yes_gate) { (1u8, ()) };
+    let (value, yes_gate) = |yes| { (1u8, ()) };
 
     #[action("Build the no value and local gate.")]
-    |no| -> (value, no_gate) { (2u8, ()) };
+    let (value, no_gate) = |no| { (2u8, ()) };
 
     #[action("Use the value inside the yes branch.")]
-    |value, yes_gate| -> result { value };
+    let result = |value, yes_gate| { value };
 
     #[action("Use the value inside the no branch.")]
-    |value, no_gate| -> result { value };
+    let result = |value, no_gate| { value };
 }
 
 fn main() {}

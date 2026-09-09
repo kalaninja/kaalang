@@ -1,19 +1,19 @@
 error[E0382]: borrow of moved value
-  --> tests/capture/compile_fail/mutable_borrow_after_move.rs:12:11
+  --> tests/capture/compile_fail/mutable_borrow_after_move.rs:12:24
    |
  3 | #[kaalang]
    | ---------- in this attribute macro expansion
  4 | fn mutable_borrow_after_move(mut text: String) -> usize {
    |                                  ---- move occurs because value has type `String`, which does not implement the `Copy` trait
  5 |     #[action("Move the text into a mutable local.")]
- 6 |     |mut text| -> moved {
-   |          ---- value moved here
+ 6 |     let moved = |mut text| {
+   |                      ---- value moved here
 ...
-12 |     |&mut text, moved| -> result {
-   |           ^^^^ value borrowed here after move
+12 |     let result = |&mut text, moved| {
+   |                        ^^^^ value borrowed here after move
    |
    = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider cloning the value if the performance cost is acceptable
    |
- 6 |     |mut text.clone()| -> moved {
-   |              ++++++++
+ 6 |     let moved = |mut text.clone()| {
+   |                          ++++++++

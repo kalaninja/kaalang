@@ -1,7 +1,7 @@
 #[kaalang::kaalang]
 fn invalid(input: u32) -> u32 {
     #[action("")]
-    |input| -> output { input };
+    let output = |input| { input };
 }
 
 fn main() {}

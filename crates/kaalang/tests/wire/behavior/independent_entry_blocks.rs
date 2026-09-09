@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn independent_entry_blocks(condition: bool) -> (u32, u32) {
     #[question("Choose the pair.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes pair.")]
-    |yes| -> (left, right) { (1, 2) };
+    let (left, right) = |yes| (1, 2);
 
     #[action("Build the no pair.")]
-    |no| -> (left, right) { (3, 4) };
+    let (left, right) = |no| (3, 4);
 
     #[action("Use the left value.")]
-    |left| -> first { left * 10 };
+    let first = |left| left * 10;
 
     #[action("Use the right value.")]
-    |right| -> second { right * 10 };
+    let second = |right| right * 10;
 
     #[action("Pair the entry results.")]
-    |first, second| -> result { (first, second) };
+    let result = |first, second| (first, second);
 }
 
 #[test]

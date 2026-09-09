@@ -41,11 +41,14 @@ aliases only for its listed inputs:
 | `&mut name` | `let name = &mut wire_name;` |
 
 Hygienic internal names keep omitted wires unavailable under their authored
-names. Block-local Rust names cannot change another block's wire resolution.
-Block-output wires captured through `&mut` get mutable internal output bindings
-and bindings after merges. The generated modifier has an expansion span so
-unused internal mutability does not produce author-facing warnings. Authored
-mutable aliases and body locals retain Rust's normal lint behavior.
+names. Block-local Rust names cannot change another block's wire resolution. The
+model validates each `&mut` capture of a block output against its authored `mut`
+declaration, and validates matching mutability across alternative producers.
+Permitted mutable captures get mutable internal output bindings and bindings
+after merges. These internal modifiers have expansion spans so unused internal
+mutability does not produce author-facing warnings. An output's authored `mut`
+is a permission and need not be exercised. Authored parameter bindings, mutable
+input aliases, and body locals retain Rust's normal lint behavior.
 
 Input aliases belong to their block's scope. Either kind of borrowed capture can
 produce a reference that outlives the alias when the underlying owner remains
@@ -55,11 +58,14 @@ mutable. Rust checks these lifetimes and conflicts between live shared and
 mutable borrows. Mutation does not add a new producer or change execution order.
 
 An action becomes a `let` initializer containing its input aliases and authored
-body. Its declared outputs become the binding pattern: one output binds the
-whole body value, including for a singleton output declaration; multiple outputs
-use a tuple pattern. An action declaring none binds the unit pattern, as in
-`let () = { body };`, so Rust rejects a body of any other type. These Rust
-bindings implement [RFC 0001 §4.1](0001-language.md#41-action) and
+body. An expression body is first wrapped in a plain block, so braces do not
+change its scope or lowering. Its declared pattern is preserved with hygienic
+wire names: a single identifier binds the whole body value, while a tuple
+pattern destructures it, including a singleton tuple. Only internal storage
+mutability is inferred from the already permitted captures. An action declaring
+none binds the unit pattern, as in `let () = { body };`, so Rust rejects a body
+of any other type. These Rust bindings implement
+[RFC 0001 §4.1](0001-language.md#41-action) and
 [§6](0001-language.md#6-wires-producers-and-captures).
 
 For example, the first action borrows a string and produces two outputs. The
@@ -71,10 +77,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn measure(text: String) -> (String, usize, bool) {
     #[action("Measure the text.")]
-    |&text| -> (length, empty) { (text.len(), text.is_empty()) };
+    let (length, empty) = |&text| { (text.len(), text.is_empty()) };
 
     #[action("Return the text and its measurements.")]
-    |text, length, empty| -> result { (text, length, empty) };
+    let result = |text, length, empty| { (text, length, empty) };
 }
 ```
 
@@ -133,16 +139,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn choose(condition: bool) -> u32 {
     #[question("Use the first value?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the first value.")]
-    |yes| -> selected { 1 };
+    let selected = |yes| { 1 };
 
     #[action("Build the second value.")]
-    |no| -> selected { 2 };
+    let selected = |no| { 2 };
 
     #[action("Add ten to the selected value.")]
-    |selected| -> result { selected + 10 };
+    let result = |selected| { selected + 10 };
 }
 ```
 
@@ -233,7 +239,7 @@ fn length_or_zero(input: Option<String>) -> usize {
     #[choice("Was text supplied?")]
     #[case("Text is available.")]
     #[case("No text is available.")]
-    |input| -> (text, absent) {
+    let (text, absent) = |input| {
         match input {
             Some(value) => value,
             None => (),
@@ -241,10 +247,10 @@ fn length_or_zero(input: Option<String>) -> usize {
     };
 
     #[action("Measure the supplied text.")]
-    |text| -> result { text.len() };
+    let result = |text| { text.len() };
 
     #[action("Return zero for absent text.")]
-    |absent| -> result { 0 };
+    let result = |absent| { 0 };
 }
 ```
 
@@ -298,22 +304,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn finish_or_join(refine: bool, finish_early: bool) -> u32 {
     #[question("Refine the value?")]
-    |refine| -> (nested, direct) { refine };
+    let (nested, direct) = |refine| { refine };
 
     #[question("Finish early?")]
-    |nested, finish_early| -> (skip, join) { finish_early };
+    let (skip, join) = |nested, finish_early| { finish_early };
 
     #[action("Finish before the shared step.")]
-    |skip| -> result { 100 };
+    let result = |skip| { 100 };
 
     #[action("Build the refined value.")]
-    |join| -> shared { 1 };
+    let shared = |join| { 1 };
 
     #[action("Build the direct value.")]
-    |direct| -> shared { 2 };
+    let shared = |direct| { 2 };
 
     #[action("Add ten to the shared value.")]
-    |shared| -> result { shared + 10 };
+    let result = |shared| { shared + 10 };
 }
 ```
 

@@ -2,7 +2,7 @@
 
 use kaalang_model::Block;
 
-use super::{Exit, ExitId, Node, NodeId, NodeKind, block_node};
+use super::{Exit, ExitId, Node, NodeId, NodeKind, block_node, provided};
 
 pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits: &mut Vec<Exit>) {
     debug_assert_eq!(block.question_branches.len(), block.outputs.len());
@@ -13,9 +13,9 @@ pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits:
             .iter()
             .zip(&block.question_branches)
             .enumerate()
-            .map(|(branch, (output, answer))| Exit {
+            .map(|(branch, (_, answer))| Exit {
                 id: exit(index, branch),
-                handover: vec![output.to_string()],
+                handover: vec![provided(block.output_binding(branch))],
                 branch_description: answer.description.clone(),
             }),
     );

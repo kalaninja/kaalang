@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
     #[question("Right enabled?")]
-    |right| -> (b, right_no) { right };
+    let (b, right_no) = |right| right;
 
     #[action("Provide the right value.")]
-    |b| -> right_value { Some(1u8) };
+    let right_value = |b| Some(1u8);
 
     #[action("Provide no right value.")]
-    |right_no| -> right_value { None };
+    let right_value = |right_no| None;
 
     #[question("Left enabled?")]
-    |left| -> (a, left_no) { left };
+    let (a, left_no) = |left| left;
 
     #[action("Work with the right value.")]
-    |a, right_value| -> result { right_value.unwrap_or(0) + 10 };
+    let result = |a, right_value| right_value.unwrap_or(0) + 10;
 
     #[action("Skip the work.")]
-    |left_no, right_value| -> result { right_value.map_or(0, |_| 0) };
+    let result = |left_no, right_value| right_value.map_or(0, |_| 0);
 }
 
 #[test]

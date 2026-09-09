@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) -> u8 {
     #[question("Choose the value.")]
-    |flag| -> (yes, no) { flag };
+    let (yes, no) = |flag| { flag };
 
     #[action("Build the yes value and local work.")]
-    |yes| -> (value, local) { (1u8, ()) };
+    let (value, local) = |yes| { (1u8, ()) };
 
     #[action("Build the no value.")]
-    |no| -> value { 2u8 };
+    let value = |no| { 2u8 };
 
     #[action("Common effect.")]
     || {};
@@ -18,7 +18,7 @@ fn invalid(flag: bool) -> u8 {
     |local| {};
 
     #[action("Finish.")]
-    |value| -> result { value };
+    let result = |value| { value };
 }
 
 fn main() {}

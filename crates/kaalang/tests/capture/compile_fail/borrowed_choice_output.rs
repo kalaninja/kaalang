@@ -5,7 +5,7 @@ fn invalid(input: Option<u8>) -> u8 {
     #[choice("Was a value supplied?")]
     #[case("A value is available.")]
     #[case("No value is available.")]
-    |input| -> (value, absent) {
+    let (value, absent) = |input| {
         match input {
             Some(value) => value,
             None => (),
@@ -13,10 +13,10 @@ fn invalid(input: Option<u8>) -> u8 {
     };
 
     #[action("Borrow the supplied value.")]
-    |&value| -> result { *value * 2 };
+    let result = |&value| { *value * 2 };
 
     #[action("Produce the absent result.")]
-    |absent| -> result { 0 };
+    let result = |absent| { 0 };
 }
 
 fn main() {}

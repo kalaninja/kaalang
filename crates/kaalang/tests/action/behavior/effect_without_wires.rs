@@ -7,7 +7,7 @@ static ENTRIES: AtomicUsize = AtomicUsize::new(0);
 #[kaalang]
 fn effect_without_wires() {
     #[action("Count the flow entry.")]
-    || -> result {
+    let result = || {
         ENTRIES.fetch_add(1, Ordering::Relaxed);
     };
 }

@@ -10,10 +10,10 @@ fn log_then_transform(value: String) -> usize {
     };
 
     #[action("Transform the value into its length.")]
-    |value| -> length { value.len() };
+    let length = |value| value.len();
 
     #[action("Finish.")]
-    |length| -> result { length };
+    let result = |length| length;
 }
 
 #[test]

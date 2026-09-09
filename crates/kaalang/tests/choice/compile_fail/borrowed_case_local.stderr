@@ -4,8 +4,8 @@ error[E0597]: `owned` does not live long enough
  5 | #[kaalang]
    |          - `owned` dropped here while still borrowed
 ...
-10 |     |value| -> (nonempty, empty) {
-   |                 -------- borrow later stored here
+10 |     let (nonempty, empty) = |value| {
+   |          -------- borrow later stored here
 11 |         match value {
 12 |             owned if !owned.is_empty() => &owned,
    |             -----                         ^^^^^^ borrowed value does not live long enough
@@ -18,8 +18,8 @@ error[E0597]: `owned` does not live long enough
  5 | #[kaalang]
    |          - `owned` dropped here while still borrowed
 ...
-10 |     |value| -> (nonempty, empty) {
-   |                           ----- borrow later stored here
+10 |     let (nonempty, empty) = |value| {
+   |                    ----- borrow later stored here
 ...
 13 |             owned => &owned,
    |             -----    ^^^^^^ borrowed value does not live long enough

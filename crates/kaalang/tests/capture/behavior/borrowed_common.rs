@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn borrowed_common(condition: bool, prefix: String) -> String {
     #[question("Choose a suffix.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes suffix.")]
-    |yes, &prefix| -> suffix { format!("{prefix}-yes") };
+    let suffix = |yes, &prefix| format!("{prefix}-yes");
 
     #[action("Build the no suffix.")]
-    |no, &prefix| -> suffix { format!("{prefix}-no") };
+    let suffix = |no, &prefix| format!("{prefix}-no");
 
     #[action("Use the suffix and the preserved prefix.")]
-    |suffix, prefix| -> result { format!("{prefix}:{suffix}") };
+    let result = |suffix, prefix| format!("{prefix}:{suffix}");
 }
 
 #[test]

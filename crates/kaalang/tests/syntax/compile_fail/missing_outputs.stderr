@@ -1,5 +1,5 @@
-error: a kaalang block body must be a braced block
- --> tests/syntax/compile_fail/missing_outputs.rs:7:14
+error: a kaalang question must declare exactly two outputs
+ --> tests/syntax/compile_fail/missing_outputs.rs:7:12
   |
 7 |     |&input| true;
-  |              ^^^^
+  |            ^

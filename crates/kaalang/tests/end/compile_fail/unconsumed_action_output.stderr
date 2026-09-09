@@ -1,5 +1,5 @@
 error: every kaalang action output must have a consumer
- --> tests/end/compile_fail/unconsumed_action_output.rs:6:23
+ --> tests/end/compile_fail/unconsumed_action_output.rs:6:16
   |
-6 |     |input| -> (used, unused) { (input, input) };
-  |                       ^^^^^^
+6 |     let (used, unused) = |input| { (input, input) };
+  |                ^^^^^^

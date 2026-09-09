@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn blocks_without_shared_wires(left: u32, right: u32) -> (u32, u32) {
     #[action("Double the left value.")]
-    |left| -> doubled { left * 2 };
+    let doubled = |left| left * 2;
 
     #[action("Triple the right value.")]
-    |right| -> tripled { right * 3 };
+    let tripled = |right| right * 3;
 
     #[action("Pair the two values.")]
-    |doubled, tripled| -> result { (doubled, tripled) };
+    let result = |doubled, tripled| (doubled, tripled);
 }
 
 #[test]

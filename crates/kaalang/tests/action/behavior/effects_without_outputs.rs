@@ -12,19 +12,19 @@ fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
     };
 
     #[question("Which way?")]
-    |condition, &log| -> (yes, no) { condition };
+    let (yes, no) = |condition, &log| condition;
 
     #[action("Mark the yes branch.")]
-    |yes, &log| -> marked { log.set(log.get() * 10 + 2) };
+    let marked = |yes, &log| log.set(log.get() * 10 + 2);
 
     #[action("Record the marked branch.")]
-    |&marked, &log| -> () { log.set(log.get() * 10 + 3) };
+    let () = |&marked, &log| log.set(log.get() * 10 + 3);
 
     #[action("Take the yes branch.")]
-    |marked, &log| -> taken { log.set(log.get() * 10 + 4) };
+    let taken = |marked, &log| log.set(log.get() * 10 + 4);
 
     #[action("Take the no branch.")]
-    |no, &log| -> taken { log.set(log.get() * 10 + 5) };
+    let taken = |no, &log| log.set(log.get() * 10 + 5);
 
     #[action("Record the step above the result.")]
     |&log| {
@@ -32,7 +32,7 @@ fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
     };
 
     #[action("Finish.")]
-    |taken, &log| -> result { log.get() };
+    let result = |taken, &log| log.get();
 }
 
 #[test]

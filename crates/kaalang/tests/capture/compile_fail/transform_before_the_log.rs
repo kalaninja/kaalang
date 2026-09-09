@@ -4,7 +4,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(value: String) -> usize {
     #[action("Transform the value into its length.")]
-    |value| -> length { value.len() };
+    let length = |value| { value.len() };
 
     #[action("Log the value.")]
     |&value| {
@@ -12,7 +12,7 @@ fn invalid(value: String) -> usize {
     };
 
     #[action("Finish.")]
-    |length| -> result { length };
+    let result = |length| { length };
 }
 
 fn main() {}

@@ -392,20 +392,20 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn valid(flag: bool, mode: u8) -> u8 {
                 #[question("Choose the seed.")]
-                |flag| -> (yes, no) { flag };
-                #[action("First seed.")] |yes| -> seed { 1u8 };
-                #[action("Second seed.")] |no| -> seed { 2u8 };
+                let (yes, no) = |flag| { flag };
+                #[action("First seed.")] let seed = |yes| { 1u8 };
+                #[action("Second seed.")] let seed = |no| { 2u8 };
                 #[choice("Choose the work.")]
                 #[case("First.")]
                 #[case("Second.")]
                 #[case("Finish.")]
-                |mode| -> (first, second, finish) {
+                let (first, second, finish) = |mode| {
                     match mode { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First value.")] |first| -> shared { 10u8 };
-                #[action("Second value.")] |second| -> shared { 20u8 };
-                #[action("Finish early.")] |finish, seed| -> result { seed };
-                #[action("Use the value.")] |shared, seed| -> result { shared + seed };
+                #[action("First value.")] let shared = |first| { 10u8 };
+                #[action("Second value.")] let shared = |second| { 20u8 };
+                #[action("Finish early.")] let result = |finish, seed| { seed };
+                #[action("Use the value.")] let result = |shared, seed| { shared + seed };
             }
         };
         assert_eq!(
@@ -419,15 +419,15 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn invalid(outer: bool, inner: bool) -> u8 {
                 #[question("Take the nested branch?")]
-                |outer| -> (nested, direct) { outer };
+                let (nested, direct) = |outer| { outer };
                 #[question("Add the marker?")]
-                |nested, inner| -> (mark, skip) { inner };
+                let (mark, skip) = |nested, inner| { inner };
                 #[action("Mark the first branch.")]
-                |mark| -> (_marker, result) { ((), 1u8) };
+                let (_marker, result) = |mark| { ((), 1u8) };
                 #[action("Leave the marker absent.")]
-                |skip| -> result { 2u8 };
+                let result = |skip| { 2u8 };
                 #[action("Mark the last branch.")]
-                |direct| -> (_marker, result) { ((), 3u8) };
+                let (_marker, result) = |direct| { ((), 3u8) };
             }
         };
         assert_eq!(
@@ -441,19 +441,19 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn valid(outer: bool, inner: bool) -> u8 {
                 #[question("Take the nested branch?")]
-                |outer| -> (nested, direct) { outer };
+                let (nested, direct) = |outer| { outer };
                 #[question("Choose the nested value.")]
-                |nested, inner| -> (yes, no) { inner };
+                let (yes, no) = |nested, inner| { inner };
                 #[action("Build the yes value.")]
-                |yes| -> refined { 1u8 };
+                let refined = |yes| { 1u8 };
                 #[action("Build the no value.")]
-                |no| -> refined { 2u8 };
+                let refined = |no| { 2u8 };
                 #[action("Finish the nested branch.")]
-                |refined| -> shared { refined + 10 };
+                let shared = |refined| { refined + 10 };
                 #[action("Build the direct value.")]
-                |direct| -> shared { 3u8 };
+                let shared = |direct| { 3u8 };
                 #[action("Use the shared value.")]
-                |shared| -> result { shared };
+                let result = |shared| { shared };
             }
         };
         assert_eq!(merge(&function, "refined").after, [4]);
@@ -465,11 +465,11 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
                 #[question("Which value?")]
-                |condition| -> (shared, no) { condition };
+                let (shared, no) = |condition| { condition };
                 #[action("Produce the other value.")]
-                |no| -> shared { () };
+                let shared = |no| { () };
                 #[action("Use the merged value.")]
-                |shared| -> result { 0u8 };
+                let result = |shared| { 0u8 };
             }
         };
         let merge = merge(&function, "shared");
@@ -482,13 +482,13 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
                 #[question("Which value?")]
-                |condition| -> (shared, no) { condition };
+                let (shared, no) = |condition| { condition };
                 #[action("Produce the other value.")]
-                |no| -> shared { () };
+                let shared = |no| { () };
                 #[action("Borrow the merged value.")]
-                |&shared| -> ready { () };
+                let ready = |&shared| { () };
                 #[action("Consume it after the borrow.")]
-                |shared, ready| -> result { 0u8 };
+                let result = |shared, ready| { 0u8 };
             }
         };
         assert_eq!(merge(&function, "shared").before, [1]);
@@ -499,11 +499,11 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
                 #[question("Which marker?")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
                 #[action("First marker.")]
-                |yes| -> (_marker, result) { ((), 1u8) };
+                let (_marker, result) = |yes| { ((), 1u8) };
                 #[action("Second marker.")]
-                |no| -> (_marker, result) { ((), 2u8) };
+                let (_marker, result) = |no| { ((), 2u8) };
             }
         };
         let merge = merge(&function, "_marker");
@@ -520,12 +520,12 @@ mod tests {
                 #[case("First")]
                 #[case("Between")]
                 #[case("Last")]
-                |value| -> (a, b, c) {
+                let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First marker.")] |a| -> (_marker, result) { ((), 1u8) };
-                #[action("Middle result.")] |b| -> result { 2u8 };
-                #[action("Last marker.")] |c| -> (_marker, result) { ((), 3u8) };
+                #[action("First marker.")] let (_marker, result) = |a| { ((), 1u8) };
+                #[action("Middle result.")] let result = |b| { 2u8 };
+                #[action("Last marker.")] let (_marker, result) = |c| { ((), 3u8) };
             }
         };
         assert_eq!(
@@ -542,12 +542,12 @@ mod tests {
                 #[case("Left")]
                 #[case("Both")]
                 #[case("Right")]
-                |value| -> (a, b, c) {
+                let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("Left marker.")] |a| -> (_left, result) { ((), 1u8) };
-                #[action("Both markers.")] |b| -> (_left, _right, result) { ((), (), 2u8) };
-                #[action("Right marker.")] |c| -> (_right, result) { ((), 3u8) };
+                #[action("Left marker.")] let (_left, result) = |a| { ((), 1u8) };
+                #[action("Both markers.")] let (_left, _right, result) = |b| { ((), (), 2u8) };
+                #[action("Right marker.")] let (_right, result) = |c| { ((), 3u8) };
             }
         };
         assert_eq!(

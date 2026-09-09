@@ -1,6 +1,6 @@
 //! Resolves parsed wires against their producers.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use syn::{Error, Result};
 
@@ -18,6 +18,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
     }
     let mut producers = flow_inputs.clone();
     let mut earlier_inputs = HashSet::new();
+    let mut output_mutability = HashMap::new();
 
     for block in &flow.blocks {
         let mut seen_inputs = HashSet::new();
@@ -45,10 +46,19 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                     },
                 ));
             }
+            if input.borrowed
+                && input.mutable
+                && output_mutability.get(&input.ident) == Some(&false)
+            {
+                return Err(Error::new(
+                    input.alias.span(),
+                    "a mutable capture requires the output wire to be declared with `mut`",
+                ));
+            }
         }
 
         let mut seen_outputs = HashSet::new();
-        for output in &block.outputs {
+        for (index, output) in block.outputs.iter().enumerate() {
             if !seen_outputs.insert(output.clone()) {
                 return Err(Error::new(output.span(), "duplicate kaalang block output"));
             }
@@ -68,6 +78,15 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                 return Err(Error::new(
                     output.span(),
                     "every producer of a kaalang wire must be declared before its consumers",
+                ));
+            }
+            let mutable = block.output_binding(index).mutability.is_some();
+            if let Some(previous) = output_mutability.insert(output.clone(), mutable)
+                && previous != mutable
+            {
+                return Err(Error::new(
+                    output.span(),
+                    "alternative producers of a kaalang wire must declare the same mutability",
                 ));
             }
             producers.insert(output.clone());

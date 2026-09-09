@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn independent_borrowers(input: u32) -> (u32, u32) {
     #[action("Produce the first value.")]
-    |&input| -> first { *input };
+    let first = |&input| *input;
 
     #[action("Produce the second value.")]
-    |&input| -> second { *input + 1 };
+    let second = |&input| *input + 1;
 
     #[action("Pair the two values.")]
-    |first, second| -> result { (first, second) };
+    let result = |first, second| (first, second);
 }
 
 #[test]

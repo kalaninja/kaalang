@@ -10,40 +10,38 @@ fn partial_merge_moves_a_string(source: u8, order: &Cell<u32>) -> String {
     #[case("First source.")]
     #[case("Second source.")]
     #[case("Third source.")]
-    |source| -> (first, second, third) {
-        match source {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (first, second, third) = |source| match source {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Build the text from the first source.")]
-    |first, &order| -> partial {
+    let partial = |first, &order| {
         order.set(order.get() * 10 + 1);
         String::from("first")
     };
 
     #[action("Build the text from the second source.")]
-    |second, &order| -> partial {
+    let partial = |second, &order| {
         order.set(order.get() * 10 + 2);
         String::from("second")
     };
 
     #[action("Extend the partially merged text.")]
-    |partial, &order| -> shared {
+    let shared = |partial, &order| {
         order.set(order.get() * 10 + 3);
         partial + "-extended"
     };
 
     #[action("Build the text from the third source.")]
-    |third, &order| -> shared {
+    let shared = |third, &order| {
         order.set(order.get() * 10 + 4);
         String::from("third")
     };
 
     #[action("Finish with the merged text.")]
-    |shared, &order| -> result {
+    let result = |shared, &order| {
         order.set(order.get() * 10 + 5);
         shared
     };

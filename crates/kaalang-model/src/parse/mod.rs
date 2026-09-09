@@ -3,8 +3,8 @@
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprAsync, ExprClosure, ExprReturn, ExprTry, FnArg, Item, ItemFn,
-    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt, Type, ext::IdentExt,
-    spanned::Spanned, visit::Visit,
+    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt, ext::IdentExt,
+    parse_quote_spanned, spanned::Spanned, visit::Visit,
 };
 
 use crate::model::{Block, BlockKind, Flow, Input};
@@ -66,11 +66,11 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
 
 /// Parses one closure-shaped statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
-    let closure = block_statement(statement)?;
-    let (kind, kind_attribute, companions) =
-        block_kind(&closure.attrs, closure.inputs_begin.span())?;
+    let (attributes, output_pattern, closure) = block_statement(statement)?;
+    let (kind, kind_attribute, companions) = block_kind(attributes, statement.span())?;
     let (inputs, body) = block_closure(closure)?;
-    let (outputs, output_span) = block_outputs(closure)?;
+    let outputs = block_outputs(&output_pattern)?;
+    let output_span = output_pattern.span();
     reject_control_transfers(&body)?;
     let syntax = BlockSyntax {
         kind,
@@ -79,6 +79,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         companions,
         inputs,
         outputs,
+        output_pattern,
         output_span,
         body,
     };
@@ -100,6 +101,7 @@ pub(crate) struct BlockSyntax<'a> {
     pub(crate) companions: Vec<&'a Attribute>,
     pub(crate) inputs: Vec<Input>,
     pub(crate) outputs: Vec<Ident>,
+    pub(crate) output_pattern: Pat,
     pub(crate) output_span: Span,
     pub(crate) body: Expr,
 }
@@ -150,6 +152,7 @@ impl<'a> BlockSyntax<'a> {
             question_branches: Vec::new(),
             case_descriptions,
             outputs: self.outputs,
+            output_pattern: self.output_pattern,
             output_span: self.output_span,
             inputs: self.inputs,
             body: self.body,
@@ -170,24 +173,56 @@ fn unexpected_companion(companion: &Attribute) -> Error {
     )
 }
 
-/// Unwraps the closure expression every kaalang block must be written as.
-///
-/// Rust already requires the semicolon on every block but the last, where it is
-/// optional exactly as it is for any tail expression.
-fn block_statement(statement: &Stmt) -> Result<&ExprClosure> {
-    let Stmt::Expr(expression, _) = statement else {
-        return Err(Error::new_spanned(
-            statement,
-            "a kaalang flow body may contain only attributed block statements",
-        ));
+/// Extracts a block's attributes, output pattern, and closure initializer.
+/// An expression statement declares an action without outputs.
+fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, &ExprClosure)> {
+    let (attributes, pattern, expression) = match statement {
+        Stmt::Local(local) => {
+            let Some(initializer) = &local.init else {
+                return Err(Error::new_spanned(
+                    local,
+                    "a kaalang block requires an initializer",
+                ));
+            };
+            if let Some((_, diverge)) = &initializer.diverge {
+                return Err(Error::new_spanned(
+                    diverge,
+                    "kaalang blocks do not support `let else`",
+                ));
+            }
+            (
+                local.attrs.as_slice(),
+                local.pat.clone(),
+                initializer.expr.as_ref(),
+            )
+        }
+        Stmt::Expr(Expr::Closure(closure), _) => {
+            return Ok((
+                &closure.attrs,
+                parse_quote_spanned!(closure.inputs_end.span()=> ()),
+                closure,
+            ));
+        }
+        _ => {
+            return Err(Error::new_spanned(
+                statement,
+                "a kaalang flow body may contain only attributed block statements",
+            ));
+        }
     };
     let Expr::Closure(closure) = expression else {
         return Err(Error::new_spanned(
             expression,
-            "a kaalang block must have the form `|inputs| -> outputs { body }`",
+            "a kaalang block initializer must have the form `|inputs| { body }`",
         ));
     };
-    Ok(closure)
+    if !closure.attrs.is_empty() {
+        return Err(Error::new_spanned(
+            expression,
+            "kaalang block attributes belong before the statement",
+        ));
+    }
+    Ok((attributes, pattern, closure))
 }
 
 /// Determines which kind a block declares, that it declares exactly one, and
@@ -270,21 +305,32 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
         ));
     }
 
-    // With the output arrow optional, an unbraced body would otherwise parse.
-    let body = closure.body.as_ref();
-    if !matches!(body, Expr::Block(block) if block.attrs.is_empty() && block.label.is_none()) {
+    if !matches!(closure.output, ReturnType::Default) {
         return Err(Error::new_spanned(
-            body,
-            "a kaalang block body must be a braced block",
+            &closure.output,
+            "kaalang block closures do not support return type annotations",
         ));
     }
+
+    let body = match closure.body.as_ref() {
+        Expr::Block(block) if !block.attrs.is_empty() || block.label.is_some() => {
+            return Err(Error::new_spanned(
+                block,
+                "kaalang block bodies do not support attributes or labels",
+            ));
+        }
+        body @ Expr::Block(_) => body.clone(),
+        // rustfmt removes braces around a closure's single expression. Keep
+        // one body shape for validation and lowering regardless of spelling.
+        body => parse_quote_spanned!(body.span()=> { #body }),
+    };
 
     let inputs = closure
         .inputs
         .iter()
         .map(block_input)
         .collect::<Result<_>>()?;
-    Ok((inputs, body.clone()))
+    Ok((inputs, body))
 }
 
 /// Parses one consuming or borrowing block input.
@@ -354,48 +400,19 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
     first.0.map_or(Ok(()), Err)
 }
 
-/// Parses output wire declarations from the closure return position.
-///
-/// An omitted arrow and `-> ()` both declare no wires. The span they report is
-/// the closing bar and the empty tuple respectively, so a kind that requires
-/// outputs still points at the declaration.
-fn block_outputs(closure: &ExprClosure) -> Result<(Vec<Ident>, Span)> {
-    let ReturnType::Type(_, output) = &closure.output else {
-        return Ok((Vec::new(), closure.inputs_end.span()));
-    };
-
-    let outputs = match output.as_ref() {
-        Type::Tuple(tuple) if tuple.elems.is_empty() => Vec::new(),
-        Type::Tuple(tuple) => tuple
-            .elems
-            .iter()
-            .map(output_ident)
-            .collect::<Result<Vec<_>>>()?,
-        output => vec![output_ident(output)?],
-    };
-    Ok((outputs, output.span()))
-}
-
-/// Reinterprets a simple Rust type path as an output wire name.
-fn output_ident(output: &Type) -> Result<Ident> {
-    let Type::Path(path) = output else {
-        return Err(unexpected_output(output));
-    };
-    if path.qself.is_some() {
-        return Err(unexpected_output(output));
+/// Parses an identifier or flat tuple of output bindings, retaining the pattern
+/// so an action distinguishes binding a whole value from tuple destructuring.
+fn block_outputs(pattern: &Pat) -> Result<Vec<Ident>> {
+    match pattern {
+        Pat::Tuple(tuple) if tuple.attrs.is_empty() => {
+            tuple.elems.iter().map(output_ident).collect()
+        }
+        output => Ok(vec![output_ident(output)?]),
     }
-
-    path.path
-        .get_ident()
-        .map(IdentExt::unraw)
-        .ok_or_else(|| unexpected_output(output))
 }
 
-fn unexpected_output(output: &Type) -> Error {
-    Error::new_spanned(
-        output,
-        "kaalang block outputs must contain only identifiers",
-    )
+fn output_ident(pattern: &Pat) -> Result<Ident> {
+    simple_binding(pattern, "kaalang block outputs", true).map(|ident| ident.unraw())
 }
 
 /// Extracts a parenthesized, nonempty description.
@@ -450,7 +467,7 @@ fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident
 mod tests {
     use syn::{ItemFn, parse_quote};
 
-    use super::{block_input, flow};
+    use super::{block_input, block_outputs, flow};
     use crate::model::{BlockKind, RESULT_WIRE};
 
     #[test]
@@ -483,11 +500,38 @@ mod tests {
     }
 
     #[test]
+    fn outputs_accept_only_plain_or_mutable_identifiers_in_a_flat_pattern() {
+        for pattern in [
+            parse_quote!(_),
+            parse_quote!((value, _)),
+            parse_quote!((value, (nested,))),
+            parse_quote!(ref value),
+            parse_quote!(ref mut value),
+            parse_quote!(&value),
+            parse_quote!(value @ _),
+            parse_quote!([value]),
+            parse_quote!(Some(value)),
+            parse_quote!(Value { field }),
+        ] {
+            assert!(block_outputs(&pattern).is_err());
+        }
+        for pattern in [
+            parse_quote!(value),
+            parse_quote!(mut r#value),
+            parse_quote!((value,)),
+            parse_quote!((mut left, right)),
+            parse_quote!(()),
+        ] {
+            assert!(block_outputs(&pattern).is_ok());
+        }
+    }
+
+    #[test]
     fn every_flow_ends_with_an_implicit_block_capturing_the_result_wire() {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
                 #[action("Double the input.")]
-                |input| -> result { input * 2 };
+                let result = |input| { input * 2 };
             }
         };
 
@@ -512,7 +556,7 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
                 #[action("Double the input.")]
-                |input| -> result { input * 2 };
+                let result = |input| { input * 2 };
 
                 #[end]
                 |result| {};
@@ -531,9 +575,9 @@ mod tests {
             parse_quote! {
                 fn effects(input: u32) {
                     #[action("Take the input without producing a wire.")]
-                    |input| -> () { drop(input) };
+                    let () = |input| { drop(input) };
                     #[action("Finish.")]
-                    || -> result {};
+                    let result = || {};
                 }
             },
             parse_quote! {
@@ -541,7 +585,7 @@ mod tests {
                     #[action("Take the input without producing a wire.")]
                     |input| { drop(input) };
                     #[action("Finish.")]
-                    || -> result {};
+                    let result = || {};
                 }
             },
         ] {
@@ -552,18 +596,39 @@ mod tests {
     }
 
     #[test]
-    fn an_unbraced_body_is_rejected() {
+    fn an_expression_body_is_normalized_to_a_block() {
         let function: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
                 #[action("Double the input.")]
-                |input| input * 2;
+                let result = |input| input * 2;
             }
         };
 
-        assert_eq!(
-            error(&function),
-            "a kaalang block body must be a braced block"
-        );
+        let model = flow(&function).expect("expression bodies are accepted");
+        assert!(matches!(model.blocks[0].body, syn::Expr::Block(_)));
+    }
+
+    #[test]
+    fn expression_bodies_keep_the_control_transfer_restrictions() {
+        for (body, diagnostic) in [
+            (
+                parse_quote!(return input),
+                "a kaalang block body must not use a `return` expression",
+            ),
+            (
+                parse_quote!(input?),
+                "a kaalang block body must not use the `?` operator",
+            ),
+        ] {
+            let body: syn::Expr = body;
+            let function = parse_quote! {
+                fn invalid(input: Option<u32>) -> u32 {
+                    #[action("Attempt a control transfer.")]
+                    let result = |input| #body;
+                }
+            };
+            assert_eq!(error(&function), diagnostic);
+        }
     }
 
     #[test]
@@ -571,7 +636,7 @@ mod tests {
         let question: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
                 #[question("Ask without outputs.")]
-                |&input| -> () { true };
+                let () = |&input| { true };
             }
         };
         let choice: ItemFn = parse_quote! {
@@ -579,7 +644,7 @@ mod tests {
                 #[choice("Pick without outputs.")]
                 #[case("First.")]
                 #[case("Second.")]
-                |&input| -> () {
+                let () = |&input| {
                     match input {
                         0 => (),
                         _ => (),
@@ -605,7 +670,7 @@ mod tests {
                 #[question("Decide.")]
                 #[no("Use the fallback.")]
                 #[yes]
-                |input| -> (fallback, proceed) { input };
+                let (fallback, proceed) = |input| { input };
             }
         };
         let parsed = flow(&function).expect("the answer attributes are valid");
@@ -623,7 +688,7 @@ mod tests {
         let implicit: ItemFn = parse_quote! {
             fn decide(input: bool) -> u8 {
                 #[question("Decide.")]
-                |input| -> (proceed, fallback) { input };
+                let (proceed, fallback) = |input| { input };
             }
         };
         let parsed = flow(&implicit).expect("questions keep their implicit yes-no order");

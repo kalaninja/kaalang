@@ -8,43 +8,39 @@ fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
     #[case("Build A.")]
     #[case("Build B.")]
     #[case("Build C.")]
-    |first| -> (a, b, c) {
-        match first {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (a, b, c) = |first| match first {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Build A.")]
-    |a| -> value { 1u8 };
+    let value = |a| 1u8;
 
     #[action("Build B.")]
-    |b| -> value { 2u8 };
+    let value = |b| 2u8;
 
     #[action("Build C.")]
-    |c| -> value { 3u8 };
+    let value = |c| 3u8;
 
     #[choice("Which finish?")]
     #[case("Finish X.")]
     #[case("Finish Y.")]
     #[case("Finish Z.")]
-    |second| -> (x, y, z) {
-        match second {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (x, y, z) = |second| match second {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Finish X.")]
-    |x, value| -> result { value + 10 };
+    let result = |x, value| value + 10;
 
     #[action("Finish Y.")]
-    |y, value| -> result { value + 20 };
+    let result = |y, value| value + 20;
 
     #[action("Finish Z.")]
-    |z, value| -> result { value + 30 };
+    let result = |z, value| value + 30;
 }
 
 #[test]

@@ -149,6 +149,13 @@ outputs therefore carries no hand-over label. A hand-over names newly provided
 wires only; it neither lists wires that remain available nor implies that the
 next node captures every named wire.
 
+A hand-over displays each producer's authored mutability as `name` or
+`mut name`, including named flow inputs. This is permission to mutably borrow
+the wire, not a capture. Alternative producers declare the same mutability and
+retain it in shared merge labels. The `result` wire remains unlabeled even when
+declared with `mut`; an authored question-branch description still replaces its
+output label.
+
 Every block input is labeled beside its receiving node. Value captures are shown
 as `name` or `mut name`, and borrowed captures as `&name` or `&mut name`,
 according to the authored form. The captures of a node are drawn once however

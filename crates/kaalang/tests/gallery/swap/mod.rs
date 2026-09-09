@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn swap<T>(a: T, b: T) -> (T, T) {
     #[action("Exchange the pair.")]
-    |a, b| -> result { (b, a) };
+    let result = |a, b| (b, a);
 }
 
 #[test]

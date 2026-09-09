@@ -5,10 +5,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn skeleton(seed: u32) -> u32 {
     #[action("Leave the first body unwritten.")]
-    |&seed| -> started { todo!() };
+    let started = |&seed| { todo!() };
 
     #[action("Produce the result.")]
-    |started| -> result { started };
+    let result = |started| { started };
 }
 
 fn main() {

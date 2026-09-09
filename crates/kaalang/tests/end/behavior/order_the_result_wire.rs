@@ -3,10 +3,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn order_the_result_wire(input: u32) -> (u32, u32, u32) {
     #[action("Build three values.")]
-    |input| -> (first, second, third) { (input, input + 1, input + 2) };
+    let (first, second, third) = |input| (input, input + 1, input + 2);
 
     #[action("Order the three values.")]
-    |third, first, second| -> result { (third, first, second) };
+    let result = |third, first, second| (third, first, second);
 }
 
 #[test]

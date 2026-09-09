@@ -6,13 +6,13 @@ fn run_choice_skeleton(value: i32) -> &'static str {
     #[choice("What is the sign of the value?")]
     #[case("The value is negative.")]
     #[case("The value is nonnegative.")]
-    |value| -> (negative, nonnegative) { todo!() };
+    let (negative, nonnegative) = |value| todo!();
 
     #[action("Produce the negative result.")]
-    |negative| -> result { todo!() };
+    let result = |negative| todo!();
 
     #[action("Produce the nonnegative result.")]
-    |nonnegative| -> result { todo!() };
+    let result = |nonnegative| todo!();
 }
 
 #[test]

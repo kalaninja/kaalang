@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(input: u32) -> u32 {
     #[action("Produce a wire.")]
-    |&input| -> shared { *input };
+    let shared = |&input| { *input };
 
     #[action("Produce the same wire name again.")]
-    |shared| -> shared { shared };
+    let shared = |shared| { shared };
 
     #[action("Use the wire.")]
-    |shared| -> result { shared };
+    let result = |shared| { shared };
 }
 
 fn main() {}

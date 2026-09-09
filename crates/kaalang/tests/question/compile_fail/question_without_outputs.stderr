@@ -1,5 +1,5 @@
 error: a kaalang question must declare exactly two outputs
- --> tests/question/compile_fail/question_without_outputs.rs:7:17
+ --> tests/question/compile_fail/question_without_outputs.rs:7:9
   |
-7 |     |&input| -> () { *input > 0 };
-  |                 ^^
+7 |     let () = |&input| { *input > 0 };
+  |         ^^

@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 const fn const_mutable_captures(mut value: u32) -> u32 {
     #[action("Increment a local copy.")]
-    |mut value| -> incremented {
+    let incremented = |mut value| {
         value += 1;
         value
     };
@@ -14,7 +14,7 @@ const fn const_mutable_captures(mut value: u32) -> u32 {
     };
 
     #[action("Return the changed original.")]
-    |value| -> result { value };
+    let result = |value| value;
 }
 
 #[test]

@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn discard_unnamed_input(_: u8) {
     #[action("Finish without the unnamed flow input.")]
-    || -> result {};
+    let result = || {};
 }
 
 #[test]

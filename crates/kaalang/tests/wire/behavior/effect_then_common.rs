@@ -15,13 +15,13 @@ fn record(block: &'static str) {
 #[kaalang]
 fn effect_then_common(flag: bool) -> u8 {
     #[question("Choose.")]
-    |flag| -> (yes, no) {
+    let (yes, no) = |flag| {
         record("choose");
         flag
     };
 
     #[action("Yes value.")]
-    |yes| -> (value, local) {
+    let (value, local) = |yes| {
         record("yes");
         (1u8, ())
     };
@@ -32,19 +32,19 @@ fn effect_then_common(flag: bool) -> u8 {
     };
 
     #[action("No value.")]
-    |no| -> value {
+    let value = |no| {
         record("no");
         2u8
     };
 
     #[action("Common stamp.")]
-    || -> stamp {
+    let stamp = || {
         record("stamp");
         10u8
     };
 
     #[action("Finish.")]
-    |value, stamp| -> result {
+    let result = |value, stamp| {
         record("finish");
         value + stamp
     };

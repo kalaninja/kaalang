@@ -7,13 +7,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
     #[question("Measure the cell?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Borrow the cell exclusively.")]
-    |yes, cell| -> guard { cell.borrow_mut() };
+    let guard = |yes, cell| cell.borrow_mut();
 
     #[action("Read the guard.")]
-    |&guard| -> size { **guard };
+    let size = |&guard| **guard;
 
     #[action("Release the guard before the merge.")]
     |guard| {
@@ -21,10 +21,10 @@ fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
     };
 
     #[action("Use the fallback size.")]
-    |no| -> size { 8usize };
+    let size = |no| 8usize;
 
     #[action("Mutate the cell after the merge.")]
-    |size, cell| -> result {
+    let result = |size, cell| {
         *cell.borrow_mut() += 1;
         size
     };

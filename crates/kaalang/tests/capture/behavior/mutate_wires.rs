@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn mutate_wires(mut r#type: String, count: u32) -> (String, u32, usize) {
     #[action("Increment a local copy.")]
-    |mut count| -> incremented {
+    let incremented = |mut count| {
         count += 1;
         count
     };
@@ -14,10 +14,10 @@ fn mutate_wires(mut r#type: String, count: u32) -> (String, u32, usize) {
     };
 
     #[action("Measure the changed text.")]
-    |&r#type| -> length { r#type.len() };
+    let length = |&r#type| r#type.len();
 
     #[action("Move the text and keep the original count.")]
-    |mut r#type, count, incremented| -> (text, total) {
+    let (mut text, mut total) = |mut r#type, count, incremented| {
         r#type.push('?');
         (r#type, count + incremented)
     };
@@ -29,7 +29,7 @@ fn mutate_wires(mut r#type: String, count: u32) -> (String, u32, usize) {
     };
 
     #[action("Return the changed wires.")]
-    |text, total, length| -> result { (text, total, length) };
+    let result = |text, total, length| (text, total, length);
 }
 
 #[test]

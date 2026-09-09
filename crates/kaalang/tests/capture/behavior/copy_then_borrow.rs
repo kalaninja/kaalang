@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn copy_then_borrow(value: u32) -> u32 {
     #[action("Copy the value and increment it.")]
-    |value| -> next { value + 1 };
+    let next = |value| value + 1;
 
     #[action("Log the original value.")]
     |&value| {
@@ -13,7 +13,7 @@ fn copy_then_borrow(value: u32) -> u32 {
     };
 
     #[action("Finish.")]
-    |next| -> result { next };
+    let result = |next| next;
 }
 
 #[test]

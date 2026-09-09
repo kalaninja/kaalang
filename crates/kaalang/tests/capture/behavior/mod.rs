@@ -8,6 +8,7 @@ mod consume_a_borrowed_input_later;
 mod copy_then_borrow;
 mod generic_reuse_with_copy;
 mod independent_borrowers;
+mod local_mutability_of_outputs;
 mod log_then_transform;
 mod mutable_reference_through_nested_joins;
 mod mutate_in_selections;

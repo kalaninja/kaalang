@@ -2,13 +2,15 @@
 
 use kaalang_model::Block;
 
-use super::{Exit, ExitId, Node, NodeId, NodeKind, block_node, names};
+use super::{Exit, ExitId, Node, NodeId, NodeKind, block_node, provided};
 
 pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits: &mut Vec<Exit>) {
     nodes.push(block_node(index, block, NodeKind::Action));
     exits.push(Exit {
         id: exit(index),
-        handover: names(&block.outputs),
+        handover: (0..block.outputs.len())
+            .map(|index| provided(block.output_binding(index)))
+            .collect(),
         branch_description: None,
     });
 }

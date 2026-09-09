@@ -5,7 +5,7 @@ fn invalid(input: Option<u32>) -> u32 {
     #[choice("Is a value present?")]
     #[case("A value is present.")]
     #[case("No value is present.")]
-    |input| -> (present, absent) {
+    let (present, absent) = |input| {
         match input {
             Some(hidden) => (),
             None => (),
@@ -13,10 +13,10 @@ fn invalid(input: Option<u32>) -> u32 {
     };
 
     #[action("Produce the hidden match value.")]
-    |present| -> result { hidden };
+    let result = |present| { hidden };
 
     #[action("Produce zero for no value.")]
-    |absent| -> result { 0 };
+    let result = |absent| { 0 };
 }
 
 fn main() {}

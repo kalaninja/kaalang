@@ -5,19 +5,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> usize {
     #[question("Build the text?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build the owned text.")]
-    |yes| -> text { String::from("abc") };
+    let text = |yes| { String::from("abc") };
 
     #[action("Borrow the text.")]
-    |&text| -> view { text.as_str() };
+    let view = |&text| { text.as_str() };
 
     #[action("Use the fallback text.")]
-    |no| -> view { "fallback" };
+    let view = |no| { "fallback" };
 
     #[action("Measure the merged view.")]
-    |view| -> result { view.len() };
+    let result = |view| { view.len() };
 }
 
 fn main() {}

@@ -8,7 +8,7 @@ fn invalid(value: u8) -> u8 {
     #[case("Shares the left marker.")]
     #[case("Shares both markers.")]
     #[case("Shares the right marker.")]
-    |value| -> (a, b, c) {
+    let (a, b, c) = |value| {
         match value {
             0 => (),
             1 => (),
@@ -17,13 +17,13 @@ fn invalid(value: u8) -> u8 {
     };
 
     #[action("Mark the left group.")]
-    |a| -> (_left, result) { ((), 1u8) };
+    let (_left, result) = |a| { ((), 1u8) };
 
     #[action("Mark both groups.")]
-    |b| -> (_left, _right, result) { ((), (), 2u8) };
+    let (_left, _right, result) = |b| { ((), (), 2u8) };
 
     #[action("Mark the right group.")]
-    |c| -> (_right, result) { ((), 3u8) };
+    let (_right, result) = |c| { ((), 3u8) };
 }
 
 fn main() {}

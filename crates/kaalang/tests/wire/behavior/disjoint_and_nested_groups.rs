@@ -10,39 +10,37 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
     #[case("Third.")]
     #[case("Fourth.")]
     #[case("Fifth.")]
-    |source| -> (a, b, c, d, e) {
-        match source {
-            0 => (),
-            1 => (),
-            2 => (),
-            3 => (),
-            _ => (),
-        }
+    let (a, b, c, d, e) = |source| match source {
+        0 => (),
+        1 => (),
+        2 => (),
+        3 => (),
+        _ => (),
     };
 
     #[action("First value.")]
-    |a| -> ab { 1u8 };
+    let ab = |a| 1u8;
 
     #[action("Second value.")]
-    |b| -> ab { 2u8 };
+    let ab = |b| 2u8;
 
     #[action("Close the first pair.")]
-    |ab| -> abc { ab + 10 };
+    let abc = |ab| ab + 10;
 
     #[action("Third value.")]
-    |c| -> abc { 3u8 };
+    let abc = |c| 3u8;
 
     #[action("Finish the first three.")]
-    |abc| -> result { abc + 100 };
+    let result = |abc| abc + 100;
 
     #[action("Fourth value.")]
-    |d| -> de { 4u8 };
+    let de = |d| 4u8;
 
     #[action("Fifth value.")]
-    |e| -> de { 5u8 };
+    let de = |e| 5u8;
 
     #[action("Finish the last two.")]
-    |de| -> result { de + 200 };
+    let result = |de| de + 200;
 }
 
 #[test]

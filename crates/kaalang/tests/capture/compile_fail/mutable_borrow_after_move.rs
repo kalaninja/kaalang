@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn mutable_borrow_after_move(mut text: String) -> usize {
     #[action("Move the text into a mutable local.")]
-    |mut text| -> moved {
+    let moved = |mut text| {
         text.push('!');
         text
     };
 
     #[action("Try to mutate the moved wire.")]
-    |&mut text, moved| -> result {
+    let result = |&mut text, moved| {
         text.push('?');
         moved.len()
     };

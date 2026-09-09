@@ -219,11 +219,11 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn effects() {
                 #[action("First")]
-                || -> first {};
+                let first = || {};
                 #[action("Second")]
-                || -> second {};
+                let second = || {};
                 #[action("Finish")]
-                |first, second| -> result {};
+                let result = |first, second| {};
             }
         })
         .expect("the independent effects are valid");
@@ -252,13 +252,13 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn choose(flag: bool) -> u8 {
                 #[question("Choose")]
-                |flag| -> (yes, no) { flag };
+                let (yes, no) = |flag| { flag };
                 #[action("Yes value")]
-                |yes| -> value { 1u8 };
+                let value = |yes| { 1u8 };
                 #[action("No value")]
-                |no| -> value { 2u8 };
+                let value = |no| { 2u8 };
                 #[action("Use the value")]
-                |value| -> result { value };
+                let result = |value| { value };
             }
         })
         .expect("the alternative producers are valid");
@@ -285,11 +285,11 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn effects() {
                 #[action("First")]
-                || -> first {};
+                let first = || {};
                 #[action("Second")]
-                || -> second {};
+                let second = || {};
                 #[action("Finish")]
-                |first, second| -> result {};
+                let result = |first, second| {};
             }
         })
         .expect("the effects are valid");
@@ -318,19 +318,19 @@ mod tests {
         let mut function: syn::ItemFn = parse_quote! {
             fn choose(flag: bool) -> u8 {
                 #[question("Choose")]
-                |flag| -> (yes, no) { flag };
+                let (yes, no) = |flag| { flag };
                 #[action("Yes value")]
-                |yes| -> (value, yes_work) { (1u8, ()) };
+                let (value, yes_work) = |yes| { (1u8, ()) };
                 #[action("No value")]
-                |no| -> (value, no_work) { (2u8, ()) };
+                let (value, no_work) = |no| { (2u8, ()) };
                 #[action("Finish the yes branch")]
-                |yes_work| -> done {};
+                let done = |yes_work| {};
                 #[action("Finish the no branch")]
-                |no_work| -> done {};
+                let done = |no_work| {};
                 #[action("Use the merged value")]
-                |value| -> used { value };
+                let used = |value| { value };
                 #[action("Finish")]
-                |used, done| -> result { used };
+                let result = |used, done| { used };
             }
         };
         let model = crate::build(&function).expect("branch-local work finishes above the capture");
@@ -358,7 +358,7 @@ mod tests {
                 "question",
                 parse_quote! {
                     #[question("Use the setup?")]
-                    |flag| -> (yes, no) { flag };
+                    let (yes, no) = |flag| { flag };
                 },
             ),
             (
@@ -367,20 +367,20 @@ mod tests {
                     #[choice("Use the setup?")]
                     #[case("Use it.")]
                     #[case("Skip it.")]
-                    |flag| -> (yes, no) { match flag { true => (), false => () } };
+                    let (yes, no) = |flag| { match flag { true => (), false => () } };
                 },
             ),
         ] {
             let mut function: syn::ItemFn = parse_quote! {
                 fn choose(flag: bool, seed: u8) -> u8 {
                     #[action("Prepare the setup.")]
-                    |seed| -> (setup, fallback) { (seed, 0u8) };
+                    let (setup, fallback) = |seed| { (seed, 0u8) };
                     #[question("Use the setup?")]
-                    |flag| -> (yes, no) { flag };
+                    let (yes, no) = |flag| { flag };
                     #[action("Use it.")]
-                    |yes, setup| -> result { setup };
+                    let result = |yes, setup| { setup };
                     #[action("Skip it.")]
-                    |no, fallback| -> result { fallback };
+                    let result = |no, fallback| { fallback };
                 }
             };
             function.block.stmts[1] = selection;
@@ -421,17 +421,17 @@ mod tests {
         let mut function: syn::ItemFn = parse_quote! {
             fn choose(report: bool, flag: bool) -> u8 {
                 #[question("Choose the value.")]
-                |flag| -> (first, second) { flag };
+                let (first, second) = |flag| { flag };
                 #[action("First value.")]
-                |first| -> value { 1u8 };
+                let value = |first| { 1u8 };
                 #[action("Second value.")]
-                |second| -> value { 2u8 };
+                let value = |second| { 2u8 };
                 #[question("Report the value?")]
-                |report| -> (yes, no) { report };
+                let (yes, no) = |report| { report };
                 #[action("Report it.")]
-                |yes, value| -> result { value };
+                let result = |yes, value| { value };
                 #[action("Report nothing.")]
-                |no, value| -> result { 0u8 };
+                let result = |no, value| { 0u8 };
             }
         };
         let model = crate::build(&function).expect("the merge completes above the selection");

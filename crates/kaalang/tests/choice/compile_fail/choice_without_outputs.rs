@@ -1,12 +1,12 @@
 use kaalang::kaalang;
 
-// `-> ()` declares no wires, and a choice needs one per case.
+// `let ()` declares no wires, and a choice needs one per case.
 #[kaalang]
 fn invalid(input: u32) -> u32 {
     #[choice("Pick without outputs.")]
     #[case("First.")]
     #[case("Second.")]
-    |&input| -> () {
+    let () = |&input| {
         match input {
             0 => (),
             _ => (),
@@ -14,7 +14,7 @@ fn invalid(input: u32) -> u32 {
     };
 
     #[action("Finish.")]
-    |input| -> result { input };
+    let result = |input| { input };
 }
 
 fn main() {}

@@ -7,7 +7,7 @@ fn invalid(value: String) -> usize {
     #[choice("Borrow the matched string.")]
     #[case("Use a nonempty string.")]
     #[case("Use an empty string.")]
-    |value| -> (nonempty, empty) {
+    let (nonempty, empty) = |value| {
         match value {
             owned if !owned.is_empty() => &owned,
             owned => &owned,
@@ -15,10 +15,10 @@ fn invalid(value: String) -> usize {
     };
 
     #[action("Measure the nonempty string.")]
-    |nonempty| -> result { nonempty.len() };
+    let result = |nonempty| { nonempty.len() };
 
     #[action("Measure the empty string.")]
-    |empty| -> result { empty.len() };
+    let result = |empty| { empty.len() };
 }
 
 fn main() {}

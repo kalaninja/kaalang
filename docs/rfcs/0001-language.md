@@ -100,7 +100,7 @@ A computational block has this common shape:
 
 ```rust
 #[action("Description of the block.")]
-|input, &borrowed| -> output {
+let output = |input, &borrowed| {
     rust_expression
 };
 ```
@@ -115,9 +115,18 @@ Source comments remain ordinary Rust comments. Block, question-branch, and case
 descriptions come from their attributes.
 
 An action may declare no outputs; a question and a choice must declare theirs.
-An omitted arrow and `-> ()` both declare none, and the body of such a block
-must evaluate to `()`, which Rust checks. The braces are never optional:
-`|input| expr;` is rejected.
+An action written without `let`, or with the pattern `let ()`, declares none;
+its body must evaluate to `()`, which Rust checks. A body may be a Rust
+expression or a braced block. For example, `let output = |input| input + 1;` and
+`let output = |input| { input + 1 };` are equivalent. This lets ordinary Rust
+formatting remove unnecessary braces without changing the flow.
+
+Block attributes precede the statement. Output patterns contain only simple
+identifiers with optional `mut`, a flat tuple of those bindings, or `()`. Type
+annotations, wildcard outputs, nested patterns, `ref` bindings, and `let else`
+are not supported. Block closures have no return type annotation or `move`,
+`async`, `const`, or lifetime modifier. A braced body has no label or body-level
+attributes.
 
 An authored computational block body must not use a `return` expression or the
 `?` operator in its own control-flow scope; it can complete only by normal
@@ -140,15 +149,17 @@ An action evaluates its body and declares zero or more outputs:
 
 ```rust
 #[action("Split the value.")]
-|input| -> (left, right) {
+let (left, right) = |input| {
     split(input)
 };
 ```
 
-With one declared output, the complete body value is bound to that wire. The
-bare `output` and singleton tuple `(output,)` declarations are equivalent. With
-two or more outputs, the body's outer tuple is destructured positionally. Rust
-checks that the body value has the required shape.
+A single identifier binds the complete body value to that wire. A tuple pattern
+destructures the body's outer tuple positionally, including a singleton pattern:
+`let (output,) = |input| { (input,) };` binds the tuple's element, while
+`let output = |input| { (input,) };` binds the tuple itself. Rust checks that
+the body value has the required shape. Output bindings may each carry `mut`, as
+in `let (header, mut body) = |packet| { split(packet) };`.
 
 An action that only performs an effect declares no outputs. Its body evaluates
 to `()`, and the block hands nothing over:
@@ -165,12 +176,12 @@ has to capture something the effect provides:
 
 ```rust
 #[action("Log flow entry.")]
-|| -> entered {
+let entered = || {
     println!("start")
 };
 
 #[action("Continue.")]
-|entered| -> result {
+let result = |entered| {
     continue_work()
 };
 ```
@@ -184,7 +195,7 @@ branches:
 #[question("Is the request eligible?")]
 #[no("Reject the request.")]
 #[yes("Continue processing.")]
-|valid, &request, &policy| -> (ineligible, eligible) {
+let (ineligible, eligible) = |valid, &request, &policy| {
     request.age_days <= policy.window_days
 };
 ```
@@ -197,7 +208,7 @@ form:
 
 ```rust
 #[question("Is the request eligible?")]
-|valid, &request, &policy| -> (eligible, ineligible) {
+let (eligible, ineligible) = |valid, &request, &policy| {
     request.age_days <= policy.window_days
 };
 ```
@@ -219,7 +230,7 @@ match arm's value available on the corresponding output wire:
 #[choice("Was a value supplied?")]
 #[case("A value is available.")]
 #[case("No value is available.")]
-|input| -> (value, absent) {
+let (value, absent) = |input| {
     match input {
         Some(value) => value,
         None => (),
@@ -284,13 +295,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn decide(request: Request) -> Decision {
     #[question("Is the request valid?")]
-    |&request| -> (valid, invalid) { todo!() };
+    let (valid, invalid) = |&request| { todo!() };
 
     #[action("Approve the valid request.")]
-    |valid, &request| -> result { todo!() };
+    let result = |valid, &request| { todo!() };
 
     #[action("Reject the invalid request.")]
-    |invalid, &request| -> result { todo!() };
+    let result = |invalid, &request| { todo!() };
 }
 ```
 
@@ -305,9 +316,11 @@ wants to silence them while filling in the bodies writes
 [RFC 0004 §6](0004-rust-lowering.md#6-placeholders-and-function-attributes)
 describes how lowering preserves placeholders and function attributes.
 
-The function body contains closure-shaped Rust expression statements. Each
-statement declares one computational block. Like any Rust tail expression, the
-final statement may omit its semicolon.
+The function body contains attributed `let` declarations and closure-shaped
+expression statements. Each statement declares one computational block. Every
+`let` requires its semicolon, including the last declaration. A final action
+without an output declaration may omit its semicolon like any Rust tail
+expression.
 
 ### 5.1 Zero-computation flow
 
@@ -326,7 +339,7 @@ computes nothing but must still finish declares one action:
 #[kaalang]
 fn nothing() {
     #[action("Finish without doing anything.")]
-    || -> result {};
+    let result = || {};
 }
 ```
 
@@ -336,13 +349,13 @@ An ignored parameter remains explicit:
 #[kaalang]
 fn discard(_value: Value) {
     #[action("Finish without the flow input.")]
-    || -> result {};
+    let result = || {};
 }
 
 #[kaalang]
 fn discard_unnamed_input(_: Value) {
     #[action("Finish without the flow input.")]
-    || -> result {};
+    let result = || {};
 }
 ```
 
@@ -359,6 +372,11 @@ A logical wire normally has one producer. Several blocks may declare the same
 output name only when they are alternative producers. This is not sequential
 shadowing: one execution cannot produce the same logical wire twice, whatever a
 block did with the earlier value.
+
+All alternative producers of a logical wire must declare the same mutability,
+even when the wire is unused or never mutably borrowed. A merge preserves that
+declaration; one mutable alternative cannot make an immutable alternative
+mutable.
 
 Repeating an output name always declares a merge, including when different
 blocks capture that name or its leading underscore permits it to remain unused.
@@ -392,16 +410,16 @@ its consumer in every execution selecting the output. For such an output, the
 
 ```rust
 #[question("Which value should be used?")]
-|condition| -> (yes, no) { condition };
+let (yes, no) = |condition| { condition };
 
 #[action("Build the yes value.")]
-|yes| -> selected { yes_value() };
+let selected = |yes| { yes_value() };
 
 #[action("Build the no value.")]
-|no| -> selected { no_value() };
+let selected = |no| { no_value() };
 
 #[action("Use the selected value.")]
-|selected| -> result { use_value(selected) };
+let result = |selected| { use_value(selected) };
 ```
 
 The alternative `selected` outputs merge before the shared consumer. Under
@@ -412,7 +430,7 @@ merge block.
 Each computational block lists every wire available to its body:
 
 ```rust
-|&request, policy, yes| -> decision { /* body */ };
+let decision = |&request, policy, yes| { /* body */ };
 ```
 
 Inputs have four forms:
@@ -425,11 +443,13 @@ Inputs have four forms:
 
 These forms apply to actions, questions, and choices alike. A flow-input wire
 can be captured through `&mut name` only when its parameter explicitly declares
-`mut name: T`; the capture never makes a parameter mutable. Block outputs keep
-their existing declaration syntax and permit mutable borrowing. A mutation
-through `&mut name` changes the original wire's stored value, which later
-captures observe in source order. It does not declare another producer or change
-the wire's capture dependencies. A `mut name` value capture needs no mutable
+`mut name: T`; the capture never makes a parameter mutable. A block-output wire
+can be captured through `&mut name` only when its output binding declares
+`mut name`. An output without `mut` does not permit mutable borrowing. The
+modifier grants permission; an unused permission is accepted. A mutation through
+`&mut name` changes the original wire's stored value, which later captures
+observe in source order. It does not declare another producer or change the
+wire's capture dependencies. A `mut name` value capture needs no mutable
 producer: it creates a mutable local binding after the move or copy. Changing a
 copied value changes only that local copy. References inside a captured value
 retain their ordinary Rust behavior.
@@ -442,7 +462,7 @@ retain their ordinary Rust behavior.
 };
 
 #[action("Move and extend the changed text.")]
-|mut text| -> result {
+let result = |mut text| {
     text.push('?');
     text
 };
@@ -648,17 +668,17 @@ The outer syntax is ordinary Rust:
 ```text
 flow := "#[kaalang]" rust_function
 
-flow_parameter := identifier ":" rust_type | "_" ":" rust_type
+flow_parameter := "mut"? identifier ":" rust_type | "_" ":" rust_type
 
 action_statement :=
     "#[action(" block_description ")]"
-    "|" input_list? "|" ("->" output_declaration)? rust_block ";"
+    ("let" output_pattern "=")? "|" input_list? "|" rust_expression ";"
 
 question_statement :=
     "#[question(" block_description ")]"
     question_answers?
-    "|" input_list "|" "->"
-        "(" identifier "," identifier ")" rust_block ";"
+    "let" "(" output_binding "," output_binding ","? ")" "="
+    "|" input_list "|" rust_expression ";"
 
 question_answers :=
     yes_attribute no_attribute | no_attribute yes_attribute
@@ -666,11 +686,11 @@ question_answers :=
 choice_statement :=
     "#[choice(" block_description ")]"
     case_attribute case_attribute+
-    "|" input_list "|" "->"
-        "(" identifier "," identifier ("," identifier)* ")"
-        choice_body ";"
+    "let" "(" output_binding "," output_binding ("," output_binding)* ","? ")" "="
+    "|" input_list "|" choice_body ";"
 
-choice_body := "{" rust_match_expression "}" | "{" "todo!()" "}"
+choice_expression := rust_match_expression | "todo!()"
+choice_body := choice_expression | "{" choice_expression "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"
@@ -678,15 +698,17 @@ yes_attribute := "#[yes]" | "#[yes(" block_description ")]"
 no_attribute := "#[no]" | "#[no(" block_description ")]"
 
 block_description := nonempty_rust_string_literal
-single_output_declaration := identifier | "(" identifier "," ")"
-output_declaration :=
-    single_output_declaration | rust_tuple_of_two_or_more_identifiers | "(" ")"
+output_binding := "mut"? identifier
+output_pattern :=
+    output_binding | "(" ")" | "(" output_binding "," ")"
+    | "(" output_binding "," output_binding ("," output_binding)* ","? ")"
 input_list := input ("," input)* ","?
-input := identifier | "&" identifier
+input := "mut"? identifier | "&" "mut"? identifier
 ```
 
-Outputs within one declaration are distinct. An omitted arrow and `-> ()` both
-declare none, which only an action may do. Every other constraint the grammar
-leaves open is stated with its rule: descriptions and control transfers in
-section 3, block kinds and the implicit end block in section 4, function forms
-and flow parameters in section 5, and repeated output names in section 6.
+Outputs within one declaration are distinct. An expression statement without
+`let` and a declaration with the pattern `()` both declare none, which only an
+action may do. Every other constraint the grammar leaves open is stated with its
+rule: descriptions and control transfers in section 3, block kinds and the
+implicit end block in section 4, function forms and flow parameters in section
+5, and repeated output names in section 6.

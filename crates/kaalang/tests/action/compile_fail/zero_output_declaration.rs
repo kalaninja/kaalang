@@ -4,10 +4,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(input: u32) {
     #[action("Declare no outputs.")]
-    |input| -> () { input + 1 };
+    let () = |input| { input + 1 };
 
     #[action("Finish.")]
-    || -> result {};
+    let result = || {};
 }
 
 fn main() {}

@@ -8,28 +8,26 @@ const fn const_borrowed_input_partial_merge(source: u8, bytes: &[u8]) -> usize {
     #[case("First source.")]
     #[case("Second source.")]
     #[case("Fallback.")]
-    |source| -> (first, second, fallback) {
-        match source {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (first, second, fallback) = |source| match source {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[action("Use the input on the first branch.")]
-    |first, bytes| -> partial { bytes };
+    let partial = |first, bytes| bytes;
 
     #[action("Use the input on the second branch.")]
-    |second, bytes| -> partial { bytes };
+    let partial = |second, bytes| bytes;
 
     #[action("Carry the partially merged slice onward.")]
-    |partial| -> view { partial };
+    let view = |partial| partial;
 
     #[action("Use the fallback slice.")]
-    |fallback| -> view { &[7u8, 8] };
+    let view = |fallback| &[7u8, 8];
 
     #[action("Measure the merged slice.")]
-    |view| -> result { view.len() + view[0] as usize };
+    let result = |view| view.len() + view[0] as usize;
 }
 
 #[test]

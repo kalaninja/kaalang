@@ -1,5 +1,5 @@
-error: kaalang block outputs must contain only identifiers
- --> tests/syntax/compile_fail/non_identifier_output.rs:6:16
+error: kaalang block outputs must use simple identifiers
+ --> tests/syntax/compile_fail/non_identifier_output.rs:6:9
   |
-6 |     |value| -> Vec<i32> { vec![value] };
-  |                ^^^^^^^^
+6 |     let Some(output) = |value| { Some(value) };
+  |         ^^^^^^^^^^^^

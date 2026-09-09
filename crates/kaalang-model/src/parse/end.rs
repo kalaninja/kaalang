@@ -22,6 +22,7 @@ pub(super) fn block(function: &ItemFn) -> Block {
         question_branches: Vec::new(),
         case_descriptions: Vec::new(),
         outputs: Vec::new(),
+        output_pattern: parse_quote!(()),
         output_span: span,
         inputs: vec![Input {
             borrowed: false,

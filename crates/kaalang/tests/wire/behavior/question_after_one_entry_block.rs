@@ -3,28 +3,28 @@ use kaalang::kaalang;
 #[kaalang]
 fn question_after_one_entry_block(condition: bool) -> u32 {
     #[question("Choose the pair.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Build the yes pair.")]
-    |yes| -> (left, right) { (1, 2) };
+    let (left, right) = |yes| (1, 2);
 
     #[action("Build the no pair.")]
-    |no| -> (left, right) { (3, 4) };
+    let (left, right) = |no| (3, 4);
 
     #[action("Use the left value.")]
-    |left| -> first { left * 10 };
+    let first = |left| left * 10;
 
     #[action("Use the right value.")]
-    |right| -> second { right * 10 };
+    let second = |right| right * 10;
 
     #[question("Is the first value large?")]
-    |first| -> (large, small) { first > 10 };
+    let (large, small) = |first| first > 10;
 
     #[action("Combine a large first value with the second.")]
-    |large, second| -> result { second + 100 };
+    let result = |large, second| second + 100;
 
     #[action("Combine a small first value with the second.")]
-    |small, second| -> result { second };
+    let result = |small, second| second;
 }
 
 #[test]

@@ -3,19 +3,19 @@ use kaalang::kaalang;
 #[kaalang]
 fn uneven_depth(condition: bool) -> u32 {
     #[question("Choose a branch depth.")]
-    |condition| -> (short, long) { condition };
+    let (short, long) = |condition| condition;
 
     #[action("Build the short value.")]
-    |short| -> selected { 5 };
+    let selected = |short| 5;
 
     #[action("Prepare the long value.")]
-    |long| -> prepared { 7 };
+    let prepared = |long| 7;
 
     #[action("Build the long value.")]
-    |prepared| -> selected { prepared + 1 };
+    let selected = |prepared| prepared + 1;
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected * 2 };
+    let result = |selected| selected * 2;
 }
 
 #[test]

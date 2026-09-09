@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn closure_before_a_branch(condition: bool, base: u32) -> u32 {
     #[action("Build a handler either branch may consume.")]
-    |base| -> handler { move |delta: u32| base + delta };
+    let handler = |base| move |delta: u32| base + delta;
 
     #[question("Add or subtract?")]
-    |condition| -> (add, subtract) { condition };
+    let (add, subtract) = |condition| condition;
 
     #[action("Add one.")]
-    |add, handler| -> result { handler(1) };
+    let result = |add, handler| handler(1);
 
     #[action("Subtract one.")]
-    |subtract, handler| -> result { handler(0) - 1 };
+    let result = |subtract, handler| handler(0) - 1;
 }
 
 #[test]

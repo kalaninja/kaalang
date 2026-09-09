@@ -5,18 +5,18 @@ use kaalang::kaalang;
 #[kaalang]
 fn branch_log_with_merge(condition: bool, value: String) -> usize {
     #[question("Log the value?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Log.")]
-    |yes, &value| -> ready {
+    let ready = |yes, &value| {
         assert_eq!(value, "abc");
     };
 
     #[action("Continue without logging.")]
-    |no| -> ready {};
+    let ready = |no| {};
 
     #[action("Transform.")]
-    |ready, value| -> result { value.len() };
+    let result = |ready, value| value.len();
 }
 
 #[test]

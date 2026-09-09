@@ -6,34 +6,34 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(left: bool, right: bool) -> u8 {
     #[question("Left enabled?")]
-    |left| -> (left_yes, left_no) { left };
+    let (left_yes, left_no) = |left| { left };
 
     #[question("Right enabled?")]
-    |right| -> (right_yes, right_no) { right };
+    let (right_yes, right_no) = |right| { right };
 
     #[action("Note the left answer.")]
-    |left_yes| -> left_note { 1u8 };
+    let left_note = |left_yes| { 1u8 };
 
     #[action("Note the missing left answer.")]
-    |left_no| -> left_absent { 0u8 };
+    let left_absent = |left_no| { 0u8 };
 
     #[action("Note the right answer.")]
-    |right_yes| -> right_note { 2u8 };
+    let right_note = |right_yes| { 2u8 };
 
     #[action("Note the missing right answer.")]
-    |right_no| -> right_absent { 0u8 };
+    let right_absent = |right_no| { 0u8 };
 
     #[action("Use both notes.")]
-    |left_note, right_note| -> result { left_note + right_note };
+    let result = |left_note, right_note| { left_note + right_note };
 
     #[action("Use the left note only.")]
-    |left_note, right_absent| -> result { left_note + right_absent };
+    let result = |left_note, right_absent| { left_note + right_absent };
 
     #[action("Use the right note only.")]
-    |left_absent, right_note| -> result { left_absent + right_note };
+    let result = |left_absent, right_note| { left_absent + right_note };
 
     #[action("Use neither note.")]
-    |left_absent, right_absent| -> result { left_absent + right_absent };
+    let result = |left_absent, right_absent| { left_absent + right_absent };
 }
 
 fn main() {}

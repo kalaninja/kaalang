@@ -41,11 +41,11 @@ fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
         r#"
         fn example(condition: bool) -> u8 {
             #[question("Use the value directly?")]
-            |condition| -> (value, needs_work) { condition };
+            let (value, needs_work) = |condition| { condition };
             #[action("Prepare the other value.")]
-            |needs_work| -> value { () };
+            let value = |needs_work| { () };
             #[action("Use the merged value.")]
-            |value| -> result { 1 };
+            let result = |value| { 1 };
         }
     "#,
     );
@@ -81,13 +81,13 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             #[choice("Pick a case.")]
             #[case("Near.")]
             #[case("Far.")]
-            |r#type| -> (near, far) { match r#type { 0 => 1, _ => 2 } };
+            let (near, far) = |r#type| { match r#type { 0 => 1, _ => 2 } };
             #[action("Split the near value.")]
-            |near| -> (width, depth, _unused) { (near, near, ()) };
+            let (width, depth, _unused) = |near| { (near, near, ()) };
             #[action("Use both dimensions.")]
-            |&width, depth| -> result { *width + depth };
+            let result = |&width, depth| { *width + depth };
             #[action("Use the far value.")]
-            |far| -> result { far };
+            let result = |far| { far };
         }
     "#,
     );
@@ -152,24 +152,30 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
 
 #[test]
 fn adjacent_labels_share_only_identical_ordered_captures() {
-    for (capture, shared) in [
-        ("first, second", true),
-        ("second, first", false),
-        ("&first, second", false),
-        ("mut first, second", false),
-        ("&mut first, second", false),
+    for (outputs, capture, shared) in [
+        ("first, second", "first, second", true),
+        ("first, second", "second, first", false),
+        ("first, second", "&first, second", false),
+        ("first, second", "mut first, second", false),
+        ("mut first, second", "&mut first, second", false),
+        ("mut first, second", "mut first, second", true),
+        ("mut first, second", "first, second", false),
     ] {
         let topology = drawn(&format!(
             r#"
             fn example() -> u8 {{
                 #[action("Prepare two values.")]
-                || -> (first, second) {{ (1, 2) }};
+                let ({outputs}) = || {{ (1, 2) }};
                 #[action("Use both values.")]
-                |{capture}| -> result {{ 3 }};
+                let result = |{capture}| {{ 3 }};
             }}
         "#
         ));
         assert_eq!(topology.capture(NodeId::Block(0)), Vec::<String>::new());
+        assert_eq!(
+            topology.handover(ExitId::of(NodeId::Block(0))),
+            outputs.split(", ").collect::<Vec<_>>()
+        );
         assert_eq!(topology.capture_label(NodeId::Block(0)), ["()"]);
         assert_eq!(
             topology.capture(NodeId::Block(1)),
@@ -228,15 +234,15 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
         r#"
         fn example(condition: bool) -> u8 {
             #[question("Choose a value?")]
-            |condition| -> (yes, no) { condition };
+            let (yes, no) = |condition| { condition };
             #[action("Build the yes value.")]
-            |yes| -> value { 1 };
+            let value = |yes| { 1 };
             #[action("Build the no value.")]
-            |no| -> value { 2 };
+            let value = |no| { 2 };
             #[action("Double the merged value.")]
-            |&value| -> doubled { *value * 2 };
+            let doubled = |&value| { *value * 2 };
             #[action("Add both.")]
-            |value, doubled| -> result { value + doubled };
+            let result = |value, doubled| { value + doubled };
         }
     "#,
     );
@@ -298,4 +304,19 @@ fn a_branch_local_block_before_a_merge_invents_no_label() {
     assert_eq!(topology.capture(note), ["local_note", "&order"]);
     assert_eq!(topology.handover(ExitId::of(note)), ["noted"]);
     assert_eq!(topology.capture(NodeId::Block(4)), ["selected", "&order"]);
+}
+
+#[test]
+fn mutable_alternatives_keep_the_same_label_across_block_kinds_and_the_merge() {
+    let source =
+        include_str!("../../../kaalang/tests/capture/behavior/mutate_merged_branch_outputs.rs");
+    let topology = fixture(source, "mutate_merged_branch_outputs");
+    for exit in [
+        super::question::exit(0, 0),
+        super::choice::exit(1, 0),
+        super::action::exit(2),
+    ] {
+        assert_eq!(topology.handover(exit), ["mut selected"]);
+    }
+    assert_eq!(topology.junctions[0].wires, ["mut selected"]);
 }

@@ -5,18 +5,16 @@ fn borrowed_case_input(text: String) -> usize {
     #[choice("Borrow the text through the choice.")]
     #[case("Keep a long text whole.")]
     #[case("Keep the first character of a short text.")]
-    |&text| -> (long, short) {
-        match text.len() {
-            length if length > 3 => text.as_str(),
-            _ => &text[..text.len().min(1)],
-        }
+    let (long, short) = |&text| match text.len() {
+        length if length > 3 => text.as_str(),
+        _ => &text[..text.len().min(1)],
     };
 
     #[action("Measure the long text.")]
-    |long| -> result { long.len() };
+    let result = |long| long.len();
 
     #[action("Measure the short text.")]
-    |short| -> result { short.len() };
+    let result = |short| short.len();
 }
 
 #[test]

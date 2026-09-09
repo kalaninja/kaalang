@@ -167,7 +167,7 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn discard(_: u8, _value: u8) {
                 #[action("Finish without the flow inputs.")]
-                || -> result {};
+                let result = || {};
             }
         };
 
@@ -189,7 +189,7 @@ mod tests {
                 #[choice("  Choose a path  ")]
                 #[case("Первый")]
                 #[case("Second & final")]
-                |input| -> (left, right) {
+                let (left, right) = |input| {
                     match input {
                         0 => input,
                         _ => input,
@@ -197,10 +197,10 @@ mod tests {
                 };
 
                 #[action("Use the first path")]
-                |left| -> result { left };
+                let result = |left| { left };
 
                 #[action("Use the second path")]
-                |right| -> result { right };
+                let result = |right| { right };
             }
         };
 
@@ -241,16 +241,16 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
                 #[question("Choose a value")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes value")]
-                |yes| -> selected { 1 };
+                let selected = |yes| { 1 };
 
                 #[action("Build the no value")]
-                |no| -> selected { 2 };
+                let selected = |no| { 2 };
 
                 #[action("Use the selected value")]
-                |selected| -> result { selected };
+                let result = |selected| { selected };
             }
         };
 
@@ -307,16 +307,16 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> (u32, u32) {
                 #[question("Choose values")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes values")]
-                |yes| -> (first, second) { (1, 2) };
+                let (first, second) = |yes| { (1, 2) };
 
                 #[action("Build the no values")]
-                |no| -> (first, second) { (3, 4) };
+                let (first, second) = |no| { (3, 4) };
 
                 #[action("Use the selected values")]
-                |second, first| -> result { (first, second) };
+                let result = |second, first| { (first, second) };
             }
         };
 
@@ -345,13 +345,13 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn pair(input: u32) -> (u32, u32) {
                 #[action("Produce the first result")]
-                |&input| -> first { *input };
+                let first = |&input| { *input };
 
                 #[action("Produce the second result")]
-                |&input| -> second { *input + 1 };
+                let second = |&input| { *input + 1 };
 
                 #[action("Pair the two results")]
-                |first, second| -> result { (first, second) };
+                let result = |first, second| { (first, second) };
             }
         };
 
@@ -374,17 +374,17 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn route(left: bool, right: bool) -> u8 {
                 #[question("Choose the right value")]
-                |right| -> (x, y) { right };
+                let (x, y) = |right| { right };
                 #[action("Build the first right value")]
-                |x| -> value { 10u8 };
+                let value = |x| { 10u8 };
                 #[action("Build the second right value")]
-                |y| -> value { 20u8 };
+                let value = |y| { 20u8 };
                 #[question("Choose the left path")]
-                |left| -> (a, b) { left };
+                let (a, b) = |left| { left };
                 #[action("Use the left path")]
-                |a, value| -> result { value + 1 };
+                let result = |a, value| { value + 1 };
                 #[action("Use the other left path")]
-                |b, value| -> result { value + 2 };
+                let result = |b, value| { value + 2 };
             }
         };
 
@@ -404,16 +404,16 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
                 #[action("Prepare a shared value")]
-                |seed| -> prepared { seed };
+                let prepared = |seed| { seed };
 
                 #[question("Which way?")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Use it on the yes branch")]
-                |yes, &prepared| -> result { *prepared };
+                let result = |yes, &prepared| { *prepared };
 
                 #[action("Use it on the no branch")]
-                |no, prepared| -> result { prepared + 1 };
+                let result = |no, prepared| { prepared + 1 };
             }
         };
 
@@ -431,13 +431,13 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
                 #[question("Take the branching path?")]
-                |condition, &value| -> (yes, no) { condition };
+                let (yes, no) = |condition, &value| { condition };
 
                 #[choice("Which branch?")]
                 #[case("First")]
                 #[case("Second")]
                 #[case("Terminal")]
-                |yes, value| -> (first, second, third) {
+                let (first, second, third) = |yes, value| {
                     match value {
                         0 => (),
                         1 => (),
@@ -446,19 +446,19 @@ mod tests {
                 };
 
                 #[action("Build the first value")]
-                |first| -> selected { 1 };
+                let selected = |first| { 1 };
 
                 #[action("Build the second value")]
-                |second| -> selected { 2 };
+                let selected = |second| { 2 };
 
                 #[action("Produce the terminal result")]
-                |third| -> result { 3 };
+                let result = |third| { 3 };
 
                 #[action("Produce the selected result")]
-                |selected| -> result { selected };
+                let result = |selected| { selected };
 
                 #[action("Produce the no-branch result")]
-                |no| -> result { 0 };
+                let result = |no| { 0 };
             }
         };
 
@@ -534,11 +534,11 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn both(left: bool, right: bool) -> u8 {
                 #[question("Left?")]
-                |left| -> (a, _b) { left };
+                let (a, _b) = |left| { left };
                 #[question("Right?")]
-                |right| -> (c, _d) { right };
+                let (c, _d) = |right| { right };
                 #[action("Both")]
-                |a, c| -> result { 1u8 };
+                let result = |a, c| { 1u8 };
             }
         };
 
@@ -566,25 +566,25 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn route(outer: bool, inner: bool) -> u8 {
                 #[question("Choose the source")]
-                |outer| -> (yes, no) { outer };
+                let (yes, no) = |outer| { outer };
 
                 #[action("Prepare the nested branch")]
-                |no| -> (trigger, branch_gate) { ((), ()) };
+                let (trigger, branch_gate) = |no| { ((), ()) };
 
                 #[question("Choose the control output")]
-                |trigger, inner| -> (shared, skip) { inner };
+                let (shared, skip) = |trigger, inner| { inner };
 
                 #[action("Produce borrowable data")]
-                |yes| -> (shared, borrow_gate) { ((), ()) };
+                let (shared, borrow_gate) = |yes| { ((), ()) };
 
                 #[action("Consume the nested control")]
-                |shared, branch_gate| -> result { 1u8 };
+                let result = |shared, branch_gate| { 1u8 };
 
                 #[action("Consume the other nested control")]
-                |skip, branch_gate| -> result { 2u8 };
+                let result = |skip, branch_gate| { 2u8 };
 
                 #[action("Borrow only the action output")]
-                |&shared, borrow_gate| -> result { 3u8 };
+                let result = |&shared, borrow_gate| { 3u8 };
             }
         };
 
@@ -604,7 +604,7 @@ mod tests {
                 #[case("Terminal")]
                 #[case("First of the right group")]
                 #[case("Second of the right group")]
-                |value| -> (a, b, done, c, d) {
+                let (a, b, done, c, d) = |value| {
                     match value {
                         0 => (),
                         1 => (),
@@ -615,25 +615,25 @@ mod tests {
                 };
 
                 #[action("Build the left value from a")]
-                |a| -> left { 1 };
+                let left = |a| { 1 };
 
                 #[action("Build the left value from b")]
-                |b| -> left { 2 };
+                let left = |b| { 2 };
 
                 #[action("Produce the terminal result")]
-                |done| -> result { 3 };
+                let result = |done| { 3 };
 
                 #[action("Build the right value from c")]
-                |c| -> right { 4 };
+                let right = |c| { 4 };
 
                 #[action("Build the right value from d")]
-                |d| -> right { 5 };
+                let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                |left| -> result { left };
+                let result = |left| { left };
 
                 #[action("Use the right value")]
-                |right| -> result { right };
+                let result = |right| { right };
             }
         };
 
@@ -707,7 +707,7 @@ mod tests {
         let source = include_str!(
             "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
         )
-        .replace("(join, skip) { inner }", "(skip, join) { !inner }");
+        .replace("let (join, skip)", "let (skip, join)");
         assert_eq!(
             message(&fixture(&source, "invalid")),
             "a nested kaalang branch cannot bypass the `shared` wire merge and rejoin at `ready`; merge before or with the enclosing branches"
@@ -746,7 +746,7 @@ mod tests {
                 #[case("Terminal between the groups")]
                 #[case("First of the right group")]
                 #[case("Second of the right group")]
-                |value| -> (first, a, b, between, c, d) {
+                let (first, a, b, between, c, d) = |value| {
                     match value {
                         0 => (),
                         1 => (),
@@ -758,28 +758,28 @@ mod tests {
                 };
 
                 #[action("Produce the first terminal result")]
-                |first| -> result { 0 };
+                let result = |first| { 0 };
 
                 #[action("Build the left value from a")]
-                |a| -> left { 1 };
+                let left = |a| { 1 };
 
                 #[action("Build the left value from b")]
-                |b| -> left { 2 };
+                let left = |b| { 2 };
 
                 #[action("Produce the terminal result between the groups")]
-                |between| -> result { 3 };
+                let result = |between| { 3 };
 
                 #[action("Build the right value from c")]
-                |c| -> right { 4 };
+                let right = |c| { 4 };
 
                 #[action("Build the right value from d")]
-                |d| -> right { 5 };
+                let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                |left| -> result { left };
+                let result = |left| { left };
 
                 #[action("Use the right value")]
-                |right| -> result { right };
+                let result = |right| { right };
             }
         };
 
@@ -823,19 +823,19 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
                 #[action("Prepare a shared value")]
-                |seed| -> prepared { seed };
+                let prepared = |seed| { seed };
 
                 #[question("Which way?")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Use it on the yes branch")]
-                |yes, &prepared| -> selected { *prepared };
+                let selected = |yes, &prepared| { *prepared };
 
                 #[action("Use it on the no branch")]
-                |no, &prepared| -> selected { *prepared + 1 };
+                let selected = |no, &prepared| { *prepared + 1 };
 
                 #[action("Combine the selected and prepared values")]
-                |selected, prepared| -> result { selected + prepared };
+                let result = |selected, prepared| { selected + prepared };
             }
         };
 
@@ -868,16 +868,16 @@ mod tests {
         let unified: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
                 #[question("Choose a value")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes value")]
-                |yes| -> (selected, _tag) { (1, 1u8) };
+                let (selected, _tag) = |yes| { (1, 1u8) };
 
                 #[action("Build the no value")]
-                |no| -> (selected, _tag) { (2, 2u8) };
+                let (selected, _tag) = |no| { (2, 2u8) };
 
                 #[action("Use the selected value")]
-                |selected| -> result { selected };
+                let result = |selected| { selected };
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -890,16 +890,16 @@ mod tests {
         let terminal: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
                 #[question("Choose a value")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes value")]
-                |yes| -> (selected, _tag) { (1, 1u8) };
+                let (selected, _tag) = |yes| { (1, 1u8) };
 
                 #[action("Build the no result")]
-                |no| -> (result, _tag) { (2, 2u8) };
+                let (result, _tag) = |no| { (2, 2u8) };
 
                 #[action("Use the selected value")]
-                |selected| -> result { selected };
+                let result = |selected| { selected };
             }
         };
         let ExecutionPlan::End { gates, .. } =

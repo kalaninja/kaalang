@@ -5,21 +5,21 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool, value: String) -> usize {
     #[question("Log the value?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Log.")]
-    |yes, &value| -> logged {
+    let logged = |yes, &value| {
         assert_eq!(value, "abc");
     };
 
     #[action("Transform.")]
-    |value| -> length { value.len() };
+    let length = |value| { value.len() };
 
     #[action("Finish yes.")]
-    |logged, length| -> result { length };
+    let result = |logged, length| { length };
 
     #[action("Finish no.")]
-    |no, length| -> result { length };
+    let result = |no, length| { length };
 }
 
 fn main() {}

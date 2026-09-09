@@ -6,25 +6,23 @@ fn mutate_through_partial_merges(source: u8, refine: bool) -> Vec<u8> {
     #[case("Refined source.")]
     #[case("Second source.")]
     #[case("Fallback.")]
-    |source| -> (first, second, third) {
-        match source {
-            0 => (),
-            1 => (),
-            _ => (),
-        }
+    let (first, second, third) = |source| match source {
+        0 => (),
+        1 => (),
+        _ => (),
     };
 
     #[question("Refine the first source?")]
-    |first, refine| -> (yes, no) { refine };
+    let (yes, no) = |first, refine| refine;
 
     #[action("Build the refined value.")]
-    |yes| -> partial { vec![1] };
+    let mut partial = |yes| vec![1];
 
     #[action("Build the unrefined value.")]
-    |no| -> partial { vec![2] };
+    let mut partial = |no| vec![2];
 
     #[action("Build the second value.")]
-    |second| -> partial { vec![3] };
+    let mut partial = |second| vec![3];
 
     #[action("Extend the partially merged value.")]
     |&mut partial| {
@@ -32,10 +30,10 @@ fn mutate_through_partial_merges(source: u8, refine: bool) -> Vec<u8> {
     };
 
     #[action("Carry the partial value to the outer merge.")]
-    |partial| -> shared { partial };
+    let mut shared = |partial| partial;
 
     #[action("Build the fallback value.")]
-    |third| -> shared { vec![0] };
+    let mut shared = |third| vec![0];
 
     #[action("Extend the fully merged value.")]
     |&mut shared| {
@@ -43,7 +41,7 @@ fn mutate_through_partial_merges(source: u8, refine: bool) -> Vec<u8> {
     };
 
     #[action("Return the changed value.")]
-    |shared| -> result { shared };
+    let result = |shared| shared;
 }
 
 #[test]

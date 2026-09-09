@@ -2,7 +2,7 @@
 //! convergence groups and wire merges, and the compiler's execution plan.
 
 use proc_macro2::{Ident, Span};
-use syn::{Expr, FnArg, ReturnType};
+use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 
 /// A validated kaalang flow: its blocks, every possible execution, its
 /// convergence groups and wire merges, and the verified plan that lowers it.
@@ -49,10 +49,34 @@ pub struct Block {
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
     pub outputs: Vec<Ident>,
+    /// The validated identifier or flat tuple pattern declaring the outputs.
+    /// Each binding preserves its authored mutability. An outputless block uses `()`.
+    pub output_pattern: Pat,
     pub output_span: Span,
     pub inputs: Vec<Input>,
+    /// The authored body normalized to a plain block expression.
     pub body: Expr,
     pub span: Span,
+}
+
+impl Block {
+    /// Returns the authored binding at one validated output position.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the position does not exist or the output pattern is invalid.
+    #[must_use]
+    pub fn output_binding(&self, index: usize) -> &PatIdent {
+        let pattern = match &self.output_pattern {
+            Pat::Tuple(tuple) => &tuple.elems[index],
+            pattern if index == 0 => pattern,
+            _ => panic!("output position must exist"),
+        };
+        let Pat::Ident(binding) = pattern else {
+            unreachable!("validated outputs are identifier bindings")
+        };
+        binding
+    }
 }
 
 /// One positional branch of a question.

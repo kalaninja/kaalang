@@ -5,18 +5,18 @@ use kaalang::kaalang;
 #[kaalang]
 fn branch_log_in_each_branch(condition: bool, value: String) -> usize {
     #[question("Log the value?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Log.")]
-    |yes, &value| -> logged {
+    let logged = |yes, &value| {
         assert_eq!(value, "abc");
     };
 
     #[action("Transform after logging.")]
-    |logged, value| -> result { value.len() };
+    let result = |logged, value| value.len();
 
     #[action("Transform without logging.")]
-    |no, value| -> result { value.len() };
+    let result = |no, value| value.len();
 }
 
 #[test]

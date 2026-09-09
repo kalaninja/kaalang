@@ -5,7 +5,7 @@ fn mutably_borrowed_choice_output(input: Option<String>) -> usize {
     #[choice("Was text supplied?")]
     #[case("Text supplied.")]
     #[case("No text.")]
-    |input| -> (text, absent) {
+    let (mut text, absent) = |input| {
         match input {
             Some(text) => text,
             None => (),
@@ -13,13 +13,13 @@ fn mutably_borrowed_choice_output(input: Option<String>) -> usize {
     };
 
     #[action("Try to borrow the case value.")]
-    |&mut text| -> result {
+    let result = |&mut text| {
         text.push('!');
         text.len()
     };
 
     #[action("Use zero when absent.")]
-    |absent| -> result { 0 };
+    let result = |absent| { 0 };
 }
 
 fn main() {}

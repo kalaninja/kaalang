@@ -7,16 +7,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn unused_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> bool {
     #[question("Which branch borrows the cell?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| condition;
 
     #[action("Borrow the cell on the yes branch.")]
-    |yes, cell| -> _guard { cell.borrow_mut() };
+    let _guard = |yes, cell| cell.borrow_mut();
 
     #[action("Borrow the cell on the no branch.")]
-    |no, cell| -> _guard { cell.borrow_mut() };
+    let _guard = |no, cell| cell.borrow_mut();
 
     #[action("Check that the merged guard is still alive.")]
-    |cell| -> result { cell.try_borrow_mut().is_err() };
+    let result = |cell| cell.try_borrow_mut().is_err();
 }
 
 #[test]

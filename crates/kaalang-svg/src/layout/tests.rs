@@ -171,13 +171,13 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
         let function = syn::parse_quote! {
             fn borrowed_merge(condition: bool) -> usize {
                 #[question("Choose a value.")]
-                |condition| -> (yes, no) { condition };
+                let (yes, no) = |condition| { condition };
                 #[action("Build the yes value.")]
-                |yes| -> #outputs { todo!() };
+                let #outputs = |yes| { todo!() };
                 #[action("Build the no value.")]
-                |no| -> value { String::new() };
+                let value = |no| { String::new() };
                 #[action("Measure the value.")]
-                |&value| -> result { value.len() };
+                let result = |&value| { value.len() };
             }
         };
         let model = kaalang_model::build(&function).unwrap();
@@ -373,19 +373,19 @@ const SHARED_INPUTS: &str = r#"
     #[kaalang]
     fn shared_inputs() -> u8 {
         #[action("Produce the first value.")]
-        || -> first { 2u8 };
+        let first = || { 2u8 };
 
         #[action("Produce the second value.")]
-        || -> second { 3u8 };
+        let second = || { 3u8 };
 
         #[action("Add the values.")]
-        |&first, &second| -> sum { first + second };
+        let sum = |&first, &second| { first + second };
 
         #[action("Multiply the values.")]
-        |&first, &second| -> product { first * second };
+        let product = |&first, &second| { first * second };
 
         #[action("Finish from both combinations.")]
-        |sum, product| -> result { sum + product };
+        let result = |sum, product| { sum + product };
     }
 "#;
 
@@ -579,11 +579,11 @@ fn long_wire_labels_clear_a_tall_neighbor() {
         #[kaalang]
         fn example(condition: bool) -> u8 {{
             #[question("Choose a branch.")]
-            |condition| -> (the_rather_long_named_left_branch_wire, no) {{ condition }};
+            let (the_rather_long_named_left_branch_wire, no) = |condition| {{ condition }};
             #[action("Short action.")]
-            |the_rather_long_named_left_branch_wire| -> result {{ 1 }};
+            let result = |the_rather_long_named_left_branch_wire| {{ 1 }};
             #[action({:?})]
-            |no| -> result {{ 2 }};
+            let result = |no| {{ 2 }};
         }}
     "#,
         "A tall description.\n".repeat(16)
@@ -599,11 +599,11 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
         #[kaalang]
         fn example(condition: bool) -> u8 {
             #[question("Choose a branch.")]
-            |condition| -> (yes, a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection) { condition };
+            let (yes, a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection) = |condition| { condition };
             #[action("Take the first branch.")]
-            |yes| -> result { 1 };
+            let result = |yes| { 1 };
             #[action("Take the second branch.")]
-            |a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection| -> result { 2 };
+            let result = |a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection| { 2 };
         }
     "#,
         "example",
@@ -636,11 +636,11 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
             #[question("Choose a branch.")]
             #[no]
             #[yes("Take the longer continuation description that must wrap beside the branch.")]
-            |condition| -> (fallback, proceed) { condition };
+            let (fallback, proceed) = |condition| { condition };
             #[action("Use the fallback.")]
-            |fallback| -> result { 0 };
+            let result = |fallback| { 0 };
             #[action("Proceed.")]
-            |proceed| -> result { 1 };
+            let result = |proceed| { 1 };
         }
     "#,
         "example",
@@ -719,25 +719,25 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
         #[kaalang]
         fn serial(first_seed: u8, second_seed: u8, third_seed: u8) -> u8 {
             #[action("Produce the first value.")]
-            |first_seed| -> first { first_seed };
+            let first = |first_seed| { first_seed };
 
             #[action("Produce the second value.")]
-            |second_seed| -> second { second_seed };
+            let second = |second_seed| { second_seed };
 
             #[action("Produce the third value.")]
-            |third_seed| -> third { third_seed };
+            let third = |third_seed| { third_seed };
 
             #[action("Combine the values one way.")]
-            |&first, &second, &third| -> one { first + second + third };
+            let one = |&first, &second, &third| { first + second + third };
 
             #[action("Combine the values another way.")]
-            |&first, &second, &third| -> two { first * second * third };
+            let two = |&first, &second, &third| { first * second * third };
 
             #[action("Combine the values a third way.")]
-            |&first, &second, &third| -> three { first ^ second ^ third };
+            let three = |&first, &second, &third| { first ^ second ^ third };
 
             #[action("Finish from all three combinations.")]
-            |one, two, three| -> result { one + two + three };
+            let result = |one, two, three| { one + two + three };
         }
     "#;
     let scene = drawn((source, "serial"));
@@ -833,6 +833,10 @@ fn the_end_node_names_only_the_flow_return_type() {
         ),
         (fixture!("empty_flow/behavior", "nothing"), "-> ()"),
         (fixture!("end/behavior", "capture_from_a_branch"), "-> ()"),
+        (
+            fixture!("capture/behavior", "local_mutability_of_outputs"),
+            "-> (String, u32, u32)",
+        ),
     ] {
         let scene = drawn((source, flow));
         let end = end_node(&scene);
@@ -859,7 +863,7 @@ fn start_separates_the_flow_name_and_typed_parameters() {
             T: Copy,
         {
             #[action("Return the input.")]
-            |r#type| -> result { r#type };
+            let result = |r#type| { r#type };
         }
     "#;
     let scene = drawn((source, "example"));

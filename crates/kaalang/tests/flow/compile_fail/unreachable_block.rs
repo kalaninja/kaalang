@@ -6,16 +6,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Which way?")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Finish the yes branch and mark it.")]
-    |yes| -> (_left, result) { ((), 1) };
+    let (_left, result) = |yes| { ((), 1) };
 
     #[action("Finish the no branch and mark it.")]
-    |no| -> (_right, result) { ((), 2) };
+    let (_right, result) = |no| { ((), 2) };
 
     #[action("Combine two markers no execution provides together.")]
-    |_left, _right| -> _reused { () };
+    let _reused = |_left, _right| { () };
 }
 
 fn main() {}

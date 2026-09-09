@@ -1,11 +1,11 @@
 error[E0596]: cannot borrow value as mutable, as it is not declared as mutable
- --> tests/capture/compile_fail/immutable_flow_parameter.rs:6:11
+ --> tests/capture/compile_fail/immutable_flow_parameter.rs:6:24
   |
 3 | #[kaalang]
   | ---------- in this attribute macro expansion
 ...
-6 |     |&mut value| -> result {
-  |           ^^^^^ cannot borrow as mutable
+6 |     let result = |&mut value| {
+  |                        ^^^^^ cannot borrow as mutable
   |
   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider changing this to be mutable

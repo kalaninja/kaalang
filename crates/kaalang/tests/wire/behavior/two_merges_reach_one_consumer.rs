@@ -6,25 +6,25 @@ use kaalang::kaalang;
 #[kaalang]
 fn two_merges_reach_one_consumer(scale: bool, offset: bool) -> u32 {
     #[question("Scale the value?")]
-    |scale| -> (scaled, plain) { scale };
+    let (scaled, plain) = |scale| scale;
 
     #[action("Take the scaled factor.")]
-    |scaled| -> factor { 10u32 };
+    let factor = |scaled| 10u32;
 
     #[action("Take the plain factor.")]
-    |plain| -> factor { 1u32 };
+    let factor = |plain| 1u32;
 
     #[question("Offset the value?")]
-    |offset| -> (shifted, centred) { offset };
+    let (shifted, centred) = |offset| offset;
 
     #[action("Take the shifted base.")]
-    |shifted| -> base { 5u32 };
+    let base = |shifted| 5u32;
 
     #[action("Take the centred base.")]
-    |centred| -> base { 0u32 };
+    let base = |centred| 0u32;
 
     #[action("Combine both merged values.")]
-    |factor, base| -> result { factor + base };
+    let result = |factor, base| factor + base;
 }
 
 #[test]

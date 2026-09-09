@@ -1,5 +1,5 @@
 error: a kaalang branch output is consumed, never borrowed
- --> tests/capture/compile_fail/borrowed_question_output.rs:9:7
+ --> tests/capture/compile_fail/borrowed_question_output.rs:9:20
   |
-9 |     |&yes| -> result { 1 };
-  |       ^^^
+9 |     let result = |&yes| { 1 };
+  |                    ^^^

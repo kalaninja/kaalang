@@ -5,13 +5,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn repeated_copy_captures(input: u32) -> (u32, u32) {
     #[action("Consume the input.")]
-    |input| -> first { input };
+    let first = |input| input;
 
     #[action("Consume the input again.")]
-    |input| -> second { input + 1 };
+    let second = |input| input + 1;
 
     #[action("Pair the two values.")]
-    |first, second| -> result { (first, second) };
+    let result = |first, second| (first, second);
 }
 
 #[test]

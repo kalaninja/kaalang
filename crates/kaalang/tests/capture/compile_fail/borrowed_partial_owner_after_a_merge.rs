@@ -8,7 +8,7 @@ fn invalid(source: u8) -> usize {
     #[case("First source.")]
     #[case("Second source.")]
     #[case("Fallback.")]
-    |source| -> (first, second, fallback) {
+    let (first, second, fallback) = |source| {
         match source {
             0 => (),
             1 => (),
@@ -17,19 +17,19 @@ fn invalid(source: u8) -> usize {
     };
 
     #[action("Build the first text.")]
-    |first| -> text { String::from("abc") };
+    let text = |first| { String::from("abc") };
 
     #[action("Build the second text.")]
-    |second| -> text { String::from("defg") };
+    let text = |second| { String::from("defg") };
 
     #[action("Borrow the partially merged text.")]
-    |&text| -> view { text.as_str() };
+    let view = |&text| { text.as_str() };
 
     #[action("Use the fallback text.")]
-    |fallback| -> view { "fallback" };
+    let view = |fallback| { "fallback" };
 
     #[action("Measure the merged view.")]
-    |view| -> result { view.len() };
+    let result = |view| { view.len() };
 }
 
 fn main() {}

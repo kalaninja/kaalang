@@ -1,10 +1,10 @@
 error[E0507]: cannot move out of `*input` which is behind a shared reference
- --> tests/capture/compile_fail/move_from_borrowed_input.rs:6:26
+ --> tests/capture/compile_fail/move_from_borrowed_input.rs:6:29
   |
-6 |     |&input| -> result { input.into_bytes().len() };
-  |                          ^^^^^ ------------ `*input` moved due to this method call
-  |                          |
-  |                          move occurs because `*input` has type `String`, which does not implement the `Copy` trait
+6 |     let result = |&input| { input.into_bytes().len() };
+  |                             ^^^^^ ------------ `*input` moved due to this method call
+  |                             |
+  |                             move occurs because `*input` has type `String`, which does not implement the `Copy` trait
   |
 note: `String::into_bytes` takes ownership of the receiver `self`, which moves `*input`
  --> $RUST/alloc/src/string.rs
@@ -13,9 +13,9 @@ note: `String::into_bytes` takes ownership of the receiver `self`, which moves `
   |                             ^^^^
 help: you can `clone` the value and consume it, but this might not be your desired behavior
   |
-6 |     |&input| -> result { <String as Clone>::clone(&input).into_bytes().len() };
-  |                          ++++++++++++++++++++++++++     +
+6 |     let result = |&input| { <String as Clone>::clone(&input).into_bytes().len() };
+  |                             ++++++++++++++++++++++++++     +
 help: consider cloning the value if the performance cost is acceptable
   |
-6 |     |&input| -> result { input.clone().into_bytes().len() };
-  |                               ++++++++
+6 |     let result = |&input| { input.clone().into_bytes().len() };
+  |                                  ++++++++

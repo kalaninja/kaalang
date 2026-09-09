@@ -6,13 +6,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn borrowers_before_a_move(text: String) -> (usize, bool, String) {
     #[action("Measure the text.")]
-    |&text| -> (length, trigger) { (text.len(), ()) };
+    let (length, trigger) = |&text| (text.len(), ());
 
     #[action("Ask whether the text is empty.")]
-    |&text| -> empty { text.is_empty() };
+    let empty = |&text| text.is_empty();
 
     #[action("Take the text once the trigger and both borrows are done.")]
-    |trigger, text, length, empty| -> result { (length, empty, text) };
+    let result = |trigger, text, length, empty| (length, empty, text);
 }
 
 #[test]

@@ -1,5 +1,5 @@
 error: kaalang block inputs must use simple identifiers
- --> tests/capture/compile_fail/reference_input.rs:6:6
+ --> tests/capture/compile_fail/reference_input.rs:6:20
   |
-6 |     |ref value| -> doubled { *value * 2 };
-  |      ^^^^^^^^^
+6 |     let doubled = |ref value| { *value * 2 };
+  |                    ^^^^^^^^^

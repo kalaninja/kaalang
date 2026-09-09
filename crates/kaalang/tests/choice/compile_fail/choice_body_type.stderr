@@ -1,5 +1,5 @@
 error: a kaalang choice body must contain exactly one `match` expression or `todo!()`
- --> tests/choice/compile_fail/choice_body_type.rs:8:40
+ --> tests/choice/compile_fail/choice_body_type.rs:8:43
   |
-8 |     |input| -> (negative, nonnegative) { true };
-  |                                        ^^^^^^^^
+8 |     let (negative, nonnegative) = |input| { true };
+  |                                           ^^^^^^^^

@@ -1,8 +1,8 @@
 error: variable does not need to be mutable
- --> tests/capture/compile_fail/unused_mutable_capture.rs:8:10
+ --> tests/capture/compile_fail/unused_mutable_capture.rs:8:23
   |
-8 |     |mut value| -> result { value };
-  |          ^^^^^ help: remove this `mut`
+8 |     let result = |mut value| { value };
+  |                       ^^^^^ help: remove this `mut`
   |
 note: the lint level is defined here
  --> tests/capture/compile_fail/unused_mutable_capture.rs:1:9

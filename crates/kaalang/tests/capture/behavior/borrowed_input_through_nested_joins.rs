@@ -5,25 +5,25 @@ use kaalang::kaalang;
 #[kaalang]
 fn borrowed_input_through_nested_joins(outer: bool, inner: bool, text: String) -> usize {
     #[question("Use the nested branch?")]
-    |outer| -> (nested, fallback) { outer };
+    let (nested, fallback) = |outer| outer;
 
     #[question("Borrow the flow input?")]
-    |nested, inner| -> (borrow, skip) { inner };
+    let (borrow, skip) = |nested, inner| inner;
 
     #[action("Borrow the flow input.")]
-    |borrow, &text| -> partial { text.as_str() };
+    let partial = |borrow, &text| text.as_str();
 
     #[action("Use the inner fallback.")]
-    |skip| -> partial { "inner" };
+    let partial = |skip| "inner";
 
     #[action("Carry the inner view onward.")]
-    |partial| -> view { partial };
+    let view = |partial| partial;
 
     #[action("Use the outer fallback.")]
-    |fallback| -> view { "fallback" };
+    let view = |fallback| "fallback";
 
     #[action("Measure the final view.")]
-    |view| -> result { view.len() };
+    let result = |view| view.len();
 }
 
 #[test]

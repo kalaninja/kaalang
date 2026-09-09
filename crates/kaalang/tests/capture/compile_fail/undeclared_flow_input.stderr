@@ -1,5 +1,5 @@
 error[E0425]: cannot find value `input` in this scope
- --> tests/capture/compile_fail/undeclared_flow_input.rs:6:27
+ --> tests/capture/compile_fail/undeclared_flow_input.rs:6:30
   |
-6 |     |trigger| -> output { input };
-  |                           ^^^^^ not found in this scope
+6 |     let output = |trigger| { input };
+  |                              ^^^^^ not found in this scope

@@ -3,16 +3,16 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Choose a branch.")]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 
     #[action("Build both required values.")]
-    |yes| -> (selected, continuation) { (1, ()) };
+    let (selected, continuation) = |yes| { (1, ()) };
 
     #[action("Build only one required value.")]
-    |no| -> continuation { () };
+    let continuation = |no| { () };
 
     #[action("Use both values.")]
-    |selected, continuation| -> result { selected };
+    let result = |selected, continuation| { selected };
 }
 
 fn main() {}

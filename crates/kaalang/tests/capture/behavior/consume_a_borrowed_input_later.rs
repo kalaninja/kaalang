@@ -3,10 +3,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn consume_a_borrowed_input_later(input: u32, log: &mut Vec<u32>) -> u32 {
     #[action("Record the input the flow returns.")]
-    |&input, log| -> logged { log.push(*input) };
+    let logged = |&input, log| log.push(*input);
 
     #[action("Return the recorded input.")]
-    |input, logged| -> result { input };
+    let result = |input, logged| input;
 }
 
 #[test]

@@ -3,22 +3,22 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_convergence(outer: bool, inner: bool) -> u32 {
     #[question("Take the nested branch?")]
-    |outer, &inner| -> (nested, direct) { outer };
+    let (nested, direct) = |outer, &inner| outer;
 
     #[question("Choose the nested value.")]
-    |nested, inner| -> (inner_yes, inner_no) { inner };
+    let (inner_yes, inner_no) = |nested, inner| inner;
 
     #[action("Build the nested yes value.")]
-    |inner_yes| -> selected { 1 };
+    let selected = |inner_yes| 1;
 
     #[action("Build the nested no value.")]
-    |inner_no| -> selected { 2 };
+    let selected = |inner_no| 2;
 
     #[action("Build the direct value.")]
-    |direct| -> selected { 3 };
+    let selected = |direct| 3;
 
     #[action("Use the selected nested value.")]
-    |selected| -> result { selected * 10 };
+    let result = |selected| selected * 10;
 }
 
 #[test]

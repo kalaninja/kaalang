@@ -6,28 +6,26 @@ fn run_choice(value: i32, branch_action_count: &mut usize) -> &'static str {
     #[case("The value is negative.")]
     #[case("The value is zero.")]
     #[case("The value is positive.")]
-    |value| -> (negative, zero, positive) {
-        match value {
-            ..0 => (),
-            0 => (),
-            _ => (),
-        }
+    let (negative, zero, positive) = |value| match value {
+        ..0 => (),
+        0 => (),
+        _ => (),
     };
 
     #[action("Produce the negative result.")]
-    |negative, branch_action_count| -> result {
+    let result = |negative, branch_action_count| {
         *branch_action_count += 1;
         "negative"
     };
 
     #[action("Produce the zero result.")]
-    |zero, branch_action_count| -> result {
+    let result = |zero, branch_action_count| {
         *branch_action_count += 1;
         "zero"
     };
 
     #[action("Produce the positive result.")]
-    |positive, branch_action_count| -> result {
+    let result = |positive, branch_action_count| {
         *branch_action_count += 1;
         "positive"
     };

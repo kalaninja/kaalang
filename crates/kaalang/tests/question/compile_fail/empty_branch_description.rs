@@ -5,7 +5,7 @@ fn invalid(condition: bool) -> u8 {
     #[question("Choose a branch.")]
     #[yes("")]
     #[no]
-    |condition| -> (yes, no) { condition };
+    let (yes, no) = |condition| { condition };
 }
 
 fn main() {}

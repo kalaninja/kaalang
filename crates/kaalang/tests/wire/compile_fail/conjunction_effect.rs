@@ -7,13 +7,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(left: bool, right: bool) -> u8 {
     #[question("Enable the left input.")]
-    |left| -> (a, _left_no) { left };
+    let (a, _left_no) = |left| { left };
 
     #[question("Enable the right input.")]
-    |right| -> (b, _right_no) { right };
+    let (b, _right_no) = |right| { right };
 
     #[action("Require both selected outputs.")]
-    |a, b| -> result { 1 };
+    let result = |a, b| { 1 };
 }
 
 fn main() {}

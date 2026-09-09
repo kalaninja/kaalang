@@ -1,5 +1,5 @@
 error: a kaalang question requires at least one input
- --> tests/syntax/compile_fail/empty_question_inputs.rs:6:6
+ --> tests/syntax/compile_fail/empty_question_inputs.rs:6:22
   |
-6 |     || -> (yes, no) { true };
-  |      ^
+6 |     let (yes, no) = || { true };
+  |                      ^

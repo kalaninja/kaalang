@@ -1,0 +1,13 @@
+error: expected `;`, found `}`
+ --> tests/syntax/compile_fail/missing_let_semicolon.rs:6:35
+  |
+6 |     let result = |input| { input }
+  |                                   ^ help: add `;` here
+7 | }
+  | - unexpected token
+
+error: expected `;`
+ --> tests/syntax/compile_fail/missing_let_semicolon.rs:7:1
+  |
+7 | }
+  | ^

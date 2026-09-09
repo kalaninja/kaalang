@@ -6,25 +6,23 @@ fn convergence_after_a_terminal_case(value: i8) -> &'static str {
     #[case("Finish without a shared step.")]
     #[case("Build the left value.")]
     #[case("Build the right value.")]
-    |value| -> (done, left, right) {
-        match value {
-            ..0 => (),
-            0 => (),
-            _ => (),
-        }
+    let (done, left, right) = |value| match value {
+        ..0 => (),
+        0 => (),
+        _ => (),
     };
 
     #[action("Produce the direct result.")]
-    |done| -> result { "done" };
+    let result = |done| "done";
 
     #[action("Build the left value.")]
-    |left| -> selected { "left" };
+    let selected = |left| "left";
 
     #[action("Build the right value.")]
-    |right| -> selected { "right" };
+    let selected = |right| "right";
 
     #[action("Use the selected value.")]
-    |selected| -> result { selected };
+    let result = |selected| selected;
 }
 
 #[test]

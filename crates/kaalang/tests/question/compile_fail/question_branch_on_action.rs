@@ -4,7 +4,7 @@ use kaalang::kaalang;
 fn invalid() -> u8 {
     #[action("Produce the result.")]
     #[yes]
-    || -> result { 1 };
+    let result = || { 1 };
 }
 
 fn main() {}

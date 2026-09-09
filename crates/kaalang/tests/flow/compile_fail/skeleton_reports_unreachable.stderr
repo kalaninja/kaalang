@@ -1,8 +1,8 @@
 error: unreachable statement
   --> tests/flow/compile_fail/skeleton_reports_unreachable.rs:10:5
    |
- 8 |     |&seed| -> started { todo!() };
-   |                          ------- any code following this expression is unreachable
+ 8 |     let started = |&seed| { todo!() };
+   |                             ------- any code following this expression is unreachable
  9 |
 10 |     #[action("Produce the result.")]
    |     ^ unreachable statement

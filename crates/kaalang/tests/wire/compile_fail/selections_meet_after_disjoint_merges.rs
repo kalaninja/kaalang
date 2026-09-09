@@ -9,7 +9,7 @@ fn invalid(mode: u8, report: bool) -> u8 {
     #[case("Second.")]
     #[case("Third.")]
     #[case("Fourth.")]
-    |mode| -> (a, b, c, d) {
+    let (a, b, c, d) = |mode| {
         match mode {
             0 => (),
             1 => (),
@@ -19,37 +19,37 @@ fn invalid(mode: u8, report: bool) -> u8 {
     };
 
     #[action("First value.")]
-    |a| -> early { 1u8 };
+    let early = |a| { 1u8 };
 
     #[action("Second value.")]
-    |b| -> early { 2u8 };
+    let early = |b| { 2u8 };
 
     #[action("Third value.")]
-    |c| -> late { 3u8 };
+    let late = |c| { 3u8 };
 
     #[action("Fourth value.")]
-    |d| -> late { 4u8 };
+    let late = |d| { 4u8 };
 
     #[question("Report?")]
-    |report| -> (yes, no) { report };
+    let (yes, no) = |report| { report };
 
     #[action("Keep the yes marker.")]
-    |yes| -> kept { 10u8 };
+    let kept = |yes| { 10u8 };
 
     #[action("Keep the no marker.")]
-    |no| -> skipped { 20u8 };
+    let skipped = |no| { 20u8 };
 
     #[action("Finish the early half loudly.")]
-    |early, kept| -> result { early + kept };
+    let result = |early, kept| { early + kept };
 
     #[action("Finish the early half quietly.")]
-    |early, skipped| -> result { early + skipped };
+    let result = |early, skipped| { early + skipped };
 
     #[action("Finish the late half loudly.")]
-    |late, kept| -> result { late + kept };
+    let result = |late, kept| { late + kept };
 
     #[action("Finish the late half quietly.")]
-    |late, skipped| -> result { late + skipped };
+    let result = |late, skipped| { late + skipped };
 }
 
 fn main() {}

@@ -1,5 +1,5 @@
 error: a kaalang block body must not use a `return` expression
- --> tests/action/compile_fail/action_return.rs:6:26
+ --> tests/action/compile_fail/action_return.rs:6:29
   |
-6 |     |value| -> doubled { return value * 2 };
-  |                          ^^^^^^^^^^^^^^^^
+6 |     let doubled = |value| { return value * 2 };
+  |                             ^^^^^^^^^^^^^^^^

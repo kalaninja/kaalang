@@ -6,16 +6,16 @@ fn run_choice_skeleton_with_a_shared_consumer(value: i32) -> i32 {
     #[choice("What is the sign of the value?")]
     #[case("The value is negative.")]
     #[case("The value is nonnegative.")]
-    |value| -> (negative, nonnegative) { todo!() };
+    let (negative, nonnegative) = |value| todo!();
 
     #[action("Build the negative magnitude.")]
-    |negative| -> magnitude { todo!() };
+    let magnitude = |negative| todo!();
 
     #[action("Build the nonnegative magnitude.")]
-    |nonnegative| -> magnitude { todo!() };
+    let magnitude = |nonnegative| todo!();
 
     #[action("Use the selected magnitude.")]
-    |magnitude| -> result { magnitude };
+    let result = |magnitude| magnitude;
 }
 
 #[test]

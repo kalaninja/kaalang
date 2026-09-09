@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn nothing() {
     #[action("Finish without doing anything.")]
-    || -> result {};
+    let result = || {};
 }
 
 #[test]

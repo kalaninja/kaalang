@@ -1,8 +1,8 @@
 error[E0425]: cannot find value `__kaalang_wire_0` in this scope
- --> tests/capture/compile_fail/hidden_internal_wire.rs:6:27
+ --> tests/capture/compile_fail/hidden_internal_wire.rs:6:30
   |
-6 |     |trigger| -> output { __kaalang_wire_0 };
-  |                           ^^^^^^^^^^^^^^^^ not found in this scope
+6 |     let output = |trigger| { __kaalang_wire_0 };
+  |                              ^^^^^^^^^^^^^^^^ not found in this scope
   |
 help: an identifier with the same name is defined here, but is not accessible due to macro hygiene
  --> tests/capture/compile_fail/hidden_internal_wire.rs:4:12

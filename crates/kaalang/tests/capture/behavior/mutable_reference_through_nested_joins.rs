@@ -7,37 +7,37 @@ fn mutable_reference_through_nested_joins(
     mut text: String,
 ) -> (String, usize) {
     #[question("Use the nested branch?")]
-    |outer| -> (nested, fallback) { outer };
+    let (nested, fallback) = |outer| outer;
 
     #[question("Choose the inner mutation.")]
-    |nested, inner| -> (first, second) { inner };
+    let (first, second) = |nested, inner| inner;
 
     #[action("Borrow and append the first suffix.")]
-    |first, &mut text| -> partial {
+    let partial = |first, &mut text| {
         text.push('a');
         text
     };
 
     #[action("Borrow and append the second suffix.")]
-    |second, &mut text| -> partial {
+    let partial = |second, &mut text| {
         text.push('b');
         text
     };
 
     #[action("Carry the borrowed value onward.")]
-    |partial| -> view { partial };
+    let view = |partial| partial;
 
     #[action("Borrow on the fallback branch.")]
-    |fallback, &mut text| -> view { text };
+    let view = |fallback, &mut text| text;
 
     #[action("Mutate through the reference after both joins.")]
-    |view| -> length {
+    let length = |view| {
         view.push('!');
         view.len()
     };
 
     #[action("Move the owner after the reference's last use.")]
-    |text, length| -> result { (text, length) };
+    let result = |text, length| (text, length);
 }
 
 #[test]

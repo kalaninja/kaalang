@@ -1,3 +1,4 @@
+mod destructure_singleton_tuple;
 mod effect_without_wires;
 mod effects_without_outputs;
 mod entry_effect_without_wires;

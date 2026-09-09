@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
-// The other zero-output spelling: an omitted arrow declares no wires, so Rust
-// checks the body against `()` just as `-> ()` does.
+// An action without an output declaration produces no wires, so Rust
+// checks the body against `()` just as `let ()` does.
 #[kaalang]
 fn invalid(input: u32) {
     #[action("Omit the outputs and return a value anyway.")]
@@ -11,7 +11,7 @@ fn invalid(input: u32) {
     };
 
     #[action("Finish.")]
-    || -> result {};
+    let result = || {};
 }
 
 fn main() {}

@@ -231,7 +231,7 @@ fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
 fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
     let names = names
         .iter()
-        .filter(|name| name.as_str() != "result")
+        .filter(|name| !matches!(name.as_str(), "result" | "mut result"))
         .cloned()
         .collect::<Vec<_>>();
     (!names.is_empty()).then(|| wrap_text(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
