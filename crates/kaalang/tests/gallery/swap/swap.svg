@@ -1,34 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="388" viewBox="0 0 344 388" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="396" viewBox="0 0 680 396" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for swap</title>
-  <desc id="kaalang-description">Nodes: Start: swap&lt;T&gt;(a: T, b: T) -&gt; (T, T) handing over a, b; Action: Exchange the pair. capturing a, b handing over result; End: (T, T) capturing result. Connections: Start: swap&lt;T&gt;(a: T, b: T) -&gt; (T, T) to Action: Exchange the pair.; Action: Exchange the pair. to End: (T, T).</desc>
+  <desc id="kaalang-description">Nodes: Start: swap&lt;T&gt; with parameters a: T; b: T handing over a, b; Action: Exchange the pair. capturing a, b handing over result; End: (T, T) capturing result. Connections: Start: swap&lt;T&gt; to Action: Exchange the pair.; Action: Exchange the pair. to End: (T, T).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 226 L 172 298"/>
-    <text class="connection-label" x="195" y="121" xml:space="preserve"><tspan x="195" dy="0">a, b</tspan></text>
+    <path class="connection" d="M 172 94 L 172 170"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <text class="connection-label" x="195" y="127" xml:space="preserve"><tspan x="195" dy="0">a, b</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">swap&lt;T&gt;(a: T, b: T) -&gt; (T, T)</tspan></text>
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">a: T</tspan><tspan x="-104" dy="18">b: T</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 194)">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">swap&lt;T&gt;</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Exchange the pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Exchange the pair.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 327)">
+    <g class="node end" transform="translate(172 335)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; (T, T)</tspan></text>
     </g>

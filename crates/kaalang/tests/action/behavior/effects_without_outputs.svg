@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="1292" viewBox="0 0 704 1292" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for effects_without_outputs</title>
-  <desc id="kaalang-description">Nodes: Start: effects_without_outputs(condition: bool, log: &amp;Cell&lt;u32&gt;) -&gt; u32 handing over condition, log; Action: Record the flow entry. capturing &amp;log; Question: Which way? capturing condition, &amp;log handing over yes / no; Action: Mark the yes branch. capturing yes, &amp;log handing over marked; Action: Record the marked branch. capturing &amp;marked, &amp;log; Action: Take the yes branch. capturing marked, &amp;log handing over taken; Action: Take the no branch. capturing no, &amp;log handing over taken; Action: Record the step above the result. capturing &amp;log; Action: Finish. capturing taken, &amp;log handing over result; End: u32 capturing result. Connections: Start: effects_without_outputs(condition: bool, log: &amp;Cell&lt;u32&gt;) -&gt; u32 to Action: Record the flow entry.; Action: Record the flow entry. to Question: Which way?; Question: Which way? branch 1 to Action: Mark the yes branch.; Question: Which way? branch 2 to Action: Take the no branch.; Action: Mark the yes branch. to Action: Record the marked branch.; Action: Record the marked branch. to Action: Take the yes branch.; Action: Take the yes branch. to the taken merge; Action: Take the no branch. to the taken merge; Action: Record the step above the result. to Action: Finish.; Action: Finish. to End: u32; the taken merge to Action: Record the step above the result..</desc>
+  <desc id="kaalang-description">Nodes: Start: effects_without_outputs with parameters condition: bool; log: &amp;Cell&lt;u32&gt; handing over condition, log; Action: Record the flow entry. capturing &amp;log; Question: Which way? capturing condition, &amp;log handing over yes / no; Action: Mark the yes branch. capturing yes, &amp;log handing over marked; Action: Record the marked branch. capturing &amp;marked, &amp;log; Action: Take the yes branch. capturing marked, &amp;log handing over taken; Action: Take the no branch. capturing no, &amp;log handing over taken; Action: Record the step above the result. capturing &amp;log; Action: Finish. capturing taken, &amp;log handing over result; End: u32 capturing result. Connections: Start: effects_without_outputs to Action: Record the flow entry.; Action: Record the flow entry. to Question: Which way?; Question: Which way? branch 1 to Action: Mark the yes branch.; Question: Which way? branch 2 to Action: Take the no branch.; Action: Mark the yes branch. to Action: Record the marked branch.; Action: Record the marked branch. to Action: Take the yes branch.; Action: Take the yes branch. to the taken merge; Action: Take the no branch. to the taken merge; Action: Record the step above the result. to Action: Finish.; Action: Finish. to End: u32; the taken merge to Action: Record the step above the result..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 234 L 172 306"/>
     <path class="connection" d="M 172 378 L 172 450"/>
     <path class="connection" d="M 312 342 L 532 342 L 532 450"/>
@@ -26,7 +27,7 @@
     <path class="connection" d="M 172 1130 L 172 1202"/>
     <path class="connection" d="M 172 838 L 172 930"/>
     <text class="connection-label" x="201" y="856" xml:space="preserve"><tspan x="201" dy="0">taken</tspan></text>
-    <text class="connection-label" x="224" y="116" xml:space="preserve"><tspan x="224" dy="0">condition, log</tspan></text>
+    <text class="connection-label" x="224" y="112" xml:space="preserve"><tspan x="224" dy="0">condition, log</tspan></text>
     <text class="connection-label" x="195" y="396" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="331" y="360" xml:space="preserve"><tspan x="331" dy="0">no</tspan></text>
     <text class="connection-label" x="207" y="532" xml:space="preserve"><tspan x="207" dy="0">marked</tspan></text>
@@ -40,9 +41,14 @@
     <text class="connection-label" x="217" y="1055" xml:space="preserve"><tspan x="217" dy="0">taken, &amp;log</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">log: &amp;Cell&lt;u32&gt;</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">effects_without_outputs(conditio</tspan><tspan x="0" dy="18">n: bool, log: &amp;Cell&lt;u32&gt;) -&gt; u32</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">effects_without_outputs</tspan></text>
     </g>
     <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Record the flow entry.</title>

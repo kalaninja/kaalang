@@ -1,58 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="740" viewBox="0 0 704 740" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for several_wires</title>
-  <desc id="kaalang-description">Nodes: Start: several_wires(condition: bool) -&gt; (u32, &amp;&apos;static str) handing over condition; Question: Choose a pair. capturing condition handing over yes / no; Action: Build the yes pair. capturing yes handing over number, label; Action: Build the no pair. capturing no handing over number, label; Action: Use both selected values. capturing label, number handing over result; End: (u32, &amp;&apos;static str) capturing result. Connections: Start: several_wires(condition: bool) -&gt; (u32, &amp;&apos;static str) to Question: Choose a pair.; Question: Choose a pair. branch 1 to Action: Build the yes pair.; Question: Choose a pair. branch 2 to Action: Build the no pair.; Action: Build the yes pair. to the number and label merge; Action: Build the no pair. to the number and label merge; Action: Use both selected values. to End: (u32, &amp;&apos;static str); the number and label merge to Action: Use both selected values..</desc>
+  <desc id="kaalang-description">Nodes: Start: several_wires with parameters condition: bool handing over condition; Question: Choose a pair. capturing condition handing over yes / no; Action: Build the yes pair. capturing yes handing over number, label; Action: Build the no pair. capturing no handing over number, label; Action: Use both selected values. capturing label, number handing over result; End: (u32, &amp;&apos;static str) capturing result. Connections: Start: several_wires to Question: Choose a pair.; Question: Choose a pair. branch 1 to Action: Build the yes pair.; Question: Choose a pair. branch 2 to Action: Build the no pair.; Action: Build the yes pair. to the number and label merge; Action: Build the no pair. to the number and label merge; Action: Use both selected values. to End: (u32, &amp;&apos;static str); the number and label merge to Action: Use both selected values..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 586 L 172 658"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="224" y="448" xml:space="preserve"><tspan x="224" dy="0">number, label</tspan></text>
-    <text class="connection-label" x="212" y="129" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
-    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
-    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="224" y="511" xml:space="preserve"><tspan x="224" dy="0">label, number</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 312 198 L 532 198 L 532 306"/>
+    <path class="connection" d="M 172 370 L 172 422"/>
+    <path class="connection" d="M 532 370 L 532 422 L 172 422"/>
+    <path class="connection" d="M 172 578 L 172 650"/>
+    <path class="connection" d="M 172 422 L 172 514"/>
+    <text class="connection-label" x="224" y="440" xml:space="preserve"><tspan x="224" dy="0">number, label</tspan></text>
+    <text class="connection-label" x="212" y="121" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="265" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="422" y="187" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="connection-label" x="224" y="503" xml:space="preserve"><tspan x="224" dy="0">label, number</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">several_wires(condition: bool) -&gt; </tspan><tspan x="0" dy="18">(u32, &amp;&apos;static str)</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 206)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">several_wires</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 198)">
       <title xml:space="preserve">Choose a pair.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 346)">
+    <g class="node action" transform="translate(172 338)">
       <title xml:space="preserve">Build the yes pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the yes pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 346)">
+    <g class="node action" transform="translate(532 338)">
       <title xml:space="preserve">Build the no pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the no pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 554)">
+    <g class="node action" transform="translate(172 546)">
       <title xml:space="preserve">Use both selected values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use both selected values.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 687)">
+    <g class="node end" transform="translate(172 679)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; (u32, &amp;&apos;static str)</tspan></text>
     </g>

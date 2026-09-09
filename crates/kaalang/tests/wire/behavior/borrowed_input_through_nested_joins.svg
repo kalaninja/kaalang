@@ -1,83 +1,89 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1122" viewBox="0 0 1064 1122" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1118" viewBox="0 0 1064 1118" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_input_through_nested_joins</title>
-  <desc id="kaalang-description">Nodes: Start: borrowed_input_through_nested_joins(outer: bool, inner: bool, text: String) -&gt; usize handing over outer, inner, text; Question: Use the nested branch? capturing outer handing over nested / fallback; Question: Borrow the flow input? capturing nested, inner handing over borrow / skip; Action: Borrow the flow input. capturing borrow, &amp;text handing over partial; Action: Use the inner fallback. capturing skip handing over partial; Action: Carry the inner view onward. capturing partial handing over view; Action: Use the outer fallback. capturing fallback handing over view; Action: Measure the final view. capturing view handing over result; End: usize capturing result. Connections: Start: borrowed_input_through_nested_joins(outer: bool, inner: bool, text: String) -&gt; usize to Question: Use the nested branch?; Question: Use the nested branch? branch 1 to Question: Borrow the flow input?; Question: Use the nested branch? branch 2 to Action: Use the outer fallback.; Question: Borrow the flow input? branch 1 to Action: Borrow the flow input.; Question: Borrow the flow input? branch 2 to Action: Use the inner fallback.; Action: Borrow the flow input. to the partial merge; Action: Use the inner fallback. to the partial merge; Action: Carry the inner view onward. to the view merge; Action: Use the outer fallback. to the view merge; Action: Measure the final view. to End: usize; the partial merge to Action: Carry the inner view onward.; the view merge to Action: Measure the final view..</desc>
+  <desc id="kaalang-description">Nodes: Start: borrowed_input_through_nested_joins with parameters outer: bool; inner: bool; text: String handing over outer, inner, text; Question: Use the nested branch? capturing outer handing over nested / fallback; Question: Borrow the flow input? capturing nested, inner handing over borrow / skip; Action: Borrow the flow input. capturing borrow, &amp;text handing over partial; Action: Use the inner fallback. capturing skip handing over partial; Action: Carry the inner view onward. capturing partial handing over view; Action: Use the outer fallback. capturing fallback handing over view; Action: Measure the final view. capturing view handing over result; End: usize capturing result. Connections: Start: borrowed_input_through_nested_joins to Question: Use the nested branch?; Question: Use the nested branch? branch 1 to Question: Borrow the flow input?; Question: Use the nested branch? branch 2 to Action: Use the outer fallback.; Question: Borrow the flow input? branch 1 to Action: Borrow the flow input.; Question: Borrow the flow input? branch 2 to Action: Use the inner fallback.; Action: Borrow the flow input. to the partial merge; Action: Use the inner fallback. to the partial merge; Action: Carry the inner view onward. to the view merge; Action: Use the outer fallback. to the view merge; Action: Measure the final view. to End: usize; the partial merge to Action: Carry the inner view onward.; the view merge to Action: Measure the final view..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 120 L 172 192"/>
-    <path class="connection" d="M 172 264 L 172 336"/>
-    <path class="connection" d="M 312 228 L 892 228 L 892 340"/>
-    <path class="connection" d="M 172 408 L 172 480"/>
-    <path class="connection" d="M 312 372 L 532 372 L 532 480"/>
-    <path class="connection" d="M 172 544 L 172 596"/>
-    <path class="connection" d="M 532 544 L 532 596 L 172 596"/>
-    <path class="connection" d="M 172 752 L 172 804"/>
-    <path class="connection" d="M 892 404 L 892 804 L 172 804"/>
-    <path class="connection" d="M 172 960 L 172 1032"/>
-    <path class="connection" d="M 172 596 L 172 688"/>
-    <path class="connection" d="M 172 804 L 172 896"/>
-    <text class="connection-label" x="205" y="614" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
-    <text class="connection-label" x="199" y="822" xml:space="preserve"><tspan x="199" dy="0">view</tspan></text>
-    <text class="connection-label" x="602" y="217" xml:space="preserve"><tspan x="602" dy="0">fallback</tspan></text>
-    <text class="connection-label" x="422" y="361" xml:space="preserve"><tspan x="422" dy="0">skip</tspan></text>
-    <text class="connection-label" x="238" y="138" xml:space="preserve"><tspan x="238" dy="0">outer, inner, text</tspan></text>
-    <text class="connection-label" x="205" y="282" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
-    <text class="connection-label" x="207" y="426" xml:space="preserve"><tspan x="207" dy="0">borrow</tspan></text>
-    <text class="connection-label" x="201" y="181" xml:space="preserve"><tspan x="201" dy="0">outer</tspan></text>
-    <text class="connection-label" x="224" y="325" xml:space="preserve"><tspan x="224" dy="0">nested, inner</tspan></text>
-    <text class="connection-label" x="227" y="469" xml:space="preserve"><tspan x="227" dy="0">borrow, &amp;text</tspan></text>
+    <path class="connection" d="M 172 107 L 172 188"/>
+    <path class="connection" d="M 172 260 L 172 332"/>
+    <path class="connection" d="M 312 224 L 892 224 L 892 336"/>
+    <path class="connection" d="M 172 404 L 172 476"/>
+    <path class="connection" d="M 312 368 L 532 368 L 532 476"/>
+    <path class="connection" d="M 172 540 L 172 592"/>
+    <path class="connection" d="M 532 540 L 532 592 L 172 592"/>
+    <path class="connection" d="M 172 748 L 172 800"/>
+    <path class="connection" d="M 892 400 L 892 800 L 172 800"/>
+    <path class="connection" d="M 172 956 L 172 1028"/>
+    <path class="connection" d="M 172 592 L 172 684"/>
+    <path class="connection" d="M 172 800 L 172 892"/>
+    <text class="connection-label" x="205" y="610" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
+    <text class="connection-label" x="199" y="818" xml:space="preserve"><tspan x="199" dy="0">view</tspan></text>
+    <text class="connection-label" x="602" y="213" xml:space="preserve"><tspan x="602" dy="0">fallback</tspan></text>
+    <text class="connection-label" x="422" y="357" xml:space="preserve"><tspan x="422" dy="0">skip</tspan></text>
+    <text class="connection-label" x="238" y="125" xml:space="preserve"><tspan x="238" dy="0">outer, inner, text</tspan></text>
+    <text class="connection-label" x="205" y="278" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
+    <text class="connection-label" x="207" y="422" xml:space="preserve"><tspan x="207" dy="0">borrow</tspan></text>
+    <text class="connection-label" x="201" y="177" xml:space="preserve"><tspan x="201" dy="0">outer</tspan></text>
+    <text class="connection-label" x="224" y="321" xml:space="preserve"><tspan x="224" dy="0">nested, inner</tspan></text>
+    <text class="connection-label" x="227" y="465" xml:space="preserve"><tspan x="227" dy="0">borrow, &amp;text</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 76)">
-      <rect class="node-shape" x="-140" y="-44" width="280" height="88" rx="44"/>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">borrowed_input_through_nested_jo</tspan><tspan x="0" dy="18">ins(outer: bool, inner: bool, text: </tspan><tspan x="0" dy="18">String) -&gt; usize</tspan></text>
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan><tspan x="-104" dy="18">text: String</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 228)">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">borrowed_input_through_nested_jo</tspan><tspan x="0" dy="18">ins</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Use the nested branch?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Use the nested branch?</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 372)">
+    <g class="node question" transform="translate(172 368)">
       <title xml:space="preserve">Borrow the flow input?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Borrow the flow input?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 512)">
+    <g class="node action" transform="translate(172 508)">
       <title xml:space="preserve">Borrow the flow input.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the flow input.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 512)">
+    <g class="node action" transform="translate(532 508)">
       <title xml:space="preserve">Use the inner fallback.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the inner fallback.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 720)">
+    <g class="node action" transform="translate(172 716)">
       <title xml:space="preserve">Carry the inner view onward.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Carry the inner view onward.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 372)">
+    <g class="node action" transform="translate(892 368)">
       <title xml:space="preserve">Use the outer fallback.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the outer fallback.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 928)">
+    <g class="node action" transform="translate(172 924)">
       <title xml:space="preserve">Measure the final view.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the final view.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1061)">
+    <g class="node end" transform="translate(172 1057)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>

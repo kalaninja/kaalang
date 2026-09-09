@@ -1,73 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="964" viewBox="0 0 704 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="990" viewBox="0 0 704 990" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for and</title>
-  <desc id="kaalang-description">Nodes: Start: and(a: bool, b: bool, c: bool) -&gt; bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: Yes / branch 2: No; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: Yes / branch 2: No; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: Yes / branch 2: No; Action: Return true. capturing true_result handing over result; Action: Return false. capturing false_result handing over result; End: bool capturing result. Connections: Start: and(a: bool, b: bool, c: bool) -&gt; bool to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: Return true.; Question: c branch 2 to the false_result merge; Action: Return true. to the result merge; Action: Return false. to the result merge; the false_result merge to Action: Return false.; the result merge to End: bool.</desc>
+  <desc id="kaalang-description">Nodes: Start: and with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: Yes / branch 2: No; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: Yes / branch 2: No; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: Yes / branch 2: No; Action: Return true. capturing true_result handing over result; Action: Return false. capturing false_result handing over result; End: bool capturing result. Connections: Start: and to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: Return true.; Question: c branch 2 to the false_result merge; Action: Return true. to the result merge; Action: Return false. to the result merge; the false_result merge to Action: Return false.; the result merge to End: bool.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 312 198 L 532 198 L 532 594"/>
-    <path class="connection" d="M 172 378 L 172 450"/>
-    <path class="connection" d="M 312 342 L 532 342 L 532 594"/>
-    <path class="connection" d="M 172 522 L 172 666"/>
-    <path class="connection" d="M 312 486 L 532 486 L 532 594"/>
-    <path class="connection" d="M 172 730 L 172 782"/>
-    <path class="connection" d="M 532 730 L 532 782 L 172 782"/>
-    <path class="connection" d="M 532 594 L 532 666"/>
-    <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="582" y="612" xml:space="preserve"><tspan x="582" dy="0">false_result</tspan></text>
-    <text class="connection-label" x="202" y="108" xml:space="preserve"><tspan x="202" dy="0">a, b, c</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="254" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="186" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="398" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="330" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="542" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="474" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
-    <text class="connection-label" x="188" y="151" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
-    <text class="connection-label" x="215" y="295" xml:space="preserve"><tspan x="215" dy="0">check_b, b</tspan></text>
-    <text class="connection-label" x="215" y="439" xml:space="preserve"><tspan x="215" dy="0">check_c, c</tspan></text>
+    <path class="connection" d="M 172 103 L 172 188"/>
+    <path class="connection" d="M 172 260 L 172 332"/>
+    <path class="connection" d="M 312 224 L 532 224 L 532 620"/>
+    <path class="connection" d="M 172 404 L 172 476"/>
+    <path class="connection" d="M 312 368 L 532 368 L 532 620"/>
+    <path class="connection" d="M 172 548 L 172 692"/>
+    <path class="connection" d="M 312 512 L 532 512 L 532 620"/>
+    <path class="connection" d="M 172 756 L 172 808"/>
+    <path class="connection" d="M 532 756 L 532 808 L 172 808"/>
+    <path class="connection" d="M 532 620 L 532 692"/>
+    <path class="connection" d="M 172 808 L 172 900"/>
+    <text class="connection-label" x="582" y="638" xml:space="preserve"><tspan x="582" dy="0">false_result</tspan></text>
+    <text class="connection-label" x="202" y="121" xml:space="preserve"><tspan x="202" dy="0">a, b, c</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="280" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="212" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="424" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="356" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="197" y="568" xml:space="preserve"><tspan x="197" dy="0">Yes</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="333" y="500" xml:space="preserve"><tspan x="333" dy="0">No</tspan></text>
+    <text class="connection-label" x="188" y="177" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
+    <text class="connection-label" x="215" y="321" xml:space="preserve"><tspan x="215" dy="0">check_b, b</tspan></text>
+    <text class="connection-label" x="215" y="465" xml:space="preserve"><tspan x="215" dy="0">check_c, c</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">and(a: bool, b: bool, c: bool) -&gt; bool</tspan></text>
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 198)">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">and</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">a</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">a</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 342)">
+    <g class="node question" transform="translate(172 368)">
       <title xml:space="preserve">b</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">b</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 486)">
+    <g class="node question" transform="translate(172 512)">
       <title xml:space="preserve">c</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">c</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 698)">
+    <g class="node action" transform="translate(172 724)">
       <title xml:space="preserve">Return true.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return true.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 698)">
+    <g class="node action" transform="translate(532 724)">
       <title xml:space="preserve">Return false.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return false.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 903)">
+    <g class="node end" transform="translate(172 929)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; bool</tspan></text>
     </g>

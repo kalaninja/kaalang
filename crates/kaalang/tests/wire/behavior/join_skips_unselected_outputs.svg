@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1168" viewBox="0 0 1064 1168" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for join_skips_unselected_outputs</title>
-  <desc id="kaalang-description">Nodes: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8 handing over outer, inner; Question: Choose an outer branch. capturing outer handing over left / right; Action: Prepare the left branch. capturing left handing over probe, left_value; Question: Take the far left branch? capturing probe, inner handing over far / near; Action: Produce the near left value and an unused alternative. capturing near, &amp;left_value handing over _unused, selected; Action: Produce the far left value. capturing far, &amp;left_value handing over selected; Action: Produce the right value and an unused alternative. capturing right handing over _unused, selected; Action: Use the selected value. capturing selected handing over result; End: u8 capturing result. Connections: Start: join_skips_unselected_outputs(outer: bool, inner: bool) -&gt; u8 to Question: Choose an outer branch.; Question: Choose an outer branch. branch 1 to Action: Prepare the left branch.; Question: Choose an outer branch. branch 2 to Action: Produce the right value and an unused alternative.; Action: Prepare the left branch. to Question: Take the far left branch?; Question: Take the far left branch? branch 1 to Action: Produce the far left value.; Question: Take the far left branch? branch 2 to Action: Produce the near left value and an unused alternative.; Action: Produce the near left value and an unused alternative. to the selected merge; Action: Produce the far left value. to the selected merge; Action: Produce the right value and an unused alternative. to the selected merge; Action: Use the selected value. to End: u8; the selected merge to Action: Use the selected value..</desc>
+  <desc id="kaalang-description">Nodes: Start: join_skips_unselected_outputs with parameters outer: bool; inner: bool handing over outer, inner; Question: Choose an outer branch. capturing outer handing over left / right; Action: Prepare the left branch. capturing left handing over probe, left_value; Question: Take the far left branch? capturing probe, inner handing over far / near; Action: Produce the near left value and an unused alternative. capturing near, &amp;left_value handing over _unused, selected; Action: Produce the far left value. capturing far, &amp;left_value handing over selected; Action: Produce the right value and an unused alternative. capturing right handing over _unused, selected; Action: Use the selected value. capturing selected handing over result; End: u8 capturing result. Connections: Start: join_skips_unselected_outputs to Question: Choose an outer branch.; Question: Choose an outer branch. branch 1 to Action: Prepare the left branch.; Question: Choose an outer branch. branch 2 to Action: Produce the right value and an unused alternative.; Action: Prepare the left branch. to Question: Take the far left branch?; Question: Take the far left branch? branch 1 to Action: Produce the far left value.; Question: Take the far left branch? branch 2 to Action: Produce the near left value and an unused alternative.; Action: Produce the near left value and an unused alternative. to the selected merge; Action: Produce the far left value. to the selected merge; Action: Produce the right value and an unused alternative. to the selected merge; Action: Use the selected value. to End: u8; the selected merge to Action: Use the selected value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 242 L 172 315"/>
     <path class="connection" d="M 312 206 L 892 206 L 892 314"/>
     <path class="connection" d="M 172 379 L 172 452"/>
@@ -27,7 +28,7 @@
     <path class="connection" d="M 172 850 L 172 942"/>
     <text class="connection-label" x="197" y="273" xml:space="preserve"><tspan x="197" dy="0">left</tspan></text>
     <text class="connection-label" x="602" y="195" xml:space="preserve"><tspan x="602" dy="0">right</tspan></text>
-    <text class="connection-label" x="221" y="116" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
+    <text class="connection-label" x="221" y="112" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
     <text class="connection-label" x="236" y="397" xml:space="preserve"><tspan x="236" dy="0">probe, left_value</tspan></text>
     <text class="connection-label" x="195" y="542" xml:space="preserve"><tspan x="195" dy="0">far</tspan></text>
     <text class="connection-label" x="338" y="506" xml:space="preserve"><tspan x="338" dy="0">near</tspan></text>
@@ -41,9 +42,14 @@
     <text class="connection-label" x="210" y="931" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">join_skips_unselected_outputs(out</tspan><tspan x="0" dy="18">er: bool, inner: bool) -&gt; u8</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">join_skips_unselected_outputs</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Choose an outer branch.</title>

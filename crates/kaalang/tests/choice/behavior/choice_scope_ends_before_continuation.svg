@@ -1,73 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1004" viewBox="0 0 704 1004" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="964" viewBox="0 0 704 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for choice_scope_ends_before_continuation</title>
-  <desc id="kaalang-description">Nodes: Start: choice_scope_ends_before_continuation( condition: bool, cell: &amp;RefCell&lt;usize&gt;, evaluations: &amp;Cell&lt;usize&gt;, ) -&gt; usize handing over condition, cell, evaluations; Action: Borrow the cell before choosing. capturing cell handing over input_guard; Select: Which increment should be applied? capturing condition, input_guard, cell, evaluations; Case: Use the next value. handing over number; Case: Use the fallback word&apos;s length. handing over text; Action: Apply the numeric increment after leaving the choice. capturing number, cell handing over result; Action: Apply the text length after leaving the choice. capturing text, cell handing over result; End: usize capturing result. Connections: Start: choice_scope_ends_before_continuation( condition: bool, cell: &amp;RefCell&lt;usize&gt;, evaluations: &amp;Cell&lt;usize&gt;, ) -&gt; usize to Action: Borrow the cell before choosing.; Action: Borrow the cell before choosing. to Select: Which increment should be applied?; Select: Which increment should be applied? to Case: Use the next value.; Select: Which increment should be applied? to Case: Use the fallback word&apos;s length.; Case: Use the next value. to Action: Apply the numeric increment after leaving the choice.; Case: Use the fallback word&apos;s length. to Action: Apply the text length after leaving the choice.; Action: Apply the numeric increment after leaving the choice. to the result merge; Action: Apply the text length after leaving the choice. to the result merge; the result merge to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: choice_scope_ends_before_continuation with parameters condition: bool; cell: &amp;RefCell&lt;usize&gt;; evaluations: &amp;Cell&lt;usize&gt; handing over condition, cell, evaluations; Action: Borrow the cell before choosing. capturing cell handing over input_guard; Select: Which increment should be applied? capturing condition, input_guard, cell, evaluations; Case: Use the next value. handing over number; Case: Use the fallback word&apos;s length. handing over text; Action: Apply the numeric increment after leaving the choice. capturing number, cell handing over result; Action: Apply the text length after leaving the choice. capturing text, cell handing over result; End: usize capturing result. Connections: Start: choice_scope_ends_before_continuation to Action: Borrow the cell before choosing.; Action: Borrow the cell before choosing. to Select: Which increment should be applied?; Select: Which increment should be applied? to Case: Use the next value.; Select: Which increment should be applied? to Case: Use the fallback word&apos;s length.; Case: Use the next value. to Action: Apply the numeric increment after leaving the choice.; Case: Use the fallback word&apos;s length. to Action: Apply the text length after leaving the choice.; Action: Apply the numeric increment after leaving the choice. to the result merge; Action: Apply the text length after leaving the choice. to the result merge; the result merge to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 156 L 172 235"/>
-    <path class="connection" d="M 172 299 L 172 378"/>
-    <path class="connection" d="M 172 450 L 172 535"/>
-    <path class="connection" d="M 172 450 L 172 509 L 532 509 L 532 529"/>
-    <path class="connection" d="M 172 605 L 172 690"/>
-    <path class="connection" d="M 532 611 L 532 690"/>
-    <path class="connection" d="M 172 756 L 172 815"/>
-    <path class="connection" d="M 532 756 L 532 815 L 172 815"/>
-    <path class="connection" d="M 172 815 L 172 914"/>
-    <text class="connection-label" x="264" y="174" xml:space="preserve"><tspan x="264" dy="0">condition, cell, evaluations</tspan></text>
-    <text class="connection-label" x="220" y="317" xml:space="preserve"><tspan x="220" dy="0">input_guard</tspan></text>
-    <text class="connection-label" x="207" y="623" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
-    <text class="connection-label" x="558" y="629" xml:space="preserve"><tspan x="558" dy="0">text</tspan></text>
-    <text class="connection-label" x="195" y="224" xml:space="preserve"><tspan x="195" dy="0">cell</tspan></text>
-    <text class="connection-label" x="269" y="353" xml:space="preserve"><tspan x="269" dy="0">condition, input_guard, cell, </tspan><tspan x="269" dy="14">evaluations</tspan></text>
-    <text class="connection-label" x="221" y="679" xml:space="preserve"><tspan x="221" dy="0">number, cell</tspan></text>
-    <text class="connection-label" x="572" y="679" xml:space="preserve"><tspan x="572" dy="0">text, cell</tspan></text>
+    <path class="connection" d="M 172 107 L 172 195"/>
+    <path class="connection" d="M 172 259 L 172 338"/>
+    <path class="connection" d="M 172 410 L 172 495"/>
+    <path class="connection" d="M 172 410 L 172 469 L 532 469 L 532 489"/>
+    <path class="connection" d="M 172 565 L 172 650"/>
+    <path class="connection" d="M 532 571 L 532 650"/>
+    <path class="connection" d="M 172 716 L 172 775"/>
+    <path class="connection" d="M 532 716 L 532 775 L 172 775"/>
+    <path class="connection" d="M 172 775 L 172 874"/>
+    <text class="connection-label" x="264" y="125" xml:space="preserve"><tspan x="264" dy="0">condition, cell, evaluations</tspan></text>
+    <text class="connection-label" x="220" y="277" xml:space="preserve"><tspan x="220" dy="0">input_guard</tspan></text>
+    <text class="connection-label" x="207" y="583" xml:space="preserve"><tspan x="207" dy="0">number</tspan></text>
+    <text class="connection-label" x="558" y="589" xml:space="preserve"><tspan x="558" dy="0">text</tspan></text>
+    <text class="connection-label" x="195" y="184" xml:space="preserve"><tspan x="195" dy="0">cell</tspan></text>
+    <text class="connection-label" x="269" y="313" xml:space="preserve"><tspan x="269" dy="0">condition, input_guard, cell, </tspan><tspan x="269" dy="14">evaluations</tspan></text>
+    <text class="connection-label" x="221" y="639" xml:space="preserve"><tspan x="221" dy="0">number, cell</tspan></text>
+    <text class="connection-label" x="572" y="639" xml:space="preserve"><tspan x="572" dy="0">text, cell</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 94)">
-      <rect class="node-shape" x="-140" y="-62" width="280" height="124" rx="62"/>
-      <text class="label" y="-21" xml:space="preserve"><tspan x="0" dy="0">choice_scope_ends_before_continu</tspan><tspan x="0" dy="18">ation( condition: bool, cell: </tspan><tspan x="0" dy="18">&amp;RefCell&lt;usize&gt;, evaluations: </tspan><tspan x="0" dy="18">&amp;Cell&lt;usize&gt;, ) -&gt; usize</tspan></text>
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">cell: &amp;RefCell&lt;usize&gt;</tspan><tspan x="-104" dy="18">evaluations: &amp;Cell&lt;usize&gt;</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 267)">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">choice_scope_ends_before_continu</tspan><tspan x="0" dy="18">ation</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 227)">
       <title xml:space="preserve">Borrow the cell before choosing.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the cell before choosing.</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 414)">
+    <g class="node select" transform="translate(172 374)">
       <title xml:space="preserve">Which increment should be applied?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which increment should be </tspan><tspan x="0" dy="18">applied?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 570)">
+    <g class="node case" transform="translate(172 530)">
       <title xml:space="preserve">Use the next value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the next value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 570)">
+    <g class="node case" transform="translate(532 530)">
       <title xml:space="preserve">Use the fallback word&apos;s length.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Use the fallback word&apos;s </tspan><tspan x="0" dy="18">length.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 723)">
+    <g class="node action" transform="translate(172 683)">
       <title xml:space="preserve">Apply the numeric increment after leaving the choice.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Apply the numeric increment </tspan><tspan x="-124" dy="18">after leaving the choice.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 723)">
+    <g class="node action" transform="translate(532 683)">
       <title xml:space="preserve">Apply the text length after leaving the choice.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Apply the text length after </tspan><tspan x="-124" dy="18">leaving the choice.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 943)">
+    <g class="node end" transform="translate(172 903)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>

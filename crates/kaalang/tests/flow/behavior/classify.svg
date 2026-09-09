@@ -1,76 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1012" viewBox="0 0 704 1012" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1020" viewBox="0 0 704 1020" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for classify</title>
-  <desc id="kaalang-description">Nodes: Start: classify(seed: u32, limit: u32) -&gt; u32 handing over seed, limit; Action: Normalize the seed. capturing &amp;seed handing over normalized; Action: Split the seed. capturing normalized handing over left, right; Action: Add the values. capturing left, right, &amp;limit handing over total; Question: Is the total above the limit? capturing &amp;total, &amp;limit handing over accepted / rejected; Action: Keep the accepted total. capturing accepted, total handing over result; Action: Keep the rejected total. capturing rejected, total handing over result; End: u32 capturing result. Connections: Start: classify(seed: u32, limit: u32) -&gt; u32 to Action: Normalize the seed.; Action: Normalize the seed. to Action: Split the seed.; Action: Split the seed. to Action: Add the values.; Action: Add the values. to Question: Is the total above the limit?; Question: Is the total above the limit? branch 1 to Action: Keep the accepted total.; Question: Is the total above the limit? branch 2 to Action: Keep the rejected total.; Action: Keep the accepted total. to the result merge; Action: Keep the rejected total. to the result merge; the result merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: classify with parameters seed: u32; limit: u32 handing over seed, limit; Action: Normalize the seed. capturing &amp;seed handing over normalized; Action: Split the seed. capturing normalized handing over left, right; Action: Add the values. capturing left, right, &amp;limit handing over total; Question: Is the total above the limit? capturing &amp;total, &amp;limit handing over accepted / rejected; Action: Keep the accepted total. capturing accepted, total handing over result; Action: Keep the rejected total. capturing rejected, total handing over result; End: u32 capturing result. Connections: Start: classify to Action: Normalize the seed.; Action: Normalize the seed. to Action: Split the seed.; Action: Split the seed. to Action: Add the values.; Action: Add the values. to Question: Is the total above the limit?; Question: Is the total above the limit? branch 1 to Action: Keep the accepted total.; Question: Is the total above the limit? branch 2 to Action: Keep the rejected total.; Action: Keep the accepted total. to the result merge; Action: Keep the rejected total. to the result merge; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 226 L 172 298"/>
-    <path class="connection" d="M 172 362 L 172 434"/>
-    <path class="connection" d="M 172 498 L 172 570"/>
-    <path class="connection" d="M 172 642 L 172 714"/>
-    <path class="connection" d="M 312 606 L 532 606 L 532 714"/>
-    <path class="connection" d="M 172 778 L 172 830"/>
-    <path class="connection" d="M 532 778 L 532 830 L 172 830"/>
-    <path class="connection" d="M 172 830 L 172 922"/>
-    <text class="connection-label" x="217" y="257" xml:space="preserve"><tspan x="217" dy="0">normalized</tspan></text>
-    <text class="connection-label" x="216" y="108" xml:space="preserve"><tspan x="216" dy="0">seed, limit</tspan></text>
-    <text class="connection-label" x="216" y="380" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="200" y="516" xml:space="preserve"><tspan x="200" dy="0">total</tspan></text>
-    <text class="connection-label" x="211" y="660" xml:space="preserve"><tspan x="211" dy="0">accepted</tspan></text>
-    <text class="connection-label" x="350" y="624" xml:space="preserve"><tspan x="350" dy="0">rejected</tspan></text>
-    <text class="connection-label" x="201" y="151" xml:space="preserve"><tspan x="201" dy="0">&amp;seed</tspan></text>
-    <text class="connection-label" x="237" y="423" xml:space="preserve"><tspan x="237" dy="0">left, right, &amp;limit</tspan></text>
-    <text class="connection-label" x="225" y="559" xml:space="preserve"><tspan x="225" dy="0">&amp;total, &amp;limit</tspan></text>
-    <text class="connection-label" x="231" y="703" xml:space="preserve"><tspan x="231" dy="0">accepted, total</tspan></text>
-    <text class="connection-label" x="589" y="703" xml:space="preserve"><tspan x="589" dy="0">rejected, total</tspan></text>
+    <path class="connection" d="M 172 94 L 172 170"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 370 L 172 442"/>
+    <path class="connection" d="M 172 506 L 172 578"/>
+    <path class="connection" d="M 172 650 L 172 722"/>
+    <path class="connection" d="M 312 614 L 532 614 L 532 722"/>
+    <path class="connection" d="M 172 786 L 172 838"/>
+    <path class="connection" d="M 532 786 L 532 838 L 172 838"/>
+    <path class="connection" d="M 172 838 L 172 930"/>
+    <text class="connection-label" x="217" y="265" xml:space="preserve"><tspan x="217" dy="0">normalized</tspan></text>
+    <text class="connection-label" x="216" y="112" xml:space="preserve"><tspan x="216" dy="0">seed, limit</tspan></text>
+    <text class="connection-label" x="216" y="388" xml:space="preserve"><tspan x="216" dy="0">left, right</tspan></text>
+    <text class="connection-label" x="200" y="524" xml:space="preserve"><tspan x="200" dy="0">total</tspan></text>
+    <text class="connection-label" x="211" y="668" xml:space="preserve"><tspan x="211" dy="0">accepted</tspan></text>
+    <text class="connection-label" x="350" y="632" xml:space="preserve"><tspan x="350" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="201" y="159" xml:space="preserve"><tspan x="201" dy="0">&amp;seed</tspan></text>
+    <text class="connection-label" x="237" y="431" xml:space="preserve"><tspan x="237" dy="0">left, right, &amp;limit</tspan></text>
+    <text class="connection-label" x="225" y="567" xml:space="preserve"><tspan x="225" dy="0">&amp;total, &amp;limit</tspan></text>
+    <text class="connection-label" x="231" y="711" xml:space="preserve"><tspan x="231" dy="0">accepted, total</tspan></text>
+    <text class="connection-label" x="589" y="711" xml:space="preserve"><tspan x="589" dy="0">rejected, total</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">classify(seed: u32, limit: u32) -&gt; u32</tspan></text>
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">seed: u32</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 194)">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">classify</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Normalize the seed.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Normalize the seed.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 330)">
+    <g class="node action" transform="translate(172 338)">
       <title xml:space="preserve">Split the seed.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Split the seed.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 466)">
+    <g class="node action" transform="translate(172 474)">
       <title xml:space="preserve">Add the values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the values.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 606)">
+    <g class="node question" transform="translate(172 614)">
       <title xml:space="preserve">Is the total above the limit?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the total above the limit?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 746)">
+    <g class="node action" transform="translate(172 754)">
       <title xml:space="preserve">Keep the accepted total.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the accepted total.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 746)">
+    <g class="node action" transform="translate(532 754)">
       <title xml:space="preserve">Keep the rejected total.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the rejected total.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 951)">
+    <g class="node end" transform="translate(172 959)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>

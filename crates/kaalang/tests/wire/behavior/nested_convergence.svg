@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="892" viewBox="0 0 1064 892" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_convergence</title>
-  <desc id="kaalang-description">Nodes: Start: nested_convergence(outer: bool, inner: bool) -&gt; u32 handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Question: Choose the nested value. capturing nested, inner handing over inner_yes / inner_no; Action: Build the nested yes value. capturing inner_yes handing over selected; Action: Build the nested no value. capturing inner_no handing over selected; Action: Build the direct value. capturing direct handing over selected; Action: Use the selected nested value. capturing selected handing over result; End: u32 capturing result. Connections: Start: nested_convergence(outer: bool, inner: bool) -&gt; u32 to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Question: Choose the nested value.; Question: Take the nested branch? branch 2 to Action: Build the direct value.; Question: Choose the nested value. branch 1 to Action: Build the nested yes value.; Question: Choose the nested value. branch 2 to Action: Build the nested no value.; Action: Build the nested yes value. to the selected merge; Action: Build the nested no value. to the selected merge; Action: Build the direct value. to the selected merge; Action: Use the selected nested value. to End: u32; the selected merge to Action: Use the selected nested value..</desc>
+  <desc id="kaalang-description">Nodes: Start: nested_convergence with parameters outer: bool; inner: bool handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Question: Choose the nested value. capturing nested, inner handing over inner_yes / inner_no; Action: Build the nested yes value. capturing inner_yes handing over selected; Action: Build the nested no value. capturing inner_no handing over selected; Action: Build the direct value. capturing direct handing over selected; Action: Use the selected nested value. capturing selected handing over result; End: u32 capturing result. Connections: Start: nested_convergence to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Question: Choose the nested value.; Question: Take the nested branch? branch 2 to Action: Build the direct value.; Question: Choose the nested value. branch 1 to Action: Build the nested yes value.; Question: Choose the nested value. branch 2 to Action: Build the nested no value.; Action: Build the nested yes value. to the selected merge; Action: Build the nested no value. to the selected merge; Action: Build the direct value. to the selected merge; Action: Use the selected nested value. to End: u32; the selected merge to Action: Use the selected nested value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 242 L 172 314"/>
     <path class="connection" d="M 312 206 L 892 206 L 892 318"/>
     <path class="connection" d="M 172 386 L 172 458"/>
@@ -28,15 +29,20 @@
     <text class="connection-label" x="602" y="195" xml:space="preserve"><tspan x="602" dy="0">direct</tspan></text>
     <text class="connection-label" x="213" y="417" xml:space="preserve"><tspan x="213" dy="0">inner_yes</tspan></text>
     <text class="connection-label" x="422" y="339" xml:space="preserve"><tspan x="422" dy="0">inner_no</tspan></text>
-    <text class="connection-label" x="221" y="116" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
+    <text class="connection-label" x="221" y="112" xml:space="preserve"><tspan x="221" dy="0">outer, inner</tspan></text>
     <text class="connection-label" x="205" y="260" xml:space="preserve"><tspan x="205" dy="0">nested</tspan></text>
     <text class="connection-label" x="224" y="159" xml:space="preserve"><tspan x="224" dy="0">outer, &amp;inner</tspan></text>
     <text class="connection-label" x="224" y="303" xml:space="preserve"><tspan x="224" dy="0">nested, inner</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_convergence(outer: bool, </tspan><tspan x="0" dy="18">inner: bool) -&gt; u32</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_convergence</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Take the nested branch?</title>

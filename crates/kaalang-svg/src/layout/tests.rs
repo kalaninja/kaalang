@@ -181,7 +181,7 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
             }
         };
         let model = kaalang_model::build(&function).unwrap();
-        let scene = layout(&model, "example", "-> usize").unwrap();
+        let scene = layout(&model, "example", &[], "-> usize").unwrap();
         let labels = scene
             .labels
             .iter()
@@ -312,10 +312,12 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares the flow");
     let model = kaalang_model::build(function).expect("the fixture is a valid flow");
-    let signature = signature_text(source, &function.sig);
+    let start = start_text(source, &function.sig);
+    let parameters = parameter_text(source, &function.sig);
     let scene = layout(
         &model,
-        &signature,
+        &start,
+        &parameters,
         &return_text(source, &function.sig.output),
     )
     .expect("the fixture has a conforming diagram");
@@ -846,6 +848,29 @@ fn the_end_node_names_only_the_flow_return_type() {
             "{flow}: the result wire is labeled"
         );
     }
+}
+
+#[test]
+fn start_separates_the_flow_name_and_typed_parameters() {
+    let source = r#"
+        #[kaalang]
+        fn example<'a, T>(r#type: &'a T, _: usize) -> &'a T
+        where
+            T: Copy,
+        {
+            #[action("Return the input.")]
+            |r#type| -> result { r#type };
+        }
+    "#;
+    let scene = drawn((source, "example"));
+    assert_eq!(
+        scene.topology.node(NodeId::Start).label,
+        "example<'a, T> where T: Copy,"
+    );
+    let parameters = scene.parameters.as_ref().expect("the flow has parameters");
+    assert_eq!(parameters.parameters, ["r#type: &'a T", "_: usize"]);
+    assert_eq!(parameters.lines, parameters.parameters);
+    assert!(parameters.x > scene.node(NodeId::Start).x);
 }
 
 #[test]

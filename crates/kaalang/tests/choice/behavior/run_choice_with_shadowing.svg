@@ -1,65 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="772" viewBox="0 0 704 772" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="754" viewBox="0 0 704 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_shadowing</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32) handing over value, selected; Select: Was a value selected? capturing &amp;value, selected; Case: A value was selected. handing over selected_value; Case: No value was selected. handing over absent; Action: Produce the selected pair. capturing selected_value, value handing over result; Action: Produce the fallback pair. capturing absent, value handing over result; End: (i32, i32) capturing result. Connections: Start: run_choice_with_shadowing(value: i32, selected: Option&lt;i32&gt;) -&gt; (i32, i32) to Select: Was a value selected?; Select: Was a value selected? to Case: A value was selected.; Select: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair.; Case: No value was selected. to Action: Produce the fallback pair.; Action: Produce the selected pair. to the result merge; Action: Produce the fallback pair. to the result merge; the result merge to End: (i32, i32).</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing with parameters value: i32; selected: Option&lt;i32&gt; handing over value, selected; Select: Was a value selected? capturing &amp;value, selected; Case: A value was selected. handing over selected_value; Case: No value was selected. handing over absent; Action: Produce the selected pair. capturing selected_value, value handing over result; Action: Produce the fallback pair. capturing absent, value handing over result; End: (i32, i32) capturing result. Connections: Start: run_choice_with_shadowing to Select: Was a value selected?; Select: Was a value selected? to Case: A value was selected.; Select: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair.; Case: No value was selected. to Action: Produce the fallback pair.; Action: Produce the selected pair. to the result merge; Action: Produce the fallback pair. to the result merge; the result merge to End: (i32, i32).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 116 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 172 260 L 172 312 L 532 312 L 532 332"/>
-    <path class="connection" d="M 172 402 L 172 474"/>
-    <path class="connection" d="M 532 402 L 532 474"/>
-    <path class="connection" d="M 172 538 L 172 590"/>
-    <path class="connection" d="M 532 538 L 532 590 L 172 590"/>
-    <path class="connection" d="M 172 590 L 172 682"/>
-    <text class="connection-label" x="229" y="134" xml:space="preserve"><tspan x="229" dy="0">value, selected</tspan></text>
-    <text class="connection-label" x="229" y="420" xml:space="preserve"><tspan x="229" dy="0">selected_value</tspan></text>
-    <text class="connection-label" x="565" y="420" xml:space="preserve"><tspan x="565" dy="0">absent</tspan></text>
-    <text class="connection-label" x="233" y="177" xml:space="preserve"><tspan x="233" dy="0">&amp;value, selected</tspan></text>
-    <text class="connection-label" x="248" y="463" xml:space="preserve"><tspan x="248" dy="0">selected_value, value</tspan></text>
-    <text class="connection-label" x="584" y="463" xml:space="preserve"><tspan x="584" dy="0">absent, value</tspan></text>
+    <path class="connection" d="M 172 94 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 314"/>
+    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
+    <path class="connection" d="M 172 384 L 172 456"/>
+    <path class="connection" d="M 532 384 L 532 456"/>
+    <path class="connection" d="M 172 520 L 172 572"/>
+    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
+    <path class="connection" d="M 172 572 L 172 664"/>
+    <text class="connection-label" x="229" y="112" xml:space="preserve"><tspan x="229" dy="0">value, selected</tspan></text>
+    <text class="connection-label" x="229" y="402" xml:space="preserve"><tspan x="229" dy="0">selected_value</tspan></text>
+    <text class="connection-label" x="565" y="402" xml:space="preserve"><tspan x="565" dy="0">absent</tspan></text>
+    <text class="connection-label" x="233" y="159" xml:space="preserve"><tspan x="233" dy="0">&amp;value, selected</tspan></text>
+    <text class="connection-label" x="248" y="445" xml:space="preserve"><tspan x="248" dy="0">selected_value, value</tspan></text>
+    <text class="connection-label" x="584" y="445" xml:space="preserve"><tspan x="584" dy="0">absent, value</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">run_choice_with_shadowing(value: </tspan><tspan x="0" dy="18">i32, selected: Option&lt;i32&gt;) -&gt; (i32, </tspan><tspan x="0" dy="18">i32)</tspan></text>
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan><tspan x="-104" dy="18">selected: Option&lt;i32&gt;</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 224)">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">run_choice_with_shadowing</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Was a value selected?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Was a value selected?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 367)">
+    <g class="node case" transform="translate(172 349)">
       <title xml:space="preserve">A value was selected.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A value was selected.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 367)">
+    <g class="node case" transform="translate(532 349)">
       <title xml:space="preserve">No value was selected.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No value was selected.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 506)">
+    <g class="node action" transform="translate(172 488)">
       <title xml:space="preserve">Produce the selected pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the selected pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 506)">
+    <g class="node action" transform="translate(532 488)">
       <title xml:space="preserve">Produce the fallback pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the fallback pair.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 711)">
+    <g class="node end" transform="translate(172 693)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; (i32, i32)</tspan></text>
     </g>

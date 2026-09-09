@@ -9,7 +9,7 @@ fn drawn(source: &str) -> Topology {
     )
 }
 
-/// One flow of an authored fixture file. The signature and return type only
+/// One flow of an authored fixture file. The start and return type only
 /// label start and end, which no test here reads.
 fn fixture(source: &str, flow: &str) -> Topology {
     let file = crate::parse_file(source).unwrap();

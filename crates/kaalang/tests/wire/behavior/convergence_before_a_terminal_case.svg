@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="964" viewBox="0 0 1064 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for convergence_before_a_terminal_case</title>
-  <desc id="kaalang-description">Nodes: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32 handing over case; Select: Choose whether to continue. capturing case; Case: First continuing branch. handing over first; Case: Second continuing branch. handing over second; Case: Terminal case. handing over done; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Produce the direct result. capturing done handing over result; Action: Use a value from a continuing branch. capturing selected handing over result; End: u32 capturing result. Connections: Start: convergence_before_a_terminal_case(case: u8) -&gt; u32 to Select: Choose whether to continue.; Select: Choose whether to continue. to Case: First continuing branch.; Select: Choose whether to continue. to Case: Second continuing branch.; Select: Choose whether to continue. to Case: Terminal case.; Case: First continuing branch. to Action: Build the first value.; Case: Second continuing branch. to Action: Build the second value.; Case: Terminal case. to Action: Produce the direct result.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Produce the direct result. to the result merge; Action: Use a value from a continuing branch. to the result merge; the selected merge to Action: Use a value from a continuing branch.; the result merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: convergence_before_a_terminal_case with parameters case: u8 handing over case; Select: Choose whether to continue. capturing case; Case: First continuing branch. handing over first; Case: Second continuing branch. handing over second; Case: Terminal case. handing over done; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Produce the direct result. capturing done handing over result; Action: Use a value from a continuing branch. capturing selected handing over result; End: u32 capturing result. Connections: Start: convergence_before_a_terminal_case to Select: Choose whether to continue.; Select: Choose whether to continue. to Case: First continuing branch.; Select: Choose whether to continue. to Case: Second continuing branch.; Select: Choose whether to continue. to Case: Terminal case.; Case: First continuing branch. to Action: Build the first value.; Case: Second continuing branch. to Action: Build the second value.; Case: Terminal case. to Action: Produce the direct result.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Produce the direct result. to the result merge; Action: Use a value from a continuing branch. to the result merge; the selected merge to Action: Use a value from a continuing branch.; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -34,9 +35,14 @@
     <text class="connection-label" x="918" y="415" xml:space="preserve"><tspan x="918" dy="0">done</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">case: u8</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">convergence_before_a_terminal_ca</tspan><tspan x="0" dy="18">se(case: u8) -&gt; u32</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">convergence_before_a_terminal_ca</tspan><tspan x="0" dy="18">se</tspan></text>
     </g>
     <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Choose whether to continue.</title>

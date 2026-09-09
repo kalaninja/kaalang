@@ -1,76 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1028" viewBox="0 0 704 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1020" viewBox="0 0 704 1020" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for anonymous_case_values</title>
-  <desc id="kaalang-description">Nodes: Start: anonymous_case_values(value: i32) -&gt; i32 handing over value; Select: Which transformation? capturing value; Case: Negate the value. handing over negate; Case: Double the value. handing over double; Action: Run the negation. capturing negate handing over selected; Action: Run the doubling. capturing double handing over selected; Action: Capture the selected value in a closure. capturing selected handing over increment; Action: Run the selected closure. capturing increment handing over result; End: i32 capturing result. Connections: Start: anonymous_case_values(value: i32) -&gt; i32 to Select: Which transformation?; Select: Which transformation? to Case: Negate the value.; Select: Which transformation? to Case: Double the value.; Case: Negate the value. to Action: Run the negation.; Case: Double the value. to Action: Run the doubling.; Action: Run the negation. to the selected merge; Action: Run the doubling. to the selected merge; Action: Capture the selected value in a closure. to Action: Run the selected closure.; Action: Run the selected closure. to End: i32; the selected merge to Action: Capture the selected value in a closure..</desc>
+  <desc id="kaalang-description">Nodes: Start: anonymous_case_values with parameters value: i32 handing over value; Select: Which transformation? capturing value; Case: Negate the value. handing over negate; Case: Double the value. handing over double; Action: Run the negation. capturing negate handing over selected; Action: Run the doubling. capturing double handing over selected; Action: Capture the selected value in a closure. capturing selected handing over increment; Action: Run the selected closure. capturing increment handing over result; End: i32 capturing result. Connections: Start: anonymous_case_values to Select: Which transformation?; Select: Which transformation? to Case: Negate the value.; Select: Which transformation? to Case: Double the value.; Case: Negate the value. to Action: Run the negation.; Case: Double the value. to Action: Run the doubling.; Action: Run the negation. to the selected merge; Action: Run the doubling. to the selected merge; Action: Capture the selected value in a closure. to Action: Run the selected closure.; Action: Run the selected closure. to End: i32; the selected merge to Action: Capture the selected value in a closure..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
-    <path class="connection" d="M 172 384 L 172 456"/>
-    <path class="connection" d="M 532 384 L 532 456"/>
-    <path class="connection" d="M 172 520 L 172 572"/>
-    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
-    <path class="connection" d="M 172 730 L 172 802"/>
-    <path class="connection" d="M 172 866 L 172 938"/>
-    <path class="connection" d="M 172 572 L 172 664"/>
-    <text class="connection-label" x="210" y="590" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
-    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
-    <text class="connection-label" x="205" y="415" xml:space="preserve"><tspan x="205" dy="0">negate</tspan></text>
-    <text class="connection-label" x="563" y="415" xml:space="preserve"><tspan x="563" dy="0">double</tspan></text>
-    <text class="connection-label" x="215" y="761" xml:space="preserve"><tspan x="215" dy="0">increment</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
+    <path class="connection" d="M 172 376 L 172 448"/>
+    <path class="connection" d="M 532 376 L 532 448"/>
+    <path class="connection" d="M 172 512 L 172 564"/>
+    <path class="connection" d="M 532 512 L 532 564 L 172 564"/>
+    <path class="connection" d="M 172 722 L 172 794"/>
+    <path class="connection" d="M 172 858 L 172 930"/>
+    <path class="connection" d="M 172 564 L 172 656"/>
+    <text class="connection-label" x="210" y="582" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="200" y="121" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="205" y="407" xml:space="preserve"><tspan x="205" dy="0">negate</tspan></text>
+    <text class="connection-label" x="563" y="407" xml:space="preserve"><tspan x="563" dy="0">double</tspan></text>
+    <text class="connection-label" x="215" y="753" xml:space="preserve"><tspan x="215" dy="0">increment</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">anonymous_case_values(value: i32) </tspan><tspan x="0" dy="18">-&gt; i32</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 206)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">anonymous_case_values</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 198)">
       <title xml:space="preserve">Which transformation?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which transformation?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 349)">
+    <g class="node case" transform="translate(172 341)">
       <title xml:space="preserve">Negate the value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Negate the value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 349)">
+    <g class="node case" transform="translate(532 341)">
       <title xml:space="preserve">Double the value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Double the value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 488)">
+    <g class="node action" transform="translate(172 480)">
       <title xml:space="preserve">Run the negation.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the negation.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 488)">
+    <g class="node action" transform="translate(532 480)">
       <title xml:space="preserve">Run the doubling.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the doubling.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 697)">
+    <g class="node action" transform="translate(172 689)">
       <title xml:space="preserve">Capture the selected value in a closure.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Capture the selected value in a </tspan><tspan x="-124" dy="18">closure.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 834)">
+    <g class="node action" transform="translate(172 826)">
       <title xml:space="preserve">Run the selected closure.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the selected closure.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 967)">
+    <g class="node end" transform="translate(172 959)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; i32</tspan></text>
     </g>

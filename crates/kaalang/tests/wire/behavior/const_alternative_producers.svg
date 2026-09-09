@@ -1,52 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="632" viewBox="0 0 704 632" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="606" viewBox="0 0 704 606" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_alternative_producers</title>
-  <desc id="kaalang-description">Nodes: Start: const fn const_alternative_producers(condition: bool) -&gt; u8 handing over condition; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value and an unused marker. capturing yes handing over result, _marker; Action: Build the no value and an unused marker. capturing no handing over result, _marker; End: u8 capturing result. Connections: Start: const fn const_alternative_producers(condition: bool) -&gt; u8 to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value and an unused marker.; Question: Choose a value. branch 2 to Action: Build the no value and an unused marker.; Action: Build the yes value and an unused marker. to the result merge; Action: Build the no value and an unused marker. to the result merge; the result merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: const const_alternative_producers with parameters condition: bool handing over condition; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value and an unused marker. capturing yes handing over result, _marker; Action: Build the no value and an unused marker. capturing no handing over result, _marker; End: u8 capturing result. Connections: Start: const const_alternative_producers to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value and an unused marker.; Question: Choose a value. branch 2 to Action: Build the no value and an unused marker.; Action: Build the yes value and an unused marker. to the result merge; Action: Build the no value and an unused marker. to the result merge; the result merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 116 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
-    <path class="connection" d="M 172 398 L 172 450"/>
-    <path class="connection" d="M 532 398 L 532 450 L 172 450"/>
-    <path class="connection" d="M 172 450 L 172 542"/>
-    <text class="connection-label" x="212" y="147" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
-    <text class="connection-label" x="195" y="291" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
-    <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="210" y="416" xml:space="preserve"><tspan x="210" dy="0">_marker</tspan></text>
-    <text class="connection-label" x="570" y="416" xml:space="preserve"><tspan x="570" dy="0">_marker</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 312 198 L 532 198 L 532 306"/>
+    <path class="connection" d="M 172 372 L 172 424"/>
+    <path class="connection" d="M 532 372 L 532 424 L 172 424"/>
+    <path class="connection" d="M 172 424 L 172 516"/>
+    <text class="connection-label" x="212" y="121" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="195" y="265" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="422" y="187" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="connection-label" x="210" y="390" xml:space="preserve"><tspan x="210" dy="0">_marker</tspan></text>
+    <text class="connection-label" x="570" y="390" xml:space="preserve"><tspan x="570" dy="0">_marker</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">const fn </tspan><tspan x="0" dy="18">const_alternative_producers(condi</tspan><tspan x="0" dy="18">tion: bool) -&gt; u8</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 224)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const const_alternative_producers</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 198)">
       <title xml:space="preserve">Choose a value.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 365)">
+    <g class="node action" transform="translate(172 339)">
       <title xml:space="preserve">Build the yes value and an unused marker.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the yes value and an unused </tspan><tspan x="-124" dy="18">marker.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 365)">
+    <g class="node action" transform="translate(532 339)">
       <title xml:space="preserve">Build the no value and an unused marker.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the no value and an unused </tspan><tspan x="-124" dy="18">marker.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 571)">
+    <g class="node end" transform="translate(172 545)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u8</tspan></text>
     </g>

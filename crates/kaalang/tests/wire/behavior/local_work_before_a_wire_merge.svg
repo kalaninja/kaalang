@@ -1,76 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1044" viewBox="0 0 704 1044" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1026" viewBox="0 0 704 1026" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for local_work_before_a_wire_merge</title>
-  <desc id="kaalang-description">Nodes: Start: local_work_before_a_wire_merge(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u32 handing over condition, order; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value and local note. capturing yes handing over selected, local_note; Action: Build the no value, which has no note to record. capturing no handing over selected, noted; Action: Record the note before leaving the yes branch. capturing local_note, &amp;order handing over noted; Action: Use the merged value. capturing selected, &amp;order handing over used; Action: Finish once the merged value and the note are both in. capturing used, noted handing over result; End: u32 capturing result. Connections: Start: local_work_before_a_wire_merge(condition: bool, order: &amp;Cell&lt;u8&gt;) -&gt; u32 to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value and local note.; Question: Choose a value. branch 2 to Action: Build the no value, which has no note to record.; Action: Build the yes value and local note. to Action: Record the note before leaving the yes branch.; Action: Build the no value, which has no note to record. to the selected and noted merge; Action: Record the note before leaving the yes branch. to the selected and noted merge; Action: Use the merged value. to Action: Finish once the merged value and the note are both in.; Action: Finish once the merged value and the note are both in. to End: u32; the selected and noted merge to Action: Use the merged value..</desc>
+  <desc id="kaalang-description">Nodes: Start: local_work_before_a_wire_merge with parameters condition: bool; order: &amp;Cell&lt;u8&gt; handing over condition, order; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value and local note. capturing yes handing over selected, local_note; Action: Build the no value, which has no note to record. capturing no handing over selected, noted; Action: Record the note before leaving the yes branch. capturing local_note, &amp;order handing over noted; Action: Use the merged value. capturing selected, &amp;order handing over used; Action: Finish once the merged value and the note are both in. capturing used, noted handing over result; End: u32 capturing result. Connections: Start: local_work_before_a_wire_merge to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value and local note.; Question: Choose a value. branch 2 to Action: Build the no value, which has no note to record.; Action: Build the yes value and local note. to Action: Record the note before leaving the yes branch.; Action: Build the no value, which has no note to record. to the selected and noted merge; Action: Record the note before leaving the yes branch. to the selected and noted merge; Action: Use the merged value. to Action: Finish once the merged value and the note are both in.; Action: Finish once the merged value and the note are both in. to End: u32; the selected and noted merge to Action: Use the merged value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 116 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 333"/>
-    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
-    <path class="connection" d="M 172 397 L 172 470"/>
-    <path class="connection" d="M 532 398 L 532 588 L 172 588"/>
-    <path class="connection" d="M 172 536 L 172 588"/>
-    <path class="connection" d="M 172 744 L 172 816"/>
-    <path class="connection" d="M 172 882 L 172 954"/>
-    <path class="connection" d="M 172 588 L 172 680"/>
-    <text class="connection-label" x="195" y="291" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
-    <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="233" y="134" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
-    <text class="connection-label" x="245" y="415" xml:space="preserve"><tspan x="245" dy="0">selected, local_note</tspan></text>
-    <text class="connection-label" x="591" y="416" xml:space="preserve"><tspan x="591" dy="0">selected, noted</tspan></text>
-    <text class="connection-label" x="201" y="554" xml:space="preserve"><tspan x="201" dy="0">noted</tspan></text>
-    <text class="connection-label" x="198" y="762" xml:space="preserve"><tspan x="198" dy="0">used</tspan></text>
-    <text class="connection-label" x="212" y="177" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
-    <text class="connection-label" x="239" y="459" xml:space="preserve"><tspan x="239" dy="0">local_note, &amp;order</tspan></text>
-    <text class="connection-label" x="234" y="669" xml:space="preserve"><tspan x="234" dy="0">selected, &amp;order</tspan></text>
-    <text class="connection-label" x="219" y="805" xml:space="preserve"><tspan x="219" dy="0">used, noted</tspan></text>
+    <path class="connection" d="M 172 94 L 172 170"/>
+    <path class="connection" d="M 172 242 L 172 315"/>
+    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
+    <path class="connection" d="M 172 379 L 172 452"/>
+    <path class="connection" d="M 532 380 L 532 570 L 172 570"/>
+    <path class="connection" d="M 172 518 L 172 570"/>
+    <path class="connection" d="M 172 726 L 172 798"/>
+    <path class="connection" d="M 172 864 L 172 936"/>
+    <path class="connection" d="M 172 570 L 172 662"/>
+    <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
+    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">condition, order</tspan></text>
+    <text class="connection-label" x="245" y="397" xml:space="preserve"><tspan x="245" dy="0">selected, local_note</tspan></text>
+    <text class="connection-label" x="591" y="398" xml:space="preserve"><tspan x="591" dy="0">selected, noted</tspan></text>
+    <text class="connection-label" x="201" y="536" xml:space="preserve"><tspan x="201" dy="0">noted</tspan></text>
+    <text class="connection-label" x="198" y="744" xml:space="preserve"><tspan x="198" dy="0">used</tspan></text>
+    <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
+    <text class="connection-label" x="239" y="441" xml:space="preserve"><tspan x="239" dy="0">local_note, &amp;order</tspan></text>
+    <text class="connection-label" x="234" y="651" xml:space="preserve"><tspan x="234" dy="0">selected, &amp;order</tspan></text>
+    <text class="connection-label" x="219" y="787" xml:space="preserve"><tspan x="219" dy="0">used, noted</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">local_work_before_a_wire_merge(</tspan><tspan x="0" dy="18">condition: bool, order: &amp;Cell&lt;u8&gt;) </tspan><tspan x="0" dy="18">-&gt; u32</tspan></text>
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">order: &amp;Cell&lt;u8&gt;</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 224)">
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">local_work_before_a_wire_merge</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Choose a value.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 365)">
+    <g class="node action" transform="translate(172 347)">
       <title xml:space="preserve">Build the yes value and local note.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the yes value and local note.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 365)">
+    <g class="node action" transform="translate(532 347)">
       <title xml:space="preserve">Build the no value, which has no note to record.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the no value, which has no </tspan><tspan x="-124" dy="18">note to record.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 503)">
+    <g class="node action" transform="translate(172 485)">
       <title xml:space="preserve">Record the note before leaving the yes branch.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record the note before leaving </tspan><tspan x="-124" dy="18">the yes branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 712)">
+    <g class="node action" transform="translate(172 694)">
       <title xml:space="preserve">Use the merged value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the merged value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 849)">
+    <g class="node action" transform="translate(172 831)">
       <title xml:space="preserve">Finish once the merged value and the note are both in.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish once the merged value and </tspan><tspan x="-124" dy="18">the note are both in.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 983)">
+    <g class="node end" transform="translate(172 965)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>

@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use crate::layout::{
     CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection, LABEL_FONT, LINE_HEIGHT, Label,
-    LabelKind, Node, Point, Scene,
+    LabelKind, Node, ParameterPanel, Point, Scene,
 };
 use crate::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
@@ -53,10 +53,11 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       svg {{ color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }}
       .connection {{ fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }}
       .connection-label {{ fill: currentColor; font-size: {CONNECTION_LABEL_FONT}px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: {CONNECTION_LABEL_HALO}px; stroke-linejoin: round; text-anchor: middle; }}
+      .parameter-link {{ fill: none; stroke: currentColor; stroke-width: 1.75; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
-      .action .label {{ font-weight: 400; text-anchor: start; }}
+      .action .label, .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -71,6 +72,9 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
         write_connection_label(&mut svg, label);
     }
     svg.push_str("  </g>\n  <g class=\"nodes\">\n");
+    if let Some(parameters) = &scene.parameters {
+        write_parameter_panel(&mut svg, scene.node(NodeId::Start), parameters);
+    }
     for node in &scene.nodes {
         write_node(&mut svg, scene, node);
     }
@@ -130,6 +134,12 @@ fn describe(scene: &Scene) -> String {
         .iter()
         .map(|node| {
             let mut described = node_name(scene, node.id);
+            if node.id == NodeId::Start
+                && let Some(parameters) = &scene.parameters
+            {
+                described.push_str(" with parameters ");
+                described.push_str(&parameters.parameters.join("; "));
+            }
             let capture = topology.capture_label(node.id);
             if capture == ["()"] {
                 described.push_str(" capturing nothing");
@@ -185,6 +195,44 @@ fn describe(scene: &Scene) -> String {
         .join("; ");
 
     format!("Nodes: {nodes}. Connections: {connections}.")
+}
+
+fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterPanel) {
+    let left = parameters.x - parameters.width / 2;
+    let right = start.x + start.width / 2;
+    emit!(
+        svg,
+        "    <path class=\"parameter-link\" d=\"M {right} {} L {left} {}\"/>",
+        start.y,
+        parameters.y
+    );
+    emit!(
+        svg,
+        "    <g class=\"parameter-panel\" transform=\"translate({} {})\">",
+        parameters.x,
+        parameters.y
+    );
+    emit!(
+        svg,
+        "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\"/>",
+        parameters.width / 2,
+        parameters.height / 2,
+        parameters.width,
+        parameters.height
+    );
+    let first_y = 15 - parameters.lines.len() as i32 * LINE_HEIGHT / 2;
+    emit_inline!(
+        svg,
+        "      <text class=\"label\" x=\"{}\" y=\"{first_y}\" xml:space=\"preserve\">",
+        16 - parameters.width / 2
+    );
+    write_lines(
+        svg,
+        &parameters.lines,
+        16 - parameters.width / 2,
+        LINE_HEIGHT,
+    );
+    svg.push_str("    </g>\n");
 }
 
 fn source_name(scene: &Scene, source: Source) -> String {
@@ -247,7 +295,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         write_title(svg, &projected.label);
     }
     match projected.kind {
-        // Start and end are the two ends of one contract, drawn alike.
+        // Start and end are the two ends of one flow, drawn alike.
         NodeKind::Start | NodeKind::End => {
             write_capsule(svg, node);
             write_label(svg, node, 0, 0);

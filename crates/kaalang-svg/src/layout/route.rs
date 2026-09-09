@@ -582,6 +582,13 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             {
                 return Some("a connection passes through a node".to_owned());
             }
+            if scene
+                .parameters
+                .as_ref()
+                .is_some_and(|parameters| enters(a, b, Scene::parameter_bounds(parameters)))
+            {
+                return Some("a connection passes through the parameter panel".to_owned());
+            }
         }
         if overlaps_itself(&connection.points) {
             return Some("a connection overlaps itself".to_owned());
@@ -784,6 +791,7 @@ mod tests {
                 vertices: vec![],
             },
             nodes: vec![],
+            parameters: None,
             connections,
             labels: vec![],
         }

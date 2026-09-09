@@ -367,6 +367,16 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                 ));
             }
         }
+        if let Some(parameters) = &scene.parameters {
+            let (panel_left, panel_top, panel_right, panel_bottom) =
+                Scene::parameter_bounds(parameters);
+            if right > panel_left && left < panel_right && bottom > panel_top && top < panel_bottom
+            {
+                return Some(format!(
+                    "the label `{names}` reaches into the parameter panel"
+                ));
+            }
+        }
     }
 
     None
@@ -408,6 +418,7 @@ mod tests {
                     lines: vec!["Do the work.".to_owned()],
                 })
                 .collect(),
+            parameters: None,
             connections: vec![],
             labels: vec![Label {
                 kind: LabelKind::Wire,

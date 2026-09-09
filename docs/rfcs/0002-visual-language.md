@@ -20,6 +20,8 @@ following terms:
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
+- a **parameter panel** is the non-executable rectangle to the right of start
+  that lists the flow's authored Rust parameters;
 - an **exit** is an outgoing attachment point of a node; start and action nodes
   each have one non-branching exit, a question has one branch-specific exit per
   output, a select has one distributor exit, each case has one exit associated
@@ -55,7 +57,7 @@ visual projections, not additional semantic blocks.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
-| **start**    | the beginning of a flow | the flow signature     | capsule                               |
+| **start**    | the beginning of a flow | the flow header        | capsule                               |
 | **action**   | an action block         | the block description  | rectangle                             |
 | **question** | a question block        | the block description  | elongated hexagon                     |
 | **select**   | a choice block          | the choice description | skewed parallelogram                  |
@@ -64,10 +66,16 @@ visual projections, not additional semantic blocks.
 
 ### 4.1 start
 
-A diagram contains one synthetic start node. It uses the authored flow signature
-without its `fn` keyword. The label retains parameter types, generics, the
-return type, a where clause, a wildcard parameter, and the `r#` of a raw
-identifier.
+A diagram contains one synthetic start node. Its label uses the authored flow
+header without its `fn` keyword, parameters, or return type. It retains the
+`const` marker, generic parameter declarations, where clause, and the `r#` of a
+raw flow name.
+
+When the flow has parameters, a rectangular parameter panel sits to the right
+of start and connects to it with a horizontal line. The panel lists one authored
+parameter per row, including its Rust type. It retains a wildcard parameter and
+the `r#` of a raw identifier. The panel is not a node and does not participate
+in execution.
 
 ### 4.2 action
 
@@ -99,9 +107,8 @@ its wire name in either case.
 
 The end node represents the flow's implicit end block. That block has no
 description, so its node carries the flow's return type instead: the authored
-return type preceded by `->`, and `-> ()` when the function declares none. The
-label is therefore the tail of the start node's signature, and the two read as
-one contract split across the diagram. A diagram has no separate return node.
+return type preceded by `->`, and `-> ()` when the function declares none. A
+diagram has no separate return node.
 
 The end node's label names the type. Its incoming connection does not name the
 `result` wire: every connection reaching end carries that wire, so the endpoint
@@ -111,11 +118,10 @@ merge.
 
 ## 5. Flow inputs and outputs
 
-The start node's signature shows the flow input parameters and, when present,
-the return type that constrains the flow output. Every named flow input is also
-shown as an output of the start node, even if no block captures it. A wildcard
-flow input produces no wire label. A zero-computation flow is the start node
-connected to the end node by the `result` wire a flow input provides.
+The parameter panel shows every flow input with its Rust type. Every named flow
+input is also shown as an output of the start node, even if no block captures
+it. A wildcard flow input produces no wire label. A zero-computation flow is the
+start node connected to the end node by the `result` wire a flow input provides.
 
 ## 6. Wires and labels
 
@@ -179,7 +185,7 @@ described above.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
 the raw and ordinary spellings of one wire name the same wire, and only the
-signature in the start node preserves the authored raw spelling.
+parameter panel preserves the authored raw spelling of a flow input.
 
 ## 7. Connections and implicit convergence
 
@@ -272,6 +278,9 @@ right in authored order: question answer/output order and choice case order. The
 first question output and the first choice case continue down the current
 column; remaining branches appear to their right.
 
+The parameter panel is vertically centred beside start. It does not overlap a
+node, connection, or connection label.
+
 Consecutive blocks continue down the current column. After a convergence, the
 entry blocks of its shared continuation form a sequence in the column reached by
 the group's first branch. Exact lower rows and routing space remain presentation
@@ -297,12 +306,12 @@ merge rail. The outgoing connection alone owns the vertical below that point: an
 incoming side route must not turn down and overlap that continuation. Routes
 already in the junction's column descend straight to the same point.
 
-The visual-language contract covers the diagram's nodes, roles, labels, the
-connection end or ends to which each connection label belongs, branch order,
-implicit convergence, dependency reachability, connections, crossing-free
-orthogonal routing, top-to-bottom row order, and branch column order. Exact
-dimensions, colors, typography, spacing, and routing offsets are presentation
-choices.
+The visual-language contract covers the diagram's nodes, parameter panel,
+roles, labels, the connection end or ends to which each connection label
+belongs, branch order, implicit convergence, dependency reachability,
+connections, crossing-free orthogonal routing, top-to-bottom row order, and
+branch column order. Exact dimensions, colors, typography, spacing, and routing
+offsets are presentation choices.
 
 A validated flow whose required connections cannot be drawn under these rules
 has no conforming diagram.

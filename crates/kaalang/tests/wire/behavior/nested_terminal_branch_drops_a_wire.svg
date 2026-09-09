@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="894" viewBox="0 0 1064 894" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_terminal_branch_drops_a_wire</title>
-  <desc id="kaalang-description">Nodes: Start: nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -&gt; u32 handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Action: Prepare the nested values. capturing nested handing over probe, extra; Question: Finish early? capturing probe, inner handing over early / late; Action: Produce the early result without the extra value. capturing early handing over result; Action: Combine the late result with the extra value. capturing late, extra handing over result; Action: Produce the direct result. capturing direct handing over result; End: u32 capturing result. Connections: Start: nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -&gt; u32 to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Action: Prepare the nested values.; Question: Take the nested branch? branch 2 to Action: Produce the direct result.; Action: Prepare the nested values. to Question: Finish early?; Question: Finish early? branch 1 to Action: Produce the early result without the extra value.; Question: Finish early? branch 2 to Action: Combine the late result with the extra value.; Action: Produce the early result without the extra value. to the result merge; Action: Combine the late result with the extra value. to the result merge; Action: Produce the direct result. to the result merge; the result merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: nested_terminal_branch_drops_a_wire with parameters outer: bool; inner: bool handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Action: Prepare the nested values. capturing nested handing over probe, extra; Question: Finish early? capturing probe, inner handing over early / late; Action: Produce the early result without the extra value. capturing early handing over result; Action: Combine the late result with the extra value. capturing late, extra handing over result; Action: Produce the direct result. capturing direct handing over result; End: u32 capturing result. Connections: Start: nested_terminal_branch_drops_a_wire to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Action: Prepare the nested values.; Question: Take the nested branch? branch 2 to Action: Produce the direct result.; Action: Prepare the nested values. to Question: Finish early?; Question: Finish early? branch 1 to Action: Produce the early result without the extra value.; Question: Finish early? branch 2 to Action: Combine the late result with the extra value.; Action: Produce the early result without the extra value. to the result merge; Action: Combine the late result with the extra value. to the result merge; Action: Produce the direct result. to the result merge; the result merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -35,9 +36,14 @@
     <text class="connection-label" x="577" y="583" xml:space="preserve"><tspan x="577" dy="0">late, extra</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_terminal_branch_drops_a_</tspan><tspan x="0" dy="18">wire(outer: bool, inner: bool) -&gt; u32</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_terminal_branch_drops_a_</tspan><tspan x="0" dy="18">wire</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Take the nested branch?</title>

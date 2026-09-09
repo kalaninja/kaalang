@@ -1,41 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="532" viewBox="0 0 344 532" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="524" viewBox="0 0 344 524" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for entry_effect_without_wires</title>
-  <desc id="kaalang-description">Nodes: Start: entry_effect_without_wires() -&gt; usize; Action: Count the flow entry. capturing nothing; Action: Report the count. capturing nothing handing over result; End: usize capturing result. Connections: Start: entry_effect_without_wires() -&gt; usize to Action: Count the flow entry.; Action: Count the flow entry. to Action: Report the count.; Action: Report the count. to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: entry_effect_without_wires; Action: Count the flow entry. capturing nothing; Action: Report the count. capturing nothing handing over result; End: usize capturing result. Connections: Start: entry_effect_without_wires to Action: Count the flow entry.; Action: Count the flow entry. to Action: Report the count.; Action: Report the count. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 370 L 172 442"/>
-    <text class="connection-label" x="188" y="159" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
-    <text class="connection-label" x="188" y="295" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 226 L 172 298"/>
+    <path class="connection" d="M 172 362 L 172 434"/>
+    <text class="connection-label" x="188" y="151" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
+    <text class="connection-label" x="188" y="287" xml:space="preserve"><tspan x="188" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">entry_effect_without_wires() -&gt; </tspan><tspan x="0" dy="18">usize</tspan></text>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">entry_effect_without_wires</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 202)">
+    <g class="node action" transform="translate(172 194)">
       <title xml:space="preserve">Count the flow entry.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the flow entry.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 338)">
+    <g class="node action" transform="translate(172 330)">
       <title xml:space="preserve">Report the count.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report the count.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 471)">
+    <g class="node end" transform="translate(172 463)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>

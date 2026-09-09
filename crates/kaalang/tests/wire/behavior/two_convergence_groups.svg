@@ -1,106 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="962" viewBox="0 0 1424 962" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="954" viewBox="0 0 1424 954" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for two_convergence_groups</title>
-  <desc id="kaalang-description">Nodes: Start: two_convergence_groups(quarter: u8) -&gt; u32 handing over quarter; Select: Which quarter? capturing quarter; Case: The first quarter. handing over first; Case: The second quarter. handing over second; Case: The third quarter. handing over third; Case: The fourth quarter. handing over fourth; Action: Open the early half. capturing first handing over early; Action: Open the early half the other way. capturing second handing over early; Action: Close the early half. capturing early handing over result; Action: Open the late half. capturing third handing over late; Action: Open the late half the other way. capturing fourth handing over late; Action: Close the late half. capturing late handing over result; End: u32 capturing result. Connections: Start: two_convergence_groups(quarter: u8) -&gt; u32 to Select: Which quarter?; Select: Which quarter? to Case: The first quarter.; Select: Which quarter? to Case: The second quarter.; Select: Which quarter? to Case: The third quarter.; Select: Which quarter? to Case: The fourth quarter.; Case: The first quarter. to Action: Open the early half.; Case: The second quarter. to Action: Open the early half the other way.; Case: The third quarter. to Action: Open the late half.; Case: The fourth quarter. to Action: Open the late half the other way.; Action: Open the early half. to the early merge; Action: Open the early half the other way. to the early merge; Action: Close the early half. to the result merge; Action: Open the late half. to the late merge; Action: Open the late half the other way. to the late merge; Action: Close the late half. to the result merge; the early merge to Action: Close the early half.; the result merge to End: u32; the late merge to Action: Close the late half..</desc>
+  <desc id="kaalang-description">Nodes: Start: two_convergence_groups with parameters quarter: u8 handing over quarter; Select: Which quarter? capturing quarter; Case: The first quarter. handing over first; Case: The second quarter. handing over second; Case: The third quarter. handing over third; Case: The fourth quarter. handing over fourth; Action: Open the early half. capturing first handing over early; Action: Open the early half the other way. capturing second handing over early; Action: Close the early half. capturing early handing over result; Action: Open the late half. capturing third handing over late; Action: Open the late half the other way. capturing fourth handing over late; Action: Close the late half. capturing late handing over result; End: u32 capturing result. Connections: Start: two_convergence_groups to Select: Which quarter?; Select: Which quarter? to Case: The first quarter.; Select: Which quarter? to Case: The second quarter.; Select: Which quarter? to Case: The third quarter.; Select: Which quarter? to Case: The fourth quarter.; Case: The first quarter. to Action: Open the early half.; Case: The second quarter. to Action: Open the early half the other way.; Case: The third quarter. to Action: Open the late half.; Case: The fourth quarter. to Action: Open the late half the other way.; Action: Open the early half. to the early merge; Action: Open the early half the other way. to the early merge; Action: Close the early half. to the result merge; Action: Open the late half. to the late merge; Action: Open the late half the other way. to the late merge; Action: Close the late half. to the result merge; the early merge to Action: Close the early half.; the result merge to End: u32; the late merge to Action: Close the late half..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 892 294 L 892 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 1252 294 L 1252 314"/>
-    <path class="connection" d="M 172 384 L 172 456"/>
-    <path class="connection" d="M 532 384 L 532 456"/>
-    <path class="connection" d="M 892 384 L 892 456"/>
-    <path class="connection" d="M 1252 384 L 1252 456"/>
-    <path class="connection" d="M 172 520 L 172 572"/>
-    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
-    <path class="connection" d="M 172 728 L 172 780"/>
-    <path class="connection" d="M 892 520 L 892 572"/>
-    <path class="connection" d="M 1252 520 L 1252 572 L 892 572"/>
-    <path class="connection" d="M 892 728 L 892 780 L 172 780"/>
-    <path class="connection" d="M 172 572 L 172 664"/>
-    <path class="connection" d="M 172 780 L 172 872"/>
-    <path class="connection" d="M 892 572 L 892 664"/>
-    <text class="connection-label" x="200" y="590" xml:space="preserve"><tspan x="200" dy="0">early</tspan></text>
-    <text class="connection-label" x="917" y="590" xml:space="preserve"><tspan x="917" dy="0">late</tspan></text>
-    <text class="connection-label" x="208" y="129" xml:space="preserve"><tspan x="208" dy="0">quarter</tspan></text>
-    <text class="connection-label" x="200" y="415" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="565" y="415" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
-    <text class="connection-label" x="920" y="415" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
-    <text class="connection-label" x="1285" y="415" xml:space="preserve"><tspan x="1285" dy="0">fourth</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 892 286 L 892 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 1252 286 L 1252 306"/>
+    <path class="connection" d="M 172 376 L 172 448"/>
+    <path class="connection" d="M 532 376 L 532 448"/>
+    <path class="connection" d="M 892 376 L 892 448"/>
+    <path class="connection" d="M 1252 376 L 1252 448"/>
+    <path class="connection" d="M 172 512 L 172 564"/>
+    <path class="connection" d="M 532 512 L 532 564 L 172 564"/>
+    <path class="connection" d="M 172 720 L 172 772"/>
+    <path class="connection" d="M 892 512 L 892 564"/>
+    <path class="connection" d="M 1252 512 L 1252 564 L 892 564"/>
+    <path class="connection" d="M 892 720 L 892 772 L 172 772"/>
+    <path class="connection" d="M 172 564 L 172 656"/>
+    <path class="connection" d="M 172 772 L 172 864"/>
+    <path class="connection" d="M 892 564 L 892 656"/>
+    <text class="connection-label" x="200" y="582" xml:space="preserve"><tspan x="200" dy="0">early</tspan></text>
+    <text class="connection-label" x="917" y="582" xml:space="preserve"><tspan x="917" dy="0">late</tspan></text>
+    <text class="connection-label" x="208" y="121" xml:space="preserve"><tspan x="208" dy="0">quarter</tspan></text>
+    <text class="connection-label" x="200" y="407" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="565" y="407" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
+    <text class="connection-label" x="920" y="407" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
+    <text class="connection-label" x="1285" y="407" xml:space="preserve"><tspan x="1285" dy="0">fourth</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">two_convergence_groups(quarter: </tspan><tspan x="0" dy="18">u8) -&gt; u32</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">quarter: u8</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 206)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">two_convergence_groups</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 198)">
       <title xml:space="preserve">Which quarter?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which quarter?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 349)">
+    <g class="node case" transform="translate(172 341)">
       <title xml:space="preserve">The first quarter.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The first quarter.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 349)">
+    <g class="node case" transform="translate(532 341)">
       <title xml:space="preserve">The second quarter.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The second quarter.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 349)">
+    <g class="node case" transform="translate(892 341)">
       <title xml:space="preserve">The third quarter.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The third quarter.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1252 349)">
+    <g class="node case" transform="translate(1252 341)">
       <title xml:space="preserve">The fourth quarter.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The fourth quarter.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 488)">
+    <g class="node action" transform="translate(172 480)">
       <title xml:space="preserve">Open the early half.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the early half.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 488)">
+    <g class="node action" transform="translate(532 480)">
       <title xml:space="preserve">Open the early half the other way.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the early half the other way.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 696)">
+    <g class="node action" transform="translate(172 688)">
       <title xml:space="preserve">Close the early half.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the early half.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 488)">
+    <g class="node action" transform="translate(892 480)">
       <title xml:space="preserve">Open the late half.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the late half.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 488)">
+    <g class="node action" transform="translate(1252 480)">
       <title xml:space="preserve">Open the late half the other way.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the late half the other way.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 696)">
+    <g class="node action" transform="translate(892 688)">
       <title xml:space="preserve">Close the late half.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the late half.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 901)">
+    <g class="node end" transform="translate(172 893)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>

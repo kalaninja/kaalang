@@ -1,83 +1,89 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="890" viewBox="0 0 1064 890" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="882" viewBox="0 0 1064 882" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for choice_value</title>
-  <desc id="kaalang-description">Nodes: Start: choice_value(case: u8) -&gt; &amp;&apos;static str handing over case; Select: Choose one of three values. capturing case; Case: First handing over first; Case: Second handing over second; Case: Third handing over third; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Build the third value. capturing third handing over selected; Action: Use the selected value. capturing selected handing over result; End: &amp;&apos;static str capturing result. Connections: Start: choice_value(case: u8) -&gt; &amp;&apos;static str to Select: Choose one of three values.; Select: Choose one of three values. to Case: First; Select: Choose one of three values. to Case: Second; Select: Choose one of three values. to Case: Third; Case: First to Action: Build the first value.; Case: Second to Action: Build the second value.; Case: Third to Action: Build the third value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Build the third value. to the selected merge; Action: Use the selected value. to End: &amp;&apos;static str; the selected merge to Action: Use the selected value..</desc>
+  <desc id="kaalang-description">Nodes: Start: choice_value with parameters case: u8 handing over case; Select: Choose one of three values. capturing case; Case: First handing over first; Case: Second handing over second; Case: Third handing over third; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Build the third value. capturing third handing over selected; Action: Use the selected value. capturing selected handing over result; End: &amp;&apos;static str capturing result. Connections: Start: choice_value to Select: Choose one of three values.; Select: Choose one of three values. to Case: First; Select: Choose one of three values. to Case: Second; Select: Choose one of three values. to Case: Third; Case: First to Action: Build the first value.; Case: Second to Action: Build the second value.; Case: Third to Action: Build the third value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Build the third value. to the selected merge; Action: Use the selected value. to End: &amp;&apos;static str; the selected merge to Action: Use the selected value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
-    <path class="connection" d="M 172 242 L 172 294 L 892 294 L 892 314"/>
-    <path class="connection" d="M 172 384 L 172 456"/>
-    <path class="connection" d="M 532 384 L 532 456"/>
-    <path class="connection" d="M 892 384 L 892 456"/>
-    <path class="connection" d="M 172 520 L 172 572"/>
-    <path class="connection" d="M 532 520 L 532 572 L 172 572"/>
-    <path class="connection" d="M 892 520 L 892 572 L 172 572"/>
-    <path class="connection" d="M 172 728 L 172 800"/>
-    <path class="connection" d="M 172 572 L 172 664"/>
-    <text class="connection-label" x="210" y="590" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
-    <text class="connection-label" x="198" y="129" xml:space="preserve"><tspan x="198" dy="0">case</tspan></text>
-    <text class="connection-label" x="200" y="415" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="565" y="415" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
-    <text class="connection-label" x="920" y="415" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 892 286 L 892 306"/>
+    <path class="connection" d="M 172 376 L 172 448"/>
+    <path class="connection" d="M 532 376 L 532 448"/>
+    <path class="connection" d="M 892 376 L 892 448"/>
+    <path class="connection" d="M 172 512 L 172 564"/>
+    <path class="connection" d="M 532 512 L 532 564 L 172 564"/>
+    <path class="connection" d="M 892 512 L 892 564 L 172 564"/>
+    <path class="connection" d="M 172 720 L 172 792"/>
+    <path class="connection" d="M 172 564 L 172 656"/>
+    <text class="connection-label" x="210" y="582" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="198" y="121" xml:space="preserve"><tspan x="198" dy="0">case</tspan></text>
+    <text class="connection-label" x="200" y="407" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="565" y="407" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
+    <text class="connection-label" x="920" y="407" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">choice_value(case: u8) -&gt; &amp;&apos;static </tspan><tspan x="0" dy="18">str</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">case: u8</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 206)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">choice_value</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 198)">
       <title xml:space="preserve">Choose one of three values.</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose one of three values.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 349)">
+    <g class="node case" transform="translate(172 341)">
       <title xml:space="preserve">First</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 349)">
+    <g class="node case" transform="translate(532 341)">
       <title xml:space="preserve">Second</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 349)">
+    <g class="node case" transform="translate(892 341)">
       <title xml:space="preserve">Third</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 488)">
+    <g class="node action" transform="translate(172 480)">
       <title xml:space="preserve">Build the first value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 488)">
+    <g class="node action" transform="translate(532 480)">
       <title xml:space="preserve">Build the second value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 488)">
+    <g class="node action" transform="translate(892 480)">
       <title xml:space="preserve">Build the third value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the third value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 696)">
+    <g class="node action" transform="translate(172 688)">
       <title xml:space="preserve">Use the selected value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 829)">
+    <g class="node end" transform="translate(172 821)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; &amp;&apos;static str</tspan></text>
     </g>

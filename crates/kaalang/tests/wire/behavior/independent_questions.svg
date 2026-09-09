@@ -1,77 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="966" viewBox="0 0 704 966" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="984" viewBox="0 0 704 984" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for independent_questions</title>
-  <desc id="kaalang-description">Nodes: Start: independent_questions(left: bool, right: bool, calls: &amp;Cell&lt;u8&gt;) -&gt; u8 handing over left, right, calls; Question: Choose the right value. capturing right, &amp;calls handing over x / y; Action: Build the first right value. capturing x handing over value; Action: Build the second right value. capturing y handing over value; Question: Choose the left branch. capturing left, &amp;calls handing over a / b; Action: Use the left branch and the right value. capturing a, value handing over result; Action: Use the other left branch and the right value. capturing b, value handing over result; End: u8 capturing result. Connections: Start: independent_questions(left: bool, right: bool, calls: &amp;Cell&lt;u8&gt;) -&gt; u8 to Question: Choose the right value.; Question: Choose the right value. branch 1 to Action: Build the first right value.; Question: Choose the right value. branch 2 to Action: Build the second right value.; Action: Build the first right value. to the value merge; Action: Build the second right value. to the value merge; Question: Choose the left branch. branch 1 to Action: Use the left branch and the right value.; Question: Choose the left branch. branch 2 to Action: Use the other left branch and the right value.; Action: Use the left branch and the right value. to the result merge; Action: Use the other left branch and the right value. to the result merge; the value merge to Question: Choose the left branch.; the result merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: independent_questions with parameters left: bool; right: bool; calls: &amp;Cell&lt;u8&gt; handing over left, right, calls; Question: Choose the right value. capturing right, &amp;calls handing over x / y; Action: Build the first right value. capturing x handing over value; Action: Build the second right value. capturing y handing over value; Question: Choose the left branch. capturing left, &amp;calls handing over a / b; Action: Use the left branch and the right value. capturing a, value handing over result; Action: Use the other left branch and the right value. capturing b, value handing over result; End: u8 capturing result. Connections: Start: independent_questions to Question: Choose the right value.; Question: Choose the right value. branch 1 to Action: Build the first right value.; Question: Choose the right value. branch 2 to Action: Build the second right value.; Action: Build the first right value. to the value merge; Action: Build the second right value. to the value merge; Question: Choose the left branch. branch 1 to Action: Use the left branch and the right value.; Question: Choose the left branch. branch 2 to Action: Use the other left branch and the right value.; Action: Use the left branch and the right value. to the result merge; Action: Use the other left branch and the right value. to the result merge; the value merge to Question: Choose the left branch.; the result merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 594 L 172 666"/>
-    <path class="connection" d="M 312 558 L 532 558 L 532 666"/>
-    <path class="connection" d="M 172 732 L 172 784"/>
-    <path class="connection" d="M 532 732 L 532 784 L 172 784"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <path class="connection" d="M 172 784 L 172 876"/>
-    <text class="connection-label" x="200" y="448" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
-    <text class="connection-label" x="188" y="273" xml:space="preserve"><tspan x="188" dy="0">x</tspan></text>
-    <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">y</tspan></text>
-    <text class="connection-label" x="233" y="116" xml:space="preserve"><tspan x="233" dy="0">left, right, calls</tspan></text>
-    <text class="connection-label" x="188" y="612" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
-    <text class="connection-label" x="328" y="576" xml:space="preserve"><tspan x="328" dy="0">b</tspan></text>
-    <text class="connection-label" x="221" y="159" xml:space="preserve"><tspan x="221" dy="0">right, &amp;calls</tspan></text>
-    <text class="connection-label" x="218" y="511" xml:space="preserve"><tspan x="218" dy="0">left, &amp;calls</tspan></text>
-    <text class="connection-label" x="207" y="655" xml:space="preserve"><tspan x="207" dy="0">a, value</tspan></text>
-    <text class="connection-label" x="567" y="655" xml:space="preserve"><tspan x="567" dy="0">b, value</tspan></text>
+    <path class="connection" d="M 172 103 L 172 188"/>
+    <path class="connection" d="M 172 260 L 172 332"/>
+    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
+    <path class="connection" d="M 172 396 L 172 448"/>
+    <path class="connection" d="M 532 396 L 532 448 L 172 448"/>
+    <path class="connection" d="M 172 612 L 172 684"/>
+    <path class="connection" d="M 312 576 L 532 576 L 532 684"/>
+    <path class="connection" d="M 172 750 L 172 802"/>
+    <path class="connection" d="M 532 750 L 532 802 L 172 802"/>
+    <path class="connection" d="M 172 448 L 172 540"/>
+    <path class="connection" d="M 172 802 L 172 894"/>
+    <text class="connection-label" x="200" y="466" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="188" y="291" xml:space="preserve"><tspan x="188" dy="0">x</tspan></text>
+    <text class="connection-label" x="422" y="213" xml:space="preserve"><tspan x="422" dy="0">y</tspan></text>
+    <text class="connection-label" x="233" y="121" xml:space="preserve"><tspan x="233" dy="0">left, right, calls</tspan></text>
+    <text class="connection-label" x="188" y="630" xml:space="preserve"><tspan x="188" dy="0">a</tspan></text>
+    <text class="connection-label" x="328" y="594" xml:space="preserve"><tspan x="328" dy="0">b</tspan></text>
+    <text class="connection-label" x="221" y="177" xml:space="preserve"><tspan x="221" dy="0">right, &amp;calls</tspan></text>
+    <text class="connection-label" x="218" y="529" xml:space="preserve"><tspan x="218" dy="0">left, &amp;calls</tspan></text>
+    <text class="connection-label" x="207" y="673" xml:space="preserve"><tspan x="207" dy="0">a, value</tspan></text>
+    <text class="connection-label" x="567" y="673" xml:space="preserve"><tspan x="567" dy="0">b, value</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">independent_questions(left: bool, </tspan><tspan x="0" dy="18">right: bool, calls: &amp;Cell&lt;u8&gt;) -&gt; u8</tspan></text>
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan><tspan x="-104" dy="18">calls: &amp;Cell&lt;u8&gt;</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 206)">
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">independent_questions</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Choose the right value.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose the right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 346)">
+    <g class="node action" transform="translate(172 364)">
       <title xml:space="preserve">Build the first right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 346)">
+    <g class="node action" transform="translate(532 364)">
       <title xml:space="preserve">Build the second right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second right value.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 558)">
+    <g class="node question" transform="translate(172 576)">
       <title xml:space="preserve">Choose the left branch.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose the left branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 699)">
+    <g class="node action" transform="translate(172 717)">
       <title xml:space="preserve">Use the left branch and the right value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the left branch and the right </tspan><tspan x="-124" dy="18">value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 699)">
+    <g class="node action" transform="translate(532 717)">
       <title xml:space="preserve">Use the other left branch and the right value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the other left branch and the </tspan><tspan x="-124" dy="18">right value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 905)">
+    <g class="node end" transform="translate(172 923)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u8</tspan></text>
     </g>

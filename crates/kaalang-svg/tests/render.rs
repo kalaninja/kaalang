@@ -46,6 +46,9 @@ fn renders_an_accessible_standalone_svg() {
         r#"<title xml:space="preserve">Split &lt;the&gt; near lane &amp; measure it.</title>"#
     ));
     assert_eq!(svg.matches(r#"class="node end""#).count(), 1);
+    assert_eq!(svg.matches(r#"class="parameter-panel""#).count(), 1);
+    assert!(svg.contains(">seed: u8</tspan><tspan"));
+    assert!(svg.contains(">_spare: u8</tspan></text>"));
 }
 
 #[test]

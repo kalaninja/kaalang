@@ -225,13 +225,13 @@ impl Topology {
     }
 }
 
-/// Builds the topology of one validated flow. `signature` labels the start node
+/// Builds the topology of one validated flow. `start` labels the start node
 /// and `return_type` captions end, both taken from the authored source text.
-pub(crate) fn project(model: &SemanticModel, signature: &str, return_type: &str) -> Topology {
+pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> Topology {
     let mut nodes = vec![Node {
         id: NodeId::Start,
         kind: NodeKind::Start,
-        label: signature.to_owned(),
+        label: start.to_owned(),
         capture: Vec::new(),
     }];
     let mut exits = vec![Exit {

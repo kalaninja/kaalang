@@ -26,6 +26,10 @@ const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
 const MIN_VERTICAL_GAP: i32 = 72;
 const NODE_WIDTH: i32 = 280;
+/// Leaves the start hand-over label clear beneath the link to the panel.
+const PARAMETER_PANEL_GAP: i32 = 96;
+const PARAMETER_PANEL_WIDTH: i32 = 240;
+const PARAMETER_LABEL_WIDTH: i32 = PARAMETER_PANEL_WIDTH - 32;
 const CASE_WIDTH: i32 = 240;
 pub(crate) const CASE_TIP_HEIGHT: i32 = 18;
 pub(crate) const QUESTION_POINT: i32 = 28;
@@ -62,8 +66,19 @@ pub(crate) struct Scene {
     /// and nodes own are read from here rather than copied.
     pub(crate) topology: Topology,
     pub(crate) nodes: Vec<Node>,
+    pub(crate) parameters: Option<ParameterPanel>,
     pub(crate) connections: Vec<Connection>,
     pub(crate) labels: Vec<Label>,
+}
+
+/// The flow parameters shown beside start, outside the control-flow topology.
+pub(crate) struct ParameterPanel {
+    pub(crate) parameters: Vec<String>,
+    pub(crate) x: i32,
+    pub(crate) y: i32,
+    pub(crate) width: i32,
+    pub(crate) height: i32,
+    pub(crate) lines: Vec<String>,
 }
 
 /// One placed node. Its role and caption stay in the topology; only geometry
@@ -122,16 +137,32 @@ impl LabelKind {
     }
 }
 
-/// The authored flow signature, minus `fn`, with every whitespace run collapsed
-/// so a signature written across source lines wraps on the label's own terms.
-pub(crate) fn signature_text(source: &str, signature: &Signature) -> String {
-    let authored = collapsed(source, signature.span());
-    authored.strip_prefix("fn ").unwrap_or(&authored).to_owned()
+/// The authored flow header without its parameters and return type.
+pub(crate) fn start_text(source: &str, signature: &Signature) -> String {
+    let start = signature.span().byte_range().start;
+    let end = signature.paren_token.span.open().byte_range().start;
+    let function = signature.fn_token.span.byte_range();
+    let mut header = source[start..end].to_owned();
+    header.replace_range(function.start - start..function.end - start, "");
+    let mut authored = collapsed_text(&header);
+    if let Some(where_clause) = &signature.generics.where_clause {
+        authored.push(' ');
+        authored.push_str(&collapsed(source, where_clause.span()));
+    }
+    authored
+}
+
+/// The authored flow parameters, one per panel row and without separating commas.
+pub(crate) fn parameter_text(source: &str, signature: &Signature) -> Vec<String> {
+    signature
+        .inputs
+        .iter()
+        .map(|parameter| collapsed(source, parameter.span()))
+        .collect()
 }
 
 /// The end node's caption: the authored return type preceded by `->`, and
-/// `-> ()` when the function declares none. RFC 0002 §4.6 makes it the tail of
-/// the start node's contract rather than a block-kind word.
+/// `-> ()` when the function declares none.
 pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
     match output {
         ReturnType::Default => "-> ()".to_owned(),
@@ -141,25 +172,32 @@ pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
 
 /// The authored text under a span with every whitespace run collapsed to one space.
 fn collapsed(source: &str, span: proc_macro2::Span) -> String {
-    source[span.byte_range()]
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+    collapsed_range(source, span.byte_range())
+}
+
+fn collapsed_range(source: &str, range: std::ops::Range<usize>) -> String {
+    collapsed_text(&source[range])
+}
+
+fn collapsed_text(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Lays out one validated flow, or reports that this layout could not route its
 /// connections under RFC 0002 §8.
 pub(crate) fn layout(
     model: &SemanticModel,
-    signature: &str,
+    start: &str,
+    parameters: &[String],
     return_type: &str,
 ) -> Result<Scene, String> {
-    let topology = topology::project(model, signature, return_type);
+    let topology = topology::project(model, start, return_type);
     let attempts = 4 * topology.connections.len() + 8;
     let mut scene = Scene {
         width: 0,
         height: 0,
         nodes: Vec::new(),
+        parameters: parameter_panel(parameters),
         connections: Vec::new(),
         labels: Vec::new(),
         topology,
@@ -286,6 +324,10 @@ impl Scene {
             capture_space[row] =
                 capture_space[row].max(label::capture_space(&self.topology.capture_label(node.id)));
         }
+        if let Some(parameters) = &self.parameters {
+            let row = placement.row(Vertex::Node(NodeId::Start));
+            height[row] = height[row].max(parameters.height);
+        }
         let gap = vertical_gap(&self.topology);
         let mut top = Vec::with_capacity(placement.rows + 1);
         let mut next = MARGIN;
@@ -314,6 +356,12 @@ impl Scene {
             let row = placement.row(Vertex::Node(node.id));
             node.y = rows.top[row] + rows.height[row] / 2;
         }
+        let start = self.node(NodeId::Start);
+        let (x, y, width) = (start.x, start.y, start.width);
+        if let Some(parameters) = &mut self.parameters {
+            parameters.x = x + width / 2 + PARAMETER_PANEL_GAP + parameters.width / 2;
+            parameters.y = y;
+        }
     }
 
     pub(crate) fn node(&self, id: NodeId) -> &Node {
@@ -329,6 +377,15 @@ impl Scene {
             node.y - node.height / 2,
             node.x + node.width / 2,
             node.y + node.height / 2,
+        )
+    }
+
+    pub(super) const fn parameter_bounds(parameters: &ParameterPanel) -> (i32, i32, i32, i32) {
+        (
+            parameters.x - parameters.width / 2,
+            parameters.y - parameters.height / 2,
+            parameters.x + parameters.width / 2,
+            parameters.y + parameters.height / 2,
         )
     }
 
@@ -382,6 +439,9 @@ impl Scene {
         for label in &mut self.labels {
             label.at.x += shift;
         }
+        if let Some(parameters) = &mut self.parameters {
+            parameters.x += shift;
+        }
     }
 
     fn fit(&mut self) {
@@ -401,9 +461,32 @@ impl Scene {
             right = right.max(label_right);
             bottom = bottom.max(label_bottom);
         }
+        if let Some(parameters) = &self.parameters {
+            let (.., parameters_right, parameters_bottom) = Self::parameter_bounds(parameters);
+            right = right.max(parameters_right);
+            bottom = bottom.max(parameters_bottom);
+        }
         self.width = right + MARGIN;
         self.height = bottom + MARGIN;
     }
+}
+
+fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
+    if parameters.is_empty() {
+        return None;
+    }
+    let lines = parameters
+        .iter()
+        .flat_map(|parameter| wrap_text(parameter, PARAMETER_LABEL_WIDTH, LABEL_FONT))
+        .collect::<Vec<_>>();
+    Some(ParameterPanel {
+        parameters: parameters.to_vec(),
+        x: 0,
+        y: 0,
+        width: PARAMETER_PANEL_WIDTH,
+        height: 30 + lines.len() as i32 * LINE_HEIGHT,
+        lines,
+    })
 }
 
 fn column_x(column: usize) -> i32 {

@@ -1,49 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="668" viewBox="0 0 344 668" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="660" viewBox="0 0 680 660" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for copy_then_borrow</title>
-  <desc id="kaalang-description">Nodes: Start: copy_then_borrow(value: u32) -&gt; u32 handing over value; Action: Copy the value and increment it. capturing value handing over next; Action: Log the original value. capturing &amp;value; Action: Finish. capturing next handing over result; End: u32 capturing result. Connections: Start: copy_then_borrow(value: u32) -&gt; u32 to Action: Copy the value and increment it.; Action: Copy the value and increment it. to Action: Log the original value.; Action: Log the original value. to Action: Finish.; Action: Finish. to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: copy_then_borrow with parameters value: u32 handing over value; Action: Copy the value and increment it. capturing value handing over next; Action: Log the original value. capturing &amp;value; Action: Finish. capturing next handing over result; End: u32 capturing result. Connections: Start: copy_then_borrow to Action: Copy the value and increment it.; Action: Copy the value and increment it. to Action: Log the original value.; Action: Log the original value. to Action: Finish.; Action: Finish. to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 370 L 172 442"/>
-    <path class="connection" d="M 172 506 L 172 578"/>
-    <text class="connection-label" x="200" y="129" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
-    <text class="connection-label" x="198" y="252" xml:space="preserve"><tspan x="198" dy="0">next</tspan></text>
-    <text class="connection-label" x="203" y="295" xml:space="preserve"><tspan x="203" dy="0">&amp;value</tspan></text>
-    <text class="connection-label" x="198" y="431" xml:space="preserve"><tspan x="198" dy="0">next</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 226 L 172 298"/>
+    <path class="connection" d="M 172 362 L 172 434"/>
+    <path class="connection" d="M 172 498 L 172 570"/>
+    <text class="connection-label" x="200" y="121" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
+    <text class="connection-label" x="198" y="244" xml:space="preserve"><tspan x="198" dy="0">next</tspan></text>
+    <text class="connection-label" x="203" y="287" xml:space="preserve"><tspan x="203" dy="0">&amp;value</tspan></text>
+    <text class="connection-label" x="198" y="423" xml:space="preserve"><tspan x="198" dy="0">next</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">copy_then_borrow(value: u32) -&gt; </tspan><tspan x="0" dy="18">u32</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: u32</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 202)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">copy_then_borrow</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 194)">
       <title xml:space="preserve">Copy the value and increment it.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Copy the value and increment it.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 338)">
+    <g class="node action" transform="translate(172 330)">
       <title xml:space="preserve">Log the original value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Log the original value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 474)">
+    <g class="node action" transform="translate(172 466)">
       <title xml:space="preserve">Finish.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 607)">
+    <g class="node end" transform="translate(172 599)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>

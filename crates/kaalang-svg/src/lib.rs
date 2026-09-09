@@ -115,9 +115,10 @@ pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderErro
     let function = select_flow(&file.items, flow_name)?;
     let model = kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
     validate_labels(&model)?;
-    let signature = layout::signature_text(source, &function.sig);
+    let start = layout::start_text(source, &function.sig);
+    let parameters = layout::parameter_text(source, &function.sig);
     let return_type = layout::return_text(source, &function.sig.output);
-    let scene = layout::layout(&model, &signature, &return_type).map_err(|reason| {
+    let scene = layout::layout(&model, &start, &parameters, &return_type).map_err(|reason| {
         RenderError::UnroutableTopology {
             name: flow_name.to_owned(),
             reason,

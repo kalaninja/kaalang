@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="1238" viewBox="0 0 704 1238" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for successive_selections_keep_a_copy</title>
-  <desc id="kaalang-description">Nodes: Start: successive_selections_keep_a_copy(condition: bool, long: bool) -&gt; u32 handing over condition, long; Question: Which seed? capturing condition handing over first / second; Action: Build the first seed. capturing first handing over seed; Action: Build the second seed. capturing second handing over seed; Action: Scale the merged seed. capturing seed handing over scaled; Question: Is it large? capturing &amp;scaled, long handing over yes / no; Action: Include the original seed. capturing yes handing over include_seed; Action: Use the scaled value alone. capturing no handing over include_seed; Action: Finish with the selected adjustment. capturing include_seed, scaled, seed handing over result; End: u32 capturing result. Connections: Start: successive_selections_keep_a_copy(condition: bool, long: bool) -&gt; u32 to Question: Which seed?; Question: Which seed? branch 1 to Action: Build the first seed.; Question: Which seed? branch 2 to Action: Build the second seed.; Action: Build the first seed. to the seed merge; Action: Build the second seed. to the seed merge; Action: Scale the merged seed. to Question: Is it large?; Question: Is it large? branch 1 to Action: Include the original seed.; Question: Is it large? branch 2 to Action: Use the scaled value alone.; Action: Include the original seed. to the include_seed merge; Action: Use the scaled value alone. to the include_seed merge; Action: Finish with the selected adjustment. to End: u32; the seed merge to Action: Scale the merged seed.; the include_seed merge to Action: Finish with the selected adjustment..</desc>
+  <desc id="kaalang-description">Nodes: Start: successive_selections_keep_a_copy with parameters condition: bool; long: bool handing over condition, long; Question: Which seed? capturing condition handing over first / second; Action: Build the first seed. capturing first handing over seed; Action: Build the second seed. capturing second handing over seed; Action: Scale the merged seed. capturing seed handing over scaled; Question: Is it large? capturing &amp;scaled, long handing over yes / no; Action: Include the original seed. capturing yes handing over include_seed; Action: Use the scaled value alone. capturing no handing over include_seed; Action: Finish with the selected adjustment. capturing include_seed, scaled, seed handing over result; End: u32 capturing result. Connections: Start: successive_selections_keep_a_copy to Question: Which seed?; Question: Which seed? branch 1 to Action: Build the first seed.; Question: Which seed? branch 2 to Action: Build the second seed.; Action: Build the first seed. to the seed merge; Action: Build the second seed. to the seed merge; Action: Scale the merged seed. to Question: Is it large?; Question: Is it large? branch 1 to Action: Include the original seed.; Question: Is it large? branch 2 to Action: Use the scaled value alone.; Action: Include the original seed. to the include_seed merge; Action: Use the scaled value alone. to the include_seed merge; Action: Finish with the selected adjustment. to End: u32; the seed merge to Action: Scale the merged seed.; the include_seed merge to Action: Finish with the selected adjustment..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 242 L 172 314"/>
     <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
     <path class="connection" d="M 172 378 L 172 430"/>
@@ -33,16 +34,21 @@
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">second</tspan></text>
     <text class="connection-label" x="195" y="761" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="683" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="228" y="116" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
+    <text class="connection-label" x="228" y="112" xml:space="preserve"><tspan x="228" dy="0">condition, long</tspan></text>
     <text class="connection-label" x="203" y="604" xml:space="preserve"><tspan x="203" dy="0">scaled</tspan></text>
     <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="222" y="647" xml:space="preserve"><tspan x="222" dy="0">&amp;scaled, long</tspan></text>
     <text class="connection-label" x="262" y="999" xml:space="preserve"><tspan x="262" dy="0">include_seed, scaled, seed</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">long: bool</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">successive_selections_keep_a_copy</tspan><tspan x="0" dy="18">(condition: bool, long: bool) -&gt; u32</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">successive_selections_keep_a_copy</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Which seed?</title>

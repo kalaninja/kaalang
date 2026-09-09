@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for question_value</title>
-  <desc id="kaalang-description">Nodes: Start: question_value(condition: bool, shared_runs: &amp;mut usize) -&gt; u32 handing over condition, shared_runs; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value. capturing yes handing over selected; Action: Build the no value. capturing no handing over selected; Action: Use the selected value once. capturing selected, shared_runs handing over result; End: u32 capturing result. Connections: Start: question_value(condition: bool, shared_runs: &amp;mut usize) -&gt; u32 to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value.; Question: Choose a value. branch 2 to Action: Build the no value.; Action: Build the yes value. to the selected merge; Action: Build the no value. to the selected merge; Action: Use the selected value once. to End: u32; the selected merge to Action: Use the selected value once..</desc>
+  <desc id="kaalang-description">Nodes: Start: question_value with parameters condition: bool; shared_runs: &amp;mut usize handing over condition, shared_runs; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value. capturing yes handing over selected; Action: Build the no value. capturing no handing over selected; Action: Use the selected value once. capturing selected, shared_runs handing over result; End: u32 capturing result. Connections: Start: question_value to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value.; Question: Choose a value. branch 2 to Action: Build the no value.; Action: Build the yes value. to the selected merge; Action: Build the no value. to the selected merge; Action: Use the selected value once. to End: u32; the selected merge to Action: Use the selected value once..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 242 L 172 314"/>
     <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
     <path class="connection" d="M 172 378 L 172 430"/>
@@ -24,14 +25,19 @@
     <text class="connection-label" x="210" y="448" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
     <text class="connection-label" x="195" y="273" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
     <text class="connection-label" x="422" y="195" xml:space="preserve"><tspan x="422" dy="0">no</tspan></text>
-    <text class="connection-label" x="253" y="116" xml:space="preserve"><tspan x="253" dy="0">condition, shared_runs</tspan></text>
+    <text class="connection-label" x="253" y="112" xml:space="preserve"><tspan x="253" dy="0">condition, shared_runs</tspan></text>
     <text class="connection-label" x="212" y="159" xml:space="preserve"><tspan x="212" dy="0">condition</tspan></text>
     <text class="connection-label" x="251" y="511" xml:space="preserve"><tspan x="251" dy="0">selected, shared_runs</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">shared_runs: &amp;mut usize</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">question_value(condition: bool, </tspan><tspan x="0" dy="18">shared_runs: &amp;mut usize) -&gt; u32</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">question_value</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Choose a value.</title>

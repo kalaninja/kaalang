@@ -1,91 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1120" viewBox="0 0 1064 1120" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1094" viewBox="0 0 1064 1094" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_partial_merge</title>
-  <desc id="kaalang-description">Nodes: Start: const fn const_partial_merge(source: u8) -&gt; u8 handing over source; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the value from the first source. capturing first handing over partial; Action: Build the value from the second source. capturing second handing over partial; Action: Add one to the partially merged value. capturing partial handing over shared; Action: Build the value from the third source. capturing third handing over shared; Action: Double the merged value. capturing shared handing over result; End: u8 capturing result. Connections: Start: const fn const_partial_merge(source: u8) -&gt; u8 to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the value from the first source.; Case: Second source. to Action: Build the value from the second source.; Case: Third source. to Action: Build the value from the third source.; Action: Build the value from the first source. to the partial merge; Action: Build the value from the second source. to the partial merge; Action: Add one to the partially merged value. to the shared merge; Action: Build the value from the third source. to the shared merge; Action: Double the merged value. to End: u8; the partial merge to Action: Add one to the partially merged value.; the shared merge to Action: Double the merged value..</desc>
+  <desc id="kaalang-description">Nodes: Start: const const_partial_merge with parameters source: u8 handing over source; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the value from the first source. capturing first handing over partial; Action: Build the value from the second source. capturing second handing over partial; Action: Add one to the partially merged value. capturing partial handing over shared; Action: Build the value from the third source. capturing third handing over shared; Action: Double the merged value. capturing shared handing over result; End: u8 capturing result. Connections: Start: const const_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the value from the first source.; Case: Second source. to Action: Build the value from the second source.; Case: Third source. to Action: Build the value from the third source.; Action: Build the value from the first source. to the partial merge; Action: Build the value from the second source. to the partial merge; Action: Add one to the partially merged value. to the shared merge; Action: Build the value from the third source. to the shared merge; Action: Double the merged value. to End: u8; the partial merge to Action: Add one to the partially merged value.; the shared merge to Action: Double the merged value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 116 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 172 260 L 172 312 L 532 312 L 532 332"/>
-    <path class="connection" d="M 172 260 L 172 312 L 892 312 L 892 332"/>
-    <path class="connection" d="M 172 402 L 172 474"/>
-    <path class="connection" d="M 532 402 L 532 474"/>
-    <path class="connection" d="M 892 402 L 892 474"/>
-    <path class="connection" d="M 172 540 L 172 592"/>
-    <path class="connection" d="M 532 540 L 532 592 L 172 592"/>
-    <path class="connection" d="M 172 750 L 172 802"/>
-    <path class="connection" d="M 892 540 L 892 802 L 172 802"/>
-    <path class="connection" d="M 172 958 L 172 1030"/>
-    <path class="connection" d="M 172 592 L 172 684"/>
-    <path class="connection" d="M 172 802 L 172 894"/>
-    <text class="connection-label" x="205" y="610" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
-    <text class="connection-label" x="205" y="820" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
-    <text class="connection-label" x="205" y="147" xml:space="preserve"><tspan x="205" dy="0">source</tspan></text>
-    <text class="connection-label" x="200" y="433" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
-    <text class="connection-label" x="565" y="433" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
-    <text class="connection-label" x="920" y="433" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
+    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
+    <path class="connection" d="M 172 234 L 172 286 L 892 286 L 892 306"/>
+    <path class="connection" d="M 172 376 L 172 448"/>
+    <path class="connection" d="M 532 376 L 532 448"/>
+    <path class="connection" d="M 892 376 L 892 448"/>
+    <path class="connection" d="M 172 514 L 172 566"/>
+    <path class="connection" d="M 532 514 L 532 566 L 172 566"/>
+    <path class="connection" d="M 172 724 L 172 776"/>
+    <path class="connection" d="M 892 514 L 892 776 L 172 776"/>
+    <path class="connection" d="M 172 932 L 172 1004"/>
+    <path class="connection" d="M 172 566 L 172 658"/>
+    <path class="connection" d="M 172 776 L 172 868"/>
+    <text class="connection-label" x="205" y="584" xml:space="preserve"><tspan x="205" dy="0">partial</tspan></text>
+    <text class="connection-label" x="205" y="794" xml:space="preserve"><tspan x="205" dy="0">shared</tspan></text>
+    <text class="connection-label" x="205" y="121" xml:space="preserve"><tspan x="205" dy="0">source</tspan></text>
+    <text class="connection-label" x="200" y="407" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="565" y="407" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
+    <text class="connection-label" x="920" y="407" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">const fn </tspan><tspan x="0" dy="18">const_partial_merge(source: u8) -&gt; </tspan><tspan x="0" dy="18">u8</tspan></text>
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 224)">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const const_partial_merge</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 198)">
       <title xml:space="preserve">Which source?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which source?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 367)">
+    <g class="node case" transform="translate(172 341)">
       <title xml:space="preserve">First source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 367)">
+    <g class="node case" transform="translate(532 341)">
       <title xml:space="preserve">Second source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 367)">
+    <g class="node case" transform="translate(892 341)">
       <title xml:space="preserve">Third source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third source.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 507)">
+    <g class="node action" transform="translate(172 481)">
       <title xml:space="preserve">Build the value from the first source.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the first </tspan><tspan x="-124" dy="18">source.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 507)">
+    <g class="node action" transform="translate(532 481)">
       <title xml:space="preserve">Build the value from the second source.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the second </tspan><tspan x="-124" dy="18">source.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 717)">
+    <g class="node action" transform="translate(172 691)">
       <title xml:space="preserve">Add one to the partially merged value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add one to the partially merged </tspan><tspan x="-124" dy="18">value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 507)">
+    <g class="node action" transform="translate(892 481)">
       <title xml:space="preserve">Build the value from the third source.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the value from the third </tspan><tspan x="-124" dy="18">source.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 926)">
+    <g class="node action" transform="translate(172 900)">
       <title xml:space="preserve">Double the merged value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Double the merged value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1059)">
+    <g class="node end" transform="translate(172 1033)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u8</tspan></text>
     </g>

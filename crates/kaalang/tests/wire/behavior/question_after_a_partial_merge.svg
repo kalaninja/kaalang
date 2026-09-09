@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1316" viewBox="0 0 1064 1316" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for question_after_a_partial_merge</title>
-  <desc id="kaalang-description">Nodes: Start: question_after_a_partial_merge(value: u8, flag: bool) -&gt; u8 handing over value, flag; Select: Which source? capturing value; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the value from the first source. capturing first handing over partial; Action: Build the value from the second source. capturing second handing over partial; Action: Use the partially merged value. capturing partial handing over shared; Action: Build the value from the third source. capturing third handing over shared; Question: Is the value large? capturing &amp;shared, flag handing over large / small; Action: Double a large value. capturing large, shared handing over result; Action: Keep a small value. capturing small, shared handing over result; End: u8 capturing result. Connections: Start: question_after_a_partial_merge(value: u8, flag: bool) -&gt; u8 to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the value from the first source.; Case: Second source. to Action: Build the value from the second source.; Case: Third source. to Action: Build the value from the third source.; Action: Build the value from the first source. to the partial merge; Action: Build the value from the second source. to the partial merge; Action: Use the partially merged value. to the shared merge; Action: Build the value from the third source. to the shared merge; Question: Is the value large? branch 1 to Action: Double a large value.; Question: Is the value large? branch 2 to Action: Keep a small value.; Action: Double a large value. to the result merge; Action: Keep a small value. to the result merge; the partial merge to Action: Use the partially merged value.; the shared merge to Question: Is the value large?; the result merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: question_after_a_partial_merge with parameters value: u8; flag: bool handing over value, flag; Select: Which source? capturing value; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the value from the first source. capturing first handing over partial; Action: Build the value from the second source. capturing second handing over partial; Action: Use the partially merged value. capturing partial handing over shared; Action: Build the value from the third source. capturing third handing over shared; Question: Is the value large? capturing &amp;shared, flag handing over large / small; Action: Double a large value. capturing large, shared handing over result; Action: Keep a small value. capturing small, shared handing over result; End: u8 capturing result. Connections: Start: question_after_a_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the value from the first source.; Case: Second source. to Action: Build the value from the second source.; Case: Third source. to Action: Build the value from the third source.; Action: Build the value from the first source. to the partial merge; Action: Build the value from the second source. to the partial merge; Action: Use the partially merged value. to the shared merge; Action: Build the value from the third source. to the shared merge; Question: Is the value large? branch 1 to Action: Double a large value.; Question: Is the value large? branch 2 to Action: Keep a small value.; Action: Double a large value. to the result merge; Action: Keep a small value. to the result merge; the partial merge to Action: Use the partially merged value.; the shared merge to Question: Is the value large?; the result merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
       .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
       .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 400; text-anchor: start; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
+    <path class="connection" d="M 172 94 L 172 170"/>
     <path class="connection" d="M 172 242 L 172 314"/>
     <path class="connection" d="M 172 242 L 172 294 L 532 294 L 532 314"/>
     <path class="connection" d="M 172 242 L 172 294 L 892 294 L 892 314"/>
@@ -37,7 +38,7 @@
     <text class="connection-label" x="200" y="415" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
     <text class="connection-label" x="565" y="415" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
     <text class="connection-label" x="920" y="415" xml:space="preserve"><tspan x="920" dy="0">third</tspan></text>
-    <text class="connection-label" x="216" y="116" xml:space="preserve"><tspan x="216" dy="0">value, flag</tspan></text>
+    <text class="connection-label" x="216" y="112" xml:space="preserve"><tspan x="216" dy="0">value, flag</tspan></text>
     <text class="connection-label" x="200" y="964" xml:space="preserve"><tspan x="200" dy="0">large</tspan></text>
     <text class="connection-label" x="340" y="928" xml:space="preserve"><tspan x="340" dy="0">small</tspan></text>
     <text class="connection-label" x="200" y="159" xml:space="preserve"><tspan x="200" dy="0">value</tspan></text>
@@ -46,9 +47,14 @@
     <text class="connection-label" x="584" y="1007" xml:space="preserve"><tspan x="584" dy="0">small, shared</tspan></text>
   </g>
   <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: bool</tspan></text>
+    </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">question_after_a_partial_merge(v</tspan><tspan x="0" dy="18">alue: u8, flag: bool) -&gt; u8</tspan></text>
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">question_after_a_partial_merge</tspan></text>
     </g>
     <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Which source?</title>
