@@ -21,19 +21,19 @@ question or choice.
 
 A **footprint** is the contiguous range of columns reserved by one convergence
 group and its shared continuation. Disjoint convergence groups of the same
-question or choice receive disjoint footprints in authored branch order.
-Nested convergence groups of that question or choice may share columns.
+question or choice receive disjoint footprints in authored branch order. Nested
+convergence groups of that question or choice may share columns.
 
-When a shared continuation has one entry block, its node occupies the
-column in which the first branch of its convergence group reaches it. "First"
-follows the branch order defined by RFC 0002. This is normally that branch's own
-column; if the branch contains a nested question or choice, its route may reach
-that node in another column. Other branches of the group route to the same node.
+When a shared continuation has one entry block, its node occupies the column in
+which the first branch of its convergence group reaches it. "First" follows the
+branch order defined by RFC 0002. This is normally that branch's own column; if
+the branch contains a nested question or choice, its route may reach that node
+in another column. Other branches of the group route to the same node.
 
 When a shared continuation has several entry blocks, draw them sequentially in
-source order. They share the column
-reached by the group's first branch. Other branches meet before the sequence;
-connections carry later captures transitively through it.
+source order. They share the column reached by the group's first branch. Other
+branches meet before the sequence; connections carry later captures transitively
+through it.
 
 A group's footprint extends from its leftmost occupied column to its rightmost
 occupied column. A terminal sibling branch that precedes the group remains to
@@ -48,9 +48,9 @@ in the continuation's column; routes meet it as RFC 0002 §8 requires.
 ## 3. SVG output
 
 The renderer produces standalone SVG with embedded styles and no JavaScript,
-external fonts, or external rendering programs. It uses a monochrome style.
-The presentation choices left open by RFC 0002 are internal to the renderer and
-may change without changing the visual language.
+external fonts, or external rendering programs. It uses a monochrome style. The
+presentation choices left open by RFC 0002 are internal to the renderer and may
+change without changing the visual language.
 
 The renderer preserves Unicode text and escapes XML content. For the start
 label, it takes the signature content defined by RFC 0002 and collapses each run

@@ -2,8 +2,8 @@
 
 > We be of one blood, thou and I—man and snake together.
 >
-> — Rudyard Kipling, [“The Spring Running”][spring-running],
-> *The Second Jungle Book*
+> — Rudyard Kipling, [“The Spring Running”][spring-running], _The Second Jungle
+> Book_
 
 kaalang is a language for writing executable flows as valid Rust. A diagram is
 not a separate architectural sketch: visual semantics and execution share one

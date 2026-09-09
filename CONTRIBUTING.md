@@ -13,8 +13,8 @@
 
 RFCs in `docs/rfcs/` define kaalang syntax and semantics. Implementation code,
 Rust documentation, diagnostics, test names, and test fixtures use the same
-terminology as the relevant RFC. Do not duplicate the language contract in
-other documentation.
+terminology as the relevant RFC. Do not duplicate the language contract in other
+documentation.
 
 Always write the language name as `kaalang`, including at the start of a
 sentence and in headings.
@@ -36,10 +36,9 @@ Put behavior that is specific to one block kind in a module named for that kind
 within each implementation phase that needs it, such as `parse/action.rs`,
 `analyze/question.rs`, or `codegen/choice.rs`. Parent phase modules own shared
 data flow, structural traversal, cross-kind invariants, and thin exhaustive
-dispatch only. An exhaustive dispatch delegates authored block variants to
-their corresponding modules. Structural plan variants remain in the parent;
-no match arm accumulates a block kind's parsing, validation, layout, or
-generation logic.
+dispatch only. An exhaustive dispatch delegates authored block variants to their
+corresponding modules. Structural plan variants remain in the parent; no match
+arm accumulates a block kind's parsing, validation, layout, or generation logic.
 
 When adding a block kind, add its module to every phase that needs kind-specific
 behavior. Keep genuinely shared algorithms in the parent phase instead of
@@ -75,9 +74,19 @@ For syntax or semantic changes:
 
 ## Validation
 
+Markdown is formatted with [Prettier](https://prettier.io/docs/cli). With
+Node.js and npm installed, format it from the repository root:
+
+```sh
+npx --yes prettier@3.6.2 --write '**/*.md'
+```
+
+The version is pinned to match CI. Prettier respects `.gitignore`.
+
 Run from the repository root:
 
 ```sh
+npx --yes prettier@3.6.2 --check '**/*.md'
 cargo fmt --all -- --check
 cargo check --workspace
 cargo clippy --workspace --all-targets -- -D warnings

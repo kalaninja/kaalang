@@ -20,8 +20,8 @@ tests, commit messages, and pull request content.
 - `crates/kaalang-cli/` owns the `cargo kaalang` subcommand, shipped as the
   `cargo-kaalang` binary.
 - `crates/kaalang/` exports the public macro and owns its test suite. Behavior
-  tests are executable examples; compile-fail tests document rejected forms.
-  The `.svg` beside each `behavior/<flow>.rs` is drawn by `cargo test -p kaalang`
+  tests are executable examples; compile-fail tests document rejected forms. The
+  `.svg` beside each `behavior/<flow>.rs` is drawn by `cargo test -p kaalang`
   and reviewed in the diff; never edit one by hand.
 
 Do not restate the language contract in this guide or the root README. Link to
