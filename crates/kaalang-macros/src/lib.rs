@@ -2,8 +2,11 @@
 
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
-use syn::{Error, ItemFn, Result, parse_macro_input};
+use quote::{ToTokens, quote};
+use syn::{
+    Error, FnArg, GenericParam, ItemFn, Pat, Result, Safety, Visibility, ext::IdentExt,
+    parse_macro_input,
+};
 
 mod codegen;
 
@@ -28,15 +31,65 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let bindings = codegen::Bindings::new(&model);
     let body = codegen::flow(&model.flow, &model.execution_plan, &bindings);
 
-    codegen::rename_flow_inputs(function, &bindings);
-    *function.block = syn::parse2(quote!({ #body }))?;
+    let implementation_name = syn::Ident::new("__kaalang_flow", Span::mixed_site());
+    let mut implementation = function.clone();
+    implementation.attrs.clear();
+    implementation.vis = Visibility::Inherited;
+    implementation.sig.ident = implementation_name.clone();
+    implementation.sig.inputs = implementation
+        .sig
+        .inputs
+        .into_iter()
+        .filter(|argument| !matches!(argument, FnArg::Typed(argument) if matches!(argument.pat.as_ref(), Pat::Wild(_))))
+        .collect();
+    codegen::rename_implementation_inputs(&mut implementation, &bindings);
+    *implementation.block = syn::parse2(quote!({ #body }))?;
+
+    let arguments = function.sig.inputs.iter().filter_map(|argument| {
+        let FnArg::Typed(argument) = argument else {
+            unreachable!("the parser rejects method receivers")
+        };
+        let Pat::Ident(parameter) = argument.pat.as_ref() else {
+            return None;
+        };
+        let ident = &parameter.ident;
+        Some(
+            if parameter.mutability.is_some() && bindings.is_mutably_captured(&ident.unraw()) {
+                quote!({ let _ = &mut #ident; #ident })
+            } else {
+                quote!(#ident)
+            },
+        )
+    });
+    let generic_arguments = function
+        .sig
+        .generics
+        .params
+        .iter()
+        .filter_map(|parameter| match parameter {
+            GenericParam::Type(parameter) => Some(parameter.ident.to_token_stream()),
+            GenericParam::Const(parameter) => Some(parameter.ident.to_token_stream()),
+            GenericParam::Lifetime(_) => None,
+        })
+        .collect::<Vec<_>>();
+    let generic_arguments =
+        (!generic_arguments.is_empty()).then(|| quote!(::<#(#generic_arguments),*>));
+    let call = quote!(#implementation_name #generic_arguments (#(#arguments),*));
+    let call = matches!(function.sig.safety, Safety::Unsafe(_))
+        .then(|| quote!(unsafe { #call }))
+        .unwrap_or(call);
+    *function.block = syn::parse2(quote!({
+        #implementation
+        #[allow(clippy::used_underscore_binding)]
+        #call
+    }))?;
 
     Ok(quote!(#function))
 }
 
 #[cfg(test)]
 mod tests {
-    use quote::format_ident;
+    use quote::{ToTokens, format_ident};
     use syn::{Expr, ItemFn, Stmt, parse_quote, visit::Visit};
 
     use super::expand;
@@ -64,6 +117,21 @@ mod tests {
         let mut count = Count(0);
         count.visit_item_fn(function);
         count.0
+    }
+
+    #[test]
+    fn preserves_the_authored_function_signature() {
+        let mut function: ItemFn = parse_quote! {
+            pub const fn identity<T>(mut r#type: T, _: u8) -> T {
+                #[action("Return the value")]
+                let result = |r#type| r#type;
+            }
+        };
+        let signature = function.sig.to_token_stream().to_string();
+
+        expand(&mut function).expect("the flow expands");
+
+        assert_eq!(function.sig.to_token_stream().to_string(), signature);
     }
 
     #[test]
@@ -135,8 +203,8 @@ mod tests {
         assert!(!expansion.contains("Result"));
         assert_eq!(
             expansion.matches("Option").count(),
-            1,
-            "only the authored input"
+            2,
+            "only the outer and internal input signatures"
         );
         assert_eq!(expansion.matches("__kaalang_shared_marker").count(), 1);
     }

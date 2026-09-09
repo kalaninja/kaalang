@@ -1,5 +1,7 @@
-error[E0425]: cannot find value `input` in this scope
+error[E0434]: can't capture dynamic environment in a fn item
  --> tests/capture/compile_fail/undeclared_flow_input.rs:6:30
   |
 6 |     let output = |trigger| { input };
-  |                              ^^^^^ not found in this scope
+  |                              ^^^^^
+  |
+  = help: use the `|| { ... }` closure form instead

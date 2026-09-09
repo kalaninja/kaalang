@@ -91,6 +91,10 @@ impl Bindings {
         })
     }
 
+    pub(crate) fn is_mutably_captured(&self, name: &Ident) -> bool {
+        self.mutable.contains(name)
+    }
+
     pub(crate) fn pattern(&self, span: Span, names: &[Ident]) -> TokenStream2 {
         let bindings = names
             .iter()
@@ -210,15 +214,20 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
     quote!(#(#bindings)*)
 }
 
-/// Rewrites flow-input parameters to their hygienic internal bindings.
-pub(crate) fn rename_flow_inputs(function: &mut ItemFn, bindings: &Bindings) {
+/// Rewrites nested implementation parameters to their hygienic wire bindings.
+pub(crate) fn rename_implementation_inputs(function: &mut ItemFn, bindings: &Bindings) {
     for argument in &mut function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             unreachable!("the parser rejects method receivers")
         };
         match argument.pat.as_mut() {
             Pat::Ident(parameter) => {
-                parameter.ident = bindings.wire(&parameter.ident.unraw()).clone();
+                let name = parameter.ident.unraw();
+                parameter.mutability = parameter
+                    .mutability
+                    .as_ref()
+                    .and(bindings.mutability(&name));
+                parameter.ident = bindings.wire(&name).clone();
             }
             Pat::Wild(_) => {}
             _ => unreachable!("the parser accepts only simple bindings or wildcards"),

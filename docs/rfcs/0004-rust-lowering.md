@@ -20,18 +20,22 @@ The examples below pair complete kaalang functions with illustrative Rust. They
 show the relevant bindings, scopes, and control flow, not a promised
 token-for-token expansion. Names beginning with `wire_` stand for hygienic
 generated bindings; their plain Rust spellings do not demonstrate macro hygiene.
-Unit control-wire bindings and generated lint attributes are omitted where the
-branch structure already shows their role. Tail result expressions in simplified
-examples stand for generated Rust `return` statements. Internal names and the
-generator's own data structures are implementation details.
+The examples omit the signature-preserving outer function that forwards its
+named parameters to the generated implementation. Unit control-wire bindings and
+generated lint attributes are omitted where the branch structure already shows
+their role. Tail result expressions in simplified examples stand for generated
+Rust `return` statements. Internal names and the generator's own data structures
+are implementation details.
 
 ## 2. Bindings, scopes, and actions
 
-Named function parameters become internal Rust bindings for flow-input wires,
-preserving their authored mutability. Lowering renames a parameter but never
-adds `mut`: a mutable capture of an immutable parameter is rejected by Rust. A
-wildcard parameter remains a wildcard. Each authored block body receives local
-aliases only for its listed inputs:
+The outer function preserves every authored parameter. It forwards named
+parameters to hygienic internal bindings in a nested implementation; wildcard
+parameters remain only in the outer signature because they provide no wire. The
+internal binding is mutable only when the authored parameter permits and a block
+requests a mutable capture, so a mutable capture of an immutable parameter is
+rejected before lowering. Each authored block body receives local aliases only
+for its listed inputs:
 
 | Capture     | Rust alias                   |
 | ----------- | ---------------------------- |
@@ -385,11 +389,12 @@ rejects such an unfinished flow unless the author opts out. An authored
 other attributes, implementing the opt-out described by
 [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs).
 
-Expansion replaces the kaalang body and renames named parameters for hygiene. It
-preserves the function's name, visibility, generics, parameter and return types,
-supported qualifiers, where clause, and other function attributes. kaalang v0.1
-supports synchronous flows, including `const fn`; an `async fn` is rejected
-before lowering under [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs).
-The `#[kaalang]` attribute and block and case descriptions are consumed during
-translation; the closure-shaped declarations do not become callable Rust
-closures.
+Expansion replaces the kaalang body but preserves the authored function
+signature, including parameter names and patterns. Hygienic wire names remain
+confined to a nested implementation. It also preserves the function's name,
+visibility, generics, parameter and return types, supported qualifiers, where
+clause, and other function attributes. kaalang v0.1 supports synchronous flows,
+including `const fn`; an `async fn` is rejected before lowering under
+[RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs). The `#[kaalang]`
+attribute and block and case descriptions are consumed during translation; the
+closure-shaped declarations do not become callable Rust closures.
