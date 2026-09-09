@@ -45,7 +45,7 @@ pub(crate) fn emit(
     let span = Span::mixed_site().located_at(flow.blocks[block].span);
     for (index, join) in joins.iter().enumerate() {
         let label = label(JoinTarget { block, join: index });
-        let pattern = value(bindings, &join.wires);
+        let pattern = bindings.pattern(span, &join.wires);
         let continuation = super::flow(flow, &join.next, bindings);
         // A match arm supplies a coercion context: a bare labeled initializer
         // otherwise fixes its type from the first break (e.g. an array reference

@@ -1,0 +1,10 @@
+error[E0596]: cannot borrow `*text` as mutable, as it is behind a `&` reference
+ --> tests/capture/compile_fail/mutate_shared_capture.rs:7:9
+  |
+7 |         text.push('!');
+  |         ^^^^ `text` is a `&` reference, so it cannot be borrowed as mutable
+  |
+help: consider specifying this binding's type
+  |
+6 |     |&text: &mut String| -> result {
+  |           +++++++++++++

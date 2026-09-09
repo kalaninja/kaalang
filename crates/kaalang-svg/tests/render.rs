@@ -72,6 +72,26 @@ fn a_transit_connection_does_not_imply_a_capture() {
 }
 
 #[test]
+fn mutable_captures_keep_their_modifiers_in_labels_and_descriptions() {
+    let svg = render_source(
+        include_str!("../../kaalang/tests/capture/behavior/mutate_wires.rs"),
+        "mutate_wires",
+    )
+    .expect("mutable captures render with their authored modifiers");
+    let description = describe(&svg);
+    assert!(svg.contains(">mut r#type: String</tspan>"));
+    assert!(description.contains("with parameters mut r#type: String; count: u32"));
+    for capture in ["mut count", "&amp;mut type", "&amp;type", "mut type"] {
+        assert!(svg.contains(&format!(">{capture}")), "{capture}");
+        assert!(
+            description.contains(&format!("capturing {capture}")),
+            "{capture}"
+        );
+    }
+    assert!(description.contains("capturing &amp;mut text, &amp;mut total"));
+}
+
+#[test]
 fn terminal_cases_render_beside_a_wide_shared_continuation() {
     let svg = render_source(
         include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),

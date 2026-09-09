@@ -108,7 +108,7 @@ pub(crate) fn emit(
     // cannot fall through into the continuation of a different case.
     for (case, branch) in branches.iter().enumerate() {
         let label = &labels[case];
-        let wire = bindings.wire(&block.outputs[case]);
+        let wire = bindings.pattern(block.output_span, &block.outputs[case..=case]);
         let gate = bindings.gate(&block.outputs[case]);
         let path = super::flow(flow, &branch.plan, bindings);
         dispatch = quote! {

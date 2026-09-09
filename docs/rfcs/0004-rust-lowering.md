@@ -27,17 +27,32 @@ generator's own data structures are implementation details.
 
 ## 2. Bindings, scopes, and actions
 
-Named function parameters become internal Rust bindings for flow-input wires. A
+Named function parameters become internal Rust bindings for flow-input wires,
+preserving their authored mutability. Lowering renames a parameter but never
+adds `mut`: a mutable capture of an immutable parameter is rejected by Rust. A
 wildcard parameter remains a wildcard. Each authored block body receives local
-aliases only for its listed inputs: a bare input binds the wire's value, and a
-borrowed input binds a shared reference to it. Hygienic internal names keep
-omitted wires unavailable under their authored names. Block-local Rust names
-cannot change another block's wire resolution.
+aliases only for its listed inputs:
 
-Input aliases belong to their block's scope. A borrowed capture can produce a
-reference that outlives the alias when the underlying owner remains valid. A
-bare capture moves a non-`Copy` value into its alias; a reference to that
-alias-owned value cannot escape the block. Rust checks these lifetimes.
+| Capture     | Rust alias                   |
+| ----------- | ---------------------------- |
+| `name`      | `let name = wire_name;`      |
+| `mut name`  | `let mut name = wire_name;`  |
+| `&name`     | `let name = &wire_name;`     |
+| `&mut name` | `let name = &mut wire_name;` |
+
+Hygienic internal names keep omitted wires unavailable under their authored
+names. Block-local Rust names cannot change another block's wire resolution.
+Block-output wires captured through `&mut` get mutable internal output bindings
+and bindings after merges. The generated modifier has an expansion span so
+unused internal mutability does not produce author-facing warnings. Authored
+mutable aliases and body locals retain Rust's normal lint behavior.
+
+Input aliases belong to their block's scope. Either kind of borrowed capture can
+produce a reference that outlives the alias when the underlying owner remains
+valid. A value capture moves a non-`Copy` value into its alias; a reference to
+that alias-owned value cannot escape the block, including when the alias is
+mutable. Rust checks these lifetimes and conflicts between live shared and
+mutable borrows. Mutation does not add a new producer or change execution order.
 
 An action becomes a `let` initializer containing its input aliases and authored
 body. Its declared outputs become the binding pattern: one output binds the
@@ -100,6 +115,11 @@ branch transfers its selected producer values with `break 'join values`; several
 merged wires travel together as a tuple. The shared continuation is emitted once
 after this binding. This implements the merge and ordering rules of
 [RFC 0001 §7](0001-language.md#7-execution-and-implicit-convergence).
+
+Mutability belongs to binding patterns only. A wire captured through `&mut`
+after the merge is bound as `let mut wire_name = ...`; tuple bindings mark each
+mutable wire separately. Branches still transfer ordinary value expressions with
+`break 'join wire_name`, without capture modifiers.
 
 The initializer is wrapped in `match () { () => 'join: { ... } }` to give Rust a
 coercion context. Without it, the first `break` can fix the inferred type too

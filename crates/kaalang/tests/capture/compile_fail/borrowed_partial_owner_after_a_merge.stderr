@@ -1,5 +1,5 @@
 error[E0716]: temporary value dropped while borrowed
-  --> tests/wire/compile_fail/borrowed_partial_owner_after_a_merge.rs:20:16
+  --> tests/capture/compile_fail/borrowed_partial_owner_after_a_merge.rs:20:16
    |
  5 | #[kaalang]
    | ---------- in this attribute macro expansion

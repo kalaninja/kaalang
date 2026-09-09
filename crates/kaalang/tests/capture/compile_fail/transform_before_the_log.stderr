@@ -1,5 +1,5 @@
 error[E0382]: borrow of moved value
-  --> tests/wire/compile_fail/transform_before_the_log.rs:10:7
+  --> tests/capture/compile_fail/transform_before_the_log.rs:10:7
    |
  4 | #[kaalang]
    | ---------- in this attribute macro expansion

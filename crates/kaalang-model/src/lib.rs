@@ -548,13 +548,13 @@ mod tests {
     #[test]
     fn rejects_a_borrowed_branch_output() {
         let question =
-            include_str!("../../kaalang/tests/question/compile_fail/borrowed_question_output.rs");
+            include_str!("../../kaalang/tests/capture/compile_fail/borrowed_question_output.rs");
         assert_eq!(
             message(&fixture(question, "invalid")),
             "a kaalang branch output is consumed, never borrowed"
         );
         let choice =
-            include_str!("../../kaalang/tests/choice/compile_fail/borrowed_choice_output.rs");
+            include_str!("../../kaalang/tests/capture/compile_fail/borrowed_choice_output.rs");
         assert_eq!(
             message(&fixture(choice, "invalid")),
             "a kaalang branch output is consumed, never borrowed"

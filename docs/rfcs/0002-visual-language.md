@@ -71,8 +71,8 @@ header without its `fn` keyword, parameters, or return type. It retains the
 `const` marker, generic parameter declarations, where clause, and the `r#` of a
 raw flow name.
 
-When the flow has parameters, a rectangular parameter panel sits to the right
-of start and connects to it with a horizontal line. The panel lists one authored
+When the flow has parameters, a rectangular parameter panel sits to the right of
+start and connects to it with a horizontal line. The panel lists one authored
 parameter per row, including its Rust type. It retains a wildcard parameter and
 the `r#` of a raw identifier. The panel is not a node and does not participate
 in execution.
@@ -149,15 +149,15 @@ outputs therefore carries no hand-over label. A hand-over names newly provided
 wires only; it neither lists wires that remain available nor implies that the
 next node captures every named wire.
 
-Every block input is labeled beside its receiving node. An input binding the
-wire's value is shown as `name`, while a borrowed input is shown as `&name`. The
-captures of a node are drawn once however many connections arrive there, because
-the capture list belongs to the node rather than to an incoming connection. Both
-forms establish execution dependencies. A wire that remains available for a
-later capture may pass virtually along a transitive connection path without
-appearing in intermediate hand-overs. This version of the visual language does
-not show wire lifetimes or assign a wire to one particular sequence of
-connections.
+Every block input is labeled beside its receiving node. Value captures are shown
+as `name` or `mut name`, and borrowed captures as `&name` or `&mut name`,
+according to the authored form. The captures of a node are drawn once however
+many connections arrive there, because the capture list belongs to the node
+rather than to an incoming connection. All forms establish execution
+dependencies. A wire that remains available for a later capture may pass
+virtually along a transitive connection path without appearing in intermediate
+hand-overs. This version of the visual language does not show wire lifetimes or
+assign a wire to one particular sequence of connections.
 
 A computational node with an incoming connection and no authored inputs shows
 `()` beside its receiving end. This marks an empty capture list, not a wire or a
@@ -169,9 +169,9 @@ no inputs.
 A hand-over and an adjacent capture may share one label only when they are the
 two ends of the same connection, that connection is the only one leaving its
 source exit and the only one entering its destination node, and the two lists
-have the same nonempty displayed names in the same order. `name` and `&name` do
-not match, and an empty hand-over shares nothing. The shared label represents
-both connection-end labels.
+have the same nonempty displayed names in the same order. `name`, `mut name`,
+`&name`, and `&mut name` do not match each other, and an empty hand-over shares
+nothing. The shared label represents both connection-end labels.
 
 Identical hand-overs from alternative exits may share one label beside their
 merge when each exit has only one outgoing connection and all those connections
@@ -306,12 +306,12 @@ merge rail. The outgoing connection alone owns the vertical below that point: an
 incoming side route must not turn down and overlap that continuation. Routes
 already in the junction's column descend straight to the same point.
 
-The visual-language contract covers the diagram's nodes, parameter panel,
-roles, labels, the connection end or ends to which each connection label
-belongs, branch order, implicit convergence, dependency reachability,
-connections, crossing-free orthogonal routing, top-to-bottom row order, and
-branch column order. Exact dimensions, colors, typography, spacing, and routing
-offsets are presentation choices.
+The visual-language contract covers the diagram's nodes, parameter panel, roles,
+labels, the connection end or ends to which each connection label belongs,
+branch order, implicit convergence, dependency reachability, connections,
+crossing-free orthogonal routing, top-to-bottom row order, and branch column
+order. Exact dimensions, colors, typography, spacing, and routing offsets are
+presentation choices.
 
 A validated flow whose required connections cannot be drawn under these rules
 has no conforming diagram.

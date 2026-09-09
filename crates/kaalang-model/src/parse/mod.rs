@@ -28,7 +28,7 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     })
 }
 
-/// Extracts simple flow parameters as named flow inputs.
+/// Extracts identifier flow parameters, preserving mutability in the signature.
 fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
     function
         .sig
@@ -38,7 +38,8 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
             FnArg::Typed(argument) => match argument.pat.as_ref() {
                 Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
                 pattern => Some(
-                    simple_binding(pattern, "kaalang flow parameters").map(|input| input.unraw()),
+                    simple_binding(pattern, "kaalang flow parameters", true)
+                        .map(|input| input.unraw()),
                 ),
             },
             FnArg::Receiver(receiver) => Some(Err(Error::new(
@@ -289,29 +290,28 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
 /// Parses one consuming or borrowing block input.
 fn block_input(pattern: &Pat) -> Result<Input> {
     match pattern {
-        Pat::Ident(_) => Ok(input(
-            simple_binding(pattern, "kaalang block inputs")?,
+        Pat::Ident(binding) => Ok(input(
+            simple_binding(pattern, "kaalang block inputs", true)?,
             false,
+            binding.mutability.is_some(),
         )),
-        Pat::Reference(reference)
-            if reference.attrs.is_empty() && reference.mutability.is_none() =>
-        {
-            Ok(input(
-                simple_binding(&reference.pat, "kaalang block inputs")?,
-                true,
-            ))
-        }
+        Pat::Reference(reference) if reference.attrs.is_empty() => Ok(input(
+            simple_binding(&reference.pat, "kaalang block inputs", false)?,
+            true,
+            reference.mutability.is_some(),
+        )),
         _ => Err(Error::new_spanned(
             pattern,
-            "kaalang block inputs must contain only `name` or `&name`",
+            "kaalang block inputs must contain only `name`, `mut name`, `&name`, or `&mut name`",
         )),
     }
 }
 
 /// Pairs one authored input spelling with the logical wire it names.
-fn input(alias: Ident, borrowed: bool) -> Input {
+fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
     Input {
         borrowed,
+        mutable,
         ident: alias.unraw(),
         alias,
     }
@@ -428,13 +428,13 @@ pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String
     Ok(description.value())
 }
 
-/// Extracts an unmodified identifier binding, as authored, from a Rust pattern.
-fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
+/// Extracts an identifier binding, optionally permitting an authored `mut`.
+fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident> {
     match pattern {
         Pat::Ident(binding)
             if binding.attrs.is_empty()
                 && binding.by_ref.is_none()
-                && binding.mutability.is_none()
+                && (allow_mut || binding.mutability.is_none())
                 && binding.subpat.is_none() =>
         {
             Ok(binding.ident.clone())
@@ -450,8 +450,37 @@ fn simple_binding(pattern: &Pat, subject: &str) -> Result<Ident> {
 mod tests {
     use syn::{ItemFn, parse_quote};
 
-    use super::flow;
+    use super::{block_input, flow};
     use crate::model::{BlockKind, RESULT_WIRE};
+
+    #[test]
+    fn captures_preserve_borrowing_mutability_and_authored_spelling() {
+        for (pattern, borrowed, mutable) in [
+            (parse_quote!(r#value), false, false),
+            (parse_quote!(mut r#value), false, true),
+            (parse_quote!(&r#value), true, false),
+            (parse_quote!(&mut r#value), true, true),
+        ] {
+            let input = block_input(&pattern).expect("one of the four capture forms");
+            assert_eq!((input.borrowed, input.mutable), (borrowed, mutable));
+            assert_eq!(input.ident, "value");
+            assert_eq!(input.alias, "r#value");
+        }
+    }
+
+    #[test]
+    fn mutability_does_not_admit_other_input_patterns() {
+        for pattern in [
+            parse_quote!(ref mut value),
+            parse_quote!(&mut mut value),
+            parse_quote!(&mut (value,)),
+            parse_quote!(&mut _),
+            parse_quote!(&mut &value),
+            parse_quote!(mut value @ _),
+        ] {
+            assert!(block_input(&pattern).is_err());
+        }
+    }
 
     #[test]
     fn every_flow_ends_with_an_implicit_block_capturing_the_result_wire() {
@@ -474,6 +503,7 @@ mod tests {
             panic!("end captures one wire")
         };
         assert!(!captured.borrowed);
+        assert!(!captured.mutable);
         assert_eq!(captured.ident, RESULT_WIRE);
     }
 

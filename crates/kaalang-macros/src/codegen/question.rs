@@ -25,8 +25,8 @@ pub(crate) fn emit(
     let no_path = super::flow(flow, &branches[no].plan, bindings);
     let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
-    let yes_wire = bindings.wire(&block.outputs[yes]);
-    let no_wire = bindings.wire(&block.outputs[no]);
+    let yes_wire = bindings.pattern(block.output_span, &block.outputs[yes..=yes]);
+    let no_wire = bindings.pattern(block.output_span, &block.outputs[no..=no]);
     let yes_gate = bindings.gate(&block.outputs[yes]);
     let no_gate = bindings.gate(&block.outputs[no]);
     // The expansion context keeps lints such as `clippy::redundant_else` off a

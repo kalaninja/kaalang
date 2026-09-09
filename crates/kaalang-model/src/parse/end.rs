@@ -25,6 +25,7 @@ pub(super) fn block(function: &ItemFn) -> Block {
         output_span: span,
         inputs: vec![Input {
             borrowed: false,
+            mutable: false,
             ident: result.clone(),
             alias: result,
         }],

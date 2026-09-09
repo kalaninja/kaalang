@@ -216,7 +216,7 @@ mod tests {
             ),
             (
                 include_str!(
-                    "../../kaalang/tests/wire/behavior/const_borrowed_input_partial_merge.rs"
+                    "../../kaalang/tests/capture/behavior/const_borrowed_input_partial_merge.rs"
                 ),
                 "const_borrowed_input_partial_merge",
             ),

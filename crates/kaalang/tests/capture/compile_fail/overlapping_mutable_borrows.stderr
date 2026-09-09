@@ -1,0 +1,15 @@
+error[E0499]: cannot borrow value as mutable more than once at a time
+ --> tests/capture/compile_fail/overlapping_mutable_borrows.rs:9:11
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+...
+6 |     |&mut text| -> first { text };
+  |           ---- first mutable borrow occurs here
+...
+9 |     |&mut text, first| -> result {
+  |           ^^^^  ----- first borrow later used here
+  |           |
+  |           second mutable borrow occurs here
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

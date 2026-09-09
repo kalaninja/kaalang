@@ -1,4 +1,4 @@
-error: kaalang block inputs must contain only `name` or `&name`
+error: kaalang block inputs must contain only `name`, `mut name`, `&name`, or `&mut name`
  --> tests/syntax/compile_fail/bracketed_inputs.rs:6:6
   |
 6 |     |[input]| -> output { input };

@@ -53,13 +53,13 @@ kind while retaining shape and labels as independent type indicators. The
 presentation choices left open by RFC 0002 are internal to the renderer and may
 change without changing the visual language.
 
-The renderer preserves Unicode text and escapes XML content. For the start
-label and each row of the parameter panel, it takes the source content defined
-by RFC 0002 and collapses each run of whitespace to one space before wrapping it
-to its allotted width. It applies no other renderer-specific rewrite. Other
-long labels also wrap to their allotted width. Wrapping breaks only between
-grapheme clusters; an otherwise unbreakable word is split rather than drawn
-outside its node or panel.
+The renderer preserves Unicode text and escapes XML content. For the start label
+and each row of the parameter panel, it takes the source content defined by RFC
+0002 and collapses each run of whitespace to one space before wrapping it to its
+allotted width. It applies no other renderer-specific rewrite. Other long labels
+also wrap to their allotted width. Wrapping breaks only between grapheme
+clusters; an otherwise unbreakable word is split rather than drawn outside its
+node or panel.
 
 A question-branch description uses its own branch-label style beside the exit
 and replaces the output label. Its font is larger than a wire label's font, and

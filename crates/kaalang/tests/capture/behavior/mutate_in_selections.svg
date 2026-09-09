@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1056" viewBox="0 0 1064 1056" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for mutate_in_selections</title>
+  <desc id="kaalang-description">Nodes: Start: mutate_in_selections with parameters mut text: String; count: u8; mode: u8 handing over text, count, mode; Question: Use the choice after changing the text? capturing &amp;mut text, mut count handing over yes / no; Select: Change the text and choose a suffix. capturing yes, &amp;mut text, mut mode; Case: First suffix. handing over first; Case: Second suffix. handing over second; Action: Consume and extend the first case value. capturing mut first, &amp;mut text handing over selected; Action: Consume and extend the second case value. capturing mut second, &amp;mut text handing over selected; Action: Skip the choice. capturing no handing over selected; Action: Return the text and selected suffix. capturing text, selected handing over result; End: String capturing result. Connections: Start: mutate_in_selections to Question: Use the choice after changing the text?; Question: Use the choice after changing the text? branch 1 to Select: Change the text and choose a suffix.; Question: Use the choice after changing the text? branch 2 to Action: Skip the choice.; Select: Change the text and choose a suffix. to Case: First suffix.; Select: Change the text and choose a suffix. to Case: Second suffix.; Case: First suffix. to Action: Consume and extend the first case value.; Case: Second suffix. to Action: Consume and extend the second case value.; Action: Consume and extend the first case value. to the selected merge; Action: Consume and extend the second case value. to the selected merge; Action: Skip the choice. to the selected merge; Action: Return the text and selected suffix. to End: String; the selected merge to Action: Return the text and selected suffix..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <path class="connection" d="M 172 103 L 172 188"/>
+    <path class="connection" d="M 172 260 L 172 332"/>
+    <path class="connection" d="M 312 224 L 892 224 L 892 336"/>
+    <path class="connection" d="M 172 404 L 172 476"/>
+    <path class="connection" d="M 172 404 L 172 456 L 532 456 L 532 476"/>
+    <path class="connection" d="M 172 546 L 172 618"/>
+    <path class="connection" d="M 532 546 L 532 618"/>
+    <path class="connection" d="M 172 684 L 172 736"/>
+    <path class="connection" d="M 532 684 L 532 736 L 172 736"/>
+    <path class="connection" d="M 892 400 L 892 736 L 172 736"/>
+    <path class="connection" d="M 172 894 L 172 966"/>
+    <path class="connection" d="M 172 736 L 172 828"/>
+    <text class="connection-label" x="210" y="754" xml:space="preserve"><tspan x="210" dy="0">selected</tspan></text>
+    <text class="connection-label" x="602" y="213" xml:space="preserve"><tspan x="602" dy="0">no</tspan></text>
+    <text class="connection-label" x="238" y="121" xml:space="preserve"><tspan x="238" dy="0">text, count, mode</tspan></text>
+    <text class="connection-label" x="195" y="278" xml:space="preserve"><tspan x="195" dy="0">yes</tspan></text>
+    <text class="connection-label" x="200" y="564" xml:space="preserve"><tspan x="200" dy="0">first</tspan></text>
+    <text class="connection-label" x="565" y="564" xml:space="preserve"><tspan x="565" dy="0">second</tspan></text>
+    <text class="connection-label" x="250" y="177" xml:space="preserve"><tspan x="250" dy="0">&amp;mut text, mut count</tspan></text>
+    <text class="connection-label" x="263" y="321" xml:space="preserve"><tspan x="263" dy="0">yes, &amp;mut text, mut mode</tspan></text>
+    <text class="connection-label" x="249" y="607" xml:space="preserve"><tspan x="249" dy="0">mut first, &amp;mut text</tspan></text>
+    <text class="connection-label" x="613" y="607" xml:space="preserve"><tspan x="613" dy="0">mut second, &amp;mut text</tspan></text>
+    <text class="connection-label" x="227" y="817" xml:space="preserve"><tspan x="227" dy="0">text, selected</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">mut text: String</tspan><tspan x="-104" dy="18">count: u8</tspan><tspan x="-104" dy="18">mode: u8</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">mutate_in_selections</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
+      <title xml:space="preserve">Use the choice after changing the text?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the choice after </tspan><tspan x="0" dy="18">changing the text?</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 368)">
+      <title xml:space="preserve">Change the text and choose a suffix.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Change the text and choose </tspan><tspan x="0" dy="18">a suffix.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 511)">
+      <title xml:space="preserve">First suffix.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First suffix.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 511)">
+      <title xml:space="preserve">Second suffix.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second suffix.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 651)">
+      <title xml:space="preserve">Consume and extend the first case value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Consume and extend the first </tspan><tspan x="-124" dy="18">case value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 651)">
+      <title xml:space="preserve">Consume and extend the second case value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Consume and extend the second </tspan><tspan x="-124" dy="18">case value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 368)">
+      <title xml:space="preserve">Skip the choice.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Skip the choice.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 861)">
+      <title xml:space="preserve">Return the text and selected suffix.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Return the text and selected </tspan><tspan x="-124" dy="18">suffix.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 995)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; String</tspan></text>
+    </g>
+  </g>
+</svg>

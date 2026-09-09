@@ -40,8 +40,9 @@ visualization:
 - a **block** is one unit of a flow; its inputs name the wires it captures, and
   its outputs name the wires it produces. Every block but the end block is
   authored;
-- an **input** names an available wire captured by a block; a bare input binds
-  the wire's value, while a `&` input binds a shared reference to it;
+- an **input** names an available wire captured by a block; `name` and
+  `mut name` bind its value, while `&name` and `&mut name` bind shared and
+  mutable references to it;
 - an **output** declares a wire produced by a block;
 - a **producer** is one occurrence of a named flow input or block output that
   provides a wire;
@@ -267,9 +268,10 @@ kaalang has no zero-input end block and no implicit unit wire.
 kaalang v0.1 supports synchronous Rust functions, including `const fn`. An
 `async fn` cannot declare a flow.
 
-Function parameters declare flow inputs. Parameters written as simple
-identifiers provide wires. A wildcard parameter (`_`) accepts and discards a
-flow input and provides no wire. Other parameter patterns, including modified
+Function parameters declare flow inputs. Identifier parameters provide wires;
+`name: T` declares an immutable binding and `mut name: T` explicitly permits
+mutable borrowing of that wire. A wildcard parameter (`_`) accepts and discards
+a flow input and provides no wire. Other parameter patterns, including `ref`
 bindings and destructuring patterns, are invalid, as is a method receiver.
 
 A named flow input is a producer occurrence and follows section 6's capture
@@ -413,13 +415,41 @@ Each computational block lists every wire available to its body:
 |&request, policy, yes| -> decision { /* body */ };
 ```
 
-Inputs have two forms:
+Inputs have four forms:
 
 - `name` binds the wire's value by ordinary Rust assignment, so a `Copy` type
   copies and any other type moves;
-- `&name` binds a shared reference to the wire.
+- `mut name` performs the same move or copy into a mutable block-local binding;
+- `&name` binds a shared reference to the wire;
+- `&mut name` binds a mutable reference to the wire.
 
-The end of a borrowing block ends its input alias. The underlying owner follows
+These forms apply to actions, questions, and choices alike. A flow-input wire
+can be captured through `&mut name` only when its parameter explicitly declares
+`mut name: T`; the capture never makes a parameter mutable. Block outputs keep
+their existing declaration syntax and permit mutable borrowing. A mutation
+through `&mut name` changes the original wire's stored value, which later
+captures observe in source order. It does not declare another producer or change
+the wire's capture dependencies. A `mut name` value capture needs no mutable
+producer: it creates a mutable local binding after the move or copy. Changing a
+copied value changes only that local copy. References inside a captured value
+retain their ordinary Rust behavior.
+
+```rust
+// The flow declares `mut text: String`.
+#[action("Append to the original text.")]
+|&mut text| {
+    text.push('!');
+};
+
+#[action("Move and extend the changed text.")]
+|mut text| -> result {
+    text.push('?');
+    text
+};
+```
+
+The end of a borrowing block ends its input alias. A produced reference can keep
+the shared or mutable borrow live beyond the block. The underlying owner follows
 the scope of its wire binding. A value created only inside one branch and not
 carried out through the merge remains local to that branch; any remaining owned
 value is dropped when the branch scope ends. Its scope is not extended to keep a
@@ -443,9 +473,9 @@ The outputs of one action appear together: an execution that runs the action
 produces all of them, so they are ordinary data wires that later blocks borrow
 or consume under these rules. The outputs of a question or choice are
 alternatives: an execution produces exactly one of them. A branch output without
-alternative producers is captured by at most one block, which consumes it; a
-borrow or a second consumer would give the selected branch a second
-continuation.
+alternative producers is captured by at most one block, which consumes it using
+`name` or `mut name`; either kind of borrow or a second consumer would give the
+selected branch a second continuation.
 
 That consumer must execute whenever the branch output is selected. Its other
 inputs must therefore be available in every such execution. For example, an
@@ -459,18 +489,20 @@ and choices that decide the action's consumers stay the same (section 7).
 
 When a branch output shares its name with an alternative producer, its one
 continuation is the implicit merge. Captures after that merge use ordinary
-merged data: they may borrow it or have different consumers in different
-executions. They do not capture the raw branch output.
+merged data: they may borrow it with `&name` or `&mut name`, or have different
+consumers in different executions. They do not capture the raw branch output.
 
 Every input names a wire provided by a flow input or an earlier block output.
 Questions and choices have at least one input; an action may have none.
-Duplicate inputs are invalid. Whenever a consumer executes, each captured name
-resolves to exactly one available producer. No producer is an error; more than
-one proves that the supposed alternative producers are not mutually exclusive
-and is also an error. Producer resolution is occurrence-level and
-branch-feasible: a same-named downstream input does not depend on a particular
-producer occurrence unless some possible execution can reach the consumer with
-that occurrence's value available.
+Duplicate inputs are invalid regardless of their capture modifiers. Other
+patterns, including `ref name`, `&mut mut name`, and destructuring, are invalid.
+Whenever a consumer executes, each captured name resolves to exactly one
+available producer. No producer is an error; more than one proves that the
+supposed alternative producers are not mutually exclusive and is also an error.
+Producer resolution is occurrence-level and branch-feasible: a same-named
+downstream input does not depend on a particular producer occurrence unless some
+possible execution can reach the consumer with that occurrence's value
+available.
 
 A block body receives local bindings only for its listed inputs, so omitted
 wires are out of scope. Rust locals declared inside a block remain local to that
@@ -479,8 +511,8 @@ body and may reuse a wire's spelling without changing wire resolution.
 Rust checks block body types, concrete wire types, repeated uses, moves,
 borrows, match exhaustiveness, alternative producer type agreement, and output
 destructuring. kaalang keeps types out of wire declarations and relies on Rust
-inference. It does not detect `Copy`, insert clones, or order a borrowing
-capture against a consuming one.
+inference. It does not detect `Copy`, insert clones, or reorder captures to
+satisfy ownership or borrowing rules.
 
 ## 7. Execution and implicit convergence
 

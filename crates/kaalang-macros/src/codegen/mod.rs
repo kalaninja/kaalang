@@ -1,10 +1,10 @@
 //! Emits Rust tokens from a validated execution plan.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
-use quote::{quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Pat, ext::IdentExt};
+use quote::{ToTokens, quote, quote_spanned};
+use syn::{Expr, FnArg, ItemFn, Pat, ext::IdentExt, token::Mut};
 
 use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
 
@@ -17,6 +17,8 @@ mod question;
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
     wires: HashMap<Ident, Ident>,
+    /// Wires whose internal bindings permit a mutable borrowing capture.
+    mutable: HashSet<Ident>,
     /// The type gate of each logical wire whose alternative producers no
     /// common binding unifies.
     gates: HashMap<Ident, Ident>,
@@ -54,7 +56,19 @@ impl Bindings {
                 )
             })
             .collect();
-        Self { wires, gates }
+        let mutable = model
+            .flow
+            .blocks
+            .iter()
+            .flat_map(|block| &block.inputs)
+            .filter(|input| input.borrowed && input.mutable)
+            .map(|input| input.ident.clone())
+            .collect();
+        Self {
+            wires,
+            mutable,
+            gates,
+        }
     }
 
     pub(crate) fn wire(&self, name: &Ident) -> &Ident {
@@ -67,6 +81,26 @@ impl Bindings {
         let mut wire = self.wire(name).clone();
         wire.set_span(Span::mixed_site().located_at(name.span()));
         wire
+    }
+
+    fn mutability(&self, name: &Ident) -> Option<Mut> {
+        // This modifier belongs to generated storage, including producer
+        // bindings moved through a merge before any mutable borrow happens.
+        self.mutable.contains(name).then(|| Mut {
+            span: Span::mixed_site().located_at(name.span()),
+        })
+    }
+
+    pub(crate) fn pattern(&self, span: Span, names: &[Ident]) -> TokenStream2 {
+        let bindings = names
+            .iter()
+            .map(|name| {
+                let wire = self.wire_at(name);
+                let mutable = self.mutability(name);
+                quote!(#mutable #wire)
+            })
+            .collect::<Vec<_>>();
+        tuple(span, &bindings)
     }
 
     /// Checks one just-bound producer occurrence against its wire's type gate,
@@ -105,8 +139,8 @@ impl Bindings {
     }
 }
 
-/// Binds one ident bare and several as a tuple pattern or value.
-pub(crate) fn tuple(span: Span, idents: &[Ident]) -> TokenStream2 {
+/// Emits one binding or value bare and several as a tuple.
+pub(crate) fn tuple(span: Span, idents: &[impl ToTokens]) -> TokenStream2 {
     match idents {
         [] => quote_spanned!(span=> ()),
         [ident] => quote_spanned!(span=> #ident),
@@ -161,9 +195,15 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
         let alias = &input.alias;
         let wire = bindings.wire_at(&input.ident);
         let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
+        let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
+        let (binding_mut, borrow_mut) = if input.borrowed {
+            (None, mutable)
+        } else {
+            (mutable, None)
+        };
         quote_spanned!(alias.span()=>
             #[allow(unused_variables, clippy::let_unit_value)]
-            let #alias = #borrow #wire;
+            let #binding_mut #alias = #borrow #borrow_mut #wire;
         )
     });
 

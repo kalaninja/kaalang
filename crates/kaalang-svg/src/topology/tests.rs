@@ -156,6 +156,8 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
         ("first, second", true),
         ("second, first", false),
         ("&first, second", false),
+        ("mut first, second", false),
+        ("&mut first, second", false),
     ] {
         let topology = drawn(&format!(
             r#"
@@ -169,6 +171,10 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
         ));
         assert_eq!(topology.capture(NodeId::Block(0)), Vec::<String>::new());
         assert_eq!(topology.capture_label(NodeId::Block(0)), ["()"]);
+        assert_eq!(
+            topology.capture(NodeId::Block(1)),
+            capture.split(", ").collect::<Vec<_>>()
+        );
         assert_eq!(
             topology.connections.len(),
             3,

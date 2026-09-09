@@ -1,0 +1,5 @@
+error: kaalang block inputs must use simple identifiers
+ --> tests/capture/compile_fail/mutable_reference_binding.rs:6:11
+  |
+6 |     |&mut mut value| -> result { *value };
+  |           ^^^^^^^^^

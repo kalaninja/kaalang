@@ -106,7 +106,7 @@ pub(crate) struct Node {
     pub(crate) id: NodeId,
     pub(crate) kind: NodeKind,
     pub(crate) label: String,
-    /// The wires this node captures, in authored order, a borrow as `&name`.
+    /// The wires this node captures, in authored order, with capture modifiers.
     pub(crate) capture: Vec<String>,
 }
 
@@ -202,9 +202,9 @@ impl Topology {
     }
 
     /// Equal, nonempty displayed lists share a label only at the sole connection
-    /// between their ends. `name`, `&name`, and the empty-input marker never
-    /// match, and an exit handing over nothing shares no label with a node that
-    /// shows no capture list either.
+    /// between their ends. Capture modifiers and the empty-input marker never
+    /// match a bare wire name, and an exit handing over nothing shares no label
+    /// with a node that shows no capture list either.
     ///
     /// Only the outdegree check is reached by an authored flow, at a select
     /// distributor: alternatives meet at a junction, so no node in the current
@@ -393,14 +393,12 @@ fn block_node(index: usize, block: &Block, kind: NodeKind) -> Node {
     }
 }
 
-/// A consuming input reads as `name` and a borrowing one as `&name`, so the two
-/// never share a label with a bare hand-over.
+/// Capture modifiers distinguish borrowing and mutable inputs from a bare
+/// hand-over, so only an unmodified value capture can share its label.
 fn captured(input: &Input) -> String {
-    if input.borrowed {
-        format!("&{}", input.ident)
-    } else {
-        input.ident.to_string()
-    }
+    let borrow = if input.borrowed { "&" } else { "" };
+    let mutable = if input.mutable { "mut " } else { "" };
+    format!("{borrow}{mutable}{}", input.ident)
 }
 
 fn names(idents: &[Ident]) -> Vec<String> {

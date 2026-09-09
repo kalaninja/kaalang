@@ -1,5 +1,5 @@
 error[E0382]: use of moved value
-  --> tests/wire/compile_fail/generic_reuse_without_copy.rs:10:6
+  --> tests/capture/compile_fail/generic_reuse_without_copy.rs:10:6
    |
  4 | #[kaalang]
    | ---------- in this attribute macro expansion
@@ -13,7 +13,7 @@ error[E0382]: use of moved value
    |      ^^^^^ value used here after move
    |
 help: if `T` implemented `Clone`, you could clone the value
-  --> tests/wire/compile_fail/generic_reuse_without_copy.rs:5:12
+  --> tests/capture/compile_fail/generic_reuse_without_copy.rs:5:12
    |
  5 | fn invalid<T>(value: T) -> (T, T) {
    |            ^ consider constraining this type parameter with `Clone`

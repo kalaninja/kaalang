@@ -1,5 +1,5 @@
 error[E0382]: use of moved value
-  --> tests/wire/compile_fail/moved_text_after_the_second_join.rs:29:16
+  --> tests/capture/compile_fail/moved_text_after_the_second_join.rs:29:16
    |
  5 | #[kaalang]
    | ---------- in this attribute macro expansion

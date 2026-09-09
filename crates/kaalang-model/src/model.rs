@@ -65,7 +65,10 @@ pub struct QuestionBranch {
 
 /// One consuming or borrowing block input.
 pub struct Input {
+    /// Whether the input borrows the wire rather than binding its value.
     pub borrowed: bool,
+    /// Mutability of the reference for a borrow, or of the local value binding.
+    pub mutable: bool,
     /// The logical wire name: raw and ordinary spellings normalize to one ident.
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1078" viewBox="0 0 680 1078" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for mutate_wires</title>
+  <desc id="kaalang-description">Nodes: Start: mutate_wires with parameters mut r#type: String; count: u32 handing over type, count; Action: Increment a local copy. capturing mut count handing over incremented; Action: Append to the original text. capturing &amp;mut type; Action: Measure the changed text. capturing &amp;type handing over length; Action: Move the text and keep the original count. capturing mut type, count, incremented handing over text, total; Action: Change both action outputs. capturing &amp;mut text, &amp;mut total; Action: Return the changed wires. capturing text, total, length handing over result; End: (String, u32, usize) capturing result. Connections: Start: mutate_wires to Action: Increment a local copy.; Action: Increment a local copy. to Action: Append to the original text.; Action: Append to the original text. to Action: Measure the changed text.; Action: Measure the changed text. to Action: Move the text and keep the original count.; Action: Move the text and keep the original count. to Action: Change both action outputs.; Action: Change both action outputs. to Action: Return the changed wires.; Action: Return the changed wires. to End: (String, u32, usize).</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: currentColor; font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <path class="connection" d="M 172 94 L 172 170"/>
+    <path class="connection" d="M 172 234 L 172 306"/>
+    <path class="connection" d="M 172 370 L 172 442"/>
+    <path class="connection" d="M 172 506 L 172 578"/>
+    <path class="connection" d="M 172 644 L 172 716"/>
+    <path class="connection" d="M 172 780 L 172 852"/>
+    <path class="connection" d="M 172 916 L 172 988"/>
+    <text class="connection-label" x="219" y="112" xml:space="preserve"><tspan x="219" dy="0">type, count</tspan></text>
+    <text class="connection-label" x="222" y="252" xml:space="preserve"><tspan x="222" dy="0">incremented</tspan></text>
+    <text class="connection-label" x="203" y="524" xml:space="preserve"><tspan x="203" dy="0">length</tspan></text>
+    <text class="connection-label" x="217" y="662" xml:space="preserve"><tspan x="217" dy="0">text, total</tspan></text>
+    <text class="connection-label" x="215" y="159" xml:space="preserve"><tspan x="215" dy="0">mut count</tspan></text>
+    <text class="connection-label" x="215" y="295" xml:space="preserve"><tspan x="215" dy="0">&amp;mut type</tspan></text>
+    <text class="connection-label" x="201" y="431" xml:space="preserve"><tspan x="201" dy="0">&amp;type</tspan></text>
+    <text class="connection-label" x="274" y="567" xml:space="preserve"><tspan x="274" dy="0">mut type, count, incremented</tspan></text>
+    <text class="connection-label" x="252" y="705" xml:space="preserve"><tspan x="252" dy="0">&amp;mut text, &amp;mut total</tspan></text>
+    <text class="connection-label" x="240" y="841" xml:space="preserve"><tspan x="240" dy="0">text, total, length</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut r#type: String</tspan><tspan x="-104" dy="18">count: u32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">mutate_wires</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 202)">
+      <title xml:space="preserve">Increment a local copy.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment a local copy.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 338)">
+      <title xml:space="preserve">Append to the original text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Append to the original text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 474)">
+      <title xml:space="preserve">Measure the changed text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the changed text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 611)">
+      <title xml:space="preserve">Move the text and keep the original count.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Move the text and keep the </tspan><tspan x="-124" dy="18">original count.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 748)">
+      <title xml:space="preserve">Change both action outputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Change both action outputs.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 884)">
+      <title xml:space="preserve">Return the changed wires.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the changed wires.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1017)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; (String, u32, usize)</tspan></text>
+    </g>
+  </g>
+</svg>

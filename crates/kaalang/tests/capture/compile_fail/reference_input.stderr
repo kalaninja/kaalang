@@ -1,5 +1,5 @@
 error: kaalang block inputs must use simple identifiers
- --> tests/syntax/compile_fail/reference_input.rs:6:6
+ --> tests/capture/compile_fail/reference_input.rs:6:6
   |
 6 |     |ref value| -> doubled { *value * 2 };
   |      ^^^^^^^^^

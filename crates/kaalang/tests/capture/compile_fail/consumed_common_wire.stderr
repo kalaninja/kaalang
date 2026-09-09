@@ -1,5 +1,5 @@
 error[E0382]: use of moved value
-  --> tests/wire/compile_fail/consumed_common_wire.rs:17:16
+  --> tests/capture/compile_fail/consumed_common_wire.rs:17:16
    |
  5 | #[kaalang]
    | ---------- in this attribute macro expansion

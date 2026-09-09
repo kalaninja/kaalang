@@ -1,0 +1,17 @@
+error[E0716]: temporary value dropped while borrowed
+  --> tests/capture/compile_fail/mutable_reference_to_a_branch_local.rs:9:14
+   |
+ 3 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 4 | fn mutable_reference_to_a_branch_local(condition: bool, mut fallback: String) -> usize {
+ 5 |     #[question("Create a local owner?")]
+   |     - temporary value is freed at the end of this statement
+...
+ 9 |     |yes| -> local { String::from("local") };
+   |              ^^^^^ creates a temporary value which is freed while still in use
+...
+12 |     |&mut local| -> view { local };
+   |                     ---- borrow later stored here
+   |
+   = note: consider using a `let` binding to create a longer lived value
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

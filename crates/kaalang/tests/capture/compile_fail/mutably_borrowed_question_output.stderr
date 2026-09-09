@@ -1,0 +1,5 @@
+error: a kaalang branch output is consumed, never borrowed
+ --> tests/capture/compile_fail/mutably_borrowed_question_output.rs:9:11
+  |
+9 |     |&mut yes| -> result { 1 };
+  |           ^^^

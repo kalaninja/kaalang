@@ -1,5 +1,5 @@
 error[E0505]: cannot move out of value because it is borrowed
-  --> tests/wire/compile_fail/moved_owner_inside_a_branch.rs:17:6
+  --> tests/capture/compile_fail/moved_owner_inside_a_branch.rs:17:6
    |
  5 | #[kaalang]
    | ---------- in this attribute macro expansion
