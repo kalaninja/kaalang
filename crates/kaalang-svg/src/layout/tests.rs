@@ -1319,6 +1319,66 @@ fn nested_loop_boundaries_render_with_and_without_end() {
 }
 
 #[test]
+fn side_only_loop_returns_ignore_wider_nodes_below_their_span() {
+    for fixture in [
+        fixture!("loop/behavior", "empty_trailing_while"),
+        fixture!("loop/behavior", "trailing_while"),
+    ] {
+        let scene = drawn(fixture);
+        let outer = scene.topology.loops[0];
+        let condition = scene.node(NodeId::Block(scene.topology.loops[1].header));
+        let right = Scene::bounds(condition).2;
+        let edge = scene
+            .connections
+            .iter()
+            .find(|edge| edge.source == Source::Junction(outer.tail))
+            .unwrap();
+        let contour = edge.points.iter().map(|point| point.x).max().unwrap();
+        assert!(contour > right);
+        assert!(
+            contour <= right + 3 * LANE,
+            "{}: the return extends too far beyond the condition",
+            fixture.1
+        );
+        let arrival = scene
+            .connections
+            .iter()
+            .find(|edge| edge.destination == Destination::Junction(outer.tail))
+            .unwrap();
+        assert_eq!(arrival.points.last(), edge.points.first());
+    }
+}
+
+#[test]
+fn a_compact_side_return_clears_a_wrapped_branch_description() {
+    let (source, flow) = fixture!("loop/behavior", "empty_trailing_while");
+    let description = "Restart the entire outer iteration after the inner loop finishes.";
+    let source = source.replace(
+        "while (",
+        &format!("#[yes]\n#[no(\"{description}\")]\nwhile ("),
+    );
+    let scene = drawn((&source, flow));
+    let label = scene
+        .labels
+        .iter()
+        .find(|label| label.lines.concat() == description)
+        .unwrap();
+    assert!(label.lines.len() > 1);
+    let outer = scene.topology.loops[0];
+    let edge = scene
+        .connections
+        .iter()
+        .find(|edge| edge.source == Source::Junction(outer.tail))
+        .unwrap();
+    let vertical = edge
+        .points
+        .windows(2)
+        .find(|segment| segment[1].y < segment[0].y)
+        .unwrap();
+    assert!(vertical[0].x >= label_rect(label).2 + LANE);
+}
+
+#[test]
 fn a_blocked_inner_return_can_lower_its_tail_below_end() {
     let (source, flow) = fixture!("loop/behavior", "trailing_while");
     let reversed = source.replace("while (", "#[no]\n#[yes]\nwhile (");

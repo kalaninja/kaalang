@@ -84,6 +84,13 @@ over descending to the tail's placement row and immediately returning upward.
 Keep the lower route when the shorter one would cross another connection; the
 tail's forward precedence still determines initial node placement.
 
+A sole rightward horizontal arrival may also shorten toward the body instead of
+reserving an empty branch column. Move its tail and return together, keeping the
+return beyond the nodes and the ink and halo of labels along its vertical span.
+Wider body nodes below that span do not widen the return. Keep the original
+route when the compact one would cross another connection. Node columns and
+branch order do not change.
+
 After routing the returns, adjust a reachable terminal `end` merge and end using
 the actual geometry. First try the usual vertical gap below all other nodes, so
 independent terminal and return rails can share a row. Horizontal terminal and

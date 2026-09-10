@@ -25,12 +25,12 @@
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 306 L 172 378
-      M 312 270 L 532 270
+      M 312 270 L 358 270
       M 172 442 L 172 514
       M 172 162 L 172 234
     "/>
     <path class="connection" d="
-      M 532 270 L 552 270 L 552 162 L 172 162
+      M 358 270 L 378 270 L 378 162 L 172 162
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">mut checks</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="326" xml:space="preserve"><tspan x="185" dy="0">NO</tspan></text>

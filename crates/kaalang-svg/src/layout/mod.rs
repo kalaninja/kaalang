@@ -141,6 +141,7 @@ impl LabelKind {
 /// Routes each loop return to its entry junction, innermost first.
 fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destination, String)> {
     let gap = vertical_gap(&scene.topology);
+    let labels = label::place_labels(scene);
     for loop_index in (0..scene.topology.loops.len()).rev() {
         let loop_ = &scene.topology.loops[loop_index];
         let (header, entry, tail) = (loop_.header, loop_.entry, loop_.tail);
@@ -157,10 +158,6 @@ fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destinat
             .collect::<Vec<_>>();
         let arrival = *incoming.first().expect("a repeating body reaches its tail");
         let points = scene.connections[arrival].points.clone();
-        let start = *points.last().expect("an arrival has a route");
-        let raised = (incoming.len() == 1)
-            .then(|| compact_arrival(&points, gap))
-            .flatten();
         let end = *scene
             .connections
             .iter()
@@ -172,25 +169,24 @@ fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destinat
             matches!(node.id, NodeId::Block(index) if (header..body_end).contains(&index))
                 || matches!(node.id, NodeId::Case { choice, .. } if (header..body_end).contains(&choice))
         }).collect::<Vec<_>>();
-        let left = body_nodes
-            .iter()
-            .map(|node| Scene::bounds(node).0)
-            .min()
-            .unwrap_or(end.x)
-            .min(start.x);
-        let right = body_nodes
-            .iter()
-            .map(|node| Scene::bounds(node).2)
-            .max()
-            .unwrap_or(end.x)
-            .max(start.x);
+        let compact = (incoming.len() == 1)
+            .then(|| compact_arrival(&points, gap, end.y, &labels))
+            .flatten();
         let prefer_left = block.kind == BlockKind::Loop || block.yes_branch() == 0;
         let mut routed = false;
         let mut blocked = String::new();
         // ponytail: bounded side lanes and lower tails; broaden contours if
         // a real flow needs a return that bends around several obstacles.
-        for points in raised.into_iter().chain(std::iter::once(points)) {
+        for points in compact.into_iter().chain(std::iter::once(points)) {
             let from = *points.last().expect("an arrival has a route");
+            let (left, right) = body_nodes
+                .iter()
+                .map(|node| Scene::bounds(node))
+                .filter(|&(_, top, _, bottom)| bottom > end.y && top < from.y)
+                .fold(
+                    (from.x.min(end.x), from.x.max(end.x)),
+                    |(left, right), (l, _, r, _)| (left.min(l), right.max(r)),
+                );
             scene.connections[arrival].points = points;
             for offset in 1..=scene.topology.connections.len() + 2 {
                 for use_left in [prefer_left, !prefer_left] {
@@ -241,21 +237,38 @@ fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destinat
     Ok(())
 }
 
-/// A sole arrival can turn at its last bend, or after the usual gap below a
-/// vertical exit. The tail's placement row may be much lower.
-fn compact_arrival(points: &[Point], gap: i32) -> Option<Vec<Point>> {
+/// A sole arrival can turn earlier without reserving a node's row or column.
+/// Side exits keep enough horizontal room for labels above them.
+fn compact_arrival(
+    points: &[Point],
+    gap: i32,
+    entry_y: i32,
+    labels: &[Label],
+) -> Option<Vec<Point>> {
     let [.., bend, end] = points else {
         return None;
     };
+    let mut compact = points.to_vec();
     let y = bend.y + if points.len() == 2 { gap } else { 0 };
-    if bend.x != end.x || y >= end.y {
-        return None;
+    if bend.x == end.x && y < end.y {
+        compact.pop();
+        if y != bend.y {
+            compact.push(Point { x: end.x, y });
+        }
     }
-    let mut compact = points[..points.len() - 1].to_vec();
-    if y != bend.y {
-        compact.push(Point { x: end.x, y });
+    if let [start, end] = compact.as_mut_slice()
+        && start.y == end.y
+        && start.x < end.x
+    {
+        let right = labels
+            .iter()
+            .map(label_rect)
+            .filter(|&(_, top, _, bottom)| bottom > entry_y && top < end.y)
+            .map(|(_, _, right, _)| right)
+            .fold(start.x + LANE, i32::max);
+        end.x = end.x.min(right);
     }
-    Some(compact)
+    (compact != points).then_some(compact)
 }
 
 /// The authored flow header without its parameters and return type.

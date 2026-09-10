@@ -25,7 +25,7 @@
     <path class="connection" d="
       M 192 90 L 192 162
       M 192 378 L 192 450
-      M 332 342 L 552 342
+      M 332 342 L 369 342
       M 192 162 L 192 234
       M 192 234 L 192 306
     "/>
@@ -33,7 +33,7 @@
       M 192 450 L 32 450 L 32 234 L 192 234
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 552 342 L 572 342 L 572 162 L 192 162
+      M 369 342 L 389 342 L 389 162 L 192 162
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="205" y="108" xml:space="preserve"><tspan x="205" dy="0">flag</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="205" y="398" xml:space="preserve"><tspan x="205" dy="0">YES</tspan></text>

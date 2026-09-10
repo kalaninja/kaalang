@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="964" height="1300" viewBox="0 0 964 1300" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="724" height="1300" viewBox="0 0 724 1300" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for trailing_while</title>
   <desc id="kaalang-description">Nodes: Start: trailing_while; Action: Initialize the counters. capturing nothing handing over mut outer, mut inner; Action: Enter the outer iteration. capturing &amp;mut outer; Question: Is the inner counter below three? capturing &amp;inner described as branch 1: YES / branch 2: NO; Action: Increment the inner counter. capturing &amp;mut inner; Question: Has the inner counter reached three? capturing &amp;inner handing over done / again; Action: Return the outer counter. capturing done, &amp;outer handing over end; Action: Finish the inner iteration. capturing again; End: usize capturing end. Connections: Start: trailing_while to Action: Initialize the counters.; Action: Initialize the counters. to the entry of the loop; Action: Enter the outer iteration. to the entry of Question: Is the inner counter below three?; Question: Is the inner counter below three? branch 1 to Action: Increment the inner counter.; Question: Is the inner counter below three? branch 2 to the iteration tail of the loop; Action: Increment the inner counter. to Question: Has the inner counter reached three?; Question: Has the inner counter reached three? branch 1 to Action: Return the outer counter.; Question: Has the inner counter reached three? branch 2 to Action: Finish the inner iteration.; Action: Return the outer counter. to End: usize; Action: Finish the inner iteration. to the iteration tail of Question: Is the inner counter below three?; the entry of the loop to Action: Enter the outer iteration.; the entry of Question: Is the inner counter below three? to Question: Is the inner counter below three?; Repeat from the iteration tail of Question: Is the inner counter below three? to the entry of Question: Is the inner counter below three?; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
   <defs>
@@ -27,7 +27,7 @@
       M 192 226 L 192 298
       M 192 434 L 192 506
       M 192 650 L 192 722
-      M 332 614 L 912 614
+      M 332 614 L 369 614
       M 192 786 L 192 858
       M 192 930 L 192 1002
       M 332 894 L 552 894 L 552 1002
@@ -40,7 +40,7 @@
       M 552 1268 L 32 1268 L 32 506 L 192 506
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 912 614 L 932 614 L 932 298 L 192 298
+      M 369 614 L 389 614 L 389 298 L 192 298
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="427" y="883" xml:space="preserve"><tspan x="427" dy="0">again</tspan></text>
     <text class="connection-label" x="205" y="244" xml:space="preserve"><tspan x="205" dy="0">mut outer, mut inner</tspan></text>
