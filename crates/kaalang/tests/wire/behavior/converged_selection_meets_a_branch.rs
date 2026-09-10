@@ -6,7 +6,7 @@ fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
     let (b, right_no) = |right| right;
 
     #[action("Provide the right value.")]
-    let right_value = |b| Some(1u8);
+    let right_value = |b| Some(1);
 
     #[action("Provide no right value.")]
     let right_value = |right_no| None;

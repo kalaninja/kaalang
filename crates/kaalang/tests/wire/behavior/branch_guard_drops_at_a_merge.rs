@@ -17,7 +17,7 @@ fn branch_guard_drops_at_a_merge(condition: bool, cell: &RefCell<usize>) -> usiz
     };
 
     #[action("Borrow the cell and use the fallback size.")]
-    let (_no_guard, ready) = |no, cell| (cell.borrow_mut(), 8usize);
+    let (_no_guard, ready) = |no, cell| (cell.borrow_mut(), 8);
 
     #[action("Mutate the cell after the merge.")]
     let end = |ready, cell| {

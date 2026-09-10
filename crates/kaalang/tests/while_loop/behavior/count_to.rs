@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 const fn count_to(limit: usize) -> usize {
     #[action("Initialize the counter.")]
-    let mut count = || 0usize;
+    let mut count = || 0;
 
     #[question("Is the counter below the limit?")]
     while (|&count, &limit| *count < *limit) {

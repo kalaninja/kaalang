@@ -6,10 +6,10 @@ const fn const_alternative_producers(condition: bool) -> u8 {
     let (yes, no) = |condition| condition;
 
     #[action("Build the yes value and an unused marker.")]
-    let (end, _marker) = |yes| (1u8, 3u8);
+    let (end, _marker) = |yes| (1, 3u8);
 
     #[action("Build the no value and an unused marker.")]
-    let (end, _marker) = |no| (2u8, 4u8);
+    let (end, _marker) = |no| (2, 4);
 }
 
 #[test]

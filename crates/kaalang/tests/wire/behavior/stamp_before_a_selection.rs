@@ -6,7 +6,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn stamp_before_a_selection(flag: bool) -> u64 {
     #[action("Stamp.")]
-    let stamp = || 7u64;
+    let stamp = || 7;
 
     #[question("Which way?")]
     let (yes, no) = |flag| flag;

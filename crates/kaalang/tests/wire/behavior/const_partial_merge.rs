@@ -15,16 +15,16 @@ const fn const_partial_merge(source: u8) -> u8 {
     };
 
     #[action("Build the value from the first source.")]
-    let partial = |first| 10u8;
+    let partial = |first| 10;
 
     #[action("Build the value from the second source.")]
-    let partial = |second| 20u8;
+    let partial = |second| 20;
 
     #[action("Add one to the partially merged value.")]
     let shared = |partial| partial + 1;
 
     #[action("Build the value from the third source.")]
-    let shared = |third| 30u8;
+    let shared = |third| 30;
 
     #[action("Double the merged value.")]
     let end = |shared| shared * 2;

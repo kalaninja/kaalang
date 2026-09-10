@@ -12,16 +12,16 @@ fn invalid(left: bool, right: bool) -> u8 {
     let (right_yes, right_no) = |right| { right };
 
     #[action("Note the left answer.")]
-    let left_note = |left_yes| { 1u8 };
+    let left_note = |left_yes| { 1 };
 
     #[action("Note the missing left answer.")]
-    let left_absent = |left_no| { 0u8 };
+    let left_absent = |left_no| { 0 };
 
     #[action("Note the right answer.")]
-    let right_note = |right_yes| { 2u8 };
+    let right_note = |right_yes| { 2 };
 
     #[action("Note the missing right answer.")]
-    let right_absent = |right_no| { 0u8 };
+    let right_absent = |right_no| { 0 };
 
     #[action("Use both notes.")]
     let end = |left_note, right_note| { left_note + right_note };

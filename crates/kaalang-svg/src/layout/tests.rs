@@ -380,10 +380,10 @@ const SHARED_INPUTS: &str = r#"
     #[kaalang]
     fn shared_inputs() -> u8 {
         #[action("Produce the first value.")]
-        let first = || { 2u8 };
+        let first = || { 2 };
 
         #[action("Produce the second value.")]
-        let second = || { 3u8 };
+        let second = || { 3 };
 
         #[action("Add the values.")]
         let sum = |&first, &second| { first + second };

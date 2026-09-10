@@ -9,7 +9,7 @@ fn setup_precedes_a_later_question(condition: bool, order: &Cell<u8>) -> u8 {
     #[action("Prepare the shared setup.")]
     let setup = |&order| {
         order.set(order.get() * 10 + 1);
-        7u8
+        7
     };
 
     #[question("Take the short branch?")]

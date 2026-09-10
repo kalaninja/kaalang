@@ -8,7 +8,7 @@ fn local_work_before_a_wire_merge(condition: bool, order: &Cell<u8>) -> u32 {
     let (yes, no) = |condition| condition;
 
     #[action("Build the yes value and local note.")]
-    let (selected, local_note) = |yes| (21, 1u8);
+    let (selected, local_note) = |yes| (21, 1);
 
     #[action("Build the no value, which has no note to record.")]
     let (selected, noted) = |no| (34, ());

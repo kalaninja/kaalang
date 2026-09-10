@@ -19,25 +19,25 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
     };
 
     #[action("First value.")]
-    let ab = |a| 1u8;
+    let ab = |a| 1;
 
     #[action("Second value.")]
-    let ab = |b| 2u8;
+    let ab = |b| 2;
 
     #[action("Close the first pair.")]
     let abc = |ab| ab + 10;
 
     #[action("Third value.")]
-    let abc = |c| 3u8;
+    let abc = |c| 3;
 
     #[action("Finish the first three.")]
     let end = |abc| abc + 100;
 
     #[action("Fourth value.")]
-    let de = |d| 4u8;
+    let de = |d| 4;
 
     #[action("Fifth value.")]
-    let de = |e| 5u8;
+    let de = |e| 5;
 
     #[action("Finish the last two.")]
     let end = |de| de + 200;

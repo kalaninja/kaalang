@@ -17,19 +17,19 @@ fn two_convergence_groups(quarter: u8) -> u32 {
     };
 
     #[action("Open the early half.")]
-    let early = |first| 1u32;
+    let early = |first| 1;
 
     #[action("Open the early half the other way.")]
-    let early = |second| 2u32;
+    let early = |second| 2;
 
     #[action("Close the early half.")]
     let end = |early| early + 10;
 
     #[action("Open the late half.")]
-    let late = |third| 3u32;
+    let late = |third| 3;
 
     #[action("Open the late half the other way.")]
-    let late = |fourth| 4u32;
+    let late = |fourth| 4;
 
     #[action("Close the late half.")]
     let end = |late| late + 20;

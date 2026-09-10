@@ -16,7 +16,7 @@ const SOURCE: &str = r#"
         };
 
         #[action("Split <the> near lane & measure it.")]
-        let (width, depth) = |near| { (1u8, 2u8) };
+        let (width, depth) = |near| { (1, 2) };
 
         #[action("Measure the width.")]
         let measured = |&width| { *width };
@@ -28,7 +28,7 @@ const SOURCE: &str = r#"
         let end = |measured, gauged| { measured + gauged };
 
         #[action("Finish from the far lane.")]
-        let end = |far| { 9u8 };
+        let end = |far| { 9 };
     }
 "#;
 

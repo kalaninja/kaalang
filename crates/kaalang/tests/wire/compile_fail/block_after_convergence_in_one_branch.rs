@@ -9,7 +9,7 @@ fn invalid(condition: bool) -> u32 {
     let (selected, plain) = |yes| { (1, ()) };
 
     #[action("Build the no value and a note.")]
-    let (selected, extra) = |no| { (2, 7u32) };
+    let (selected, extra) = |no| { (2, 7) };
 
     #[action("Take the shared step.")]
     let stepped = |selected| { selected * 10 };

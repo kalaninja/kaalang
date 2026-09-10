@@ -9,19 +9,19 @@ fn two_merges_reach_one_consumer(scale: bool, offset: bool) -> u32 {
     let (scaled, plain) = |scale| scale;
 
     #[action("Take the scaled factor.")]
-    let factor = |scaled| 10u32;
+    let factor = |scaled| 10;
 
     #[action("Take the plain factor.")]
-    let factor = |plain| 1u32;
+    let factor = |plain| 1;
 
     #[question("Offset the value?")]
     let (shifted, centred) = |offset| offset;
 
     #[action("Take the shifted base.")]
-    let base = |shifted| 5u32;
+    let base = |shifted| 5;
 
     #[action("Take the centred base.")]
-    let base = |centred| 0u32;
+    let base = |centred| 0;
 
     #[action("Combine both merged values.")]
     let end = |factor, base| factor + base;

@@ -411,7 +411,7 @@ the final false check, including when the body never runs.
 #[kaalang]
 fn count_to(limit: usize) -> usize {
     #[action("Initialize the counter.")]
-    let mut count = || 0usize;
+    let mut count = || 0;
 
     #[question("Is the counter below the limit?")]
     while (|&count, &limit| *count < *limit) {
@@ -428,7 +428,7 @@ Illustrative Rust:
 
 ```rust
 fn count_to(wire_limit: usize) -> usize {
-    let mut wire_count = 0usize;
+    let mut wire_count = 0;
     while {
         let count = &wire_count;
         let limit = &wire_limit;

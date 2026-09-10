@@ -23,7 +23,7 @@ fn effect_then_common(flag: bool) -> u8 {
     #[action("Yes value.")]
     let (value, local) = |yes| {
         record("yes");
-        (1u8, ())
+        (1, ())
     };
 
     #[action("Local effect.")]
@@ -34,13 +34,13 @@ fn effect_then_common(flag: bool) -> u8 {
     #[action("No value.")]
     let value = |no| {
         record("no");
-        2u8
+        2
     };
 
     #[action("Common stamp.")]
     let stamp = || {
         record("stamp");
-        10u8
+        10
     };
 
     #[action("Finish.")]

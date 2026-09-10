@@ -3,14 +3,14 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
     #[action("Start at the first row.")]
-    let mut row = || 0usize;
+    let mut row = || 0;
 
     #[question("Are there more rows?")]
     #[no("All rows have been searched.")]
     #[yes("Search this row.")]
     while (|row, rows| row < rows.len()) {
         #[action("Start at the first column.")]
-        let mut column = || 0usize;
+        let mut column = || 0;
 
         #[question("Are there more columns?")]
         while (|column, row, rows| column < rows[row].len()) {

@@ -11,13 +11,13 @@ fn invalid(outer: bool, late: bool) -> u8 {
     let (early, delayed) = |nested, late| { late };
 
     #[action("Build the shared value early.")]
-    let (shared, early_gate) = |early| { (1u8, ()) };
+    let (shared, early_gate) = |early| { (1, ()) };
 
     #[action("Build the shared value late.")]
-    let (shared, late_gate) = |delayed| { (2u8, ()) };
+    let (shared, late_gate) = |delayed| { (2, ()) };
 
     #[action("Build the shared value directly.")]
-    let (shared, direct_gate) = |direct| { (3u8, ()) };
+    let (shared, direct_gate) = |direct| { (3, ()) };
 
     #[action("Use the shared value inside the early branch.")]
     let end = |shared, early_gate| { shared };

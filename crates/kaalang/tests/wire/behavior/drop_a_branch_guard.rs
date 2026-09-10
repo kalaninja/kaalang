@@ -21,7 +21,7 @@ fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
     };
 
     #[action("Use the fallback size.")]
-    let size = |no| 8usize;
+    let size = |no| 8;
 
     #[action("Mutate the cell after the merge.")]
     let end = |size, cell| {

@@ -18,13 +18,13 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     let shared = |left| 1u8;
 
     #[action("Build the right shared value.")]
-    let shared = |right| 2u8;
+    let shared = |right| 2;
 
     #[action("Produce the first terminal result.")]
-    let end = |first| 3u8;
+    let end = |first| 3;
 
     #[action("Take one more step toward the second terminal result.")]
-    let stepped = |second| 4u8;
+    let stepped = |second| 4;
 
     #[action("Produce the second terminal result.")]
     let end = |stepped| stepped;
@@ -42,16 +42,16 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     };
 
     #[action("Build result A.")]
-    let selected = |a| 6u8;
+    let selected = |a| 6;
 
     #[action("Build result B.")]
-    let selected = |b| 7u8;
+    let selected = |b| 7;
 
     #[action("Build result C.")]
-    let selected = |c| 8u8;
+    let selected = |c| 8;
 
     #[action("Build result D.")]
-    let selected = |d| 9u8;
+    let selected = |d| 9;
 
     #[action("Use the result.")]
     let end = |selected| selected;

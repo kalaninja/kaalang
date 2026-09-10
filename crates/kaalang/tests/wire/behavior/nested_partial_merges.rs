@@ -17,22 +17,22 @@ fn nested_partial_merges(source: u8) -> u8 {
     };
 
     #[action("First value.")]
-    let ab = |a| 1u8;
+    let ab = |a| 1;
 
     #[action("Second value.")]
-    let ab = |b| 2u8;
+    let ab = |b| 2;
 
     #[action("Close the first pair.")]
     let abc = |ab| ab + 10;
 
     #[action("Third value.")]
-    let abc = |c| 3u8;
+    let abc = |c| 3;
 
     #[action("Close the first three.")]
     let abcd = |abc| abc + 100;
 
     #[action("Fourth value.")]
-    let abcd = |d| 4u8;
+    let abcd = |d| 4;
 
     #[action("Finish.")]
     let end = |abcd| abcd;

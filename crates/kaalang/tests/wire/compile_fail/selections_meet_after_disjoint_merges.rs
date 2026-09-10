@@ -19,25 +19,25 @@ fn invalid(mode: u8, report: bool) -> u8 {
     };
 
     #[action("First value.")]
-    let early = |a| { 1u8 };
+    let early = |a| { 1 };
 
     #[action("Second value.")]
-    let early = |b| { 2u8 };
+    let early = |b| { 2 };
 
     #[action("Third value.")]
-    let late = |c| { 3u8 };
+    let late = |c| { 3 };
 
     #[action("Fourth value.")]
-    let late = |d| { 4u8 };
+    let late = |d| { 4 };
 
     #[question("Report?")]
     let (yes, no) = |report| { report };
 
     #[action("Keep the yes marker.")]
-    let kept = |yes| { 10u8 };
+    let kept = |yes| { 10 };
 
     #[action("Keep the no marker.")]
-    let skipped = |no| { 20u8 };
+    let skipped = |no| { 20 };
 
     #[action("Finish the early half loudly.")]
     let end = |early, kept| { early + kept };

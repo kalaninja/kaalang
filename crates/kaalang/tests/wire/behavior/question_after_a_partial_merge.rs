@@ -13,16 +13,16 @@ fn question_after_a_partial_merge(value: u8, flag: bool) -> u8 {
     };
 
     #[action("Build the value from the first source.")]
-    let partial = |first| 10u8;
+    let partial = |first| 10;
 
     #[action("Build the value from the second source.")]
-    let partial = |second| 20u8;
+    let partial = |second| 20;
 
     #[action("Use the partially merged value.")]
     let shared = |partial| partial + 1;
 
     #[action("Build the value from the third source.")]
-    let shared = |third| 30u8;
+    let shared = |third| 30;
 
     #[question("Is the value large?")]
     let (large, small) = |&shared, flag| flag && *shared > 15;

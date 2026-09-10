@@ -15,13 +15,13 @@ fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
     };
 
     #[action("Build A.")]
-    let value = |a| 1u8;
+    let value = |a| 1;
 
     #[action("Build B.")]
-    let value = |b| 2u8;
+    let value = |b| 2;
 
     #[action("Build C.")]
-    let value = |c| 3u8;
+    let value = |c| 3;
 
     #[choice("Which finish?")]
     #[case("Finish X.")]
@@ -45,8 +45,8 @@ fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
 
 #[test]
 fn every_build_reaches_every_finish() {
-    for first in 0..3u8 {
-        for second in 0..3u8 {
+    for first in 0..3 {
+        for second in 0..3 {
             let expected = (first + 1) + (second + 1) * 10;
             assert_eq!(builds_before_a_second_choice(first, second), expected);
         }

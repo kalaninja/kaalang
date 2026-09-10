@@ -8,19 +8,19 @@ fn two_merges_before_one_finish(left: bool, right: bool) -> u8 {
     let (left_yes, left_no) = |left| left;
 
     #[action("Left value.")]
-    let counted = |left_yes| 1u8;
+    let counted = |left_yes| 1;
 
     #[action("Other left value.")]
-    let counted = |left_no| 2u8;
+    let counted = |left_no| 2;
 
     #[question("Right enabled?")]
     let (right_yes, right_no) = |right| right;
 
     #[action("Right value.")]
-    let seen = |right_yes| 10u8;
+    let seen = |right_yes| 10;
 
     #[action("Other right value.")]
-    let seen = |right_no| 20u8;
+    let seen = |right_no| 20;
 
     #[action("Finish with both merged values.")]
     let end = |counted, seen| counted + seen;

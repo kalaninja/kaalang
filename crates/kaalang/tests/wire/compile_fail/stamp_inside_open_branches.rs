@@ -9,7 +9,7 @@ fn invalid(flag: bool) -> u64 {
     let (yes, no) = |flag| { flag };
 
     #[action("Stamp.")]
-    let stamp = || { 7u64 };
+    let stamp = || { 7 };
 
     #[action("Finish yes.")]
     let end = |yes, stamp| { stamp };

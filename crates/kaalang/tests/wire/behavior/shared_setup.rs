@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn shared_setup(condition: bool) -> u32 {
     #[action("Prepare the shared setup.")]
-    let setup = || 10u32;
+    let setup = || 10;
 
     #[question("Take the short branch?")]
     let (short, long) = |condition| condition;

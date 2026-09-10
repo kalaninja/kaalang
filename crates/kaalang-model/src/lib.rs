@@ -402,9 +402,9 @@ mod tests {
                 #[question("Choose the right value")]
                 let (x, y) = |right| { right };
                 #[action("Build the first right value")]
-                let value = |x| { 10u8 };
+                let value = |x| { 10 };
                 #[action("Build the second right value")]
-                let value = |y| { 20u8 };
+                let value = |y| { 20 };
                 #[question("Choose the left path")]
                 let (a, b) = |left| { left };
                 #[action("Use the left path")]
@@ -564,7 +564,7 @@ mod tests {
                 #[question("Right?")]
                 let (c, _d) = |right| { right };
                 #[action("Both")]
-                let end = |a, c| { 1u8 };
+                let end = |a, c| { 1 };
             }
         };
 
@@ -604,13 +604,13 @@ mod tests {
                 let (shared, borrow_gate) = |yes| { ((), ()) };
 
                 #[action("Consume the nested control")]
-                let end = |shared, branch_gate| { 1u8 };
+                let end = |shared, branch_gate| { 1 };
 
                 #[action("Consume the other nested control")]
-                let end = |skip, branch_gate| { 2u8 };
+                let end = |skip, branch_gate| { 2 };
 
                 #[action("Borrow only the action output")]
-                let end = |&shared, borrow_gate| { 3u8 };
+                let end = |&shared, borrow_gate| { 3 };
             }
         };
 
@@ -900,7 +900,7 @@ mod tests {
                 let (selected, _tag) = |yes| { (1, 1u8) };
 
                 #[action("Build the no value")]
-                let (selected, _tag) = |no| { (2, 2u8) };
+                let (selected, _tag) = |no| { (2, 2) };
 
                 #[action("Use the selected value")]
                 let end = |selected| { selected };
@@ -922,7 +922,7 @@ mod tests {
                 let (selected, _tag) = |yes| { (1, 1u8) };
 
                 #[action("Build the no result")]
-                let (end, _tag) = |no| { (2, 2u8) };
+                let (end, _tag) = |no| { (2, 2) };
 
                 #[action("Use the selected value")]
                 let end = |selected| { selected };

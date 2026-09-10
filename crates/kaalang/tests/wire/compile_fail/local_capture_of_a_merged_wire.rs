@@ -8,10 +8,10 @@ fn invalid(condition: bool) -> u8 {
     let (yes, no) = |condition| { condition };
 
     #[action("Build the yes value and local gate.")]
-    let (value, yes_gate) = |yes| { (1u8, ()) };
+    let (value, yes_gate) = |yes| { (1, ()) };
 
     #[action("Build the no value and local gate.")]
-    let (value, no_gate) = |no| { (2u8, ()) };
+    let (value, no_gate) = |no| { (2, ()) };
 
     #[action("Use the value inside the yes branch.")]
     let end = |value, yes_gate| { value };

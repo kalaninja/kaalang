@@ -8,10 +8,10 @@ fn successive_selections_keep_a_copy(condition: bool, long: bool) -> u32 {
     let (first, second) = |condition| condition;
 
     #[action("Build the first seed.")]
-    let seed = |first| 3u32;
+    let seed = |first| 3;
 
     #[action("Build the second seed.")]
-    let seed = |second| 2u32;
+    let seed = |second| 2;
 
     #[action("Scale the merged seed.")]
     let scaled = |seed| seed * 10;

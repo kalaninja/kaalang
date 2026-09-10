@@ -6,7 +6,7 @@ fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     let (left, right) = |outer| outer;
 
     #[action("Prepare the left branch.")]
-    let (probe, left_value) = |left| ((), 1u8);
+    let (probe, left_value) = |left| ((), 1);
 
     #[question("Take the far left branch?")]
     let (far, near) = |probe, inner| !inner;
@@ -18,7 +18,7 @@ fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     let selected = |far, &left_value| *left_value;
 
     #[action("Produce the right value and an unused alternative.")]
-    let (_unused, selected) = |right| ((), 2u8);
+    let (_unused, selected) = |right| ((), 2);
 
     #[action("Use the selected value.")]
     let end = |selected| selected;

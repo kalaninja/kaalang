@@ -266,9 +266,9 @@ mod tests {
                 #[question("Choose")]
                 let (yes, no) = |flag| { flag };
                 #[action("Yes value")]
-                let value = |yes| { 1u8 };
+                let value = |yes| { 1 };
                 #[action("No value")]
-                let value = |no| { 2u8 };
+                let value = |no| { 2 };
                 #[action("Use the value")]
                 let end = |value| { value };
             }
@@ -332,9 +332,9 @@ mod tests {
                 #[question("Choose")]
                 let (yes, no) = |flag| { flag };
                 #[action("Yes value")]
-                let (value, yes_work) = |yes| { (1u8, ()) };
+                let (value, yes_work) = |yes| { (1, ()) };
                 #[action("No value")]
-                let (value, no_work) = |no| { (2u8, ()) };
+                let (value, no_work) = |no| { (2, ()) };
                 #[action("Finish the yes branch")]
                 let done = |yes_work| {};
                 #[action("Finish the no branch")]
@@ -386,7 +386,7 @@ mod tests {
             let mut function: syn::ItemFn = parse_quote! {
                 fn choose(flag: bool, seed: u8) -> u8 {
                     #[action("Prepare the setup.")]
-                    let (setup, fallback) = |seed| { (seed, 0u8) };
+                    let (setup, fallback) = |seed| { (seed, 0) };
                     #[question("Use the setup?")]
                     let (yes, no) = |flag| { flag };
                     #[action("Use it.")]
@@ -435,15 +435,15 @@ mod tests {
                 #[question("Choose the value.")]
                 let (first, second) = |flag| { flag };
                 #[action("First value.")]
-                let value = |first| { 1u8 };
+                let value = |first| { 1 };
                 #[action("Second value.")]
-                let value = |second| { 2u8 };
+                let value = |second| { 2 };
                 #[question("Report the value?")]
                 let (yes, no) = |report| { report };
                 #[action("Report it.")]
                 let end = |yes, value| { value };
                 #[action("Report nothing.")]
-                let end = |no, value| { 0u8 };
+                let end = |no, value| { 0 };
             }
         };
         let model = crate::build(&function).expect("the merge completes above the selection");

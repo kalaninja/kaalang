@@ -13,10 +13,10 @@ fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
     };
 
     #[action("Build the first right value.")]
-    let value = |x| 10u8;
+    let value = |x| 10;
 
     #[action("Build the second right value.")]
-    let value = |y| 20u8;
+    let value = |y| 20;
 
     #[question("Choose the left branch.")]
     let (a, b) = |left, &calls| {

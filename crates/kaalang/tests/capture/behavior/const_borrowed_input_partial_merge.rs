@@ -24,7 +24,7 @@ const fn const_borrowed_input_partial_merge(source: u8, bytes: &[u8]) -> usize {
     let view = |partial| partial;
 
     #[action("Use the fallback slice.")]
-    let view = |fallback| &[7u8, 8];
+    let view = |fallback| &[7, 8];
 
     #[action("Measure the merged slice.")]
     let end = |view| view.len() + view[0] as usize;
@@ -32,8 +32,8 @@ const fn const_borrowed_input_partial_merge(source: u8, bytes: &[u8]) -> usize {
 
 #[test]
 fn borrowed_input_crosses_the_partial_merge_at_compile_time() {
-    const FIRST: usize = const_borrowed_input_partial_merge(0, &[1u8, 2, 3]);
-    const SECOND: usize = const_borrowed_input_partial_merge(1, &[4u8, 5, 6]);
+    const FIRST: usize = const_borrowed_input_partial_merge(0, &[1, 2, 3]);
+    const SECOND: usize = const_borrowed_input_partial_merge(1, &[4, 5, 6]);
     const FALLBACK: usize = const_borrowed_input_partial_merge(2, &[]);
     assert_eq!((FIRST, SECOND, FALLBACK), (4, 7, 9));
 }

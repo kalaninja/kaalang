@@ -17,16 +17,16 @@ fn invalid(mode: u8) -> u8 {
     };
 
     #[action("First value.")]
-    let early = |a| { 1u8 };
+    let early = |a| { 1 };
 
     #[action("Second value.")]
-    let early = |b| { 2u8 };
+    let early = |b| { 2 };
 
     #[action("Third value.")]
-    let late = |c| { 3u8 };
+    let late = |c| { 3 };
 
     #[action("Fourth value.")]
-    let late = |d| { 4u8 };
+    let late = |d| { 4 };
 
     #[action("Common effect.")]
     || {};

@@ -6,10 +6,10 @@ fn invalid(flag: bool) -> u8 {
     let (yes, no) = |flag| { flag };
 
     #[action("Build the yes value and local work.")]
-    let (value, local) = |yes| { (1u8, ()) };
+    let (value, local) = |yes| { (1, ()) };
 
     #[action("Build the no value.")]
-    let value = |no| { 2u8 };
+    let value = |no| { 2 };
 
     #[action("Common effect.")]
     || {};
