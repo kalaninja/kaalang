@@ -58,6 +58,7 @@ fn renders_an_accessible_standalone_svg() {
     assert!(svg.contains(".action .node-shape { fill: #f8fafc; }"));
     assert!(svg.contains(".question .node-shape { fill: #fffbeb; }"));
     assert!(svg.contains(".select .node-shape, .case .node-shape { fill: #f5f3ff; }"));
+    assert!(svg.contains(".branch-label { fill: currentColor; font-weight: 500; }"));
 }
 
 #[test]
