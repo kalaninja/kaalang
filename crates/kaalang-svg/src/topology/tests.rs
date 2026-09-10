@@ -2,11 +2,7 @@ use super::*;
 
 fn drawn(source: &str) -> Topology {
     let function = syn::parse_str(source).unwrap();
-    project(
-        &kaalang_model::build(&function).unwrap(),
-        "example",
-        "-> u8",
-    )
+    project(&kaalang_model::build(&function).unwrap(), "example", "u8")
 }
 
 /// One flow of an authored fixture file. The start and return type only
@@ -14,7 +10,7 @@ fn drawn(source: &str) -> Topology {
 fn fixture(source: &str, flow: &str) -> Topology {
     let file = crate::parse_file(source).unwrap();
     let function = crate::select_flow(&file.items, flow).unwrap();
-    project(&kaalang_model::build(function).unwrap(), "example", "-> u8")
+    project(&kaalang_model::build(function).unwrap(), "example", "u8")
 }
 
 /// Whether any chain of connections leads from one vertex to another.

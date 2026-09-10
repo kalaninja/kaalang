@@ -60,7 +60,7 @@
     </g>
     <g class="node end" transform="translate(172 543)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

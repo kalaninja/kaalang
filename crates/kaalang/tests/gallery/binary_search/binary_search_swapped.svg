@@ -128,7 +128,7 @@
     </g>
     <g class="node end" transform="translate(172 1253)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; Option&lt;usize&gt;</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;usize&gt;</tspan></text>
     </g>
   </g>
 </svg>

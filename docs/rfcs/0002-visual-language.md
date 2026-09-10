@@ -117,8 +117,8 @@ its wire name in either case.
 
 The end node represents the flow's implicit end block. That block has no
 description, so its node carries the flow's return type instead: the authored
-return type preceded by `->`, and `-> ()` when the function declares none. A
-diagram has no separate return node.
+return type, and `()` when the function declares none. A diagram has no separate
+return node.
 
 The end node's label names the type. Its incoming connection does not name the
 `end` wire: every connection reaching end carries that wire, so the endpoint
@@ -136,9 +136,9 @@ start node connected to the end node by the `end` wire a flow input provides.
 
 Description labels carry the exact authored text. A presentation may wrap or
 escape that text but must not paraphrase, normalize, or synthesize it. No node
-carries a caption naming its block kind. The end node's `-> ()` for an absent
-return type and the while's default `YES`/`NO` answer labels state the contract
-rather than paraphrasing authored text.
+carries a caption naming its block kind. The end node's `()` for an absent return
+type and the while's default `YES`/`NO` answer labels state the contract rather
+than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection

@@ -71,7 +71,7 @@
     </g>
     <g class="node end" transform="translate(172 689)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; String</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
     </g>
   </g>
 </svg>

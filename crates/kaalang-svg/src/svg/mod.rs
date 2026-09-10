@@ -305,14 +305,7 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
         NodeKind::Question => question::name(&node.label),
         NodeKind::Select => choice::select_name(&node.label),
         NodeKind::Case => choice::case_name(&node.label),
-        // The drawn caption carries the arrow; the role does not.
-        NodeKind::End => format!(
-            "End: {}",
-            node.label
-                .strip_prefix("->")
-                .unwrap_or(&node.label)
-                .trim_start()
-        ),
+        NodeKind::End => format!("End: {}", node.label),
     }
 }
 

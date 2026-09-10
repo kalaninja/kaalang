@@ -163,12 +163,11 @@ pub(crate) fn parameter_text(source: &str, signature: &Signature) -> Vec<String>
         .collect()
 }
 
-/// The end node's caption: the authored return type preceded by `->`, and
-/// `-> ()` when the function declares none.
+/// The end node's caption: the authored return type, or `()` when absent.
 pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
     match output {
-        ReturnType::Default => "-> ()".to_owned(),
-        ReturnType::Type(..) => collapsed(source, output.span()),
+        ReturnType::Default => "()".to_owned(),
+        ReturnType::Type(_, ty) => collapsed(source, ty.span()),
     }
 }
 

@@ -16,7 +16,7 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
     let file = crate::parse_file(source).unwrap();
     let function = crate::select_flow(&file.items, flow).unwrap();
     let model = kaalang_model::build(function).unwrap();
-    let topology = topology::project(&model, "example", "-> u8");
+    let topology = topology::project(&model, "example", "u8");
     let placement = place::place(&topology, &model, &BTreeMap::new()).unwrap();
     let case = |choice, branch| placement.column(Vertex::Node(NodeId::Case { choice, branch }));
     assert!(
@@ -181,7 +181,7 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
             }
         };
         let model = kaalang_model::build(&function).unwrap();
-        let scene = layout(&model, "example", &[], "-> usize").unwrap();
+        let scene = layout(&model, "example", &[], "usize").unwrap();
         let labels = scene
             .labels
             .iter()
@@ -832,17 +832,17 @@ fn end_node(scene: &Scene) -> NodeId {
 
 #[test]
 fn the_end_node_names_only_the_flow_return_type() {
-    // A declared return type verbatim, and `-> ()` when the flow declares none.
+    // A declared return type verbatim, and `()` when the flow declares none.
     for ((source, flow), caption) in [
         (
             fixture!("end/behavior", "order_the_end_wire"),
-            "-> (u32, u32, u32)",
+            "(u32, u32, u32)",
         ),
-        (fixture!("empty_flow/behavior", "nothing"), "-> ()"),
-        (fixture!("end/behavior", "capture_from_a_branch"), "-> ()"),
+        (fixture!("empty_flow/behavior", "nothing"), "()"),
+        (fixture!("end/behavior", "capture_from_a_branch"), "()"),
         (
             fixture!("capture/behavior", "local_mutability_of_outputs"),
-            "-> (String, u32, u32)",
+            "(String, u32, u32)",
         ),
     ] {
         let scene = drawn((source, flow));

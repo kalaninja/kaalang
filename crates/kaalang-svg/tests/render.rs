@@ -153,8 +153,7 @@ fn the_description_names_every_role_and_label_once() {
         "start and cases have no capture marker"
     );
 
-    // A choice is a select, and the end node carries the return type without
-    // the arrow that its drawn caption keeps.
+    // A choice is a select, and the end node carries the return type.
     assert!(
         description.contains("Select: Pick a lane."),
         "the select is not named as one: {description}"
@@ -184,10 +183,11 @@ fn the_description_names_every_role_and_label_once() {
 }
 
 #[test]
-fn the_end_description_omits_the_arrow_regardless_of_spacing() {
+fn the_end_label_omits_the_arrow_regardless_of_spacing() {
     for output in ["->u8", "-> u8", "->\n\tu8"] {
         let source = format!("#[kaalang] fn example(end: u8){output} {{}}");
         let svg = render_source(&source, "example").unwrap();
+        assert!(!svg.contains("-&gt;"), "{output}");
         assert!(describe(&svg).contains("End: u8 capturing end"), "{output}");
     }
 }
