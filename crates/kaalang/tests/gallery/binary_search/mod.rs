@@ -8,7 +8,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     let (mut left, mut right) = |values| (0, values.len());
 
     #[question("Does the search range contain any elements?")]
-    while (|&left, &right| left < right) {
+    while (|left, right| left < right) {
         #[action("Find the middle index.")]
         let mid = |left, right| left + (right - left) / 2;
 
@@ -44,7 +44,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     #[question("Does the search range contain any elements?")]
     #[no]
     #[yes]
-    while (|&left, &right| left < right) {
+    while (|left, right| left < right) {
         #[action("Find the middle index.")]
         let mid = |left, right| left + (right - left) / 2;
 
