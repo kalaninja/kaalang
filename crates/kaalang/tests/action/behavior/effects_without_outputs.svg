@@ -20,18 +20,20 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 378 L 172 450"/>
-    <path class="connection" d="M 312 342 L 532 342 L 532 450"/>
-    <path class="connection" d="M 172 514 L 172 586"/>
-    <path class="connection" d="M 172 650 L 172 722"/>
-    <path class="connection" d="M 172 786 L 172 838"/>
-    <path class="connection" d="M 532 514 L 532 838 L 172 838"/>
-    <path class="connection" d="M 172 994 L 172 1066"/>
-    <path class="connection" d="M 172 1130 L 172 1202"/>
-    <path class="connection" d="M 172 838 L 172 930"/>
-    <text class="connection-label" x="185" y="856" xml:space="preserve"><tspan x="185" dy="0">taken</tspan></text>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 234 L 172 306
+      M 172 378 L 172 450
+      M 312 342 L 532 342 L 532 450
+      M 172 514 L 172 586
+      M 172 650 L 172 722
+      M 172 786 L 172 858
+      M 532 514 L 532 858 L 172 858
+      M 172 994 L 172 1066
+      M 172 1130 L 172 1202
+      M 172 858 L 172 930
+    "/>
+    <text class="connection-label" x="185" y="876" xml:space="preserve"><tspan x="185" dy="0">taken</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, log</tspan></text>
     <text class="connection-label" x="185" y="396" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="360" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>

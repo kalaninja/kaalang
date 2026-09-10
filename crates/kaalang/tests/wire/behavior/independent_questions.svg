@@ -20,18 +20,20 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 103 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
-    <path class="connection" d="M 172 396 L 172 448"/>
-    <path class="connection" d="M 532 396 L 532 448 L 172 448"/>
-    <path class="connection" d="M 172 612 L 172 684"/>
-    <path class="connection" d="M 312 576 L 532 576 L 532 684"/>
-    <path class="connection" d="M 172 750 L 172 802"/>
-    <path class="connection" d="M 532 750 L 532 802 L 172 802"/>
-    <path class="connection" d="M 172 448 L 172 540"/>
-    <path class="connection" d="M 172 802 L 172 894"/>
-    <text class="connection-label" x="185" y="466" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 532 224 L 532 332
+      M 172 396 L 172 468
+      M 532 396 L 532 468 L 172 468
+      M 172 612 L 172 684
+      M 312 576 L 532 576 L 532 684
+      M 172 750 L 172 822
+      M 532 750 L 532 822 L 172 822
+      M 172 468 L 172 540
+      M 172 822 L 172 894
+    "/>
+    <text class="connection-label" x="185" y="486" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
     <text class="connection-label" x="185" y="291" xml:space="preserve"><tspan x="185" dy="0">x</tspan></text>
     <text class="connection-label" x="419" y="213" xml:space="preserve"><tspan x="419" dy="0">y</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">left, right, calls</tspan></text>

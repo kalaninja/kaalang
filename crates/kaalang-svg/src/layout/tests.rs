@@ -1079,12 +1079,19 @@ fn a_single_action_returns_after_the_usual_gap() {
 }
 
 #[test]
-fn terminal_routes_keep_the_same_gap_below_loop_returns() {
+fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
     let binary_search = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
+    let early_result = fixture!("while_loop/behavior", "early_result_then_loop");
+    // Wrapping makes this action two pixels taller than its repeating sibling.
+    let wrapped_result = early_result.0.replace(
+        "Return the count.",
+        "Return the counter after the loop finishes.",
+    );
     for fixture in [
         fixture!("while_loop/behavior", "count_to"),
         fixture!("while_loop/behavior", "collect_steps"),
-        fixture!("while_loop/behavior", "early_result_then_loop"),
+        early_result,
+        (wrapped_result.as_str(), early_result.1),
         fixture!("while_loop/behavior", "nested_search"),
         (binary_search, "binary_search"),
         (binary_search, "binary_search_swapped"),
@@ -1113,12 +1120,57 @@ fn terminal_routes_keep_the_same_gap_below_loop_returns() {
             .map(|point| point.y)
             .max()
             .unwrap();
+        let gap = vertical_gap(&scene.topology);
+        let crosses_return = matches!(fixture.1, "early_result_then_loop" | "nested_search");
         assert_eq!(
             terminal_y - lowest_return,
-            91,
-            "{}: the terminal should leave the same clearance below the return",
+            if crosses_return { gap } else { 0 },
+            "{}",
             fixture.1
         );
+        if matches!(connection.source, Source::Junction(_)) {
+            assert_eq!(
+                scene.top_anchor(end.id).y - terminal_y,
+                gap,
+                "{}",
+                fixture.1
+            );
+        }
+    }
+}
+
+#[test]
+fn distributors_and_loop_tails_leave_the_usual_gap() {
+    let source = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
+    for flow in ["binary_search", "binary_search_swapped"] {
+        let scene = drawn((source, flow));
+        let gap = vertical_gap(&scene.topology);
+        let tail = scene.topology.loops[0].tail;
+        for incoming in scene
+            .connections
+            .iter()
+            .filter(|edge| edge.destination == Destination::Junction(tail))
+        {
+            assert_eq!(
+                incoming.points.last().unwrap().y - incoming.points[0].y,
+                gap,
+                "{flow}: iteration tail"
+            );
+        }
+        for branch in [1, 2] {
+            let connection = scene
+                .connections
+                .iter()
+                .find(|edge| {
+                    edge.destination == Destination::Node(NodeId::Case { choice: 3, branch })
+                })
+                .unwrap();
+            let [start, turn, across, end] = connection.points[..] else {
+                panic!("{flow}: the distributor should have two bends");
+            };
+            assert_eq!(turn.y - start.y, gap, "{flow}: below select");
+            assert_eq!(end.y - across.y, gap, "{flow}: above case");
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="944" height="983" viewBox="0 0 944 983" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="944" height="892" viewBox="0 0 944 892" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_loop_tail</title>
   <desc id="kaalang-description">Nodes: Start: nested_loop_tail with parameters mut count: usize; limit: usize handing over mut count, limit; Question: Is another counting pass needed? capturing count, limit described as branch 1: NO / branch 2: YES; Question: Is the count below the limit? capturing count, limit described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing &amp;mut count; Action: Return the count. capturing count handing over result; End: usize capturing result. Connections: Start: nested_loop_tail to the entry of Question: Is another counting pass needed?; Question: Is another counting pass needed? branch 1 to Action: Return the count.; Question: Is another counting pass needed? branch 2 to the entry of Question: Is the count below the limit?; Question: Is the count below the limit? branch 1 to Action: Increment the count.; Question: Is the count below the limit? branch 2 to the iteration tail of Question: Is another counting pass needed?; Action: Increment the count. to the iteration tail of Question: Is the count below the limit?; Action: Return the count. to End: usize; the entry of Question: Is another counting pass needed? to Question: Is another counting pass needed?; the entry of Question: Is the count below the limit? to Question: Is the count below the limit?; Repeat from the iteration tail of Question: Is the count below the limit? to the entry of Question: Is the count below the limit?; Repeat from the iteration tail of Question: Is another counting pass needed? to the entry of Question: Is another counting pass needed?.</desc>
   <defs>
@@ -21,17 +21,23 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 314 L 172 386"/>
-    <path class="connection" d="M 312 278 L 532 278 L 532 386"/>
-    <path class="connection" d="M 532 594 L 532 666"/>
-    <path class="connection" d="M 672 558 L 892 558"/>
-    <path class="connection" d="M 532 730 L 532 802"/>
-    <path class="connection" d="M 172 450 L 172 893"/>
-    <path class="connection" d="M 172 170 L 172 242"/>
-    <path class="connection" d="M 532 386 L 532 522"/>
-    <path class="connection" d="M 532 802 L 372 802 L 372 386 L 532 386" marker-end="url(#loop-arrow)"/>
-    <path class="connection" d="M 892 558 L 912 558 L 912 170 L 172 170" marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 314 L 172 386
+      M 312 278 L 532 278 L 532 386
+      M 532 594 L 532 666
+      M 672 558 L 892 558
+      M 532 730 L 532 802
+      M 172 450 L 172 802
+      M 172 170 L 172 242
+      M 532 386 L 532 522
+    "/>
+    <path class="connection" d="
+      M 532 802 L 372 802 L 372 386 L 532 386
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 892 558 L 912 558 L 912 170 L 172 170
+    " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">mut count, limit</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="334" xml:space="preserve"><tspan x="185" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="266" xml:space="preserve"><tspan x="325" dy="0">YES</tspan></text>
@@ -72,7 +78,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the count.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 922)">
+    <g class="node end" transform="translate(172 831)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>

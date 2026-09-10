@@ -15,9 +15,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::topology::{Destination, Exit, Source, Topology, Vertex};
 
 use super::{
-    BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO,
-    CONNECTION_LINE_HEIGHT, Connection, Label, LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point,
-    Scene,
+    BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection,
+    Label, LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Scene,
     text::{text_width, wrap_text},
 };
 
@@ -317,19 +316,6 @@ fn label_line_count(names: &[String]) -> usize {
 
 fn branch_label_line_count(description: &str) -> usize {
     wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size()).len()
-}
-
-/// Space above a node that its capture label and halo occupy. Horizontal
-/// arrivals stay above this strip, leaving the label beside their final descent.
-pub(super) fn capture_space(names: &[String]) -> i32 {
-    let lines = label_line_count(names);
-    if lines == 0 {
-        return 0;
-    }
-    RISE + CONNECTION_LABEL_FONT
-        + CONNECTION_LABEL_HALO
-        + CLEARANCE
-        + (lines as i32 - 1) * CONNECTION_LINE_HEIGHT
 }
 
 /// The rectangle a label's ink and halo occupy, matching how the serializer

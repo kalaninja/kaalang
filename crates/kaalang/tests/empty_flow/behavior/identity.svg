@@ -20,7 +20,9 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
+    <path class="connection" d="
+      M 172 90 L 172 162
+    "/>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>

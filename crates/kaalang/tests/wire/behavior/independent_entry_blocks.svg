@@ -20,16 +20,18 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 312 198 L 532 198 L 532 306"/>
-    <path class="connection" d="M 172 370 L 172 422"/>
-    <path class="connection" d="M 532 370 L 532 422 L 172 422"/>
-    <path class="connection" d="M 172 578 L 172 650"/>
-    <path class="connection" d="M 172 714 L 172 786"/>
-    <path class="connection" d="M 172 850 L 172 922"/>
-    <path class="connection" d="M 172 422 L 172 514"/>
-    <text class="connection-label" x="185" y="440" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 306
+      M 312 198 L 532 198 L 532 306
+      M 172 370 L 172 442
+      M 532 370 L 532 442 L 172 442
+      M 172 578 L 172 650
+      M 172 714 L 172 786
+      M 172 850 L 172 922
+      M 172 442 L 172 514
+    "/>
+    <text class="connection-label" x="185" y="460" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
     <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="416" y="187" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>

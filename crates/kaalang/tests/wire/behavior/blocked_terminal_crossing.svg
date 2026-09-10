@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2144" height="1532" viewBox="0 0 2144 1532" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="2144" height="1744" viewBox="0 0 2144 1744" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for blocked_terminal_crossing</title>
   <desc id="kaalang-description">Nodes: Start: blocked_terminal_crossing with parameters request: u8 handing over request; Select: Choose an outer case. capturing request; Case: Build the left shared value. handing over left; Case: Build the right shared value. handing over right; Case: Finish after one step. handing over first; Case: Finish after two steps. handing over second; Action: Build the left shared value. capturing left handing over shared; Action: Build the right shared value. capturing right handing over shared; Action: Produce the first terminal result. capturing first handing over result; Action: Take one more step toward the second terminal result. capturing second handing over stepped; Action: Produce the second terminal result. capturing stepped handing over result; Select: Choose an inner case wide enough to block both terminal columns. capturing shared; Case: Build A. handing over a; Case: Build B. handing over b; Case: Build C. handing over c; Case: Build D. handing over d; Action: Build result A. capturing a handing over selected; Action: Build result B. capturing b handing over selected; Action: Build result C. capturing c handing over selected; Action: Build result D. capturing d handing over selected; Action: Use the result. capturing selected handing over result; End: u8 capturing result. Connections: Start: blocked_terminal_crossing to Select: Choose an outer case.; Select: Choose an outer case. to Case: Build the left shared value.; Select: Choose an outer case. to Case: Build the right shared value.; Select: Choose an outer case. to Case: Finish after one step.; Select: Choose an outer case. to Case: Finish after two steps.; Case: Build the left shared value. to Action: Build the left shared value.; Case: Build the right shared value. to Action: Build the right shared value.; Case: Finish after one step. to Action: Produce the first terminal result.; Case: Finish after two steps. to Action: Take one more step toward the second terminal result.; Action: Build the left shared value. to the shared merge; Action: Build the right shared value. to the shared merge; Action: Produce the first terminal result. to the result merge; Action: Take one more step toward the second terminal result. to Action: Produce the second terminal result.; Action: Produce the second terminal result. to the result merge; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build A.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build B.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build C.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build D.; Case: Build A. to Action: Build result A.; Case: Build B. to Action: Build result B.; Case: Build C. to Action: Build result C.; Case: Build D. to Action: Build result D.; Action: Build result A. to the selected merge; Action: Build result B. to the selected merge; Action: Build result C. to the selected merge; Action: Build result D. to the selected merge; Action: Use the result. to the result merge; the shared merge to Select: Choose an inner case wide enough to block both terminal columns.; the result merge to End: u8; the selected merge to Action: Use the result..</desc>
   <defs>
@@ -20,48 +20,50 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
-    <path class="connection" d="M 172 234 L 172 286 L 1612 286 L 1612 306"/>
-    <path class="connection" d="M 172 234 L 172 286 L 1972 286 L 1972 306"/>
-    <path class="connection" d="M 172 376 L 172 449"/>
-    <path class="connection" d="M 532 376 L 532 449"/>
-    <path class="connection" d="M 1612 376 L 1612 449"/>
-    <path class="connection" d="M 1972 376 L 1972 448"/>
-    <path class="connection" d="M 172 513 L 172 554"/>
-    <path class="connection" d="M 532 513 L 532 554 L 172 554"/>
-    <path class="connection" d="M 1612 513 L 1612 1350 L 172 1350"/>
-    <path class="connection" d="M 1972 514 L 1972 590"/>
-    <path class="connection" d="M 1972 656 L 1972 1350 L 172 1350"/>
-    <path class="connection" d="M 172 812 L 172 884"/>
-    <path class="connection" d="M 172 812 L 172 864 L 532 864 L 532 884"/>
-    <path class="connection" d="M 172 812 L 172 864 L 892 864 L 892 884"/>
-    <path class="connection" d="M 172 812 L 172 864 L 1252 864 L 1252 884"/>
-    <path class="connection" d="M 172 954 L 172 1026"/>
-    <path class="connection" d="M 532 954 L 532 1026"/>
-    <path class="connection" d="M 892 954 L 892 1026"/>
-    <path class="connection" d="M 1252 954 L 1252 1026"/>
-    <path class="connection" d="M 172 1090 L 172 1142"/>
-    <path class="connection" d="M 532 1090 L 532 1142 L 172 1142"/>
-    <path class="connection" d="M 892 1090 L 892 1142 L 172 1142"/>
-    <path class="connection" d="M 1252 1090 L 1252 1142 L 172 1142"/>
-    <path class="connection" d="M 172 1298 L 172 1350"/>
-    <path class="connection" d="M 172 554 L 172 728"/>
-    <path class="connection" d="M 172 1350 L 172 1442"/>
-    <path class="connection" d="M 172 1142 L 172 1234"/>
-    <text class="connection-label" x="185" y="572" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
-    <text class="connection-label" x="185" y="1160" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 378
+      M 172 234 L 172 306 L 532 306 L 532 378
+      M 172 234 L 172 306 L 1612 306 L 1612 378
+      M 172 234 L 172 306 L 1972 306 L 1972 378
+      M 172 448 L 172 521
+      M 532 448 L 532 521
+      M 1612 448 L 1612 521
+      M 1972 448 L 1972 520
+      M 172 585 L 172 658
+      M 532 585 L 532 658 L 172 658
+      M 1612 585 L 1612 1582 L 172 1582
+      M 1972 586 L 1972 730
+      M 1972 796 L 1972 1582 L 172 1582
+      M 172 952 L 172 1096
+      M 172 952 L 172 1024 L 532 1024 L 532 1096
+      M 172 952 L 172 1024 L 892 1024 L 892 1096
+      M 172 952 L 172 1024 L 1252 1024 L 1252 1096
+      M 172 1166 L 172 1238
+      M 532 1166 L 532 1238
+      M 892 1166 L 892 1238
+      M 1252 1166 L 1252 1238
+      M 172 1302 L 172 1374
+      M 532 1302 L 532 1374 L 172 1374
+      M 892 1302 L 892 1374 L 172 1374
+      M 1252 1302 L 1252 1374 L 172 1374
+      M 172 1510 L 172 1582
+      M 172 658 L 172 868
+      M 172 1582 L 172 1654
+      M 172 1374 L 172 1446
+    "/>
+    <text class="connection-label" x="185" y="676" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label" x="185" y="1392" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">request</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
-    <text class="connection-label" x="1625" y="407" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
-    <text class="connection-label" x="1985" y="407" xml:space="preserve"><tspan x="1985" dy="0">second</tspan></text>
-    <text class="connection-label" x="1985" y="547" xml:space="preserve"><tspan x="1985" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="185" y="985" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="545" y="985" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
-    <text class="connection-label" x="905" y="985" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
-    <text class="connection-label" x="1265" y="985" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
+    <text class="connection-label" x="185" y="479" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="545" y="479" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
+    <text class="connection-label" x="1625" y="479" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
+    <text class="connection-label" x="1985" y="479" xml:space="preserve"><tspan x="1985" dy="0">second</tspan></text>
+    <text class="connection-label" x="1985" y="653" xml:space="preserve"><tspan x="1985" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="185" y="1197" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="545" y="1197" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
+    <text class="connection-label" x="905" y="1197" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
+    <text class="connection-label" x="1265" y="1197" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -78,102 +80,102 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose an outer case.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 341)">
+    <g class="node case" transform="translate(172 413)">
       <title xml:space="preserve">Build the left shared value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build the left shared value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 341)">
+    <g class="node case" transform="translate(532 413)">
       <title xml:space="preserve">Build the right shared value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build the right shared value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1612 341)">
+    <g class="node case" transform="translate(1612 413)">
       <title xml:space="preserve">Finish after one step.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish after one step.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1972 341)">
+    <g class="node case" transform="translate(1972 413)">
       <title xml:space="preserve">Finish after two steps.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish after two steps.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 481)">
+    <g class="node action" transform="translate(172 553)">
       <title xml:space="preserve">Build the left shared value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the left shared value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 481)">
+    <g class="node action" transform="translate(532 553)">
       <title xml:space="preserve">Build the right shared value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the right shared value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1612 481)">
+    <g class="node action" transform="translate(1612 553)">
       <title xml:space="preserve">Produce the first terminal result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the first terminal result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1972 481)">
+    <g class="node action" transform="translate(1972 553)">
       <title xml:space="preserve">Take one more step toward the second terminal result.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take one more step toward the </tspan><tspan x="-124" dy="18">second terminal result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1972 623)">
+    <g class="node action" transform="translate(1972 763)">
       <title xml:space="preserve">Produce the second terminal result.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the second terminal </tspan><tspan x="-124" dy="18">result.</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 770)">
+    <g class="node select" transform="translate(172 910)">
       <title xml:space="preserve">Choose an inner case wide enough to block both terminal columns.</title>
       <polygon class="node-shape" points="-116,-42 140,-42 116,42 -140,42"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Choose an inner case wide </tspan><tspan x="0" dy="18">enough to block both </tspan><tspan x="0" dy="18">terminal columns.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 919)">
+    <g class="node case" transform="translate(172 1131)">
       <title xml:space="preserve">Build A.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build A.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 919)">
+    <g class="node case" transform="translate(532 1131)">
       <title xml:space="preserve">Build B.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build B.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 919)">
+    <g class="node case" transform="translate(892 1131)">
       <title xml:space="preserve">Build C.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build C.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1252 919)">
+    <g class="node case" transform="translate(1252 1131)">
       <title xml:space="preserve">Build D.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build D.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1058)">
+    <g class="node action" transform="translate(172 1270)">
       <title xml:space="preserve">Build result A.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result A.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 1058)">
+    <g class="node action" transform="translate(532 1270)">
       <title xml:space="preserve">Build result B.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result B.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 1058)">
+    <g class="node action" transform="translate(892 1270)">
       <title xml:space="preserve">Build result C.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result C.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 1058)">
+    <g class="node action" transform="translate(1252 1270)">
       <title xml:space="preserve">Build result D.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result D.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1266)">
+    <g class="node action" transform="translate(172 1478)">
       <title xml:space="preserve">Use the result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1471)">
+    <g class="node end" transform="translate(172 1683)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u8</tspan></text>
     </g>

@@ -72,8 +72,20 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     if !scene.topology.back_edges.is_empty() {
         svg.push_str("    <defs><marker id=\"loop-arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"9\" refY=\"5\" orient=\"auto\" markerUnits=\"userSpaceOnUse\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"currentColor\"/></marker></defs>\n");
     }
+    // One stroke paints shared distributors and merge rails only once.
+    svg.push_str("    <path class=\"connection\" d=\"\n");
     for connection in &scene.connections {
-        write_connection(&mut svg, connection, scene.is_back_edge(connection));
+        if !scene.is_back_edge(connection) {
+            write_connection(&mut svg, connection);
+        }
+    }
+    svg.push_str("    \"/>\n");
+    for connection in &scene.connections {
+        if scene.is_back_edge(connection) {
+            svg.push_str("    <path class=\"connection\" d=\"\n");
+            write_connection(&mut svg, connection);
+            svg.push_str("    \" marker-end=\"url(#loop-arrow)\"/>\n");
+        }
     }
     // After the routes, so a label's halo covers the connections it crosses.
     for label in &scene.labels {
@@ -91,25 +103,16 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     svg
 }
 
-fn write_connection(svg: &mut String, connection: &Connection, backward: bool) {
+fn write_connection(svg: &mut String, connection: &Connection) {
     let first = connection
         .points
         .first()
         .expect("a routed connection has at least two points");
-    emit_inline!(
-        svg,
-        "    <path class=\"connection\" d=\"M {} {}",
-        first.x,
-        first.y
-    );
+    emit_inline!(svg, "      M {} {}", first.x, first.y);
     for point in &connection.points[1..] {
         emit_inline!(svg, " L {} {}", point.x, point.y);
     }
-    if backward {
-        emit!(svg, "\" marker-end=\"url(#loop-arrow)\"/>");
-    } else {
-        emit!(svg, "\"/>");
-    }
+    svg.push('\n');
 }
 
 fn write_connection_label(svg: &mut String, label: &Label) {

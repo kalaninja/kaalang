@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1451" height="1333" viewBox="0 0 1451 1333" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1451" height="1314" viewBox="0 0 1451 1314" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for binary_search_swapped</title>
   <desc id="kaalang-description">Nodes: Start: binary_search_swapped with parameters values: &amp;[i32]; target: i32 handing over values, target; Action: Initialize the search range. capturing values handing over mut left, mut right; Question: Does the search range contain any elements? capturing &amp;left, &amp;right described as branch 1: NO / branch 2: YES; Action: Find the middle index. capturing left, right handing over mid; Select: Compare the middle element with the target. capturing values, target, mid; Case: The target was found. handing over equal; Case: Search the right half. handing over less; Case: Search the left half. handing over greater; Action: Return the matching index. capturing equal, mid handing over result; Action: Advance the lower bound. capturing less, mid, &amp;mut left; Action: Reduce the upper bound. capturing greater, mid, &amp;mut right; Action: The target is absent. capturing nothing handing over result; End: Option&lt;usize&gt; capturing result. Connections: Start: binary_search_swapped to Action: Initialize the search range.; Action: Initialize the search range. to the entry of Question: Does the search range contain any elements?; Question: Does the search range contain any elements? branch 1 to Action: The target is absent.; Question: Does the search range contain any elements? branch 2 to Action: Find the middle index.; Action: Find the middle index. to Select: Compare the middle element with the target.; Select: Compare the middle element with the target. to Case: The target was found.; Select: Compare the middle element with the target. to Case: Search the right half.; Select: Compare the middle element with the target. to Case: Search the left half.; Case: The target was found. to Action: Return the matching index.; Case: Search the right half. to Action: Advance the lower bound.; Case: Search the left half. to Action: Reduce the upper bound.; Action: Return the matching index. to the result merge; Action: Advance the lower bound. to the iteration tail of Question: Does the search range contain any elements?; Action: Reduce the upper bound. to the iteration tail of Question: Does the search range contain any elements?; Action: The target is absent. to the result merge; the result merge to End: Option&lt;usize&gt;; the entry of Question: Does the search range contain any elements? to Question: Does the search range contain any elements?; Repeat from the iteration tail of Question: Does the search range contain any elements? to the entry of Question: Does the search range contain any elements?.</desc>
   <defs>
@@ -21,39 +21,43 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 450 L 172 522"/>
-    <path class="connection" d="M 312 414 L 532 414 L 532 522"/>
-    <path class="connection" d="M 532 586 L 532 658"/>
-    <path class="connection" d="M 532 730 L 532 802"/>
-    <path class="connection" d="M 532 730 L 532 782 L 892 782 L 892 802"/>
-    <path class="connection" d="M 532 730 L 532 782 L 1252 782 L 1252 802"/>
-    <path class="connection" d="M 532 872 L 532 944"/>
-    <path class="connection" d="M 892 872 L 892 944"/>
-    <path class="connection" d="M 1252 872 L 1252 944"/>
-    <path class="connection" d="M 532 1008 L 532 1151 L 172 1151"/>
-    <path class="connection" d="M 892 1008 L 892 1060 L 1252 1060"/>
-    <path class="connection" d="M 1252 1008 L 1252 1060"/>
-    <path class="connection" d="M 172 586 L 172 1151"/>
-    <path class="connection" d="M 172 1151 L 172 1243"/>
-    <path class="connection" d="M 172 306 L 172 378"/>
-    <path class="connection" d="M 1252 1060 L 1412 1060 L 1412 306 L 172 306" marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 234 L 172 306
+      M 172 450 L 172 522
+      M 312 414 L 532 414 L 532 522
+      M 532 586 L 532 658
+      M 532 730 L 532 874
+      M 532 730 L 532 802 L 892 802 L 892 874
+      M 532 730 L 532 802 L 1252 802 L 1252 874
+      M 532 944 L 532 1016
+      M 892 944 L 892 1016
+      M 1252 944 L 1252 1016
+      M 532 1080 L 532 1152 L 172 1152
+      M 892 1080 L 892 1152 L 1252 1152
+      M 1252 1080 L 1252 1152
+      M 172 586 L 172 1152
+      M 172 1152 L 172 1224
+      M 172 306 L 172 378
+    "/>
+    <path class="connection" d="
+      M 1252 1152 L 1412 1152 L 1412 306 L 172 306
+    " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">values, target</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">mut left, mut right</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="470" xml:space="preserve"><tspan x="185" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="402" xml:space="preserve"><tspan x="325" dy="0">YES</tspan></text>
     <text class="connection-label" x="545" y="604" xml:space="preserve"><tspan x="545" dy="0">mid</tspan></text>
-    <text class="connection-label" x="545" y="890" xml:space="preserve"><tspan x="545" dy="0">equal</tspan></text>
-    <text class="connection-label" x="905" y="890" xml:space="preserve"><tspan x="905" dy="0">less</tspan></text>
-    <text class="connection-label" x="1265" y="890" xml:space="preserve"><tspan x="1265" dy="0">greater</tspan></text>
+    <text class="connection-label" x="545" y="962" xml:space="preserve"><tspan x="545" dy="0">equal</tspan></text>
+    <text class="connection-label" x="905" y="962" xml:space="preserve"><tspan x="905" dy="0">less</tspan></text>
+    <text class="connection-label" x="1265" y="962" xml:space="preserve"><tspan x="1265" dy="0">greater</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">values</tspan></text>
     <text class="connection-label" x="185" y="367" xml:space="preserve"><tspan x="185" dy="0">&amp;left, &amp;right</tspan></text>
     <text class="connection-label" x="545" y="511" xml:space="preserve"><tspan x="545" dy="0">left, right</tspan></text>
     <text class="connection-label" x="545" y="647" xml:space="preserve"><tspan x="545" dy="0">values, target, mid</tspan></text>
-    <text class="connection-label" x="545" y="933" xml:space="preserve"><tspan x="545" dy="0">equal, mid</tspan></text>
-    <text class="connection-label" x="905" y="933" xml:space="preserve"><tspan x="905" dy="0">less, mid, &amp;mut left</tspan></text>
-    <text class="connection-label" x="1265" y="933" xml:space="preserve"><tspan x="1265" dy="0">greater, mid, &amp;mut right</tspan></text>
+    <text class="connection-label" x="545" y="1005" xml:space="preserve"><tspan x="545" dy="0">equal, mid</tspan></text>
+    <text class="connection-label" x="905" y="1005" xml:space="preserve"><tspan x="905" dy="0">less, mid, &amp;mut left</tspan></text>
+    <text class="connection-label" x="1265" y="1005" xml:space="preserve"><tspan x="1265" dy="0">greater, mid, &amp;mut right</tspan></text>
     <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
@@ -86,32 +90,32 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Compare the middle </tspan><tspan x="0" dy="18">element with the target.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 837)">
+    <g class="node case" transform="translate(532 909)">
       <title xml:space="preserve">The target was found.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The target was found.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 837)">
+    <g class="node case" transform="translate(892 909)">
       <title xml:space="preserve">Search the right half.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Search the right half.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1252 837)">
+    <g class="node case" transform="translate(1252 909)">
       <title xml:space="preserve">Search the left half.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Search the left half.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 976)">
+    <g class="node action" transform="translate(532 1048)">
       <title xml:space="preserve">Return the matching index.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the matching index.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 976)">
+    <g class="node action" transform="translate(892 1048)">
       <title xml:space="preserve">Advance the lower bound.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance the lower bound.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 976)">
+    <g class="node action" transform="translate(1252 1048)">
       <title xml:space="preserve">Reduce the upper bound.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Reduce the upper bound.</tspan></text>
@@ -121,7 +125,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">The target is absent.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1272)">
+    <g class="node end" transform="translate(172 1253)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; Option&lt;usize&gt;</tspan></text>
     </g>

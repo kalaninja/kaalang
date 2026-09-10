@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="758" viewBox="0 0 704 758" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="830" viewBox="0 0 704 830" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_case_input</title>
   <desc id="kaalang-description">Nodes: Start: borrowed_case_input with parameters text: String handing over text; Select: Borrow the text through the choice. capturing &amp;text; Case: Keep a long text whole. handing over long; Case: Keep the first character of a short text. handing over short; Action: Measure the long text. capturing long handing over result; Action: Measure the short text. capturing short handing over result; End: usize capturing result. Connections: Start: borrowed_case_input to Select: Borrow the text through the choice.; Select: Borrow the text through the choice. to Case: Keep a long text whole.; Select: Borrow the text through the choice. to Case: Keep the first character of a short text.; Case: Keep a long text whole. to Action: Measure the long text.; Case: Keep the first character of a short text. to Action: Measure the short text.; Action: Measure the long text. to the result merge; Action: Measure the short text. to the result merge; the result merge to End: usize.</desc>
   <defs>
@@ -20,16 +20,18 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 234 L 172 312"/>
-    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
-    <path class="connection" d="M 172 382 L 172 460"/>
-    <path class="connection" d="M 532 388 L 532 460"/>
-    <path class="connection" d="M 172 524 L 172 576"/>
-    <path class="connection" d="M 532 524 L 532 576 L 172 576"/>
-    <path class="connection" d="M 172 576 L 172 668"/>
-    <text class="connection-label" x="185" y="416" xml:space="preserve"><tspan x="185" dy="0">long</tspan></text>
-    <text class="connection-label" x="545" y="419" xml:space="preserve"><tspan x="545" dy="0">short</tspan></text>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 384
+      M 172 234 L 172 306 L 532 306 L 532 378
+      M 172 454 L 172 532
+      M 532 460 L 532 532
+      M 172 596 L 172 668
+      M 532 596 L 532 668 L 172 668
+      M 172 668 L 172 740
+    "/>
+    <text class="connection-label" x="185" y="488" xml:space="preserve"><tspan x="185" dy="0">long</tspan></text>
+    <text class="connection-label" x="545" y="491" xml:space="preserve"><tspan x="545" dy="0">short</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">text</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">&amp;text</tspan></text>
   </g>
@@ -48,27 +50,27 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Borrow the text through </tspan><tspan x="0" dy="18">the choice.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 347)">
+    <g class="node case" transform="translate(172 419)">
       <title xml:space="preserve">Keep a long text whole.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Keep a long text whole.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 347)">
+    <g class="node case" transform="translate(532 419)">
       <title xml:space="preserve">Keep the first character of a short text.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Keep the first character of </tspan><tspan x="0" dy="18">a short text.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 492)">
+    <g class="node action" transform="translate(172 564)">
       <title xml:space="preserve">Measure the long text.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the long text.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 492)">
+    <g class="node action" transform="translate(532 564)">
       <title xml:space="preserve">Measure the short text.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the short text.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 697)">
+    <g class="node end" transform="translate(172 769)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; usize</tspan></text>
     </g>

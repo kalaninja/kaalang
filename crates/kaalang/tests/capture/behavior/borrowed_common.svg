@@ -20,14 +20,16 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 588 L 172 660"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">suffix</tspan></text>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 450
+      M 532 378 L 532 450 L 172 450
+      M 172 588 L 172 660
+      M 172 450 L 172 522
+    "/>
+    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">suffix</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, prefix</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>

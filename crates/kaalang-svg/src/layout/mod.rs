@@ -295,12 +295,12 @@ fn nodes(topology: &Topology, placement: &place::Placement) -> Vec<Node> {
 ///
 /// `top` and `capture_space` carry one entry past the last row, the bottom edge
 /// of the diagram, so that the row gap below a row is always addressable as
-/// `row + 1`. No node's capture claims that trailing entry, so it keeps the
-/// default a row without a capture label would have.
+/// `row + 1`. The trailing entry has no node, so it needs no capture space.
 pub(super) struct Rows {
     top: Vec<i32>,
     height: Vec<i32>,
-    /// Space between the last horizontal arrival and the following node row.
+    /// Space between the last horizontal arrival and the following node row;
+    /// zero when the row contains only junctions.
     capture_space: Vec<i32>,
 }
 
@@ -320,19 +320,18 @@ impl Rows {
 
 impl Scene {
     fn rows(&self, placement: &place::Placement, plan: &route::Plan) -> Rows {
+        let gap = vertical_gap(&self.topology);
         let mut height = vec![0; placement.rows];
-        let mut capture_space = vec![LANE; placement.rows + 1];
+        let mut capture_space = vec![0; placement.rows + 1];
         for node in &self.nodes {
             let row = placement.row(Vertex::Node(node.id));
             height[row] = height[row].max(node.height);
-            capture_space[row] =
-                capture_space[row].max(label::capture_space(&self.topology.capture_label(node.id)));
+            capture_space[row] = gap;
         }
         if let Some(parameters) = &self.parameters {
             let row = placement.row(Vertex::Node(NodeId::Start));
             height[row] = height[row].max(parameters.height);
         }
-        let gap = vertical_gap(&self.topology);
         let mut top = Vec::with_capacity(placement.rows + 1);
         let mut next = MARGIN;
         for (row, height) in height.iter().enumerate() {
@@ -341,7 +340,7 @@ impl Scene {
             let routing = if lanes == 0 {
                 0
             } else {
-                (lanes + 1) * LANE + capture_space[row + 1]
+                gap + (lanes - 1) * LANE + capture_space[row + 1]
             };
             next += height + gap.max(routing);
         }

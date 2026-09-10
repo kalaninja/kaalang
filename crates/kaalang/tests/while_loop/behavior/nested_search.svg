@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1444" height="1617" viewBox="0 0 1444 1617" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1444" height="1597" viewBox="0 0 1444 1597" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_search</title>
   <desc id="kaalang-description">Nodes: Start: nested_search with parameters rows: &amp;[&amp;[i32]]; target: i32 handing over rows, target; Action: Start at the first row. capturing nothing handing over mut row; Question: Are there more rows? capturing row, rows described as branch 1: All rows have been searched. / branch 2: Search this row.; Action: Start at the first column. capturing nothing handing over mut column; Question: Are there more columns? capturing column, row, rows described as branch 1: YES / branch 2: NO; Question: Does the value differ from the target? capturing rows, row, column, target handing over different / equal; Action: Advance to the next column. capturing different, &amp;mut column; Action: Return the matching position. capturing equal, row, column handing over result; Action: Advance to the next row. capturing &amp;mut row; Action: The target is absent. capturing nothing handing over result; End: Option&lt;(usize, usize)&gt; capturing result. Connections: Start: nested_search to Action: Start at the first row.; Action: Start at the first row. to the entry of Question: Are there more rows?; Question: Are there more rows? branch 1 to Action: The target is absent.; Question: Are there more rows? branch 2 to Action: Start at the first column.; Action: Start at the first column. to the entry of Question: Are there more columns?; Question: Are there more columns? branch 1 to Question: Does the value differ from the target?; Question: Are there more columns? branch 2 to Action: Advance to the next row.; Question: Does the value differ from the target? branch 1 to Action: Advance to the next column.; Question: Does the value differ from the target? branch 2 to Action: Return the matching position.; Action: Advance to the next column. to the iteration tail of Question: Are there more columns?; Action: Return the matching position. to the result merge; Action: Advance to the next row. to the iteration tail of Question: Are there more rows?; Action: The target is absent. to the result merge; the result merge to End: Option&lt;(usize, usize)&gt;; the entry of Question: Are there more rows? to Question: Are there more rows?; the entry of Question: Are there more columns? to Question: Are there more columns?; Repeat from the iteration tail of Question: Are there more columns? to the entry of Question: Are there more columns?; Repeat from the iteration tail of Question: Are there more rows? to the entry of Question: Are there more rows?.</desc>
   <defs>
@@ -21,24 +21,30 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
-    <path class="connection" d="M 172 94 L 172 189"/>
-    <path class="connection" d="M 172 253 L 172 344"/>
-    <path class="connection" d="M 172 507 L 172 598"/>
-    <path class="connection" d="M 312 471 L 532 471 L 532 598"/>
-    <path class="connection" d="M 532 662 L 532 753"/>
-    <path class="connection" d="M 532 916 L 532 1007"/>
-    <path class="connection" d="M 672 880 L 1252 880 L 1252 1011"/>
-    <path class="connection" d="M 532 1079 L 532 1170"/>
-    <path class="connection" d="M 672 1043 L 892 1043 L 892 1170"/>
-    <path class="connection" d="M 532 1234 L 532 1325"/>
-    <path class="connection" d="M 892 1234 L 892 1416 L 172 1416"/>
-    <path class="connection" d="M 1252 1075 L 1252 1166"/>
-    <path class="connection" d="M 172 662 L 172 1416"/>
-    <path class="connection" d="M 172 1416 L 172 1527"/>
-    <path class="connection" d="M 172 344 L 172 435"/>
-    <path class="connection" d="M 532 753 L 532 844"/>
-    <path class="connection" d="M 532 1325 L 372 1325 L 372 753 L 532 753" marker-end="url(#loop-arrow)"/>
-    <path class="connection" d="M 1252 1166 L 1412 1166 L 1412 344 L 172 344" marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 172 94 L 172 189
+      M 172 253 L 172 344
+      M 172 507 L 172 598
+      M 312 471 L 532 471 L 532 598
+      M 532 662 L 532 753
+      M 532 916 L 532 1007
+      M 672 880 L 1252 880 L 1252 1011
+      M 532 1079 L 532 1170
+      M 672 1043 L 892 1043 L 892 1170
+      M 532 1234 L 532 1325
+      M 892 1234 L 892 1416 L 172 1416
+      M 1252 1075 L 1252 1166
+      M 172 662 L 172 1416
+      M 172 1416 L 172 1507
+      M 172 344 L 172 435
+      M 532 753 L 532 844
+    "/>
+    <path class="connection" d="
+      M 532 1325 L 372 1325 L 372 753 L 532 753
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1252 1166 L 1412 1166 L 1412 344 L 172 344
+    " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">rows, target</tspan></text>
     <text class="connection-label" x="185" y="271" xml:space="preserve"><tspan x="185" dy="0">mut row</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="527" xml:space="preserve"><tspan x="185" dy="0">All rows have been </tspan><tspan x="185" dy="18">searched.</tspan></text>
@@ -113,7 +119,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">The target is absent.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1556)">
+    <g class="node end" transform="translate(172 1536)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; Option&lt;(usize, usize)&gt;</tspan></text>
     </g>

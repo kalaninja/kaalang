@@ -47,6 +47,9 @@ fn renders_an_accessible_standalone_svg() {
     ));
     assert_eq!(svg.matches(r#"class="node end""#).count(), 1);
     assert_eq!(svg.matches(r#"class="parameter-panel""#).count(), 1);
+    // Distributors and merge rails share one paint operation, so overlapping
+    // branches cannot darken their antialiased edges by repeated strokes.
+    assert_eq!(svg.matches(r#"<path class="connection""#).count(), 1);
     assert!(svg.contains(">seed: u8</tspan><tspan"));
     assert!(svg.contains(">_spare: u8</tspan></text>"));
     assert!(svg.contains(

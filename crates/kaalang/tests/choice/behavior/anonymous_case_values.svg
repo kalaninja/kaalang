@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1020" viewBox="0 0 704 1020" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1092" viewBox="0 0 704 1092" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for anonymous_case_values</title>
   <desc id="kaalang-description">Nodes: Start: anonymous_case_values with parameters value: i32 handing over value; Select: Which transformation? capturing value; Case: Negate the value. handing over negate; Case: Double the value. handing over double; Action: Run the negation. capturing negate handing over selected; Action: Run the doubling. capturing double handing over selected; Action: Capture the selected value in a closure. capturing selected handing over increment; Action: Run the selected closure. capturing increment handing over result; End: i32 capturing result. Connections: Start: anonymous_case_values to Select: Which transformation?; Select: Which transformation? to Case: Negate the value.; Select: Which transformation? to Case: Double the value.; Case: Negate the value. to Action: Run the negation.; Case: Double the value. to Action: Run the doubling.; Action: Run the negation. to the selected merge; Action: Run the doubling. to the selected merge; Action: Capture the selected value in a closure. to Action: Run the selected closure.; Action: Run the selected closure. to End: i32; the selected merge to Action: Capture the selected value in a closure..</desc>
   <defs>
@@ -20,21 +20,23 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 234 L 172 286 L 532 286 L 532 306"/>
-    <path class="connection" d="M 172 376 L 172 448"/>
-    <path class="connection" d="M 532 376 L 532 448"/>
-    <path class="connection" d="M 172 512 L 172 564"/>
-    <path class="connection" d="M 532 512 L 532 564 L 172 564"/>
-    <path class="connection" d="M 172 722 L 172 794"/>
-    <path class="connection" d="M 172 858 L 172 930"/>
-    <path class="connection" d="M 172 564 L 172 656"/>
-    <text class="connection-label" x="185" y="582" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 378
+      M 172 234 L 172 306 L 532 306 L 532 378
+      M 172 448 L 172 520
+      M 532 448 L 532 520
+      M 172 584 L 172 656
+      M 532 584 L 532 656 L 172 656
+      M 172 794 L 172 866
+      M 172 930 L 172 1002
+      M 172 656 L 172 728
+    "/>
+    <text class="connection-label" x="185" y="674" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">negate</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">double</tspan></text>
-    <text class="connection-label" x="185" y="753" xml:space="preserve"><tspan x="185" dy="0">increment</tspan></text>
+    <text class="connection-label" x="185" y="479" xml:space="preserve"><tspan x="185" dy="0">negate</tspan></text>
+    <text class="connection-label" x="545" y="479" xml:space="preserve"><tspan x="545" dy="0">double</tspan></text>
+    <text class="connection-label" x="185" y="825" xml:space="preserve"><tspan x="185" dy="0">increment</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -51,37 +53,37 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which transformation?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 341)">
+    <g class="node case" transform="translate(172 413)">
       <title xml:space="preserve">Negate the value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Negate the value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 341)">
+    <g class="node case" transform="translate(532 413)">
       <title xml:space="preserve">Double the value.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Double the value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 480)">
+    <g class="node action" transform="translate(172 552)">
       <title xml:space="preserve">Run the negation.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the negation.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 480)">
+    <g class="node action" transform="translate(532 552)">
       <title xml:space="preserve">Run the doubling.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the doubling.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 689)">
+    <g class="node action" transform="translate(172 761)">
       <title xml:space="preserve">Capture the selected value in a closure.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Capture the selected value in a </tspan><tspan x="-124" dy="18">closure.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 826)">
+    <g class="node action" transform="translate(172 898)">
       <title xml:space="preserve">Run the selected closure.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Run the selected closure.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 959)">
+    <g class="node end" transform="translate(172 1031)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; i32</tspan></text>
     </g>

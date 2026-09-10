@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1804" height="1707" viewBox="0 0 1804 1707" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1804" height="1596" viewBox="0 0 1804 1596" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for collect_steps</title>
   <desc id="kaalang-description">Nodes: Start: collect_steps with parameters enabled: bool; limit: usize handing over enabled, limit; Question: Collect the steps? capturing enabled handing over run / skip; Action: Start an empty log. capturing run handing over mut log; Question: Are there more first steps? capturing &amp;log, limit described as branch 1: YES / branch 2: NO; Action: Build the first step. capturing nothing handing over step; Action: Record the first step. capturing &amp;mut log, step; Question: Are there more second steps? capturing &amp;log, limit described as branch 1: YES / branch 2: NO; Question: Is the log length odd? capturing &amp;log handing over odd / even; Action: Build an odd step. capturing odd handing over step; Action: Build an even step. capturing even handing over step; Action: Record the second step. capturing &amp;mut log, step; Action: Return the log. capturing log handing over result; Action: Return an empty log. capturing skip handing over result; End: Vec&lt;String&gt; capturing result. Connections: Start: collect_steps to Question: Collect the steps?; Question: Collect the steps? branch 1 to Action: Start an empty log.; Question: Collect the steps? branch 2 to Action: Return an empty log.; Action: Start an empty log. to the entry of Question: Are there more first steps?; Question: Are there more first steps? branch 1 to Action: Build the first step.; Question: Are there more first steps? branch 2 to the entry of Question: Are there more second steps?; Action: Build the first step. to Action: Record the first step.; Action: Record the first step. to the iteration tail of Question: Are there more first steps?; Question: Are there more second steps? branch 1 to Question: Is the log length odd?; Question: Are there more second steps? branch 2 to Action: Return the log.; Question: Is the log length odd? branch 1 to Action: Build an odd step.; Question: Is the log length odd? branch 2 to Action: Build an even step.; Action: Build an odd step. to the step merge; Action: Build an even step. to the step merge; Action: Record the second step. to the iteration tail of Question: Are there more second steps?; Action: Return the log. to the result merge; Action: Return an empty log. to the result merge; the step merge to Action: Record the second step.; the result merge to End: Vec&lt;String&gt;; the entry of Question: Are there more first steps? to Question: Are there more first steps?; the entry of Question: Are there more second steps? to Question: Are there more second steps?; Repeat from the iteration tail of Question: Are there more second steps? to the entry of Question: Are there more second steps?; Repeat from the iteration tail of Question: Are there more first steps? to the entry of Question: Are there more first steps?.</desc>
   <defs>
@@ -21,30 +21,36 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
-    <path class="connection" d="M 192 94 L 192 170"/>
-    <path class="connection" d="M 192 242 L 192 314"/>
-    <path class="connection" d="M 332 206 L 1632 206 L 1632 314"/>
-    <path class="connection" d="M 192 378 L 192 450"/>
-    <path class="connection" d="M 192 594 L 192 666"/>
-    <path class="connection" d="M 332 558 L 552 558 L 552 666"/>
-    <path class="connection" d="M 192 730 L 192 806"/>
-    <path class="connection" d="M 192 870 L 192 942"/>
-    <path class="connection" d="M 552 874 L 552 946"/>
-    <path class="connection" d="M 692 838 L 1272 838 L 1272 950"/>
-    <path class="connection" d="M 552 1018 L 552 1090"/>
-    <path class="connection" d="M 692 982 L 912 982 L 912 1090"/>
-    <path class="connection" d="M 552 1154 L 552 1206"/>
-    <path class="connection" d="M 912 1154 L 912 1206 L 552 1206"/>
-    <path class="connection" d="M 552 1362 L 552 1434"/>
-    <path class="connection" d="M 1272 1014 L 1272 1525"/>
-    <path class="connection" d="M 1632 378 L 1632 1525 L 1272 1525"/>
-    <path class="connection" d="M 552 1206 L 552 1298"/>
-    <path class="connection" d="M 1272 1525 L 1272 1617"/>
-    <path class="connection" d="M 192 450 L 192 522"/>
-    <path class="connection" d="M 552 666 L 552 802"/>
-    <path class="connection" d="M 552 1434 L 392 1434 L 392 666 L 552 666" marker-end="url(#loop-arrow)"/>
-    <path class="connection" d="M 192 942 L 32 942 L 32 450 L 192 450" marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="565" y="1224" xml:space="preserve"><tspan x="565" dy="0">step</tspan></text>
+    <path class="connection" d="
+      M 192 94 L 192 170
+      M 192 242 L 192 314
+      M 332 206 L 1632 206 L 1632 314
+      M 192 378 L 192 450
+      M 192 594 L 192 666
+      M 332 558 L 552 558 L 552 666
+      M 192 730 L 192 806
+      M 192 870 L 192 942
+      M 552 874 L 552 946
+      M 692 838 L 1272 838 L 1272 950
+      M 552 1018 L 552 1090
+      M 692 982 L 912 982 L 912 1090
+      M 552 1154 L 552 1226
+      M 912 1154 L 912 1226 L 552 1226
+      M 552 1362 L 552 1434
+      M 1272 1014 L 1272 1434
+      M 1632 378 L 1632 1434 L 1272 1434
+      M 552 1226 L 552 1298
+      M 1272 1434 L 1272 1506
+      M 192 450 L 192 522
+      M 552 666 L 552 802
+    "/>
+    <path class="connection" d="
+      M 552 1434 L 392 1434 L 392 666 L 552 666
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 192 942 L 32 942 L 32 450 L 192 450
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="565" y="1244" xml:space="preserve"><tspan x="565" dy="0">step</tspan></text>
     <text class="connection-label" x="205" y="273" xml:space="preserve"><tspan x="205" dy="0">run</tspan></text>
     <text class="connection-label" x="970" y="195" xml:space="preserve"><tspan x="970" dy="0">skip</tspan></text>
     <text class="connection-label" x="565" y="1049" xml:space="preserve"><tspan x="565" dy="0">odd</tspan></text>
@@ -135,7 +141,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return an empty log.</tspan></text>
     </g>
-    <g class="node end" transform="translate(1272 1646)">
+    <g class="node end" transform="translate(1272 1535)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; Vec&lt;String&gt;</tspan></text>
     </g>

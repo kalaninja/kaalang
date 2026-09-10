@@ -20,18 +20,20 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 103 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 600"/>
-    <path class="connection" d="M 312 224 L 532 224 L 532 332"/>
-    <path class="connection" d="M 532 404 L 532 600 L 172 600"/>
-    <path class="connection" d="M 672 368 L 892 368 L 892 476"/>
-    <path class="connection" d="M 892 548 L 892 600 L 172 600"/>
-    <path class="connection" d="M 1032 512 L 1252 512 L 1252 692"/>
-    <path class="connection" d="M 172 756 L 172 808"/>
-    <path class="connection" d="M 1252 756 L 1252 808 L 172 808"/>
-    <path class="connection" d="M 172 600 L 172 692"/>
-    <path class="connection" d="M 172 808 L 172 900"/>
-    <text class="connection-label" x="185" y="618" xml:space="preserve"><tspan x="185" dy="0">true_result</tspan></text>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 620
+      M 312 224 L 532 224 L 532 332
+      M 532 404 L 532 620 L 172 620
+      M 672 368 L 892 368 L 892 476
+      M 892 548 L 892 620 L 172 620
+      M 1032 512 L 1252 512 L 1252 692
+      M 172 756 L 172 828
+      M 1252 756 L 1252 828 L 172 828
+      M 172 620 L 172 692
+      M 172 828 L 172 900
+    "/>
+    <text class="connection-label" x="185" y="638" xml:space="preserve"><tspan x="185" dy="0">true_result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">Yes</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">No</tspan></text>

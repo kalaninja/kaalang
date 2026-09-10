@@ -20,21 +20,23 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 586 L 172 658"/>
-    <path class="connection" d="M 172 730 L 172 802"/>
-    <path class="connection" d="M 312 694 L 532 694 L 532 802"/>
-    <path class="connection" d="M 172 866 L 172 918"/>
-    <path class="connection" d="M 532 866 L 532 918 L 172 918"/>
-    <path class="connection" d="M 172 1074 L 172 1146"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <path class="connection" d="M 172 918 L 172 1010"/>
-    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">text</tspan></text>
-    <text class="connection-label" x="185" y="936" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 450
+      M 532 378 L 532 450 L 172 450
+      M 172 586 L 172 658
+      M 172 730 L 172 802
+      M 312 694 L 532 694 L 532 802
+      M 172 866 L 172 938
+      M 532 866 L 532 938 L 172 938
+      M 172 1074 L 172 1146
+      M 172 450 L 172 522
+      M 172 938 L 172 1010
+    "/>
+    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">text</tspan></text>
+    <text class="connection-label" x="185" y="956" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
     <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
     <text class="connection-label" x="402" y="195" xml:space="preserve"><tspan x="402" dy="0">second</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">condition, long</tspan></text>

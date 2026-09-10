@@ -20,10 +20,12 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 90 L 172 162"/>
-    <path class="connection" d="M 172 226 L 172 298"/>
-    <path class="connection" d="M 172 362 L 172 434"/>
-    <path class="connection" d="M 172 498 L 172 570"/>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 172 362 L 172 434
+      M 172 498 L 172 570
+    "/>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
     <text class="connection-label" x="185" y="380" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>

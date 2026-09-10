@@ -20,20 +20,22 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 594 L 172 666"/>
-    <path class="connection" d="M 312 558 L 532 558 L 532 666"/>
-    <path class="connection" d="M 172 730 L 172 782"/>
-    <path class="connection" d="M 532 730 L 532 782 L 172 782"/>
-    <path class="connection" d="M 172 938 L 172 1010"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">counted</tspan></text>
-    <text class="connection-label" x="185" y="800" xml:space="preserve"><tspan x="185" dy="0">seen</tspan></text>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 450
+      M 532 378 L 532 450 L 172 450
+      M 172 594 L 172 666
+      M 312 558 L 532 558 L 532 666
+      M 172 730 L 172 802
+      M 532 730 L 532 802 L 172 802
+      M 172 938 L 172 1010
+      M 172 450 L 172 522
+      M 172 802 L 172 874
+    "/>
+    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">counted</tspan></text>
+    <text class="connection-label" x="185" y="820" xml:space="preserve"><tspan x="185" dy="0">seen</tspan></text>
     <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">left_yes</tspan></text>
     <text class="connection-label" x="400" y="195" xml:space="preserve"><tspan x="400" dy="0">left_no</tspan></text>
     <text class="connection-label" x="185" y="625" xml:space="preserve"><tspan x="185" dy="0">right_yes</tspan></text>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1122" height="772" viewBox="0 0 1122 772" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1122" height="844" viewBox="0 0 1122 844" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice</title>
   <desc id="kaalang-description">Nodes: Start: run_choice with parameters value: i32; branch_action_count: &amp;mut usize handing over value, branch_action_count; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is zero. handing over zero; Case: The value is positive. handing over positive; Action: Produce the negative result. capturing negative, branch_action_count handing over result; Action: Produce the zero result. capturing zero, branch_action_count handing over result; Action: Produce the positive result. capturing positive, branch_action_count handing over result; End: &amp;&apos;static str capturing result. Connections: Start: run_choice to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is zero.; Select: What is the sign of the value? to Case: The value is positive.; Case: The value is negative. to Action: Produce the negative result.; Case: The value is zero. to Action: Produce the zero result.; Case: The value is positive. to Action: Produce the positive result.; Action: Produce the negative result. to the result merge; Action: Produce the zero result. to the result merge; Action: Produce the positive result. to the result merge; the result merge to End: &amp;&apos;static str.</desc>
   <defs>
@@ -20,25 +20,27 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 103 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 172 260 L 172 312 L 532 312 L 532 332"/>
-    <path class="connection" d="M 172 260 L 172 312 L 892 312 L 892 332"/>
-    <path class="connection" d="M 172 402 L 172 474"/>
-    <path class="connection" d="M 532 402 L 532 474"/>
-    <path class="connection" d="M 892 402 L 892 474"/>
-    <path class="connection" d="M 172 538 L 172 590"/>
-    <path class="connection" d="M 532 538 L 532 590 L 172 590"/>
-    <path class="connection" d="M 892 538 L 892 590 L 172 590"/>
-    <path class="connection" d="M 172 590 L 172 682"/>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 404
+      M 172 260 L 172 332 L 532 332 L 532 404
+      M 172 260 L 172 332 L 892 332 L 892 404
+      M 172 474 L 172 546
+      M 532 474 L 532 546
+      M 892 474 L 892 546
+      M 172 610 L 172 682
+      M 532 610 L 532 682 L 172 682
+      M 892 610 L 892 682 L 172 682
+      M 172 682 L 172 754
+    "/>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">value, branch_action_count</tspan></text>
-    <text class="connection-label" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">negative</tspan></text>
-    <text class="connection-label" x="545" y="420" xml:space="preserve"><tspan x="545" dy="0">zero</tspan></text>
-    <text class="connection-label" x="905" y="420" xml:space="preserve"><tspan x="905" dy="0">positive</tspan></text>
+    <text class="connection-label" x="185" y="492" xml:space="preserve"><tspan x="185" dy="0">negative</tspan></text>
+    <text class="connection-label" x="545" y="492" xml:space="preserve"><tspan x="545" dy="0">zero</tspan></text>
+    <text class="connection-label" x="905" y="492" xml:space="preserve"><tspan x="905" dy="0">positive</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="463" xml:space="preserve"><tspan x="185" dy="0">negative, branch_action_count</tspan></text>
-    <text class="connection-label" x="545" y="463" xml:space="preserve"><tspan x="545" dy="0">zero, branch_action_count</tspan></text>
-    <text class="connection-label" x="905" y="463" xml:space="preserve"><tspan x="905" dy="0">positive, branch_action_count</tspan></text>
+    <text class="connection-label" x="185" y="535" xml:space="preserve"><tspan x="185" dy="0">negative, branch_action_count</tspan></text>
+    <text class="connection-label" x="545" y="535" xml:space="preserve"><tspan x="545" dy="0">zero, branch_action_count</tspan></text>
+    <text class="connection-label" x="905" y="535" xml:space="preserve"><tspan x="905" dy="0">positive, branch_action_count</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
@@ -55,37 +57,37 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">What is the sign of the </tspan><tspan x="0" dy="18">value?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 367)">
+    <g class="node case" transform="translate(172 439)">
       <title xml:space="preserve">The value is negative.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The value is negative.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 367)">
+    <g class="node case" transform="translate(532 439)">
       <title xml:space="preserve">The value is zero.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The value is zero.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 367)">
+    <g class="node case" transform="translate(892 439)">
       <title xml:space="preserve">The value is positive.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The value is positive.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 506)">
+    <g class="node action" transform="translate(172 578)">
       <title xml:space="preserve">Produce the negative result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the negative result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 506)">
+    <g class="node action" transform="translate(532 578)">
       <title xml:space="preserve">Produce the zero result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the zero result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 506)">
+    <g class="node action" transform="translate(892 578)">
       <title xml:space="preserve">Produce the positive result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the positive result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 711)">
+    <g class="node end" transform="translate(172 783)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; &amp;&apos;static str</tspan></text>
     </g>

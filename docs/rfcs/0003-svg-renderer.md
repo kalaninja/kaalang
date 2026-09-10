@@ -45,6 +45,14 @@ To draw an implicit merge, including the `result` merge above end, each producer
 descends in its approach column to one horizontal merge rail whose junction lies
 in the continuation's column; routes meet it as RFC 0002 §8 requires.
 
+Use one vertical gap throughout a diagram, at least 72 pixels and enlarged when
+labels need more room. Leave at least that gap between consecutive node rows.
+For horizontal runs in row gaps, reserve it both below the preceding node row
+and above the following node row. A junction has no node or capture label, so it
+reserves no extra space above its rail. Additional horizontal lanes stay 20
+pixels apart. This gives select distributors, merge rails, and iteration tails
+the same clearance.
+
 While conditions use the ordinary question layout and authored answer order.
 Forward connections and iteration-tail precedence form an acyclic placement
 graph. After separating every return from the forward graph, carry each tail's
@@ -71,12 +79,16 @@ Keep the lower route when the shorter one would cross another connection; the
 tail's forward precedence still determines initial node placement.
 
 After routing the returns, adjust the terminal `result` merge and end using the
-actual geometry. Leave the usual vertical gap below all other nodes and at least
-91 pixels below the lowest return. Move the terminal merge and end together,
-preserving their common segment's length; when end has no result merge, move end
-alone. Move upward to remove excess space or downward to provide the required
-clearance. Keep the original placement if the adjusted terminal routes would
-introduce a crossing or upward segment. Place labels after this adjustment.
+actual geometry. First try the usual vertical gap below all other nodes, so
+independent terminal and return rails can share a row. Horizontal terminal and
+return segments whose horizontal spans overlap must remain at least the usual
+vertical gap apart. If the first position violates that clearance or introduces
+a crossing, also leave the usual vertical gap below the lowest return. Move the
+terminal merge and end together, preserving their common segment's length; when
+end has no result merge, move end alone. Move upward to remove excess space or
+downward to provide the required clearance. Keep the original placement if both
+adjusted positions would introduce a crossing or upward segment. Place labels
+after this adjustment.
 
 ## 3. SVG output
 
@@ -85,6 +97,10 @@ external fonts, or external rendering programs. It lightly tints nodes by block
 kind while retaining shape and labels as independent type indicators. The
 presentation choices left open by RFC 0002 are internal to the renderer and may
 change without changing the visual language.
+
+Serialize forward connections as subpaths of one SVG path, so shared
+distributors and merge rails are stroked once without darkening their
+antialiased edges. Keep return paths separate for their arrowhead markers.
 
 The renderer preserves Unicode text and escapes XML content. For the start label
 and each row of the parameter panel, it takes the source content defined by RFC

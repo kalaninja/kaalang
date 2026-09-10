@@ -20,15 +20,17 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 94 L 172 170"/>
-    <path class="connection" d="M 172 234 L 172 306"/>
-    <path class="connection" d="M 172 370 L 172 442"/>
-    <path class="connection" d="M 172 506 L 172 578"/>
-    <path class="connection" d="M 172 650 L 172 722"/>
-    <path class="connection" d="M 312 614 L 532 614 L 532 722"/>
-    <path class="connection" d="M 172 786 L 172 838"/>
-    <path class="connection" d="M 532 786 L 532 838 L 172 838"/>
-    <path class="connection" d="M 172 838 L 172 930"/>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 234 L 172 306
+      M 172 370 L 172 442
+      M 172 506 L 172 578
+      M 172 650 L 172 722
+      M 312 614 L 532 614 L 532 722
+      M 172 786 L 172 858
+      M 532 786 L 532 858 L 172 858
+      M 172 858 L 172 930
+    "/>
     <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">normalized</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">seed, limit</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>

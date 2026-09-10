@@ -20,17 +20,19 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 103 L 172 188"/>
-    <path class="connection" d="M 172 260 L 172 332"/>
-    <path class="connection" d="M 312 224 L 532 224 L 532 620"/>
-    <path class="connection" d="M 172 404 L 172 476"/>
-    <path class="connection" d="M 312 368 L 532 368 L 532 620"/>
-    <path class="connection" d="M 172 548 L 172 692"/>
-    <path class="connection" d="M 312 512 L 532 512 L 532 620"/>
-    <path class="connection" d="M 172 756 L 172 808"/>
-    <path class="connection" d="M 532 756 L 532 808 L 172 808"/>
-    <path class="connection" d="M 532 620 L 532 692"/>
-    <path class="connection" d="M 172 808 L 172 900"/>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 532 224 L 532 620
+      M 172 404 L 172 476
+      M 312 368 L 532 368 L 532 620
+      M 172 548 L 172 692
+      M 312 512 L 532 512 L 532 620
+      M 172 756 L 172 828
+      M 532 756 L 532 828 L 172 828
+      M 532 620 L 532 692
+      M 172 828 L 172 900
+    "/>
     <text class="connection-label" x="545" y="638" xml:space="preserve"><tspan x="545" dy="0">false_result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">No</tspan></text>

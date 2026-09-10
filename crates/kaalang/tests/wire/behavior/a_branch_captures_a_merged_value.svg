@@ -20,18 +20,20 @@
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="connections">
-    <path class="connection" d="M 172 98 L 172 170"/>
-    <path class="connection" d="M 172 242 L 172 314"/>
-    <path class="connection" d="M 312 206 L 532 206 L 532 314"/>
-    <path class="connection" d="M 172 378 L 172 430"/>
-    <path class="connection" d="M 532 378 L 532 430 L 172 430"/>
-    <path class="connection" d="M 172 594 L 172 666"/>
-    <path class="connection" d="M 312 558 L 532 558 L 532 666"/>
-    <path class="connection" d="M 172 730 L 172 782"/>
-    <path class="connection" d="M 532 730 L 532 782 L 172 782"/>
-    <path class="connection" d="M 172 430 L 172 522"/>
-    <path class="connection" d="M 172 782 L 172 874"/>
-    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 450
+      M 532 378 L 532 450 L 172 450
+      M 172 594 L 172 666
+      M 312 558 L 532 558 L 532 666
+      M 172 730 L 172 802
+      M 532 730 L 532 802 L 172 802
+      M 172 450 L 172 522
+      M 172 802 L 172 874
+    "/>
+    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
     <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">positive</tspan></text>
     <text class="connection-label" x="397" y="195" xml:space="preserve"><tspan x="397" dy="0">negative</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">amount, verbose</tspan></text>
