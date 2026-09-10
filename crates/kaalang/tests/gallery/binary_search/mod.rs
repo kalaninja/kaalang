@@ -13,22 +13,22 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         let mid = |left, right| left + (right - left) / 2;
 
         #[choice("Compare the middle element with the target.")]
-        #[case("Search the right half.")]
-        #[case("Search the left half.")]
-        #[case("The target was found.")]
+        #[case("Less than the target.")]
+        #[case("Greater than the target.")]
+        #[case("Equal to the target.")]
         let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
             Ordering::Equal => (),
         };
 
-        #[action("Advance the lower bound.")]
+        #[action("Search the right half.")]
         |less, mid, &mut left| *left = mid + 1;
 
-        #[action("Reduce the upper bound.")]
+        #[action("Search the left half.")]
         |greater, mid, &mut right| *right = mid;
 
-        #[action("Return the matching index.")]
+        #[action("The target was found.")]
         let end = |equal, mid| Some(mid);
     }
 
@@ -49,22 +49,22 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         let mid = |left, right| left + (right - left) / 2;
 
         #[choice("Compare the middle element with the target.")]
-        #[case("The target was found.")]
-        #[case("Search the right half.")]
-        #[case("Search the left half.")]
+        #[case("Equal to the target.")]
+        #[case("Less than the target.")]
+        #[case("Greater than the target.")]
         let (equal, less, greater) = |values, target, mid| match values[mid].cmp(&target) {
             Ordering::Equal => (),
             Ordering::Less => (),
             Ordering::Greater => (),
         };
 
-        #[action("Return the matching index.")]
+        #[action("The target was found.")]
         let end = |equal, mid| Some(mid);
 
-        #[action("Advance the lower bound.")]
+        #[action("Search the right half.")]
         |less, mid, &mut left| *left = mid + 1;
 
-        #[action("Reduce the upper bound.")]
+        #[action("Search the left half.")]
         |greater, mid, &mut right| *right = mid;
     }
 
