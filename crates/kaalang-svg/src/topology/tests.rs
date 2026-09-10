@@ -32,6 +32,108 @@ fn reaches(topology: &Topology, from: Vertex, to: Vertex) -> bool {
 }
 
 #[test]
+fn an_empty_unconditional_loop_uses_only_its_entry_and_tail() {
+    let topology = drawn(
+        r"
+        fn example() -> usize {
+            loop {}
+        }
+    ",
+    );
+    let loop_ = topology.loops[0];
+    assert_eq!(topology.nodes.len(), 1);
+    assert_eq!(topology.nodes[0].id, NodeId::Start);
+    assert_eq!(topology.junctions.len(), 2);
+    assert_eq!(
+        topology.connections,
+        [
+            Connection {
+                source: Source::Exit(ExitId::of(NodeId::Start)),
+                destination: Destination::Junction(loop_.entry),
+            },
+            Connection {
+                source: Source::Junction(loop_.entry),
+                destination: Destination::Junction(loop_.tail),
+            },
+        ]
+    );
+    assert_eq!(
+        topology.back_edges,
+        [Connection {
+            source: Source::Junction(loop_.tail),
+            destination: Destination::Junction(loop_.entry),
+        }]
+    );
+}
+
+#[test]
+fn a_terminal_loop_finishes_before_its_enclosing_end_merge() {
+    let topology = drawn(
+        r#"
+        fn example(flag: bool) -> usize {
+            #[question("Flag?")]
+            while (|flag| flag) {
+                loop {
+                    #[action("Return one.")]
+                    let end = || 1;
+                }
+            }
+            #[action("Return two.")]
+            let end = || 2;
+        }
+        "#,
+    );
+    assert!(topology.loops.is_empty());
+    assert_eq!(topology.junctions.len(), 1);
+    assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
+    for block in [2, 3] {
+        assert!(topology.connections.contains(&Connection {
+            source: Source::Exit(ExitId::of(NodeId::Block(block))),
+            destination: Destination::Junction(0),
+        }));
+    }
+    assert!(topology.connections.contains(&Connection {
+        source: Source::Junction(0),
+        destination: Destination::Node(NodeId::Block(4)),
+    }));
+}
+
+#[test]
+fn a_final_nested_while_closes_before_the_unconditional_loop_repeats() {
+    let topology = drawn(
+        r#"
+        fn example(flag: bool) -> usize {
+            loop {
+                #[question("Flag?")]
+                while (|&flag| *flag) {}
+            }
+        }
+        "#,
+    );
+    let [outer, inner] = topology.loops[..] else {
+        panic!("both loops repeat");
+    };
+    assert!(topology.connections.contains(&Connection {
+        source: Source::Exit(ExitId {
+            node: NodeId::Block(inner.header),
+            branch: Some(0),
+        }),
+        destination: Destination::Junction(inner.tail),
+    }));
+    assert!(topology.connections.contains(&Connection {
+        source: Source::Exit(ExitId {
+            node: NodeId::Block(inner.header),
+            branch: Some(1),
+        }),
+        destination: Destination::Junction(outer.tail),
+    }));
+    assert!(topology.order.contains(&Connection {
+        source: Source::Junction(inner.tail),
+        destination: Destination::Junction(outer.tail),
+    }));
+}
+
+#[test]
 fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
     let topology = drawn(
         r#"

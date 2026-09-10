@@ -611,7 +611,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             let meetings = if shared {
                 bundle_meetings(&connection.points, &other.points)
             } else {
-                common_junction(connection, other).into_iter().collect()
+                common_junctions(connection, other)
             };
             for left in connection.points.windows(2) {
                 for right in other.points.windows(2) {
@@ -665,12 +665,12 @@ fn on_segment(point: Point, segment: &[Point]) -> bool {
         && point.y <= segment[0].y.max(segment[1].y)
 }
 
-/// Only an incoming route and an outgoing route of the same junction may meet
+/// Only incoming and outgoing routes of the same junction may meet
 /// perpendicularly at their endpoints. Sharing any length still counts as overlap.
-fn common_junction(left: &Connection, right: &Connection) -> Option<Point> {
+fn common_junctions(left: &Connection, right: &Connection) -> Vec<Point> {
     [(left, right), (right, left)]
         .into_iter()
-        .find_map(|(incoming, outgoing)| {
+        .filter_map(|(incoming, outgoing)| {
             if let Destination::Junction(junction) = incoming.destination
                 && outgoing.source == Source::Junction(junction)
             {
@@ -683,6 +683,7 @@ fn common_junction(left: &Connection, right: &Connection) -> Option<Point> {
                 None
             }
         })
+        .collect()
 }
 
 fn touches(connection: &Connection, node: NodeId) -> bool {

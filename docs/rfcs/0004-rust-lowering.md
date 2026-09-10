@@ -399,7 +399,9 @@ including `const fn`; an `async fn` is rejected before lowering under
 attribute and block and case descriptions are consumed during translation; the
 closure-shaped declarations do not become callable Rust closures.
 
-## 7. While loops
+## 7. Loops
+
+### 7.1 while
 
 The closure-shaped condition is syntax for explicit captures, not a callable
 Rust closure. Lowering emits a native `while` whose condition block creates the
@@ -465,3 +467,49 @@ locals are ordinary Rust bindings inside the loop body; no output slots, clones,
 or runtime scope bookkeeping are introduced. Native Rust control transfers
 wholly inside a computational body remain valid under RFC 0001 §3; authored
 transfers to a kaalang loop are rejected before lowering.
+
+### 7.2 loop
+
+An unconditional loop lowers directly to a native hygienically labeled Rust
+`loop`. Its plan is `Loop { index, body }` and has no after-loop continuation.
+Normal body completion is represented by `Repeat { index }` and emitted as a
+`continue` to that label; an `EndArrival` still returns from the whole function.
+
+```rust
+#[kaalang]
+fn spin(mut count: usize) -> ! {
+    loop {
+        #[action("Increment the counter.")]
+        |&mut count| *count = count.wrapping_add(1);
+    }
+}
+```
+
+Illustrative Rust:
+
+```rust
+fn spin(mut wire_count: usize) -> ! {
+    '__kaalang_loop: loop {
+        let count = &mut wire_count;
+        *count = count.wrapping_add(1);
+        continue '__kaalang_loop;
+    }
+}
+```
+
+Validation and plan verification represent each path with one finite iteration.
+Its public `ExecutionOutcome` is `End` when that path produces `end`, otherwise
+`Repeat { loop_index }`. A fully repeating flow therefore needs no reachable
+`end` producer, although the semantic model retains the implicit end block and
+the function signature remains the return contract. Blocks after a `Loop` plan
+are rejected as unreachable.
+
+The unconditional body uses the same lexical wire scopes and hygienic labels as
+a while body. Nested loops close innermost first: a trailing while repeats its
+own condition before its normal exit can reach the enclosing loop's repeat. The
+final summary outcome does not replace those intermediate boundaries. Plan
+verification checks every repeat against the active innermost loop and checks
+that all iteration boundaries recorded by the summary were reached.
+
+An empty body lowers to a labeled loop whose generated continue is its only
+statement. No runtime scope bookkeeping or value cloning is introduced.

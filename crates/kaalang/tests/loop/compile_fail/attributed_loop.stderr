@@ -1,0 +1,5 @@
+error: a kaalang loop does not support attributes
+ --> tests/loop/compile_fail/attributed_loop.rs:5:5
+  |
+5 |     #[action("Repeat forever.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

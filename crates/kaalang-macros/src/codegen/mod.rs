@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Pat, ext::IdentExt, token::Mut};
+use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, ext::IdentExt, token::Mut};
 
 use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
 
@@ -13,6 +13,7 @@ mod choice;
 mod end;
 mod join;
 mod question;
+mod unconditional_loop;
 mod while_loop;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
@@ -157,10 +158,16 @@ pub(crate) fn tuple(span: Span, idents: &[impl ToTokens]) -> TokenStream2 {
 /// kaalang invariant, including the destination of every branch exit.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
+        ExecutionPlan::Loop { index, body } => {
+            unconditional_loop::emit(flow, bindings, *index, body)
+        }
         ExecutionPlan::While { index, body, next } => {
             while_loop::emit(flow, bindings, *index, body, next)
         }
-        ExecutionPlan::Repeat { index } => while_loop::repeat(flow, *index),
+        ExecutionPlan::Repeat { index } => {
+            let label = loop_label(*index, flow.blocks[*index].span);
+            quote_spanned!(flow.blocks[*index].span=> continue #label;)
+        }
         ExecutionPlan::Action { index, next } => action::emit(flow, bindings, *index, next),
         ExecutionPlan::Question {
             index,
@@ -180,6 +187,13 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         ExecutionPlan::EndArrival { wire } => end::arrival(bindings, wire),
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     }
+}
+
+fn loop_label(index: usize, span: Span) -> Lifetime {
+    Lifetime::new(
+        &format!("'__kaalang_loop_{index}"),
+        Span::mixed_site().located_at(span),
+    )
 }
 
 /// Splices the statements of a block body so lowering adds no extra braces.

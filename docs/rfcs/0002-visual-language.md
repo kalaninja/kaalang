@@ -16,7 +16,8 @@ following terms:
 
 - a **diagram** is the complete visual representation of one flow;
 - a **node** is a drawn unit that represents all or part of one block, authored
-  or implicit, except for the synthetic start node;
+  or implicit, except for the synthetic start node; an unconditional loop is
+  represented by junctions and connections rather than a node;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
@@ -37,9 +38,11 @@ following terms:
 
 ## 3. Diagram structure
 
-A diagram contains a visual representation of each block the flow declares,
-authored or implicit, so the implicit end block has a node like any other. No
-block is duplicated to simplify layout.
+A diagram contains a visual representation of each reachable block the flow
+declares, authored or implicit. An unconditional loop uses only its entry and
+iteration-tail junctions, and the implicit end block has a node only when at
+least one finite execution summary has outcome `End`. No block is duplicated to
+simplify layout.
 
 Connections preserve the validated model's dependencies, wire merges, and branch
 routes. The serial order they show is the source order RFC 0001 §7 defines, so
@@ -51,10 +54,10 @@ data connections.
 
 ## 4. Node kinds
 
-An action, a question (including a while condition), and the unique end block
-each become one node. A choice becomes one select node and one case node per
-authored case. Case nodes are visual projections, not additional semantic
-blocks.
+An action and a question, including a while condition, each become one node. A
+choice becomes one select node and one case node per authored case. A reachable
+end block becomes one end node. Case nodes are visual projections, not
+additional semantic blocks; an unconditional loop has no node of its own.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
@@ -115,30 +118,41 @@ its wire name in either case.
 
 ### 4.6 end
 
-The end node represents the flow's implicit end block. That block has no
-description, so its node carries the flow's return type instead: the authored
-return type, and `()` when the function declares none. A diagram has no separate
-return node.
+When at least one execution has outcome `End`, the end node represents the
+flow's implicit end block. That block has no description, so its node carries
+the flow's return type instead: the authored return type, and `()` when the
+function declares none. A diagram has no separate return node. A fully diverging
+flow omits the unreachable end node.
 
 The end node's label names the type. Its incoming connection does not name the
 `end` wire: every connection reaching end carries that wire, so the endpoint
 already identifies it. The end node remains an ordinary consumer: alternative
 producers of `end` merge above it (section 7), and it is not itself the merge.
 
+### 4.7 loop
+
+An unconditional loop has no condition or separate node. An unlabeled entry
+junction receives the initial route and every repeated arrival. The body follows
+that junction once in the finite diagram. Normal body endings meet at an
+unlabeled iteration tail, whose return connects to the entry junction. An empty
+body connects entry directly to tail. A body route producing `end` goes to the
+end node instead of the tail.
+
 ## 5. Flow inputs and outputs
 
 The parameter panel shows every flow input with its Rust type. Every named flow
 input is also shown as an output of the start node, even if no block captures
 it. A wildcard flow input produces no wire label. A zero-computation flow is the
-start node connected to the end node by the `end` wire a flow input provides.
+start node connected to the end node by the `end` wire a flow input provides,
+when that flow reaches end.
 
 ## 6. Wires and labels
 
 Description labels carry the exact authored text. A presentation may wrap or
 escape that text but must not paraphrase, normalize, or synthesize it. No node
-carries a caption naming its block kind. The end node's `()` for an absent return
-type and the while's default `YES`/`NO` answer labels state the contract rather
-than paraphrasing authored text.
+carries a caption naming its block kind. The end node's `()` for an absent
+return type and the while's default `YES`/`NO` answer labels state the contract
+rather than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
@@ -209,26 +223,28 @@ For dependency routing, the start node represents the producers of named flow
 inputs, a question's two outputs are distinct exits of its node, and a case node
 represents its corresponding choice output.
 
-Consider one possible execution after its branches have been selected. A node
-participates in that execution when its represented block executes or its
-represented case is selected; the start and end nodes always participate. A
-producer node precedes a consumer node when a capture dependency from the
-represented producer occurrence to that consumer participates in the execution,
-and this order is transitive. A select node precedes its selected case node.
-Wire production and implicit merges also establish the precedence defined by RFC
-0001 §7: a merge follows every producer and every block it closes, and precedes
-every block that captures the merged wire. These orderings participate in the
-same per-execution reduction as capture dependencies. RFC 0001 makes the
-producer of `end` the last participating block, so every other node precedes the
-end node.
+Consider one finite structural execution after its branches have been selected.
+A node participates when its represented block executes or its represented case
+is selected. Start always participates; end participates only in an `End`
+outcome. A producer node precedes a consumer node when a capture dependency from
+the represented producer occurrence to that consumer participates in the
+execution, and this order is transitive. A select node precedes its selected
+case node. Wire production and implicit merges also establish the precedence
+defined by RFC 0001 §7: a merge follows every producer and every block it
+closes, and precedes every block that captures the merged wire. These orderings
+participate in the same per-execution reduction as capture dependencies. In an
+`End` outcome, RFC 0001 makes the producer of `end` the last participating
+block, so every other node precedes the end node.
 
 Source order supplies the serial order of participating blocks. For each
-execution, add precedence from start to its first computational block, between
-consecutive computational blocks, and from the last one to end. A question
-leaves through its selected exit; a choice continues through its selected case.
-With no computational blocks, start leads directly to end. These relations
-participate in the same reduction as dependencies and merges. They express the
-order the flow is written in without inventing captures.
+execution, add precedence from start to its first computational block and
+between consecutive computational blocks. An `End` outcome continues from the
+last one to end; a `Repeat` outcome continues to the corresponding iteration
+tail. A question leaves through its selected exit; a choice continues through
+its selected case. With no computational blocks, start leads directly to end or
+through an unconditional loop's entry to its tail, according to the outcome.
+These relations participate in the same reduction as dependencies and merges.
+They express the order the flow is written in without inventing captures.
 
 For example, if two actions capture `left` and `right` after a merge, draw them
 in the order they are written on the happy path. A connection between them does
@@ -237,12 +253,11 @@ action is written above a question capturing `condition`, draw
 `start → setup → question`: the action's capture label is `()`, its hand-over
 still names only `setup`, and the question's capture still names `condition`.
 
-A direct connection joins an exit of a participating source node to a
-participating destination node exactly when the source node precedes the
-destination node and no other participating node lies between them in this
-order. A connection is identified by its source exit and destination node, so
-connections from distinct exits remain distinct even when they join the same
-pair of nodes.
+A direct connection joins a participating source exit or junction to a
+participating destination node or junction exactly when the source precedes the
+destination and no other participating vertex lies between them in this order. A
+connection is identified by its source and destination, so connections from
+distinct exits remain distinct even when they join the same pair of nodes.
 
 The complete diagram is the union of these connections over all possible
 executions. A connection may therefore be direct in one execution and
@@ -297,7 +312,14 @@ tail instead returns to the entry junction before its own condition, where the
 initial and repeated arrivals meet. No retains its direct forward route to the
 after-loop continuation. Nested tails close innermost first. Local wires do not
 travel along return connections; mutations of enclosing wires follow RFC 0001
-§4.5.
+§§4.5–4.6.
+
+For an unconditional loop, use one representative iteration for each finite
+summary. An `End` outcome follows its body route to end. A `Repeat` outcome ends
+at the loop's iteration tail, whose return reaches the entry junction; there is
+no after-loop continuation. Nested iteration tails close innermost first. The
+same wire rule applies, including to an empty body whose entry connects directly
+to its tail.
 
 ## 8. Spatial notation
 
@@ -323,20 +345,21 @@ including any nested question or choice. Later sibling branches start to the
 right of that whole area, even when the shared continuation is wider than the
 group's incoming branches.
 
-Alternative producers of `end` meet at their implicit merge above the end node,
-mirroring the distributor that fans a select node out to its case nodes.
-Connection routes are simple: they do not intersect or overlap themselves. They
-do not cross one another or pass through a non-endpoint node. Meeting at a
-common endpoint or deliberately sharing a collinear segment is not a crossing;
-connections may share such a segment only when they have the same source exit or
-the same destination node. Other connections do not overlap. Forward connections
-are plain lines without arrowheads. A while return travels upward outside its
-body and ends horizontally with an arrowhead at the entry junction on the line
-above its condition. The arrow points into that line, not into the question
-node. The common segment below the junction enters the question from above and
-has no arrowhead. The return is the only exception to downward routing and the
-only arrowhead. A route contains only straight horizontal and vertical segments,
-so every bend is a right angle.
+When end is reachable, alternative producers of `end` meet at their implicit
+merge above the end node, mirroring the distributor that fans a select node out
+to its case nodes. Connection routes are simple: they do not intersect or
+overlap themselves. They do not cross one another or pass through a non-endpoint
+node. Meeting at a common endpoint or deliberately sharing a collinear segment
+is not a crossing; connections may share such a segment only when they have the
+same source exit or the same destination node. Other connections do not overlap.
+Forward connections are plain lines without arrowheads. A loop return travels
+upward outside its body and ends horizontally with an arrowhead at its entry
+junction. For a while, the junction lies on the line above its condition and the
+common segment below it enters the question without an arrowhead. An
+unconditional loop has no condition node; its return prefers the left contour.
+The return is the only exception to downward routing and the only arrowhead. A
+route contains only straight horizontal and vertical segments, so every bend is
+a right angle.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an

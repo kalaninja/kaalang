@@ -14,9 +14,10 @@ therefore reason about program behavior from the diagram without translating it
 to another implementation or wondering whether the two have diverged.
 
 A **flow** is a kaalang computation composed of blocks. Named wires make values
-available to blocks, while questions and choices divide execution into
-alternative branches, and while loops repeat a nested sequence. Every completed
-execution produces the flow's `end` wire, which the implicit end block captures.
+available to blocks, questions and choices divide execution into alternative
+branches, and while and unconditional loops repeat nested sequences. Every
+execution that finishes produces the flow's `end` wire, which the implicit end
+block captures; an unconditional loop may instead diverge.
 
 A flow is written as an ordinary Rust function marked with `#[kaalang]`. Source
 order is execution order: each block runs where it is written, in every
@@ -64,14 +65,15 @@ visualization:
 - a **branch output** is a question or choice output; it selects one branch and
   is consumed by its implicit merge, or, for a name with no alternative
   producers, by at most one block whenever that output is selected;
-- an **iteration** is one execution of a while body after its condition selects
-  yes;
+- an **iteration** is one execution of a loop body, entered unconditionally or
+  after a while condition selects yes;
 - a **case** describes one branch of a choice and is not itself a block;
 - the **branch ancestry** of a block is the set of branches it belongs to: a
-  while body inherits its header's ancestry and its yes branch; otherwise a
-  block belongs to a branch when it captures that branch's output, or a wire
-  produced by a block that belongs to the branch. A wire with alternative
-  producers carries only the ancestry all of them share;
+  while body inherits its header's ancestry and its yes branch, while an
+  unconditional loop body inherits its enclosing ancestry; otherwise a block
+  belongs to a branch when it captures that branch's output, or a wire produced
+  by a block that belongs to the branch. A wire with alternative producers
+  carries only the ancestry all of them share;
 - a question or choice **decides** a block when two executions that select
   different branches of it, and the same branch of every other question or
   choice they both run, differ in whether the block executes;
@@ -147,6 +149,7 @@ loop. Macro token streams are opaque to this validation.
 | **action**   | performs a computation or effect                                                  | zero or more   | zero or more                                          |
 | **question** | evaluates a logical expression and selects one of two branches                    | one or more    | exactly two unit-valued control wires, one per branch |
 | **choice**   | selects one of two or more cases and provides a value to the corresponding branch | one or more    | one per case, at least two                            |
+| **loop**     | repeats a nested sequence unconditionally                                         | none           | none                                                  |
 | **while**    | repeats a nested sequence while its condition is true                             | one or more    | none                                                  |
 | **end**      | the implicit block that finishes a flow                                           | the `end` wire | none                                                  |
 
@@ -280,8 +283,13 @@ output name does (section 6), so a question or choice output may itself be named
 `end`. Whenever execution reaches the end block, exactly one producer of `end`
 must be available.
 
-A flow returning unit produces a unit-valued `end` like any other wire; kaalang
-has no zero-input end block and no implicit unit wire.
+An unconditional loop may prevent execution from reaching the end block. Such a
+flow keeps the implicit block and `end` wire as its return contract but need not
+produce `end` on the diverging route. Every route that does reach the block must
+still provide exactly one `end` producer.
+
+A flow returning unit that reaches end produces a unit-valued `end` like any
+other wire; kaalang has no zero-input end block and no implicit unit wire.
 
 ### 4.5 while
 
@@ -315,10 +323,10 @@ optional descriptions and the default yes-first order. They determine branch
 positions, never which answer enters the body. The while declares no control
 wires or data outputs; there is no separate loop attribute.
 
-The body contains ordinary kaalang statements, including nested while loops.
-Each body block explicitly captures its own inputs. A block with no inputs runs
-at its position in each iteration. If the while's inputs are unavailable in a
-branch, neither its condition nor any part of its body participates there.
+The body contains ordinary kaalang statements, including nested loops. Each body
+block explicitly captures its own inputs. A block with no inputs runs at its
+position in each iteration. If the while's inputs are unavailable in a branch,
+neither its condition nor any part of its body participates there.
 
 Wires declared outside the loop remain in their enclosing scope. State carried
 between iterations is updated through an explicit mutable capture of an outer
@@ -340,6 +348,33 @@ The local Rust control transfers permitted by §3 keep their ordinary behavior.
 Moving a non-`Copy` outer wire on repeated checks or iterations is subject to
 Rust's normal move checking; kaalang neither clones it nor stores an optional
 replacement.
+
+### 4.6 loop
+
+An unconditional loop uses the bare Rust form with a nested sequence of kaalang
+statements:
+
+```rust
+loop {
+    #[action("Perform one step.")]
+    |&mut state| step(state);
+}
+```
+
+The body may be empty. Normal completion of any body route begins the next
+iteration. Producing `end` finishes the entire flow, including from a nested
+loop. A loop has no condition, inputs, outputs, captures, description, or
+attributes; its branch ancestry is determined by the enclosing lexical scope.
+
+The wire and iteration-scope rules of §4.5 apply unchanged. In particular, outer
+mutable state is carried through an explicit mutable capture, body-local wires
+are fresh for each iteration and cannot redeclare an enclosing wire, and nested
+`loop` and `while` statements have their own scopes.
+
+No block may follow an unconditional loop in the same sequence because the loop
+has no normal exit. Kaalang-level `break`, `continue`, and loop labels are not
+supported. Rust loops and their control transfers wholly inside a computational
+block body remain ordinary Rust under §3.
 
 ## 5. Flow inputs and outputs
 
@@ -606,9 +641,9 @@ satisfy ownership or borrowing rules.
 
 Source order is the order of block declarations in each lexical sequence. For
 each branch selection, every participating block executes once in that order
-within its enclosing iteration. A while repeats its body according to §4.5. The
-compiler neither rearranges blocks nor stops an execution early to hide later
-participating work.
+within its enclosing iteration. A while repeats its body according to §4.5, and
+an unconditional loop according to §4.6. The compiler neither rearranges blocks
+nor stops an execution early to hide later participating work.
 
 Named flow-input producers participate in every execution. A block participates
 when its enclosing loop bodies are entered and every one of its inputs has a
@@ -626,12 +661,12 @@ below it must belong to that branch, by the branch ancestry of section 2, until
 a merge joins the selected branch with the others or `end` finishes the
 execution, or the enclosing iteration ends. Shared inputs do not attach a block
 to a selected branch, and source position alone does not supply missing
-ancestry. Lexical nesting supplies only the enclosing while's ancestry (§4.5).
-The rule applies to actions, questions, and choices alike: a second selection
-cannot start while the first selection's branches remain open. Branch membership
-and completed merges are checked per execution, so interleaved declarations from
-mutually exclusive branches do not conflict merely because of their source
-positions.
+ancestry. Lexical nesting supplies the ancestry described by the enclosing loop
+(§4.5 and §4.6). The rule applies to actions, questions, and choices alike: a
+second selection cannot start while the first selection's branches remain open.
+Branch membership and completed merges are checked per execution, so interleaved
+declarations from mutually exclusive branches do not conflict merely because of
+their source positions.
 
 The author writes separate blocks inside the branches, arranges a wire merge
 before the common work, or moves that work above the selection when its
@@ -719,13 +754,13 @@ outside a partial convergence.
 
 Validation combines capture dependencies with producer-to-merge,
 branch-local-work-to-merge, and merge-to-consumer order. This order must be
-acyclic within a single visit to each sequence; the explicit return to a while
-condition is not a wire dependency or a wire merge. A cycle means that
-completing a producer branch requires a value from a merge that already waits
-for that branch. For example, independently merging `left_value` and
-`right_value` is invalid when left-only work needs the merged `right_value` and
-right-only work needs the merged `left_value`. A one-way use of a fully merged
-value in another question's branch remains valid.
+acyclic within a single visit to each sequence; an explicit return to a loop
+entry is not a wire dependency or a wire merge. A cycle means that completing a
+producer branch requires a value from a merge that already waits for that
+branch. For example, independently merging `left_value` and `right_value` is
+invalid when left-only work needs the merged `right_value` and right-only work
+needs the merged `left_value`. A one-way use of a fully merged value in another
+question's branch remains valid.
 
 Rust checks that all alternative producers have one type. A branch-local value
 absent on another converging path cannot reappear after convergence: it must
@@ -734,12 +769,16 @@ it. Past the merge the wire is ordinary data. A later block may leave it
 uncaptured, and a question or choice anywhere in the flow may decide which block
 captures it, exactly as for any other action output.
 
-`end` is the only way to finish an execution, and its producer is the last
+Finite structural executions end with one of two public outcomes: `End`, or
+`Repeat { loop_index }` for normal completion of an unconditional loop body.
+They summarize at most one iteration of each loop and do not prove termination.
+At runtime, `end` is the only way to finish a flow, and its producer is the last
 participating computational block of that execution; statements below it belong
 to other branches or the continuation of an enclosing loop that this execution
 leaves. Every branch that completes the flow provides `end`, directly or through
 its continuation, and branches may do so after different numbers of
-computational blocks.
+computational blocks. A repeating outcome instead transfers to the named loop's
+next iteration.
 
 ## 8. Grammar
 
@@ -766,7 +805,11 @@ while_statement :=
     "while" "(" "|" input_list "|" rust_expression ")"
     "{" block_statement* "}"
 
-block_statement := action_statement | question_statement | choice_statement | while_statement
+loop_statement := "loop" "{" block_statement* "}"
+
+block_statement :=
+    action_statement | question_statement | choice_statement
+    | while_statement | loop_statement
 
 question_answers :=
     yes_attribute no_attribute | no_attribute yes_attribute
@@ -800,4 +843,4 @@ action may do in closure-statement form. A while has no output pattern. Every
 other constraint the grammar leaves open is stated with its rule: descriptions
 and control transfers in section 3, block kinds and the implicit end block in
 section 4, function forms and flow parameters in section 5, and repeated output
-names in section 6.
+names in section 6. A `loop` has no output pattern, attributes, or label.

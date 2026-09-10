@@ -16,6 +16,7 @@ mod action;
 mod choice;
 mod end;
 mod question;
+mod unconditional_loop;
 mod while_loop;
 
 /// Parses a flow function into its named flow inputs and closure-shaped blocks.
@@ -67,17 +68,28 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
 /// Flattens lexical loop regions without changing their authored order.
 fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
     for statement in statements {
-        if let Stmt::Expr(Expr::While(expression), _) = statement {
-            let mut block = while_loop::parse(expression)?;
-            block.parent = parent;
-            let index = blocks.len();
-            blocks.push(block);
-            self::statements(&expression.body.stmts, Some(index), blocks)?;
-            blocks[index].loop_end = Some(blocks.len());
-        } else {
-            let mut block = parse_block(statement)?;
-            block.parent = parent;
-            blocks.push(block);
+        match statement {
+            Stmt::Expr(Expr::Loop(expression), _) => {
+                let mut block = unconditional_loop::parse(expression)?;
+                block.parent = parent;
+                let index = blocks.len();
+                blocks.push(block);
+                self::statements(&expression.body.stmts, Some(index), blocks)?;
+                blocks[index].loop_end = Some(blocks.len());
+            }
+            Stmt::Expr(Expr::While(expression), _) => {
+                let mut block = while_loop::parse(expression)?;
+                block.parent = parent;
+                let index = blocks.len();
+                blocks.push(block);
+                self::statements(&expression.body.stmts, Some(index), blocks)?;
+                blocks[index].loop_end = Some(blocks.len());
+            }
+            _ => {
+                let mut block = parse_block(statement)?;
+                block.parent = parent;
+                blocks.push(block);
+            }
         }
     }
     Ok(())
@@ -107,7 +119,9 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::End | BlockKind::While => unreachable!("structural blocks parse separately"),
+        BlockKind::End | BlockKind::Loop | BlockKind::While => {
+            unreachable!("structural blocks parse separately")
+        }
     }
 }
 

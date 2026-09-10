@@ -6,9 +6,9 @@ use syn::{Error, Result};
 
 use crate::model::{BlockKind, END_WIRE, Flow};
 
-/// Resolves a parsed flow's wires: every input names an earlier producer, only
-/// the implicit end block captures `end`, and declarations do not collide
-/// with themselves.
+/// Resolves a parsed flow's wires: every reachable input names an earlier
+/// producer, only the implicit end block captures `end`, and declarations do not
+/// collide with themselves.
 pub(crate) fn flow(flow: &Flow) -> Result<()> {
     let mut flow_inputs = HashSet::new();
     for input in &flow.flow_inputs {
@@ -36,14 +36,14 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                 ));
             }
             if !producers.contains(&input.ident) {
+                // A diverging unconditional loop never reaches the implicit end.
+                // Completion analysis reports the missing wire only on paths that do.
+                if block.kind == BlockKind::End {
+                    continue;
+                }
                 return Err(Error::new(
                     input.ident.span(),
-                    match block.kind {
-                        BlockKind::End => "a kaalang flow must produce its `end` wire",
-                        _ => {
-                            "a kaalang block input must name a flow input or an earlier block output"
-                        }
-                    },
+                    "a kaalang block input must name a flow input or an earlier block output",
                 ));
             }
             if input.borrowed

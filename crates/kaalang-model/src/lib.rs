@@ -13,8 +13,8 @@ mod scope;
 pub use choice::{choice_match, is_todo_body};
 pub use model::{
     Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
-    Execution, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId, QuestionBranch,
-    SemanticModel, WireMerge,
+    Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId,
+    QuestionBranch, SemanticModel, WireMerge,
 };
 
 /// Builds the validated semantic model for one kaalang flow function.
@@ -46,11 +46,13 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{
-        BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, ExecutionPlan,
-        ProducerId, SemanticModel, build,
+        BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
+        ExecutionOutcome, ExecutionPlan, ProducerId, SemanticModel, build,
     };
 
     /// The flow declared by `crates/kaalang/tests/<dir>/<stem>.rs`, named after the file.
@@ -151,6 +153,22 @@ mod tests {
                 "nested_search",
                 include_str!("../../kaalang/tests/while_loop/behavior/nested_search.rs"),
             ),
+            (
+                "empty_loop",
+                include_str!("../../kaalang/tests/loop/behavior/empty_loop.rs"),
+            ),
+            (
+                "repeat_until_end",
+                include_str!("../../kaalang/tests/loop/behavior/repeat_until_end.rs"),
+            ),
+            (
+                "nested_loops",
+                include_str!("../../kaalang/tests/loop/behavior/nested_loops.rs"),
+            ),
+            (
+                "nested_unconditional_loops",
+                include_str!("../../kaalang/tests/loop/behavior/nested_unconditional_loops.rs"),
+            ),
         ] {
             let model =
                 build(&fixture(source, name)).unwrap_or_else(|error| panic!("{name}: {error}"));
@@ -185,6 +203,44 @@ mod tests {
                 fn nothing() {}
             }),
             "a kaalang flow must produce its `end` wire"
+        );
+    }
+
+    #[test]
+    fn an_unconditional_loop_may_repeat_without_reaching_end() {
+        let function: ItemFn = parse_quote! {
+            fn forever() -> usize {
+                loop {}
+            }
+        };
+
+        let model = build(&function).expect("the diverging flow is valid");
+        assert_eq!(model.flow.blocks[0].kind, BlockKind::Loop);
+        assert_eq!(
+            model.executions[0].outcome,
+            ExecutionOutcome::Repeat { loop_index: 0 }
+        );
+        assert!(matches!(
+            end_body(&model.execution_plan),
+            ExecutionPlan::Loop { index: 0, body }
+                if matches!(body.as_ref(), ExecutionPlan::Repeat { index: 0 })
+        ));
+
+        let model = build(&fixture(
+            include_str!("../../kaalang/tests/loop/behavior/repeat_until_end.rs"),
+            "repeat_until_end",
+        ))
+        .expect("the loop may either repeat or finish");
+        assert_eq!(
+            model
+                .executions
+                .iter()
+                .map(|execution| execution.outcome)
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                ExecutionOutcome::End,
+                ExecutionOutcome::Repeat { loop_index: 1 },
+            ])
         );
     }
 

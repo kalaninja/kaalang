@@ -10,7 +10,9 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::{Block, BlockKind, Execution, ExecutionPlan, Input, ProducerId, SemanticModel};
+use kaalang_model::{
+    Block, BlockKind, Execution, ExecutionOutcome, ExecutionPlan, Input, ProducerId, SemanticModel,
+};
 use syn::{FnArg, Ident, Pat, PatIdent, ext::IdentExt};
 
 mod action;
@@ -143,7 +145,7 @@ pub(crate) struct Topology {
     /// Structural precedence after the iteration, never drawn as execution.
     pub(crate) order: Vec<Connection>,
     pub(crate) back_edges: Vec<Connection>,
-    pub(crate) loops: Vec<while_loop::Loop>,
+    pub(crate) loops: Vec<Loop>,
 }
 
 impl Topology {
@@ -267,18 +269,27 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
             BlockKind::Question => question::project(index, block, &mut nodes, &mut exits),
             BlockKind::While => while_loop::project(index, block, &mut nodes, &mut exits),
             BlockKind::Choice => choice::project(index, block, &mut nodes, &mut exits),
-            BlockKind::End => end::project(index, block, return_type, &mut nodes),
+            BlockKind::End
+                if model
+                    .executions
+                    .iter()
+                    .any(|execution| execution.outcome == ExecutionOutcome::End) =>
+            {
+                end::project(index, block, return_type, &mut nodes);
+            }
+            BlockKind::Loop | BlockKind::End => {}
         }
     }
 
     let merges = merges(model);
-    let loops = while_loop::headers(model).len();
-    let vertices = vertices(&nodes, merges.len() + loops);
-    let connections = connections(model, &merges, &vertices);
+    let loops = loops(model, merges.len());
+    let loop_junctions = loops.len() * 2;
+    let vertices = vertices(&nodes, merges.len() + loop_junctions);
+    let connections = connections(model, &merges, &loops, &vertices);
     let mut topology = Topology {
         order: Vec::new(),
         back_edges: Vec::new(),
-        loops: Vec::new(),
+        loops,
         nodes,
         exits,
         connections,
@@ -297,11 +308,11 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
                     })
                     .collect(),
             })
-            .chain((0..loops).map(|_| Junction { wires: Vec::new() }))
+            .chain((0..loop_junctions).map(|_| Junction { wires: Vec::new() }))
             .collect(),
         vertices,
     };
-    while_loop::close(&mut topology, model, merges.len());
+    close_loops(&mut topology);
     topology
 }
 
@@ -414,7 +425,7 @@ fn branch_exits(
 /// only on the branch selected and each branch owns its own exit.
 fn branches(kind: BlockKind) -> bool {
     match kind {
-        BlockKind::Action => false,
+        BlockKind::Action | BlockKind::Loop => false,
         BlockKind::Question | BlockKind::Choice | BlockKind::While => true,
         BlockKind::End => unreachable!("end declares no output"),
     }
@@ -471,6 +482,7 @@ impl From<Source> for Vertex {
 fn connections(
     model: &SemanticModel,
     merges: &[Vec<usize>],
+    loops: &[Loop],
     vertices: &[Vertex],
 ) -> Vec<Connection> {
     let junction_of = |wire: &Ident| {
@@ -483,7 +495,7 @@ fn connections(
     serial_order(&model.execution_plan, &mut order);
     let mut union = BTreeSet::new();
     for execution in &model.executions {
-        let mut direct = serial_connections(model, execution, merges, &order);
+        let mut direct = serial_connections(model, execution, merges, loops, &order);
         for dependency in &execution.dependencies {
             let capture = dependency.capture;
             let source = source(model, dependency.producer);
@@ -529,7 +541,8 @@ fn connections(
                 }));
                 direct.extend(merge.after.iter().filter_map(|&block| {
                     (execution.participates(block)
-                        || model.flow.blocks[block].kind == BlockKind::End)
+                        || (model.flow.blocks[block].kind == BlockKind::End
+                            && execution.outcome == ExecutionOutcome::End))
                         .then_some(Connection {
                             source: Source::Junction(junction),
                             destination: Destination::Node(NodeId::Block(block)),
@@ -539,7 +552,12 @@ fn connections(
                     merge
                         .before
                         .iter()
-                        .filter(|&&block| execution.participates(block))
+                        // Structural loops have no exit. Their participating
+                        // body blocks already establish completion here.
+                        .filter(|&&block| {
+                            execution.participates(block)
+                                && model.flow.blocks[block].kind != BlockKind::Loop
+                        })
                         .map(|&block| Connection {
                             source: selected_exit(model, execution, block),
                             destination: Destination::Junction(junction),
@@ -572,17 +590,19 @@ fn serial_connections(
     model: &SemanticModel,
     execution: &Execution,
     merges: &[Vec<usize>],
+    loops: &[Loop],
     order: &[usize],
 ) -> BTreeSet<Connection> {
     let mut direct = BTreeSet::new();
     let mut previous = Source::Exit(ExitId::of(NodeId::Start));
-    let headers = while_loop::headers(model);
     let mut closed = BTreeSet::new();
     let mut steps = order
         .iter()
         .copied()
         .filter(|&block| {
-            execution.participates(block) || model.flow.blocks[block].kind == BlockKind::End
+            execution.participates(block)
+                || (model.flow.blocks[block].kind == BlockKind::End
+                    && execution.outcome == ExecutionOutcome::End)
         })
         .peekable();
     while let Some(block) = steps.next() {
@@ -592,17 +612,27 @@ fn serial_connections(
                 .is_some_and(|end| end <= block)
                 && closed.insert(header)
             {
-                let tail = merges.len()
-                    + headers
-                        .iter()
-                        .position(|&candidate| candidate == header)
-                        .expect("the loop has a tail");
+                let tail = loops
+                    .iter()
+                    .find(|loop_| loop_.header == header)
+                    .expect("a repeating loop has topology")
+                    .tail;
                 direct.insert(Connection {
                     source: previous,
                     destination: Destination::Junction(tail),
                 });
                 previous = Source::Junction(tail);
             }
+        }
+        if let Some(loop_) = loops.iter().find(|loop_| loop_.header == block) {
+            direct.insert(Connection {
+                source: previous,
+                destination: Destination::Junction(loop_.entry),
+            });
+            previous = Source::Junction(loop_.entry);
+        }
+        if model.flow.blocks[block].kind == BlockKind::Loop {
+            continue;
         }
         direct.insert(Connection {
             source: previous,
@@ -618,6 +648,25 @@ fn serial_connections(
             .peek()
             .and_then(|&next| junction_after(model, execution, merges, block, next))
             .map_or(exit, Source::Junction);
+    }
+    if matches!(execution.outcome, ExecutionOutcome::Repeat { .. }) {
+        // No following block closes the final regions. Include nested while
+        // tails before reaching the unconditional loop's own tail.
+        for &header in execution.repeats.iter().rev() {
+            if !closed.insert(header) {
+                continue;
+            }
+            let tail = loops
+                .iter()
+                .find(|loop_| loop_.header == header)
+                .expect("a repeating loop has topology")
+                .tail;
+            direct.insert(Connection {
+                source: previous,
+                destination: Destination::Junction(tail),
+            });
+            previous = Source::Junction(tail);
+        }
     }
     direct
 }
@@ -658,6 +707,10 @@ fn junction_after(
 /// including branches yielding to an outer join.
 fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     match plan {
+        ExecutionPlan::Loop { index, body } => {
+            order.push(*index);
+            serial_order(body, order);
+        }
         ExecutionPlan::While { index, body, next } => {
             order.push(*index);
             serial_order(body, order);
@@ -792,8 +845,89 @@ fn exit(model: &SemanticModel, block: usize, output: usize) -> Source {
         BlockKind::Action => action::exit(block),
         BlockKind::Question | BlockKind::While => question::exit(block, output),
         BlockKind::Choice => choice::exit(block, output),
-        BlockKind::End => unreachable!("end has no exit"),
+        BlockKind::End | BlockKind::Loop => unreachable!("this kind has no exit"),
     })
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct Loop {
+    pub(crate) header: usize,
+    pub(crate) entry: usize,
+    pub(crate) tail: usize,
+}
+
+fn loops(model: &SemanticModel, wire_merges: usize) -> Vec<Loop> {
+    loop_headers(model)
+        .into_iter()
+        .enumerate()
+        .map(|(offset, header)| Loop {
+            header,
+            tail: wire_merges + offset * 2,
+            entry: wire_merges + offset * 2 + 1,
+        })
+        .collect()
+}
+
+/// Tail-to-continuation edges constrain placement only: execution returns to
+/// the loop entry instead.
+fn close_loops(topology: &mut Topology) {
+    for loop_ in topology.loops.clone() {
+        let source = Source::Junction(loop_.tail);
+        let mut forward = Vec::new();
+        for connection in std::mem::take(&mut topology.connections) {
+            if connection.source == source {
+                topology.order.push(connection);
+            } else {
+                forward.push(connection);
+            }
+        }
+        topology.connections = forward;
+        topology.back_edges.push(Connection {
+            source,
+            destination: Destination::Junction(loop_.entry),
+        });
+    }
+    defer_continuations(topology);
+}
+
+/// Keep joins, iteration tails, and end below the preceding body. The blocks
+/// leading to them may fill their branch columns immediately after the NO exit.
+/// Walk only after every loop has separated its return from forward execution.
+fn defer_continuations(topology: &mut Topology) {
+    for connection in std::mem::take(&mut topology.order) {
+        let mut pending = vec![connection.destination];
+        let mut seen = BTreeSet::new();
+        while let Some(destination) = pending.pop() {
+            if !seen.insert(destination) {
+                continue;
+            }
+            let boundary = match destination {
+                Vertex::Node(node) => topology.node(node).kind == NodeKind::End,
+                Vertex::Junction(junction) => {
+                    !topology.loops.iter().any(|loop_| loop_.entry == junction)
+                }
+            };
+            if boundary {
+                topology.order.push(Connection {
+                    source: connection.source,
+                    destination,
+                });
+            } else {
+                pending.extend(topology.outgoing(destination).map(|edge| edge.destination));
+            }
+        }
+    }
+}
+
+/// Terminal-only bodies never reach a tail and need no return connection.
+fn loop_headers(model: &SemanticModel) -> Vec<usize> {
+    model
+        .executions
+        .iter()
+        .flat_map(|execution| execution.repeats.iter().copied())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
 }
 
 #[cfg(test)]

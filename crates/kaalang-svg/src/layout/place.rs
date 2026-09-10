@@ -243,7 +243,9 @@ fn columns(
                     .map(|connection| arrives_from(topology, &columns, footprints, connection));
                 // The return leaves the end of the rail nearest its preferred
                 // contour, without turning back over its incoming branches.
-                if model.flow.blocks[loop_.header].yes_branch() == 0 {
+                if model.flow.blocks[loop_.header].kind == BlockKind::Loop
+                    || model.flow.blocks[loop_.header].yes_branch() == 0
+                {
                     arrivals.min()
                 } else {
                     arrivals.max()

@@ -35,30 +35,6 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &State) {
     }
 }
 
-/// Closes nested regions innermost first, restoring their enclosing wires.
-/// A result leaves every enclosing loop and bypasses the outer continuation.
-pub(super) fn close(walk: &mut Walk<'_>, index: usize, state: &mut State) -> bool {
-    let closing = state
-        .loop_inputs
-        .keys()
-        .rev()
-        .copied()
-        .filter(|&header| walk.flow.blocks[header].loop_end == Some(index))
-        .collect::<Vec<_>>();
-    for header in closing {
-        if state.available.contains_key(&walk.end_wire) {
-            walk.finish(state.clone());
-            return true;
-        }
-        state.available = state
-            .loop_inputs
-            .remove(&header)
-            .expect("the iteration is open");
-        state.repeats.insert(header);
-    }
-    false
-}
-
 #[cfg(test)]
 mod tests {
     use syn::{Block, ItemFn, Stmt, parse_quote};

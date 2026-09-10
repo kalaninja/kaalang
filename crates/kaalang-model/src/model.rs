@@ -36,6 +36,7 @@ pub(crate) const END_WIRE: &str = "end";
 pub enum BlockKind {
     Action,
     Question,
+    Loop,
     While,
     Choice,
     End,
@@ -59,9 +60,9 @@ pub struct Block {
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
     pub span: Span,
-    /// The enclosing while block, if this block belongs to an iteration.
+    /// The enclosing loop block, if this block belongs to an iteration.
     pub parent: Option<usize>,
-    /// The exclusive end of a while's body in the depth-first block sequence.
+    /// The exclusive end of a loop body's depth-first block sequence.
     pub loop_end: Option<usize>,
 }
 
@@ -180,21 +181,30 @@ pub struct BranchSelection {
     pub branch: usize,
 }
 
-/// One structural execution summary: the computational blocks that participate, the
-/// branches it selects, and its capture dependencies. Start and end participate
-/// implicitly. Each loop is represented by zero or one iteration and eventual
-/// exit or result. Source order is the order the blocks run in, so a summary
-/// records which of them take part rather than a schedule; every vector is
-/// sorted and deduplicated. Field order is the derived sort order: branch
-/// selections first.
+/// One structural execution summary: the computational blocks that participate,
+/// the branches it selects, its capture dependencies, and its finite outcome.
+/// Start participates implicitly; end participates for an `End` outcome. Each
+/// loop is represented by zero or one iteration. Source order is the order the
+/// blocks run in, so a summary records which of them take part rather than a
+/// schedule; every vector is sorted and deduplicated. Field order is the derived
+/// sort order: branch selections first.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Loops whose represented iteration reaches its end before the eventual
-    /// false check. Each execution summarizes at most one iteration per loop.
+    /// Loops whose represented iteration reaches its end. Each execution
+    /// summarizes at most one iteration per loop.
     pub repeats: Vec<usize>,
+    /// Whether this finite summary finishes the flow or repeats an unconditional loop.
+    pub outcome: ExecutionOutcome,
+}
+
+/// The boundary reached by one finite structural execution summary.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ExecutionOutcome {
+    End,
+    Repeat { loop_index: usize },
 }
 
 impl Execution {
@@ -256,12 +266,16 @@ pub struct WireMerge {
 /// authored flow a second time. Its joins are lowering structure and say
 /// nothing about semantic convergence groups.
 pub enum ExecutionPlan {
+    Loop {
+        index: usize,
+        body: Box<ExecutionPlan>,
+    },
     While {
         index: usize,
         body: Box<ExecutionPlan>,
         next: Box<ExecutionPlan>,
     },
-    /// Normal completion of an iteration, returning to its condition.
+    /// Normal completion of an iteration, returning to the loop's entry.
     Repeat { index: usize },
     Action {
         index: usize,
@@ -279,7 +293,7 @@ pub enum ExecutionPlan {
         /// ordered by first case.
         joins: Vec<Join>,
     },
-    /// The implicit end block and the execution that feeds it.
+    /// The implicit end block and the plan body, whether or not a path reaches it.
     End {
         index: usize,
         body: Box<ExecutionPlan>,

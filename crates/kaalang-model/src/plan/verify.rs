@@ -5,8 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 
 use crate::model::{
-    BlockKind, Branch, CaptureDependency, CaptureId, Execution, ExecutionPlan, Flow, Join,
-    JoinTarget, ProducerId, WireMerge,
+    BlockKind, Branch, CaptureDependency, CaptureId, Execution, ExecutionOutcome, ExecutionPlan,
+    Flow, Join, JoinTarget, ProducerId, WireMerge,
 };
 
 pub(super) fn plan(
@@ -32,24 +32,40 @@ pub(super) fn plan(
                 ran: BTreeSet::new(),
                 last: None,
                 dependencies: BTreeSet::new(),
+                loop_index: None,
+                repeats: BTreeSet::new(),
             };
-            matches!(replay.walk(plan), Some(Exit::End))
-                && replay
-                    .ran
-                    .iter()
-                    .copied()
-                    .eq(execution.blocks.iter().copied())
+            (match (replay.walk(plan), execution.outcome) {
+                (Some(Exit::End), ExecutionOutcome::End) => true,
+                (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { loop_index }) => {
+                    found == loop_index
+                }
+                _ => false,
+            }) && replay
+                .ran
+                .iter()
+                .copied()
+                .eq(execution.blocks.iter().copied())
                 && replay
                     .dependencies
                     .iter()
                     .copied()
                     .eq(execution.dependencies.iter().copied())
+                && replay
+                    .repeats
+                    .iter()
+                    .copied()
+                    .eq(execution.repeats.iter().copied())
         })
 }
 
 /// Counts how many times the plan emits each computational block.
 pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
     match plan {
+        ExecutionPlan::Loop { index, body } => {
+            bodies[*index] += 1;
+            count(body, bodies);
+        }
         ExecutionPlan::While { index, body, next } => {
             bodies[*index] += 1;
             count(body, bodies);
@@ -109,9 +125,19 @@ pub(super) struct Replay<'a> {
     /// blocks in another sequence.
     last: Option<usize>,
     dependencies: BTreeSet<CaptureDependency>,
+    /// Only the innermost active body may be the target of a native continue.
+    loop_index: Option<usize>,
+    repeats: BTreeSet<usize>,
 }
 
 impl Replay<'_> {
+    pub(super) fn iteration(&mut self, index: usize, body: &ExecutionPlan) -> Option<Exit> {
+        let outside = self.loop_index.replace(index);
+        let exit = self.walk(body);
+        self.loop_index = outside;
+        exit
+    }
+
     fn capture(&mut self, block: usize) -> Option<()> {
         if !super::settled(self.merges, self.execution, block, &self.ran) {
             return None;
@@ -148,10 +174,16 @@ impl Replay<'_> {
 
     pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
+            ExecutionPlan::Loop { index, body } => {
+                super::unconditional_loop::replay(self, *index, body)
+            }
             ExecutionPlan::While { index, body, next } => {
                 super::while_loop::replay(self, *index, body, next)
             }
-            ExecutionPlan::Repeat { index } => Some(Exit::Repeat(*index)),
+            ExecutionPlan::Repeat { index } => (self.loop_index == Some(*index)
+                && self.execution.repeats.contains(index)
+                && self.repeats.insert(*index))
+            .then_some(Exit::Repeat(*index)),
             ExecutionPlan::Action { index, next } => {
                 self.enter(*index, BlockKind::Action)?;
                 self.walk(next)
@@ -225,6 +257,69 @@ mod tests {
     use syn::parse_quote;
 
     use super::*;
+
+    #[test]
+    fn rejects_a_repeat_that_skips_an_enclosing_iteration_boundary() {
+        let mut model = crate::build(&parse_quote! {
+            fn nested(flag: bool) -> usize {
+                loop {
+                    #[question("Repeat?")]
+                    while (|&flag| *flag) {}
+                }
+            }
+        })
+        .expect("a trailing while inside a loop is valid");
+        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+            unreachable!()
+        };
+        let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let ExecutionPlan::While { body, next, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        assert!(matches!(body.as_ref(), ExecutionPlan::Repeat { index: 1 }));
+        assert!(matches!(next.as_ref(), ExecutionPlan::Repeat { index: 0 }));
+        **body = ExecutionPlan::Repeat { index: 0 };
+        assert!(!plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
+    fn a_diverging_inner_loop_propagates_through_a_while() {
+        let model = crate::build(&parse_quote! {
+            fn nested(flag: bool) -> usize {
+                #[question("Enter the loop?")]
+                while (|flag| flag) {
+                    loop {}
+                }
+                #[action("Finish.")]
+                let end = || 0;
+            }
+        })
+        .expect("the inner loop may diverge instead of reaching end");
+        assert_eq!(
+            model
+                .executions
+                .iter()
+                .map(|execution| execution.outcome)
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                ExecutionOutcome::End,
+                ExecutionOutcome::Repeat { loop_index: 1 }
+            ])
+        );
+        assert!(plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
 
     #[test]
     fn rejects_a_plan_that_skips_an_independent_effect() {

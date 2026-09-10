@@ -10,7 +10,7 @@ use syn::{Error, Result};
 
 use crate::model::{
     Block, BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
-    Flow, ProducerId, WireMerge,
+    ExecutionOutcome, Flow, ProducerId, WireMerge,
 };
 
 mod action;
@@ -21,12 +21,13 @@ mod merge;
 mod participation;
 mod placement;
 mod question;
+mod unconditional_loop;
 mod while_loop;
 
 /// Walks the blocks in source order under every branch selection. Returns the
 /// executions and convergence groups in canonical order, or the earliest
 /// authored violation: a walk error first, then a block placed inside open
-/// branches, then an execution without `end`, then an unreachable block,
+/// branches, then an end-reaching execution without `end`, then an unreachable block,
 /// then a producer occurrence that no execution captures, then an invalid
 /// branch-output continuation, then a block decided by independent questions
 /// or choices, then an invalid wire merge or shared continuation.
@@ -220,7 +221,7 @@ impl Walk<'_> {
     /// whose inputs this execution has all provided participates; the others
     /// belong to branches this execution did not select.
     fn visit(&mut self, index: usize, mut state: State) {
-        if while_loop::close(self, index, &mut state) {
+        if self.close_loops(index, &mut state) {
             return;
         }
         if index == self.end {
@@ -245,6 +246,7 @@ impl Walk<'_> {
         match block.kind {
             BlockKind::Action => action::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
+            BlockKind::Loop => unconditional_loop::visit(self, index, state),
             BlockKind::While => while_loop::visit(self, index, &state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
@@ -284,16 +286,52 @@ impl Walk<'_> {
         true
     }
 
+    /// Closes nested loop regions innermost first. An unconditional loop records
+    /// a repeating summary instead of proceeding to the implicit end.
+    fn close_loops(&mut self, index: usize, state: &mut State) -> bool {
+        let closing = state
+            .loop_inputs
+            .keys()
+            .rev()
+            .copied()
+            .filter(|&header| self.flow.blocks[header].loop_end == Some(index))
+            .collect::<Vec<_>>();
+        for header in closing {
+            if state.available.contains_key(&self.end_wire) {
+                self.finish(state.clone());
+                return true;
+            }
+            state.available = state
+                .loop_inputs
+                .remove(&header)
+                .expect("the iteration is open");
+            state.repeats.insert(header);
+            if self.flow.blocks[header].kind == BlockKind::Loop {
+                self.record(
+                    state.clone(),
+                    ExecutionOutcome::Repeat { loop_index: header },
+                );
+                return true;
+            }
+        }
+        false
+    }
+
     /// Resolves the end block's `end` capture and records the execution.
     fn finish(&mut self, mut state: State) {
         if !end::arrive(self, &mut state) {
             return;
         }
+        self.record(state, ExecutionOutcome::End);
+    }
+
+    fn record(&mut self, state: State, outcome: ExecutionOutcome) {
         self.executions.insert(Execution {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
             repeats: state.repeats.into_iter().collect(),
+            outcome,
         });
     }
 }
@@ -347,7 +385,9 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
                 BlockKind::Action => action::uncaptured(name),
                 BlockKind::Question => question::uncaptured(name),
                 BlockKind::Choice => choice::uncaptured(name),
-                BlockKind::End | BlockKind::While => unreachable!("this kind declares no outputs"),
+                BlockKind::End | BlockKind::Loop | BlockKind::While => {
+                    unreachable!("this kind declares no outputs")
+                }
             });
         }
     }

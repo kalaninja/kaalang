@@ -1230,7 +1230,7 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
                 .find(|edge| {
                     edge.source == Source::Junction(loop_.tail) && edge.destination == entry
                 })
-                .expect("every repeating body returns to the entry before its condition");
+                .expect("every repeating while body returns to the entry before its condition");
             let end = *edge.points.last().unwrap();
             let anchor = scene.top_anchor(header);
             assert_eq!(end.x, anchor.x);
@@ -1258,5 +1258,90 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
         let svg = crate::render_source(fixture.0, fixture.1).expect("the loop renders");
         assert_eq!(svg.matches("marker-end=").count(), returns);
         assert!(!svg.contains("__kaalang_scoped"));
+    }
+}
+
+#[test]
+fn an_empty_unconditional_loop_returns_on_the_left_without_an_end_node() {
+    let fixture = fixture!("loop/behavior", "empty_loop");
+    let scene = drawn(fixture);
+    let loop_ = scene.topology.loops[0];
+    assert!(
+        !scene
+            .topology
+            .nodes
+            .iter()
+            .any(|node| node.kind == NodeKind::End)
+    );
+    let edge = scene
+        .connections
+        .iter()
+        .find(|edge| scene.is_back_edge(edge))
+        .expect("the empty loop returns to its entry");
+    assert_eq!(edge.destination, Destination::Junction(loop_.entry));
+    let entry = edge.points.last().expect("the return reaches its entry");
+    assert!(edge.points.iter().any(|point| point.x < entry.x));
+
+    let svg = crate::render_source(fixture.0, fixture.1).expect("the empty loop renders");
+    assert_eq!(svg.matches("marker-end=").count(), 1);
+    assert!(!svg.contains("class=\"node end\""));
+}
+
+#[test]
+fn nested_loop_boundaries_render_with_and_without_end() {
+    for (fixture, returns, ends) in [
+        (fixture!("loop/behavior", "empty_trailing_while"), 2, 0),
+        (fixture!("loop/behavior", "loop_inside_while"), 0, 1),
+    ] {
+        let scene = drawn(fixture);
+        assert_eq!(
+            scene
+                .connections
+                .iter()
+                .filter(|edge| scene.is_back_edge(edge))
+                .count(),
+            returns
+        );
+        assert_eq!(
+            scene
+                .topology
+                .nodes
+                .iter()
+                .filter(|node| node.kind == NodeKind::End)
+                .count(),
+            ends
+        );
+        let svg =
+            crate::render_source(fixture.0, fixture.1).expect("nested loop boundaries render");
+        assert_eq!(svg.matches("marker-end=").count(), returns);
+        assert_eq!(svg.matches("class=\"node end\"").count(), ends);
+    }
+}
+
+#[test]
+fn a_blocked_inner_return_can_lower_its_tail_below_end() {
+    let (source, flow) = fixture!("loop/behavior", "trailing_while");
+    let reversed = source.replace("while (", "#[no]\n#[yes]\nwhile (");
+    for (source, lowered) in [(source, true), (reversed.as_str(), false)] {
+        let scene = drawn((source, flow));
+        assert_eq!(scene.topology.loops.len(), 2);
+        if lowered {
+            let tail = scene.topology.loops[1].tail;
+            let return_edge = scene
+                .connections
+                .iter()
+                .find(|edge| edge.source == Source::Junction(tail))
+                .unwrap();
+            let end = scene
+                .topology
+                .nodes
+                .iter()
+                .find(|node| node.kind == NodeKind::End)
+                .unwrap();
+            assert!(
+                return_edge.points[0].y
+                    >= Scene::bounds(scene.node(end.id)).3 + vertical_gap(&scene.topology)
+            );
+        }
     }
 }

@@ -281,15 +281,22 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         .iter()
         .find(|loop_| loop_.tail == junction || loop_.entry == junction)
     {
-        return format!(
-            "the {} of {}",
-            if loop_.tail == junction {
-                "iteration tail"
-            } else {
-                "entry"
-            },
+        let owner = if scene
+            .topology
+            .nodes
+            .iter()
+            .any(|node| node.id == NodeId::Block(loop_.header))
+        {
             node_name(scene, NodeId::Block(loop_.header))
-        );
+        } else {
+            "the loop".to_owned()
+        };
+        let part = if loop_.tail == junction {
+            "iteration tail"
+        } else {
+            "entry"
+        };
+        return format!("the {part} of {owner}");
     }
     format!(
         "the {} merge",

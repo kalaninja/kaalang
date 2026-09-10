@@ -53,24 +53,30 @@ reserves no extra space above its rail. Additional horizontal lanes stay 20
 pixels apart. This gives select distributors, merge rails, and iteration tails
 the same clearance.
 
-While conditions use the ordinary question layout and authored answer order.
-Forward connections and iteration-tail precedence form an acyclic placement
-graph. After separating every return from the forward graph, carry each tail's
-precedence through continuation blocks and loop-entry junctions. Stop at the
-first wire merge, iteration tail, or end on each forward route. These boundaries
-stay below the preceding body to leave room for its return; continuation blocks
-can fill their separate branch columns without waiting for the body's final row.
-This rule applies equally to actions, questions, choices, and further loops.
-Tail precedence is not drawn. Each repeating condition has an entry junction on
-its incoming line, followed by one vertical segment into the question. Return
-connections are routed separately, innermost loop first, around the body and
-horizontally into that junction. The arrowhead belongs to that horizontal
+While conditions use the ordinary question layout and authored answer order. An
+unconditional loop has no node: its entry and iteration tail are junctions, and
+an empty body connects them directly. Forward connections and iteration-tail
+precedence form an acyclic placement graph. After separating every return from
+the forward graph, carry each tail's precedence through continuation blocks and
+loop-entry junctions. Stop at the first wire merge, iteration tail, or end on
+each forward route. These boundaries stay below the preceding body to leave room
+for its return; continuation blocks can fill their separate branch columns
+without waiting for the body's final row. This rule applies equally to actions,
+questions, choices, and further loops. Tail precedence is not drawn. Each loop
+has an entry junction on its incoming line; a while follows it with one vertical
+segment into the question, while an unconditional loop follows it with its body.
+Return connections are routed separately, innermost loop first, around the body
+and horizontally into that junction. The arrowhead belongs to that horizontal
 arrival. Returns may move upward; all other geometry checks still apply. If no
-checked return route fits, rendering fails under §4.
+checked return route fits, lower the blocked iteration tail and retry placement
+and routing within the existing bounded attempt budget. Tail precedence carries
+that delay to dependent boundaries; independent terminal branches may remain
+above the return. If no attempt succeeds, rendering fails under §4.
 
-An iteration tail meets its incoming branches at their leftmost approach for a
-yes-first loop and their rightmost approach for a no-first loop. The return can
-then leave that end of the rail without retracing an incoming branch.
+An iteration tail meets its incoming branches at their leftmost approach for an
+unconditional or yes-first loop and their rightmost approach for a no-first
+loop. The return can then leave that end of the rail without retracing an
+incoming branch.
 
 A tail with one incoming connection may sit on a side exit's horizontal run, or
 after the usual vertical gap below a straight exit. Prefer turning upward there
@@ -78,8 +84,8 @@ over descending to the tail's placement row and immediately returning upward.
 Keep the lower route when the shorter one would cross another connection; the
 tail's forward precedence still determines initial node placement.
 
-After routing the returns, adjust the terminal `end` merge and end using the
-actual geometry. First try the usual vertical gap below all other nodes, so
+After routing the returns, adjust a reachable terminal `end` merge and end using
+the actual geometry. First try the usual vertical gap below all other nodes, so
 independent terminal and return rails can share a row. Horizontal terminal and
 return segments whose horizontal spans overlap must remain at least the usual
 vertical gap apart. If the first position violates that clearance or introduces
@@ -116,7 +122,8 @@ layout uses that size when wrapping text and placing the following row. The
 first branch's description hangs below its downward exit; the second branch's
 description sits above its horizontal exit. Default while answer labels use the
 same placement. Return arrowheads use an embedded SVG marker, and the accessible
-description identifies the iteration tail and the entry before its condition.
+description identifies the iteration tail and the loop entry, naming the while
+condition when one exists.
 
 ## 4. Library interface
 

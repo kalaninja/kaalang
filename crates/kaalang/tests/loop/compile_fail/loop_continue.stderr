@@ -1,0 +1,5 @@
+error: a kaalang flow body may contain only attributed block statements
+ --> tests/loop/compile_fail/loop_continue.rs:6:9
+  |
+6 |         continue;
+  |         ^^^^^^^^^

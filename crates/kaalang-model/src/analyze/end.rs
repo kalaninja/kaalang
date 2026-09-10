@@ -10,9 +10,19 @@ use super::{Block, CaptureDependency, CaptureId, State, Walk};
 pub(super) fn arrive(walk: &mut Walk<'_>, state: &mut State) -> bool {
     let Some(&producer) = state.available.get(&walk.end_wire) else {
         walk.incomplete.get_or_insert_with(|| {
+            let produced = walk.flow.flow_inputs.contains(&walk.end_wire)
+                || walk
+                    .flow
+                    .blocks
+                    .iter()
+                    .any(|block| block.outputs.contains(&walk.end_wire));
             Error::new(
                 walk.end_wire.span(),
-                "this kaalang execution does not produce the `end` wire",
+                if produced {
+                    "this kaalang execution does not produce the `end` wire"
+                } else {
+                    "a kaalang flow must produce its `end` wire"
+                },
             )
         });
         return false;

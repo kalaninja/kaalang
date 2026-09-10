@@ -16,6 +16,7 @@ use crate::model::{
 
 mod choice;
 mod question;
+mod unconditional_loop;
 pub(crate) mod verify;
 mod while_loop;
 
@@ -36,7 +37,7 @@ pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) 
         .expect("a validated flow lowers to nested branches");
     assert!(
         lowered.yielding.is_empty(),
-        "every execution of a validated flow reaches end"
+        "every execution has a final outcome"
     );
     // A wrong plan would silently reorder effects, so fail the expansion
     // instead of emitting it.
@@ -78,9 +79,8 @@ struct Lowered<'e> {
     emitted: BTreeSet<usize>,
 }
 
-/// A question or choice enclosing the code being lowered, with the shared
-/// blocks each of its joins runs. Every block a branch may not run itself
-/// belongs to exactly one join of one enclosing scope.
+/// An enclosing selection or loop, with the blocks its joins or normal exit
+/// run. Loop scopes also mark iteration boundaries without a pending successor.
 #[derive(Clone)]
 struct Scope {
     block: usize,
@@ -167,6 +167,11 @@ impl Builder<'_> {
                 emitted: next.emitted,
             });
         }
+        if self.flow.blocks[block].kind == BlockKind::Loop {
+            return unconditional_loop::lower(
+                self, block, executions, &next_done, forbidden, scopes,
+            );
+        }
         if self.flow.blocks[block].kind == BlockKind::While {
             return while_loop::lower(self, block, executions, &next_done, forbidden, scopes);
         }
@@ -174,8 +179,9 @@ impl Builder<'_> {
     }
 
     /// No block can run here: the executions yield to the innermost enclosing
-    /// join whose shared computation is still pending, or arrive at end. A
-    /// block pending in only some of them has no place in the branch tree.
+    /// join whose shared computation is still pending, repeat the enclosing
+    /// iteration, or arrive at end. A block pending in only some of them has no
+    /// place in the branch tree.
     fn leaf<'e>(
         &self,
         executions: &[&'e Execution],
@@ -217,6 +223,22 @@ impl Builder<'_> {
         }
         let emitted = BTreeSet::new();
         if waiting.is_empty() {
+            // The final outcome may repeat an outer loop, but a trailing while
+            // must complete its own iteration before that continuation runs.
+            if let Some(scope) = scopes
+                .iter()
+                .rev()
+                .find(|scope| self.flow.blocks[scope.block].loop_end.is_some())
+                && executions
+                    .iter()
+                    .all(|execution| execution.repeats.contains(&scope.block))
+            {
+                return Ok(Lowered {
+                    plan: ExecutionPlan::Repeat { index: scope.block },
+                    yielding: Vec::new(),
+                    emitted,
+                });
+            }
             let [wire] = self.flow.blocks[self.end].inputs.as_slice() else {
                 unreachable!("the end block captures exactly one wire")
             };
@@ -315,7 +337,7 @@ impl Builder<'_> {
         let plan = match self.flow.blocks[block].kind {
             BlockKind::Question => question::dispatch(block, branches, joins),
             BlockKind::Choice => choice::dispatch(block, branches, joins),
-            BlockKind::Action | BlockKind::End | BlockKind::While => {
+            BlockKind::Action | BlockKind::End | BlockKind::Loop | BlockKind::While => {
                 unreachable!("only questions and choices branch")
             }
         };
@@ -542,6 +564,7 @@ impl Builder<'_> {
 /// each yield's own producer spellings.
 fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
     match plan {
+        ExecutionPlan::Loop { body, .. } => fill_yields(body, wires, target),
         ExecutionPlan::While { body, next, .. } => {
             fill_yields(body, wires, target);
             fill_yields(next, wires, target);

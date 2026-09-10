@@ -66,13 +66,12 @@ pub(super) fn replay(
     replay.enter(index, crate::model::BlockKind::While)?;
     if replay.execution.selected(index)? == replay.flow.blocks[index].yes_branch() {
         let outside = replay.available.clone();
-        match replay.walk(body)? {
-            Exit::Repeat(target)
-                if target == index && replay.execution.repeats.contains(&index) =>
-            {
+        match replay.iteration(index, body)? {
+            Exit::Repeat(target) if target == index => {
                 replay.available = outside;
             }
             Exit::End => return Some(Exit::End),
+            exit @ Exit::Repeat(_) => return Some(exit),
             _ => return None,
         }
     }

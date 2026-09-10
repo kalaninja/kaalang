@@ -7,13 +7,15 @@ pub(super) fn adjust(scene: &mut Scene) {
     if scene.topology.loops.is_empty() {
         return;
     }
-    let end = scene
+    let Some(end) = scene
         .topology
         .nodes
         .iter()
         .find(|node| node.kind == NodeKind::End)
-        .expect("a flow has an end")
-        .id;
+        .map(|node| node.id)
+    else {
+        return;
+    };
     let incoming = scene
         .topology
         .incoming(Destination::Node(end))
