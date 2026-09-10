@@ -2,7 +2,7 @@
 //! form a chain of nested selections rather than independent ones.
 //!
 //! Branch placement rejects independent selections even after disjoint partial
-//! merges. This pass retains a direct check of the capture-ancestry invariant.
+//! merges. This pass checks capture ancestry and the order of normal loop exits.
 
 use std::collections::BTreeSet;
 
@@ -37,18 +37,28 @@ pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<us
 }
 
 /// The deciders of one block are pairwise dependent: one lies in the
-/// continuation of a branch of the other. Two independent selections would
-/// withhold the block's inputs in a way none of its own decisions explains,
-/// whether by leaving a branch output unselected or a wire unproduced.
+/// continuation of a branch of the other, or after the loop containing it exits.
+/// Loop exit order does not add captures or convergence groups. Two independent
+/// selections would withhold the block's inputs in a way none of its own
+/// decisions explains, whether by leaving a branch output unselected or a wire
+/// unproduced.
 pub(super) fn flow(
     flow: &Flow,
     executions: &[Execution],
     precedence: &[Vec<BTreeSet<usize>>],
 ) -> Result<()> {
     let dependent = |first: usize, second: usize| {
-        precedence.iter().any(|preceding| {
-            preceding[first].contains(&second) || preceding[second].contains(&first)
-        })
+        precedence
+            .iter()
+            .zip(executions)
+            .any(|(preceding, execution)| {
+                preceding[first].contains(&second)
+                    || preceding[second].contains(&first)
+                    || (execution.participates(first)
+                        && execution.participates(second)
+                        && (super::while_loop::closed_before(flow, first, second)
+                            || super::while_loop::closed_before(flow, second, first)))
+            })
     };
     for (block, deciders) in deciders(flow, executions).into_iter().enumerate() {
         let deciders = deciders.into_iter().collect::<Vec<_>>();

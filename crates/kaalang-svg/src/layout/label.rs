@@ -62,6 +62,9 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     let mut merged_captures = BTreeSet::new();
 
     for (junction, merge) in topology.junctions.iter().enumerate() {
+        if merge.wires.is_empty() {
+            continue;
+        }
         let Some(exits) = topology
             .incoming(Vertex::Junction(junction))
             .map(|connection| match connection.source {
@@ -82,7 +85,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         let mut outgoing = topology.outgoing(Vertex::Junction(junction));
         if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
             && outgoing.next().is_none()
-            && topology.incoming(Vertex::Node(node)).count() == 1
+            && topology.single_arrival(node)
             && topology.capture(node) == merge.wires
         {
             merged_captures.insert(node);
@@ -400,6 +403,9 @@ mod tests {
             width: 200,
             height: 200,
             topology: Topology {
+                order: vec![],
+                back_edges: vec![],
+                loops: vec![],
                 nodes: vec![],
                 exits: vec![],
                 junctions: vec![],

@@ -38,13 +38,20 @@ fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
     for input in &flow.flow_inputs {
         wires.insert(input.clone(), BTreeSet::new());
     }
-    let mut blocks = Vec::with_capacity(flow.blocks.len());
+    let mut blocks: Vec<BTreeSet<BranchSelection>> = Vec::with_capacity(flow.blocks.len());
     for (index, declaration) in flow.blocks.iter().enumerate() {
-        let inherited = declaration
+        let mut inherited = declaration
             .inputs
             .iter()
             .flat_map(|input| wires.get(&input.ident).into_iter().flatten().copied())
             .collect::<BTreeSet<_>>();
+        if let Some(parent) = declaration.parent {
+            inherited.extend(blocks[parent].iter().copied());
+            inherited.insert(BranchSelection {
+                block: parent,
+                branch: flow.blocks[parent].yes_branch(),
+            });
+        }
         for (output, name) in declaration.outputs.iter().enumerate() {
             let occurrence = occurrence(flow, &inherited, index, output);
             // Alternative producers meet before every capture, so the merged
@@ -169,7 +176,8 @@ pub(super) fn flow(
     for execution in executions {
         for &block in execution.blocks.iter().filter(|&&block| block < end) {
             for selection in execution.branches.iter().filter(|s| s.block < block) {
-                if ancestry[block].contains(selection)
+                if super::while_loop::closed_before(flow, selection.block, block)
+                    || ancestry[block].contains(selection)
                     || junctions
                         .iter()
                         .any(|junction| junction.closes(execution, block, *selection, executions))

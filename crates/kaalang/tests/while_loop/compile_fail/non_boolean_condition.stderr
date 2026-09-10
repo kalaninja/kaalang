@@ -1,0 +1,5 @@
+error[E0308]: mismatched types
+ --> tests/while_loop/compile_fail/non_boolean_condition.rs:6:19
+  |
+6 |     while (|flag| usize::from(flag)) {}
+  |                   ^^^^^^^^^^^^^^^^^ expected `bool`, found `usize`

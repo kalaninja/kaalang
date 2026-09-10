@@ -29,27 +29,39 @@ fn draws_a_diagram_beside_every_behavior_fixture() {
                 continue;
             }
 
-            // One flow per file, named for the file — or for the folder, when
-            // the fixture is the folder — is what keeps a diagram beside the
-            // source it was drawn from.
+            // A gallery mod.rs may group related flows and share their tests.
+            // Other fixtures keep one flow named for the file or its folder.
             let stem = fixture.file_stem().unwrap();
-            let named_after = if stem == "mod" {
-                directory.file_name().unwrap()
-            } else {
-                stem
-            };
-            let flow = named_after.to_str().unwrap();
-            assert_eq!(names, [flow], "{}", fixture.display());
-
-            let svg = kaalang_svg::render_source(&source, flow)
-                .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
-            let diagram = directory.join(format!("{flow}.svg"));
-            // Rewriting an unchanged diagram would spin file watchers on every run.
-            if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
-                fs::write(&diagram, svg).unwrap();
+            if stem != "mod" || directory.parent() != Some(tests.join("gallery").as_path()) {
+                let named_after = if stem == "mod" {
+                    directory.file_name().unwrap()
+                } else {
+                    stem
+                };
+                assert_eq!(
+                    names,
+                    [named_after.to_str().unwrap()],
+                    "{}",
+                    fixture.display()
+                );
             }
-            drawn += 1;
-            current.push(diagram);
+
+            for flow in names {
+                let svg = kaalang_svg::render_source(&source, &flow)
+                    .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
+                let diagram = directory.join(format!("{flow}.svg"));
+                assert!(
+                    !current.contains(&diagram),
+                    "multiple fixtures draw {}",
+                    diagram.display()
+                );
+                // Rewriting an unchanged diagram would spin file watchers on every run.
+                if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
+                    fs::write(&diagram, svg).unwrap();
+                }
+                drawn += 1;
+                current.push(diagram);
+            }
         }
 
         // A renamed or deleted fixture must not leave its old diagram behind.

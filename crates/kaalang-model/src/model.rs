@@ -2,9 +2,10 @@
 //! convergence groups and wire merges, and the compiler's execution plan.
 
 use proc_macro2::{Ident, Span};
+use syn::ext::IdentExt;
 use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 
-/// A validated kaalang flow: its blocks, every possible execution, its
+/// A validated kaalang flow: its blocks, finite structural execution summaries, its
 /// convergence groups and wire merges, and the verified plan that lowers it.
 pub struct SemanticModel {
     /// The authored flow function name.
@@ -17,7 +18,7 @@ pub struct SemanticModel {
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
-    /// Every possible execution, ordered by branch selections, then blocks,
+    /// Every structural execution summary, ordered by branch selections, then blocks,
     /// then capture dependencies and implicit block order.
     pub executions: Vec<Execution>,
     /// Every continuation group, ordered by branching block, then branch list.
@@ -35,6 +36,7 @@ pub(crate) const RESULT_WIRE: &str = "result";
 pub enum BlockKind {
     Action,
     Question,
+    While,
     Choice,
     End,
 }
@@ -44,7 +46,7 @@ pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for the implicit end block.
     pub description: Option<String>,
-    /// A question's two answers, positionally paired with its outputs.
+    /// A question's two answers, paired with outputs except on a while.
     pub question_branches: Vec<QuestionBranch>,
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
@@ -57,9 +59,35 @@ pub struct Block {
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
     pub span: Span,
+    /// The enclosing while block, if this block belongs to an iteration.
+    pub parent: Option<usize>,
+    /// The exclusive end of a while's body in the depth-first block sequence.
+    pub loop_end: Option<usize>,
 }
 
 impl Block {
+    /// The number of alternative control exits, including a while's answers.
+    #[must_use]
+    pub fn branch_count(&self) -> usize {
+        match self.kind {
+            BlockKind::Question | BlockKind::While => 2,
+            BlockKind::Choice => self.outputs.len(),
+            _ => 0,
+        }
+    }
+
+    /// The positional answer that enters a while body.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the block has no validated yes answer.
+    #[must_use]
+    pub fn yes_branch(&self) -> usize {
+        self.question_branches
+            .iter()
+            .position(|answer| answer.is_yes)
+            .expect("a question has a yes answer")
+    }
     /// Returns the authored binding at one validated output position.
     ///
     /// # Panics
@@ -93,7 +121,7 @@ pub struct Input {
     pub borrowed: bool,
     /// Mutability of the reference for a borrow, or of the local value binding.
     pub mutable: bool,
-    /// The logical wire name: raw and ordinary spellings normalize to one ident.
+    /// The logical wire key: raw spellings normalize and loop locals are scoped.
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
@@ -103,6 +131,23 @@ pub struct Input {
 pub struct Flow {
     pub flow_inputs: Vec<Ident>,
     pub blocks: Vec<Block>,
+}
+
+impl Flow {
+    /// The displayed name of a wire, without internal scope keys or raw prefixes.
+    #[must_use]
+    pub(crate) fn wire_name(&self, wire: &Ident) -> String {
+        self.blocks
+            .iter()
+            .find_map(|block| {
+                block
+                    .outputs
+                    .iter()
+                    .position(|output| output == wire)
+                    .map(|index| block.output_binding(index).ident.unraw().to_string())
+            })
+            .unwrap_or_else(|| wire.unraw().to_string())
+    }
 }
 
 /// One occurrence that provides a wire: a named flow input or one output of
@@ -135,9 +180,10 @@ pub struct BranchSelection {
     pub branch: usize,
 }
 
-/// One possible execution: the computational blocks that participate, the
+/// One structural execution summary: the computational blocks that participate, the
 /// branches it selects, and its capture dependencies. Start and end participate
-/// implicitly. Source order is the order the blocks run in, so an execution
+/// implicitly. Each loop is represented by zero or one iteration and eventual
+/// exit or result. Source order is the order the blocks run in, so a summary
 /// records which of them take part rather than a schedule; every vector is
 /// sorted and deduplicated. Field order is the derived sort order: branch
 /// selections first.
@@ -146,6 +192,9 @@ pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
+    /// Loops whose represented iteration reaches its end before the eventual
+    /// false check. Each execution summarizes at most one iteration per loop.
+    pub repeats: Vec<usize>,
 }
 
 impl Execution {
@@ -207,6 +256,13 @@ pub struct WireMerge {
 /// authored flow a second time. Its joins are lowering structure and say
 /// nothing about semantic convergence groups.
 pub enum ExecutionPlan {
+    While {
+        index: usize,
+        body: Box<ExecutionPlan>,
+        next: Box<ExecutionPlan>,
+    },
+    /// Normal completion of an iteration, returning to its condition.
+    Repeat { index: usize },
     Action {
         index: usize,
         next: Box<ExecutionPlan>,

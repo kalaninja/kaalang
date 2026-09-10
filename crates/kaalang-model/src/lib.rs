@@ -8,6 +8,7 @@ mod model;
 mod parse;
 mod plan;
 mod resolve;
+mod scope;
 
 pub use choice::{choice_match, is_todo_body};
 pub use model::{
@@ -25,7 +26,8 @@ pub use model::{
 /// convergence groups, spanned at the offending token so callers can report it
 /// against the authored source.
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
-    let flow = parse::flow(function)?;
+    let mut flow = parse::flow(function)?;
+    scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
     let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
     let execution_plan = plan::flow(&flow, &executions, &merges);
@@ -131,6 +133,30 @@ mod tests {
                 !recorded.continuation.contains(&end),
                 "the end block is not a computational continuation member"
             );
+        }
+    }
+
+    #[test]
+    fn loop_examples_have_one_verified_body_per_authored_block() {
+        for (name, source) in [
+            (
+                "count_to",
+                include_str!("../../kaalang/tests/while_loop/behavior/count_to.rs"),
+            ),
+            (
+                "binary_search",
+                include_str!("../../kaalang/tests/gallery/binary_search/mod.rs"),
+            ),
+            (
+                "nested_search",
+                include_str!("../../kaalang/tests/while_loop/behavior/nested_search.rs"),
+            ),
+        ] {
+            let model =
+                build(&fixture(source, name)).unwrap_or_else(|error| panic!("{name}: {error}"));
+            for block in 0..model.flow.blocks.len() {
+                assert_eq!(count_block(&model, block), 1, "{name}: block {block}");
+            }
         }
     }
 

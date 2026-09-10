@@ -3,8 +3,11 @@
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprAsync, ExprClosure, ExprReturn, ExprTry, FnArg, Item, ItemFn,
-    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt, ext::IdentExt,
-    parse_quote_spanned, spanned::Spanned, visit::Visit,
+    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt,
+    ext::IdentExt,
+    parse_quote_spanned,
+    spanned::Spanned,
+    visit::{self, Visit},
 };
 
 use crate::model::{Block, BlockKind, Flow, Input};
@@ -13,6 +16,7 @@ mod action;
 mod choice;
 mod end;
 mod question;
+mod while_loop;
 
 /// Parses a flow function into its named flow inputs and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
@@ -53,15 +57,30 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
 /// Parses every function-body statement as one kaalang block, then appends the
 /// implicit end block that captures the flow's `result` wire.
 fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
-    let mut blocks = function
-        .block
-        .stmts
-        .iter()
-        .map(parse_block)
-        .collect::<Result<Vec<_>>>()?;
+    let mut blocks = Vec::new();
+    statements(&function.block.stmts, None, &mut blocks)?;
     blocks.push(end::block(function));
 
     Ok(blocks)
+}
+
+/// Flattens lexical loop regions without changing their authored order.
+fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
+    for statement in statements {
+        if let Stmt::Expr(Expr::While(expression), _) = statement {
+            let mut block = while_loop::parse(expression)?;
+            block.parent = parent;
+            let index = blocks.len();
+            blocks.push(block);
+            self::statements(&expression.body.stmts, Some(index), blocks)?;
+            blocks[index].loop_end = Some(blocks.len());
+        } else {
+            let mut block = parse_block(statement)?;
+            block.parent = parent;
+            blocks.push(block);
+        }
+    }
+    Ok(())
 }
 
 /// Parses one closure-shaped statement and hands it to its kind's parser.
@@ -88,7 +107,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::End => unreachable!("the end block is implicit, never parsed"),
+        BlockKind::End | BlockKind::While => unreachable!("structural blocks parse separately"),
     }
 }
 
@@ -157,6 +176,8 @@ impl<'a> BlockSyntax<'a> {
             inputs: self.inputs,
             body: self.body,
             span: self.kind_attribute.span(),
+            parent: None,
+            loop_end: None,
         }
     }
 }
@@ -363,15 +384,53 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
     }
 }
 
-/// Rejects a `return` expression or `?` operator in the body's own control-flow
+/// Rejects transfers out of the body's own control-flow
 /// scope. A nested closure, async block, or item owns its control flow, and macro
 /// token streams are opaque, so the walk stops at each of those.
 fn reject_control_transfers(body: &Expr) -> Result<()> {
-    struct FirstTransfer(Option<Error>);
+    #[derive(Default)]
+    struct FirstTransfer {
+        error: Option<Error>,
+        // A label and whether this Rust construct is a loop rather than a block.
+        scopes: Vec<(Option<Ident>, bool)>,
+    }
 
     impl<'ast> Visit<'ast> for FirstTransfer {
+        fn visit_expr(&mut self, expression: &'ast Expr) {
+            let scope = match expression {
+                Expr::Loop(loop_) => Some((loop_.label.as_ref(), true)),
+                Expr::While(loop_) => Some((loop_.label.as_ref(), true)),
+                Expr::ForLoop(loop_) => Some((loop_.label.as_ref(), true)),
+                Expr::Block(block) if block.label.is_some() => Some((block.label.as_ref(), false)),
+                _ => None,
+            };
+            if let Some((label, is_loop)) = scope {
+                self.scopes
+                    .push((label.map(|label| label.name.ident.clone()), is_loop));
+            }
+            let transfer = match expression {
+                Expr::Break(transfer) => Some((transfer.label.as_ref(), false)),
+                Expr::Continue(transfer) => Some((transfer.label.as_ref(), true)),
+                _ => None,
+            };
+            if let Some((label, continuing)) = transfer {
+                let local = self.scopes.iter().rev().any(|(name, is_loop)| match label {
+                    Some(label) => name.as_ref() == Some(&label.ident) && (!continuing || *is_loop),
+                    None => *is_loop,
+                });
+                if !local {
+                    self.error.get_or_insert_with(|| Error::new_spanned(expression,
+                        "a kaalang block body must not use `break` or `continue` outside its own Rust loops"));
+                }
+            }
+            visit::visit_expr(self, expression);
+            if scope.is_some() {
+                self.scopes.pop();
+            }
+        }
+
         fn visit_expr_return(&mut self, expression: &'ast ExprReturn) {
-            self.0.get_or_insert_with(|| {
+            self.error.get_or_insert_with(|| {
                 Error::new_spanned(
                     expression,
                     "a kaalang block body must not use a `return` expression",
@@ -380,7 +439,7 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
         }
 
         fn visit_expr_try(&mut self, expression: &'ast ExprTry) {
-            self.0.get_or_insert_with(|| {
+            self.error.get_or_insert_with(|| {
                 Error::new_spanned(
                     expression,
                     "a kaalang block body must not use the `?` operator",
@@ -395,9 +454,9 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
         fn visit_item(&mut self, _: &'ast Item) {}
     }
 
-    let mut first = FirstTransfer(None);
+    let mut first = FirstTransfer::default();
     first.visit_expr(body);
-    first.0.map_or(Ok(()), Err)
+    first.error.map_or(Ok(()), Err)
 }
 
 /// Parses an identifier or flat tuple of output bindings, retaining the pattern

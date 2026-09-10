@@ -11,10 +11,10 @@ which programs are valid and what they mean. This RFC describes how lowering
 implements that contract; it does not add language rules.
 
 Before lowering, the source is parsed, producer occurrences are grouped by
-logical wire name, and block-local and branch-dependent invariants are
-validated. Lowering consumes the resulting validated model and its verified
-execution plan. The [visual language](0002-visual-language.md) draws the same
-source order.
+logical wire identity (including its lexical loop scope), and block-local and
+branch-dependent invariants are validated. Lowering consumes the resulting
+validated model and its verified execution plan. The
+[visual language](0002-visual-language.md) draws the same source order.
 
 The examples below pair complete kaalang functions with illustrative Rust. They
 show the relevant bindings, scopes, and control flow, not a promised
@@ -398,3 +398,70 @@ including `const fn`; an `async fn` is rejected before lowering under
 [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs). The `#[kaalang]`
 attribute and block and case descriptions are consumed during translation; the
 closure-shaped declarations do not become callable Rust closures.
+
+## 7. While loops
+
+The closure-shaped condition is syntax for explicit captures, not a callable
+Rust closure. Lowering emits a native `while` whose condition block creates the
+input aliases and evaluates the authored boolean expression. Its aliases end
+before the body runs. A fresh evaluation happens before every iteration and on
+the final false check, including when the body never runs.
+
+```rust
+#[kaalang]
+fn count_to(limit: usize) -> usize {
+    #[action("Initialize the counter.")]
+    let mut count = || 0usize;
+
+    #[question("Is the counter below the limit?")]
+    while (|&count, &limit| *count < *limit) {
+        #[action("Increment the counter.")]
+        |&mut count| *count += 1;
+    }
+
+    #[action("Return the counter.")]
+    let result = |count| count;
+}
+```
+
+Illustrative Rust:
+
+```rust
+fn count_to(wire_limit: usize) -> usize {
+    let mut wire_count = 0usize;
+    while {
+        let count = &wire_count;
+        let limit = &wire_limit;
+        *count < *limit
+    } {
+        let () = {
+            let count = &mut wire_count;
+            *count += 1;
+        };
+    }
+    return wire_count;
+}
+```
+
+The plan contains one while node with a body and an after-loop continuation.
+Each authored block is emitted once. Normal body endings use a generated
+`continue` to the loop's hygienic label, including endings inside a question or
+choice. This transfer leaves all iteration-local scopes. A generated return of
+`result` exits the whole function under §5. Answer attribute order affects
+presentation only: true always enters the body.
+
+Validation and plan verification use finite structural summaries: no iteration,
+or one representative iteration followed by eventual normal exit, or a return
+from that iteration. Every nested branch selection is retained. At a normal
+iteration boundary the available producer set is restored to the enclosing
+scope; local producers cannot escape or feed the next condition. Replaying these
+summaries checks captures and source order without proving termination or
+unrolling the runtime loop. Rust separately checks moves and borrows across
+iterations.
+
+Internal wire identities distinguish sibling loop scopes while preserving
+original names in diagnostics, generated input aliases, and diagrams. Iteration
+locals are ordinary Rust bindings inside the loop body; no output slots, clones,
+or runtime scope bookkeeping are introduced. Native Rust control transfers
+wholly inside a computational body remain valid under RFC 0001 §3; authored
+transfers to a kaalang loop are rejected before lowering.

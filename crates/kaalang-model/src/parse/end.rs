@@ -32,6 +32,8 @@ pub(super) fn block(function: &ItemFn) -> Block {
         }],
         body: parse_quote!({}),
         span,
+        parent: None,
+        loop_end: None,
     }
 }
 

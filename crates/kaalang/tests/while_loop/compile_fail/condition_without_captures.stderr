@@ -1,0 +1,5 @@
+error: a kaalang while condition must have the form `(|inputs| condition)`
+ --> tests/while_loop/compile_fail/condition_without_captures.rs:6:11
+  |
+6 |     while flag {}
+  |           ^^^^

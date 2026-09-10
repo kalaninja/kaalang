@@ -571,7 +571,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if a.x != b.x && a.y != b.y {
                 return Some("a connection bends other than at a right angle".to_owned());
             }
-            if b.y < a.y {
+            if b.y < a.y && !scene.is_back_edge(connection) {
                 return Some("a connection moves upward".to_owned());
             }
             if scene
@@ -789,6 +789,9 @@ mod tests {
                 junctions: vec![],
                 connections: vec![],
                 vertices: vec![],
+                order: vec![],
+                back_edges: vec![],
+                loops: vec![],
             },
             nodes: vec![],
             parameters: None,

@@ -13,6 +13,7 @@ mod choice;
 mod end;
 mod join;
 mod question;
+mod while_loop;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -156,6 +157,10 @@ pub(crate) fn tuple(span: Span, idents: &[impl ToTokens]) -> TokenStream2 {
 /// kaalang invariant, including the destination of every branch exit.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
+        ExecutionPlan::While { index, body, next } => {
+            while_loop::emit(flow, bindings, *index, body, next)
+        }
+        ExecutionPlan::Repeat { index } => while_loop::repeat(flow, *index),
         ExecutionPlan::Action { index, next } => action::emit(flow, bindings, *index, next),
         ExecutionPlan::Question {
             index,

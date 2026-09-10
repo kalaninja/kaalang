@@ -50,6 +50,11 @@ pub(super) fn plan(
 /// Counts how many times the plan emits each computational block.
 pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
     match plan {
+        ExecutionPlan::While { index, body, next } => {
+            bodies[*index] += 1;
+            count(body, bodies);
+            count(next, bodies);
+        }
         ExecutionPlan::Action { index, next } => {
             bodies[*index] += 1;
             count(next, bodies);
@@ -81,20 +86,23 @@ pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
             }
         }
         ExecutionPlan::End { body, .. } => count(body, bodies),
-        ExecutionPlan::EndArrival { .. } | ExecutionPlan::Yield { .. } => {}
+        ExecutionPlan::EndArrival { .. }
+        | ExecutionPlan::Yield { .. }
+        | ExecutionPlan::Repeat { .. } => {}
     }
 }
 
-enum Exit {
+pub(super) enum Exit {
     End,
     Yield(JoinTarget),
+    Repeat(usize),
 }
 
-struct Replay<'a> {
-    flow: &'a Flow,
-    execution: &'a Execution,
+pub(super) struct Replay<'a> {
+    pub(super) flow: &'a Flow,
+    pub(super) execution: &'a Execution,
     merges: &'a [WireMerge],
-    available: BTreeMap<Ident, ProducerId>,
+    pub(super) available: BTreeMap<Ident, ProducerId>,
     ran: BTreeSet<usize>,
     /// The block this execution entered last. Source order is the execution
     /// order, so `ran` alone would not catch a plan that emits the same set of
@@ -118,7 +126,7 @@ impl Replay<'_> {
         Some(())
     }
 
-    fn enter(&mut self, block: usize, kind: BlockKind) -> Option<()> {
+    pub(super) fn enter(&mut self, block: usize, kind: BlockKind) -> Option<()> {
         if self.flow.blocks[block].kind != kind
             || !self.execution.participates(block)
             || self.last.is_some_and(|last| block <= last)
@@ -138,8 +146,12 @@ impl Replay<'_> {
         Some(())
     }
 
-    fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
+    pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
+            ExecutionPlan::While { index, body, next } => {
+                super::while_loop::replay(self, *index, body, next)
+            }
+            ExecutionPlan::Repeat { index } => Some(Exit::Repeat(*index)),
             ExecutionPlan::Action { index, next } => {
                 self.enter(*index, BlockKind::Action)?;
                 self.walk(next)

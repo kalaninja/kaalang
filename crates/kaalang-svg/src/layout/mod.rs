@@ -11,6 +11,7 @@ use crate::topology::{self, Destination, ExitId, NodeId, NodeKind, Source, Topol
 
 mod action;
 mod choice;
+mod end;
 mod label;
 mod place;
 mod question;
@@ -18,6 +19,7 @@ mod route;
 #[cfg(test)]
 mod tests;
 mod text;
+mod while_loop;
 
 use label::{label_rect, vertical_gap};
 use text::wrap_text;
@@ -226,6 +228,8 @@ pub(crate) fn layout(
                 if let Some(reason) = route::verify(&scene) {
                     return Err(reason);
                 }
+                while_loop::route(&mut scene, model)?;
+                end::adjust(&mut scene);
                 scene.labels = label::place_labels(&scene);
                 scene.indent();
                 scene.fit();
@@ -362,6 +366,12 @@ impl Scene {
             parameters.x = x + width / 2 + PARAMETER_PANEL_GAP + parameters.width / 2;
             parameters.y = y;
         }
+    }
+
+    pub(crate) fn is_back_edge(&self, connection: &Connection) -> bool {
+        self.topology.back_edges.iter().any(|edge| {
+            edge.source == connection.source && edge.destination == connection.destination
+        })
     }
 
     pub(crate) fn node(&self, id: NodeId) -> &Node {

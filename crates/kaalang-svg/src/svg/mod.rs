@@ -69,8 +69,11 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
   <g class="connections">
 "##
     );
+    if !scene.topology.back_edges.is_empty() {
+        svg.push_str("    <defs><marker id=\"loop-arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"9\" refY=\"5\" orient=\"auto\" markerUnits=\"userSpaceOnUse\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"currentColor\"/></marker></defs>\n");
+    }
     for connection in &scene.connections {
-        write_connection(&mut svg, connection);
+        write_connection(&mut svg, connection, scene.is_back_edge(connection));
     }
     // After the routes, so a label's halo covers the connections it crosses.
     for label in &scene.labels {
@@ -88,7 +91,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     svg
 }
 
-fn write_connection(svg: &mut String, connection: &Connection) {
+fn write_connection(svg: &mut String, connection: &Connection, backward: bool) {
     let first = connection
         .points
         .first()
@@ -102,7 +105,11 @@ fn write_connection(svg: &mut String, connection: &Connection) {
     for point in &connection.points[1..] {
         emit_inline!(svg, " L {} {}", point.x, point.y);
     }
-    emit!(svg, "\"/>");
+    if backward {
+        emit!(svg, "\" marker-end=\"url(#loop-arrow)\"/>");
+    } else {
+        emit!(svg, "\"/>");
+    }
 }
 
 fn write_connection_label(svg: &mut String, label: &Label) {
@@ -191,7 +198,12 @@ fn describe(scene: &Scene) -> String {
         .iter()
         .map(|connection| {
             format!(
-                "{} to {}",
+                "{}{} to {}",
+                if scene.is_back_edge(connection) {
+                    "Repeat from "
+                } else {
+                    ""
+                },
                 source_name(scene, connection.source),
                 destination_name(scene, connection.destination)
             )
@@ -259,6 +271,22 @@ fn destination_name(scene: &Scene, destination: Destination) -> String {
 }
 
 fn merge_name(scene: &Scene, junction: usize) -> String {
+    if let Some(loop_) = scene
+        .topology
+        .loops
+        .iter()
+        .find(|loop_| loop_.tail == junction || loop_.entry == junction)
+    {
+        return format!(
+            "the {} of {}",
+            if loop_.tail == junction {
+                "iteration tail"
+            } else {
+                "entry"
+            },
+            node_name(scene, NodeId::Block(loop_.header))
+        );
+    }
     format!(
         "the {} merge",
         scene.topology.junctions[junction].wires.join(" and ")

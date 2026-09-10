@@ -5,6 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
+use syn::ext::IdentExt;
 use syn::{Error, Result};
 
 use crate::model::{
@@ -20,6 +21,7 @@ mod merge;
 mod participation;
 mod placement;
 mod question;
+mod while_loop;
 
 /// Walks the blocks in source order under every branch selection. Returns the
 /// executions and convergence groups in canonical order, or the earliest
@@ -52,6 +54,8 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
             executed: BTreeSet::new(),
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
+            repeats: BTreeSet::new(),
+            loop_inputs: BTreeMap::new(),
         },
     );
     if let Some((_, error)) = walk.error {
@@ -70,13 +74,13 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     branch_outputs(flow, &executions)?;
     let captures = executions
         .iter()
-        .map(|execution| predecessors(flow.blocks.len(), execution, &[]))
+        .map(|execution| predecessors(flow, execution, &[]))
         .collect::<Vec<_>>();
     participation::flow(flow, &executions, &captures)?;
     let merges = merge::flow(flow, &executions, merges, owners)?;
     let precedence = executions
         .iter()
-        .map(|execution| predecessors(flow.blocks.len(), execution, &merges))
+        .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
     Ok((executions, convergence_groups, merges))
@@ -112,12 +116,16 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
 /// merge closes before its consumers.
 // ponytail: the closure costs O(blocks³) per execution; switch to a DAG walk
 // if flows reach hundreds of blocks with many executions.
-fn predecessors(
-    blocks: usize,
-    execution: &Execution,
-    merges: &[WireMerge],
-) -> Vec<BTreeSet<usize>> {
+fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec<BTreeSet<usize>> {
+    let blocks = flow.blocks.len();
     let mut preceding = vec![BTreeSet::new(); blocks];
+    for &block in &execution.blocks {
+        let mut parent = flow.blocks[block].parent;
+        while let Some(header) = parent {
+            preceding[block].insert(header);
+            parent = flow.blocks[header].parent;
+        }
+    }
     for dependency in &execution.dependencies {
         if let ProducerId::BlockOutput { block, .. } = dependency.producer {
             preceding[dependency.capture.block].insert(block);
@@ -163,6 +171,8 @@ struct State {
     executed: BTreeSet<usize>,
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
+    repeats: BTreeSet<usize>,
+    loop_inputs: BTreeMap<usize, BTreeMap<Ident, ProducerId>>,
 }
 
 impl State {
@@ -210,6 +220,9 @@ impl Walk<'_> {
     /// whose inputs this execution has all provided participates; the others
     /// belong to branches this execution did not select.
     fn visit(&mut self, index: usize, mut state: State) {
+        if while_loop::close(self, index, &mut state) {
+            return;
+        }
         if index == self.end {
             self.finish(state);
             return;
@@ -220,7 +233,7 @@ impl Walk<'_> {
             .iter()
             .all(|input| state.available.contains_key(&input.ident))
         {
-            self.visit(index + 1, state);
+            self.visit(block.loop_end.unwrap_or(index + 1), state);
             return;
         }
         // `result` finishes an execution, so nothing participating may follow it.
@@ -232,6 +245,7 @@ impl Walk<'_> {
         match block.kind {
             BlockKind::Action => action::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
+            BlockKind::While => while_loop::visit(self, index, &state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
         }
@@ -279,6 +293,7 @@ impl Walk<'_> {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
+            repeats: state.repeats.into_iter().collect(),
         });
     }
 }
@@ -323,14 +338,16 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     }
     for (block, declaration) in flow.blocks.iter().enumerate() {
         for (output, name) in declaration.outputs.iter().enumerate() {
-            if ignored(name) || captured(ProducerId::BlockOutput { block, output }) {
+            if ignored(&declaration.output_binding(output).ident)
+                || captured(ProducerId::BlockOutput { block, output })
+            {
                 continue;
             }
             return Err(match declaration.kind {
                 BlockKind::Action => action::uncaptured(name),
                 BlockKind::Question => question::uncaptured(name),
                 BlockKind::Choice => choice::uncaptured(name),
-                BlockKind::End => unreachable!("end declares no outputs"),
+                BlockKind::End | BlockKind::While => unreachable!("this kind declares no outputs"),
             });
         }
     }
@@ -428,5 +445,5 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
 
 /// A leading underscore permits a producer to have no consumer.
 fn ignored(name: &Ident) -> bool {
-    name.to_string().starts_with('_')
+    name.unraw().to_string().starts_with('_')
 }

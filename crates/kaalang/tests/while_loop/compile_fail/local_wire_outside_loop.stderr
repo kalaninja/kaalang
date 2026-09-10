@@ -1,0 +1,5 @@
+error: a kaalang block input must name a flow input or an earlier block output
+  --> tests/while_loop/compile_fail/local_wire_outside_loop.rs:11:6
+   |
+11 |     |_local| {};
+   |      ^^^^^^

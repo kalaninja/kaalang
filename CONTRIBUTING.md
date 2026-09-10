@@ -100,6 +100,9 @@ themselves during `cargo test`, so a renderer or model change arrives as a diff
 over them. Read that diff before committing: nothing else checks that the new
 diagrams still make sense.
 
+Gallery examples may group related flows in one `mod.rs` and share a test. Each
+flow still gets its own `<flow>.svg` beside that module.
+
 ## Commits
 
 Use Conventional Commits:

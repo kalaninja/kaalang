@@ -24,7 +24,7 @@ following terms:
   that lists the flow's authored Rust parameters;
 - an **exit** is an outgoing attachment point of a node; start and action nodes
   each have one non-branching exit, a question has one branch-specific exit per
-  output, a select has one distributor exit, each case has one exit associated
+  answer, a select has one distributor exit, each case has one exit associated
   with its choice branch, and end has no exit;
 - a **hand-over** is the ordered sequence of newly provided wires labeled at a
   node exit;
@@ -51,9 +51,10 @@ data connections.
 
 ## 4. Node kinds
 
-An action, a question, and the unique end block each become one node. A choice
-becomes one select node and one case node per authored case. Case nodes are
-visual projections, not additional semantic blocks.
+An action, a question (including a while condition), and the unique end block
+each become one node. A choice becomes one select node and one case node per
+authored case. Case nodes are visual projections, not additional semantic
+blocks.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
@@ -85,8 +86,17 @@ An action block becomes one action node.
 
 A question block becomes one question node. Its answer attributes, outputs, and
 branches preserve their positional order from RFC 0001. Each branch is labeled
-with its authored description when present, otherwise with its output name. The
-diagram does not synthesize `yes` or `no` labels.
+with its authored description when present, otherwise with its output name. An
+ordinary question therefore needs no synthesized answer labels.
+
+A while condition has the same node shape and branch order. It has no output
+wires, so a branch without an authored description displays `YES` or `NO`. Yes
+reaches the nested body; no reaches the after-loop continuation. Each body block
+is drawn once. Normal body endings meet at an unlabeled iteration tail whose
+return connection meets the incoming line at an unlabeled entry junction before
+the condition. One common vertical segment leads from that junction to the
+question. A body whose every branch finishes the flow has no return connection.
+An empty body connects yes directly to its iteration tail.
 
 ### 4.4 select
 
@@ -128,8 +138,8 @@ start node connected to the end node by the `result` wire a flow input provides.
 Description labels carry the exact authored text. A presentation may wrap or
 escape that text but must not paraphrase, normalize, or synthesize it. No node
 carries a caption naming its block kind. The end node's `-> ()` for an absent
-return type is the one synthesized label, and it states the contract rather than
-paraphrasing authored text.
+return type and the while's default `YES`/`NO` answer labels state the contract
+rather than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
@@ -274,15 +284,31 @@ by the per-execution transitive reduction. The junction adds neither a
 computational block nor a producer occurrence. Consumers display the captured
 logical wire name once.
 
+For a while, apply the forward dependency and serial-order rules to zero
+iterations and one representative iteration followed by normal exit, or by
+`result`. These finite summaries retain every branch and capture route without
+unrolling runtime iterations. Insert an iteration tail at each normal body end.
+The tail's precedence over the after-loop continuation constrains layout only;
+it is not a drawn control connection. Carry that precedence through the no
+branch's blocks and loop-entry junctions to the first wire merge, iteration
+tail, or end on each forward route. Those boundaries remain below the preceding
+body; the blocks leading to them may start immediately below the condition in
+their separate branch columns, regardless of block kind or answer order. The
+tail instead returns to the entry junction before its own condition, where the
+initial and repeated arrivals meet. No retains its direct forward route to the
+after-loop continuation. Nested tails close innermost first. Local wires do not
+travel along return connections; mutations of enclosing wires follow RFC 0001
+§4.5.
+
 ## 8. Spatial notation
 
-Along each connection, execution time runs from top to bottom: the destination
-node occupies a lower row than its source node, and the route never moves
-upward. Nodes on alternative branches may share a row.
+Along each forward connection, execution time runs from top to bottom: the
+destination node occupies a lower row than its source node, and the route never
+moves upward. Nodes on alternative branches may share a row.
 
 The visual language uses columns and rows. Branches are arranged from left to
 right in authored order: question answer/output order and choice case order. The
-first question output and the first choice case continue down the current
+first question answer and the first choice case continue down the current
 column; remaining branches appear to their right.
 
 The parameter panel is vertically centred beside start. It does not overlap a
@@ -304,9 +330,14 @@ Connection routes are simple: they do not intersect or overlap themselves. They
 do not cross one another or pass through a non-endpoint node. Meeting at a
 common endpoint or deliberately sharing a collinear segment is not a crossing;
 connections may share such a segment only when they have the same source exit or
-the same destination node. Other connections do not overlap. Connections are
-plain lines without arrowheads. A route contains only straight horizontal and
-vertical segments, so every bend is a right angle.
+the same destination node. Other connections do not overlap. Forward connections
+are plain lines without arrowheads. A while return travels upward outside its
+body and ends horizontally with an arrowhead at the entry junction on the line
+above its condition. The arrow points into that line, not into the question
+node. The common segment below the junction enters the question from above and
+has no arrowhead. The return is the only exception to downward routing and the
+only arrowhead. A route contains only straight horizontal and vertical segments,
+so every bend is a right angle.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an
@@ -316,9 +347,9 @@ already in the junction's column descend straight to the same point.
 The visual-language contract covers the diagram's nodes, parameter panel, roles,
 labels, the connection end or ends to which each connection label belongs,
 branch order, implicit convergence, dependency reachability, connections,
-crossing-free orthogonal routing, top-to-bottom row order, and branch column
-order. Exact dimensions, colors, typography, spacing, and routing offsets are
-presentation choices.
+crossing-free orthogonal routing, forward top-to-bottom row order, and branch
+column order. Exact dimensions, colors, typography, spacing, and routing offsets
+are presentation choices.
 
 A validated flow whose required connections cannot be drawn under these rules
 has no conforming diagram.

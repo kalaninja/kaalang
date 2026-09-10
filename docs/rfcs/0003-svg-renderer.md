@@ -45,6 +45,39 @@ To draw an implicit merge, including the `result` merge above end, each producer
 descends in its approach column to one horizontal merge rail whose junction lies
 in the continuation's column; routes meet it as RFC 0002 §8 requires.
 
+While conditions use the ordinary question layout and authored answer order.
+Forward connections and iteration-tail precedence form an acyclic placement
+graph. After separating every return from the forward graph, carry each tail's
+precedence through continuation blocks and loop-entry junctions. Stop at the
+first wire merge, iteration tail, or end on each forward route. These boundaries
+stay below the preceding body to leave room for its return; continuation blocks
+can fill their separate branch columns without waiting for the body's final row.
+This rule applies equally to actions, questions, choices, and further loops.
+Tail precedence is not drawn. Each repeating condition has an entry junction on
+its incoming line, followed by one vertical segment into the question. Return
+connections are routed separately, innermost loop first, around the body and
+horizontally into that junction. The arrowhead belongs to that horizontal
+arrival. Returns may move upward; all other geometry checks still apply. If no
+checked return route fits, rendering fails under §4.
+
+An iteration tail meets its incoming branches at their leftmost approach for a
+yes-first loop and their rightmost approach for a no-first loop. The return can
+then leave that end of the rail without retracing an incoming branch.
+
+A tail with one incoming connection may sit on a side exit's horizontal run, or
+after the usual vertical gap below a straight exit. Prefer turning upward there
+over descending to the tail's placement row and immediately returning upward.
+Keep the lower route when the shorter one would cross another connection; the
+tail's forward precedence still determines initial node placement.
+
+After routing the returns, adjust the terminal `result` merge and end using the
+actual geometry. Leave the usual vertical gap below all other nodes and at least
+91 pixels below the lowest return. Move the terminal merge and end together,
+preserving their common segment's length; when end has no result merge, move end
+alone. Move upward to remove excess space or downward to provide the required
+clearance. Keep the original placement if the adjusted terminal routes would
+introduce a crossing or upward segment. Place labels after this adjustment.
+
 ## 3. SVG output
 
 The renderer produces standalone SVG with embedded styles and no JavaScript,
@@ -65,7 +98,9 @@ A question-branch description uses its own branch-label style beside the exit
 and replaces the output label. Its font is larger than a wire label's font, and
 layout uses that size when wrapping text and placing the following row. The
 first branch's description hangs below its downward exit; the second branch's
-description sits above its horizontal exit.
+description sits above its horizontal exit. Default while answer labels use the
+same placement. Return arrowheads use an embedded SVG marker, and the accessible
+description identifies the iteration tail and the entry before its condition.
 
 ## 4. Library interface
 

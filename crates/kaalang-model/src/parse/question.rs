@@ -16,6 +16,21 @@ pub(super) fn answer_before_question(attribute: &Attribute) -> Error {
 /// A question branches on a boolean, so it declares a yes and a no output.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let description = description(syntax.kind_attribute, "kaalang block")?;
+    let question_branches = answers(&syntax)?;
+    syntax.require_inputs("question")?;
+    if syntax.outputs.len() != 2 {
+        return Err(Error::new(
+            syntax.output_span,
+            "a kaalang question must declare exactly two outputs",
+        ));
+    }
+
+    let mut block = syntax.into_block(Some(description), Vec::new());
+    block.question_branches = question_branches;
+    Ok(block)
+}
+
+pub(super) fn answers(syntax: &BlockSyntax<'_>) -> Result<Vec<QuestionBranch>> {
     let attributes = syntax.accept_companions(&["yes", "no"])?;
     let question_branches = if attributes.is_empty() {
         vec![branch(true, None), branch(false, None)]
@@ -32,17 +47,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
         }
         branches
     };
-    syntax.require_inputs("question")?;
-    if syntax.outputs.len() != 2 {
-        return Err(Error::new(
-            syntax.output_span,
-            "a kaalang question must declare exactly two outputs",
-        ));
-    }
-
-    let mut block = syntax.into_block(Some(description), Vec::new());
-    block.question_branches = question_branches;
-    Ok(block)
+    Ok(question_branches)
 }
 
 fn parse_branch(attribute: &Attribute) -> Result<QuestionBranch> {

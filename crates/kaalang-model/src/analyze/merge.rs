@@ -98,7 +98,7 @@ fn validate_nesting(
                         .find(|&producer| produced(execution, producer))
                 })
                 .collect::<Vec<_>>();
-            validate_adjacency(executions, merge, &producers)?;
+            validate_adjacency(flow, executions, merge, &producers)?;
             Ok(producers
                 .iter()
                 .enumerate()
@@ -135,8 +135,8 @@ fn validate_nesting(
         }
     }
     if let Some((nested, skipped, later)) = offending {
-        let skipped = &merges[skipped].wire;
-        let later = &merges[later].wire;
+        let skipped = flow.wire_name(&merges[skipped].wire);
+        let later = flow.wire_name(&merges[later].wire);
         return Err(Error::new(
             flow.blocks[nested].span,
             format!(
@@ -152,6 +152,7 @@ fn validate_nesting(
 /// its branch interval. Source order puts each deciding ancestor before its
 /// descendants, so their projected traces sort in authored branch order.
 fn validate_adjacency(
+    flow: &Flow,
     executions: &[Execution],
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
@@ -184,9 +185,9 @@ fn validate_adjacency(
             .iter()
             .any(|&index| producers[index].is_none())
     {
-        let wire = &merge.wire;
+        let wire = flow.wire_name(&merge.wire);
         return Err(Error::new(
-            wire.span(),
+            merge.wire.span(),
             format!(
                 "branches reaching the `{wire}` wire merge must be adjacent, including nested branches"
             ),
@@ -211,7 +212,7 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
     }
     for (index, merge) in merges.iter().enumerate() {
         if let Some(block) = cycle_block(successors, flow.blocks.len() + index) {
-            let wire = &merge.wire;
+            let wire = flow.wire_name(&merge.wire);
             return Err(Error::new(
                 flow.blocks[block].span,
                 format!(
@@ -229,6 +230,7 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
         })
         .min_by_key(|&(block, _)| block);
     if let Some((block, wire)) = late {
+        let wire = flow.wire_name(wire);
         return Err(Error::new(
             flow.blocks[block].span,
             format!(

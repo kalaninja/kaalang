@@ -46,7 +46,7 @@ pub(super) fn place(
     let rows_used = row.values().copied().max().unwrap_or(0) + 1;
     let footprints = footprints(topology, model);
     Ok(Placement {
-        column: columns(topology, &footprints, &row, rows_used),
+        column: columns(topology, model, &footprints, &row, rows_used),
         footprints,
         row,
         rows: rows_used,
@@ -74,6 +74,12 @@ fn rows(
         let Some(&ready) = pending.iter().find(|&&vertex| {
             topology
                 .incoming(vertex)
+                .chain(
+                    topology
+                        .order
+                        .iter()
+                        .filter(|edge| edge.destination == vertex),
+                )
                 .all(|connection| rows.contains_key(&Vertex::from(connection.source)))
         }) else {
             return Err("the connections form a cycle, so no node can be lowest".to_owned());
@@ -81,6 +87,12 @@ fn rows(
         pending.remove(&ready);
         let row = topology
             .incoming(ready)
+            .chain(
+                topology
+                    .order
+                    .iter()
+                    .filter(|edge| edge.destination == ready),
+            )
             .map(|connection| Vertex::from(connection.source))
             .map(|predecessor| rows[&predecessor] + 1)
             .max()
@@ -179,6 +191,7 @@ impl Footprints {
 
 fn columns(
     topology: &Topology,
+    model: &SemanticModel,
     footprints: &Footprints,
     rows: &BTreeMap<Vertex, usize>,
     rows_used: usize,
@@ -187,7 +200,7 @@ fn columns(
     ordered.sort_by_key(|vertex| (rows[vertex], *vertex));
 
     let mut columns = BTreeMap::new();
-    let mut occupied = vec![0; rows_used];
+    let mut occupied = vec![BTreeSet::new(); rows_used];
     for vertex in ordered {
         let Vertex::Node(node) = vertex else {
             // A junction owns no column of its own; it is placed once the
@@ -195,9 +208,14 @@ fn columns(
             continue;
         };
         let row = rows[&vertex];
-        let preferred = preferred(topology, &columns, footprints, node);
-        let column = preferred.max(occupied[row]);
-        occupied[row] = column + footprints.span(node);
+        let mut column = preferred(topology, &columns, footprints, node);
+        let width = footprints.span(node);
+        // A later-authored continuation may occupy free columns to the left
+        // of a loop body already placed on this row.
+        while (column..column + width).any(|slot| occupied[row].contains(&slot)) {
+            column += 1;
+        }
+        occupied[row].extend(column..column + width);
         columns.insert(vertex, column);
     }
 
@@ -218,14 +236,29 @@ fn columns(
         // The common segment out of the junction descends into the leftmost
         // consumer. Only items on the same row claim this point: successive
         // merges may reuse the same column.
-        let preferred = topology
-            .outgoing(vertex)
-            .filter_map(|connection| match connection.destination {
-                Destination::Node(node) => columns.get(&Vertex::Node(node)).copied(),
-                Destination::Junction(_) => None,
-            })
-            .min()
-            .unwrap_or(0);
+        let preferred =
+            if let Some(loop_) = topology.loops.iter().find(|loop_| loop_.tail == junction) {
+                let arrivals = topology
+                    .incoming(vertex)
+                    .map(|connection| arrives_from(topology, &columns, footprints, connection));
+                // The return leaves the end of the rail nearest its preferred
+                // contour, without turning back over its incoming branches.
+                if model.flow.blocks[loop_.header].yes_branch() == 0 {
+                    arrivals.min()
+                } else {
+                    arrivals.max()
+                }
+                .unwrap_or(0)
+            } else {
+                topology
+                    .outgoing(vertex)
+                    .filter_map(|connection| match connection.destination {
+                        Destination::Node(node) => columns.get(&Vertex::Node(node)).copied(),
+                        Destination::Junction(_) => None,
+                    })
+                    .min()
+                    .unwrap_or(0)
+            };
         let mut column = preferred;
         let row = rows[&vertex];
         while !claimed.insert((row, column)) {
@@ -352,7 +385,12 @@ fn branchers(model: &SemanticModel) -> Vec<usize> {
         .blocks
         .iter()
         .enumerate()
-        .filter(|(_, block)| matches!(block.kind, BlockKind::Question | BlockKind::Choice))
+        .filter(|(_, block)| {
+            matches!(
+                block.kind,
+                BlockKind::Question | BlockKind::Choice | BlockKind::While
+            )
+        })
         .map(|(block, _)| block)
         .collect()
 }
@@ -365,7 +403,7 @@ fn branch_sets(
     reachable: &BTreeMap<Vertex, BTreeSet<Vertex>>,
     block: usize,
 ) -> Vec<BTreeSet<Vertex>> {
-    (0..model.flow.blocks[block].outputs.len())
+    (0..model.flow.blocks[block].branch_count())
         .map(|branch| {
             let heads: Vec<Vertex> = match model.flow.blocks[block].kind {
                 BlockKind::Choice => vec![Vertex::Node(choice::case(block, branch))],
@@ -445,6 +483,9 @@ mod tests {
     /// reads them: one exit per source, one vertex per block.
     fn linked(pairs: &[(usize, usize)]) -> Topology {
         Topology {
+            order: vec![],
+            back_edges: vec![],
+            loops: vec![],
             nodes: vec![],
             exits: vec![],
             junctions: vec![],

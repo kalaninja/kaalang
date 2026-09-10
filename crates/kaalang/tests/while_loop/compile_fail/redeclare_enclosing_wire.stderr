@@ -1,0 +1,5 @@
+error: a loop-local output must not redeclare an enclosing wire
+ --> tests/while_loop/compile_fail/redeclare_enclosing_wire.rs:8:13
+  |
+8 |         let flag = || false;
+  |             ^^^^
