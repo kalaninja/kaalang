@@ -6,7 +6,7 @@ fn invalid(secret: u32, trigger: ()) -> (u32, u32) {
     let output = |trigger| { __kaalang_wire_0 };
 
     #[action("Pair the two values.")]
-    let result = |output, secret| { (output, secret) };
+    let end = |output, secret| { (output, secret) };
 }
 
 fn main() {}

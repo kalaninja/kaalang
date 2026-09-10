@@ -29,11 +29,11 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         |greater, mid, &mut right| *right = mid;
 
         #[action("Return the matching index.")]
-        let result = |equal, mid| Some(mid);
+        let end = |equal, mid| Some(mid);
     }
 
     #[action("The target is absent.")]
-    let result = || None;
+    let end = || None;
 }
 
 #[kaalang]
@@ -59,7 +59,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         };
 
         #[action("Return the matching index.")]
-        let result = |equal, mid| Some(mid);
+        let end = |equal, mid| Some(mid);
 
         #[action("Advance the lower bound.")]
         |less, mid, &mut left| *left = mid + 1;
@@ -69,7 +69,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     }
 
     #[action("The target is absent.")]
-    let result = || None;
+    let end = || None;
 }
 
 #[test]

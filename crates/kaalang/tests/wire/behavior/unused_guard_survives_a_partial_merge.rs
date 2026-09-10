@@ -29,7 +29,7 @@ fn unused_guard_survives_a_partial_merge(source: u8, cell: &RefCell<usize>) -> b
     let borrowed = |fallback| false;
 
     #[action("Check that the wider merge releases the partial guard.")]
-    let result = |borrowed, cell| {
+    let end = |borrowed, cell| {
         assert!(cell.try_borrow_mut().is_ok());
         borrowed
     };

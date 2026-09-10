@@ -11,7 +11,7 @@ fn repeated_copy_captures(input: u32) -> (u32, u32) {
     let second = |input| input + 1;
 
     #[action("Pair the two values.")]
-    let result = |first, second| (first, second);
+    let end = |first, second| (first, second);
 }
 
 #[test]

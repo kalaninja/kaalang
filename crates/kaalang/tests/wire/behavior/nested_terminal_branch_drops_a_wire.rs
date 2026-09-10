@@ -12,13 +12,13 @@ fn nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -> u32 {
     let (early, late) = |probe, inner| inner;
 
     #[action("Produce the early result without the extra value.")]
-    let result = |early| 1;
+    let end = |early| 1;
 
     #[action("Combine the late result with the extra value.")]
-    let result = |late, extra| 2 + extra;
+    let end = |late, extra| 2 + extra;
 
     #[action("Produce the direct result.")]
-    let result = |direct| 3;
+    let end = |direct| 3;
 }
 
 #[test]

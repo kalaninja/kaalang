@@ -32,14 +32,14 @@ fn choice_scope_ends_before_continuation(
     };
 
     #[action("Apply the numeric increment after leaving the choice.")]
-    let result = |number, cell| {
+    let end = |number, cell| {
         let mut value = cell.borrow_mut();
         *value += number;
         *value
     };
 
     #[action("Apply the text length after leaving the choice.")]
-    let result = |text, cell| {
+    let end = |text, cell| {
         let mut value = cell.borrow_mut();
         *value += text.len();
         *value

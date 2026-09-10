@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{Flow, RESULT_WIRE};
+use crate::model::{END_WIRE, Flow};
 
 #[derive(Default)]
 struct Scope {
@@ -57,9 +57,7 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             }
         }
         for output in &mut block.outputs {
-            if block.parent.is_some()
-                && *output != RESULT_WIRE
-                && scope.inherited.contains_key(output)
+            if block.parent.is_some() && *output != END_WIRE && scope.inherited.contains_key(output)
             {
                 return Err(Error::new(
                     output.span(),
@@ -68,7 +66,7 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             }
             let name = output.clone();
             let key = scope.local.entry(name.clone()).or_insert_with(|| {
-                if block.parent.is_none() || name == RESULT_WIRE {
+                if block.parent.is_none() || name == END_WIRE {
                     return name.clone();
                 }
                 loop {

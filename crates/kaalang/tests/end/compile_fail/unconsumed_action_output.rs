@@ -6,7 +6,7 @@ fn invalid(input: u32) {
     let (used, unused) = |input| { (input, input) };
 
     #[action("Finish with the used value.")]
-    let result = |used| { used };
+    let end = |used| { used };
 }
 
 fn main() {}

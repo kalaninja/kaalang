@@ -12,7 +12,7 @@ const fn count_to(limit: usize) -> usize {
     }
 
     #[action("Return the counter.")]
-    let result = |count| count;
+    let end = |count| count;
 }
 
 #[test]

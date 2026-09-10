@@ -15,7 +15,7 @@ fn immutable_merged_output(condition: bool) -> u32 {
     |&mut value| { *value += 1 };
 
     #[action("Return the value.")]
-    let result = |value| { value };
+    let end = |value| { value };
 }
 
 fn main() {}

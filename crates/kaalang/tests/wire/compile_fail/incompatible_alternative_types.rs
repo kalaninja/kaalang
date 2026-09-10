@@ -12,7 +12,7 @@ fn invalid(condition: bool) -> u32 {
     let selected = |no| { "no" };
 
     #[action("Use the selected value.")]
-    let result = |selected| { 0 };
+    let end = |selected| { 0 };
 }
 
 fn main() {}

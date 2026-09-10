@@ -20,13 +20,13 @@ fn invalid(outer: bool, late: bool) -> u8 {
     let (shared, direct_gate) = |direct| { (3u8, ()) };
 
     #[action("Use the shared value inside the early branch.")]
-    let result = |shared, early_gate| { shared };
+    let end = |shared, early_gate| { shared };
 
     #[action("Use the shared value inside the late branch.")]
-    let result = |shared, late_gate| { shared };
+    let end = |shared, late_gate| { shared };
 
     #[action("Use the shared value in the direct branch.")]
-    let result = |shared, direct_gate| { shared };
+    let end = |shared, direct_gate| { shared };
 }
 
 fn main() {}

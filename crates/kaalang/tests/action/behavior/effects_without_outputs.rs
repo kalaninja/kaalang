@@ -3,7 +3,7 @@ use std::cell::Cell;
 use kaalang::kaalang;
 
 /// Actions with no outputs at flow entry, inside a branch, and directly above
-/// the block producing `result`, in both spellings.
+/// the block producing `end`, in both spellings.
 #[kaalang]
 fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
     #[action("Record the flow entry.")]
@@ -32,7 +32,7 @@ fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
     };
 
     #[action("Finish.")]
-    let result = |taken, &log| log.get();
+    let end = |taken, &log| log.get();
 }
 
 #[test]

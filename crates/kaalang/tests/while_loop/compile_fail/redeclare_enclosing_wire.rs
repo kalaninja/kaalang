@@ -8,7 +8,7 @@ fn invalid(flag: bool) {
         let flag = || false;
     }
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

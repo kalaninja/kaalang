@@ -18,10 +18,10 @@ fn classify(seed: u32, limit: u32) -> u32 {
     let (accepted, rejected) = |&total, &limit| *total > *limit;
 
     #[action("Keep the accepted total.")]
-    let result = |accepted, total| total;
+    let end = |accepted, total| total;
 
     #[action("Keep the rejected total.")]
-    let result = |rejected, total| total;
+    let end = |rejected, total| total;
 }
 
 #[test]

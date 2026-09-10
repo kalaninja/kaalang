@@ -20,7 +20,7 @@ fn invalid(condition: bool) -> u32 {
     let noted = |local_note| { let _ = local_note; };
 
     #[action("Finish.")]
-    let result = |used, noted| { used };
+    let end = |used, noted| { used };
 }
 
 fn main() {}

@@ -12,7 +12,7 @@ fn invalid(condition: bool) -> u32 {
     let continuation = |no| { () };
 
     #[action("Use both values.")]
-    let result = |selected, continuation| { selected };
+    let end = |selected, continuation| { selected };
 }
 
 fn main() {}

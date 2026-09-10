@@ -6,7 +6,7 @@ fn invalid(input: u32) {
     let (large, small) = |&input| { *input > 10 };
 
     #[action("Handle only the large input.")]
-    let result = |large, input| { drop(input) };
+    let end = |large, input| { drop(input) };
 }
 
 fn main() {}

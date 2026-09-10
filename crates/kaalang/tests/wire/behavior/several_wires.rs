@@ -12,7 +12,7 @@ fn several_wires(condition: bool) -> (u32, &'static str) {
     let (number, label) = |no| (2, "no");
 
     #[action("Use both selected values.")]
-    let result = |label, number| (number, label);
+    let end = |label, number| (number, label);
 }
 
 #[test]

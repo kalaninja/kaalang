@@ -14,7 +14,7 @@ fn nested_loop_tail(mut count: usize, limit: usize) -> usize {
     }
 
     #[action("Return the count.")]
-    let result = |count| count;
+    let end = |count| count;
 }
 
 #[test]

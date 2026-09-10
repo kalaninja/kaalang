@@ -13,19 +13,19 @@ fn run_choice(value: i32, branch_action_count: &mut usize) -> &'static str {
     };
 
     #[action("Produce the negative result.")]
-    let result = |negative, branch_action_count| {
+    let end = |negative, branch_action_count| {
         *branch_action_count += 1;
         "negative"
     };
 
     #[action("Produce the zero result.")]
-    let result = |zero, branch_action_count| {
+    let end = |zero, branch_action_count| {
         *branch_action_count += 1;
         "zero"
     };
 
     #[action("Produce the positive result.")]
-    let result = |positive, branch_action_count| {
+    let end = |positive, branch_action_count| {
         *branch_action_count += 1;
         "positive"
     };

@@ -25,7 +25,7 @@ fn local_work_before_a_wire_merge(condition: bool, order: &Cell<u8>) -> u32 {
     };
 
     #[action("Finish once the merged value and the note are both in.")]
-    let result = |used, noted| used;
+    let end = |used, noted| used;
 }
 
 #[test]

@@ -9,7 +9,7 @@ fn invalid(input: u32) -> u32 {
     let shared = |shared| { shared };
 
     #[action("Use the wire.")]
-    let result = |shared| { shared };
+    let end = |shared| { shared };
 }
 
 fn main() {}

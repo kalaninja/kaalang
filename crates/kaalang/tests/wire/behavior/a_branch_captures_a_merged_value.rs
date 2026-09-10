@@ -15,10 +15,10 @@ fn a_branch_captures_a_merged_value(amount: u8, verbose: bool) -> u8 {
     let (report, quiet) = |verbose| verbose;
 
     #[action("Report the counted amount.")]
-    let result = |report, counted| counted;
+    let end = |report, counted| counted;
 
     #[action("Report nothing.")]
-    let result = |quiet, seen| 0u8;
+    let end = |quiet, seen| 0u8;
 }
 
 #[test]

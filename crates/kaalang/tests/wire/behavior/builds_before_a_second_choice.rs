@@ -34,13 +34,13 @@ fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
     };
 
     #[action("Finish X.")]
-    let result = |x, value| value + 10;
+    let end = |x, value| value + 10;
 
     #[action("Finish Y.")]
-    let result = |y, value| value + 20;
+    let end = |y, value| value + 20;
 
     #[action("Finish Z.")]
-    let result = |z, value| value + 30;
+    let end = |z, value| value + 30;
 }
 
 #[test]

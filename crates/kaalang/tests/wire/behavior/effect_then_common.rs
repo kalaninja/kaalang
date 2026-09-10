@@ -44,7 +44,7 @@ fn effect_then_common(flag: bool) -> u8 {
     };
 
     #[action("Finish.")]
-    let result = |value, stamp| {
+    let end = |value, stamp| {
         record("finish");
         value + stamp
     };

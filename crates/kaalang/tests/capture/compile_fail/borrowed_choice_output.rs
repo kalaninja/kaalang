@@ -13,10 +13,10 @@ fn invalid(input: Option<u8>) -> u8 {
     };
 
     #[action("Borrow the supplied value.")]
-    let result = |&value| { *value * 2 };
+    let end = |&value| { *value * 2 };
 
     #[action("Produce the absent result.")]
-    let result = |absent| { 0 };
+    let end = |absent| { 0 };
 }
 
 fn main() {}

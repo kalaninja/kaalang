@@ -9,7 +9,7 @@ fn invalid(condition: bool) -> u32 {
     let selected = |yes| { 1 };
 
     #[action("Use the selected value.")]
-    let result = |selected| { selected };
+    let end = |selected| { selected };
 
     #[action("Build the later alternative.")]
     let selected = |no| { 2 };

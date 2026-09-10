@@ -3,10 +3,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn capture_from_a_branch(condition: bool) {
     #[question("Is the short answer enough?")]
-    let (result, more) = |condition| condition;
+    let (end, more) = |condition| condition;
 
     #[action("Work out the longer answer.")]
-    let result = |more| {};
+    let end = |more| {};
 }
 
 #[test]

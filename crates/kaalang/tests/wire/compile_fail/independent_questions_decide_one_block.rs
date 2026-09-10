@@ -24,16 +24,16 @@ fn invalid(left: bool, right: bool) -> u8 {
     let right_absent = |right_no| { 0u8 };
 
     #[action("Use both notes.")]
-    let result = |left_note, right_note| { left_note + right_note };
+    let end = |left_note, right_note| { left_note + right_note };
 
     #[action("Use the left note only.")]
-    let result = |left_note, right_absent| { left_note + right_absent };
+    let end = |left_note, right_absent| { left_note + right_absent };
 
     #[action("Use the right note only.")]
-    let result = |left_absent, right_note| { left_absent + right_note };
+    let end = |left_absent, right_note| { left_absent + right_note };
 
     #[action("Use neither note.")]
-    let result = |left_absent, right_absent| { left_absent + right_absent };
+    let end = |left_absent, right_absent| { left_absent + right_absent };
 }
 
 fn main() {}

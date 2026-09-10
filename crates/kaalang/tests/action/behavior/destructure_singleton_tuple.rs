@@ -9,7 +9,7 @@ fn destructure_singleton_tuple(input: u32) -> u32 {
     |&mut value| *value += 1;
 
     #[action("Return the changed value.")]
-    let result = |value| value;
+    let end = |value| value;
 }
 
 #[test]

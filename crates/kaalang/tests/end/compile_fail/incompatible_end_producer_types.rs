@@ -6,10 +6,10 @@ fn invalid(condition: bool) -> u32 {
     let (yes, no) = |condition| { condition };
 
     #[action("Build a number.")]
-    let result = |yes| { 1_u32 };
+    let end = |yes| { 1_u32 };
 
     #[action("Build text.")]
-    let result = |no| { "no" };
+    let end = |no| { "no" };
 }
 
 fn main() {}

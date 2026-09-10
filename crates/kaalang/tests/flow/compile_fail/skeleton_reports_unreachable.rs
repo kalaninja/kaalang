@@ -8,7 +8,7 @@ fn skeleton(seed: u32) -> u32 {
     let started = |&seed| { todo!() };
 
     #[action("Produce the result.")]
-    let result = |started| { started };
+    let end = |started| { started };
 }
 
 fn main() {

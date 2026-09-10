@@ -14,10 +14,10 @@ fn invalid(condition: bool) -> u8 {
     let (value, no_gate) = |no| { (2u8, ()) };
 
     #[action("Use the value inside the yes branch.")]
-    let result = |value, yes_gate| { value };
+    let end = |value, yes_gate| { value };
 
     #[action("Use the value inside the no branch.")]
-    let result = |value, no_gate| { value };
+    let end = |value, no_gate| { value };
 }
 
 fn main() {}

@@ -9,7 +9,7 @@ fn mutable_borrow_after_move(mut text: String) -> usize {
     };
 
     #[action("Try to mutate the moved wire.")]
-    let result = |&mut text, moved| {
+    let end = |&mut text, moved| {
         text.push('?');
         moved.len()
     };

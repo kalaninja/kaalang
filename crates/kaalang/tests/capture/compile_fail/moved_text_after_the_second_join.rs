@@ -26,7 +26,7 @@ fn invalid(condition: bool, long: bool) -> usize {
     let selected = |no, length| { length };
 
     #[action("Use the moved text after the join.")]
-    let result = |selected, text| { selected + text.len() };
+    let end = |selected, text| { selected + text.len() };
 }
 
 fn main() {}

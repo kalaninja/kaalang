@@ -5,7 +5,7 @@ fn invalid(text: String) {
     #[question("Repeat?")]
     while (|text| !text.is_empty()) {}
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

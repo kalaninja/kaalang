@@ -39,7 +39,7 @@ fn mutate_in_selections(mut text: String, count: u8, mode: u8) -> String {
     let selected = |no| String::from("skip");
 
     #[action("Return the text and selected suffix.")]
-    let result = |text, selected| text + &selected;
+    let end = |text, selected| text + &selected;
 }
 
 #[test]

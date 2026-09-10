@@ -6,7 +6,7 @@ fn split_nested_tuple(input: u32) -> ((u32, u32), u32) {
     let (out1, out2) = |input| ((input, input + 1), input + 2);
 
     #[action("Produce the result pair.")]
-    let result = |out1, out2| (out1, out2);
+    let end = |out1, out2| (out1, out2);
 }
 
 #[test]

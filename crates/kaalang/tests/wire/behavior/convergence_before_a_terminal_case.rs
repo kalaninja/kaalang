@@ -19,10 +19,10 @@ fn convergence_before_a_terminal_case(case: u8) -> u32 {
     let selected = |second| 2;
 
     #[action("Produce the direct result.")]
-    let result = |done| 99;
+    let end = |done| 99;
 
     #[action("Use a value from a continuing branch.")]
-    let result = |selected| selected * 10;
+    let end = |selected| selected * 10;
 }
 
 #[test]

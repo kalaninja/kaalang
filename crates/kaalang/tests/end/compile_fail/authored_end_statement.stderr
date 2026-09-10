@@ -1,4 +1,4 @@
-error: a kaalang flow has no end statement; the block that produces the `result` wire finishes it
+error: a kaalang flow has no end statement; the block that produces the `end` wire finishes it
  --> tests/end/compile_fail/authored_end_statement.rs:8:5
   |
 8 |     #[end]

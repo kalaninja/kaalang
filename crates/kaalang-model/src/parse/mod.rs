@@ -55,7 +55,7 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
 }
 
 /// Parses every function-body statement as one kaalang block, then appends the
-/// implicit end block that captures the flow's `result` wire.
+/// implicit end block that captures the flow's `end` wire.
 fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
     let mut blocks = Vec::new();
     statements(&function.block.stmts, None, &mut blocks)?;
@@ -527,7 +527,7 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::{block_input, block_outputs, flow};
-    use crate::model::{BlockKind, RESULT_WIRE};
+    use crate::model::{BlockKind, END_WIRE};
 
     #[test]
     fn captures_preserve_borrowing_mutability_and_authored_spelling() {
@@ -586,11 +586,11 @@ mod tests {
     }
 
     #[test]
-    fn every_flow_ends_with_an_implicit_block_capturing_the_result_wire() {
+    fn every_flow_ends_with_an_implicit_block_capturing_the_end_wire() {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
                 #[action("Double the input.")]
-                let result = |input| { input * 2 };
+                let end = |input| { input * 2 };
             }
         };
 
@@ -607,7 +607,7 @@ mod tests {
         };
         assert!(!captured.borrowed);
         assert!(!captured.mutable);
-        assert_eq!(captured.ident, RESULT_WIRE);
+        assert_eq!(captured.ident, END_WIRE);
     }
 
     #[test]
@@ -615,16 +615,16 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
                 #[action("Double the input.")]
-                let result = |input| { input * 2 };
+                let end = |input| { input * 2 };
 
                 #[end]
-                |result| {};
+                |end| {};
             }
         };
 
         assert_eq!(
             error(&function),
-            "a kaalang flow has no end statement; the block that produces the `result` wire finishes it"
+            "a kaalang flow has no end statement; the block that produces the `end` wire finishes it"
         );
     }
 
@@ -636,7 +636,7 @@ mod tests {
                     #[action("Take the input without producing a wire.")]
                     let () = |input| { drop(input) };
                     #[action("Finish.")]
-                    let result = || {};
+                    let end = || {};
                 }
             },
             parse_quote! {
@@ -644,7 +644,7 @@ mod tests {
                     #[action("Take the input without producing a wire.")]
                     |input| { drop(input) };
                     #[action("Finish.")]
-                    let result = || {};
+                    let end = || {};
                 }
             },
         ] {
@@ -659,7 +659,7 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
                 #[action("Double the input.")]
-                let result = |input| input * 2;
+                let end = |input| input * 2;
             }
         };
 
@@ -683,7 +683,7 @@ mod tests {
             let function = parse_quote! {
                 fn invalid(input: Option<u32>) -> u32 {
                     #[action("Attempt a control transfer.")]
-                    let result = |input| #body;
+                    let end = |input| #body;
                 }
             };
             assert_eq!(error(&function), diagnostic);

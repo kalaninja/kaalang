@@ -121,17 +121,16 @@ return type preceded by `->`, and `-> ()` when the function declares none. A
 diagram has no separate return node.
 
 The end node's label names the type. Its incoming connection does not name the
-`result` wire: every connection reaching end carries that wire, so the endpoint
+`end` wire: every connection reaching end carries that wire, so the endpoint
 already identifies it. The end node remains an ordinary consumer: alternative
-producers of `result` merge above it (section 7), and it is not itself the
-merge.
+producers of `end` merge above it (section 7), and it is not itself the merge.
 
 ## 5. Flow inputs and outputs
 
 The parameter panel shows every flow input with its Rust type. Every named flow
 input is also shown as an output of the start node, even if no block captures
 it. A wildcard flow input produces no wire label. A zero-computation flow is the
-start node connected to the end node by the `result` wire a flow input provides.
+start node connected to the end node by the `end` wire a flow input provides.
 
 ## 6. Wires and labels
 
@@ -145,11 +144,11 @@ An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
 is shared with a later capture or moved to an implicit merge.
 
-Every named flow input and every block output except `result` is labeled once at
+Every named flow input and every block output except `end` is labeled once at
 the exit that provides it, or by a shared label as defined below, except for a
-question output replaced by its branch description. The `result` wire and its
+question output replaced by its branch description. The `end` wire and its
 terminal merge are unlabeled because every route carrying it finishes at end.
-When `result` is one part of a multi-output hand-over, the other outputs remain
+When `end` is one part of a multi-output hand-over, the other outputs remain
 labeled in declaration order. This includes an intentionally unused wire whose
 name begins with `_`. The labels at one exit form its hand-over. The start node
 hands over its named flow inputs in signature order, an action hands over all
@@ -162,7 +161,7 @@ next node captures every named wire.
 A hand-over displays each producer's authored mutability as `name` or
 `mut name`, including named flow inputs. This is permission to mutably borrow
 the wire, not a capture. Alternative producers declare the same mutability and
-retain it in shared merge labels. The `result` wire remains unlabeled even when
+retain it in shared merge labels. The `end` wire remains unlabeled even when
 declared with `mut`; an authored question-branch description still replaces its
 output label.
 
@@ -197,7 +196,7 @@ different hand-over remains at its own exit. The shared label represents the
 alternative hand-overs, not a new producer at the junction. If the merge has one
 outgoing connection, it is the sole connection entering its consumer, and that
 consumer's capture list matches the shared hand-over, the same label also
-represents the capture. The terminal `result` merge is instead unlabeled, as
+represents the capture. The terminal `end` merge is instead unlabeled, as
 described above.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
@@ -220,8 +219,8 @@ Wire production and implicit merges also establish the precedence defined by RFC
 0001 §7: a merge follows every producer and every block it closes, and precedes
 every block that captures the merged wire. These orderings participate in the
 same per-execution reduction as capture dependencies. RFC 0001 makes the
-producer of `result` the last participating block, so every other node precedes
-the end node.
+producer of `end` the last participating block, so every other node precedes the
+end node.
 
 Source order supplies the serial order of participating blocks. For each
 execution, add precedence from start to its first computational block, between
@@ -286,7 +285,7 @@ logical wire name once.
 
 For a while, apply the forward dependency and serial-order rules to zero
 iterations and one representative iteration followed by normal exit, or by
-`result`. These finite summaries retain every branch and capture route without
+`end`. These finite summaries retain every branch and capture route without
 unrolling runtime iterations. Insert an iteration tail at each normal body end.
 The tail's precedence over the after-loop continuation constrains layout only;
 it is not a drawn control connection. Carry that precedence through the no
@@ -324,8 +323,8 @@ including any nested question or choice. Later sibling branches start to the
 right of that whole area, even when the shared continuation is wider than the
 group's incoming branches.
 
-Alternative producers of `result` meet at their implicit merge above the end
-node, mirroring the distributor that fans a select node out to its case nodes.
+Alternative producers of `end` meet at their implicit merge above the end node,
+mirroring the distributor that fans a select node out to its case nodes.
 Connection routes are simple: they do not intersect or overlap themselves. They
 do not cross one another or pass through a non-endpoint node. Meeting at a
 common endpoint or deliberately sharing a collinear segment is not a crossing;

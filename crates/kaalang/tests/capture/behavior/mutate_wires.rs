@@ -29,7 +29,7 @@ fn mutate_wires(mut r#type: String, count: u32) -> (String, u32, usize) {
     };
 
     #[action("Return the changed wires.")]
-    let result = |text, total, length| (text, total, length);
+    let end = |text, total, length| (text, total, length);
 }
 
 #[test]

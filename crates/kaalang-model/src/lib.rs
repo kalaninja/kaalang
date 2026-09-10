@@ -161,30 +161,30 @@ mod tests {
     }
 
     #[test]
-    fn a_flow_input_named_result_needs_no_computational_block() {
+    fn a_flow_input_named_end_needs_no_computational_block() {
         let function: ItemFn = parse_quote! {
-            fn identity(result: u8) -> u8 {}
+            fn identity(end: u8) -> u8 {}
         };
 
         let model = build(&function).expect("the zero-computation flow is valid");
-        assert_eq!(model.flow.flow_inputs, ["result"]);
+        assert_eq!(model.flow.flow_inputs, ["end"]);
         assert_eq!(model.flow.blocks.len(), 1);
         assert_eq!(model.executions.len(), 1);
         assert!(model.executions[0].blocks.is_empty());
         assert_eq!(model.executions[0].dependencies.len(), 1);
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::EndArrival { result } if result == "result"
+            ExecutionPlan::EndArrival { wire } if wire == "end"
         ));
     }
 
     #[test]
-    fn a_flow_that_produces_no_result_is_rejected() {
+    fn a_flow_that_produces_no_end_is_rejected() {
         assert_eq!(
             message(&parse_quote! {
                 fn nothing() {}
             }),
-            "a kaalang flow must produce its `result` wire"
+            "a kaalang flow must produce its `end` wire"
         );
     }
 
@@ -193,7 +193,7 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn discard(_: u8, _value: u8) {
                 #[action("Finish without the flow inputs.")]
-                let result = || {};
+                let end = || {};
             }
         };
 
@@ -223,10 +223,10 @@ mod tests {
                 };
 
                 #[action("Use the first path")]
-                let result = |left| { left };
+                let end = |left| { left };
 
                 #[action("Use the second path")]
-                let result = |right| { right };
+                let end = |right| { right };
             }
         };
 
@@ -276,7 +276,7 @@ mod tests {
                 let selected = |no| { 2 };
 
                 #[action("Use the selected value")]
-                let result = |selected| { selected };
+                let end = |selected| { selected };
             }
         };
 
@@ -342,7 +342,7 @@ mod tests {
                 let (first, second) = |no| { (3, 4) };
 
                 #[action("Use the selected values")]
-                let result = |second, first| { (first, second) };
+                let end = |second, first| { (first, second) };
             }
         };
 
@@ -377,7 +377,7 @@ mod tests {
                 let second = |&input| { *input + 1 };
 
                 #[action("Pair the two results")]
-                let result = |first, second| { (first, second) };
+                let end = |first, second| { (first, second) };
             }
         };
 
@@ -408,9 +408,9 @@ mod tests {
                 #[question("Choose the left path")]
                 let (a, b) = |left| { left };
                 #[action("Use the left path")]
-                let result = |a, value| { value + 1 };
+                let end = |a, value| { value + 1 };
                 #[action("Use the other left path")]
-                let result = |b, value| { value + 2 };
+                let end = |b, value| { value + 2 };
             }
         };
 
@@ -436,10 +436,10 @@ mod tests {
                 let (yes, no) = |condition| { condition };
 
                 #[action("Use it on the yes branch")]
-                let result = |yes, &prepared| { *prepared };
+                let end = |yes, &prepared| { *prepared };
 
                 #[action("Use it on the no branch")]
-                let result = |no, prepared| { prepared + 1 };
+                let end = |no, prepared| { prepared + 1 };
             }
         };
 
@@ -478,13 +478,13 @@ mod tests {
                 let selected = |second| { 2 };
 
                 #[action("Produce the terminal result")]
-                let result = |third| { 3 };
+                let end = |third| { 3 };
 
                 #[action("Produce the selected result")]
-                let result = |selected| { selected };
+                let end = |selected| { selected };
 
                 #[action("Produce the no-branch result")]
-                let result = |no| { 0 };
+                let end = |no| { 0 };
             }
         };
 
@@ -554,7 +554,7 @@ mod tests {
 
     /// The second question opens its own branches while the first question's
     /// are still separate, which is reported before the three executions that
-    /// would leave the flow without its `result` wire.
+    /// would leave the flow without its `end` wire.
     #[test]
     fn rejects_a_conjunction_of_independent_branch_outputs() {
         let function: ItemFn = parse_quote! {
@@ -564,7 +564,7 @@ mod tests {
                 #[question("Right?")]
                 let (c, _d) = |right| { right };
                 #[action("Both")]
-                let result = |a, c| { 1u8 };
+                let end = |a, c| { 1u8 };
             }
         };
 
@@ -604,13 +604,13 @@ mod tests {
                 let (shared, borrow_gate) = |yes| { ((), ()) };
 
                 #[action("Consume the nested control")]
-                let result = |shared, branch_gate| { 1u8 };
+                let end = |shared, branch_gate| { 1u8 };
 
                 #[action("Consume the other nested control")]
-                let result = |skip, branch_gate| { 2u8 };
+                let end = |skip, branch_gate| { 2u8 };
 
                 #[action("Borrow only the action output")]
-                let result = |&shared, borrow_gate| { 3u8 };
+                let end = |&shared, borrow_gate| { 3u8 };
             }
         };
 
@@ -647,7 +647,7 @@ mod tests {
                 let left = |b| { 2 };
 
                 #[action("Produce the terminal result")]
-                let result = |done| { 3 };
+                let end = |done| { 3 };
 
                 #[action("Build the right value from c")]
                 let right = |c| { 4 };
@@ -656,10 +656,10 @@ mod tests {
                 let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                let result = |left| { left };
+                let end = |left| { left };
 
                 #[action("Use the right value")]
-                let result = |right| { right };
+                let end = |right| { right };
             }
         };
 
@@ -784,7 +784,7 @@ mod tests {
                 };
 
                 #[action("Produce the first terminal result")]
-                let result = |first| { 0 };
+                let end = |first| { 0 };
 
                 #[action("Build the left value from a")]
                 let left = |a| { 1 };
@@ -793,7 +793,7 @@ mod tests {
                 let left = |b| { 2 };
 
                 #[action("Produce the terminal result between the groups")]
-                let result = |between| { 3 };
+                let end = |between| { 3 };
 
                 #[action("Build the right value from c")]
                 let right = |c| { 4 };
@@ -802,10 +802,10 @@ mod tests {
                 let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                let result = |left| { left };
+                let end = |left| { left };
 
                 #[action("Use the right value")]
-                let result = |right| { right };
+                let end = |right| { right };
             }
         };
 
@@ -861,7 +861,7 @@ mod tests {
                 let selected = |no, &prepared| { *prepared + 1 };
 
                 #[action("Combine the selected and prepared values")]
-                let result = |selected, prepared| { selected + prepared };
+                let end = |selected, prepared| { selected + prepared };
             }
         };
 
@@ -903,7 +903,7 @@ mod tests {
                 let (selected, _tag) = |no| { (2, 2u8) };
 
                 #[action("Use the selected value")]
-                let result = |selected| { selected };
+                let end = |selected| { selected };
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -922,10 +922,10 @@ mod tests {
                 let (selected, _tag) = |yes| { (1, 1u8) };
 
                 #[action("Build the no result")]
-                let (result, _tag) = |no| { (2, 2u8) };
+                let (end, _tag) = |no| { (2, 2u8) };
 
                 #[action("Use the selected value")]
-                let result = |selected| { selected };
+                let end = |selected| { selected };
             }
         };
         let ExecutionPlan::End { gates, .. } =

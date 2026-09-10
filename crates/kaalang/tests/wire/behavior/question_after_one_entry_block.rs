@@ -21,10 +21,10 @@ fn question_after_one_entry_block(condition: bool) -> u32 {
     let (large, small) = |first| first > 10;
 
     #[action("Combine a large first value with the second.")]
-    let result = |large, second| second + 100;
+    let end = |large, second| second + 100;
 
     #[action("Combine a small first value with the second.")]
-    let result = |small, second| second;
+    let end = |small, second| second;
 }
 
 #[test]

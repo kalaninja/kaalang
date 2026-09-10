@@ -23,7 +23,7 @@ fn two_merges_before_one_finish(left: bool, right: bool) -> u8 {
     let seen = |right_no| 20u8;
 
     #[action("Finish with both merged values.")]
-    let result = |counted, seen| counted + seen;
+    let end = |counted, seen| counted + seen;
 }
 
 #[test]

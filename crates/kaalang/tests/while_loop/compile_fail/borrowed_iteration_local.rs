@@ -7,10 +7,10 @@ fn invalid(flag: bool) -> &'static str {
         #[action("Create the local owner.")]
         let text = || String::from("local");
         #[action("Return a reference to the local owner.")]
-        let result = |&text| text.as_str();
+        let end = |&text| text.as_str();
     }
     #[action("Return a static value.")]
-    let result = || "static";
+    let end = || "static";
 }
 
 fn main() {}

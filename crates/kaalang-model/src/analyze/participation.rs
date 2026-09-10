@@ -106,9 +106,9 @@ mod tests {
                 vec![],     // the outer question
                 vec![0],    // prepare the nested values
                 vec![0],    // the nested question
-                vec![0, 2], // the early result
-                vec![0, 2], // the late result with the extra value
-                vec![0],    // the direct result
+                vec![0, 2], // the early end
+                vec![0, 2], // the late end with the extra value
+                vec![0],    // the direct end
             ]
         );
     }

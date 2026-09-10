@@ -21,7 +21,7 @@ pub(super) fn adjust(scene: &mut Scene) {
     let terminal = match incoming.as_slice() {
         [edge] => match edge.source {
             Source::Junction(junction)
-                if scene.topology.junctions[junction].wires == ["result"]
+                if scene.topology.junctions[junction].wires == ["end"]
                     && scene
                         .topology
                         .outgoing(Destination::Junction(junction))

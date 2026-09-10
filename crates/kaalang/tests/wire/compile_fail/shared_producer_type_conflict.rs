@@ -9,13 +9,13 @@ fn invalid(condition: bool) -> u32 {
     let (narrow, wide) = |condition| { condition };
 
     #[action("Use it as a byte.")]
-    let result = |narrow, shared| {
+    let end = |narrow, shared| {
         let byte: u8 = shared;
         u32::from(byte)
     };
 
     #[action("Use it as a word.")]
-    let result = |wide, shared| {
+    let end = |wide, shared| {
         let word: u16 = shared;
         u32::from(word)
     };

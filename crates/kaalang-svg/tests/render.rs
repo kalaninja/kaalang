@@ -25,10 +25,10 @@ const SOURCE: &str = r#"
         let gauged = |depth| { depth };
 
         #[action("Finish from the near lane.")]
-        let result = |measured, gauged| { measured + gauged };
+        let end = |measured, gauged| { measured + gauged };
 
         #[action("Finish from the far lane.")]
-        let result = |far| { 9u8 };
+        let end = |far| { 9u8 };
     }
 "#;
 
@@ -186,12 +186,9 @@ fn the_description_names_every_role_and_label_once() {
 #[test]
 fn the_end_description_omits_the_arrow_regardless_of_spacing() {
     for output in ["->u8", "-> u8", "->\n\tu8"] {
-        let source = format!("#[kaalang] fn example(result: u8){output} {{}}");
+        let source = format!("#[kaalang] fn example(end: u8){output} {{}}");
         let svg = render_source(&source, "example").unwrap();
-        assert!(
-            describe(&svg).contains("End: u8 capturing result"),
-            "{output}"
-        );
+        assert!(describe(&svg).contains("End: u8 capturing end"), "{output}");
     }
 }
 

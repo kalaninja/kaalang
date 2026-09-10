@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid((left, right): (u32, u32)) -> u32 {
     #[action("Add both halves.")]
-    let result = |left, right| { left + right };
+    let end = |left, right| { left + right };
 }
 
 fn main() {}

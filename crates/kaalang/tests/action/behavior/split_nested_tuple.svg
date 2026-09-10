@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="526" viewBox="0 0 680 526" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for split_nested_tuple</title>
-  <desc id="kaalang-description">Nodes: Start: split_nested_tuple with parameters input: u32 handing over input; Action: Build two outputs, including a tuple. capturing input handing over out1, out2; Action: Produce the result pair. capturing out1, out2 handing over result; End: ((u32, u32), u32) capturing result. Connections: Start: split_nested_tuple to Action: Build two outputs, including a tuple.; Action: Build two outputs, including a tuple. to Action: Produce the result pair.; Action: Produce the result pair. to End: ((u32, u32), u32).</desc>
+  <desc id="kaalang-description">Nodes: Start: split_nested_tuple with parameters input: u32 handing over input; Action: Build two outputs, including a tuple. capturing input handing over out1, out2; Action: Produce the result pair. capturing out1, out2 handing over end; End: ((u32, u32), u32) capturing end. Connections: Start: split_nested_tuple to Action: Build two outputs, including a tuple.; Action: Build two outputs, including a tuple. to Action: Produce the result pair.; Action: Produce the result pair. to End: ((u32, u32), u32).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }

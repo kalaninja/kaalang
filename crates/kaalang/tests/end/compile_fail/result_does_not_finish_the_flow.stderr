@@ -1,0 +1,5 @@
+error: a kaalang flow must produce its `end` wire
+ --> tests/end/compile_fail/result_does_not_finish_the_flow.rs:4:4
+  |
+4 | fn invalid() {
+  |    ^^^^^^^

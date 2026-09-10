@@ -27,7 +27,7 @@ fn successive_selections_move_a_string(condition: bool, long: bool) -> usize {
     let selected = |no, length| length * 100;
 
     #[action("Finish with the selected length.")]
-    let result = |selected| selected;
+    let end = |selected| selected;
 }
 
 #[test]

@@ -11,10 +11,10 @@ fn run_choice_with_guard(value: i32) -> i32 {
     };
 
     #[action("Produce the positive-even result.")]
-    let result = |positive_even| positive_even;
+    let end = |positive_even| positive_even;
 
     #[action("Produce the other result.")]
-    let result = |other| 0;
+    let end = |other| 0;
 }
 
 #[test]

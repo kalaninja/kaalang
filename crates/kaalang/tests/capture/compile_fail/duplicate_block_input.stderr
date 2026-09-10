@@ -1,5 +1,5 @@
 error: duplicate kaalang block input
- --> tests/capture/compile_fail/duplicate_block_input.rs:6:26
+ --> tests/capture/compile_fail/duplicate_block_input.rs:6:23
   |
-6 |     let result = |value, value| { value * 2 };
-  |                          ^^^^^
+6 |     let end = |value, value| { value * 2 };
+  |                       ^^^^^

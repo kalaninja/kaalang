@@ -15,7 +15,7 @@ fn local_mutability_of_outputs(input: String, number: u32) -> (String, u32, u32)
     };
 
     #[action("Return both counts and the changed text.")]
-    let mut result = |changed, incremented, count| (changed, incremented, count);
+    let mut end = |changed, incremented, count| (changed, incremented, count);
 }
 
 #[test]

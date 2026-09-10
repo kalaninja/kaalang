@@ -14,7 +14,7 @@ fn invalid(condition: bool, common: String) -> String {
     let selected = |no, &common| { common.clone() };
 
     #[action("Use the selected and common wires.")]
-    let result = |selected, common| { format!("{common}:{selected}") };
+    let end = |selected, common| { format!("{common}:{selected}") };
 }
 
 fn main() {}

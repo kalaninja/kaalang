@@ -8,7 +8,7 @@ fn invalid(mut count: usize) {
         || { count -= 1; };
     }
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

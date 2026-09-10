@@ -6,10 +6,10 @@ fn inconsistent_output_mutability(condition: bool) -> u32 {
     let (yes, no) = |condition| { condition };
 
     #[action("Produce a mutable unused wire.")]
-    let (mut _value, result) = |yes| { (1, 1) };
+    let (mut _value, end) = |yes| { (1, 1) };
 
     #[action("Produce an immutable alternative with the same logical name.")]
-    let (r#_value, result) = |no| { (2, 2) };
+    let (r#_value, end) = |no| { (2, 2) };
 }
 
 fn main() {}

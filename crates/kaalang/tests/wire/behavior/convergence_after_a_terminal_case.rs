@@ -13,7 +13,7 @@ fn convergence_after_a_terminal_case(value: i8) -> &'static str {
     };
 
     #[action("Produce the direct result.")]
-    let result = |done| "done";
+    let end = |done| "done";
 
     #[action("Build the left value.")]
     let selected = |left| "left";
@@ -22,7 +22,7 @@ fn convergence_after_a_terminal_case(value: i8) -> &'static str {
     let selected = |right| "right";
 
     #[action("Use the selected value.")]
-    let result = |selected| selected;
+    let end = |selected| selected;
 }
 
 #[test]

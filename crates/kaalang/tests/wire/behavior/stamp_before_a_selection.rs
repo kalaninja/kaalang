@@ -12,10 +12,10 @@ fn stamp_before_a_selection(flag: bool) -> u64 {
     let (yes, no) = |flag| flag;
 
     #[action("Finish with the stamp.")]
-    let result = |yes, stamp| stamp;
+    let end = |yes, stamp| stamp;
 
     #[action("Finish without it.")]
-    let result = |no| 0;
+    let end = |no| 0;
 }
 
 #[test]

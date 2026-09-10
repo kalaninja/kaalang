@@ -7,10 +7,10 @@ fn skeleton(seed: u32) -> u32 {
     let (accepted, rejected) = |&seed| todo!();
 
     #[action("Keep the accepted seed.")]
-    let result = |accepted, seed| todo!();
+    let end = |accepted, seed| todo!();
 
     #[action("Keep the rejected seed.")]
-    let result = |rejected, seed| todo!();
+    let end = |rejected, seed| todo!();
 }
 
 #[test]

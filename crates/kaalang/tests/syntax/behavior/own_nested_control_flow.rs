@@ -6,7 +6,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn own_nested_control_flow(input: u32) -> u32 {
     #[action("Combine values from constructs that own their control flow.")]
-    let result = |input| {
+    let end = |input| {
         // Lowering binds the inputs ahead of the authored statements, so an item
         // written first in the body would still follow a statement and trip
         // `clippy::items_after_statements`. Its own block keeps it first.

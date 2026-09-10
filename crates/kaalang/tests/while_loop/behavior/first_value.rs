@@ -5,10 +5,10 @@ fn first_value(values: &[i32]) -> Option<i32> {
     #[question("Is there a first value?")]
     while (|values| !values.is_empty()) {
         #[action("Return the first value.")]
-        let result = |values| Some(values[0]);
+        let end = |values| Some(values[0]);
     }
     #[action("No first value exists.")]
-    let result = || None;
+    let end = || None;
 }
 
 #[test]

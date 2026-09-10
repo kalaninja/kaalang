@@ -22,13 +22,13 @@ fn expression_bodies(input: Option<u32>, visits: &Cell<u32>) -> u32 {
     let (positive, zero) = |&number| *number > 0;
 
     #[action("Double the positive value.")]
-    let result = |positive, number| number * 2;
+    let end = |positive, number| number * 2;
 
     #[action("Return zero.")]
-    let result = |zero| 0;
+    let end = |zero| 0;
 
     #[action("Return the default.")]
-    let result = |absent| 1;
+    let end = |absent| 1;
 }
 
 #[test]

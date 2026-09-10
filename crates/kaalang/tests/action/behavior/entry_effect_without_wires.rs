@@ -13,10 +13,10 @@ fn entry_effect_without_wires() -> usize {
     };
 
     #[action("Report the count.")]
-    let result = || VISITS.load(Ordering::Relaxed);
+    let end = || VISITS.load(Ordering::Relaxed);
 }
 
 #[test]
-fn an_effect_with_no_wires_at_all_runs_before_the_result() {
+fn an_effect_with_no_wires_at_all_runs_before_the_end_wire() {
     assert_eq!(entry_effect_without_wires(), 1);
 }

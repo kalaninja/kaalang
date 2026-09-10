@@ -15,10 +15,10 @@ fn invalid(condition: bool) -> u32 {
     let stepped = |selected| { selected * 10 };
 
     #[action("Use the note after the shared step.")]
-    let result = |stepped, extra| { stepped + extra };
+    let end = |stepped, extra| { stepped + extra };
 
     #[action("Finish without the note.")]
-    let result = |stepped, plain| { stepped };
+    let end = |stepped, plain| { stepped };
 }
 
 fn main() {}

@@ -40,16 +40,16 @@ fn invalid(mode: u8, report: bool) -> u8 {
     let skipped = |no| { 20u8 };
 
     #[action("Finish the early half loudly.")]
-    let result = |early, kept| { early + kept };
+    let end = |early, kept| { early + kept };
 
     #[action("Finish the early half quietly.")]
-    let result = |early, skipped| { early + skipped };
+    let end = |early, skipped| { early + skipped };
 
     #[action("Finish the late half loudly.")]
-    let result = |late, kept| { late + kept };
+    let end = |late, kept| { late + kept };
 
     #[action("Finish the late half quietly.")]
-    let result = |late, skipped| { late + skipped };
+    let end = |late, skipped| { late + skipped };
 }
 
 fn main() {}

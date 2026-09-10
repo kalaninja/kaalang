@@ -1,5 +1,5 @@
 error: a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name
-  --> tests/wire/compile_fail/nested_local_capture_of_a_merged_wire.rs:23:19
+  --> tests/wire/compile_fail/nested_local_capture_of_a_merged_wire.rs:23:16
    |
-23 |     let result = |shared, early_gate| { shared };
-   |                   ^^^^^^
+23 |     let end = |shared, early_gate| { shared };
+   |                ^^^^^^

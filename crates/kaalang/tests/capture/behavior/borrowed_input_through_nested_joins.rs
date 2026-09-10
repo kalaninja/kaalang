@@ -23,7 +23,7 @@ fn borrowed_input_through_nested_joins(outer: bool, inner: bool, text: String) -
     let view = |fallback| "fallback";
 
     #[action("Measure the final view.")]
-    let result = |view| view.len();
+    let end = |view| view.len();
 }
 
 #[test]

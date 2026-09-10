@@ -13,7 +13,7 @@ fn invalid(input: i32) {
     };
 
     #[action("Handle only the negative input.")]
-    let result = |negative| { drop(negative) };
+    let end = |negative| { drop(negative) };
 }
 
 fn main() {}

@@ -29,7 +29,7 @@ fn invalid(source: u8) -> usize {
     let view = |fallback| { "fallback" };
 
     #[action("Measure the merged view.")]
-    let result = |view| { view.len() };
+    let end = |view| { view.len() };
 }
 
 fn main() {}

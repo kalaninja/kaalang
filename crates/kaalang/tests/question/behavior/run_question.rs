@@ -8,10 +8,10 @@ fn run_question(condition: bool) -> &'static str {
     let (no, yes) = |condition| condition;
 
     #[action("Produce the no result.")]
-    let result = |no| "no";
+    let end = |no| "no";
 
     #[action("Produce the yes result.")]
-    let result = |yes| "yes";
+    let end = |yes| "yes";
 }
 
 #[test]

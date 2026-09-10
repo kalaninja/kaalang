@@ -106,7 +106,7 @@ fn validate_nesting(
                 .collect::<BTreeSet<_>>())
         })
         .collect::<Result<Vec<_>>>()?;
-    let result = &flow.blocks[flow.blocks.len() - 1].inputs[0].ident;
+    let end_wire = &flow.blocks[flow.blocks.len() - 1].inputs[0].ident;
     let mut offending = None;
     for (index, context) in contexts.iter().enumerate() {
         let following = reachable(successors, flow.blocks.len() + index);
@@ -124,7 +124,7 @@ fn validate_nesting(
                     continue;
                 }
                 if let Some(later) = merges.iter().enumerate().position(|(later, merge)| {
-                    &merge.wire != result
+                    &merge.wire != end_wire
                         && following.contains(&(flow.blocks.len() + later))
                         && contexts[later].contains(&skip)
                 }) {
@@ -406,8 +406,8 @@ mod tests {
                 };
                 #[action("First value.")] let shared = |first| { 10u8 };
                 #[action("Second value.")] let shared = |second| { 20u8 };
-                #[action("Finish early.")] let result = |finish, seed| { seed };
-                #[action("Use the value.")] let result = |shared, seed| { shared + seed };
+                #[action("Finish early.")] let end = |finish, seed| { seed };
+                #[action("Use the value.")] let end = |shared, seed| { shared + seed };
             }
         };
         assert_eq!(
@@ -425,11 +425,11 @@ mod tests {
                 #[question("Add the marker?")]
                 let (mark, skip) = |nested, inner| { inner };
                 #[action("Mark the first branch.")]
-                let (_marker, result) = |mark| { ((), 1u8) };
+                let (_marker, end) = |mark| { ((), 1u8) };
                 #[action("Leave the marker absent.")]
-                let result = |skip| { 2u8 };
+                let end = |skip| { 2u8 };
                 #[action("Mark the last branch.")]
-                let (_marker, result) = |direct| { ((), 3u8) };
+                let (_marker, end) = |direct| { ((), 3u8) };
             }
         };
         assert_eq!(
@@ -455,7 +455,7 @@ mod tests {
                 #[action("Build the direct value.")]
                 let shared = |direct| { 3u8 };
                 #[action("Use the shared value.")]
-                let result = |shared| { shared };
+                let end = |shared| { shared };
             }
         };
         assert_eq!(merge(&function, "refined").after, [4]);
@@ -471,7 +471,7 @@ mod tests {
                 #[action("Produce the other value.")]
                 let shared = |no| { () };
                 #[action("Use the merged value.")]
-                let result = |shared| { 0u8 };
+                let end = |shared| { 0u8 };
             }
         };
         let merge = merge(&function, "shared");
@@ -490,7 +490,7 @@ mod tests {
                 #[action("Borrow the merged value.")]
                 let ready = |&shared| { () };
                 #[action("Consume it after the borrow.")]
-                let result = |shared, ready| { 0u8 };
+                let end = |shared, ready| { 0u8 };
             }
         };
         assert_eq!(merge(&function, "shared").before, [1]);
@@ -503,9 +503,9 @@ mod tests {
                 #[question("Which marker?")]
                 let (yes, no) = |condition| { condition };
                 #[action("First marker.")]
-                let (_marker, result) = |yes| { ((), 1u8) };
+                let (_marker, end) = |yes| { ((), 1u8) };
                 #[action("Second marker.")]
-                let (_marker, result) = |no| { ((), 2u8) };
+                let (_marker, end) = |no| { ((), 2u8) };
             }
         };
         let merge = merge(&function, "_marker");
@@ -525,9 +525,9 @@ mod tests {
                 let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First marker.")] let (_marker, result) = |a| { ((), 1u8) };
-                #[action("Middle result.")] let result = |b| { 2u8 };
-                #[action("Last marker.")] let (_marker, result) = |c| { ((), 3u8) };
+                #[action("First marker.")] let (_marker, end) = |a| { ((), 1u8) };
+                #[action("Middle result.")] let end = |b| { 2u8 };
+                #[action("Last marker.")] let (_marker, end) = |c| { ((), 3u8) };
             }
         };
         assert_eq!(
@@ -547,9 +547,9 @@ mod tests {
                 let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("Left marker.")] let (_left, result) = |a| { ((), 1u8) };
-                #[action("Both markers.")] let (_left, _right, result) = |b| { ((), (), 2u8) };
-                #[action("Right marker.")] let (_right, result) = |c| { ((), 3u8) };
+                #[action("Left marker.")] let (_left, end) = |a| { ((), 1u8) };
+                #[action("Both markers.")] let (_left, _right, end) = |b| { ((), (), 2u8) };
+                #[action("Right marker.")] let (_right, end) = |c| { ((), 3u8) };
             }
         };
         assert_eq!(

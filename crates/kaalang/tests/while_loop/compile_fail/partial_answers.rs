@@ -6,7 +6,7 @@ fn invalid(flag: bool) {
     #[no]
     while (|flag| flag) {}
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

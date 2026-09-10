@@ -16,10 +16,10 @@ fn invalid(condition: bool, value: String) -> usize {
     let length = |value| { value.len() };
 
     #[action("Finish yes.")]
-    let result = |logged, length| { length };
+    let end = |logged, length| { length };
 
     #[action("Finish no.")]
-    let result = |no, length| { length };
+    let end = |no, length| { length };
 }
 
 fn main() {}

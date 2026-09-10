@@ -6,7 +6,7 @@ fn invalid(value: i32) -> i32 {
     let doubled = |value| { return value * 2 };
 
     #[action("Produce the result.")]
-    let result = |doubled| { doubled };
+    let end = |doubled| { doubled };
 }
 
 fn main() {}

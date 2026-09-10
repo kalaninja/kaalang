@@ -6,10 +6,10 @@ fn invalid(condition: bool) -> u32 {
     let (yes, no) = |condition| { condition };
 
     #[action("Borrow the yes output.")]
-    let result = |&yes| { 1 };
+    let end = |&yes| { 1 };
 
     #[action("Produce the no result.")]
-    let result = |no| { 2 };
+    let end = |no| { 2 };
 }
 
 fn main() {}

@@ -12,10 +12,10 @@ fn invalid(flag: bool) -> u64 {
     let stamp = || { 7u64 };
 
     #[action("Finish yes.")]
-    let result = |yes, stamp| { stamp };
+    let end = |yes, stamp| { stamp };
 
     #[action("Finish no.")]
-    let result = |no, stamp| { stamp + 1 };
+    let end = |no, stamp| { stamp + 1 };
 }
 
 fn main() {}

@@ -217,12 +217,12 @@ impl Builder<'_> {
         }
         let emitted = BTreeSet::new();
         if waiting.is_empty() {
-            let [result] = self.flow.blocks[self.end].inputs.as_slice() else {
+            let [wire] = self.flow.blocks[self.end].inputs.as_slice() else {
                 unreachable!("the end block captures exactly one wire")
             };
             return Ok(Lowered {
                 plan: ExecutionPlan::EndArrival {
-                    result: result.ident.clone(),
+                    wire: wire.ident.clone(),
                 },
                 yielding: Vec::new(),
                 emitted,

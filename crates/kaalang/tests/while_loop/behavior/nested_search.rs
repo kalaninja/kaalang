@@ -21,7 +21,7 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
             |different, &mut column| *column += 1;
 
             #[action("Return the matching position.")]
-            let result = |equal, row, column| Some((row, column));
+            let end = |equal, row, column| Some((row, column));
         }
 
         #[action("Advance to the next row.")]
@@ -29,11 +29,11 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
     }
 
     #[action("The target is absent.")]
-    let result = || None;
+    let end = || None;
 }
 
 #[test]
-fn inner_result_finishes_the_entire_flow() {
+fn inner_end_wire_finishes_the_entire_flow() {
     let rows = [&[][..], &[1, 2][..], &[3][..]];
     assert_eq!(nested_search(&[], 1), None);
     assert_eq!(nested_search(&rows, 3), Some((2, 0)));

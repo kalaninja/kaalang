@@ -18,7 +18,7 @@ fn invalid(flag: bool) -> u8 {
     |local| {};
 
     #[action("Finish.")]
-    let result = |value| { value };
+    let end = |value| { value };
 }
 
 fn main() {}

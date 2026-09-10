@@ -28,7 +28,7 @@ fn invalid(refine: bool, value: u8) -> u32 {
     let ready = |skip| { 100 };
 
     #[action("Use the later merge.")]
-    let result = |ready| { ready + 1 };
+    let end = |ready| { ready + 1 };
 }
 
 fn main() {}

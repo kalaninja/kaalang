@@ -6,7 +6,7 @@ use kaalang::kaalang;
 fn document_a_block(input: u32) -> u32 {
     /// Increments by one, because the flow needs a successor.
     #[action("Increment the input.")]
-    let result = |input| input + 1;
+    let end = |input| input + 1;
 }
 
 #[test]

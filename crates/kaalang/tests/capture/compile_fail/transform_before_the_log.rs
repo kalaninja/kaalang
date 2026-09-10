@@ -12,7 +12,7 @@ fn invalid(value: String) -> usize {
     };
 
     #[action("Finish.")]
-    let result = |length| { length };
+    let end = |length| { length };
 }
 
 fn main() {}

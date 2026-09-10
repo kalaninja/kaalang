@@ -9,10 +9,10 @@ fn run_choice_skeleton(value: i32) -> &'static str {
     let (negative, nonnegative) = |value| todo!();
 
     #[action("Produce the negative result.")]
-    let result = |negative| todo!();
+    let end = |negative| todo!();
 
     #[action("Produce the nonnegative result.")]
-    let result = |nonnegative| todo!();
+    let end = |nonnegative| todo!();
 }
 
 #[test]

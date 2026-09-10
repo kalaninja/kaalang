@@ -1,8 +1,8 @@
 error: expected `;`, found `}`
- --> tests/syntax/compile_fail/missing_let_semicolon.rs:6:35
+ --> tests/syntax/compile_fail/missing_let_semicolon.rs:6:32
   |
-6 |     let result = |input| { input }
-  |                                   ^ help: add `;` here
+6 |     let end = |input| { input }
+  |                                ^ help: add `;` here
 7 | }
   | - unexpected token
 

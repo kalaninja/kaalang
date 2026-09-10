@@ -9,7 +9,7 @@ fn nested_branch_passes_a_question_join(refine: bool, finish_early: bool) -> u32
     let (skip, join) = |nested, finish_early| finish_early;
 
     #[action("Finish without the shared step.")]
-    let result = |skip| 100;
+    let end = |skip| 100;
 
     #[action("Build the refined value.")]
     let shared = |join| 1;
@@ -18,7 +18,7 @@ fn nested_branch_passes_a_question_join(refine: bool, finish_early: bool) -> u32
     let shared = |direct| 2;
 
     #[action("Add ten in the shared step.")]
-    let result = |shared| shared + 10;
+    let end = |shared| shared + 10;
 }
 
 #[test]

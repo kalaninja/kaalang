@@ -23,7 +23,7 @@ fn two_convergence_groups(quarter: u8) -> u32 {
     let early = |second| 2u32;
 
     #[action("Close the early half.")]
-    let result = |early| early + 10;
+    let end = |early| early + 10;
 
     #[action("Open the late half.")]
     let late = |third| 3u32;
@@ -32,7 +32,7 @@ fn two_convergence_groups(quarter: u8) -> u32 {
     let late = |fourth| 4u32;
 
     #[action("Close the late half.")]
-    let result = |late| late + 20;
+    let end = |late| late + 20;
 }
 
 #[test]

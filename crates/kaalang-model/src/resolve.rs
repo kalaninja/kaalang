@@ -4,10 +4,10 @@ use std::collections::{HashMap, HashSet};
 
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Flow, RESULT_WIRE};
+use crate::model::{BlockKind, END_WIRE, Flow};
 
 /// Resolves a parsed flow's wires: every input names an earlier producer, only
-/// the implicit end block captures `result`, and declarations do not collide
+/// the implicit end block captures `end`, and declarations do not collide
 /// with themselves.
 pub(crate) fn flow(flow: &Flow) -> Result<()> {
     let mut flow_inputs = HashSet::new();
@@ -29,17 +29,17 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                     "duplicate kaalang block input",
                 ));
             }
-            if block.kind != BlockKind::End && input.ident == RESULT_WIRE {
+            if block.kind != BlockKind::End && input.ident == END_WIRE {
                 return Err(Error::new(
                     input.ident.span(),
-                    "the `result` wire finishes a kaalang flow; no block captures it",
+                    "the `end` wire finishes a kaalang flow; no block captures it",
                 ));
             }
             if !producers.contains(&input.ident) {
                 return Err(Error::new(
                     input.ident.span(),
                     match block.kind {
-                        BlockKind::End => "a kaalang flow must produce its `result` wire",
+                        BlockKind::End => "a kaalang flow must produce its `end` wire",
                         _ => {
                             "a kaalang block input must name a flow input or an earlier block output"
                         }

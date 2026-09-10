@@ -1,5 +1,5 @@
 error: a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name
-  --> tests/wire/compile_fail/local_capture_of_a_merged_wire.rs:17:19
+  --> tests/wire/compile_fail/local_capture_of_a_merged_wire.rs:17:16
    |
-17 |     let result = |value, yes_gate| { value };
-   |                   ^^^^^
+17 |     let end = |value, yes_gate| { value };
+   |                ^^^^^

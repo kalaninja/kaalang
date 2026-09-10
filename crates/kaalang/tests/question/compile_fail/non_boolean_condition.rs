@@ -6,10 +6,10 @@ fn invalid(input: u32) -> u32 {
     let (yes, no) = |&input| { *input };
 
     #[action("Produce the yes result.")]
-    let result = |yes, &input| { *input };
+    let end = |yes, &input| { *input };
 
     #[action("Produce the no result.")]
-    let result = |no, &input| { *input };
+    let end = |no, &input| { *input };
 }
 
 fn main() {}

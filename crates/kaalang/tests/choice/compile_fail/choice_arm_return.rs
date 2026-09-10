@@ -13,10 +13,10 @@ fn invalid(value: u32) -> u32 {
     };
 
     #[action("Produce the zero result.")]
-    let result = |zero| { 0 };
+    let end = |zero| { 0 };
 
     #[action("Produce the positive result.")]
-    let result = |positive| { positive };
+    let end = |positive| { positive };
 }
 
 fn main() {}

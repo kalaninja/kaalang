@@ -11,10 +11,10 @@ fn borrowed_case_input(text: String) -> usize {
     };
 
     #[action("Measure the long text.")]
-    let result = |long| long.len();
+    let end = |long| long.len();
 
     #[action("Measure the short text.")]
-    let result = |short| short.len();
+    let end = |short| short.len();
 }
 
 #[test]

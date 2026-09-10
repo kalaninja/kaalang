@@ -9,7 +9,7 @@ fn blocks_without_shared_wires(left: u32, right: u32) -> (u32, u32) {
     let tripled = |right| right * 3;
 
     #[action("Pair the two values.")]
-    let result = |doubled, tripled| (doubled, tripled);
+    let end = |doubled, tripled| (doubled, tripled);
 }
 
 #[test]

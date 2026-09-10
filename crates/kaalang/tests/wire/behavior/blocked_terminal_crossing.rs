@@ -21,13 +21,13 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     let shared = |right| 2u8;
 
     #[action("Produce the first terminal result.")]
-    let result = |first| 3u8;
+    let end = |first| 3u8;
 
     #[action("Take one more step toward the second terminal result.")]
     let stepped = |second| 4u8;
 
     #[action("Produce the second terminal result.")]
-    let result = |stepped| stepped;
+    let end = |stepped| stepped;
 
     #[choice("Choose an inner case wide enough to block both terminal columns.")]
     #[case("Build A.")]
@@ -54,7 +54,7 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
     let selected = |d| 9u8;
 
     #[action("Use the result.")]
-    let result = |selected| selected;
+    let end = |selected| selected;
 }
 
 #[test]

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="662" viewBox="0 0 680 662" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for log_then_transform</title>
-  <desc id="kaalang-description">Nodes: Start: log_then_transform with parameters value: String handing over value; Action: Log the value. capturing &amp;value; Action: Transform the value into its length. capturing value handing over length; Action: Finish. capturing length handing over result; End: usize capturing result. Connections: Start: log_then_transform to Action: Log the value.; Action: Log the value. to Action: Transform the value into its length.; Action: Transform the value into its length. to Action: Finish.; Action: Finish. to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: log_then_transform with parameters value: String handing over value; Action: Log the value. capturing &amp;value; Action: Transform the value into its length. capturing value handing over length; Action: Finish. capturing length handing over end; End: usize capturing end. Connections: Start: log_then_transform to Action: Log the value.; Action: Log the value. to Action: Transform the value into its length.; Action: Transform the value into its length. to Action: Finish.; Action: Finish. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }

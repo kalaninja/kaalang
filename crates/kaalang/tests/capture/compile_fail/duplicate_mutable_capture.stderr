@@ -1,5 +1,5 @@
 error: duplicate kaalang block input
- --> tests/capture/compile_fail/duplicate_mutable_capture.rs:6:35
+ --> tests/capture/compile_fail/duplicate_mutable_capture.rs:6:32
   |
-6 |     let result = |mut value, &mut r#value| { *value };
-  |                                   ^^^^^^^
+6 |     let end = |mut value, &mut r#value| { *value };
+  |                                ^^^^^^^

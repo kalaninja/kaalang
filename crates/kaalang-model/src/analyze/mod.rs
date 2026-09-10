@@ -26,7 +26,7 @@ mod while_loop;
 /// Walks the blocks in source order under every branch selection. Returns the
 /// executions and convergence groups in canonical order, or the earliest
 /// authored violation: a walk error first, then a block placed inside open
-/// branches, then an execution without `result`, then an unreachable block,
+/// branches, then an execution without `end`, then an unreachable block,
 /// then a producer occurrence that no execution captures, then an invalid
 /// branch-output continuation, then a block decided by independent questions
 /// or choices, then an invalid wire merge or shared continuation.
@@ -36,7 +36,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     let mut walk = Walk {
         flow,
         end,
-        result: flow.blocks[end].inputs[0].ident.clone(),
+        end_wire: flow.blocks[end].inputs[0].ident.clone(),
         executions: BTreeSet::new(),
         error: None,
         incomplete: None,
@@ -196,11 +196,11 @@ struct Walk<'a> {
     flow: &'a Flow,
     end: usize,
     /// The wire the implicit end block captures.
-    result: Ident,
+    end_wire: Ident,
     executions: BTreeSet<Execution>,
     /// The earliest authored violation so far, keyed by block and occurrence.
     error: Option<((usize, usize), Error)>,
-    /// An execution that reaches the end of the flow without `result`. Reported
+    /// An execution that reaches the end of the flow without `end`. Reported
     /// after branch placement, which explains such an execution more directly.
     incomplete: Option<Error>,
 }
@@ -236,9 +236,9 @@ impl Walk<'_> {
             self.visit(block.loop_end.unwrap_or(index + 1), state);
             return;
         }
-        // `result` finishes an execution, so nothing participating may follow it.
-        if state.available.contains_key(&self.result) {
-            self.report((index, 0), end::after_result(block));
+        // `end` finishes an execution, so nothing participating may follow it.
+        if state.available.contains_key(&self.end_wire) {
+            self.report((index, 0), end::after_end(block));
             return;
         }
         state.enter(self.flow, index);
@@ -284,7 +284,7 @@ impl Walk<'_> {
         true
     }
 
-    /// Resolves the end block's `result` capture and records the execution.
+    /// Resolves the end block's `end` capture and records the execution.
     fn finish(&mut self, mut state: State) {
         if !end::arrive(self, &mut state) {
             return;
@@ -317,7 +317,7 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
 /// Every named producer occurrence has a capture dependency in at least one
 /// execution unless its name begins with `_`. Only the action arm is reached in
 /// practice: an uncaptured question or choice output leaves its execution
-/// without `result`, and the walk reports that first.
+/// without `end`, and the walk reports that first.
 fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let captured = |producer: ProducerId| {
         executions.iter().any(|execution| {
@@ -415,7 +415,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
         return Err(Error::new(input(capture).ident.span(), message));
     }
     // No fixture reaches the check below: a branch output left without its
-    // consumer also leaves its execution without `result`, which the walk
+    // consumer also leaves its execution without `end`, which the walk
     // reports first. Kept until that is proven rather than observed.
     let missing = captures.iter().filter_map(|(&producer, captures)| {
         let ProducerId::BlockOutput { block, output } = producer else {

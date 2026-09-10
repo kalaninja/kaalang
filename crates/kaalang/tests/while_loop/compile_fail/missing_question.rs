@@ -4,7 +4,7 @@ use kaalang::kaalang;
 fn invalid(flag: bool) {
     while (|flag| flag) {}
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

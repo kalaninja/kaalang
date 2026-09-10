@@ -21,7 +21,7 @@ fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
     let (_unused, selected) = |right| ((), 2u8);
 
     #[action("Use the selected value.")]
-    let result = |selected| selected;
+    let end = |selected| selected;
 }
 
 #[test]

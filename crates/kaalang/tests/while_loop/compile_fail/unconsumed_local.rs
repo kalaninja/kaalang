@@ -8,7 +8,7 @@ fn invalid(flag: bool) {
         let local = || 1;
     }
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

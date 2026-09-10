@@ -1,5 +1,5 @@
 error: duplicate kaalang block output
- --> tests/wire/compile_fail/duplicate_action_output.rs:6:18
+ --> tests/wire/compile_fail/duplicate_action_output.rs:6:15
   |
-6 |     let (result, result) = |input| { (input, input) };
-  |                  ^^^^^^
+6 |     let (end, end) = |input| { (input, input) };
+  |               ^^^

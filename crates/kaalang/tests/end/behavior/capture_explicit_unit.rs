@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn capture_explicit_unit(input: ()) {
     #[action("Preserve the explicit unit wire.")]
-    let result = |input| input;
+    let end = |input| input;
 }
 
 #[test]

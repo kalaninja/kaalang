@@ -17,13 +17,13 @@ fn invalid(value: u8) -> u8 {
     };
 
     #[action("Mark the left group.")]
-    let (_left, result) = |a| { ((), 1u8) };
+    let (_left, end) = |a| { ((), 1u8) };
 
     #[action("Mark both groups.")]
-    let (_left, _right, result) = |b| { ((), (), 2u8) };
+    let (_left, _right, end) = |b| { ((), (), 2u8) };
 
     #[action("Mark the right group.")]
-    let (_right, result) = |c| { ((), 3u8) };
+    let (_right, end) = |c| { ((), 3u8) };
 }
 
 fn main() {}

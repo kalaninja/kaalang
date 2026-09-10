@@ -177,7 +177,7 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             let body = self::flow(flow, body, bindings);
             quote!(#gates #body)
         }
-        ExecutionPlan::EndArrival { result } => end::arrival(bindings, result),
+        ExecutionPlan::EndArrival { wire } => end::arrival(bindings, wire),
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     }
 }

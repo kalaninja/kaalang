@@ -6,10 +6,10 @@ fn captured_in_one_branch(condition: bool, extra: u32) -> u32 {
     let (yes, no) = |condition| condition;
 
     #[action("Add a fixed amount to the extra value.")]
-    let result = |yes, extra| extra + 5;
+    let end = |yes, extra| extra + 5;
 
     #[action("Ignore the extra value.")]
-    let result = |no| 0;
+    let end = |no| 0;
 }
 
 #[test]

@@ -16,7 +16,7 @@ fn effect_before_a_nested_terminal_branch(
     let (early, late) = |nested, inner| inner;
 
     #[action("Produce the early result.")]
-    let result = |early, logged| 1;
+    let end = |early, logged| 1;
 
     #[action("Build the late value.")]
     let selected = |late| 2;
@@ -25,7 +25,7 @@ fn effect_before_a_nested_terminal_branch(
     let selected = |direct| 3;
 
     #[action("Use the selected value.")]
-    let result = |selected, logged| selected * 10;
+    let end = |selected, logged| selected * 10;
 }
 
 #[test]

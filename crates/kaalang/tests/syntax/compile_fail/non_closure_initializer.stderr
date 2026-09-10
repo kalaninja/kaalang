@@ -1,5 +1,5 @@
 error: a kaalang block initializer must have the form `|inputs| { body }`
- --> tests/syntax/compile_fail/non_closure_initializer.rs:6:18
+ --> tests/syntax/compile_fail/non_closure_initializer.rs:6:15
   |
-6 |     let result = input;
-  |                  ^^^^^
+6 |     let end = input;
+  |               ^^^^^

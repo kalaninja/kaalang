@@ -20,7 +20,7 @@ fn anonymous_case_values(value: i32) -> i32 {
     let increment = |selected| move || selected + 1;
 
     #[action("Run the selected closure.")]
-    let result = |increment| increment();
+    let end = |increment| increment();
 }
 
 #[test]

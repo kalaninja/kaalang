@@ -11,10 +11,10 @@ fn shared_setup(condition: bool) -> u32 {
     let (short, long) = |condition| condition;
 
     #[action("Use the setup on the short branch.")]
-    let result = |short, &setup| setup + 1;
+    let end = |short, &setup| setup + 1;
 
     #[action("Use the setup on the long branch.")]
-    let result = |long, &setup| setup + 2;
+    let end = |long, &setup| setup + 2;
 }
 
 #[test]

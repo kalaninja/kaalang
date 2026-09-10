@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 /// The other correction: each branch transforms the value itself, so the string
-/// moves only on the selected path and the two `result` outputs merge before end.
+/// moves only on the selected path and the two `end` outputs merge before end.
 #[kaalang]
 fn branch_log_in_each_branch(condition: bool, value: String) -> usize {
     #[question("Log the value?")]
@@ -13,10 +13,10 @@ fn branch_log_in_each_branch(condition: bool, value: String) -> usize {
     };
 
     #[action("Transform after logging.")]
-    let result = |logged, value| value.len();
+    let end = |logged, value| value.len();
 
     #[action("Transform without logging.")]
-    let result = |no, value| value.len();
+    let end = |no, value| value.len();
 }
 
 #[test]

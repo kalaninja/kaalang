@@ -12,10 +12,10 @@ fn invalid(condition: bool) -> u8 {
     let second = |yes| { 2u8 };
 
     #[action("Finish the yes branch.")]
-    let result = |first, second| { first + second };
+    let end = |first, second| { first + second };
 
     #[action("Finish the no branch.")]
-    let result = |no| { 0u8 };
+    let end = |no| { 0u8 };
 }
 
 fn main() {}

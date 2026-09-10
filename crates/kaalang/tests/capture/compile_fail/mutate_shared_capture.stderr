@@ -6,5 +6,5 @@ error[E0596]: cannot borrow `*text` as mutable, as it is behind a `&` reference
   |
 help: consider specifying this binding's type
   |
-6 |     let result = |&text: &mut String| {
-  |                        +++++++++++++
+6 |     let end = |&text: &mut String| {
+  |                     +++++++++++++

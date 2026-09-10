@@ -13,13 +13,13 @@ fn mutably_borrowed_choice_output(input: Option<String>) -> usize {
     };
 
     #[action("Try to borrow the case value.")]
-    let result = |&mut text| {
+    let end = |&mut text| {
         text.push('!');
         text.len()
     };
 
     #[action("Use zero when absent.")]
-    let result = |absent| { 0 };
+    let end = |absent| { 0 };
 }
 
 fn main() {}

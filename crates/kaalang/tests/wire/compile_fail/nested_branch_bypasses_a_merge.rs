@@ -21,7 +21,7 @@ fn invalid(outer: bool, inner: bool) -> u32 {
     let ready = |skip| { 100u32 };
 
     #[action("Use the later merge.")]
-    let result = |ready| { ready + 1 };
+    let end = |ready| { ready + 1 };
 }
 
 fn main() {}

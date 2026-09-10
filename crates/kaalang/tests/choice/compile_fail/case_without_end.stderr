@@ -1,0 +1,5 @@
+error: this kaalang execution does not produce the `end` wire
+ --> tests/choice/compile_fail/case_without_end.rs:4:4
+  |
+4 | fn invalid(input: i32) {
+  |    ^^^^^^^

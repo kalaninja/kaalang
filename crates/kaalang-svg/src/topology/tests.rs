@@ -45,7 +45,7 @@ fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
             #[action("Prepare the other value.")]
             let value = |needs_work| { () };
             #[action("Use the merged value.")]
-            let result = |value| { 1 };
+            let end = |value| { 1 };
         }
     "#,
     );
@@ -85,9 +85,9 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             #[action("Split the near value.")]
             let (width, depth, _unused) = |near| { (near, near, ()) };
             #[action("Use both dimensions.")]
-            let result = |&width, depth| { *width + depth };
+            let end = |&width, depth| { *width + depth };
             #[action("Use the far value.")]
-            let result = |far| { far };
+            let end = |far| { far };
         }
     "#,
     );
@@ -167,7 +167,7 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
                 #[action("Prepare two values.")]
                 let ({outputs}) = || {{ (1, 2) }};
                 #[action("Use both values.")]
-                let result = |{capture}| {{ 3 }};
+                let end = |{capture}| {{ 3 }};
             }}
         "#
         ));
@@ -242,7 +242,7 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
             #[action("Double the merged value.")]
             let doubled = |&value| { *value * 2 };
             #[action("Add both.")]
-            let result = |value, doubled| { value + doubled };
+            let end = |value, doubled| { value + doubled };
         }
     "#,
     );

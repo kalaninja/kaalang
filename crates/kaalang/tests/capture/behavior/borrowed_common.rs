@@ -12,7 +12,7 @@ fn borrowed_common(condition: bool, prefix: String) -> String {
     let suffix = |no, &prefix| format!("{prefix}-no");
 
     #[action("Use the suffix and the preserved prefix.")]
-    let result = |suffix, prefix| format!("{prefix}:{suffix}");
+    let end = |suffix, prefix| format!("{prefix}:{suffix}");
 }
 
 #[test]

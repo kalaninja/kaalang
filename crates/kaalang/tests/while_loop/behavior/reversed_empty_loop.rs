@@ -11,7 +11,7 @@ fn reversed_empty_loop(mut checks: usize) -> usize {
     }) {}
 
     #[action("Return the number of checks.")]
-    let result = |checks| checks;
+    let end = |checks| checks;
 }
 
 #[test]

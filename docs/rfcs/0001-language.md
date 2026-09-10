@@ -16,8 +16,7 @@ to another implementation or wondering whether the two have diverged.
 A **flow** is a kaalang computation composed of blocks. Named wires make values
 available to blocks, while questions and choices divide execution into
 alternative branches, and while loops repeat a nested sequence. Every completed
-execution produces the flow's `result` wire, which the implicit end block
-captures.
+execution produces the flow's `end` wire, which the implicit end block captures.
 
 A flow is written as an ordinary Rust function marked with `#[kaalang]`. Source
 order is execution order: each block runs where it is written, in every
@@ -36,7 +35,7 @@ visualization:
 
 - **flow inputs** are values supplied when a flow begins; named flow inputs
   provide wires;
-- the **flow output** is the value of the `result` wire, which the implicit end
+- the **flow output** is the value of the `end` wire, which the implicit end
   block captures when a flow finishes;
 - a **block** is one unit of a flow; its inputs name the wires it captures, and
   its outputs name the wires it produces. Every block but the end block is
@@ -143,13 +142,13 @@ loop. Macro token streams are opaque to this validation.
 
 ## 4. Block kinds
 
-| Block kind   | Meaning                                                                           | Inputs            | Outputs                                               |
-| ------------ | --------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------- |
-| **action**   | performs a computation or effect                                                  | zero or more      | zero or more                                          |
-| **question** | evaluates a logical expression and selects one of two branches                    | one or more       | exactly two unit-valued control wires, one per branch |
-| **choice**   | selects one of two or more cases and provides a value to the corresponding branch | one or more       | one per case, at least two                            |
-| **while**    | repeats a nested sequence while its condition is true                             | one or more       | none                                                  |
-| **end**      | the implicit block that finishes a flow                                           | the `result` wire | none                                                  |
+| Block kind   | Meaning                                                                           | Inputs         | Outputs                                               |
+| ------------ | --------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------- |
+| **action**   | performs a computation or effect                                                  | zero or more   | zero or more                                          |
+| **question** | evaluates a logical expression and selects one of two branches                    | one or more    | exactly two unit-valued control wires, one per branch |
+| **choice**   | selects one of two or more cases and provides a value to the corresponding branch | one or more    | one per case, at least two                            |
+| **while**    | repeats a nested sequence while its condition is true                             | one or more    | none                                                  |
+| **end**      | the implicit block that finishes a flow                                           | the `end` wire | none                                                  |
 
 ### 4.1 action
 
@@ -189,7 +188,7 @@ let entered = || {
 };
 
 #[action("Continue.")]
-let result = |entered| {
+let end = |entered| {
     continue_work()
 };
 ```
@@ -269,18 +268,20 @@ and cannot be reached from the authored body.
 ### 4.4 end
 
 Every flow has one implicit end block. It is not authored, and there is no end
-statement. It consumes exactly one wire, `result`, whose value is the flow
-output. Rust checks that value against the function return type, which is `()`
-when the function declares none.
+statement. It consumes exactly one wire, `end`, whose value is the flow output.
+Rust checks that value against the function return type, which is `()` when the
+function declares none.
 
-`result` completes the flow: no computational block captures it. When `result`
-has alternative producers they merge before the end block exactly as any
-repeated output name does (section 6), so a question or choice output may itself
-be named `result`. Whenever execution reaches the end block, exactly one
-producer of `result` must be available.
+The wire is named for its destination, the implicit end block.
 
-A flow returning unit produces a unit-valued `result` like any other wire;
-kaalang has no zero-input end block and no implicit unit wire.
+`end` completes the flow: no computational block captures it. When `end` has
+alternative producers they merge before the end block exactly as any repeated
+output name does (section 6), so a question or choice output may itself be named
+`end`. Whenever execution reaches the end block, exactly one producer of `end`
+must be available.
+
+A flow returning unit produces a unit-valued `end` like any other wire; kaalang
+has no zero-input end block and no implicit unit wire.
 
 ### 4.5 while
 
@@ -299,7 +300,7 @@ while (|&count, &limit| *count < *limit) {
 }
 
 #[action("Return the counter.")]
-let result = |count| count;
+let end = |count| count;
 ```
 
 The condition has at least one input and evaluates to `bool`, checked by Rust.
@@ -329,10 +330,10 @@ Uncaptured owned wires drop when their iteration or nested branch scope ends.
 Rust locals retain their ordinary computational-body scopes.
 
 Normal branches of a question or choice inside the body may finish the iteration
-without producing `result`; their routes join the return to the condition. They
+without producing `end`; their routes join the return to the condition. They
 must still obey the usual ancestry and merge rules for any work before that
-return. Producing `result` completes the entire flow, including from a nested
-loop, and skips every remaining iteration and the after-loop continuation.
+return. Producing `end` completes the entire flow, including from a nested loop,
+and skips every remaining iteration and the after-loop continuation.
 
 This version has no kaalang `break`, `continue`, loop labels, or `while let`.
 The local Rust control transfers permitted by §3 keep their ordinary behavior.
@@ -352,8 +353,8 @@ a flow input and provides no wire. Other parameter patterns, including `ref`
 bindings and destructuring patterns, are invalid, as is a method receiver.
 
 A named flow input is a producer occurrence and follows section 6's capture
-requirement. The function return type is the contract for the `result` wire the
-end block captures.
+requirement. The function return type is the contract for the `end` wire the end
+block captures.
 
 ```rust
 use kaalang::kaalang;
@@ -364,14 +365,14 @@ fn decide(request: Request) -> Decision {
     let (valid, invalid) = |&request| { todo!() };
 
     #[action("Approve the valid request.")]
-    let result = |valid, &request| { todo!() };
+    let end = |valid, &request| { todo!() };
 
     #[action("Reject the invalid request.")]
-    let result = |invalid, &request| { todo!() };
+    let end = |invalid, &request| { todo!() };
 }
 ```
 
-The two actions are alternative producers of the logical `result` wire. The end
+The two actions are alternative producers of the logical `end` wire. The end
 block captures whichever producer ran. The example is a complete flow whose
 computational bodies are placeholders. `todo!()` retains its Rust behavior and
 panics if execution reaches it.
@@ -391,21 +392,21 @@ expression.
 ### 5.1 Zero-computation flow
 
 A flow contains no computational blocks only when a flow input already provides
-`result`:
+`end`:
 
 ```rust
 #[kaalang]
-fn identity<T>(result: T) -> T {}
+fn identity<T>(end: T) -> T {}
 ```
 
-Any other empty body is invalid, because nothing produces `result`. A flow that
+Any other empty body is invalid, because nothing produces `end`. A flow that
 computes nothing but must still finish declares one action:
 
 ```rust
 #[kaalang]
 fn nothing() {
     #[action("Finish without doing anything.")]
-    let result = || {};
+    let end = || {};
 }
 ```
 
@@ -415,13 +416,13 @@ An ignored parameter remains explicit:
 #[kaalang]
 fn discard(_value: Value) {
     #[action("Finish without the flow input.")]
-    let result = || {};
+    let end = || {};
 }
 
 #[kaalang]
 fn discard_unnamed_input(_: Value) {
     #[action("Finish without the flow input.")]
-    let result = || {};
+    let end = || {};
 }
 ```
 
@@ -461,7 +462,7 @@ Raw and ordinary spellings of the same Rust identifier name the same wire, so
 before every consumer of its logical wire; a later producer cannot retroactively
 join a wire that has already appeared as an input.
 
-No computational block captures `result`; the end block consumes it and the flow
+No computational block captures `end`; the end block consumes it and the flow
 finishes.
 
 Every producer occurrence, a named flow input or a block output, must have at
@@ -486,7 +487,7 @@ let selected = |yes| { yes_value() };
 let selected = |no| { no_value() };
 
 #[action("Use the selected value.")]
-let result = |selected| { use_value(selected) };
+let end = |selected| { use_value(selected) };
 ```
 
 The alternative `selected` outputs merge before the shared consumer. Under
@@ -529,7 +530,7 @@ captured value retain their ordinary Rust behavior.
 };
 
 #[action("Move and extend the changed text.")]
-let result = |mut text| {
+let end = |mut text| {
     text.push('?');
     text
 };
@@ -570,9 +571,9 @@ action capturing the yes outputs of two independent questions is invalid: either
 question can select yes while the other selects no, leaving the selected output
 without its consumer. The flow must express a nested question or converge
 alternative producers before a consumer that needs both results. Silently
-skipping the consumer is invalid: that branch then produces no `result`.
-Forwarding a branch output through an action does not lift this: the questions
-and choices that decide the action's consumers stay the same (section 7).
+skipping the consumer is invalid: that branch then produces no `end`. Forwarding
+a branch output through an action does not lift this: the questions and choices
+that decide the action's consumers stay the same (section 7).
 
 When a branch output shares its name with an alternative producer, its one
 continuation is the implicit merge. Captures after that merge use ordinary
@@ -622,7 +623,7 @@ each participating block executes once per visit to its enclosing sequence.
 
 After a question or choice selects a branch, every participating block declared
 below it must belong to that branch, by the branch ancestry of section 2, until
-a merge joins the selected branch with the others or `result` finishes the
+a merge joins the selected branch with the others or `end` finishes the
 execution, or the enclosing iteration ends. Shared inputs do not attach a block
 to a selected branch, and source position alone does not supply missing
 ancestry. Lexical nesting supplies only the enclosing while's ancestry (§4.5).
@@ -641,9 +642,9 @@ those branches after a shared block.
 Consequently, the questions and choices that decide a block form a chain through
 capture dependencies or normal loop exits: each lies downstream of a branch of
 the previous one, or after the loop containing it. A selection after a while
-requires the loop to finish normally instead of producing `result`, including
-when a nested selection in its body can finish the flow. This control order adds
-no capture dependency or wire merge. Two independent questions or choices cannot
+requires the loop to finish normally instead of producing `end`, including when
+a nested selection in its body can finish the flow. This control order adds no
+capture dependency or wire merge. Two independent questions or choices cannot
 both decide whether one block executes, whichever way a selection withholds an
 input. A partial merge admits only work belonging to the branches it joins. Two
 disjoint partial merges do not permit a common action or independent selection
@@ -666,10 +667,10 @@ merged wires.
 The branches of a convergence group are adjacent in authored branch order,
 within one choice and across nested questions and choices alike: a branch that
 does not produce a merged wire cannot separate two that do, even if it finishes
-with `result`, and this holds for unused merged names too. Several disjoint
-groups may be separated by branches outside either group. Precisely, the
-interval is defined over the selections that affect the wire's production. For
-each execution, record its producer occurrence, or absence. A question or choice
+with `end`, and this holds for unused merged names too. Several disjoint groups
+may be separated by branches outside either group. Precisely, the interval is
+defined over the selections that affect the wire's production. For each
+execution, record its producer occurrence, or absence. A question or choice
 affects this record when two executions differ only at that selection under
 section 2's agreement rule and have different records. Retain only these
 selections in each execution's branch trace, in authored block order. Order the
@@ -680,8 +681,8 @@ a completed merge therefore do not affect adjacency.
 
 For example, nested exits ordered `skip, join`, followed by the outer `direct`
 branch, allow `join` and `direct` to merge into `shared` while `skip` finishes
-with `result`. Ordering them `join, skip, direct` is invalid: `skip` separates
-the two producers of `shared`.
+with `end`. Ordering them `join, skip, direct` is invalid: `skip` separates the
+two producers of `shared`.
 
 Nested convergence must not bypass an enclosing convergence and rejoin its
 ordinary continuation farther downstream. More precisely, reject a flow when:
@@ -692,15 +693,15 @@ ordinary continuation farther downstream. More precisely, reject a flow when:
   a branch outside `Q`;
 - the execution bypassing `a` produces an occurrence of another merged wire `b`,
   ordered after the merge of `a` by the combined wire order below, and `b` is
-  not `result`.
+  not `end`.
 
 Thus nested branches returning to the enclosing shared continuation must
-converge before it or together with it. A branch may instead finish with
-`result`, after its own local work, without returning to that continuation,
-provided it lies outside the earlier merge's branch interval. Partial merges
-inside one question or choice and a new selection after a completed merge remain
-valid. This is a language restriction, independent of whether a renderer can
-route a particular diagram.
+converge before it or together with it. A branch may instead finish with `end`,
+after its own local work, without returning to that continuation, provided it
+lies outside the earlier merge's branch interval. Partial merges inside one
+question or choice and a new selection after a completed merge remain valid.
+This is a language restriction, independent of whether a renderer can route a
+particular diagram.
 
 An implicit merge closes its producer branches before a consumer may capture the
 merged wire, and source order must already say so: every block a merge waits for
@@ -733,11 +734,11 @@ it. Past the merge the wire is ordinary data. A later block may leave it
 uncaptured, and a question or choice anywhere in the flow may decide which block
 captures it, exactly as for any other action output.
 
-`result` is the only way to finish an execution, and its producer is the last
+`end` is the only way to finish an execution, and its producer is the last
 participating computational block of that execution; statements below it belong
 to other branches or the continuation of an enclosing loop that this execution
-leaves. Every branch that completes the flow provides `result`, directly or
-through its continuation, and branches may do so after different numbers of
+leaves. Every branch that completes the flow provides `end`, directly or through
+its continuation, and branches may do so after different numbers of
 computational blocks.
 
 ## 8. Grammar

@@ -20,7 +20,7 @@ fn branch_guard_drops_at_a_merge(condition: bool, cell: &RefCell<usize>) -> usiz
     let (_no_guard, ready) = |no, cell| (cell.borrow_mut(), 8usize);
 
     #[action("Mutate the cell after the merge.")]
-    let result = |ready, cell| {
+    let end = |ready, cell| {
         *cell.borrow_mut() += 1;
         ready
     };

@@ -15,10 +15,10 @@ fn invalid(value: String) -> usize {
     };
 
     #[action("Measure the nonempty string.")]
-    let result = |nonempty| { nonempty.len() };
+    let end = |nonempty| { nonempty.len() };
 
     #[action("Measure the empty string.")]
-    let result = |empty| { empty.len() };
+    let end = |empty| { empty.len() };
 }
 
 fn main() {}

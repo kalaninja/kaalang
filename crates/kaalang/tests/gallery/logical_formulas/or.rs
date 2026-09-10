@@ -18,10 +18,10 @@ fn or(a: bool, b: bool, c: bool) -> bool {
     let (true_result, false_result) = |check_c, c| c;
 
     #[action("Return true.")]
-    let result = |true_result| true;
+    let end = |true_result| true;
 
     #[action("Return false.")]
-    let result = |false_result| false;
+    let end = |false_result| false;
 }
 
 #[test]

@@ -7,7 +7,7 @@ fn wrap_a_long_return_type(
     input: u8,
 ) -> Result<Vec<(u8, String)>, Box<dyn std::error::Error + Send + Sync + 'static>> {
     #[action("Pair the input with an empty name.")]
-    let result = |input| Ok(vec![(input, String::new())]);
+    let end = |input| Ok(vec![(input, String::new())]);
 }
 
 #[test]

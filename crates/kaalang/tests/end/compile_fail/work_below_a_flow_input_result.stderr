@@ -1,5 +1,0 @@
-error: this kaalang block runs after the `result` wire finishes its execution; declare it above the block producing `result`
- --> tests/end/compile_fail/work_below_a_flow_input_result.rs:7:5
-  |
-7 |     #[action("Work below the flow input.")]
-  |     ^

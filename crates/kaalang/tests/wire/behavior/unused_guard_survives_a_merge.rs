@@ -16,7 +16,7 @@ fn unused_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> bool
     let _guard = |no, cell| cell.borrow_mut();
 
     #[action("Check that the merged guard is still alive.")]
-    let result = |cell| cell.try_borrow_mut().is_err();
+    let end = |cell| cell.try_borrow_mut().is_err();
 }
 
 #[test]

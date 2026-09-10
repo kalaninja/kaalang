@@ -1,5 +1,5 @@
 error: kaalang block outputs must use simple identifiers
  --> tests/syntax/compile_fail/typed_output.rs:6:9
   |
-6 |     let result: u32 = |input| { input };
-  |         ^^^^^^^^^^^
+6 |     let end: u32 = |input| { input };
+  |         ^^^^^^^^

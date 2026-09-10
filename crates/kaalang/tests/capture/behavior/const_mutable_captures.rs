@@ -14,7 +14,7 @@ const fn const_mutable_captures(mut value: u32) -> u32 {
     };
 
     #[action("Return the changed original.")]
-    let result = |value| value;
+    let end = |value| value;
 }
 
 #[test]

@@ -6,7 +6,7 @@ fn consume_a_borrowed_input_later(input: u32, log: &mut Vec<u32>) -> u32 {
     let logged = |&input, log| log.push(*input);
 
     #[action("Return the recorded input.")]
-    let result = |input, logged| input;
+    let end = |input, logged| input;
 }
 
 #[test]

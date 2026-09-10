@@ -9,10 +9,10 @@ fn closure_before_a_branch(condition: bool, base: u32) -> u32 {
     let (add, subtract) = |condition| condition;
 
     #[action("Add one.")]
-    let result = |add, handler| handler(1);
+    let end = |add, handler| handler(1);
 
     #[action("Subtract one.")]
-    let result = |subtract, handler| handler(0) - 1;
+    let end = |subtract, handler| handler(0) - 1;
 }
 
 #[test]

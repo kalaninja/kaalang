@@ -124,7 +124,7 @@ mod tests {
         let mut function: ItemFn = parse_quote! {
             pub const fn identity<T>(mut r#type: T, _: u8) -> T {
                 #[action("Return the value")]
-                let result = |r#type| r#type;
+                let end = |r#type| r#type;
             }
         };
         let signature = function.sig.to_token_stream().to_string();
@@ -163,7 +163,7 @@ mod tests {
                 let selected = |no| { 2 };
 
                 #[action("Use the selected value")]
-                let result = |selected| { __kaalang_shared_marker(selected) };
+                let end = |selected| { __kaalang_shared_marker(selected) };
             }
         };
 
@@ -195,7 +195,7 @@ mod tests {
                 let selected = |absent| { absent as usize };
 
                 #[action("Finish")]
-                let result = |selected| { __kaalang_shared_marker(selected) };
+                let end = |selected| { __kaalang_shared_marker(selected) };
             }
         };
         let expansion = expand(&mut function).expect("the flow expands").to_string();
@@ -236,7 +236,7 @@ mod tests {
                 let left = |b| { 2 };
 
                 #[action("Produce the terminal result")]
-                let result = |done| { __kaalang_terminal_marker(3) };
+                let end = |done| { __kaalang_terminal_marker(3) };
 
                 #[question("Refine the right group")]
                 let (yes, no) = |c, condition| { condition };
@@ -251,10 +251,10 @@ mod tests {
                 let right = |d| { 6 };
 
                 #[action("Use the left value")]
-                let result = |left| { __kaalang_left_marker(left) };
+                let end = |left| { __kaalang_left_marker(left) };
 
                 #[action("Use the right value")]
-                let result = |right| { __kaalang_right_marker(right) };
+                let end = |right| { __kaalang_right_marker(right) };
             }
         };
 

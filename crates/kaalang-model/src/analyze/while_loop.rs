@@ -7,7 +7,7 @@ use super::{State, Walk};
 
 /// A selection stops governing its iteration's branches when that loop ends.
 /// Reaching a later block depends on leaving the loop normally, including when
-/// a nested selection could have returned `result`. This is control order, not
+/// a nested selection could have returned `end`. This is control order, not
 /// a capture dependency or a wire merge.
 pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
     let mut owner = Some(selection);
@@ -46,7 +46,7 @@ pub(super) fn close(walk: &mut Walk<'_>, index: usize, state: &mut State) -> boo
         .filter(|&header| walk.flow.blocks[header].loop_end == Some(index))
         .collect::<Vec<_>>();
     for header in closing {
-        if state.available.contains_key(&walk.result) {
+        if state.available.contains_key(&walk.end_wire) {
             walk.finish(state.clone());
             return true;
         }
@@ -64,13 +64,13 @@ mod tests {
     use syn::{Block, ItemFn, Stmt, parse_quote};
 
     #[test]
-    fn early_results_do_not_make_later_selections_independent() {
+    fn early_end_wires_do_not_make_later_selections_independent() {
         let prefixes: [Stmt; 2] = [
             parse_quote! {
                 #[question("Finish early?")]
                 while (|stop| stop) {
                     #[action("Return early.")]
-                    let result = || 99;
+                    let end = || 99;
                 }
             },
             parse_quote! {
@@ -79,7 +79,7 @@ mod tests {
                     #[question("Is the count zero?")]
                     let (finish, resume) = |count| count == 0;
                     #[action("Return early.")]
-                    let result = |finish| 99;
+                    let end = |finish| 99;
                     #[action("Resume after the loop.")]
                     |resume, &mut stop| *stop = false;
                 }
@@ -94,7 +94,7 @@ mod tests {
                         |&mut count| *count += 1;
                     }
                     #[action("Finish.")]
-                    let result = |count| count;
+                    let end = |count| count;
                 }
             },
             parse_quote! {
@@ -102,9 +102,9 @@ mod tests {
                     #[question("Is the count zero?")]
                     let (zero, nonzero) = |count| count == 0;
                     #[action("Report zero.")]
-                    let result = |zero| 0;
+                    let end = |zero| 0;
                     #[action("Report the count.")]
-                    let result = |nonzero, count| count;
+                    let end = |nonzero, count| count;
                 }
             },
             parse_quote! {
@@ -114,9 +114,9 @@ mod tests {
                     #[case("Nonzero.")]
                     let (zero, nonzero) = |count| match count { 0 => (), _ => () };
                     #[action("Report zero.")]
-                    let result = |zero| 0;
+                    let end = |zero| 0;
                     #[action("Report the count.")]
-                    let result = |nonzero, count| count;
+                    let end = |nonzero, count| count;
                 }
             },
         ];

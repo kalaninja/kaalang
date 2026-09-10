@@ -1,4 +1,4 @@
-error: this kaalang execution does not produce the `result` wire
+error: this kaalang execution does not produce the `end` wire
  --> tests/wire/compile_fail/missing_branch_producer.rs:4:29
   |
 4 | fn invalid(condition: bool) -> u32 {

@@ -41,7 +41,7 @@ the left of its footprint; one that follows the group remains to its right. With
 several disjoint groups, intervening terminal branches remain between their
 footprints.
 
-To draw an implicit merge, including the `result` merge above end, each producer
+To draw an implicit merge, including the `end` merge above end, each producer
 descends in its approach column to one horizontal merge rail whose junction lies
 in the continuation's column; routes meet it as RFC 0002 §8 requires.
 
@@ -78,17 +78,17 @@ over descending to the tail's placement row and immediately returning upward.
 Keep the lower route when the shorter one would cross another connection; the
 tail's forward precedence still determines initial node placement.
 
-After routing the returns, adjust the terminal `result` merge and end using the
+After routing the returns, adjust the terminal `end` merge and end using the
 actual geometry. First try the usual vertical gap below all other nodes, so
 independent terminal and return rails can share a row. Horizontal terminal and
 return segments whose horizontal spans overlap must remain at least the usual
 vertical gap apart. If the first position violates that clearance or introduces
 a crossing, also leave the usual vertical gap below the lowest return. Move the
 terminal merge and end together, preserving their common segment's length; when
-end has no result merge, move end alone. Move upward to remove excess space or
-downward to provide the required clearance. Keep the original placement if both
-adjusted positions would introduce a crossing or upward segment. Place labels
-after this adjustment.
+the end block has no terminal merge, move the block alone. Move upward to remove
+excess space or downward to provide the required clearance. Keep the original
+placement if both adjusted positions would introduce a crossing or upward
+segment. Place labels after this adjustment.
 
 ## 3. SVG output
 

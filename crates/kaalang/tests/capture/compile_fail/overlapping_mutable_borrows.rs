@@ -6,7 +6,7 @@ fn overlapping_mutable_borrows(mut text: String) -> usize {
     let first = |&mut text| { text };
 
     #[action("Borrow the wire again while its first reference is live.")]
-    let result = |&mut text, first| {
+    let end = |&mut text, first| {
         text.push('!');
         first.len()
     };

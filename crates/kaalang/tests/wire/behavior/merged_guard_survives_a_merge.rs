@@ -16,7 +16,7 @@ fn merged_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> usiz
     let guard = |no, cell| cell.borrow_mut();
 
     #[action("Release the merged guard before borrowing again.")]
-    let result = |guard, cell| {
+    let end = |guard, cell| {
         assert!(cell.try_borrow_mut().is_err());
         let size = *guard;
         drop(guard);

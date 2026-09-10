@@ -15,7 +15,7 @@ fn capturing_closure_after_convergence(condition: bool) -> u32 {
     let add = |base| move |delta: u32| base + delta;
 
     #[action("Apply the closure.")]
-    let result = |add| add(1);
+    let end = |add| add(1);
 }
 
 #[test]

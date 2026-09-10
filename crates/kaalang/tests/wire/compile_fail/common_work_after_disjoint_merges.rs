@@ -32,10 +32,10 @@ fn invalid(mode: u8) -> u8 {
     || {};
 
     #[action("Finish the early half.")]
-    let result = |early| { early };
+    let end = |early| { early };
 
     #[action("Finish the late half.")]
-    let result = |late| { late };
+    let end = |late| { late };
 }
 
 fn main() {}

@@ -29,7 +29,7 @@ pub struct SemanticModel {
 
 /// The logical wire whose value is the flow output. The implicit end block
 /// captures it; no computational block may.
-pub(crate) const RESULT_WIRE: &str = "result";
+pub(crate) const END_WIRE: &str = "end";
 
 /// The semantic role of one block. Every kind but `End` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -287,8 +287,8 @@ pub enum ExecutionPlan {
         /// unifies; lowering adds a type gate for each.
         gates: Vec<Ident>,
     },
-    /// One branch hands the `result` wire to end.
-    EndArrival { result: Ident },
+    /// One branch hands the `end` wire to end.
+    EndArrival { wire: Ident },
     /// The branch yields alternative producer values to a join.
     Yield { wires: Vec<Ident>, join: JoinTarget },
 }

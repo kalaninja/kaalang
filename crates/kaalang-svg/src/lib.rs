@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn reports_kaalang_arguments_as_an_invalid_flow() {
-        let source = "#[kaalang(unexpected)]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let result = |input| { input };\n}\n";
+        let source = "#[kaalang(unexpected)]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -356,7 +356,7 @@ fn invalid(condition: bool) -> u32 {
     let selected = |yes| { 1 };
 
     #[action("Use the selected value")]
-    let result = |selected| { selected };
+    let end = |selected| { selected };
 
     #[action("Build the later alternative")]
     let selected = |no| { 2 };
@@ -377,7 +377,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn rejects_characters_that_xml_cannot_represent() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let result = |input| { input };\n}\n";
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let end = |input| { input };\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -392,7 +392,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn reports_an_invalid_case_description_by_its_position() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    let result = |a| { 1 };\n\n    #[action(\"B\")]\n    let result = |b| { 2 };\n}\n";
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    let end = |a| { 1 };\n\n    #[action(\"B\")]\n    let end = |b| { 2 };\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -407,7 +407,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn reports_an_invalid_question_branch_description() {
-        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    let (yes, no) = |condition| { condition };\n    #[action(\"Yes\")]\n    let result = |yes| { 1 };\n    #[action(\"No\")]\n    let result = |no| { 0 };\n}\n";
+        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    let (yes, no) = |condition| { condition };\n    #[action(\"Yes\")]\n    let end = |yes| { 1 };\n    #[action(\"No\")]\n    let end = |no| { 0 };\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),

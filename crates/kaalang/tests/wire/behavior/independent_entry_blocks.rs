@@ -18,7 +18,7 @@ fn independent_entry_blocks(condition: bool) -> (u32, u32) {
     let second = |right| right * 10;
 
     #[action("Pair the entry results.")]
-    let result = |first, second| (first, second);
+    let end = |first, second| (first, second);
 }
 
 #[test]

@@ -28,10 +28,10 @@ fn question_after_a_partial_merge(value: u8, flag: bool) -> u8 {
     let (large, small) = |&shared, flag| flag && *shared > 15;
 
     #[action("Double a large value.")]
-    let result = |large, shared| shared * 2;
+    let end = |large, shared| shared * 2;
 
     #[action("Keep a small value.")]
-    let result = |small, shared| shared;
+    let end = |small, shared| shared;
 }
 
 #[test]

@@ -173,9 +173,9 @@ impl Replay<'_> {
                 self.branch(*index, branches, joins)
             }
             ExecutionPlan::End { body, .. } => self.walk(body),
-            ExecutionPlan::EndArrival { result } => {
+            ExecutionPlan::EndArrival { wire } => {
                 let end = self.flow.blocks.len() - 1;
-                if self.flow.blocks[end].inputs[0].ident != *result {
+                if self.flow.blocks[end].inputs[0].ident != *wire {
                     return None;
                 }
                 self.capture(end)?;
@@ -235,7 +235,7 @@ mod tests {
                 #[action("Second")]
                 let second = || {};
                 #[action("Finish")]
-                let result = |first, second| {};
+                let end = |first, second| {};
             }
         })
         .expect("the independent effects are valid");
@@ -248,7 +248,7 @@ mod tests {
         let incomplete = ExecutionPlan::Action {
             index: 0,
             next: Box::new(ExecutionPlan::EndArrival {
-                result: Ident::new("absent", Span::call_site()),
+                wire: Ident::new("absent", Span::call_site()),
             }),
         };
         assert!(!plan(
@@ -270,7 +270,7 @@ mod tests {
                 #[action("No value")]
                 let value = |no| { 2u8 };
                 #[action("Use the value")]
-                let result = |value| { value };
+                let end = |value| { value };
             }
         })
         .expect("the alternative producers are valid");
@@ -301,7 +301,7 @@ mod tests {
                 #[action("Second")]
                 let second = || {};
                 #[action("Finish")]
-                let result = |first, second| {};
+                let end = |first, second| {};
             }
         })
         .expect("the effects are valid");
@@ -312,7 +312,7 @@ mod tests {
                 next: Box::new(ExecutionPlan::Action {
                     index: 2,
                     next: Box::new(ExecutionPlan::EndArrival {
-                        result: Ident::new("result", Span::call_site()),
+                        wire: Ident::new("end", Span::call_site()),
                     }),
                 }),
             }),
@@ -342,7 +342,7 @@ mod tests {
                 #[action("Use the merged value")]
                 let used = |value| { value };
                 #[action("Finish")]
-                let result = |used, done| { used };
+                let end = |used, done| { used };
             }
         };
         let model = crate::build(&function).expect("branch-local work finishes above the capture");
@@ -390,9 +390,9 @@ mod tests {
                     #[question("Use the setup?")]
                     let (yes, no) = |flag| { flag };
                     #[action("Use it.")]
-                    let result = |yes, setup| { setup };
+                    let end = |yes, setup| { setup };
                     #[action("Skip it.")]
-                    let result = |no, fallback| { fallback };
+                    let end = |no, fallback| { fallback };
                 }
             };
             function.block.stmts[1] = selection;
@@ -441,9 +441,9 @@ mod tests {
                 #[question("Report the value?")]
                 let (yes, no) = |report| { report };
                 #[action("Report it.")]
-                let result = |yes, value| { value };
+                let end = |yes, value| { value };
                 #[action("Report nothing.")]
-                let result = |no, value| { 0u8 };
+                let end = |no, value| { 0u8 };
             }
         };
         let model = crate::build(&function).expect("the merge completes above the selection");

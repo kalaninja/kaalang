@@ -13,7 +13,7 @@ fn copy_then_borrow(value: u32) -> u32 {
     };
 
     #[action("Finish.")]
-    let result = |next| next;
+    let end = |next| next;
 }
 
 #[test]

@@ -25,10 +25,10 @@ fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
     };
 
     #[action("Use the left branch and the right value.")]
-    let result = |a, value| value + 1;
+    let end = |a, value| value + 1;
 
     #[action("Use the other left branch and the right value.")]
-    let result = |b, value| value + 2;
+    let end = |b, value| value + 2;
 }
 
 #[test]

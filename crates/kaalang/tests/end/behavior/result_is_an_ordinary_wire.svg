@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="524" viewBox="0 0 680 524" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang diagram for order_the_result_wire</title>
-  <desc id="kaalang-description">Nodes: Start: order_the_result_wire with parameters input: u32 handing over input; Action: Build three values. capturing input handing over first, second, third; Action: Order the three values. capturing third, first, second handing over result; End: (u32, u32, u32) capturing result. Connections: Start: order_the_result_wire to Action: Build three values.; Action: Build three values. to Action: Order the three values.; Action: Order the three values. to End: (u32, u32, u32).</desc>
+  <title id="kaalang-title">kaalang diagram for result_is_an_ordinary_wire</title>
+  <desc id="kaalang-description">Nodes: Start: result_is_an_ordinary_wire with parameters input: u32 handing over input; Action: Increment the input. capturing input handing over result; Action: Double the intermediate result. capturing result handing over end; End: u32 capturing end. Connections: Start: result_is_an_ordinary_wire to Action: Increment the input.; Action: Increment the input. to Action: Double the intermediate result.; Action: Double the intermediate result. to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,8 +27,7 @@
       M 172 362 L 172 434
     "/>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">input</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">first, second, third</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">third, first, second</tspan></text>
+    <text class="connection-label" x="185" y="257" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -38,21 +37,21 @@
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">order_the_result_wire</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">result_is_an_ordinary_wire</tspan></text>
     </g>
     <g class="node action" transform="translate(172 194)">
-      <title xml:space="preserve">Build three values.</title>
+      <title xml:space="preserve">Increment the input.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build three values.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the input.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 330)">
-      <title xml:space="preserve">Order the three values.</title>
+      <title xml:space="preserve">Double the intermediate result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Order the three values.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Double the intermediate result.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 463)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; (u32, u32, u32)</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">-&gt; u32</tspan></text>
     </g>
   </g>
 </svg>

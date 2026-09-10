@@ -24,7 +24,7 @@ fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
     let size = |no| 8usize;
 
     #[action("Mutate the cell after the merge.")]
-    let result = |size, cell| {
+    let end = |size, cell| {
         *cell.borrow_mut() += 1;
         size
     };

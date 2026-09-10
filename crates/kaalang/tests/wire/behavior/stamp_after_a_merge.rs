@@ -16,7 +16,7 @@ fn stamp_after_a_merge(flag: bool) -> u8 {
     let stamp = || 10u8;
 
     #[action("Finish.")]
-    let result = |value, stamp| value + stamp;
+    let end = |value, stamp| value + stamp;
 }
 
 #[test]

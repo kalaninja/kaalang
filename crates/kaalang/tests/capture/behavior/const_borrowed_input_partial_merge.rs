@@ -27,7 +27,7 @@ const fn const_borrowed_input_partial_merge(source: u8, bytes: &[u8]) -> usize {
     let view = |fallback| &[7u8, 8];
 
     #[action("Measure the merged slice.")]
-    let result = |view| view.len() + view[0] as usize;
+    let end = |view| view.len() + view[0] as usize;
 }
 
 #[test]

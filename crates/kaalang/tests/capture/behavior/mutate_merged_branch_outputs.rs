@@ -19,7 +19,7 @@ fn mutate_merged_branch_outputs(condition: bool, mode: bool) -> usize {
     let mut selected = |prepare| {};
 
     #[action("Mutate only after the branch outputs merge.")]
-    let result = |&mut selected| {
+    let end = |&mut selected| {
         *selected = ();
         1
     };

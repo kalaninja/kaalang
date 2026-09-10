@@ -84,7 +84,7 @@ fn measure(text: String) -> (String, usize, bool) {
     let (length, empty) = |&text| { (text.len(), text.is_empty()) };
 
     #[action("Return the text and its measurements.")]
-    let result = |text, length, empty| { (text, length, empty) };
+    let end = |text, length, empty| { (text, length, empty) };
 }
 ```
 
@@ -96,13 +96,13 @@ fn measure(wire_text: String) -> (String, usize, bool) {
         let text = &wire_text;
         (text.len(), text.is_empty())
     };
-    let wire_result = {
+    let wire_end = {
         let text = wire_text;
         let length = wire_length;
         let empty = wire_empty;
         (text, length, empty)
     };
-    wire_result
+    wire_end
 }
 ```
 
@@ -152,7 +152,7 @@ fn choose(condition: bool) -> u32 {
     let selected = |no| { 2 };
 
     #[action("Add ten to the selected value.")]
-    let result = |selected| { selected + 10 };
+    let end = |selected| { selected + 10 };
 }
 ```
 
@@ -170,11 +170,11 @@ fn choose(wire_condition: bool) -> u32 {
             break 'join 2;
         }
     };
-    let wire_result = {
+    let wire_end = {
         let selected = wire_selected;
         selected + 10
     };
-    wire_result
+    wire_end
 }
 ```
 
@@ -233,7 +233,7 @@ case continuation. This scope boundary implements
 Nested labeled blocks let each case pass its value directly into an ordinary
 `let` binding. Each arm breaks out of its input and match-arm scopes before its
 continuation runs. The continuation then breaks to its join label or returns the
-flow's `result`. The example evaluates one authored `match`.
+flow's `end`. The example evaluates one authored `match`.
 
 ```rust
 use kaalang::kaalang;
@@ -251,10 +251,10 @@ fn length_or_zero(input: Option<String>) -> usize {
     };
 
     #[action("Measure the supplied text.")]
-    let result = |text| { text.len() };
+    let end = |text| { text.len() };
 
     #[action("Return zero for absent text.")]
-    let result = |absent| { 0 };
+    let end = |absent| { 0 };
 }
 ```
 
@@ -270,11 +270,11 @@ fn length_or_zero(wire_input: Option<String>) -> usize {
                 None => break 'case_absent (),
             }
         };
-        let wire_result = {
+        let wire_end = {
             let text = wire_text;
             text.len()
         };
-        return wire_result;
+        return wire_end;
     };
     return 0;
 }
@@ -293,9 +293,9 @@ when it reaches end.
 ## 5. End and terminal branches
 
 Every arrival at the implicit end block becomes a direct Rust `return` of the
-selected `result` value. A merge of alternative `result` producers happens
-before that return, under [RFC 0001 §4.4](0001-language.md#44-end); end does not
-become a separate computational continuation or merge operation.
+selected `end` value. A merge of alternative `end` producers happens before that
+return, under [RFC 0001 §4.4](0001-language.md#44-end); end does not become a
+separate computational continuation or merge operation.
 
 When one branch finishes the flow while its siblings yield a value to an
 enclosing merge, its `return` avoids the continuation it does not enter. This
@@ -314,7 +314,7 @@ fn finish_or_join(refine: bool, finish_early: bool) -> u32 {
     let (skip, join) = |nested, finish_early| { finish_early };
 
     #[action("Finish before the shared step.")]
-    let result = |skip| { 100 };
+    let end = |skip| { 100 };
 
     #[action("Build the refined value.")]
     let shared = |join| { 1 };
@@ -323,7 +323,7 @@ fn finish_or_join(refine: bool, finish_early: bool) -> u32 {
     let shared = |direct| { 2 };
 
     #[action("Add ten to the shared value.")]
-    let result = |shared| { shared + 10 };
+    let end = |shared| { shared + 10 };
 }
 ```
 
@@ -345,11 +345,11 @@ fn finish_or_join(wire_refine: bool, wire_finish_early: bool) -> u32 {
     } else {
         2
     };
-    let wire_result = {
+    let wire_end = {
         let shared = wire_shared;
         shared + 10
     };
-    wire_result
+    wire_end
 }
 ```
 
@@ -361,14 +361,14 @@ binding and a return:
 use kaalang::kaalang;
 
 #[kaalang]
-fn identity<T>(result: T) -> T {}
+fn identity<T>(end: T) -> T {}
 ```
 
 Illustrative Rust:
 
 ```rust
-fn identity<T>(wire_result: T) -> T {
-    return wire_result;
+fn identity<T>(wire_end: T) -> T {
+    return wire_end;
 }
 ```
 
@@ -420,7 +420,7 @@ fn count_to(limit: usize) -> usize {
     }
 
     #[action("Return the counter.")]
-    let result = |count| count;
+    let end = |count| count;
 }
 ```
 
@@ -447,7 +447,7 @@ The plan contains one while node with a body and an after-loop continuation.
 Each authored block is emitted once. Normal body endings use a generated
 `continue` to the loop's hygienic label, including endings inside a question or
 choice. This transfer leaves all iteration-local scopes. A generated return of
-`result` exits the whole function under §5. Answer attribute order affects
+`end` exits the whole function under §5. Answer attribute order affects
 presentation only: true always enters the body.
 
 Validation and plan verification use finite structural summaries: no iteration,

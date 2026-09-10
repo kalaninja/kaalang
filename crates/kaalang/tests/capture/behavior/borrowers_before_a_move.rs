@@ -12,7 +12,7 @@ fn borrowers_before_a_move(text: String) -> (usize, bool, String) {
     let empty = |&text| text.is_empty();
 
     #[action("Take the text once the trigger and both borrows are done.")]
-    let result = |trigger, text, length, empty| (length, empty, text);
+    let end = |trigger, text, length, empty| (length, empty, text);
 }
 
 #[test]

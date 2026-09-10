@@ -31,7 +31,7 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
     let abc = |c| 3u8;
 
     #[action("Finish the first three.")]
-    let result = |abc| abc + 100;
+    let end = |abc| abc + 100;
 
     #[action("Fourth value.")]
     let de = |d| 4u8;
@@ -40,7 +40,7 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
     let de = |e| 5u8;
 
     #[action("Finish the last two.")]
-    let result = |de| de + 200;
+    let end = |de| de + 200;
 }
 
 #[test]

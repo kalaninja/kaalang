@@ -5,7 +5,7 @@ fn invalid(flag: bool) {
     #[question("Repeat?")]
     while (|flag| { if flag { break; } false }) {}
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

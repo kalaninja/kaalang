@@ -22,10 +22,10 @@ fn invalid(condition: bool) -> usize {
     };
 
     #[action("Finish yes.")]
-    let result = |length| { length };
+    let end = |length| { length };
 
     #[action("Finish no.")]
-    let result = |no| { 0 };
+    let end = |no| { 0 };
 }
 
 fn main() {}

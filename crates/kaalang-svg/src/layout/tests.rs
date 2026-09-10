@@ -122,7 +122,7 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
     }
 
     assert_eq!(scene.topology.junctions.len(), 2);
-    assert_eq!(scene.topology.junctions[1].wires, ["result"]);
+    assert_eq!(scene.topology.junctions[1].wires, ["end"]);
     for junction in 0..2 {
         let common = scene
             .connections
@@ -150,8 +150,8 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
             .iter()
             .filter(|label| label.lines == [name.clone()])
             .collect::<Vec<_>>();
-        if name == "result" {
-            assert!(labels.is_empty(), "the result merge is labeled");
+        if name == "end" {
+            assert!(labels.is_empty(), "the end merge is labeled");
             continue;
         }
         assert_eq!(labels.len(), 1, "one shared label for {name}");
@@ -177,7 +177,7 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
                 #[action("Build the no value.")]
                 let value = |no| { String::new() };
                 #[action("Measure the value.")]
-                let result = |&value| { value.len() };
+                let end = |&value| { value.len() };
             }
         };
         let model = kaalang_model::build(&function).unwrap();
@@ -392,7 +392,7 @@ const SHARED_INPUTS: &str = r#"
         let product = |&first, &second| { first * second };
 
         #[action("Finish from both combinations.")]
-        let result = |sum, product| { sum + product };
+        let end = |sum, product| { sum + product };
     }
 "#;
 
@@ -588,9 +588,9 @@ fn long_wire_labels_clear_a_tall_neighbor() {
             #[question("Choose a branch.")]
             let (the_rather_long_named_left_branch_wire, no) = |condition| {{ condition }};
             #[action("Short action.")]
-            let result = |the_rather_long_named_left_branch_wire| {{ 1 }};
+            let end = |the_rather_long_named_left_branch_wire| {{ 1 }};
             #[action({:?})]
-            let result = |no| {{ 2 }};
+            let end = |no| {{ 2 }};
         }}
     "#,
         "A tall description.\n".repeat(16)
@@ -608,9 +608,9 @@ fn a_wrapped_question_label_stays_above_its_horizontal_run() {
             #[question("Choose a branch.")]
             let (yes, a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection) = |condition| { condition };
             #[action("Take the first branch.")]
-            let result = |yes| { 1 };
+            let end = |yes| { 1 };
             #[action("Take the second branch.")]
-            let result = |a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection| { 2 };
+            let end = |a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection| { 2 };
         }
     "#,
         "example",
@@ -645,9 +645,9 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
             #[yes("Take the longer continuation description that must wrap beside the branch.")]
             let (fallback, proceed) = |condition| { condition };
             #[action("Use the fallback.")]
-            let result = |fallback| { 0 };
+            let end = |fallback| { 0 };
             #[action("Proceed.")]
-            let result = |proceed| { 1 };
+            let end = |proceed| { 1 };
         }
     "#,
         "example",
@@ -744,7 +744,7 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
             let three = |&first, &second, &third| { first ^ second ^ third };
 
             #[action("Finish from all three combinations.")]
-            let result = |one, two, three| { one + two + three };
+            let end = |one, two, three| { one + two + three };
         }
     "#;
     let scene = drawn((source, "serial"));
@@ -835,7 +835,7 @@ fn the_end_node_names_only_the_flow_return_type() {
     // A declared return type verbatim, and `-> ()` when the flow declares none.
     for ((source, flow), caption) in [
         (
-            fixture!("end/behavior", "order_the_result_wire"),
+            fixture!("end/behavior", "order_the_end_wire"),
             "-> (u32, u32, u32)",
         ),
         (fixture!("empty_flow/behavior", "nothing"), "-> ()"),
@@ -849,16 +849,23 @@ fn the_end_node_names_only_the_flow_return_type() {
         let end = end_node(&scene);
         assert_eq!(scene.topology.node(end).label, caption, "{flow}");
         // The semantic capture remains available to the accessible description,
-        // but the terminal route makes the `result` wire visually obvious.
-        assert_eq!(scene.topology.capture(end), ["result"], "{flow}");
+        // but the terminal route makes the `end` wire visually obvious.
+        assert_eq!(scene.topology.capture(end), ["end"], "{flow}");
         assert!(
-            scene
-                .labels
-                .iter()
-                .all(|label| !label.lines.join(" ").contains("result")),
-            "{flow}: the result wire is labeled"
+            scene.labels.iter().all(|label| !label
+                .lines
+                .join(" ")
+                .split_whitespace()
+                .any(|word| word == "end")),
+            "{flow}: the end wire is labeled"
         );
     }
+}
+
+#[test]
+fn result_is_labeled_as_an_ordinary_wire() {
+    let scene = drawn(fixture!("end/behavior", "result_is_an_ordinary_wire"));
+    assert!(scene.labels.iter().any(|label| label.lines == ["result"]));
 }
 
 #[test]
@@ -870,7 +877,7 @@ fn start_separates_the_flow_name_and_typed_parameters() {
             T: Copy,
         {
             #[action("Return the input.")]
-            let result = |r#type| { r#type };
+            let end = |r#type| { r#type };
         }
     "#;
     let scene = drawn((source, "example"));
@@ -908,8 +915,7 @@ fn capsule_captions_fit_the_curved_outline() {
         let return_type = std::iter::repeat_n("[u8; 1]", fields)
             .collect::<Vec<_>>()
             .join(", ");
-        let source =
-            format!("#[kaalang] fn capsule(result: ({return_type})) -> ({return_type}) {{}}");
+        let source = format!("#[kaalang] fn capsule(end: ({return_type})) -> ({return_type}) {{}}");
         let scene = drawn((&source, "capsule"));
         for id in [NodeId::Start, end_node(&scene)] {
             let node = scene.node(id);
@@ -932,7 +938,7 @@ fn capsule_captions_fit_the_curved_outline() {
 
 #[test]
 fn a_terminal_exit_starts_beside_the_loop_body() {
-    for (fixture, body, result) in [
+    for (fixture, body, end) in [
         (
             (
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
@@ -950,18 +956,14 @@ fn a_terminal_exit_starts_beside_the_loop_body() {
             7,
         ),
         (fixture!("while_loop/behavior", "count_to"), 2, 3),
-        (
-            fixture!("while_loop/behavior", "early_result_then_loop"),
-            3,
-            4,
-        ),
+        (fixture!("while_loop/behavior", "early_end_then_loop"), 3, 4),
     ] {
         let scene = drawn(fixture);
         let body = scene.node(NodeId::Block(body));
-        let result = scene.node(NodeId::Block(result));
-        assert_ne!(result.x, body.x);
+        let end = scene.node(NodeId::Block(end));
+        assert_ne!(end.x, body.x);
         assert_eq!(
-            result.y, body.y,
+            end.y, body.y,
             "{}: the terminal branch starts just below the condition",
             fixture.1
         );
@@ -1081,17 +1083,17 @@ fn a_single_action_returns_after_the_usual_gap() {
 #[test]
 fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
     let binary_search = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
-    let early_result = fixture!("while_loop/behavior", "early_result_then_loop");
+    let early_end = fixture!("while_loop/behavior", "early_end_then_loop");
     // Wrapping makes this action two pixels taller than its repeating sibling.
-    let wrapped_result = early_result.0.replace(
+    let wrapped_end = early_end.0.replace(
         "Return the count.",
         "Return the counter after the loop finishes.",
     );
     for fixture in [
         fixture!("while_loop/behavior", "count_to"),
         fixture!("while_loop/behavior", "collect_steps"),
-        early_result,
-        (wrapped_result.as_str(), early_result.1),
+        early_end,
+        (wrapped_end.as_str(), early_end.1),
         fixture!("while_loop/behavior", "nested_search"),
         (binary_search, "binary_search"),
         (binary_search, "binary_search_swapped"),
@@ -1121,7 +1123,7 @@ fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
             .max()
             .unwrap();
         let gap = vertical_gap(&scene.topology);
-        let crosses_return = matches!(fixture.1, "early_result_then_loop" | "nested_search");
+        let crosses_return = matches!(fixture.1, "early_end_then_loop" | "nested_search");
         assert_eq!(
             terminal_y - lowest_return,
             if crosses_return { gap } else { 0 },
@@ -1197,7 +1199,7 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
         (fixture!("while_loop/behavior", "condition_effects"), 1),
         (fixture!("while_loop/behavior", "reversed_empty_loop"), 1),
         (fixture!("while_loop/behavior", "nested_loop_tail"), 2),
-        (fixture!("while_loop/behavior", "early_result_then_loop"), 1),
+        (fixture!("while_loop/behavior", "early_end_then_loop"), 1),
         (fixture!("while_loop/behavior", "first_value"), 0),
     ] {
         let scene = drawn(fixture);

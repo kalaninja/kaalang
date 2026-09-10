@@ -17,7 +17,7 @@ fn temporary_borrow_within_branch(condition: bool) -> usize {
     let size = |no| 0usize;
 
     #[action("Finish with the merged size.")]
-    let result = |size| size;
+    let end = |size| size;
 }
 
 #[test]

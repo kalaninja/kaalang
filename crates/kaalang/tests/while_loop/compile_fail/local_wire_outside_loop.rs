@@ -10,7 +10,7 @@ fn invalid(flag: bool) {
     #[action("Read the local wire.")]
     |_local| {};
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

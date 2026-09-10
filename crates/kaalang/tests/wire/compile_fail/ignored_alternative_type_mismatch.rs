@@ -12,7 +12,7 @@ fn invalid(condition: bool) -> u32 {
     let (number, _log) = |no| { (2, 3u8) };
 
     #[action("Use the number.")]
-    let result = |number| { number };
+    let end = |number| { number };
 }
 
 fn main() {}

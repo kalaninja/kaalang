@@ -1,5 +1,5 @@
 error[E0382]: use of moved value
-  --> tests/capture/compile_fail/moved_text_after_the_second_join.rs:29:29
+  --> tests/capture/compile_fail/moved_text_after_the_second_join.rs:29:26
    |
  5 | #[kaalang]
    | ---------- in this attribute macro expansion
@@ -10,8 +10,8 @@ error[E0382]: use of moved value
 17 |     let length = |text| { text.len() };
    |                   ---- value moved here
 ...
-29 |     let result = |selected, text| { selected + text.len() };
-   |                             ^^^^ value used here after move
+29 |     let end = |selected, text| { selected + text.len() };
+   |                          ^^^^ value used here after move
    |
    = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider cloning the value if the performance cost is acceptable

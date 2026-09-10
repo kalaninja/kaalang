@@ -26,7 +26,7 @@ fn successive_selections_keep_a_copy(condition: bool, long: bool) -> u32 {
     let include_seed = |no| false;
 
     #[action("Finish with the selected adjustment.")]
-    let result = |include_seed, scaled, seed| {
+    let end = |include_seed, scaled, seed| {
         if include_seed { scaled + seed } else { scaled }
     };
 }

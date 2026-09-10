@@ -15,10 +15,10 @@ fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
     let (a, left_no) = |left| left;
 
     #[action("Work with the right value.")]
-    let result = |a, right_value| right_value.unwrap_or(0) + 10;
+    let end = |a, right_value| right_value.unwrap_or(0) + 10;
 
     #[action("Skip the work.")]
-    let result = |left_no, right_value| right_value.map_or(0, |_| 0);
+    let end = |left_no, right_value| right_value.map_or(0, |_| 0);
 }
 
 #[test]

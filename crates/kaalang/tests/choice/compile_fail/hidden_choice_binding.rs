@@ -13,10 +13,10 @@ fn invalid(input: Option<u32>) -> u32 {
     };
 
     #[action("Produce the hidden match value.")]
-    let result = |present| { hidden };
+    let end = |present| { hidden };
 
     #[action("Produce zero for no value.")]
-    let result = |absent| { 0 };
+    let end = |absent| { 0 };
 }
 
 fn main() {}

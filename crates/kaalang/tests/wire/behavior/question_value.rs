@@ -12,7 +12,7 @@ fn question_value(condition: bool, shared_runs: &mut usize) -> u32 {
     let selected = |no| 29;
 
     #[action("Use the selected value once.")]
-    let result = |selected, shared_runs| {
+    let end = |selected, shared_runs| {
         *shared_runs += 1;
         selected
     };

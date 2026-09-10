@@ -17,7 +17,7 @@ fn invalid(condition: bool) -> usize {
     let view = |no| { "fallback" };
 
     #[action("Measure the merged view.")]
-    let result = |view| { view.len() };
+    let end = |view| { view.len() };
 }
 
 fn main() {}

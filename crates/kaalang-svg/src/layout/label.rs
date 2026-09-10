@@ -233,7 +233,7 @@ fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
 fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
     let names = names
         .iter()
-        .filter(|name| !matches!(name.as_str(), "result" | "mut result"))
+        .filter(|name| !matches!(name.as_str(), "end" | "mut end"))
         .cloned()
         .collect::<Vec<_>>();
     (!names.is_empty()).then(|| wrap_text(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
@@ -413,7 +413,7 @@ mod tests {
             connections: vec![],
             labels: vec![Label {
                 kind: LabelKind::Wire,
-                lines: vec!["result".to_owned()],
+                lines: vec!["end".to_owned()],
                 at,
             }],
         }
@@ -434,14 +434,14 @@ mod tests {
         ] {
             assert_eq!(
                 verify(&scene(corner, None)).as_deref(),
-                Some("the label `result` leaves the canvas"),
+                Some("the label `end` leaves the canvas"),
                 "{corner:?}"
             );
         }
 
         assert_eq!(
             verify(&scene(inside, Some((100, 100)))).as_deref(),
-            Some("the label `result` reaches into the node `Do the work.`")
+            Some("the label `end` reaches into the node `Do the work.`")
         );
     }
 }

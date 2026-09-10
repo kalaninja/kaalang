@@ -1,5 +1,5 @@
 error[E0425]: cannot find value `hidden` in this scope
-  --> tests/choice/compile_fail/hidden_choice_binding.rs:16:30
+  --> tests/choice/compile_fail/hidden_choice_binding.rs:16:27
    |
-16 |     let result = |present| { hidden };
-   |                              ^^^^^^ not found in this scope
+16 |     let end = |present| { hidden };
+   |                           ^^^^^^ not found in this scope

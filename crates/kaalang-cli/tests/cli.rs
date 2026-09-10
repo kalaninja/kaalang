@@ -4,7 +4,7 @@ const SOURCE: &str = r#"
 #[kaalang]
 fn route(request: u8) -> u8 {
     #[action("Use the request.")]
-    let result = |&request| { request };
+    let end = |&request| { request };
 }
 "#;
 

@@ -10,7 +10,7 @@ fn invalid<T>(value: T) -> (T, T) {
     let second = |value| { value };
 
     #[action("Pair the two values.")]
-    let result = |first, second| { (first, second) };
+    let end = |first, second| { (first, second) };
 }
 
 fn main() {}

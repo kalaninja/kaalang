@@ -15,7 +15,7 @@ fn invalid(condition: bool) -> u32 {
     let settled = |stray, tail| { drop((stray, tail)) };
 
     #[action("Use the value once both branches have settled.")]
-    let result = |value, settled| { value };
+    let end = |value, settled| { value };
 }
 
 fn main() {}

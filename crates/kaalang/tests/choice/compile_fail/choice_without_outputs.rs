@@ -14,7 +14,7 @@ fn invalid(input: u32) -> u32 {
     };
 
     #[action("Finish.")]
-    let result = |input| { input };
+    let end = |input| { input };
 }
 
 fn main() {}

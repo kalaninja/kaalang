@@ -18,10 +18,10 @@ fn borrow_within_branch(condition: bool) -> usize {
     };
 
     #[action("Finish yes.")]
-    let result = |text| text.len();
+    let end = |text| text.len();
 
     #[action("Finish no.")]
-    let result = |no| 0;
+    let end = |no| 0;
 }
 
 #[test]

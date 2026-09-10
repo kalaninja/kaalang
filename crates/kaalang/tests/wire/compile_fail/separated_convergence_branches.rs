@@ -18,13 +18,13 @@ fn invalid(value: u8) -> u8 {
     let selected = |first| { 1 };
 
     #[action("Produce the direct result.")]
-    let result = |done| { 2 };
+    let end = |done| { 2 };
 
     #[action("Build the second value.")]
     let selected = |second| { 3 };
 
     #[action("Produce the selected result.")]
-    let result = |selected| { selected };
+    let end = |selected| { selected };
 }
 
 fn main() {}

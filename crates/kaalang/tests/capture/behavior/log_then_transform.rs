@@ -13,7 +13,7 @@ fn log_then_transform(value: String) -> usize {
     let length = |value| value.len();
 
     #[action("Finish.")]
-    let result = |length| length;
+    let end = |length| length;
 }
 
 #[test]

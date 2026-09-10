@@ -1,5 +1,5 @@
 error[E0502]: cannot borrow value as mutable because it is also borrowed as immutable
- --> tests/capture/compile_fail/mutable_borrow_with_live_shared_reference.rs:9:24
+ --> tests/capture/compile_fail/mutable_borrow_with_live_shared_reference.rs:9:21
   |
 3 | #[kaalang]
   | ---------- in this attribute macro expansion
@@ -7,9 +7,9 @@ error[E0502]: cannot borrow value as mutable because it is also borrowed as immu
 6 |     let view = |&text| { text.as_str() };
   |                  ---- immutable borrow occurs here
 ...
-9 |     let result = |&mut text, view| {
-  |                        ^^^^  ---- immutable borrow later used here
-  |                        |
-  |                        mutable borrow occurs here
+9 |     let end = |&mut text, view| {
+  |                     ^^^^  ---- immutable borrow later used here
+  |                     |
+  |                     mutable borrow occurs here
   |
   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

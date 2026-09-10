@@ -9,10 +9,10 @@ fn invalid(condition: bool) -> u32 {
     let (selected, _marker) = |yes| { (1, "yes") };
 
     #[action("Build the no result and a marker.")]
-    let (result, _marker) = |no| { (2, 3u8) };
+    let (end, _marker) = |no| { (2, 3u8) };
 
     #[action("Use the selected value.")]
-    let result = |selected| { selected };
+    let end = |selected| { selected };
 }
 
 fn main() {}

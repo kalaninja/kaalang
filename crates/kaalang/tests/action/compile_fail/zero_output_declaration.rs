@@ -7,7 +7,7 @@ fn invalid(input: u32) {
     let () = |input| { input + 1 };
 
     #[action("Finish.")]
-    let result = || {};
+    let end = || {};
 }
 
 fn main() {}

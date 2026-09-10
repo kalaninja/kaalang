@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 // The flow breaks two rules at once. The second question opens its branches
 // while the first question's are still separate, and the work needing both
-// selected outputs leaves three of the four executions without a `result`
+// selected outputs leaves three of the four executions without a `end`
 // wire. Branch placement is the diagnostic reported.
 #[kaalang]
 fn invalid(left: bool, right: bool) -> u8 {
@@ -13,7 +13,7 @@ fn invalid(left: bool, right: bool) -> u8 {
     let (b, _right_no) = |right| { right };
 
     #[action("Require both selected outputs.")]
-    let result = |a, b| { 1 };
+    let end = |a, b| { 1 };
 }
 
 fn main() {}

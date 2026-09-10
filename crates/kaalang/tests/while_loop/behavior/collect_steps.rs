@@ -39,10 +39,10 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     }
 
     #[action("Return the log.")]
-    let result = |log| log;
+    let end = |log| log;
 
     #[action("Return an empty log.")]
-    let result = |skip| Vec::new();
+    let end = |skip| Vec::new();
 }
 
 #[test]

@@ -9,7 +9,7 @@ fn immutable_output(input: String) -> String {
     |&mut text| { text.clear() };
 
     #[action("Return the text.")]
-    let result = |text| { text };
+    let end = |text| { text };
 }
 
 fn main() {}
