@@ -1,0 +1,5 @@
+error: a kaalang break does not support attributes
+ --> tests/loop/compile_fail/break_attribute.rs:6:9
+  |
+6 |         #[action("Exit.")]
+  |         ^^^^^^^^^^^^^^^^^^

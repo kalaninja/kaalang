@@ -3,7 +3,7 @@
 
 use std::collections::BTreeMap;
 
-use kaalang_model::{BlockKind, SemanticModel};
+use kaalang_model::SemanticModel;
 use syn::{ReturnType, Signature, spanned::Spanned};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -172,7 +172,7 @@ fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destinat
         let compact = (incoming.len() == 1)
             .then(|| compact_arrival(&points, gap, end.y, &labels))
             .flatten();
-        let prefer_left = block.kind == BlockKind::Loop || block.yes_branch() == 0;
+        let prefer_left = loop_.prefer_left;
         let mut routed = false;
         let mut blocked = String::new();
         // ponytail: bounded side lanes and lower tails; broaden contours if

@@ -1,0 +1,5 @@
+error: a repeating kaalang branch cannot lie between breaks to the same loop; reorder the branches
+ --> tests/loop/compile_fail/enclosed_repeat.rs:5:5
+  |
+5 |     loop {
+  |     ^^^^

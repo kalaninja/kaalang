@@ -16,7 +16,7 @@ following terms:
 
 - a **diagram** is the complete visual representation of one flow;
 - a **node** is a drawn unit that represents all or part of one block, authored
-  or implicit, except for the synthetic start node; an unconditional loop is
+  or implicit, except for the synthetic start node; a loop or break is
   represented by junctions and connections rather than a node;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
@@ -39,10 +39,9 @@ following terms:
 ## 3. Diagram structure
 
 A diagram contains a visual representation of each reachable block the flow
-declares, authored or implicit. An unconditional loop uses only its entry and
-iteration-tail junctions, and the implicit end block has a node only when at
-least one finite execution summary has outcome `End`. No block is duplicated to
-simplify layout.
+declares, authored or implicit. Loops and breaks use structural junctions and
+connections, and the implicit end block has a node only when at least one finite
+execution summary has outcome `End`. No block is duplicated to simplify layout.
 
 Connections preserve the validated model's dependencies, wire merges, and branch
 routes. The serial order they show is the source order RFC 0001 §7 defines, so
@@ -54,10 +53,10 @@ data connections.
 
 ## 4. Node kinds
 
-An action and a question, including a while condition, each become one node. A
-choice becomes one select node and one case node per authored case. A reachable
-end block becomes one end node. Case nodes are visual projections, not
-additional semantic blocks; an unconditional loop has no node of its own.
+An action and a question each become one node. A choice becomes one select node
+and one case node per authored case. A reachable end block becomes one end node.
+Case nodes are visual projections, not additional semantic blocks; loops and
+breaks have no nodes of their own.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
@@ -92,15 +91,6 @@ branches preserve their positional order from RFC 0001. Each branch is labeled
 with its authored description when present, otherwise with its output name. An
 ordinary question therefore needs no synthesized answer labels.
 
-A while condition has the same node shape and branch order. It has no output
-wires, so a branch without an authored description displays `YES` or `NO`. Yes
-reaches the nested body; no reaches the after-loop continuation. Each body block
-is drawn once. Normal body endings meet at an unlabeled iteration tail whose
-return connection meets the incoming line at an unlabeled entry junction before
-the condition. One common vertical segment leads from that junction to the
-question. A body whose every branch finishes the flow has no return connection.
-An empty body connects yes directly to its iteration tail.
-
 ### 4.4 select
 
 A choice block becomes one select node. Its branches preserve authored case
@@ -131,12 +121,33 @@ producers of `end` merge above it (section 7), and it is not itself the merge.
 
 ### 4.7 loop
 
-An unconditional loop has no condition or separate node. An unlabeled entry
-junction receives the initial route and every repeated arrival. The body follows
-that junction once in the finite diagram. Normal body endings meet at an
-unlabeled iteration tail, whose return connects to the entry junction. An empty
-body connects entry directly to tail. A body route producing `end` goes to the
-end node instead of the tail.
+A loop has no condition or separate computational node. An entry junction
+receives the initial route and every repeated arrival. Its optional entry
+captures attach the loop to its branch but carry no labels at the junction. The
+body follows that junction once in the finite diagram. Normal body endings meet
+at an unlabeled iteration tail, whose return connects to the entry. An empty
+body connects entry directly to tail. A loop with no repeating route has no tail
+or return connection. If it also has no entry captures, only its body is drawn:
+the entry adds no junction or spacing to the diagram.
+
+Unit-valued question outputs captured by a loop or break only select an existing
+branch route. Their output name or branch description already labels that route;
+the structural capture adds neither another label nor another junction. A loop
+whose only inputs are such outputs follows the same placement rule as a loop
+without entry captures. Loop-entry and break captures remain unlabeled in every
+form; data dependencies still connect to their structural junctions.
+
+### 4.8 break
+
+A break redirects its branch connection to the continuation after the targeted
+loop, or to the enclosing iteration tail when that continuation completes an
+outer iteration. A break capturing data uses an unlabeled structural junction
+for its dependencies; a break with no data captures adds no vertex or spacing.
+Neither form has a computational figure, description, or output. Labeled exits
+bypass every intervening loop; they do not traverse those loops' return
+connections. Authored loop labels resolve the destination without adding a
+diagram node. A route producing `end` still finishes the entire flow at the end
+node.
 
 ## 5. Flow inputs and outputs
 
@@ -151,8 +162,7 @@ when that flow reaches end.
 Description labels carry the exact authored text. A presentation may wrap or
 escape that text but must not paraphrase, normalize, or synthesize it. No node
 carries a caption naming its block kind. The end node's `()` for an absent
-return type and the while's default `YES`/`NO` answer labels state the contract
-rather than paraphrasing authored text.
+return type states the contract rather than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
@@ -179,11 +189,11 @@ retain it in shared merge labels. The `end` wire remains unlabeled even when
 declared with `mut`; an authored question-branch description still replaces its
 output label.
 
-Every block input is labeled beside its receiving node. Value captures are shown
-as `name` or `mut name`, and borrowed captures as `&name` or `&mut name`,
-according to the authored form. The captures of a node are drawn once however
-many connections arrive there, because the capture list belongs to the node
-rather than to an incoming connection. All forms establish execution
+Every computational block input is labeled beside its receiving node. Value
+captures are shown as `name` or `mut name`, and borrowed captures as `&name` or
+`&mut name`, according to the authored form. The captures of a node are drawn
+once however many connections arrive there, because the capture list belongs to
+the node rather than to an incoming connection. All forms establish execution
 dependencies. A wire that remains available for a later capture may pass
 virtually along a transitive connection path without appearing in intermediate
 hand-overs. This version of the visual language does not show wire lifetimes or
@@ -237,14 +247,15 @@ participate in the same per-execution reduction as capture dependencies. In an
 block, so every other node precedes the end node.
 
 Source order supplies the serial order of participating blocks. For each
-execution, add precedence from start to its first computational block and
-between consecutive computational blocks. An `End` outcome continues from the
-last one to end; a `Repeat` outcome continues to the corresponding iteration
-tail. A question leaves through its selected exit; a choice continues through
-its selected case. With no computational blocks, start leads directly to end or
-through an unconditional loop's entry to its tail, according to the outcome.
-These relations participate in the same reduction as dependencies and merges.
-They express the order the flow is written in without inventing captures.
+execution, add precedence from start to its first authored block and between
+consecutive authored blocks, including loop and break junctions. An `End`
+outcome continues from the last one to end; a `Repeat` outcome continues to the
+corresponding iteration tail. A question leaves through its selected exit; a
+choice continues through its selected case. With no computational blocks, start
+leads directly to end or through a loop's entry to a break, its iteration tail,
+or end, according to the recorded route. These relations participate in the same
+reduction as dependencies and merges. They express the order the flow is written
+in without inventing captures.
 
 For example, if two actions capture `left` and `right` after a merge, draw them
 in the order they are written on the happy path. A connection between them does
@@ -298,28 +309,22 @@ by the per-execution transitive reduction. The junction adds neither a
 computational block nor a producer occurrence. Consumers display the captured
 logical wire name once.
 
-For a while, apply the forward dependency and serial-order rules to zero
-iterations and one representative iteration followed by normal exit, or by
-`end`. These finite summaries retain every branch and capture route without
-unrolling runtime iterations. Insert an iteration tail at each normal body end.
-The tail's precedence over the after-loop continuation constrains layout only;
-it is not a drawn control connection. Carry that precedence through the no
-branch's blocks and loop-entry junctions to the first wire merge, iteration
-tail, or end on each forward route. Those boundaries remain below the preceding
-body; the blocks leading to them may start immediately below the condition in
-their separate branch columns, regardless of block kind or answer order. The
-tail instead returns to the entry junction before its own condition, where the
-initial and repeated arrivals meet. No retains its direct forward route to the
-after-loop continuation. Nested tails close innermost first. Local wires do not
-travel along return connections; mutations of enclosing wires follow RFC 0001
-§§4.5–4.6.
+For each loop, use one representative iteration per finite summary. A break
+continues after its resolved target; a repeating outcome ends at the loop's
+iteration tail, whose return reaches the entry. End routes reach end directly.
+Entry and break junctions participate in the forward dependency and serial-order
+rules, including dependencies from their explicit captures. No local wire
+travels along a return or escapes a break.
 
-For an unconditional loop, use one representative iteration for each finite
-summary. An `End` outcome follows its body route to end. A `Repeat` outcome ends
-at the loop's iteration tail, whose return reaches the entry junction; there is
-no after-loop continuation. Nested iteration tails close innermost first. The
-same wire rule applies, including to an empty body whose entry connects directly
-to its tail.
+The continuation of a break occupies its branch column beside the other body
+routes. Carry precedence from the tails of the region it leaves through the
+continuation to its first wire merge, iteration tail, or end. Those boundaries
+stay below the body; preceding actions, questions, choices, and loop entries can
+start alongside it. This is layout precedence only, never a drawn execution edge
+from a repeating tail. Nested returns are routed innermost first. A break at the
+end of an inner loop may reach the outer iteration tail instead of a
+computational node. Each authored block is drawn once; these finite summaries do
+not unroll runtime iterations or prove termination.
 
 ## 8. Spatial notation
 
@@ -354,12 +359,12 @@ is not a crossing; connections may share such a segment only when they have the
 same source exit or the same destination node. Other connections do not overlap.
 Forward connections are plain lines without arrowheads. A loop return travels
 upward outside its body and ends horizontally with an arrowhead at its entry
-junction. For a while, the junction lies on the line above its condition and the
-common segment below it enters the question without an arrowhead. An
-unconditional loop has no condition node; its return prefers the left contour.
-The return is the only exception to downward routing and the only arrowhead. A
-route contains only straight horizontal and vertical segments, so every bend is
-a right angle.
+junction. The common segment below the junction enters the first body block
+without an arrowhead. Prefer the right contour when every repeating route takes
+the rightmost branch of the first selection in the body; otherwise prefer the
+left contour. A loop without a selection prefers the left contour. The return is
+the only exception to downward routing and the only arrowhead. A route contains
+only straight horizontal and vertical segments, so every bend is a right angle.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an

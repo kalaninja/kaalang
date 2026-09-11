@@ -1,5 +1,0 @@
-error: a kaalang block must declare its kind, such as `#[action("description")]`
- --> tests/while_loop/compile_fail/missing_question.rs:5:5
-  |
-5 |     while (|flag| flag) {}
-  |     ^^^^^

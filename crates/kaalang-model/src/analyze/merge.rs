@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Execution, Flow, ProducerId, WireMerge};
+use crate::model::{BlockKind, END_WIRE, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
 
 use super::{only_difference, produced};
 
@@ -147,35 +147,21 @@ fn validate_nesting(
     Ok(())
 }
 
-/// Unfold only selections that change this wire's producer or its presence.
-/// Earlier independent selections and questions after the merge do not split
-/// its branch interval. Source order puts each deciding ancestor before its
-/// descendants, so their projected traces sort in authored branch order.
+/// Producer routes occupy one interval in authored branch order.
 fn validate_adjacency(
     flow: &Flow,
     executions: &[Execution],
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
 ) -> Result<()> {
-    let mut selectors = BTreeSet::new();
-    for (first, execution) in executions.iter().enumerate() {
-        for (second, other) in executions.iter().enumerate().skip(first + 1) {
-            if producers[first] != producers[second]
-                && let Some(selector) = only_difference(execution, other)
-            {
-                selectors.insert(selector);
-            }
-        }
-    }
-    let mut ordered = (0..executions.len()).collect::<Vec<_>>();
-    ordered.sort_by_cached_key(|&index| {
-        executions[index]
-            .branches
-            .iter()
-            .filter(|selection| selectors.contains(&selection.block))
-            .copied()
-            .collect::<Vec<_>>()
-    });
+    // A repeating summary has not arrived at the flow's terminal merge.
+    // Its later iterations may finish through any of the recorded end routes.
+    let ordered = super::branch_order(&executions.iter().collect::<Vec<_>>(), producers)
+        .into_iter()
+        .filter(|&index| {
+            merge.wire != END_WIRE || executions[index].outcome == ExecutionOutcome::End
+        })
+        .collect::<Vec<_>>();
     let first = ordered.iter().position(|&index| producers[index].is_some());
     let last = ordered
         .iter()

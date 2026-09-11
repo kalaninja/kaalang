@@ -9,12 +9,12 @@ use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, ext::IdentExt, token::Mut};
 use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
 
 mod action;
+mod break_block;
 mod choice;
 mod end;
 mod join;
+mod loop_block;
 mod question;
-mod unconditional_loop;
-mod while_loop;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -158,11 +158,11 @@ pub(crate) fn tuple(span: Span, idents: &[impl ToTokens]) -> TokenStream2 {
 /// kaalang invariant, including the destination of every branch exit.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
-        ExecutionPlan::Loop { index, body } => {
-            unconditional_loop::emit(flow, bindings, *index, body)
+        ExecutionPlan::Loop { index, body, next } => {
+            loop_block::emit(flow, bindings, *index, body, next.as_deref())
         }
-        ExecutionPlan::While { index, body, next } => {
-            while_loop::emit(flow, bindings, *index, body, next)
+        ExecutionPlan::Break { index, target } => {
+            break_block::emit(flow, bindings, *index, *target)
         }
         ExecutionPlan::Repeat { index } => {
             let label = loop_label(*index, flow.blocks[*index].span);

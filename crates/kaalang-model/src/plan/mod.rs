@@ -14,11 +14,11 @@ use crate::model::{
     ProducerId, WireMerge,
 };
 
+mod break_block;
 mod choice;
+mod loop_block;
 mod question;
-mod unconditional_loop;
 pub(crate) mod verify;
-mod while_loop;
 
 /// Builds the nested branch tree the validated flow lowers to. Every accepted
 /// flow has one, so a failure here is a compiler bug rather than a rejected
@@ -75,7 +75,7 @@ struct Lowered<'e> {
     plan: ExecutionPlan,
     /// The executions that leave through a yield rather than end.
     yielding: Vec<&'e Execution>,
-    /// Every computational block the subtree emits.
+    /// Every authored block the subtree emits.
     emitted: BTreeSet<usize>,
 }
 
@@ -168,12 +168,10 @@ impl Builder<'_> {
             });
         }
         if self.flow.blocks[block].kind == BlockKind::Loop {
-            return unconditional_loop::lower(
-                self, block, executions, &next_done, forbidden, scopes,
-            );
+            return loop_block::lower(self, block, executions, &next_done, forbidden, scopes);
         }
-        if self.flow.blocks[block].kind == BlockKind::While {
-            return while_loop::lower(self, block, executions, &next_done, forbidden, scopes);
+        if self.flow.blocks[block].kind == BlockKind::Break {
+            return Ok(break_block::lower(self.flow, block));
         }
         self.branch(block, executions, &next_done, forbidden, scopes)
     }
@@ -223,8 +221,7 @@ impl Builder<'_> {
         }
         let emitted = BTreeSet::new();
         if waiting.is_empty() {
-            // The final outcome may repeat an outer loop, but a trailing while
-            // must complete its own iteration before that continuation runs.
+            // A body repeats only its own innermost active iteration.
             if let Some(scope) = scopes
                 .iter()
                 .rev()
@@ -257,11 +254,7 @@ impl Builder<'_> {
         // carries.
         let wires = self.available(executions[0], done).into_keys().collect();
         Ok(Lowered {
-            plan: if self.flow.blocks[join.block].kind == BlockKind::While {
-                ExecutionPlan::Repeat { index: join.block }
-            } else {
-                ExecutionPlan::Yield { wires, join }
-            },
+            plan: ExecutionPlan::Yield { wires, join },
             yielding: executions.to_vec(),
             emitted,
         })
@@ -337,7 +330,7 @@ impl Builder<'_> {
         let plan = match self.flow.blocks[block].kind {
             BlockKind::Question => question::dispatch(block, branches, joins),
             BlockKind::Choice => choice::dispatch(block, branches, joins),
-            BlockKind::Action | BlockKind::End | BlockKind::Loop | BlockKind::While => {
+            BlockKind::Action | BlockKind::End | BlockKind::Loop | BlockKind::Break => {
                 unreachable!("only questions and choices branch")
             }
         };
@@ -564,10 +557,11 @@ impl Builder<'_> {
 /// each yield's own producer spellings.
 fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
     match plan {
-        ExecutionPlan::Loop { body, .. } => fill_yields(body, wires, target),
-        ExecutionPlan::While { body, next, .. } => {
+        ExecutionPlan::Loop { body, next, .. } => {
             fill_yields(body, wires, target);
-            fill_yields(next, wires, target);
+            if let Some(next) = next {
+                fill_yields(next, wires, target);
+            }
         }
         ExecutionPlan::Action { next, .. } | ExecutionPlan::End { body: next, .. } => {
             fill_yields(next, wires, target);
@@ -607,6 +601,7 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
         }
         ExecutionPlan::EndArrival { .. }
         | ExecutionPlan::Yield { .. }
-        | ExecutionPlan::Repeat { .. } => {}
+        | ExecutionPlan::Repeat { .. }
+        | ExecutionPlan::Break { .. } => {}
     }
 }

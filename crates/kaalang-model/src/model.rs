@@ -3,7 +3,7 @@
 
 use proc_macro2::{Ident, Span};
 use syn::ext::IdentExt;
-use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
+use syn::{Expr, FnArg, Lifetime, Pat, PatIdent, ReturnType};
 
 /// A validated kaalang flow: its blocks, finite structural execution summaries, its
 /// convergence groups and wire merges, and the verified plan that lowers it.
@@ -28,7 +28,7 @@ pub struct SemanticModel {
 }
 
 /// The logical wire whose value is the flow output. The implicit end block
-/// captures it; no computational block may.
+/// captures it; no authored block may.
 pub(crate) const END_WIRE: &str = "end";
 
 /// The semantic role of one block. Every kind but `End` is authored.
@@ -37,7 +37,7 @@ pub enum BlockKind {
     Action,
     Question,
     Loop,
-    While,
+    Break,
     Choice,
     End,
 }
@@ -45,9 +45,9 @@ pub enum BlockKind {
 /// One kaalang block: an authored statement, or the implicit end block.
 pub struct Block {
     pub kind: BlockKind,
-    /// The exact authored description, absent for the implicit end block.
+    /// The exact authored description, absent for loops, breaks, and end.
     pub description: Option<String>,
-    /// A question's two answers, paired with outputs except on a while.
+    /// A question's two answers, paired with its outputs.
     pub question_branches: Vec<QuestionBranch>,
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
@@ -64,20 +64,24 @@ pub struct Block {
     pub parent: Option<usize>,
     /// The exclusive end of a loop body's depth-first block sequence.
     pub loop_end: Option<usize>,
+    /// The authored loop label, resolved lexically by break statements.
+    pub loop_label: Option<Lifetime>,
+    /// The enclosing loop a break exits.
+    pub break_target: Option<usize>,
 }
 
 impl Block {
-    /// The number of alternative control exits, including a while's answers.
+    /// The number of alternative control exits, for a question or choice.
     #[must_use]
     pub fn branch_count(&self) -> usize {
         match self.kind {
-            BlockKind::Question | BlockKind::While => 2,
+            BlockKind::Question => 2,
             BlockKind::Choice => self.outputs.len(),
             _ => 0,
         }
     }
 
-    /// The positional answer that enters a while body.
+    /// The positional answer selected when a question evaluates to true.
     ///
     /// # Panics
     ///
@@ -181,7 +185,7 @@ pub struct BranchSelection {
     pub branch: usize,
 }
 
-/// One structural execution summary: the computational blocks that participate,
+/// One structural execution summary: the authored blocks that participate,
 /// the branches it selects, its capture dependencies, and its finite outcome.
 /// Start participates implicitly; end participates for an `End` outcome. Each
 /// loop is represented by zero or one iteration. Source order is the order the
@@ -196,7 +200,7 @@ pub struct Execution {
     /// Loops whose represented iteration reaches its end. Each execution
     /// summarizes at most one iteration per loop.
     pub repeats: Vec<usize>,
-    /// Whether this finite summary finishes the flow or repeats an unconditional loop.
+    /// Whether this finite summary finishes the flow or repeats a loop.
     pub outcome: ExecutionOutcome,
 }
 
@@ -208,7 +212,7 @@ pub enum ExecutionOutcome {
 }
 
 impl Execution {
-    /// Reports whether a computational block runs in this execution.
+    /// Reports whether an authored block runs in this execution.
     #[must_use]
     pub fn participates(&self, block: usize) -> bool {
         self.blocks.binary_search(&block).is_ok()
@@ -226,14 +230,14 @@ impl Execution {
 }
 
 /// A dependency-derived shared continuation of one question or choice.
-/// Its entries are computational blocks after implicit `WireMerge` junctions.
+/// Its entries are authored blocks after implicit `WireMerge` junctions.
 /// This projection does not prescribe the scopes or joins used by lowering.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConvergenceGroup {
     pub branching_block: usize,
     /// Question-output or choice-case positions, in authored order.
     pub branches: Vec<usize>,
-    /// The shared continuation: the computational blocks whose branch set is
+    /// The shared continuation: the authored blocks whose branch set is
     /// exactly `branches`, in authored order. The end block never belongs.
     pub continuation: Vec<usize>,
     /// The first consumers of the shared continuation, not merge points.
@@ -269,12 +273,10 @@ pub enum ExecutionPlan {
     Loop {
         index: usize,
         body: Box<ExecutionPlan>,
+        next: Option<Box<ExecutionPlan>>,
     },
-    While {
-        index: usize,
-        body: Box<ExecutionPlan>,
-        next: Box<ExecutionPlan>,
-    },
+    /// An authored exit from an active enclosing loop.
+    Break { index: usize, target: usize },
     /// Normal completion of an iteration, returning to the loop's entry.
     Repeat { index: usize },
     Action {

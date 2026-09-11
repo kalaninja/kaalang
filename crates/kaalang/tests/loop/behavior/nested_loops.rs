@@ -9,11 +9,17 @@ fn nested_loops(limit: usize) -> usize {
         #[action("Initialize the iteration counter.")]
         let mut inner = || 0;
 
-        #[question("Is the iteration counter below the outer counter?")]
-        while (|&inner, &outer| *inner < *outer) {
+        |&inner, &outer| loop {
+            #[question("Is the iteration counter below the outer counter?")]
+            #[yes("YES")]
+            #[no("NO")]
+            let (iterate_1, leave_1) = |&inner, &outer| *inner < *outer;
+
+            |leave_1| break;
+
             #[action("Increment the iteration counter.")]
-            |&mut inner| *inner += 1;
-        }
+            |iterate_1, &mut inner| *inner += 1;
+        };
 
         #[question("Has the outer counter reached the limit?")]
         let (done, again) = |&outer, &limit| *outer == *limit;
@@ -27,7 +33,7 @@ fn nested_loops(limit: usize) -> usize {
 }
 
 #[test]
-fn nests_a_while_inside_an_unconditional_loop() {
+fn nests_a_conditional_loop_inside_an_unconditional_loop() {
     for limit in [0, 1, 4] {
         assert_eq!(nested_loops(limit), limit);
     }

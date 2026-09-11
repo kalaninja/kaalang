@@ -1,0 +1,5 @@
+error: a kaalang break does not return a value
+ --> tests/loop/compile_fail/break_value.rs:6:15
+  |
+6 |         break 1;
+  |               ^

@@ -401,115 +401,91 @@ closure-shaped declarations do not become callable Rust closures.
 
 ## 7. Loops
 
-### 7.1 while
+### 7.1 loop
 
-The closure-shaped condition is syntax for explicit captures, not a callable
-Rust closure. Lowering emits a native `while` whose condition block creates the
-input aliases and evaluates the authored boolean expression. Its aliases end
-before the body runs. A fresh evaluation happens before every iteration and on
-the final false check, including when the body never runs.
+A loop lowers to a native Rust `loop` with a hygienic label. Authored labels
+resolve lexically to loop block indices before lowering; shadowed labels get
+distinct generated names. The plan is `Loop { index, body, next }`, where `next`
+is absent when no execution breaks from this loop. Each body and continuation is
+emitted once.
+
+Entry captures are evaluated once in a separate Rust scope before the loop. The
+aliases end before the first iteration; the body uses the ordinary wire bindings
+and does not receive those aliases as implicit inputs. For example:
 
 ```rust
 #[kaalang]
-fn count_to(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
-    let mut count = || 0;
+fn count_to(mut count: usize, limit: usize) -> usize {
+    |&count| 'counting: loop {
+        #[question("Has the counter reached the limit?")]
+        let (done, again) = |&count, limit| *count >= limit;
 
-    #[question("Is the counter below the limit?")]
-    while (|&count, &limit| *count < *limit) {
+        |done| break 'counting;
+
         #[action("Increment the counter.")]
-        |&mut count| *count += 1;
-    }
+        |again, &mut count| *count += 1;
+    };
 
     #[action("Return the counter.")]
     let end = |count| count;
 }
 ```
 
-Illustrative Rust:
+Illustrative Rust, omitting unused-binding allowances:
 
 ```rust
-fn count_to(wire_limit: usize) -> usize {
-    let mut wire_count = 0;
-    while {
-        let count = &wire_count;
-        let limit = &wire_limit;
-        *count < *limit
-    } {
-        let () = {
-            let count = &mut wire_count;
-            *count += 1;
+fn count_to(mut wire_count: usize, wire_limit: usize) -> usize {
+    { let count = &wire_count; }
+    '__kaalang_loop: loop {
+        let answer = {
+            let count = &wire_count;
+            let limit = wire_limit;
+            *count >= limit
         };
+        if answer {
+            let wire_done = ();
+            { let done = wire_done; }
+            break '__kaalang_loop;
+        } else {
+            let wire_again = ();
+            {
+                let again = wire_again;
+                let count = &mut wire_count;
+                *count += 1;
+            }
+            continue '__kaalang_loop;
+        }
     }
     return wire_count;
 }
 ```
 
-The plan contains one while node with a body and an after-loop continuation.
-Each authored block is emitted once. Normal body endings use a generated
-`continue` to the loop's hygienic label, including endings inside a question or
-choice. This transfer leaves all iteration-local scopes. A generated return of
-`end` exits the whole function under §5. Answer attribute order affects
-presentation only: true always enters the body.
+Normal body completion is `Repeat { index }`, emitted as a `continue` to the
+innermost loop's hygienic label. An empty body contains only that generated
+continue. `EndArrival` still returns from the entire function. A repeating
+execution needs no reachable `end` producer, although the model retains the
+implicit end block and the function signature remains the return contract.
 
-Validation and plan verification use finite structural summaries: no iteration,
-or one representative iteration followed by eventual normal exit, or a return
-from that iteration. Every nested branch selection is retained. At a normal
-iteration boundary the available producer set is restored to the enclosing
-scope; local producers cannot escape or feed the next condition. Replaying these
-summaries checks captures and source order without proving termination or
-unrolling the runtime loop. Rust separately checks moves and borrows across
-iterations.
+### 7.2 break and validation
 
-Internal wire identities distinguish sibling loop scopes while preserving
-original names in diagnostics, generated input aliases, and diagrams. Iteration
-locals are ordinary Rust bindings inside the loop body; no output slots, clones,
-or runtime scope bookkeeping are introduced. Native Rust control transfers
-wholly inside a computational body remain valid under RFC 0001 §3; authored
-transfers to a kaalang loop are rejected before lowering.
+`Break { index, target }` emits the break statement's input aliases in a short
+scope, then `break` to the resolved target's hygienic label. It carries no
+value. The transfer drops every abandoned Rust scope, including nested iteration
+locals, and reaches only the target loop's continuation. Rust checks all moves,
+borrows, and drops; no runtime scope bookkeeping, optional slots, or cloning is
+added.
 
-### 7.2 loop
+Analysis records at most one representative iteration per loop. Entry saves the
+available outer producer set. A break restores its target's saved set and
+continues after the target region; normal completion records a repeat. The final
+public outcome remains `End` or `Repeat { loop_index }`. Intermediate breaks are
+recorded as participating blocks with explicit targets.
 
-An unconditional loop lowers directly to a native hygienically labeled Rust
-`loop`. Its plan is `Loop { index, body }` and has no after-loop continuation.
-Normal body completion is represented by `Repeat { index }` and emitted as a
-`continue` to that label; an `EndArrival` still returns from the whole function.
-
-```rust
-#[kaalang]
-fn spin(mut count: usize) -> ! {
-    loop {
-        #[action("Increment the counter.")]
-        |&mut count| *count = count.wrapping_add(1);
-    }
-}
-```
-
-Illustrative Rust:
-
-```rust
-fn spin(mut wire_count: usize) -> ! {
-    '__kaalang_loop: loop {
-        let count = &mut wire_count;
-        *count = count.wrapping_add(1);
-        continue '__kaalang_loop;
-    }
-}
-```
-
-Validation and plan verification represent each path with one finite iteration.
-Its public `ExecutionOutcome` is `End` when that path produces `end`, otherwise
-`Repeat { loop_index }`. A fully repeating flow therefore needs no reachable
-`end` producer, although the semantic model retains the implicit end block and
-the function signature remains the return contract. Blocks after a `Loop` plan
-are rejected as unreachable.
-
-The unconditional body uses the same lexical wire scopes and hygienic labels as
-a while body. Nested loops close innermost first: a trailing while repeats its
-own condition before its normal exit can reach the enclosing loop's repeat. The
-final summary outcome does not replace those intermediate boundaries. Plan
-verification checks every repeat against the active innermost loop and checks
-that all iteration boundaries recorded by the summary were reached.
-
-An empty body lowers to a labeled loop whose generated continue is its only
-statement. No runtime scope bookkeeping or value cloning is introduced.
+Plan verification replays those same summaries. It checks each authored block
+appears once, captures and execution order agree, repeat targets are innermost,
+and break targets match the resolved active loop. A nested break propagates
+through intervening loops until its target handles it. The continuation runs
+only after a matching break, with the target's original outer producer set.
+Loop-exit order closes abandoned branch ancestry without creating a capture or
+wire merge. Normal Rust control transfers wholly inside a computational body
+remain valid; transfers from that body into a kaalang loop remain rejected.

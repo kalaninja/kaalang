@@ -1,0 +1,5 @@
+error: a kaalang break label must name an enclosing loop
+ --> tests/loop/compile_fail/non_enclosing_label.rs:9:9
+  |
+9 |         break 'first;
+  |         ^^^^^^^^^^^^

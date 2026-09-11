@@ -1,0 +1,5 @@
+error: a captured kaalang loop or break requires a trailing semicolon
+ --> tests/loop/compile_fail/break_without_semicolon.rs:6:9
+  |
+6 |         |flag| break
+  |         ^^^^^^^^^^^^

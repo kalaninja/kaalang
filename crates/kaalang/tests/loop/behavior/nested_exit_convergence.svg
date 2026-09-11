@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="1242" viewBox="0 0 1104 1242" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_exit_convergence</title>
+  <desc id="kaalang-description">Nodes: Start: nested_exit_convergence with parameters mut count: usize handing over mut count; Select: Leave the inner loop? capturing count; Case: Leave at zero. handing over zero; Case: Leave at one. handing over one; Case: Count down. handing over again; Action: Count down. capturing again, &amp;mut count; Question: Finish the outer loop? capturing count handing over done / again; Action: Count down once more. capturing again, &amp;mut count; Action: Return the result. capturing count handing over end; End: usize capturing end. Connections: Start: nested_exit_convergence to the entry of the loop; Select: Leave the inner loop? to Case: Leave at zero.; Select: Leave the inner loop? to Case: Leave at one.; Select: Leave the inner loop? to Case: Count down.; Case: Leave at zero. to the loop exit; Case: Leave at one. to the loop exit; Case: Count down. to Action: Count down.; Action: Count down. to the iteration tail of the loop; Question: Finish the outer loop? branch 1 to Action: Return the result.; Question: Finish the outer loop? branch 2 to Action: Count down once more.; Action: Count down once more. to the iteration tail of the loop; Action: Return the result. to End: usize; the entry of the loop to the entry of the loop; the entry of the loop to Select: Leave the inner loop?; the loop exit to Question: Finish the outer loop?; the loop exit to Question: Finish the outer loop?; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 378 L 172 522
+      M 172 378 L 172 450 L 532 450 L 532 522
+      M 172 378 L 172 450 L 892 450 L 892 522
+      M 172 592 L 172 664
+      M 532 592 L 532 664
+      M 892 592 L 892 664
+      M 892 728 L 892 800
+      M 172 944 L 172 1016
+      M 312 908 L 532 908 L 532 1016
+      M 532 1080 L 532 1152
+      M 172 1080 L 172 1152
+      M 172 162 L 172 234
+      M 172 234 L 172 306
+      M 172 664 L 172 872
+      M 532 664 L 532 800 L 172 800 L 172 872
+    "/>
+    <path class="connection" d="
+      M 892 800 L 1052 800 L 1052 234 L 172 234
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 532 1152 L 1072 1152 L 1072 162 L 172 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">mut count</tspan></text>
+    <text class="connection-label" x="185" y="610" xml:space="preserve"><tspan x="185" dy="0">zero</tspan></text>
+    <text class="connection-label" x="545" y="610" xml:space="preserve"><tspan x="545" dy="0">one</tspan></text>
+    <text class="connection-label" x="905" y="610" xml:space="preserve"><tspan x="905" dy="0">again</tspan></text>
+    <text class="connection-label" x="185" y="962" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
+    <text class="connection-label" x="325" y="926" xml:space="preserve"><tspan x="325" dy="0">again</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
+    <text class="connection-label" x="905" y="653" xml:space="preserve"><tspan x="905" dy="0">again, &amp;mut count</tspan></text>
+    <text class="connection-label" x="185" y="861" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
+    <text class="connection-label" x="545" y="1005" xml:space="preserve"><tspan x="545" dy="0">again, &amp;mut count</tspan></text>
+    <text class="connection-label" x="185" y="1005" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut count: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_exit_convergence</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 342)">
+      <title xml:space="preserve">Leave the inner loop?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Leave the inner loop?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 557)">
+      <title xml:space="preserve">Leave at zero.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Leave at zero.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 557)">
+      <title xml:space="preserve">Leave at one.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Leave at one.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 557)">
+      <title xml:space="preserve">Count down.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Count down.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 696)">
+      <title xml:space="preserve">Count down.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 908)">
+      <title xml:space="preserve">Finish the outer loop?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish the outer loop?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1048)">
+      <title xml:space="preserve">Count down once more.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down once more.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1048)">
+      <title xml:space="preserve">Return the result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the result.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1181)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>

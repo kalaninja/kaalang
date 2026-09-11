@@ -10,9 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_model::{BlockKind, SemanticModel};
 
-use crate::topology::{
-    Connection, Destination, ExitId, NodeId, Source, Topology, Vertex, choice, question,
-};
+use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex, choice, question};
 
 pub(super) struct Placement {
     row: BTreeMap<Vertex, usize>,
@@ -46,7 +44,7 @@ pub(super) fn place(
     let rows_used = row.values().copied().max().unwrap_or(0) + 1;
     let footprints = footprints(topology, model);
     Ok(Placement {
-        column: columns(topology, model, &footprints, &row, rows_used),
+        column: columns(topology, &footprints, &row, rows_used),
         footprints,
         row,
         rows: rows_used,
@@ -191,7 +189,6 @@ impl Footprints {
 
 fn columns(
     topology: &Topology,
-    model: &SemanticModel,
     footprints: &Footprints,
     rows: &BTreeMap<Vertex, usize>,
     rows_used: usize,
@@ -243,21 +240,22 @@ fn columns(
                     .map(|connection| arrives_from(topology, &columns, footprints, connection));
                 // The return leaves the end of the rail nearest its preferred
                 // contour, without turning back over its incoming branches.
-                if model.flow.blocks[loop_.header].kind == BlockKind::Loop
-                    || model.flow.blocks[loop_.header].yes_branch() == 0
-                {
+                if loop_.prefer_left {
                     arrivals.min()
                 } else {
                     arrivals.max()
                 }
                 .unwrap_or(0)
+            } else if topology.junctions[junction].is_break {
+                topology
+                    .incoming(vertex)
+                    .map(|connection| arrives_from(topology, &columns, footprints, connection))
+                    .min()
+                    .unwrap_or(0)
             } else {
                 topology
                     .outgoing(vertex)
-                    .filter_map(|connection| match connection.destination {
-                        Destination::Node(node) => columns.get(&Vertex::Node(node)).copied(),
-                        Destination::Junction(_) => None,
-                    })
+                    .filter_map(|connection| columns.get(&connection.destination).copied())
                     .min()
                     .unwrap_or(0)
             };
@@ -387,12 +385,7 @@ fn branchers(model: &SemanticModel) -> Vec<usize> {
         .blocks
         .iter()
         .enumerate()
-        .filter(|(_, block)| {
-            matches!(
-                block.kind,
-                BlockKind::Question | BlockKind::Choice | BlockKind::While
-            )
-        })
+        .filter(|(_, block)| matches!(block.kind, BlockKind::Question | BlockKind::Choice))
         .map(|(block, _)| block)
         .collect()
 }
@@ -480,6 +473,7 @@ fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::topology::Destination;
 
     /// A topology of block nodes and the connections between them, as `rows`
     /// reads them: one exit per source, one vertex per block.

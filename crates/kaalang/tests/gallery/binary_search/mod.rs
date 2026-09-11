@@ -7,10 +7,16 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     #[action("Initialize the search range.")]
     let (mut left, mut right) = |values| (0, values.len());
 
-    #[question("Does the search range contain any elements?")]
-    while (|left, right| left < right) {
+    |&left, &right| loop {
+        #[question("Does the search range contain any elements?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (iterate, leave) = |left, right| left < right;
+
+        |leave| break;
+
         #[action("Find the middle index.")]
-        let mid = |left, right| left + (right - left) / 2;
+        let mid = |iterate, left, right| left + (right - left) / 2;
 
         #[choice("Compare the middle element with the target.")]
         #[case("Less than the target.")]
@@ -30,7 +36,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 
         #[action("The target was found.")]
         let end = |equal, mid| Some(mid);
-    }
+    };
 
     #[action("The target is absent.")]
     let end = || None;
@@ -41,12 +47,16 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     #[action("Initialize the search range.")]
     let (mut left, mut right) = |values| (0, values.len());
 
-    #[question("Does the search range contain any elements?")]
-    #[no]
-    #[yes]
-    while (|left, right| left < right) {
+    |&left, &right| loop {
+        #[question("Does the search range contain any elements?")]
+        #[no("NO")]
+        #[yes("YES")]
+        let (leave, iterate) = |left, right| left < right;
+
+        |leave| break;
+
         #[action("Find the middle index.")]
-        let mid = |left, right| left + (right - left) / 2;
+        let mid = |iterate, left, right| left + (right - left) / 2;
 
         #[choice("Compare the middle element with the target.")]
         #[case("Equal to the target.")]
@@ -66,7 +76,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
 
         #[action("Search the left half.")]
         |greater, mid, &mut right| *right = mid;
-    }
+    };
 
     #[action("The target is absent.")]
     let end = || None;

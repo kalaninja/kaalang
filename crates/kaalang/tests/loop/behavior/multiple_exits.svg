@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1084" height="1026" viewBox="0 0 1084 1026" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for multiple_exits</title>
+  <desc id="kaalang-description">Nodes: Start: multiple_exits with parameters mut mode: u8 handing over mut mode; Select: Exit or advance? capturing mode; Case: Exit immediately. handing over first; Case: Exit after advancing. handing over last; Case: Advance once. handing over advance; Action: Advance to the final case. capturing advance, &amp;mut mode; Action: Return the selected mode. capturing mode handing over end; End: u8 capturing end. Connections: Start: multiple_exits to the entry of the loop; Select: Exit or advance? to Case: Exit immediately.; Select: Exit or advance? to Case: Exit after advancing.; Select: Exit or advance? to Case: Advance once.; Case: Exit immediately. to the loop exit; Case: Exit after advancing. to the loop exit; Case: Advance once. to Action: Advance to the final case.; Action: Advance to the final case. to the iteration tail of the loop; Action: Return the selected mode. to End: u8; the entry of the loop to Select: Exit or advance?; the loop exit to Action: Return the selected mode.; the loop exit to Action: Return the selected mode.; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 306 L 172 450
+      M 172 306 L 172 378 L 532 378 L 532 450
+      M 172 306 L 172 378 L 892 378 L 892 450
+      M 172 520 L 172 592
+      M 532 520 L 532 592
+      M 892 520 L 892 592
+      M 892 656 L 892 728
+      M 172 864 L 172 936
+      M 172 162 L 172 234
+      M 172 592 L 172 800
+      M 532 592 L 532 728 L 172 728 L 172 800
+    "/>
+    <path class="connection" d="
+      M 892 728 L 1052 728 L 1052 162 L 172 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">mut mode</tspan></text>
+    <text class="connection-label" x="185" y="538" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="538" xml:space="preserve"><tspan x="545" dy="0">last</tspan></text>
+    <text class="connection-label" x="905" y="538" xml:space="preserve"><tspan x="905" dy="0">advance</tspan></text>
+    <text class="connection-label" x="185" y="223" xml:space="preserve"><tspan x="185" dy="0">mode</tspan></text>
+    <text class="connection-label" x="905" y="581" xml:space="preserve"><tspan x="905" dy="0">advance, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="185" y="789" xml:space="preserve"><tspan x="185" dy="0">mode</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">multiple_exits</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 270)">
+      <title xml:space="preserve">Exit or advance?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Exit or advance?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 485)">
+      <title xml:space="preserve">Exit immediately.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Exit immediately.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 485)">
+      <title xml:space="preserve">Exit after advancing.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Exit after advancing.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 485)">
+      <title xml:space="preserve">Advance once.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance once.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 624)">
+      <title xml:space="preserve">Advance to the final case.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the final case.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 832)">
+      <title xml:space="preserve">Return the selected mode.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the selected mode.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 965)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

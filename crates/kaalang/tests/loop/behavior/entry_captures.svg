@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="724" height="902" viewBox="0 0 724 902" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for entry_captures</title>
+  <desc id="kaalang-description">Nodes: Start: entry_captures with parameters entry: Entry; mut log: Rc&lt;RefCell&lt;Vec&lt;usize&gt;&gt;&gt; handing over entry, mut log; Action: Initialize the counter. capturing nothing handing over mut count, ticket; Question: Has the counter reached three? capturing &amp;count handing over done / again; Action: Record and advance the counter. capturing again, &amp;mut count, &amp;log; Action: Return the counter. capturing count handing over end; End: usize capturing end. Connections: Start: entry_captures to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the loop; Question: Has the counter reached three? branch 1 to the loop exit; Question: Has the counter reached three? branch 2 to Action: Record and advance the counter.; Action: Record and advance the counter. to the iteration tail of the loop; Action: Return the counter. to End: usize; the entry of the loop to Question: Has the counter reached three?; the loop exit to Action: Return the counter.; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 252 L 172 324
+      M 172 468 L 172 540
+      M 312 432 L 532 432 L 532 540
+      M 532 604 L 532 676
+      M 172 740 L 172 812
+      M 172 324 L 172 396
+      M 172 540 L 172 676
+    "/>
+    <path class="connection" d="
+      M 532 676 L 692 676 L 692 324 L 172 324
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">entry, mut log</tspan></text>
+    <text class="connection-label" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">mut count, ticket</tspan></text>
+    <text class="connection-label" x="185" y="486" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
+    <text class="connection-label" x="325" y="450" xml:space="preserve"><tspan x="325" dy="0">again</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="385" xml:space="preserve"><tspan x="185" dy="0">&amp;count</tspan></text>
+    <text class="connection-label" x="545" y="529" xml:space="preserve"><tspan x="545" dy="0">again, &amp;mut count, &amp;log</tspan></text>
+    <text class="connection-label" x="185" y="665" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">entry: Entry</tspan><tspan x="-104" dy="18">mut log: </tspan><tspan x="-104" dy="18">Rc&lt;RefCell&lt;Vec&lt;usize&gt;&gt;&gt;</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">entry_captures</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 220)">
+      <title xml:space="preserve">Initialize the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 432)">
+      <title xml:space="preserve">Has the counter reached three?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the counter reached </tspan><tspan x="0" dy="18">three?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 572)">
+      <title xml:space="preserve">Record and advance the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record and advance the counter.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 708)">
+      <title xml:space="preserve">Return the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the counter.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 841)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>

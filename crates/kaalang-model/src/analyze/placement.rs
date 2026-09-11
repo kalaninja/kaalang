@@ -47,12 +47,6 @@ fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
             .collect::<BTreeSet<_>>();
         if let Some(parent) = declaration.parent {
             inherited.extend(blocks[parent].iter().copied());
-            if flow.blocks[parent].kind == BlockKind::While {
-                inherited.insert(BranchSelection {
-                    block: parent,
-                    branch: flow.blocks[parent].yes_branch(),
-                });
-            }
         }
         for (output, name) in declaration.outputs.iter().enumerate() {
             let occurrence = occurrence(flow, &inherited, index, output);
@@ -178,7 +172,7 @@ pub(super) fn flow(
     for execution in executions {
         for &block in execution.blocks.iter().filter(|&&block| block < end) {
             for selection in execution.branches.iter().filter(|s| s.block < block) {
-                if super::while_loop::closed_before(flow, selection.block, block)
+                if super::loop_block::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
                     || junctions
                         .iter()

@@ -143,7 +143,7 @@ mod tests {
         for (name, source) in [
             (
                 "count_to",
-                include_str!("../../kaalang/tests/while_loop/behavior/count_to.rs"),
+                include_str!("../../kaalang/tests/loop/behavior/count_to.rs"),
             ),
             (
                 "binary_search",
@@ -151,7 +151,7 @@ mod tests {
             ),
             (
                 "nested_search",
-                include_str!("../../kaalang/tests/while_loop/behavior/nested_search.rs"),
+                include_str!("../../kaalang/tests/loop/behavior/nested_search.rs"),
             ),
             (
                 "empty_loop",
@@ -222,7 +222,7 @@ mod tests {
         );
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::Loop { index: 0, body }
+            ExecutionPlan::Loop { index: 0, body, .. }
                 if matches!(body.as_ref(), ExecutionPlan::Repeat { index: 0 })
         ));
 

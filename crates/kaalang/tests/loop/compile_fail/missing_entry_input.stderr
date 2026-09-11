@@ -1,0 +1,5 @@
+error: a kaalang block input must name a flow input or an earlier block output
+ --> tests/loop/compile_fail/missing_entry_input.rs:5:6
+  |
+5 |     |missing| loop {};
+  |      ^^^^^^^

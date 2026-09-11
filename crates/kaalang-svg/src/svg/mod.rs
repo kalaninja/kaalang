@@ -298,10 +298,14 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         };
         return format!("the {part} of {owner}");
     }
-    format!(
-        "the {} merge",
-        scene.topology.junctions[junction].wires.join(" and ")
-    )
+    let projected = &scene.topology.junctions[junction];
+    if projected.is_break {
+        "the loop exit".to_owned()
+    } else if projected.wires.is_empty() {
+        "the entry of the loop".to_owned()
+    } else {
+        format!("the {} merge", projected.wires.join(" and "))
+    }
 }
 
 fn node_name(scene: &Scene, id: NodeId) -> String {

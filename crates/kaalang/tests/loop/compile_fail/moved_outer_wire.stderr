@@ -1,0 +1,18 @@
+error[E0382]: use of moved value
+ --> tests/loop/compile_fail/moved_outer_wire.rs:7:38
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+4 | fn invalid(text: String) {
+  |            ---- move occurs because value has type `String`, which does not implement the `Copy` trait
+5 |     |&text| loop {
+  |             ---- inside of this loop
+6 |         #[question("Repeat?")]
+7 |         let (_iterate_1, leave_1) = |text| !text.is_empty();
+  |                                      ^^^^ value moved here, in previous iteration of loop
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+  |
+7 |         let (_iterate_1, leave_1) = |text.clone()| !text.is_empty();
+  |                                          ++++++++

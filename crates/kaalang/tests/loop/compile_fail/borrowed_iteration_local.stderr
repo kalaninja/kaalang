@@ -1,0 +1,12 @@
+error[E0515]: cannot return value referencing temporary value
+  --> tests/loop/compile_fail/borrowed_iteration_local.rs:4:24
+   |
+ 3 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 4 | fn invalid(flag: bool) -> &'static str {
+   |                        ^ returns a value referencing data owned by the current function
+...
+10 |         let text = |iterate_1| String::from("local");
+   |             ---- temporary value created here
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

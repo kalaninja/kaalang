@@ -32,7 +32,7 @@ pub(super) fn plan(
                 ran: BTreeSet::new(),
                 last: None,
                 dependencies: BTreeSet::new(),
-                loop_index: None,
+                loop_indices: Vec::new(),
                 repeats: BTreeSet::new(),
             };
             (match (replay.walk(plan), execution.outcome) {
@@ -59,18 +59,17 @@ pub(super) fn plan(
         })
 }
 
-/// Counts how many times the plan emits each computational block.
+/// Counts how many times the plan emits each authored block.
 pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
     match plan {
-        ExecutionPlan::Loop { index, body } => {
+        ExecutionPlan::Loop { index, body, next } => {
             bodies[*index] += 1;
             count(body, bodies);
+            if let Some(next) = next {
+                count(next, bodies);
+            }
         }
-        ExecutionPlan::While { index, body, next } => {
-            bodies[*index] += 1;
-            count(body, bodies);
-            count(next, bodies);
-        }
+        ExecutionPlan::Break { index, .. } => bodies[*index] += 1,
         ExecutionPlan::Action { index, next } => {
             bodies[*index] += 1;
             count(next, bodies);
@@ -112,6 +111,7 @@ pub(super) enum Exit {
     End,
     Yield(JoinTarget),
     Repeat(usize),
+    Break(usize),
 }
 
 pub(super) struct Replay<'a> {
@@ -126,15 +126,15 @@ pub(super) struct Replay<'a> {
     last: Option<usize>,
     dependencies: BTreeSet<CaptureDependency>,
     /// Only the innermost active body may be the target of a native continue.
-    loop_index: Option<usize>,
+    pub(super) loop_indices: Vec<usize>,
     repeats: BTreeSet<usize>,
 }
 
 impl Replay<'_> {
     pub(super) fn iteration(&mut self, index: usize, body: &ExecutionPlan) -> Option<Exit> {
-        let outside = self.loop_index.replace(index);
+        self.loop_indices.push(index);
         let exit = self.walk(body);
-        self.loop_index = outside;
+        self.loop_indices.pop();
         exit
     }
 
@@ -174,13 +174,13 @@ impl Replay<'_> {
 
     pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
-            ExecutionPlan::Loop { index, body } => {
-                super::unconditional_loop::replay(self, *index, body)
+            ExecutionPlan::Loop { index, body, next } => {
+                super::loop_block::replay(self, *index, body, next.as_deref())
             }
-            ExecutionPlan::While { index, body, next } => {
-                super::while_loop::replay(self, *index, body, next)
+            ExecutionPlan::Break { index, target } => {
+                super::break_block::replay(self, *index, *target)
             }
-            ExecutionPlan::Repeat { index } => (self.loop_index == Some(*index)
+            ExecutionPlan::Repeat { index } => (self.loop_indices.last() == Some(index)
                 && self.execution.repeats.contains(index)
                 && self.repeats.insert(*index))
             .then_some(Exit::Repeat(*index)),
@@ -259,28 +259,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rejects_a_repeat_that_skips_an_enclosing_iteration_boundary() {
+    fn rejects_a_break_target_that_is_not_active() {
         let mut model = crate::build(&parse_quote! {
-            fn nested(flag: bool) -> usize {
-                loop {
-                    #[question("Repeat?")]
-                    while (|&flag| *flag) {}
-                }
+            fn sequential() {
+                loop { break; }
+                loop { break; }
+                #[action("Finish.")]
+                let end = || {};
             }
         })
-        .expect("a trailing while inside a loop is valid");
+        .expect("both loops exit");
         let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
             unreachable!()
         };
         let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
             unreachable!()
         };
-        let ExecutionPlan::While { body, next, .. } = body.as_mut() else {
+        let ExecutionPlan::Break { target, .. } = body.as_mut() else {
             unreachable!()
         };
-        assert!(matches!(body.as_ref(), ExecutionPlan::Repeat { index: 1 }));
-        assert!(matches!(next.as_ref(), ExecutionPlan::Repeat { index: 0 }));
-        **body = ExecutionPlan::Repeat { index: 0 };
+        *target = 2;
+        // Even agreement with a corrupted resolved target cannot authorize a
+        // jump into a sibling loop that has not been entered.
+        model.flow.blocks[1].break_target = Some(2);
         assert!(!plan(
             &model.flow,
             &model.execution_plan,
@@ -290,13 +291,105 @@ mod tests {
     }
 
     #[test]
-    fn a_diverging_inner_loop_propagates_through_a_while() {
+    fn rejects_body_work_moved_after_a_break() {
+        let mut model = crate::build(&parse_quote! {
+            fn counting(mut count: usize) -> usize {
+                loop {
+                    #[question("Finished?")]
+                    let (done, again) = |count| count == 3;
+                    |done| break;
+                    #[action("Advance.")]
+                    |again, &mut count| *count += 1;
+                }
+                #[action("Finish.")]
+                let end = |count| count;
+            }
+        })
+        .expect("the body work belongs to the repeating branch");
+        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+            unreachable!()
+        };
+        let ExecutionPlan::Loop { body, next, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let ExecutionPlan::Question { branches, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let mut misplaced = std::mem::replace(
+            &mut branches[1].plan,
+            Box::new(ExecutionPlan::Repeat { index: 0 }),
+        );
+        let ExecutionPlan::Action { next: suffix, .. } = misplaced.as_mut() else {
+            unreachable!()
+        };
+        *suffix = next.take().expect("the loop has a continuation");
+        *next = Some(misplaced);
+        // Every block is still represented exactly once, but the exiting
+        // execution would now run work it should have skipped.
+        let mut counts = vec![0; model.flow.blocks.len() - 1];
+        count(&model.execution_plan, &mut counts);
+        assert!(counts.iter().all(|&count| count == 1));
+        assert!(!plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
+    fn rejects_a_repeat_that_skips_an_enclosing_iteration_boundary() {
+        let mut model = crate::build(&parse_quote! {
+            fn nested(flag: bool) -> usize {
+                loop {
+                    |&flag| loop {
+                        #[question("Repeat?")]
+                        let (_iterate_1, leave_1) = |&flag| *flag;
+                        |leave_1| break;
+                    };
+                }
+            }
+        })
+        .expect("a trailing inner loop can exit and repeat its parent");
+        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+            unreachable!()
+        };
+        let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let ExecutionPlan::Loop { body, next, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let ExecutionPlan::Question { branches, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        assert!(matches!(
+            branches[0].plan.as_ref(),
+            ExecutionPlan::Repeat { index: 1 }
+        ));
+        assert!(matches!(
+            next.as_deref(),
+            Some(ExecutionPlan::Repeat { index: 0 })
+        ));
+        *branches[0].plan = ExecutionPlan::Repeat { index: 0 };
+        assert!(!plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
+    fn a_diverging_inner_loop_propagates_through_its_parent() {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
-                #[question("Enter the loop?")]
-                while (|flag| flag) {
-                    loop {}
-                }
+                |&flag| loop {
+                    #[question("Enter the loop?")]
+                    let (iterate_2, leave_2) = |flag| flag;
+                    |leave_2| break;
+                        |iterate_2| loop {};
+                };
                 #[action("Finish.")]
                 let end = || 0;
             }
@@ -310,7 +403,7 @@ mod tests {
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
                 ExecutionOutcome::End,
-                ExecutionOutcome::Repeat { loop_index: 1 }
+                ExecutionOutcome::Repeat { loop_index: 3 }
             ])
         );
         assert!(plan(

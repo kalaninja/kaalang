@@ -36,7 +36,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                 ));
             }
             if !producers.contains(&input.ident) {
-                // A diverging unconditional loop never reaches the implicit end.
+                // A diverging loop never reaches the implicit end.
                 // Completion analysis reports the missing wire only on paths that do.
                 if block.kind == BlockKind::End {
                     continue;

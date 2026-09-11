@@ -56,8 +56,8 @@ pub(super) fn flow(
                     || preceding[second].contains(&first)
                     || (execution.participates(first)
                         && execution.participates(second)
-                        && (super::while_loop::closed_before(flow, first, second)
-                            || super::while_loop::closed_before(flow, second, first)))
+                        && (super::loop_block::closed_before(flow, first, second)
+                            || super::loop_block::closed_before(flow, second, first)))
             })
     };
     for (block, deciders) in deciders(flow, executions).into_iter().enumerate() {

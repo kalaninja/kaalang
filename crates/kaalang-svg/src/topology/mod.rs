@@ -16,10 +16,11 @@ use kaalang_model::{
 use syn::{FnArg, Ident, Pat, PatIdent, ext::IdentExt};
 
 mod action;
+mod break_block;
 pub(crate) mod choice;
 mod end;
+mod loop_block;
 pub(crate) mod question;
-mod while_loop;
 
 /// One drawn unit: the synthetic start node, one block of the flow, or one case
 /// derived from a choice. `Flow::blocks` carries the implicit end block last, so
@@ -122,16 +123,18 @@ pub(crate) struct Exit {
     pub(crate) branch_description: Option<String>,
 }
 
-/// One implicit meeting point. A junction adds no block, no producer occurrence
-/// and no capture. Alternative producers meet before a consumer captures what
-/// they provide; loop entries and iteration tails have no merged wires.
+/// A wire merge, loop entry, iteration tail, or break. Junctions add no
+/// computational node or producer occurrence. Structural captures are unlabeled;
+/// entries and breaks have no merged wires.
 ///
 /// Merged wires that the same alternatives provide, ordered behind the same
 /// branch-local work, converge at the same place, so they share one junction:
 /// drawing the meeting twice would repeat one convergence and force the two
 /// copies to cross.
+#[derive(Default)]
 pub(crate) struct Junction {
     pub(crate) wires: Vec<String>,
+    pub(crate) is_break: bool,
 }
 
 pub(crate) struct Topology {
@@ -267,7 +270,6 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
         match block.kind {
             BlockKind::Action => action::project(index, block, &mut nodes, &mut exits),
             BlockKind::Question => question::project(index, block, &mut nodes, &mut exits),
-            BlockKind::While => while_loop::project(index, block, &mut nodes, &mut exits),
             BlockKind::Choice => choice::project(index, block, &mut nodes, &mut exits),
             BlockKind::End
                 if model
@@ -277,15 +279,32 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
             {
                 end::project(index, block, return_type, &mut nodes);
             }
-            BlockKind::Loop | BlockKind::End => {}
+            BlockKind::Loop | BlockKind::Break | BlockKind::End => {}
         }
     }
 
     let merges = merges(model);
     let loops = loops(model, merges.len());
     let loop_junctions = loops.len() * 2;
-    let vertices = vertices(&nodes, merges.len() + loop_junctions);
-    let connections = connections(model, &merges, &loops, &vertices);
+    let mut count = merges.len() + loop_junctions;
+    let structural = model
+        .flow
+        .blocks
+        .iter()
+        .enumerate()
+        .filter(|(_, block)| matches!(block.kind, BlockKind::Loop | BlockKind::Break))
+        .filter_map(|(block, _)| {
+            let has_inputs = has_structural_data_inputs(model, block);
+            let junction = match model.flow.blocks[block].kind {
+                BlockKind::Loop => loop_block::project(block, has_inputs, &loops, &mut count)?,
+                BlockKind::Break => has_inputs.then(|| break_block::project(&mut count))?,
+                _ => unreachable!("only structural statements have junctions"),
+            };
+            Some((block, junction))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let vertices = vertices(&nodes, count);
+    let connections = connections(model, &merges, &loops, &structural, &vertices);
     let mut topology = Topology {
         order: Vec::new(),
         back_edges: Vec::new(),
@@ -307,13 +326,32 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
                         provided(model.flow.blocks[block].output_binding(output))
                     })
                     .collect(),
+                ..Junction::default()
             })
-            .chain((0..loop_junctions).map(|_| Junction { wires: Vec::new() }))
+            .chain((merges.len()..count).map(|_| Junction::default()))
             .collect(),
         vertices,
     };
+    for (&block, &junction) in &structural {
+        topology.junctions[junction].is_break = model.flow.blocks[block].kind == BlockKind::Break;
+    }
+    loop_block::order_exits(model, &structural, &mut topology);
     close_loops(&mut topology);
     topology
+}
+
+/// Question outputs only select the existing route into or out of a loop.
+/// Keep junctions for data dependencies, without adding stops for control inputs.
+fn has_structural_data_inputs(model: &SemanticModel, block: usize) -> bool {
+    model
+        .executions
+        .iter()
+        .flat_map(|execution| &execution.dependencies)
+        .any(|dependency| {
+            dependency.capture.block == block
+                && !matches!(dependency.producer, ProducerId::BlockOutput { block, .. }
+                    if model.flow.blocks[block].kind == BlockKind::Question)
+        })
 }
 
 /// The junctions to draw, each the merges that meet in one place, in model
@@ -425,8 +463,8 @@ fn branch_exits(
 /// only on the branch selected and each branch owns its own exit.
 fn branches(kind: BlockKind) -> bool {
     match kind {
-        BlockKind::Action | BlockKind::Loop => false,
-        BlockKind::Question | BlockKind::Choice | BlockKind::While => true,
+        BlockKind::Action | BlockKind::Loop | BlockKind::Break => false,
+        BlockKind::Question | BlockKind::Choice => true,
         BlockKind::End => unreachable!("end declares no output"),
     }
 }
@@ -459,8 +497,7 @@ fn provided(binding: &PatIdent) -> String {
 
 /// A vertex of the precedence graph. Junctions take part so that a route
 /// through one suppresses the direct producer-to-consumer connection it
-/// replaces; they remain absent from `nodes`, adding no block, no producer
-/// occurrence and no capture.
+/// replaces. Structural entries and exits also use junctions instead of nodes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Vertex {
     Node(NodeId),
@@ -483,6 +520,7 @@ fn connections(
     model: &SemanticModel,
     merges: &[Vec<usize>],
     loops: &[Loop],
+    structural: &BTreeMap<usize, usize>,
     vertices: &[Vertex],
 ) -> Vec<Connection> {
     let junction_of = |wire: &Ident| {
@@ -493,13 +531,17 @@ fn connections(
 
     let mut order = Vec::new();
     serial_order(&model.execution_plan, &mut order);
+    order.retain(|&block| represented(model, structural, block));
     let mut union = BTreeSet::new();
     for execution in &model.executions {
-        let mut direct = serial_connections(model, execution, merges, loops, &order);
+        let mut direct = serial_connections(model, execution, merges, loops, structural, &order);
         for dependency in &execution.dependencies {
             let capture = dependency.capture;
+            if !represented(model, structural, capture.block) {
+                continue;
+            }
             let source = source(model, dependency.producer);
-            let consumer = Destination::Node(NodeId::Block(capture.block));
+            let consumer = destination(structural, capture.block);
             let wire = &model.flow.blocks[capture.block].inputs[capture.input].ident;
             match junction_of(wire) {
                 // Alternative producers meet before any capture, so the route
@@ -539,27 +581,32 @@ fn connections(
                         destination: Destination::Junction(junction),
                     })
                 }));
-                direct.extend(merge.after.iter().filter_map(|&block| {
-                    (execution.participates(block)
-                        || (model.flow.blocks[block].kind == BlockKind::End
-                            && execution.outcome == ExecutionOutcome::End))
-                        .then_some(Connection {
-                            source: Source::Junction(junction),
-                            destination: Destination::Node(NodeId::Block(block)),
-                        })
-                }));
+                // Serial routes carry the merge through omitted structural
+                // consumers to the next visible block or iteration tail.
+                direct.extend(
+                    merge
+                        .after
+                        .iter()
+                        .filter(|&&block| represented(model, structural, block))
+                        .filter_map(|&block| {
+                            (execution.participates(block)
+                                || (model.flow.blocks[block].kind == BlockKind::End
+                                    && execution.outcome == ExecutionOutcome::End))
+                                .then_some(Connection {
+                                    source: Source::Junction(junction),
+                                    destination: destination(structural, block),
+                                })
+                        }),
+                );
                 direct.extend(
                     merge
                         .before
                         .iter()
-                        // Structural loops have no exit. Their participating
-                        // body blocks already establish completion here.
                         .filter(|&&block| {
-                            execution.participates(block)
-                                && model.flow.blocks[block].kind != BlockKind::Loop
+                            execution.participates(block) && represented(model, structural, block)
                         })
                         .map(|&block| Connection {
-                            source: selected_exit(model, execution, block),
+                            source: departure(model, execution, structural, block),
                             destination: Destination::Junction(junction),
                         }),
                 );
@@ -591,6 +638,7 @@ fn serial_connections(
     execution: &Execution,
     merges: &[Vec<usize>],
     loops: &[Loop],
+    structural: &BTreeMap<usize, usize>,
     order: &[usize],
 ) -> BTreeSet<Connection> {
     let mut direct = BTreeSet::new();
@@ -624,34 +672,28 @@ fn serial_connections(
                 previous = Source::Junction(tail);
             }
         }
-        if let Some(loop_) = loops.iter().find(|loop_| loop_.header == block) {
-            direct.insert(Connection {
-                source: previous,
-                destination: Destination::Junction(loop_.entry),
-            });
-            previous = Source::Junction(loop_.entry);
-        }
-        if model.flow.blocks[block].kind == BlockKind::Loop {
-            continue;
-        }
         direct.insert(Connection {
             source: previous,
-            destination: Destination::Node(NodeId::Block(block)),
+            destination: destination(structural, block),
         });
         if model.flow.blocks[block].kind == BlockKind::End {
             continue;
         }
-        let exit = selected_exit(model, execution, block);
+        let exit = departure(model, execution, structural, block);
         // Branch-local work still owed to the merge keeps the route on the
         // block's own exit; hopping to the junction would invert that order.
-        previous = steps
-            .peek()
-            .and_then(|&next| junction_after(model, execution, merges, block, next))
-            .map_or(exit, Source::Junction);
+        previous = junction_after(
+            model,
+            execution,
+            merges,
+            structural,
+            block,
+            steps.peek().copied(),
+        )
+        .map_or(exit, Source::Junction);
     }
     if matches!(execution.outcome, ExecutionOutcome::Repeat { .. }) {
-        // No following block closes the final regions. Include nested while
-        // tails before reaching the unconditional loop's own tail.
+        // No following block connects the repeating route to its loop tail.
         for &header in execution.repeats.iter().rev() {
             if !closed.insert(header) {
                 continue;
@@ -674,21 +716,23 @@ fn serial_connections(
 /// The junction the route may continue from after `block`: one this execution
 /// reaches, whose last producer or branch-local block has just finished. An
 /// exit feeding several junctions continues from the first, which is enough:
-/// the others keep their own producer connections either way.
+/// the others keep their own producer connections either way. With no next
+/// block, a completed merge still precedes the iteration tail.
 fn junction_after(
     model: &SemanticModel,
     execution: &Execution,
     merges: &[Vec<usize>],
+    structural: &BTreeMap<usize, usize>,
     block: usize,
-    next: usize,
+    next: Option<usize>,
 ) -> Option<usize> {
-    let exit = selected_exit(model, execution, block);
+    let exit = departure(model, execution, structural, block);
     merges.iter().position(|group| {
         group
             .iter()
             .map(|&merge| &model.merges[merge])
             .any(|merge| {
-                !merge.before.contains(&next)
+                next.is_none_or(|next| !merge.before.contains(&next))
                     && merge
                         .producers
                         .iter()
@@ -707,15 +751,14 @@ fn junction_after(
 /// including branches yielding to an outer join.
 fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     match plan {
-        ExecutionPlan::Loop { index, body } => {
+        ExecutionPlan::Loop { index, body, next } => {
             order.push(*index);
             serial_order(body, order);
+            if let Some(next) = next {
+                serial_order(next, order);
+            }
         }
-        ExecutionPlan::While { index, body, next } => {
-            order.push(*index);
-            serial_order(body, order);
-            serial_order(next, order);
-        }
+        ExecutionPlan::Break { index, .. } => order.push(*index),
         ExecutionPlan::Action { index, next } => {
             order.push(*index);
             serial_order(next, order);
@@ -754,6 +797,35 @@ fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
         | ExecutionPlan::Yield { .. }
         | ExecutionPlan::Repeat { .. } => {}
     }
+}
+
+/// Structural statements use junctions instead of computational nodes.
+/// A terminal-only loop without entry captures contributes only its body.
+fn represented(model: &SemanticModel, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
+    !matches!(
+        model.flow.blocks[block].kind,
+        BlockKind::Loop | BlockKind::Break
+    ) || structural.contains_key(&block)
+}
+
+fn destination(structural: &BTreeMap<usize, usize>, block: usize) -> Destination {
+    structural
+        .get(&block)
+        .map_or(Destination::Node(NodeId::Block(block)), |&junction| {
+            Destination::Junction(junction)
+        })
+}
+
+fn departure(
+    model: &SemanticModel,
+    execution: &Execution,
+    structural: &BTreeMap<usize, usize>,
+    block: usize,
+) -> Source {
+    structural.get(&block).map_or_else(
+        || selected_exit(model, execution, block),
+        |&junction| Source::Junction(junction),
+    )
 }
 
 fn vertices(nodes: &[Node], junctions: usize) -> Vec<Vertex> {
@@ -843,9 +915,11 @@ fn selected_exit(model: &SemanticModel, execution: &Execution, block: usize) -> 
 fn exit(model: &SemanticModel, block: usize, output: usize) -> Source {
     Source::Exit(match model.flow.blocks[block].kind {
         BlockKind::Action => action::exit(block),
-        BlockKind::Question | BlockKind::While => question::exit(block, output),
+        BlockKind::Question => question::exit(block, output),
         BlockKind::Choice => choice::exit(block, output),
-        BlockKind::End | BlockKind::Loop => unreachable!("this kind has no exit"),
+        BlockKind::End | BlockKind::Loop | BlockKind::Break => {
+            unreachable!("this kind has no exit")
+        }
     })
 }
 
@@ -854,6 +928,7 @@ pub(crate) struct Loop {
     pub(crate) header: usize,
     pub(crate) entry: usize,
     pub(crate) tail: usize,
+    pub(crate) prefer_left: bool,
 }
 
 fn loops(model: &SemanticModel, wire_merges: usize) -> Vec<Loop> {
@@ -864,6 +939,7 @@ fn loops(model: &SemanticModel, wire_merges: usize) -> Vec<Loop> {
             header,
             tail: wire_merges + offset * 2,
             entry: wire_merges + offset * 2 + 1,
+            prefer_left: loop_block::prefer_left(model, header),
         })
         .collect()
 }
@@ -891,7 +967,7 @@ fn close_loops(topology: &mut Topology) {
 }
 
 /// Keep joins, iteration tails, and end below the preceding body. The blocks
-/// leading to them may fill their branch columns immediately after the NO exit.
+/// leading to them may fill the exiting branch's column beside the loop body.
 /// Walk only after every loop has separated its return from forward execution.
 fn defer_continuations(topology: &mut Topology) {
     for connection in std::mem::take(&mut topology.order) {
@@ -904,7 +980,8 @@ fn defer_continuations(topology: &mut Topology) {
             let boundary = match destination {
                 Vertex::Node(node) => topology.node(node).kind == NodeKind::End,
                 Vertex::Junction(junction) => {
-                    !topology.loops.iter().any(|loop_| loop_.entry == junction)
+                    !topology.junctions[junction].wires.is_empty()
+                        || topology.loops.iter().any(|loop_| loop_.tail == junction)
                 }
             };
             if boundary {

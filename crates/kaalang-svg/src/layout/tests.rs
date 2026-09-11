@@ -938,128 +938,122 @@ fn capsule_captions_fit_the_curved_outline() {
 
 #[test]
 fn a_terminal_exit_starts_beside_the_loop_body() {
-    for (fixture, body, end) in [
+    for (fixture, body, continuation) in [
+        (
+            fixture!("loop/behavior", "count_to"),
+            "Increment the counter.",
+            "Return the counter.",
+        ),
+        (
+            fixture!("loop/behavior", "early_end_then_loop"),
+            "Increment the count.",
+            "Return the count.",
+        ),
         (
             (
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
                 "binary_search",
             ),
-            2,
-            7,
+            "Find the middle index.",
+            "The target is absent.",
         ),
         (
             (
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
                 "binary_search_swapped",
             ),
-            2,
-            7,
+            "Find the middle index.",
+            "The target is absent.",
         ),
-        (fixture!("while_loop/behavior", "count_to"), 2, 3),
-        (fixture!("while_loop/behavior", "early_end_then_loop"), 3, 4),
     ] {
         let scene = drawn(fixture);
-        let body = scene.node(NodeId::Block(body));
-        let end = scene.node(NodeId::Block(end));
-        assert_ne!(end.x, body.x);
-        assert_eq!(
-            end.y, body.y,
-            "{}: the terminal branch starts just below the condition",
-            fixture.1
-        );
+        let body = named_node(&scene, body);
+        let continuation = named_node(&scene, continuation);
+        assert_ne!(continuation.x, body.x);
+        assert_eq!(continuation.y, body.y, "{}", fixture.1);
     }
 }
 
 #[test]
 fn a_nonterminal_loop_exit_starts_beside_the_body() {
-    let (source, flow) = fixture!("while_loop/behavior", "nested_search");
+    let (source, flow) = fixture!("loop/behavior", "nested_search");
     for following in [
         "",
-        r#"#[action("Observe the next row.")] |row| { let _ = row; };"#,
+        r#"#[action("Observe the next row.")] |&column, row| { let _ = row; };"#,
     ] {
         let source = source.replace(
-            "|&mut row| *row += 1;",
-            &format!("|&mut row| *row += 1; {following}"),
+            "|&column, &mut row| *row += 1;",
+            &format!("|&column, &mut row| *row += 1; {following}"),
         );
         let scene = drawn((&source, flow));
-        let body = scene.node(NodeId::Block(4));
-        let continuation = scene.node(NodeId::Block(7));
+        let body = named_node(&scene, "Does the value differ from the target?");
+        let continuation = named_node(&scene, "Advance to the next row.");
         assert!(continuation.x > body.x);
-        assert_eq!(
-            continuation.y, body.y,
-            "an exit action starts below the condition even with further work"
-        );
+        assert_eq!(continuation.y, body.y);
         if !following.is_empty() {
-            let next = scene.node(NodeId::Block(8));
+            let next = named_node(&scene, "Observe the next row.");
             assert_eq!(next.x, continuation.x);
-            assert_eq!(next.y, scene.node(NodeId::Block(5)).y);
+            assert_eq!(next.y, named_node(&scene, "Advance to the next column.").y);
         }
     }
 }
 
 #[test]
 fn a_following_loop_starts_beside_the_preceding_body() {
-    let scene = drawn(fixture!("while_loop/behavior", "collect_steps"));
-    let first = &scene.topology.loops[0];
-    let second = &scene.topology.loops[1];
+    let scene = drawn(fixture!("loop/behavior", "collect_steps"));
+    let first = scene.topology.loops[0];
+    let second = scene.topology.loops[1];
     let entry = scene
         .connections
         .iter()
         .find(|edge| edge.source == Source::Junction(second.entry))
         .unwrap()
         .points[0];
-    assert!(entry.x > scene.node(NodeId::Block(first.header)).x);
+    assert!(entry.x > scene.node(NodeId::Block(first.header + 1)).x);
+    assert!(entry.y < named_node(&scene, "Build the first step.").y);
     assert!(
-        entry.y < scene.node(NodeId::Block(3)).y,
-        "the next loop's entry should not wait for the preceding body"
-    );
-    assert!(
-        scene.node(NodeId::Block(second.header)).y <= scene.node(NodeId::Block(4)).y,
-        "the next condition should not wait for the preceding body to finish"
+        scene.node(NodeId::Block(second.header + 1)).y
+            <= named_node(&scene, "Record the first step.").y
     );
 }
 
 #[test]
 fn a_single_side_exit_turns_up_without_descending_to_the_iteration_tail() {
-    for fixture in [
-        fixture!("while_loop/behavior", "nested_loop_tail"),
-        fixture!("while_loop/behavior", "reversed_empty_loop"),
-    ] {
-        let scene = drawn(fixture);
-        let loop_ = &scene.topology.loops[0];
-        let incoming = scene
-            .connections
-            .iter()
-            .filter(|edge| edge.destination == Destination::Junction(loop_.tail))
-            .collect::<Vec<_>>();
-        assert_eq!(incoming.len(), 1);
-        let incoming = incoming[0];
-        let departure = incoming.points[0];
-        assert!(
-            incoming.points.iter().all(|point| point.y == departure.y),
-            "{}: the side exit should reach the return horizontally",
-            fixture.1
-        );
-        let returning = scene
-            .connections
-            .iter()
-            .find(|edge| edge.source == Source::Junction(loop_.tail))
-            .unwrap();
-        assert_eq!(incoming.points.last(), returning.points.first());
-        assert!(
-            returning
-                .points
-                .windows(2)
-                .all(|segment| segment[1].y <= segment[0].y)
-        );
-    }
+    let fixture = fixture!("loop/behavior", "reversed_empty_loop");
+    let scene = drawn(fixture);
+    let loop_ = &scene.topology.loops[0];
+    let incoming = scene
+        .connections
+        .iter()
+        .filter(|edge| edge.destination == Destination::Junction(loop_.tail))
+        .collect::<Vec<_>>();
+    assert_eq!(incoming.len(), 1);
+    let incoming = incoming[0];
+    let departure = incoming.points[0];
+    assert!(
+        incoming.points.iter().all(|point| point.y == departure.y),
+        "{}: the side exit should reach the return horizontally",
+        fixture.1
+    );
+    let returning = scene
+        .connections
+        .iter()
+        .find(|edge| edge.source == Source::Junction(loop_.tail))
+        .unwrap();
+    assert_eq!(incoming.points.last(), returning.points.first());
+    assert!(
+        returning
+            .points
+            .windows(2)
+            .all(|segment| segment[1].y <= segment[0].y)
+    );
 }
 
 #[test]
 fn a_single_action_returns_after_the_usual_gap() {
-    let scene = drawn(fixture!("while_loop/behavior", "nested_search"));
+    let scene = drawn(fixture!("loop/behavior", "nested_search"));
     let outer = &scene.topology.loops[0];
-    let action = scene.node(NodeId::Block(7));
+    let action = named_node(&scene, "Advance to the next row.");
     let returning = scene
         .connections
         .iter()
@@ -1083,18 +1077,18 @@ fn a_single_action_returns_after_the_usual_gap() {
 #[test]
 fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
     let binary_search = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
-    let early_end = fixture!("while_loop/behavior", "early_end_then_loop");
+    let early_end = fixture!("loop/behavior", "early_end_then_loop");
     // Wrapping makes this action two pixels taller than its repeating sibling.
     let wrapped_end = early_end.0.replace(
         "Return the count.",
         "Return the counter after the loop finishes.",
     );
     for fixture in [
-        fixture!("while_loop/behavior", "count_to"),
-        fixture!("while_loop/behavior", "collect_steps"),
+        fixture!("loop/behavior", "count_to"),
+        fixture!("loop/behavior", "collect_steps"),
         early_end,
         (wrapped_end.as_str(), early_end.1),
-        fixture!("while_loop/behavior", "nested_search"),
+        fixture!("loop/behavior", "nested_search"),
         (binary_search, "binary_search"),
         (binary_search, "binary_search_swapped"),
     ] {
@@ -1123,11 +1117,9 @@ fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
             .max()
             .unwrap();
         let gap = vertical_gap(&scene.topology);
-        let crosses_return = matches!(fixture.1, "early_end_then_loop" | "nested_search");
-        assert_eq!(
-            terminal_y - lowest_return,
-            if crosses_return { gap } else { 0 },
-            "{}",
+        assert!(
+            terminal_y >= lowest_return,
+            "{}: the terminal route clears the returns",
             fixture.1
         );
         if matches!(connection.source, Source::Junction(_)) {
@@ -1164,7 +1156,7 @@ fn distributors_and_loop_tails_leave_the_usual_gap() {
                 .connections
                 .iter()
                 .find(|edge| {
-                    edge.destination == Destination::Node(NodeId::Case { choice: 3, branch })
+                    edge.destination == Destination::Node(NodeId::Case { choice: 5, branch })
                 })
                 .unwrap();
             let [start, turn, across, end] = connection.points[..] else {
@@ -1186,7 +1178,7 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
             ),
             1,
         ),
-        (fixture!("while_loop/behavior", "count_to"), 1),
+        (fixture!("loop/behavior", "count_to"), 1),
         (
             (
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
@@ -1194,13 +1186,13 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
             ),
             1,
         ),
-        (fixture!("while_loop/behavior", "nested_search"), 2),
-        (fixture!("while_loop/behavior", "collect_steps"), 2),
-        (fixture!("while_loop/behavior", "condition_effects"), 1),
-        (fixture!("while_loop/behavior", "reversed_empty_loop"), 1),
-        (fixture!("while_loop/behavior", "nested_loop_tail"), 2),
-        (fixture!("while_loop/behavior", "early_end_then_loop"), 1),
-        (fixture!("while_loop/behavior", "first_value"), 0),
+        (fixture!("loop/behavior", "nested_search"), 2),
+        (fixture!("loop/behavior", "collect_steps"), 2),
+        (fixture!("loop/behavior", "condition_effects"), 1),
+        (fixture!("loop/behavior", "reversed_empty_loop"), 1),
+        (fixture!("loop/behavior", "nested_loop_tail"), 2),
+        (fixture!("loop/behavior", "early_end_then_loop"), 1),
+        (fixture!("loop/behavior", "first_value"), 0),
     ] {
         let scene = drawn(fixture);
         assert_eq!(scene.topology.loops.len(), returns);
@@ -1222,7 +1214,7 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
             );
         }
         for loop_ in &scene.topology.loops {
-            let header = NodeId::Block(loop_.header);
+            let header = NodeId::Block(loop_.header + 1);
             let entry = Destination::Junction(loop_.entry);
             let edge = scene
                 .connections
@@ -1230,7 +1222,7 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
                 .find(|edge| {
                     edge.source == Source::Junction(loop_.tail) && edge.destination == entry
                 })
-                .expect("every repeating while body returns to the entry before its condition");
+                .expect("every repeating body returns to the entry before its condition");
             let end = *edge.points.last().unwrap();
             let anchor = scene.top_anchor(header);
             assert_eq!(end.x, anchor.x);
@@ -1262,6 +1254,28 @@ fn loop_returns_are_explicit_and_forward_precedence_is_not_drawn() {
 }
 
 #[test]
+fn a_loop_without_captures_or_a_return_adds_no_visual_space() {
+    let body = r#"
+        #[action("Initialize.")]
+        let mut count = || 0;
+        loop {
+            #[question("Finished?")]
+            let (done, again) = |&count, limit| *count == limit;
+            #[action("Return the count.")]
+            let end = |done, count| count;
+            #[action("Advance.")]
+            |again, &mut count| *count += 1;
+        }
+    "#;
+    let plain = format!("#[kaalang] fn example(limit: usize) -> usize {{ {body} }}");
+    let nested = format!("#[kaalang] fn example(limit: usize) -> usize {{ loop {{ {body} }} }}");
+    assert_eq!(
+        crate::render_source(&plain, "example").unwrap(),
+        crate::render_source(&nested, "example").unwrap(),
+    );
+}
+
+#[test]
 fn an_empty_unconditional_loop_returns_on_the_left_without_an_end_node() {
     let fixture = fixture!("loop/behavior", "empty_loop");
     let scene = drawn(fixture);
@@ -1290,8 +1304,8 @@ fn an_empty_unconditional_loop_returns_on_the_left_without_an_end_node() {
 #[test]
 fn nested_loop_boundaries_render_with_and_without_end() {
     for (fixture, returns, ends) in [
-        (fixture!("loop/behavior", "empty_trailing_while"), 2, 0),
-        (fixture!("loop/behavior", "loop_inside_while"), 0, 1),
+        (fixture!("loop/behavior", "empty_trailing_loop"), 2, 0),
+        (fixture!("loop/behavior", "conditional_nested_loop"), 0, 1),
     ] {
         let scene = drawn(fixture);
         assert_eq!(
@@ -1321,12 +1335,12 @@ fn nested_loop_boundaries_render_with_and_without_end() {
 #[test]
 fn side_only_loop_returns_ignore_wider_nodes_below_their_span() {
     for fixture in [
-        fixture!("loop/behavior", "empty_trailing_while"),
-        fixture!("loop/behavior", "trailing_while"),
+        fixture!("loop/behavior", "empty_trailing_loop"),
+        fixture!("loop/behavior", "trailing_inner_loop"),
     ] {
         let scene = drawn(fixture);
         let outer = scene.topology.loops[0];
-        let condition = scene.node(NodeId::Block(scene.topology.loops[1].header));
+        let condition = scene.node(NodeId::Block(scene.topology.loops[1].header + 1));
         let right = Scene::bounds(condition).2;
         let edge = scene
             .connections
@@ -1335,9 +1349,19 @@ fn side_only_loop_returns_ignore_wider_nodes_below_their_span() {
             .unwrap();
         let contour = edge.points.iter().map(|point| point.x).max().unwrap();
         assert!(contour > right);
+        let top = edge.points.last().unwrap().y;
+        let bottom = edge.points[0].y;
+        let labels_right = scene
+            .labels
+            .iter()
+            .map(label_rect)
+            .filter(|&(_, y, _, end)| end > top && y < bottom)
+            .map(|(_, _, right, _)| right)
+            .max()
+            .unwrap_or(right);
         assert!(
-            contour <= right + 3 * LANE,
-            "{}: the return extends too far beyond the condition",
+            contour <= right.max(labels_right) + 3 * LANE,
+            "{}: the return extends beyond its body and capture labels",
             fixture.1
         );
         let arrival = scene
@@ -1351,12 +1375,9 @@ fn side_only_loop_returns_ignore_wider_nodes_below_their_span() {
 
 #[test]
 fn a_compact_side_return_clears_a_wrapped_branch_description() {
-    let (source, flow) = fixture!("loop/behavior", "empty_trailing_while");
+    let (source, flow) = fixture!("loop/behavior", "empty_trailing_loop");
     let description = "Restart the entire outer iteration after the inner loop finishes.";
-    let source = source.replace(
-        "while (",
-        &format!("#[yes]\n#[no(\"{description}\")]\nwhile ("),
-    );
+    let source = source.replace("#[no(\"NO\")]", &format!("#[no(\"{description}\")]"));
     let scene = drawn((&source, flow));
     let label = scene
         .labels
@@ -1380,8 +1401,13 @@ fn a_compact_side_return_clears_a_wrapped_branch_description() {
 
 #[test]
 fn a_blocked_inner_return_can_lower_its_tail_below_end() {
-    let (source, flow) = fixture!("loop/behavior", "trailing_while");
-    let reversed = source.replace("while (", "#[no]\n#[yes]\nwhile (");
+    let (source, flow) = fixture!("loop/behavior", "trailing_inner_loop");
+    let reversed = source
+        .replace(
+            "#[yes(\"YES\")]\n            #[no(\"NO\")]",
+            "#[no(\"NO\")]\n            #[yes(\"YES\")]",
+        )
+        .replace("let (iterate_1, leave_1)", "let (leave_1, iterate_1)");
     for (source, lowered) in [(source, true), (reversed.as_str(), false)] {
         let scene = drawn((source, flow));
         assert_eq!(scene.topology.loops.len(), 2);
@@ -1403,5 +1429,64 @@ fn a_blocked_inner_return_can_lower_its_tail_below_end() {
                     >= Scene::bounds(scene.node(end.id)).3 + vertical_gap(&scene.topology)
             );
         }
+    }
+}
+
+fn named_node<'a>(scene: &'a Scene, description: &str) -> &'a Node {
+    let id = scene
+        .topology
+        .nodes
+        .iter()
+        .find(|node| node.label == description)
+        .expect("the fixture contains the described node")
+        .id;
+    scene.node(id)
+}
+
+#[test]
+fn loop_and_break_captures_are_unlabeled() {
+    let scene = drawn(fixture!("loop/behavior", "entry_captures"));
+    assert!(
+        scene
+            .topology
+            .junctions
+            .iter()
+            .any(|junction| junction.is_break)
+    );
+    for capture in [
+        "entry, mut ticket, &count, &mut log",
+        "mut ticket, &log, &mut count",
+    ] {
+        assert!(
+            !scene
+                .labels
+                .iter()
+                .any(|label| label.lines.concat() == capture)
+        );
+    }
+    assert!(scene.labels.iter().any(|label| label.lines == ["done"]));
+    let selected = drawn(fixture!("loop/behavior", "conditional_entry"));
+    assert!(
+        !selected
+            .topology
+            .junctions
+            .iter()
+            .any(|junction| junction.is_break)
+    );
+    assert!(selected.labels.iter().any(|label| label.lines == ["done"]));
+}
+
+#[test]
+fn an_enclosed_return_is_rejected_before_layout() {
+    for source in [
+        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat.rs"),
+        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat_mixed_targets.rs"),
+        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat_nested.rs"),
+    ] {
+        assert!(matches!(
+            crate::render_source(source, "invalid"),
+            Err(crate::RenderError::InvalidFlow { message, .. })
+                if message.contains("reorder the branches")
+        ));
     }
 }

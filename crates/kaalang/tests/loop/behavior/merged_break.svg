@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1084" height="964" viewBox="0 0 1084 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for merged_break</title>
+  <desc id="kaalang-description">Nodes: Start: merged_break with parameters stop: bool; mut remaining: usize handing over stop, mut remaining; Question: Stop immediately? capturing stop handing over leave / check; Question: Has the countdown finished? capturing check, remaining handing over leave / again; Action: Advance the countdown. capturing again, &amp;mut remaining; Action: Return the remaining count. capturing remaining handing over end; End: usize capturing end. Connections: Start: merged_break to the entry of the loop; Question: Stop immediately? branch 1 to the leave merge; Question: Stop immediately? branch 2 to Question: Has the countdown finished?; Question: Has the countdown finished? branch 1 to the leave merge; Question: Has the countdown finished? branch 2 to Action: Advance the countdown.; Action: Advance the countdown. to the iteration tail of the loop; Action: Return the remaining count. to End: usize; the leave merge to Action: Return the remaining count.; the entry of the loop to Question: Stop immediately?; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 314 L 172 530
+      M 312 278 L 532 278 L 532 386
+      M 532 458 L 532 530 L 172 530
+      M 672 422 L 892 422 L 892 602
+      M 892 666 L 892 738
+      M 172 802 L 172 874
+      M 172 530 L 172 738
+      M 172 170 L 172 242
+    "/>
+    <path class="connection" d="
+      M 892 738 L 1052 738 L 1052 170 L 172 170
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="548" xml:space="preserve"><tspan x="185" dy="0">leave</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">stop, mut remaining</tspan></text>
+    <text class="connection-label" x="325" y="296" xml:space="preserve"><tspan x="325" dy="0">check</tspan></text>
+    <text class="connection-label" x="685" y="440" xml:space="preserve"><tspan x="685" dy="0">again</tspan></text>
+    <text class="connection-label" x="185" y="231" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
+    <text class="connection-label" x="545" y="375" xml:space="preserve"><tspan x="545" dy="0">check, remaining</tspan></text>
+    <text class="connection-label" x="905" y="591" xml:space="preserve"><tspan x="905" dy="0">again, &amp;mut remaining</tspan></text>
+    <text class="connection-label" x="185" y="727" xml:space="preserve"><tspan x="185" dy="0">remaining</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">stop: bool</tspan><tspan x="-104" dy="18">mut remaining: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">merged_break</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 278)">
+      <title xml:space="preserve">Stop immediately?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stop immediately?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(532 422)">
+      <title xml:space="preserve">Has the countdown finished?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the countdown </tspan><tspan x="0" dy="18">finished?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 634)">
+      <title xml:space="preserve">Advance the countdown.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance the countdown.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 770)">
+      <title xml:space="preserve">Return the remaining count.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the remaining count.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 903)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>

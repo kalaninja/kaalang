@@ -1,0 +1,5 @@
+error: this kaalang block is unreachable
+ --> tests/loop/compile_fail/unreachable_after_break.rs:7:9
+  |
+7 |         #[action("Too late.")]
+  |         ^

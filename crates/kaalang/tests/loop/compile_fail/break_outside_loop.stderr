@@ -1,0 +1,5 @@
+error: a kaalang break requires an enclosing loop
+ --> tests/loop/compile_fail/break_outside_loop.rs:5:5
+  |
+5 |     break;
+  |     ^^^^^

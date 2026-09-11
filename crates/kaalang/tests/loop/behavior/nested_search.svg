@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1444" height="1597" viewBox="0 0 1444 1597" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_search</title>
+  <desc id="kaalang-description">Nodes: Start: nested_search with parameters rows: &amp;[&amp;[i32]]; target: i32 handing over rows, target; Action: Start at the first row. capturing nothing handing over mut row; Question: Are there more rows? capturing row, rows handing over leave_1 / iterate_1 described as branch 1: All rows have been searched. / branch 2: Search this row.; Action: Start at the first column. capturing iterate_1 handing over mut column; Question: Are there more columns? capturing column, row, rows handing over iterate_2 / leave_2 described as branch 1: YES / branch 2: NO; Question: Does the value differ from the target? capturing iterate_2, rows, row, column, target handing over different / equal; Action: Advance to the next column. capturing different, &amp;mut column; Action: Return the matching position. capturing equal, row, column handing over end; Action: Advance to the next row. capturing &amp;column, &amp;mut row; Action: The target is absent. capturing nothing handing over end; End: Option&lt;(usize, usize)&gt; capturing end. Connections: Start: nested_search to Action: Start at the first row.; Action: Start at the first row. to the entry of the loop; Question: Are there more rows? branch 1 to Action: The target is absent.; Question: Are there more rows? branch 2 to Action: Start at the first column.; Action: Start at the first column. to the entry of the loop; Question: Are there more columns? branch 1 to Question: Does the value differ from the target?; Question: Are there more columns? branch 2 to Action: Advance to the next row.; Question: Does the value differ from the target? branch 1 to Action: Advance to the next column.; Question: Does the value differ from the target? branch 2 to Action: Return the matching position.; Action: Advance to the next column. to the iteration tail of the loop; Action: Return the matching position. to the end merge; Action: Advance to the next row. to the iteration tail of the loop; Action: The target is absent. to the end merge; the end merge to End: Option&lt;(usize, usize)&gt;; the entry of the loop to Question: Are there more rows?; the entry of the loop to Question: Are there more columns?; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 94 L 172 189
+      M 172 253 L 172 344
+      M 172 507 L 172 598
+      M 312 471 L 532 471 L 532 598
+      M 532 662 L 532 753
+      M 532 916 L 532 1007
+      M 672 880 L 1252 880 L 1252 1011
+      M 532 1079 L 532 1170
+      M 672 1043 L 892 1043 L 892 1170
+      M 532 1234 L 532 1325
+      M 892 1234 L 892 1416 L 172 1416
+      M 1252 1075 L 1252 1166
+      M 172 662 L 172 1416
+      M 172 1416 L 172 1507
+      M 172 344 L 172 435
+      M 532 753 L 532 844
+    "/>
+    <path class="connection" d="
+      M 532 1325 L 372 1325 L 372 753 L 532 753
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1252 1166 L 1412 1166 L 1412 344 L 172 344
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">rows, target</tspan></text>
+    <text class="connection-label" x="185" y="271" xml:space="preserve"><tspan x="185" dy="0">mut row</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="527" xml:space="preserve"><tspan x="185" dy="0">All rows have been </tspan><tspan x="185" dy="18">searched.</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="459" xml:space="preserve"><tspan x="325" dy="0">Search this row.</tspan></text>
+    <text class="connection-label" x="545" y="680" xml:space="preserve"><tspan x="545" dy="0">mut column</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="545" y="936" xml:space="preserve"><tspan x="545" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="685" y="868" xml:space="preserve"><tspan x="685" dy="0">NO</tspan></text>
+    <text class="connection-label" x="545" y="1097" xml:space="preserve"><tspan x="545" dy="0">different</tspan></text>
+    <text class="connection-label" x="685" y="1061" xml:space="preserve"><tspan x="685" dy="0">equal</tspan></text>
+    <text class="connection-label" x="185" y="178" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="424" xml:space="preserve"><tspan x="185" dy="0">row, rows</tspan></text>
+    <text class="connection-label" x="545" y="833" xml:space="preserve"><tspan x="545" dy="0">column, row, rows</tspan></text>
+    <text class="connection-label" x="545" y="982" xml:space="preserve"><tspan x="545" dy="0">iterate_2, rows, row, column, </tspan><tspan x="545" dy="14">target</tspan></text>
+    <text class="connection-label" x="545" y="1159" xml:space="preserve"><tspan x="545" dy="0">different, &amp;mut column</tspan></text>
+    <text class="connection-label" x="905" y="1159" xml:space="preserve"><tspan x="905" dy="0">equal, row, column</tspan></text>
+    <text class="connection-label" x="1265" y="1000" xml:space="preserve"><tspan x="1265" dy="0">&amp;column, &amp;mut row</tspan></text>
+    <text class="connection-label" x="185" y="587" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">rows: &amp;[&amp;[i32]]</tspan><tspan x="-104" dy="18">target: i32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_search</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 221)">
+      <title xml:space="preserve">Start at the first row.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start at the first row.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 471)">
+      <title xml:space="preserve">Are there more rows?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Are there more rows?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 630)">
+      <title xml:space="preserve">Start at the first column.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start at the first column.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(532 880)">
+      <title xml:space="preserve">Are there more columns?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Are there more columns?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(532 1043)">
+      <title xml:space="preserve">Does the value differ from the target?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the value differ from </tspan><tspan x="0" dy="18">the target?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1202)">
+      <title xml:space="preserve">Advance to the next column.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the next column.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 1202)">
+      <title xml:space="preserve">Return the matching position.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the matching position.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 1043)">
+      <title xml:space="preserve">Advance to the next row.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the next row.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 630)">
+      <title xml:space="preserve">The target is absent.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">The target is absent.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1536)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;(usize, usize)&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

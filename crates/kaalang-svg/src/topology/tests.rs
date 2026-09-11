@@ -71,22 +71,24 @@ fn a_terminal_loop_finishes_before_its_enclosing_end_merge() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
-            #[question("Flag?")]
-            while (|flag| flag) {
-                loop {
-                    #[action("Return one.")]
-                    let end = || 1;
-                }
-            }
+            |&flag| loop {
+                #[question("Flag?")]
+                let (iterate_1, leave_1) = |flag| flag;
+                |leave_1| break;
+                    |iterate_1| loop {
+                        #[action("Return one.")]
+                        let end = || 1;
+                    };
+            };
             #[action("Return two.")]
             let end = || 2;
         }
         "#,
     );
     assert!(topology.loops.is_empty());
-    assert_eq!(topology.junctions.len(), 1);
+    assert_eq!(topology.junctions.len(), 2);
     assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
-    for block in [2, 3] {
+    for block in [4, 5] {
         assert!(topology.connections.contains(&Connection {
             source: Source::Exit(ExitId::of(NodeId::Block(block))),
             destination: Destination::Junction(0),
@@ -94,18 +96,21 @@ fn a_terminal_loop_finishes_before_its_enclosing_end_merge() {
     }
     assert!(topology.connections.contains(&Connection {
         source: Source::Junction(0),
-        destination: Destination::Node(NodeId::Block(4)),
+        destination: Destination::Node(NodeId::Block(6)),
     }));
 }
 
 #[test]
-fn a_final_nested_while_closes_before_the_unconditional_loop_repeats() {
+fn an_inner_break_reaches_the_outer_iteration_tail() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
             loop {
-                #[question("Flag?")]
-                while (|&flag| *flag) {}
+                |&flag| loop {
+                    #[question("Flag?")]
+                    let (_iterate_2, leave_2) = |&flag| *flag;
+                    |leave_2| break;
+                };
             }
         }
         "#,
@@ -115,22 +120,54 @@ fn a_final_nested_while_closes_before_the_unconditional_loop_repeats() {
     };
     assert!(topology.connections.contains(&Connection {
         source: Source::Exit(ExitId {
-            node: NodeId::Block(inner.header),
+            node: NodeId::Block(inner.header + 1),
             branch: Some(0),
         }),
         destination: Destination::Junction(inner.tail),
     }));
     assert!(topology.connections.contains(&Connection {
         source: Source::Exit(ExitId {
-            node: NodeId::Block(inner.header),
+            node: NodeId::Block(inner.header + 1),
             branch: Some(1),
         }),
         destination: Destination::Junction(outer.tail),
     }));
-    assert!(topology.order.contains(&Connection {
-        source: Source::Junction(inner.tail),
-        destination: Destination::Junction(outer.tail),
-    }));
+}
+
+#[test]
+fn a_merged_break_reaches_the_enclosing_iteration_tail() {
+    let topology = drawn(
+        r#"
+        fn example(first: bool, second: bool) {
+            loop {
+                loop {
+                    #[question("Leave immediately?")]
+                    let (leave, check) = |first| first;
+
+                    #[question("Leave after checking?")]
+                    let (leave, _again) = |check, second| second;
+
+                    |leave| break;
+                }
+            }
+        }
+        "#,
+    );
+    let merge = topology
+        .junctions
+        .iter()
+        .position(|junction| junction.wires == ["leave"])
+        .expect("the question outputs merge before the break");
+    assert_eq!(
+        topology
+            .outgoing(Vertex::Junction(merge))
+            .copied()
+            .collect::<Vec<_>>(),
+        [Connection {
+            source: Source::Junction(merge),
+            destination: Destination::Junction(topology.loops[0].tail),
+        }]
+    );
 }
 
 #[test]

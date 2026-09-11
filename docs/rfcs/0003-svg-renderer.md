@@ -48,35 +48,51 @@ in the continuation's column; routes meet it as RFC 0002 §8 requires.
 Use one vertical gap throughout a diagram, at least 72 pixels and enlarged when
 labels need more room. Leave at least that gap between consecutive node rows.
 For horizontal runs in row gaps, reserve it both below the preceding node row
-and above the following node row. A junction has no node or capture label, so it
-reserves no extra space above its rail. Additional horizontal lanes stay 20
+and above the following node row. Wire-merge junctions, loop entries, iteration
+tails, and breaks have no capture labels. Additional horizontal lanes stay 20
 pixels apart. This gives select distributors, merge rails, and iteration tails
 the same clearance.
 
-While conditions use the ordinary question layout and authored answer order. An
-unconditional loop has no node: its entry and iteration tail are junctions, and
-an empty body connects them directly. Forward connections and iteration-tail
-precedence form an acyclic placement graph. After separating every return from
-the forward graph, carry each tail's precedence through continuation blocks and
-loop-entry junctions. Stop at the first wire merge, iteration tail, or end on
-each forward route. These boundaries stay below the preceding body to leave room
-for its return; continuation blocks can fill their separate branch columns
-without waiting for the body's final row. This rule applies equally to actions,
-questions, choices, and further loops. Tail precedence is not drawn. Each loop
-has an entry junction on its incoming line; a while follows it with one vertical
-segment into the question, while an unconditional loop follows it with its body.
-Return connections are routed separately, innermost loop first, around the body
-and horizontally into that junction. The arrowhead belongs to that horizontal
-arrival. Returns may move upward; all other geometry checks still apply. If no
-checked return route fits, lower the blocked iteration tail and retry placement
-and routing within the existing bounded attempt budget. Tail precedence carries
-that delay to dependent boundaries; independent terminal branches may remain
-above the return. If no attempt succeeds, rendering fails under §4.
+Questions in loop bodies use the ordinary question layout and authored answer
+order. Loops and breaks have no computational nodes. Each repeating loop has an
+iteration tail and a return to its entry; an empty body connects entry directly
+to tail. A break with no data captures redirects the incoming route without an
+intermediate vertex. Data captures use an unlabeled exit junction, which stays
+in its incoming branch column before connecting to the target continuation.
+Chains of structural junctions use their downstream columns instead of falling
+back to the root column. Unit-valued question outputs that only gate structural
+statements remain labeled at the question exit and add no capture label or
+placement row.
 
-An iteration tail meets its incoming branches at their leftmost approach for an
-unconditional or yes-first loop and their rightmost approach for a no-first
-loop. The return can then leave that end of the rail without retracing an
-incoming branch.
+A loop without a repeating route or data captures contributes no entry vertex to
+the placement graph. Its body keeps the same geometry it would have without that
+enclosing loop.
+
+Forward connections and iteration-tail precedence form an acyclic placement
+graph. Carry each exited region's tail precedence through continuation blocks
+and structural entry or exit junctions. Stop at the first wire merge, iteration
+tail, or end; those boundaries stay below the body. The continuation's preceding
+blocks may fill their branch columns alongside the body, regardless of block
+kind or branch order. This precedence is not drawn. A break that finishes an
+enclosing iteration connects directly to that iteration's tail. Equivalent
+question-and-break loop routes retain their geometry; structural syntax alone
+does not introduce rows or detours.
+
+Return connections are routed separately, innermost loop first, around the body
+and horizontally into its entry junction. The arrowhead belongs to that
+horizontal arrival. Returns may move upward; all other geometry checks still
+apply. The preferred contour is right when all repeating summaries select the
+rightmost branch of the first selection in that loop, and left otherwise. The
+tail meets its incoming branches at the end of its rail nearest that contour.
+
+If no checked return route fits, lower the blocked iteration tail and retry
+placement and routing within the existing bounded attempt budget. Tail
+precedence carries the delay to dependent continuations. If no attempt succeeds,
+rendering fails under §4. Before layout, the shared model rejects a return
+enclosed by two break routes to the same loop's continuation
+([RFC 0001 §4.5](0001-language.md#45-loop)). Other placement or routing limits
+still report rendering failure rather than changing branch order or emitting a
+crossing.
 
 A tail with one incoming connection may sit on a side exit's horizontal run, or
 after the usual vertical gap below a straight exit. Prefer turning upward there
@@ -127,10 +143,9 @@ A question-branch description uses its own branch-label style beside the exit
 and replaces the output label. Its font is larger than a wire label's font, and
 layout uses that size when wrapping text and placing the following row. The
 first branch's description hangs below its downward exit; the second branch's
-description sits above its horizontal exit. Default while answer labels use the
-same placement. Return arrowheads use an embedded SVG marker, and the accessible
-description identifies the iteration tail and the loop entry, naming the while
-condition when one exists.
+description sits above its horizontal exit. Return arrowheads use an embedded
+SVG marker, and the accessible description identifies the iteration tail and the
+loop entry. Loop-entry and break captures have no labels.
 
 ## 4. Library interface
 

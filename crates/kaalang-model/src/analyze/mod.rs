@@ -14,15 +14,15 @@ use crate::model::{
 };
 
 mod action;
+mod break_block;
 mod choice;
 mod convergence;
 mod end;
+mod loop_block;
 mod merge;
 mod participation;
 mod placement;
 mod question;
-mod unconditional_loop;
-mod while_loop;
 
 /// Walks the blocks in source order under every branch selection. Returns the
 /// executions and convergence groups in canonical order, or the earliest
@@ -30,7 +30,7 @@ mod while_loop;
 /// branches, then an end-reaching execution without `end`, then an unreachable block,
 /// then a producer occurrence that no execution captures, then an invalid
 /// branch-output continuation, then a block decided by independent questions
-/// or choices, then an invalid wire merge or shared continuation.
+/// or choices, then an invalid wire merge, shared continuation, or loop route order.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
     let end = flow.blocks.len() - 1;
     debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
@@ -84,6 +84,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
+    loop_block::validate_routes(flow, &executions)?;
     Ok((executions, convergence_groups, merges))
 }
 
@@ -110,6 +111,33 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
     });
     let first = differing.next()?.block;
     differing.next().is_none().then_some(first)
+}
+
+/// Unfold only selections that change the observed outcome. Earlier converged
+/// selections and later questions do not split its branch interval. Source
+/// order puts deciding ancestors before descendants, so projected traces sort
+/// in authored branch order.
+fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
+    let mut selectors = BTreeSet::new();
+    for (first, execution) in executions.iter().enumerate() {
+        for (second, other) in executions.iter().enumerate().skip(first + 1) {
+            if outcomes[first] != outcomes[second]
+                && let Some(selector) = only_difference(execution, other)
+            {
+                selectors.insert(selector);
+            }
+        }
+    }
+    let mut ordered = (0..executions.len()).collect::<Vec<_>>();
+    ordered.sort_by_cached_key(|&index| {
+        executions[index]
+            .branches
+            .iter()
+            .filter(|selection| selectors.contains(&selection.block))
+            .copied()
+            .collect::<Vec<_>>()
+    });
+    ordered
 }
 
 /// The transitive predecessors of every block in one execution: its capture
@@ -246,8 +274,8 @@ impl Walk<'_> {
         match block.kind {
             BlockKind::Action => action::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
-            BlockKind::Loop => unconditional_loop::visit(self, index, state),
-            BlockKind::While => while_loop::visit(self, index, &state),
+            BlockKind::Loop => loop_block::visit(self, index, state),
+            BlockKind::Break => break_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
         }
@@ -286,35 +314,31 @@ impl Walk<'_> {
         true
     }
 
-    /// Closes nested loop regions innermost first. An unconditional loop records
-    /// a repeating summary instead of proceeding to the implicit end.
+    /// Reaching the innermost body's boundary records a repeating summary.
     fn close_loops(&mut self, index: usize, state: &mut State) -> bool {
-        let closing = state
+        let Some(header) = state
             .loop_inputs
             .keys()
             .rev()
             .copied()
-            .filter(|&header| self.flow.blocks[header].loop_end == Some(index))
-            .collect::<Vec<_>>();
-        for header in closing {
-            if state.available.contains_key(&self.end_wire) {
-                self.finish(state.clone());
-                return true;
-            }
-            state.available = state
-                .loop_inputs
-                .remove(&header)
-                .expect("the iteration is open");
-            state.repeats.insert(header);
-            if self.flow.blocks[header].kind == BlockKind::Loop {
-                self.record(
-                    state.clone(),
-                    ExecutionOutcome::Repeat { loop_index: header },
-                );
-                return true;
-            }
+            .find(|&header| self.flow.blocks[header].loop_end == Some(index))
+        else {
+            return false;
+        };
+        if state.available.contains_key(&self.end_wire) {
+            self.finish(state.clone());
+            return true;
         }
-        false
+        state.available = state
+            .loop_inputs
+            .remove(&header)
+            .expect("the iteration is open");
+        state.repeats.insert(header);
+        self.record(
+            state.clone(),
+            ExecutionOutcome::Repeat { loop_index: header },
+        );
+        true
     }
 
     /// Resolves the end block's `end` capture and records the execution.
@@ -336,7 +360,7 @@ impl Walk<'_> {
     }
 }
 
-/// Every computational block participates in at least one execution.
+/// Every authored block participates in at least one execution.
 fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let end = flow.blocks.len() - 1;
     match (0..end).find(|&block| {
@@ -385,7 +409,7 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
                 BlockKind::Action => action::uncaptured(name),
                 BlockKind::Question => question::uncaptured(name),
                 BlockKind::Choice => choice::uncaptured(name),
-                BlockKind::End | BlockKind::Loop | BlockKind::While => {
+                BlockKind::End | BlockKind::Loop | BlockKind::Break => {
                     unreachable!("this kind declares no outputs")
                 }
             });

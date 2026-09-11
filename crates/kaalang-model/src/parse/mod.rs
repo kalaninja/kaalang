@@ -13,11 +13,11 @@ use syn::{
 use crate::model::{Block, BlockKind, Flow, Input};
 
 mod action;
+mod break_block;
 mod choice;
 mod end;
+mod loop_block;
 mod question;
-mod unconditional_loop;
-mod while_loop;
 
 /// Parses a flow function into its named flow inputs and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
@@ -68,31 +68,84 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
 /// Flattens lexical loop regions without changing their authored order.
 fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
     for statement in statements {
-        match statement {
-            Stmt::Expr(Expr::Loop(expression), _) => {
-                let mut block = unconditional_loop::parse(expression)?;
-                block.parent = parent;
-                let index = blocks.len();
-                blocks.push(block);
-                self::statements(&expression.body.stmts, Some(index), blocks)?;
-                blocks[index].loop_end = Some(blocks.len());
+        let Stmt::Expr(expression, semicolon) = statement else {
+            let mut block = parse_block(statement)?;
+            block.parent = parent;
+            blocks.push(block);
+            continue;
+        };
+        let mut inputs = Vec::new();
+        let mut normalized = None;
+        if let Expr::Closure(closure) = expression
+            && closure.attrs.is_empty()
+        {
+            let (captures, body) = block_closure(closure)?;
+            let body = structural_expression(&body);
+            if matches!(body, Expr::Loop(_) | Expr::Break(_)) {
+                if semicolon.is_none() {
+                    return Err(Error::new_spanned(
+                        statement,
+                        "a captured kaalang loop or break requires a trailing semicolon",
+                    ));
+                }
+                inputs = captures;
+                normalized = Some(body.clone());
             }
-            Stmt::Expr(Expr::While(expression), _) => {
-                let mut block = while_loop::parse(expression)?;
-                block.parent = parent;
-                let index = blocks.len();
-                blocks.push(block);
-                self::statements(&expression.body.stmts, Some(index), blocks)?;
-                blocks[index].loop_end = Some(blocks.len());
+        }
+        let expression = normalized.as_ref().unwrap_or(expression);
+        let mut block = match expression {
+            Expr::Loop(expression) => loop_block::parse(expression, inputs)?,
+            Expr::Break(expression) => break_block::parse(expression, inputs, parent, blocks)?,
+            Expr::While(expression) => {
+                return Err(Error::new_spanned(
+                    expression,
+                    "kaalang does not support `while`; use `loop` with a question and `break`",
+                ));
             }
-            _ => {
-                let mut block = parse_block(statement)?;
-                block.parent = parent;
-                blocks.push(block);
-            }
+            _ => parse_block(statement)?,
+        };
+        block.parent = parent;
+        let index = blocks.len();
+        blocks.push(block);
+        if let Expr::Loop(expression) = expression {
+            self::statements(&expression.body.stmts, Some(index), blocks)?;
+            blocks[index].loop_end = Some(blocks.len());
         }
     }
     Ok(())
+}
+
+/// Braces around a single structural expression do not change its meaning.
+fn structural_expression(mut expression: &Expr) -> &Expr {
+    while let Expr::Block(block) = expression {
+        if !block.attrs.is_empty() || block.label.is_some() {
+            break;
+        }
+        let [Stmt::Expr(inner, _)] = block.block.stmts.as_slice() else {
+            break;
+        };
+        expression = inner;
+    }
+    expression
+}
+
+fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
+    Block {
+        kind,
+        description: None,
+        question_branches: Vec::new(),
+        case_descriptions: Vec::new(),
+        outputs: Vec::new(),
+        output_pattern: syn::parse_quote!(()),
+        output_span: span,
+        inputs,
+        body: syn::parse_quote!({}),
+        span,
+        parent: None,
+        loop_end: None,
+        loop_label: None,
+        break_target: None,
+    }
 }
 
 /// Parses one closure-shaped statement and hands it to its kind's parser.
@@ -119,7 +172,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::End | BlockKind::Loop | BlockKind::While => {
+        BlockKind::End | BlockKind::Loop | BlockKind::Break => {
             unreachable!("structural blocks parse separately")
         }
     }
@@ -192,6 +245,8 @@ impl<'a> BlockSyntax<'a> {
             span: self.kind_attribute.span(),
             parent: None,
             loop_end: None,
+            loop_label: None,
+            break_target: None,
         }
     }
 }

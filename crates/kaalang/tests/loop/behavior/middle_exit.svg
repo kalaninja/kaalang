@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="748" height="878" viewBox="0 0 748 878" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for middle_exit</title>
+  <desc id="kaalang-description">Nodes: Start: middle_exit with parameters limit: usize handing over limit; Action: Initialize the counter and log. capturing nothing handing over mut count, mut log; Action: Record the start of the iteration. capturing &amp;count, &amp;mut log; Question: Stop before advancing? capturing &amp;count, limit handing over done / again; Action: Advance and record the rest of the iteration. capturing again, &amp;mut count, &amp;mut log; Action: Return the log after leaving the loop. capturing log handing over end; End: Vec&lt;usize&gt; capturing end. Connections: Start: middle_exit to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the loop; Action: Record the start of the iteration. to Question: Stop before advancing?; Question: Stop before advancing? branch 1 to Action: Return the log after leaving the loop.; Question: Stop before advancing? branch 2 to Action: Advance and record the rest of the iteration.; Action: Advance and record the rest of the iteration. to the iteration tail of the loop; Action: Return the log after leaving the loop. to End: Vec&lt;usize&gt;; the entry of the loop to Action: Record the start of the iteration.; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 172 434 L 172 506
+      M 172 578 L 172 650
+      M 312 542 L 532 542 L 532 650
+      M 532 716 L 532 788
+      M 172 716 L 172 788
+      M 172 298 L 172 370
+    "/>
+    <path class="connection" d="
+      M 532 788 L 692 788 L 692 298 L 172 298
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">limit</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut count, mut log</tspan></text>
+    <text class="connection-label" x="185" y="596" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
+    <text class="connection-label" x="325" y="560" xml:space="preserve"><tspan x="325" dy="0">again</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="359" xml:space="preserve"><tspan x="185" dy="0">&amp;count, &amp;mut log</tspan></text>
+    <text class="connection-label" x="185" y="495" xml:space="preserve"><tspan x="185" dy="0">&amp;count, limit</tspan></text>
+    <text class="connection-label" x="545" y="639" xml:space="preserve"><tspan x="545" dy="0">again, &amp;mut count, &amp;mut log</tspan></text>
+    <text class="connection-label" x="185" y="639" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">middle_exit</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 194)">
+      <title xml:space="preserve">Initialize the counter and log.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter and log.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 402)">
+      <title xml:space="preserve">Record the start of the iteration.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record the start of the iteration.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 542)">
+      <title xml:space="preserve">Stop before advancing?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stop before advancing?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 683)">
+      <title xml:space="preserve">Advance and record the rest of the iteration.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Advance and record the rest of </tspan><tspan x="-124" dy="18">the iteration.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 683)">
+      <title xml:space="preserve">Return the log after leaving the loop.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Return the log after leaving the </tspan><tspan x="-124" dy="18">loop.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 817)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

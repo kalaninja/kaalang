@@ -34,6 +34,8 @@ pub(super) fn block(function: &ItemFn) -> Block {
         span,
         parent: None,
         loop_end: None,
+        loop_label: None,
+        break_target: None,
     }
 }
 
