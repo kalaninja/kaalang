@@ -80,18 +80,24 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
         connections.push(Connection {
             source: Source::Junction(loop_.tail),
             destination: Destination::Junction(loop_.entry),
-            points: straighten(vec![
-                from,
-                Point {
-                    x: aside,
-                    y: from.y,
-                },
-                Point { x: aside, y: end.y },
-                end,
-            ]),
+            points: straighten(return_points(from, aside, end)),
         });
     }
     connections
+}
+
+/// The climb of one loop return: out of its tail, up `aside`, and into its
+/// entry. Each caller smooths the result its own way.
+pub(super) fn return_points(from: Point, aside: i32, end: Point) -> Vec<Point> {
+    vec![
+        from,
+        Point {
+            x: aside,
+            y: from.y,
+        },
+        Point { x: aside, y: end.y },
+        end,
+    ]
 }
 
 /// Where one return climbs: on the side and in the lane the arrangement chose,

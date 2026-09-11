@@ -4,7 +4,6 @@
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
 use kaalang_model::{Arrangement, SemanticModel};
 use syn::{ReturnType, Signature, spanned::Spanned};
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::captions::{self, Captions};
 
@@ -160,7 +159,6 @@ fn shift(scene: &mut Scene, from: i32, delta: i32) {
 
 /// The rails of the loops nested inside this one, as already drawn.
 fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
-    let loop_ = scene.topology.loops[index];
     scene
         .topology
         .loops
@@ -179,7 +177,6 @@ fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
                 .x;
             Some((other.header, rail))
         })
-        .filter(|(header, _)| *header != loop_.header)
         .collect()
 }
 
@@ -279,15 +276,7 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
 }
 
 fn straighten_return(from: Point, aside: i32, end: Point) -> Vec<Point> {
-    let mut points = vec![
-        from,
-        Point {
-            x: aside,
-            y: from.y,
-        },
-        Point { x: aside, y: end.y },
-        end,
-    ];
+    let mut points = route::return_points(from, aside, end);
     points.dedup();
     points
 }
@@ -360,11 +349,7 @@ pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
 
 /// The authored text under a span with every whitespace run collapsed to one space.
 fn collapsed(source: &str, span: proc_macro2::Span) -> String {
-    collapsed_range(source, span.byte_range())
-}
-
-fn collapsed_range(source: &str, range: std::ops::Range<usize>) -> String {
-    collapsed_text(&source[range])
+    collapsed_text(&source[span.byte_range()])
 }
 
 fn collapsed_text(text: &str) -> String {
@@ -691,7 +676,7 @@ fn capsule_dimensions(label: &str) -> (i32, i32, Vec<String>) {
     let (width, mut height, lines) = block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 58);
     let first_baseline = 15 - lines.len() as i32 * LINE_HEIGHT / 2;
     for (index, line) in lines.iter().enumerate() {
-        let line_width = text::text_width(&line.graphemes(true).collect::<Vec<_>>(), LABEL_FONT);
+        let line_width = text::text_width(line, LABEL_FONT);
         let x = f64::from(line_width) / 2.0 + 4.0;
         let baseline = first_baseline + index as i32 * LINE_HEIGHT;
         let y = f64::from(

@@ -213,39 +213,35 @@ fn location(span: Span) -> (usize, usize) {
 fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
     for block in &model.flow.blocks {
         let (line, column) = location(block.span);
-        if let Some(character) = block.description.as_deref().and_then(invalid_xml_character) {
-            return Err(RenderError::InvalidLabelCharacter {
-                character,
-                line,
-                column,
-                context: "block description".to_owned(),
-            });
-        }
+        let description = block
+            .description
+            .as_deref()
+            .map(|text| (text, "block description".to_owned()));
         // Only a choice is projected with case nodes, so only a choice reaches
         // the diagram with case labels; the parser leaves this list empty for
         // every other kind.
-        for (case_index, description) in block.case_descriptions.iter().enumerate() {
-            if let Some(character) = invalid_xml_character(description) {
-                return Err(RenderError::InvalidLabelCharacter {
-                    character,
-                    line,
-                    column,
-                    context: format!("case {} description", case_index + 1),
-                });
-            }
-        }
-        for (branch, description) in block
+        let cases = block
+            .case_descriptions
+            .iter()
+            .enumerate()
+            .map(|(case, text)| (text.as_str(), format!("case {} description", case + 1)));
+        let branches = block
             .question_branches
             .iter()
             .enumerate()
-            .filter_map(|(branch, answer)| answer.description.as_deref().map(|text| (branch, text)))
-        {
-            if let Some(character) = invalid_xml_character(description) {
+            .filter_map(|(branch, answer)| {
+                answer
+                    .description
+                    .as_deref()
+                    .map(|text| (text, format!("question branch {} description", branch + 1)))
+            });
+        for (text, context) in description.into_iter().chain(cases).chain(branches) {
+            if let Some(character) = invalid_xml_character(text) {
                 return Err(RenderError::InvalidLabelCharacter {
                     character,
                     line,
                     column,
-                    context: format!("question branch {} description", branch + 1),
+                    context,
                 });
             }
         }

@@ -907,8 +907,6 @@ fn a_long_return_type_wraps_inside_the_end_node() {
 
 #[test]
 fn capsule_captions_fit_the_curved_outline() {
-    use unicode_segmentation::UnicodeSegmentation;
-
     for fields in [1, 12, 56] {
         let return_type = std::iter::repeat_n("[u8; 1]", fields)
             .collect::<Vec<_>>()
@@ -922,7 +920,7 @@ fn capsule_captions_fit_the_curved_outline() {
             let straight = f64::from(node.width / 2) - rx;
             let first_baseline = 15 - node.lines.len() as i32 * LINE_HEIGHT / 2;
             for (index, line) in node.lines.iter().enumerate() {
-                let width = text::text_width(&line.graphemes(true).collect::<Vec<_>>(), LABEL_FONT);
+                let width = text::text_width(line, LABEL_FONT);
                 let x = (f64::from(width) / 2.0 - straight).max(0.0);
                 let baseline = first_baseline + index as i32 * LINE_HEIGHT;
                 for y in [baseline - LABEL_FONT, baseline + LABEL_FONT / 3] {

@@ -32,8 +32,13 @@ fn cluster_advance(cluster: &str) -> i32 {
     )
 }
 
-/// Estimated rendered width of `clusters` at `font_size`.
-pub(super) fn text_width(clusters: &[&str], font_size: i32) -> i32 {
+/// Estimated rendered width of `text` at `font_size`.
+pub(super) fn text_width(text: &str, font_size: i32) -> i32 {
+    text.graphemes(true).map(cluster_advance).sum::<i32>() * font_size / 100
+}
+
+/// The same, for clusters a caller has already split.
+fn clusters_width(clusters: &[&str], font_size: i32) -> i32 {
     clusters.iter().copied().map(cluster_advance).sum::<i32>() * font_size / 100
 }
 
@@ -67,7 +72,7 @@ pub(super) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> 
         }
 
         let mut start = 0;
-        while text_width(&clusters[start..], font_size) > budget {
+        while clusters_width(&clusters[start..], font_size) > budget {
             let hard_end = start + fitting_count(&clusters[start..], budget, font_size);
             let preferred_break = clusters[start..hard_end]
                 .iter()
@@ -90,8 +95,6 @@ pub(super) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> 
 
 #[cfg(test)]
 mod tests {
-    use unicode_segmentation::UnicodeSegmentation;
-
     use super::{text_width, wrap_text};
     use crate::layout::{LABEL_FONT, NODE_LABEL_WIDTH};
 
@@ -106,8 +109,7 @@ mod tests {
         assert!(lines.len() > 1);
         assert_eq!(lines.concat(), word);
         for line in &lines {
-            let clusters = line.graphemes(true).collect::<Vec<_>>();
-            assert!(text_width(&clusters, 14) <= 20, "line exceeds: {line}");
+            assert!(text_width(line, 14) <= 20, "line exceeds: {line}");
         }
 
         // Narrower than one cluster, so only the cluster boundary can break.
@@ -132,9 +134,8 @@ mod tests {
 
         assert!(lines.len() > 1);
         for line in &lines {
-            let clusters = line.graphemes(true).collect::<Vec<_>>();
             assert!(
-                text_width(&clusters, LABEL_FONT) <= NODE_LABEL_WIDTH,
+                text_width(line, LABEL_FONT) <= NODE_LABEL_WIDTH,
                 "line exceeds the budget: {line}"
             );
         }
@@ -151,9 +152,8 @@ mod tests {
         assert!(lines.len() > 1);
         assert_eq!(lines.concat(), text);
         for line in &lines {
-            let clusters = line.graphemes(true).collect::<Vec<_>>();
             assert!(
-                text_width(&clusters, LABEL_FONT) <= NODE_LABEL_WIDTH,
+                text_width(line, LABEL_FONT) <= NODE_LABEL_WIDTH,
                 "line exceeds the budget: {line}"
             );
         }

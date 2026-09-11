@@ -153,51 +153,37 @@ fn describe(scene: &Scene) -> String {
             if node.id == NodeId::Start
                 && let Some(parameters) = &scene.parameters
             {
-                described.push_str(" with parameters ");
-                described.push_str(&parameters.parameters.join("; "));
+                push_phrase(
+                    &mut described,
+                    " with parameters ",
+                    &parameters.parameters,
+                    "; ",
+                );
             }
             let capture = scene.captions.capture_label(node.id);
             if capture == ["()"] {
                 described.push_str(" capturing nothing");
-            } else if !capture.is_empty() {
-                described.push_str(" capturing ");
-                described.push_str(&capture.join(", "));
+            } else {
+                push_phrase(&mut described, " capturing ", capture, ", ");
             }
-            let handovers = topology
-                .exits
-                .iter()
-                .filter(|exit| exit.id.node == node.id)
-                .map(|exit| scene.captions.handover(exit.id))
-                .filter(|handover| !handover.is_empty())
-                .map(|handover| handover.join(", "))
-                .collect::<Vec<_>>();
-            if !handovers.is_empty() {
-                described.push_str(" handing over ");
-                described.push_str(&handovers.join(" / "));
+            let (mut handovers, mut branches) = (Vec::new(), Vec::new());
+            for exit in topology.exits.iter().filter(|exit| exit.id.node == node.id) {
+                let handover = scene.captions.handover(exit.id);
+                if !handover.is_empty() {
+                    handovers.push(handover.join(", "));
+                }
+                if let Some(description) = scene.captions.branch_description(exit.id) {
+                    branches.push(format!(
+                        "branch {}: {description}",
+                        exit.id
+                            .branch
+                            .expect("only question branches have descriptions")
+                            + 1
+                    ));
+                }
             }
-            let branch_descriptions = topology
-                .exits
-                .iter()
-                .filter(|exit| exit.id.node == node.id)
-                .filter_map(|exit| {
-                    scene
-                        .captions
-                        .branch_description(exit.id)
-                        .map(|description| {
-                            format!(
-                                "branch {}: {description}",
-                                exit.id
-                                    .branch
-                                    .expect("only question branches have descriptions")
-                                    + 1
-                            )
-                        })
-                })
-                .collect::<Vec<_>>();
-            if !branch_descriptions.is_empty() {
-                described.push_str(" described as ");
-                described.push_str(&branch_descriptions.join(" / "));
-            }
+            push_phrase(&mut described, " handing over ", &handovers, " / ");
+            push_phrase(&mut described, " described as ", &branches, " / ");
             described
         })
         .collect::<Vec<_>>()
@@ -221,6 +207,15 @@ fn describe(scene: &Scene) -> String {
         .join("; ");
 
     format!("Nodes: {nodes}. Connections: {connections}.")
+}
+
+/// Appends `lead` and the joined `items`, or nothing when there are none.
+fn push_phrase(described: &mut String, lead: &str, items: &[String], separator: &str) {
+    if items.is_empty() {
+        return;
+    }
+    described.push_str(lead);
+    described.push_str(&items.join(separator));
 }
 
 fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterPanel) {

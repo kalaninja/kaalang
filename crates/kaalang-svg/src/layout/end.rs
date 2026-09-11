@@ -1,5 +1,7 @@
 //! Aligns terminal routes with independent returns, or clears them when they cross.
 
+use std::collections::BTreeSet;
+
 use super::{Scene, route, vertical_gap};
 use kaalang_model::topology::{Destination, NodeKind, Source};
 
@@ -65,7 +67,7 @@ pub(super) fn adjust(scene: &mut Scene) {
         .iter()
         .position(|node| node.id == end)
         .expect("end is placed");
-    for y in [below_nodes, below_nodes.max(below_returns)] {
+    for y in BTreeSet::from([below_nodes, below_nodes.max(below_returns)]) {
         let delta = old_y - y;
         let mut saved = Vec::new();
         for (index, edge) in scene.connections.iter_mut().enumerate() {

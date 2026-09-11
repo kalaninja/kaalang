@@ -10,8 +10,6 @@
 
 use std::collections::BTreeSet;
 
-use unicode_segmentation::UnicodeSegmentation;
-
 use kaalang_model::topology::{Destination, ExitId, Source, Vertex};
 
 use super::{
@@ -317,7 +315,8 @@ pub(super) fn vertical_gap(scene: &Scene) -> i32 {
         .iter()
         .map(|exit| match captions.branch_description(exit.id) {
             Some(description) => {
-                vertical_label_gap(branch_label_line_count(description), LabelKind::Branch)
+                let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
+                vertical_label_gap(lines.len(), LabelKind::Branch)
             }
             None => vertical_label_gap(
                 label_line_count(captions.handover(exit.id)),
@@ -353,10 +352,6 @@ fn label_line_count(names: &[String]) -> usize {
     wrap_wires(names).map_or(0, |lines| lines.len())
 }
 
-fn branch_label_line_count(description: &str) -> usize {
-    wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size()).len()
-}
-
 /// The rectangle a label's ink and halo occupy, matching how the serializer
 /// places it: starting at `at.x`, its first baseline at `at.y`. Left, top,
 /// right, bottom, like `Scene::bounds`.
@@ -380,39 +375,41 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
 /// this holds the labels to theirs, on the same emitted geometry.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     for label in &scene.labels {
-        let (left, top, right, bottom) = label_rect(label);
+        let rect = label_rect(label);
+        let (left, top, right, bottom) = rect;
         let names = label.lines.join(" ");
         if left < 0 || top < 0 || right > scene.width || bottom > scene.height {
             return Some(format!("the label `{names}` leaves the canvas"));
         }
-        for node in &scene.nodes {
-            let (node_left, node_top, node_right, node_bottom) = Scene::bounds(node);
-            if right > node_left && left < node_right && bottom > node_top && top < node_bottom {
-                return Some(format!(
-                    "the label `{names}` reaches into the node `{}`",
-                    node.lines.join(" ")
-                ));
-            }
-        }
-        if let Some(parameters) = &scene.parameters {
-            let (panel_left, panel_top, panel_right, panel_bottom) =
-                Scene::parameter_bounds(parameters);
-            if right > panel_left && left < panel_right && bottom > panel_top && top < panel_bottom
-            {
-                return Some(format!(
-                    "the label `{names}` reaches into the parameter panel"
-                ));
-            }
+        let nodes = scene.nodes.iter().map(|node| {
+            (
+                Scene::bounds(node),
+                format!("the node `{}`", node.lines.join(" ")),
+            )
+        });
+        let panel = scene.parameters.as_ref().map(|parameters| {
+            (
+                Scene::parameter_bounds(parameters),
+                "the parameter panel".to_owned(),
+            )
+        });
+        if let Some((_, what)) = nodes.chain(panel).find(|(other, _)| overlaps(rect, *other)) {
+            return Some(format!("the label `{names}` reaches into {what}"));
         }
     }
 
     None
 }
 
+/// Whether two rectangles share any area, each as left, top, right, bottom.
+const fn overlaps(rect: (i32, i32, i32, i32), other: (i32, i32, i32, i32)) -> bool {
+    rect.2 > other.0 && rect.0 < other.2 && rect.3 > other.1 && rect.1 < other.3
+}
+
 fn label_width(lines: &[String], font_size: i32) -> i32 {
     lines
         .iter()
-        .map(|line| text_width(&line.graphemes(true).collect::<Vec<_>>(), font_size))
+        .map(|line| text_width(line, font_size))
         .max()
         .unwrap_or_default()
 }
