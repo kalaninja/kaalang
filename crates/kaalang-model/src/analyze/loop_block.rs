@@ -68,14 +68,9 @@ pub(super) fn validate_routes(flow: &Flow, executions: &[Execution]) -> Result<(
 /// a nested selection could have returned `end`. This is control order, not
 /// a capture dependency or a wire merge.
 pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
-    let mut owner = Some(selection);
-    while let Some(index) = owner {
-        if flow.blocks[index].loop_end.is_some_and(|end| end <= next) {
-            return true;
-        }
-        owner = flow.blocks[index].parent;
-    }
-    false
+    std::iter::once(selection)
+        .chain(flow.enclosing(selection))
+        .any(|index| flow.blocks[index].loop_end.is_some_and(|end| end <= next))
 }
 
 #[cfg(test)]

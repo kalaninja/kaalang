@@ -68,6 +68,25 @@ pub struct Arrangement {
     pub contours: Vec<Contour>,
 }
 
+impl Arrangement {
+    /// The deepest lane any route entering one junction takes in the gap above
+    /// it. Those routes meet on that lane's line, so a side route finishes
+    /// horizontally on the rail rather than turning down over the continuation
+    /// below it (RFC 0002 §8). `None` when none of them runs sideways there.
+    #[must_use]
+    pub fn deepest_lane(&self, topology: &Topology, junction: usize, gap: usize) -> Option<usize> {
+        topology
+            .connections
+            .iter()
+            .enumerate()
+            .filter(|(_, wire)| wire.destination == Destination::Junction(junction))
+            .flat_map(|(index, _)| &self.routes[index].runs)
+            .filter(|run| run.gap == gap)
+            .map(|run| run.lane)
+            .max()
+    }
+}
+
 /// The branch columns of one question or choice, as offsets from its own
 /// column, and the total number of columns it reserves.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -198,10 +217,7 @@ pub fn construct(
 ) -> syn::Result<Arrangement> {
     let internal = |reason| {
         Error::new(
-            flow.blocks
-                .last()
-                .expect("a flow owns the implicit end block")
-                .span,
+            flow.end_span(),
             format!("internal kaalang construction error: {reason}"),
         )
     };
@@ -269,16 +285,7 @@ pub fn construct(
         }
     }
 
-    let blocked = blocked.unwrap_or_else(|| Obstruction {
-        span: flow
-            .blocks
-            .last()
-            .expect("a flow owns the implicit end block")
-            .span,
-        message: "its connections cannot be arranged without a crossing".to_owned(),
-        loop_index: None,
-        connection: None,
-    });
+    let blocked = blocked.unwrap_or_else(|| unarrangeable(flow));
     Err(Error::new(
         blocked.span,
         format!(
@@ -286,6 +293,32 @@ pub fn construct(
             blocked.message
         ),
     ))
+}
+
+/// Queues every corridor shape later than the one this connection has now.
+/// Only a later rung is worth trying: each gives the run more room, and no rung
+/// repeats. Pushed furthest first, so the stack hands back the nearest.
+fn widen(pending: &mut Vec<Vec<Shape>>, shapes: &[Shape], connection: usize) {
+    for later in Shape::ALL
+        .into_iter()
+        .filter(|shape| *shape > shapes[connection])
+        .rev()
+    {
+        let mut next = shapes.to_vec();
+        next[connection] = later;
+        pending.push(next);
+    }
+}
+
+/// The obstruction reported when the searched space ran out with nothing
+/// drawable and no candidate named a participant to blame.
+fn unarrangeable(flow: &Flow) -> Obstruction {
+    Obstruction {
+        span: flow.end_span(),
+        message: "its connections cannot be arranged without a crossing".to_owned(),
+        loop_index: None,
+        connection: None,
+    }
 }
 
 /// Resolves the corridor shapes for one rank and contour assignment, by moving
@@ -316,15 +349,7 @@ fn corridors(
                 // Only a later rung is worth trying: every rung after the
                 // current one gives the run more room, and no rung repeats.
                 // Pushed furthest first, so the stack hands back the nearest.
-                for later in Shape::ALL
-                    .into_iter()
-                    .filter(|shape| *shape > shapes[connection])
-                    .rev()
-                {
-                    let mut next = shapes.clone();
-                    next[connection] = later;
-                    pending.push(next);
-                }
+                widen(&mut pending, &shapes, connection);
                 continue;
             }
         };
@@ -346,15 +371,7 @@ fn corridors(
             // crossings. Check complete routes, including side departures on
             // node rows, before choosing contours. Either participant may move.
             for connection in [right, left] {
-                for later in Shape::ALL
-                    .into_iter()
-                    .filter(|shape| *shape > shapes[connection])
-                    .rev()
-                {
-                    let mut next = shapes.clone();
-                    next[connection] = later;
-                    pending.push(next);
-                }
+                widen(&mut pending, &shapes, connection);
             }
             continue;
         }
@@ -368,33 +385,16 @@ fn corridors(
                 // connection takes a longer corridor, so the same conflict
                 // that moves a contour also moves a shape.
                 if let Some(connection) = reason.connection {
-                    for later in Shape::ALL
-                        .into_iter()
-                        .filter(|shape| *shape > shapes[connection])
-                        .rev()
-                    {
-                        let mut next = shapes.clone();
-                        next[connection] = later;
-                        pending.push(next);
-                    }
+                    widen(&mut pending, &shapes, connection);
                 }
                 blocked.get_or_insert(reason);
             }
         }
     }
 
-    Err(Rejection::Obstructed(blocked.unwrap_or_else(|| {
-        Obstruction {
-            span: flow
-                .blocks
-                .last()
-                .expect("a flow owns the implicit end block")
-                .span,
-            message: "its connections cannot be arranged without a crossing".to_owned(),
-            loop_index: None,
-            connection: None,
-        }
-    })))
+    Err(Rejection::Obstructed(
+        blocked.unwrap_or_else(|| unarrangeable(flow)),
+    ))
 }
 
 /// Collects the chosen placement and corridors into one record. The contours

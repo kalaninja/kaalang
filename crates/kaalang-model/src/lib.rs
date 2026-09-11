@@ -81,12 +81,10 @@ mod tests {
     /// How many times the plan emits one block. The end block is emitted once
     /// when the plan is rooted at it.
     fn count_block(model: &SemanticModel, target: usize) -> usize {
-        let mut bodies = vec![0; model.flow.blocks.len()];
-        crate::plan::verify::count(&model.execution_plan, &mut bodies);
-        if let ExecutionPlan::End { index, .. } = &model.execution_plan {
-            bodies[*index] += 1;
-        }
-        bodies[target]
+        crate::plan::verify::emitted(&model.execution_plan)
+            .iter()
+            .filter(|&&block| block == target)
+            .count()
     }
 
     /// The flow named `flow` in a fixture file's source.

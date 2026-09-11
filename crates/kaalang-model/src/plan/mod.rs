@@ -553,6 +553,59 @@ impl Builder<'_> {
     }
 }
 
+/// Each body occurs once in the verified plan. Visiting branches before their
+/// joins gives the source order when filtered by an execution's participants,
+/// including branches yielding to an outer join.
+pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
+    match plan {
+        ExecutionPlan::Loop { index, body, next } => {
+            order.push(*index);
+            serial_order(body, order);
+            if let Some(next) = next {
+                serial_order(next, order);
+            }
+        }
+        ExecutionPlan::Break { index, .. } => order.push(*index),
+        ExecutionPlan::Action { index, next } => {
+            order.push(*index);
+            serial_order(next, order);
+        }
+        ExecutionPlan::Question {
+            index,
+            branches,
+            join,
+        } => {
+            order.push(*index);
+            for branch in branches {
+                serial_order(&branch.plan, order);
+            }
+            if let Some(join) = join {
+                serial_order(&join.next, order);
+            }
+        }
+        ExecutionPlan::Choice {
+            index,
+            branches,
+            joins,
+        } => {
+            order.push(*index);
+            for branch in branches {
+                serial_order(&branch.plan, order);
+            }
+            for join in joins {
+                serial_order(&join.next, order);
+            }
+        }
+        ExecutionPlan::End { index, body, .. } => {
+            serial_order(body, order);
+            order.push(*index);
+        }
+        ExecutionPlan::EndArrival { .. }
+        | ExecutionPlan::Yield { .. }
+        | ExecutionPlan::Repeat { .. } => {}
+    }
+}
+
 /// Narrows every yield into one join to the wires that join carries, keeping
 /// each yield's own producer spellings.
 fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {

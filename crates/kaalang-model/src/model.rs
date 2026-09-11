@@ -86,18 +86,6 @@ impl Block {
         }
     }
 
-    /// The positional answer selected when a question evaluates to true.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the block has no validated yes answer.
-    #[must_use]
-    pub fn yes_branch(&self) -> usize {
-        self.question_branches
-            .iter()
-            .position(|answer| answer.is_yes)
-            .expect("a question has a yes answer")
-    }
     /// Returns the authored binding at one validated output position.
     ///
     /// # Panics
@@ -144,6 +132,22 @@ pub struct Flow {
 }
 
 impl Flow {
+    /// The loops enclosing one block, innermost first.
+    pub(crate) fn enclosing(&self, block: usize) -> impl Iterator<Item = usize> + '_ {
+        std::iter::successors(self.blocks[block].parent, |&header| {
+            self.blocks[header].parent
+        })
+    }
+
+    /// The span of the implicit end block, where a diagnostic about the flow as
+    /// a whole lands.
+    pub(crate) fn end_span(&self) -> Span {
+        self.blocks
+            .last()
+            .expect("a flow owns the implicit end block")
+            .span
+    }
+
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
     pub(crate) fn wire_name(&self, wire: &Ident) -> String {

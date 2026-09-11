@@ -16,7 +16,11 @@ pub(super) fn plan(
     merges: &[WireMerge],
 ) -> bool {
     let mut bodies = vec![0; flow.blocks.len() - 1];
-    count(plan, &mut bodies);
+    for block in emitted(plan) {
+        if let Some(count) = bodies.get_mut(block) {
+            *count += 1;
+        }
+    }
     bodies.iter().all(|&count| count == 1)
         && executions.iter().all(|execution| {
             let mut replay = Replay {
@@ -59,52 +63,12 @@ pub(super) fn plan(
         })
 }
 
-/// Counts how many times the plan emits each authored block.
-pub(crate) fn count(plan: &ExecutionPlan, bodies: &mut [usize]) {
-    match plan {
-        ExecutionPlan::Loop { index, body, next } => {
-            bodies[*index] += 1;
-            count(body, bodies);
-            if let Some(next) = next {
-                count(next, bodies);
-            }
-        }
-        ExecutionPlan::Break { index, .. } => bodies[*index] += 1,
-        ExecutionPlan::Action { index, next } => {
-            bodies[*index] += 1;
-            count(next, bodies);
-        }
-        ExecutionPlan::Question {
-            index,
-            branches,
-            join,
-        } => {
-            bodies[*index] += 1;
-            for branch in branches {
-                count(&branch.plan, bodies);
-            }
-            if let Some(join) = join {
-                count(&join.next, bodies);
-            }
-        }
-        ExecutionPlan::Choice {
-            index,
-            branches,
-            joins,
-        } => {
-            bodies[*index] += 1;
-            for branch in branches {
-                count(&branch.plan, bodies);
-            }
-            for join in joins {
-                count(&join.next, bodies);
-            }
-        }
-        ExecutionPlan::End { body, .. } => count(body, bodies),
-        ExecutionPlan::EndArrival { .. }
-        | ExecutionPlan::Yield { .. }
-        | ExecutionPlan::Repeat { .. } => {}
-    }
+/// Every authored block the plan emits, in the order it emits them. The end
+/// block is emitted last; every other one belongs to exactly one body.
+pub(crate) fn emitted(plan: &ExecutionPlan) -> Vec<usize> {
+    let mut order = Vec::new();
+    super::serial_order(plan, &mut order);
+    order
 }
 
 pub(super) enum Exit {
@@ -326,9 +290,14 @@ mod tests {
         *next = Some(misplaced);
         // Every block is still represented exactly once, but the exiting
         // execution would now run work it should have skipped.
-        let mut counts = vec![0; model.flow.blocks.len() - 1];
-        count(&model.execution_plan, &mut counts);
-        assert!(counts.iter().all(|&count| count == 1));
+        let emitted = emitted(&model.execution_plan);
+        assert!(
+            (0..model.flow.blocks.len() - 1).all(|block| emitted
+                .iter()
+                .filter(|&&each| each == block)
+                .count()
+                == 1)
+        );
         assert!(!plan(
             &model.flow,
             &model.execution_plan,

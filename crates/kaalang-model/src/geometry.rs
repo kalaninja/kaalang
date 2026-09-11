@@ -103,3 +103,42 @@ pub fn overlaps_itself(points: &[Point]) -> bool {
             .any(|other| crosses(segment[0], segment[1], other[0], other[1]))
     })
 }
+
+/// Drops repeated points and collapses runs of collinear ones, so every bend is
+/// a real right angle.
+#[must_use]
+pub fn straighten(points: Vec<Point>) -> Vec<Point> {
+    let mut straight: Vec<Point> = Vec::with_capacity(points.len());
+    for point in points {
+        if straight.last() == Some(&point) {
+            continue;
+        }
+        while straight.len() >= 2 {
+            let previous = straight[straight.len() - 2];
+            let last = straight[straight.len() - 1];
+            let collinear = (previous.x == last.x && last.x == point.x)
+                || (previous.y == last.y && last.y == point.y);
+            if collinear {
+                straight.pop();
+            } else {
+                break;
+            }
+        }
+        straight.push(point);
+    }
+    straight
+}
+
+/// Whether a route turns sideways below its own start and then arrives other
+/// than horizontally. An incoming side route must not turn down over the
+/// continuation its junction's outgoing connection owns (RFC 0002 §8).
+///
+/// A route of fewer than two points turns nowhere: the first test finds no
+/// segment, and `&&` stops before the arrival is read.
+#[must_use]
+pub fn turns_downward(points: &[Point]) -> bool {
+    points
+        .windows(2)
+        .any(|segment| segment[0].x != segment[1].x && segment[0].y > points[0].y)
+        && points[points.len() - 2].y != points[points.len() - 1].y
+}

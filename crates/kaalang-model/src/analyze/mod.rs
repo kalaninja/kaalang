@@ -140,20 +140,29 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
     ordered
 }
 
+/// Closes a relation held as one set per index: whatever `middle` relates to,
+/// everything relating to `middle` relates to as well.
+// ponytail: O(n³) in the number of indices; switch to a DAG walk if flows reach
+// hundreds of blocks with many executions.
+pub(crate) fn close(relation: &mut [BTreeSet<usize>]) {
+    for middle in 0..relation.len() {
+        let inherited = relation[middle].clone();
+        for related in relation.iter_mut() {
+            if related.contains(&middle) {
+                related.extend(&inherited);
+            }
+        }
+    }
+}
+
 /// The transitive predecessors of every block in one execution: its capture
 /// dependencies together with the branch-local work and producers each wire
 /// merge closes before its consumers.
-// ponytail: the closure costs O(blocks³) per execution; switch to a DAG walk
-// if flows reach hundreds of blocks with many executions.
 fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec<BTreeSet<usize>> {
     let blocks = flow.blocks.len();
     let mut preceding = vec![BTreeSet::new(); blocks];
     for &block in &execution.blocks {
-        let mut parent = flow.blocks[block].parent;
-        while let Some(header) = parent {
-            preceding[block].insert(header);
-            parent = flow.blocks[header].parent;
-        }
+        preceding[block].extend(flow.enclosing(block));
     }
     for dependency in &execution.dependencies {
         if let ProducerId::BlockOutput { block, .. } = dependency.producer {
@@ -177,14 +186,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
             }
         }
     }
-    for middle in 0..blocks {
-        let ancestors = preceding[middle].clone();
-        for predecessors in &mut preceding {
-            if predecessors.contains(&middle) {
-                predecessors.extend(&ancestors);
-            }
-        }
-    }
+    close(&mut preceding);
     preceding
 }
 

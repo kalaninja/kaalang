@@ -23,25 +23,29 @@ pub(super) fn branchers(flow: &Flow) -> Vec<usize> {
 
 /// Transitive successors of every vertex.
 pub(super) fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
-    // ponytail: one breadth-first walk per vertex, each an indexed neighbour
-    // lookup; share one closure if a flow ever passes a few hundred blocks.
+    // ponytail: one walk per vertex, each an indexed neighbour lookup; one
+    // shared closure if a flow ever passes a few hundred blocks.
     topology
         .vertices
         .iter()
-        .map(|&start| {
-            let mut seen = BTreeSet::new();
-            let mut frontier = vec![start];
-            while let Some(vertex) = frontier.pop() {
-                for connection in topology.outgoing(vertex) {
-                    let next = connection.destination;
-                    if seen.insert(next) {
-                        frontier.push(next);
-                    }
-                }
-            }
-            (start, seen)
-        })
+        .map(|&start| (start, reached(topology, start, None)))
         .collect()
+}
+
+/// Every vertex a route reaches from `start` without entering `avoided`. The
+/// start itself appears only when a route returns to it.
+fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTreeSet<Vertex> {
+    let mut seen = BTreeSet::new();
+    let mut frontier = vec![start];
+    while let Some(vertex) = frontier.pop() {
+        for connection in topology.outgoing(vertex) {
+            let next = connection.destination;
+            if Some(next) != avoided && seen.insert(next) {
+                frontier.push(next);
+            }
+        }
+    }
+    seen
 }
 
 /// What each branch of one brancher leads to, including the branch's own case
@@ -135,16 +139,8 @@ pub(super) fn continuations(
 /// Every vertex a route reaches from the start node without passing `avoided`.
 fn bypassing(topology: &Topology, avoided: Vertex) -> BTreeSet<Vertex> {
     let start = Vertex::Node(NodeId::Start);
-    let mut seen = BTreeSet::from([start]);
-    let mut frontier = vec![start];
-    while let Some(vertex) = frontier.pop() {
-        for connection in topology.outgoing(vertex) {
-            let next = connection.destination;
-            if next != avoided && seen.insert(next) {
-                frontier.push(next);
-            }
-        }
-    }
+    let mut seen = reached(topology, start, Some(avoided));
+    seen.insert(start);
     seen
 }
 

@@ -7,7 +7,9 @@
 //! spatial contract, so a disagreement between the two is a compiler bug rather
 //! than another arrangement to try.
 
-use kaalang_model::geometry::{bundle_meetings, compatible, overlaps_itself};
+use kaalang_model::geometry::{
+    bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
+};
 use kaalang_model::topology::{Destination, NodeId, Source, Vertex};
 use kaalang_model::{SemanticModel, Side};
 
@@ -147,15 +149,8 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     let row = scene.rank(Vertex::Junction(junction));
     let gap = row - 1;
     let lane = scene
-        .topology
-        .connections
-        .iter()
-        .enumerate()
-        .filter(|(_, wire)| wire.destination == Destination::Junction(junction))
-        .flat_map(|(connection, _)| &scene.arrangement.routes[connection].runs)
-        .filter(|run| run.gap == gap)
-        .map(|run| run.lane)
-        .max();
+        .arrangement
+        .deepest_lane(&scene.topology, junction, gap);
     Point {
         x: column_x(scene.column(Vertex::Junction(junction))),
         y: lane.map_or_else(
@@ -163,30 +158,6 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
             |lane| rows.lane_y(gap, lane, rows.lanes_in(gap)),
         ),
     }
-}
-
-/// Drops repeated points and collapses runs of collinear ones, so every bend in
-/// an emitted route is a real right angle.
-fn straighten(points: Vec<Point>) -> Vec<Point> {
-    let mut straight: Vec<Point> = Vec::with_capacity(points.len());
-    for point in points {
-        if straight.last() == Some(&point) {
-            continue;
-        }
-        while straight.len() >= 2 {
-            let previous = straight[straight.len() - 2];
-            let last = straight[straight.len() - 1];
-            let collinear = (previous.x == last.x && last.x == point.x)
-                || (previous.y == last.y && last.y == point.y);
-            if collinear {
-                straight.pop();
-            } else {
-                break;
-            }
-        }
-        straight.push(point);
-    }
-    straight
 }
 
 /// Reports the first RFC 0002 §8 rule the emitted routes break, if any.
@@ -223,11 +194,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             return Some("a connection overlaps itself".to_owned());
         }
         if matches!(connection.destination, Destination::Junction(_))
-            && connection.points.windows(2).any(|segment| {
-                segment[0].x != segment[1].x && segment[0].y > connection.points[0].y
-            })
-            && connection.points[connection.points.len() - 2].y
-                != connection.points[connection.points.len() - 1].y
+            && turns_downward(&connection.points)
         {
             return Some("a merge side route turns downward before its endpoint".to_owned());
         }

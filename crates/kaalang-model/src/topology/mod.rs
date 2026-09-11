@@ -456,16 +456,7 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
             }
         }
     }
-    // ponytail: a dense closure over blocks; a flow with hundreds of them would
-    // want successor sets instead.
-    for middle in 0..blocks {
-        for block in 0..blocks {
-            if later[block].contains(&middle) {
-                let reachable = later[middle].clone();
-                later[block].extend(reachable);
-            }
-        }
-    }
+    crate::analyze::close(&mut later);
     later
 }
 
@@ -558,7 +549,7 @@ fn connections(
     };
 
     let mut order = Vec::new();
-    serial_order(model.execution_plan, &mut order);
+    crate::plan::serial_order(model.execution_plan, &mut order);
     order.retain(|&block| represented(model, structural, block));
     let mut union = BTreeSet::new();
     for execution in model.executions {
@@ -772,59 +763,6 @@ fn junction_after(
                             .any(|&producer| source(model, producer) == exit))
             })
     })
-}
-
-/// Each body occurs once in the verified plan. Visiting branches before their
-/// joins gives the source order when filtered by an execution's participants,
-/// including branches yielding to an outer join.
-fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
-    match plan {
-        ExecutionPlan::Loop { index, body, next } => {
-            order.push(*index);
-            serial_order(body, order);
-            if let Some(next) = next {
-                serial_order(next, order);
-            }
-        }
-        ExecutionPlan::Break { index, .. } => order.push(*index),
-        ExecutionPlan::Action { index, next } => {
-            order.push(*index);
-            serial_order(next, order);
-        }
-        ExecutionPlan::Question {
-            index,
-            branches,
-            join,
-        } => {
-            order.push(*index);
-            for branch in branches {
-                serial_order(&branch.plan, order);
-            }
-            if let Some(join) = join {
-                serial_order(&join.next, order);
-            }
-        }
-        ExecutionPlan::Choice {
-            index,
-            branches,
-            joins,
-        } => {
-            order.push(*index);
-            for branch in branches {
-                serial_order(&branch.plan, order);
-            }
-            for join in joins {
-                serial_order(&join.next, order);
-            }
-        }
-        ExecutionPlan::End { index, body, .. } => {
-            serial_order(body, order);
-            order.push(*index);
-        }
-        ExecutionPlan::EndArrival { .. }
-        | ExecutionPlan::Yield { .. }
-        | ExecutionPlan::Repeat { .. } => {}
-    }
 }
 
 /// Structural statements use junctions instead of computational nodes.

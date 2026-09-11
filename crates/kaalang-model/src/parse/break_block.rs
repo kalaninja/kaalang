@@ -23,19 +23,18 @@ pub(super) fn parse(
             "a kaalang break does not return a value",
         ));
     }
-    let mut target = parent;
-    while let Some(index) = target {
-        if expression.label.as_ref().is_none_or(|label| {
+    let target = std::iter::successors(parent, |&index| blocks[index].parent).find(|&index| {
+        expression.label.as_ref().is_none_or(|label| {
             blocks[index]
                 .loop_label
                 .as_ref()
                 .is_some_and(|found| found.ident.unraw() == label.ident.unraw())
-        }) {
-            let mut block = structural_block(BlockKind::Break, expression.span(), inputs);
-            block.break_target = Some(index);
-            return Ok(block);
-        }
-        target = blocks[index].parent;
+        })
+    });
+    if let Some(index) = target {
+        let mut block = structural_block(BlockKind::Break, expression.span(), inputs);
+        block.break_target = Some(index);
+        return Ok(block);
     }
     Err(Error::new_spanned(
         expression,

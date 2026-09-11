@@ -8,7 +8,9 @@
 //! result is a witness that the arrangement conforms; it says nothing about
 //! whether another arrangement exists.
 
-use crate::geometry::{Point, bundle_meetings, compatible, on_segment, overlaps_itself};
+use crate::geometry::{
+    Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
+};
 use crate::model::Flow;
 use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
 
@@ -115,16 +117,9 @@ pub(super) fn junction_line(
     let Some(gap) = rank.checked_sub(1) else {
         return grid.rank(rank);
     };
-    topology
-        .connections
-        .iter()
-        .enumerate()
-        .filter(|(_, wire)| wire.destination == Destination::Junction(junction))
-        .flat_map(|(index, _)| &arrangement.routes[index].runs)
-        .filter(|run| run.gap == gap)
-        .map(|run| grid.lane(gap, run.lane))
-        .max()
-        .unwrap_or_else(|| grid.rank(rank))
+    arrangement
+        .deepest_lane(topology, junction, gap)
+        .map_or_else(|| grid.rank(rank), |lane| grid.lane(gap, lane))
 }
 
 /// The line one endpoint of a route sits on.
@@ -212,30 +207,6 @@ pub(super) fn return_polyline(
             y: entry_line,
         },
     ])
-}
-
-/// Drops repeated points and collapses runs of collinear ones, so every bend is
-/// a real right angle.
-fn straighten(points: Vec<Point>) -> Vec<Point> {
-    let mut straight: Vec<Point> = Vec::with_capacity(points.len());
-    for point in points {
-        if straight.last() == Some(&point) {
-            continue;
-        }
-        while straight.len() >= 2 {
-            let previous = straight[straight.len() - 2];
-            let last = straight[straight.len() - 1];
-            let collinear = (previous.x == last.x && last.x == point.x)
-                || (previous.y == last.y && last.y == point.y);
-            if collinear {
-                straight.pop();
-            } else {
-                break;
-            }
-        }
-        straight.push(point);
-    }
-    straight
 }
 
 /// Where two routes are allowed to meet, and whether they may share a run.
@@ -569,10 +540,7 @@ fn routes(
         if matches!(
             topology.connections[index].destination,
             Destination::Junction(_)
-        ) && points
-            .windows(2)
-            .any(|segment| segment[0].x != segment[1].x && segment[0].y > points[0].y)
-            && points[points.len() - 2].y != points[points.len() - 1].y
+        ) && turns_downward(points)
         {
             return Err(format!(
                 "connection {} turns downward before its merge",

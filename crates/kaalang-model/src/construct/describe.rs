@@ -14,12 +14,7 @@ pub(super) fn span(flow: &Flow, topology: &Topology, connection: usize) -> Span 
         Vertex::Node(NodeId::Block(block) | NodeId::Case { choice: block, .. }) => {
             flow.blocks[block].span
         }
-        Vertex::Node(NodeId::Start) | Vertex::Junction(_) => {
-            flow.blocks
-                .last()
-                .expect("a flow owns the implicit end block")
-                .span
-        }
+        Vertex::Node(NodeId::Start) | Vertex::Junction(_) => flow.end_span(),
     }
 }
 
