@@ -1,7 +1,7 @@
 //! Aligns terminal routes with independent returns, or clears them when they cross.
 
 use super::{Scene, route, vertical_gap};
-use crate::topology::{Destination, NodeKind, Source};
+use kaalang_model::topology::{Destination, NodeKind, Source};
 
 pub(super) fn adjust(scene: &mut Scene) {
     if scene.topology.loops.is_empty() {
@@ -23,7 +23,7 @@ pub(super) fn adjust(scene: &mut Scene) {
     let terminal = match incoming.as_slice() {
         [edge] => match edge.source {
             Source::Junction(junction)
-                if scene.topology.junctions[junction].wires == ["end"]
+                if scene.topology.end_merge == Some(junction)
                     && scene
                         .topology
                         .outgoing(Destination::Junction(junction))
@@ -42,7 +42,7 @@ pub(super) fn adjust(scene: &mut Scene) {
         .and_then(|edge| edge.points.last())
         .expect("the terminal route has an arrival")
         .y;
-    let gap = vertical_gap(&scene.topology);
+    let gap = vertical_gap(scene);
     let below_nodes = scene
         .nodes
         .iter()

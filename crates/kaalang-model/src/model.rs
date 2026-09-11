@@ -5,6 +5,8 @@ use proc_macro2::{Ident, Span};
 use syn::ext::IdentExt;
 use syn::{Expr, FnArg, Lifetime, Pat, PatIdent, ReturnType};
 
+use crate::topology::Topology;
+
 /// A validated kaalang flow: its blocks, finite structural execution summaries, its
 /// convergence groups and wire merges, and the verified plan that lowers it.
 pub struct SemanticModel {
@@ -25,6 +27,9 @@ pub struct SemanticModel {
     pub convergence_groups: Vec<ConvergenceGroup>,
     /// Implicit junctions of equally named alternative outputs, before captures.
     pub merges: Vec<WireMerge>,
+    /// The diagram's structural topology: its nodes, exits, junctions, and the
+    /// connections RFC 0002 §7 draws between them.
+    pub topology: Topology,
 }
 
 /// The logical wire whose value is the flow output. The implicit end block

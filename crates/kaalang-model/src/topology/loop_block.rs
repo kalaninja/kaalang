@@ -1,8 +1,8 @@
 //! Loop statements use structural junctions, not computational nodes.
 
-use super::{Connection, Source, Topology, destination, represented};
-use kaalang_model::SemanticModel;
 use std::collections::BTreeMap;
+
+use super::{Analyzed, Connection, Source, Topology, destination, represented};
 
 pub(super) fn project(
     block: usize,
@@ -28,11 +28,11 @@ pub(super) fn project(
 /// Records the exited region's precedence. Projection carries it through the
 /// continuation to its merge, iteration tail, or end boundary.
 pub(super) fn order_exits(
-    model: &SemanticModel,
+    model: &Analyzed<'_>,
     structural: &BTreeMap<usize, usize>,
     topology: &mut Topology,
 ) {
-    for execution in &model.executions {
+    for execution in model.executions {
         for (position, &block) in execution.blocks.iter().enumerate() {
             let Some(target) = model.flow.blocks[block].break_target else {
                 continue;
@@ -62,7 +62,7 @@ pub(super) fn order_exits(
 
 /// Follow the side occupied by the repeating routes of the first selection.
 /// Without a common rightmost branch, the return starts on the left contour.
-pub(super) fn prefer_left(model: &SemanticModel, header: usize) -> bool {
+pub(super) fn prefer_left(model: &Analyzed<'_>, header: usize) -> bool {
     let end = model.flow.blocks[header]
         .loop_end
         .expect("a loop owns a body");

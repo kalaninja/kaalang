@@ -117,7 +117,7 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
 /// selections and later questions do not split its branch interval. Source
 /// order puts deciding ancestors before descendants, so projected traces sort
 /// in authored branch order.
-fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
+pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
     let mut selectors = BTreeSet::new();
     for (first, execution) in executions.iter().enumerate() {
         for (second, other) in executions.iter().enumerate().skip(first + 1) {

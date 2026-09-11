@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::topology::{Destination, Exit, Source, Topology, Vertex};
+use kaalang_model::topology::{Destination, ExitId, Source, Vertex};
 
 use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection,
@@ -51,60 +51,29 @@ enum Stack {
 
 pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     let topology = &scene.topology;
+    let captions = &scene.captions;
     let shared = topology
         .connections
         .iter()
-        .filter(|connection| topology.shares_label(connection))
+        .filter(|connection| captions.shares_label(connection))
         .collect::<Vec<_>>();
     let mut labels = Vec::new();
     let mut merged_exits = BTreeSet::new();
     let mut merged_captures = BTreeSet::new();
 
-    for (junction, merge) in topology.junctions.iter().enumerate() {
-        if merge.wires.is_empty() {
-            continue;
-        }
-        let Some(exits) = topology
-            .incoming(Vertex::Junction(junction))
-            .map(|connection| match connection.source {
-                Source::Exit(exit)
-                    if topology.handover(exit) == merge.wires
-                        && topology.leaving(exit).count() == 1 =>
-                {
-                    Some(exit)
-                }
-                _ => None,
-            })
-            .collect::<Option<Vec<_>>>()
-        else {
-            continue;
-        };
-        merged_exits.extend(exits);
-
-        let mut outgoing = topology.outgoing(Vertex::Junction(junction));
-        if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
-            && outgoing.next().is_none()
-            && topology.single_arrival(node)
-            && topology.capture(node) == merge.wires
-        {
-            merged_captures.insert(node);
-        }
-
-        let anchor = merge_anchor(scene, junction);
-        labels.extend(wire_label(
-            &merge.wires,
-            Point {
-                x: anchor.x,
-                y: anchor.y + DROP,
-            },
-            Stack::Below,
-            anchor.x,
-        ));
+    for junction in 0..topology.junctions.len() {
+        place_merge_label(
+            &mut labels,
+            scene,
+            junction,
+            &mut merged_exits,
+            &mut merged_captures,
+        );
     }
 
     for connection in &shared {
         if let Source::Exit(exit) = connection.source
-            && topology.exit(exit).branch_description.is_some()
+            && captions.branch_description(exit).is_some()
         {
             continue;
         }
@@ -117,7 +86,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
             .expect("every projected connection is routed");
         let (at, stack, clear) = centre_of(placed);
         labels.extend(wire_label(
-            &topology.capture_label(node_of(connection.destination)),
+            captions.capture_label(node_of(connection.destination)),
             at,
             stack,
             clear,
@@ -129,8 +98,14 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
             .iter()
             .any(|connection| connection.source == Source::Exit(exit.id));
         let skip_handover = merged_exits.contains(&exit.id)
-            || (shared_handover && exit.branch_description.is_none());
-        place_exit_labels(&mut labels, exit, scene.exit_anchor(exit.id), skip_handover);
+            || (shared_handover && captions.branch_description(exit.id).is_none());
+        place_exit_labels(
+            &mut labels,
+            scene,
+            exit.id,
+            scene.exit_anchor(exit.id),
+            skip_handover,
+        );
     }
 
     for node in &topology.nodes {
@@ -143,7 +118,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         }
         let anchor = scene.top_anchor(node.id);
         labels.extend(wire_label(
-            &topology.capture_label(node.id),
+            captions.capture_label(node.id),
             Point {
                 x: anchor.x,
                 y: anchor.y - RISE,
@@ -156,9 +131,68 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
     labels
 }
 
-fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_handover: bool) {
-    if let Some(description) = &exit.branch_description {
-        let (y, stack) = if exit.id.branch == Some(0) {
+/// Identical alternative hand-overs share one label beside their merge, and an
+/// identical sole consumer shares it too. Records which exits and which capture
+/// the shared label already stands for.
+fn place_merge_label(
+    labels: &mut Vec<Label>,
+    scene: &Scene,
+    junction: usize,
+    merged_exits: &mut BTreeSet<ExitId>,
+    merged_captures: &mut BTreeSet<kaalang_model::topology::NodeId>,
+) {
+    let topology = &scene.topology;
+    let captions = &scene.captions;
+    let wires = captions.junction_wires(junction);
+    if wires.is_empty() {
+        return;
+    }
+    let Some(exits) = topology
+        .incoming(Vertex::Junction(junction))
+        .map(|connection| match connection.source {
+            Source::Exit(exit)
+                if captions.handover(exit) == wires && topology.leaving(exit).count() == 1 =>
+            {
+                Some(exit)
+            }
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()
+    else {
+        return;
+    };
+    merged_exits.extend(exits);
+
+    let mut outgoing = topology.outgoing(Vertex::Junction(junction));
+    if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
+        && outgoing.next().is_none()
+        && topology.single_arrival(node)
+        && captions.capture(node) == wires
+    {
+        merged_captures.insert(node);
+    }
+
+    let anchor = merge_anchor(scene, junction);
+    labels.extend(wire_label(
+        wires,
+        Point {
+            x: anchor.x,
+            y: anchor.y + DROP,
+        },
+        Stack::Below,
+        anchor.x,
+    ));
+}
+
+fn place_exit_labels(
+    labels: &mut Vec<Label>,
+    scene: &Scene,
+    exit: ExitId,
+    anchor: Point,
+    skip_handover: bool,
+) {
+    if let Some(description) = scene.captions.branch_description(exit) {
+        let (y, stack) = if exit.branch == Some(0) {
             (anchor.y + BRANCH_DROP, Stack::Below)
         } else {
             (anchor.y - BRANCH_RISE, Stack::Above)
@@ -171,7 +205,7 @@ fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_h
         ));
     } else if !skip_handover {
         labels.extend(wire_label(
-            &exit.handover,
+            scene.captions.handover(exit),
             Point {
                 x: anchor.x,
                 y: anchor.y + DROP,
@@ -182,7 +216,7 @@ fn place_exit_labels(labels: &mut Vec<Label>, exit: &Exit, anchor: Point, skip_h
     }
 }
 
-fn node_of(destination: Destination) -> crate::topology::NodeId {
+fn node_of(destination: Destination) -> kaalang_model::topology::NodeId {
     match destination {
         Destination::Node(node) => node,
         Destination::Junction(_) => unreachable!("a shared label needs a node at both ends"),
@@ -273,21 +307,26 @@ fn place_label(lines: Vec<String>, kind: LabelKind, at: Point, stack: Stack, cle
 
 /// Leaves enough room in every row gap for a hand-over below one node and a
 /// capture above the next.
-pub(super) fn vertical_gap(topology: &Topology) -> i32 {
+pub(super) fn vertical_gap(scene: &Scene) -> i32 {
     // ponytail: one global gap keeps routing simple; reserve per-row gaps if
     // tall diagrams become a practical problem.
-    let gap = topology
+    let captions = &scene.captions;
+    let gap = scene
+        .topology
         .exits
         .iter()
-        .map(|exit| match exit.branch_description.as_deref() {
+        .map(|exit| match captions.branch_description(exit.id) {
             Some(description) => {
                 vertical_label_gap(branch_label_line_count(description), LabelKind::Branch)
             }
-            None => vertical_label_gap(label_line_count(&exit.handover), LabelKind::Wire),
+            None => vertical_label_gap(
+                label_line_count(captions.handover(exit.id)),
+                LabelKind::Wire,
+            ),
         })
-        .chain(topology.nodes.iter().map(|node| {
+        .chain(scene.topology.nodes.iter().map(|node| {
             vertical_label_gap(
-                label_line_count(&topology.capture_label(node.id)),
+                label_line_count(captions.capture_label(node.id)),
                 LabelKind::Wire,
             )
         }))
@@ -381,23 +420,17 @@ fn label_width(lines: &[String], font_size: i32) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::topology::NodeId;
+    use crate::captions::Captions;
+    use kaalang_model::topology::{NodeId, Topology};
 
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
             width: 200,
             height: 200,
-            topology: Topology {
-                order: vec![],
-                back_edges: vec![],
-                loops: vec![],
-                nodes: vec![],
-                exits: vec![],
-                junctions: vec![],
-                connections: vec![],
-                vertices: vec![],
-            },
+            topology: Topology::default(),
+            arrangement: kaalang_model::Arrangement::default(),
+            captions: Captions::default(),
             nodes: node
                 .into_iter()
                 .map(|(x, y)| super::super::Node {

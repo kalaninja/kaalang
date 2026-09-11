@@ -1,53 +1,61 @@
-//! Assigns a row and a column to every node, and a row to every junction.
+//! Assigns a rank and a column to every node and junction.
 //!
-//! RFC 0002 §8 runs execution time from top to bottom, so a row comes from
-//! connection reachability, including the chosen serial order.
+//! RFC 0002 §8 runs execution time from top to bottom, so a rank comes from
+//! connection reachability, including the chosen serial order and the
+//! placement-only precedence a break carries out of the region it leaves.
 //! Branches run left to right in authored order, and a brancher reserves the
 //! whole footprint its branches occupy, so that nested branchers and the
 //! convergence groups they share compose without corrupting each other.
+//!
+//! Exact ranks are a presentation choice (RFC 0002 §8), so a vertex takes the
+//! earliest rank its predecessors allow unless the search asks for it to sink
+//! below everything precedence leaves free.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::{BlockKind, SemanticModel};
+use crate::model::{Flow, WireMerge};
+use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
 
-use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex, choice, question};
-
+#[derive(Clone)]
 pub(super) struct Placement {
-    row: BTreeMap<Vertex, usize>,
-    column: BTreeMap<Vertex, usize>,
-    footprints: Footprints,
-    pub(super) rows: usize,
+    pub(super) rank: BTreeMap<Vertex, usize>,
+    pub(super) column: BTreeMap<Vertex, i32>,
+    pub(super) footprints: Footprints,
+    pub(super) ranks: usize,
 }
 
 impl Placement {
     pub(super) fn row(&self, vertex: Vertex) -> usize {
-        self.row[&vertex]
+        self.rank[&vertex]
     }
 
-    pub(super) fn column(&self, vertex: Vertex) -> usize {
+    pub(super) fn column(&self, vertex: Vertex) -> i32 {
         self.column[&vertex]
     }
 
-    pub(super) fn exit_column(&self, exit: ExitId) -> usize {
+    pub(super) fn exit_column(&self, exit: ExitId) -> i32 {
         self.column(Vertex::Node(exit.node)) + self.footprints.offset(exit)
     }
 }
 
 /// Places one projected topology, or reports that it has no top-to-bottom
-/// order at all.
+/// order at all. `sunk` names the vertices to place as late as precedence
+/// allows.
 pub(super) fn place(
     topology: &Topology,
-    model: &SemanticModel,
-    delays: &BTreeMap<Vertex, usize>,
+    flow: &Flow,
+    merges: &[WireMerge],
+    sunk: &BTreeSet<Vertex>,
+    sides: &[super::Side],
 ) -> Result<Placement, String> {
-    let row = rows(topology, delays)?;
-    let rows_used = row.values().copied().max().unwrap_or(0) + 1;
-    let footprints = footprints(topology, model);
+    let rank = rows(topology, merges, sunk)?;
+    let ranks_used = rank.values().copied().max().unwrap_or(0) + 1;
+    let footprints = footprints(topology, flow);
     Ok(Placement {
-        column: columns(topology, &footprints, &row, rows_used),
+        column: columns(topology, &footprints, &rank, ranks_used, sides),
         footprints,
-        row,
-        rows: rows_used,
+        rank,
+        ranks: ranks_used,
     })
 }
 
@@ -55,14 +63,34 @@ pub(super) fn place(
 /// every producer branch and every block ordered before it. Start owns row 0;
 /// every computational node is reached from it in the chosen serial order.
 ///
-/// Dependency depth is only the earliest row an item may take. Routing asks for
-/// a `delay` when two runs cannot share a row gap, and because a row is derived
-/// from already-delayed predecessors, the delay carries to everything
-/// downstream on its own.
-fn rows(
+/// Dependency depth is only the earliest row an item may take. Two further
+/// passes lower items from there: the tails the caller asks to sink go below
+/// everything precedence leaves free, and `separate_junctions` gives every
+/// iteration tail a row to itself. Routing never asks for a row: it works with
+/// the rows it is given, and reports a conflict instead when a gap cannot hold
+/// its runs.
+pub(super) fn rows(
     topology: &Topology,
-    delays: &BTreeMap<Vertex, usize>,
+    merges: &[WireMerge],
+    sunk: &BTreeSet<Vertex>,
 ) -> Result<BTreeMap<Vertex, usize>, String> {
+    // A sunk vertex may take any rank its predecessors allow, so it goes below
+    // every vertex precedence leaves free. One vertex per rank is always
+    // enough room for that. Iteration tails keep their nesting while they
+    // sink: an inner tail stays above the tail of the loop enclosing it, so
+    // the inner arrival never spans the enclosing tail's row.
+    let floor = topology.vertices.len();
+    let depth = topology
+        .loops
+        .iter()
+        .enumerate()
+        .map(|(index, loop_)| {
+            (
+                Vertex::Junction(loop_.tail),
+                topology.loops.len() - 1 - index,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
     let mut rows = BTreeMap::new();
     let mut pending = topology.vertices.iter().copied().collect::<BTreeSet<_>>();
     while !pending.is_empty() {
@@ -95,22 +123,69 @@ fn rows(
             .map(|predecessor| rows[&predecessor] + 1)
             .max()
             .unwrap_or(usize::from(ready != Vertex::Node(NodeId::Start)));
-        rows.insert(ready, row + delays.get(&ready).copied().unwrap_or(0));
+        let lowest = if sunk.contains(&ready) {
+            floor + depth.get(&ready).copied().unwrap_or(0)
+        } else {
+            0
+        };
+        rows.insert(ready, row.max(lowest));
     }
-    align_merge_producers(topology, &mut rows);
+    align_merge_producers(topology, merges, &mut rows);
+    separate_junctions(topology, &mut rows);
     Ok(rows)
+}
+
+/// Gives every iteration tail a rank of its own. A return leaves its tail
+/// horizontally, across every column between the tail and its contour, so
+/// anything else on that rank stands in the way. Loop entries keep their ranks,
+/// because RFC 0002 §7 lets a loop entry start alongside the body beside it and
+/// a return arrives at an entry from the column immediately outside that body.
+/// No connection joins two vertices of one rank, so splitting a rank keeps
+/// every order it had. Renumbering here also closes the ranks the longest path
+/// left unused, so nothing below has to compact them.
+fn separate_junctions(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
+    let alone = topology
+        .loops
+        .iter()
+        .map(|loop_| Vertex::Junction(loop_.tail))
+        .collect::<BTreeSet<_>>();
+    let mut ranks: BTreeMap<usize, Vec<Vertex>> = BTreeMap::new();
+    for (&vertex, &rank) in rows.iter() {
+        ranks.entry(rank).or_default().push(vertex);
+    }
+    let mut next = 0;
+    for (_, vertices) in ranks {
+        let (isolated, shared): (Vec<Vertex>, Vec<Vertex>) = vertices
+            .into_iter()
+            .partition(|vertex| alone.contains(vertex));
+        if !shared.is_empty() {
+            for vertex in shared {
+                rows.insert(vertex, next);
+            }
+            next += 1;
+        }
+        for vertex in isolated {
+            rows.insert(vertex, next);
+            next += 1;
+        }
+    }
 }
 
 /// A pair of alternative blocks reached directly from a question and a merge
 /// of question branches finish on the same row. That internal junction must not
 /// make the two outcomes look sequential.
-fn align_merge_producers(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
-    for (junction, merge) in topology.junctions.iter().enumerate() {
+fn align_merge_producers(
+    topology: &Topology,
+    merges: &[WireMerge],
+    rows: &mut BTreeMap<Vertex, usize>,
+) {
+    for junction in 0..topology.junctions.len() {
         let producers = topology
             .incoming(Vertex::Junction(junction))
             .filter_map(|connection| match connection.source {
                 Source::Exit(exit)
-                    if exit.branch.is_none() && topology.handover(exit) == merge.wires =>
+                    if exit.branch.is_none()
+                        && topology.provides_merged_wires(merges, exit, junction) =>
                 {
                     Some(Vertex::Node(exit.node))
                 }
@@ -164,7 +239,8 @@ fn align_merge_producers(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>
 /// The columns of one brancher's branches, as offsets from its own column. The
 /// first branch continues down the brancher's column and later branches sit to
 /// its right, in authored order.
-struct Footprints {
+#[derive(Clone)]
+pub(super) struct Footprints {
     /// Branch offsets per branching block.
     offsets: BTreeMap<usize, Vec<usize>>,
     /// Total columns owned per branching block.
@@ -172,11 +248,19 @@ struct Footprints {
 }
 
 impl Footprints {
-    fn offset(&self, exit: ExitId) -> usize {
+    pub(super) fn offset(&self, exit: ExitId) -> i32 {
         match (exit.node, exit.branch) {
-            (NodeId::Block(block), Some(branch)) => self.offsets[&block][branch],
+            (NodeId::Block(block), Some(branch)) => self.offsets[&block][branch] as i32,
             _ => 0,
         }
+    }
+
+    pub(super) fn branch_offsets(&self, block: usize) -> Option<&Vec<usize>> {
+        self.offsets.get(&block)
+    }
+
+    pub(super) fn total(&self, block: usize) -> Option<usize> {
+        self.width.get(&block).copied()
     }
 
     fn span(&self, node: NodeId) -> usize {
@@ -192,7 +276,8 @@ fn columns(
     footprints: &Footprints,
     rows: &BTreeMap<Vertex, usize>,
     rows_used: usize,
-) -> BTreeMap<Vertex, usize> {
+    sides: &[super::Side],
+) -> BTreeMap<Vertex, i32> {
     let mut ordered = topology.vertices.clone();
     ordered.sort_by_key(|vertex| (rows[vertex], *vertex));
 
@@ -206,7 +291,7 @@ fn columns(
         };
         let row = rows[&vertex];
         let mut column = preferred(topology, &columns, footprints, node);
-        let width = footprints.span(node);
+        let width = footprints.span(node) as i32;
         // A later-authored continuation may occupy free columns to the left
         // of a loop body already placed on this row.
         while (column..column + width).any(|slot| occupied[row].contains(&slot)) {
@@ -233,32 +318,35 @@ fn columns(
         // The common segment out of the junction descends into the leftmost
         // consumer. Only items on the same row claim this point: successive
         // merges may reuse the same column.
-        let preferred =
-            if let Some(loop_) = topology.loops.iter().find(|loop_| loop_.tail == junction) {
-                let arrivals = topology
-                    .incoming(vertex)
-                    .map(|connection| arrives_from(topology, &columns, footprints, connection));
-                // The return leaves the end of the rail nearest its preferred
-                // contour, without turning back over its incoming branches.
-                if loop_.prefer_left {
-                    arrivals.min()
-                } else {
-                    arrivals.max()
-                }
-                .unwrap_or(0)
-            } else if topology.junctions[junction].is_break {
-                topology
-                    .incoming(vertex)
-                    .map(|connection| arrives_from(topology, &columns, footprints, connection))
-                    .min()
-                    .unwrap_or(0)
+        let preferred = if let Some(index) = topology
+            .loops
+            .iter()
+            .position(|loop_| loop_.tail == junction)
+        {
+            let arrivals = topology
+                .incoming(vertex)
+                .map(|connection| arrives_from(topology, &columns, footprints, connection));
+            // The return leaves the end of the rail nearest the contour it
+            // takes, without turning back over its incoming branches.
+            if sides.get(index).copied() == Some(super::Side::Right) {
+                arrivals.max()
             } else {
-                topology
-                    .outgoing(vertex)
-                    .filter_map(|connection| columns.get(&connection.destination).copied())
-                    .min()
-                    .unwrap_or(0)
-            };
+                arrivals.min()
+            }
+            .unwrap_or(0)
+        } else if topology.junctions[junction].is_break {
+            topology
+                .incoming(vertex)
+                .map(|connection| arrives_from(topology, &columns, footprints, connection))
+                .min()
+                .unwrap_or(0)
+        } else {
+            topology
+                .outgoing(vertex)
+                .filter_map(|connection| columns.get(&connection.destination).copied())
+                .min()
+                .unwrap_or(0)
+        };
         let mut column = preferred;
         let row = rows[&vertex];
         while !claimed.insert((row, column)) {
@@ -275,13 +363,13 @@ fn columns(
 /// root prefers the leftmost column.
 fn preferred(
     topology: &Topology,
-    columns: &BTreeMap<Vertex, usize>,
+    columns: &BTreeMap<Vertex, i32>,
     footprints: &Footprints,
     node: NodeId,
-) -> usize {
+) -> i32 {
     if let NodeId::Case { choice, branch } = node {
         let select = columns[&Vertex::Node(NodeId::Block(choice))];
-        return select + footprints.offsets[&choice][branch];
+        return select + footprints.offsets[&choice][branch] as i32;
     }
 
     // RFC 0002 §8 puts branches in authored order left to right, so a branch's
@@ -321,10 +409,10 @@ const fn from_branch(source: Source) -> bool {
 
 fn arrives_from(
     topology: &Topology,
-    columns: &BTreeMap<Vertex, usize>,
+    columns: &BTreeMap<Vertex, i32>,
     footprints: &Footprints,
     connection: &Connection,
-) -> usize {
+) -> i32 {
     match connection.source {
         Source::Exit(exit) => columns[&Vertex::Node(exit.node)] + footprints.offset(exit),
         // A junction is placed after every node, so a consumer reads the
@@ -337,18 +425,18 @@ fn arrives_from(
     }
 }
 
-fn footprints(topology: &Topology, model: &SemanticModel) -> Footprints {
-    let reachable = reachable(topology);
+fn footprints(topology: &Topology, flow: &Flow) -> Footprints {
+    let reachable = super::regions::reachable(topology);
     let mut footprints = Footprints {
         offsets: BTreeMap::new(),
         width: BTreeMap::new(),
     };
     // Deepest first, so a nested brancher's width is known before the brancher
     // whose branch contains it asks for it.
-    let mut ordered = branchers(model);
+    let mut ordered = super::regions::branchers(flow);
     ordered.sort_by_key(|&block| reachable[&Vertex::Node(NodeId::Block(block))].len());
     for block in ordered {
-        let branches = branch_sets(topology, model, &reachable, block);
+        let branches = super::regions::branch_sets(topology, flow, &reachable, block);
         let mut members = BTreeMap::<Vertex, Vec<usize>>::new();
         for (branch, set) in branches.iter().enumerate() {
             for &vertex in set {
@@ -377,42 +465,6 @@ fn footprints(topology: &Topology, model: &SemanticModel) -> Footprints {
         footprints.offsets.insert(block, offsets);
     }
     footprints
-}
-
-fn branchers(model: &SemanticModel) -> Vec<usize> {
-    model
-        .flow
-        .blocks
-        .iter()
-        .enumerate()
-        .filter(|(_, block)| matches!(block.kind, BlockKind::Question | BlockKind::Choice))
-        .map(|(block, _)| block)
-        .collect()
-}
-
-/// What each branch of one brancher leads to, including the branch's own case
-/// node. A vertex in two of these sets belongs to a convergence group.
-fn branch_sets(
-    topology: &Topology,
-    model: &SemanticModel,
-    reachable: &BTreeMap<Vertex, BTreeSet<Vertex>>,
-    block: usize,
-) -> Vec<BTreeSet<Vertex>> {
-    (0..model.flow.blocks[block].branch_count())
-        .map(|branch| {
-            let heads: Vec<Vertex> = match model.flow.blocks[block].kind {
-                BlockKind::Choice => vec![Vertex::Node(choice::case(block, branch))],
-                _ => topology
-                    .leaving(question::exit(block, branch))
-                    .map(|connection| connection.destination)
-                    .collect(),
-            };
-            heads
-                .into_iter()
-                .flat_map(|head| std::iter::once(head).chain(reachable[&head].iter().copied()))
-                .collect()
-        })
-        .collect()
 }
 
 /// The columns a set of vertices needs: one, plus whatever the branchers it
@@ -444,73 +496,5 @@ const fn block_of(vertex: Vertex) -> usize {
     match vertex {
         Vertex::Node(NodeId::Block(block)) => block,
         _ => usize::MAX,
-    }
-}
-
-/// Transitive successors of every vertex.
-fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
-    // ponytail: one breadth-first walk per vertex; a shared closure would pay
-    // off only for diagrams far larger than a readable one.
-    topology
-        .vertices
-        .iter()
-        .map(|&start| {
-            let mut seen = BTreeSet::new();
-            let mut frontier = vec![start];
-            while let Some(vertex) = frontier.pop() {
-                for connection in topology.outgoing(vertex) {
-                    let next = connection.destination;
-                    if seen.insert(next) {
-                        frontier.push(next);
-                    }
-                }
-            }
-            (start, seen)
-        })
-        .collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::topology::Destination;
-
-    /// A topology of block nodes and the connections between them, as `rows`
-    /// reads them: one exit per source, one vertex per block.
-    fn linked(pairs: &[(usize, usize)]) -> Topology {
-        Topology {
-            order: vec![],
-            back_edges: vec![],
-            loops: vec![],
-            nodes: vec![],
-            exits: vec![],
-            junctions: vec![],
-            connections: pairs
-                .iter()
-                .map(|&(from, to)| Connection {
-                    source: Source::Exit(ExitId::of(NodeId::Block(from))),
-                    destination: Destination::Node(NodeId::Block(to)),
-                })
-                .collect(),
-            vertices: pairs
-                .iter()
-                .flat_map(|&(from, to)| [from, to])
-                .map(|block| Vertex::Node(NodeId::Block(block)))
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect(),
-        }
-    }
-
-    #[test]
-    fn a_cycle_is_refused_rather_than_ranked() {
-        let chain = rows(&linked(&[(0, 1)]), &BTreeMap::new()).expect("a chain has an order");
-        assert_eq!(chain[&Vertex::Node(NodeId::Block(0))], 1);
-        assert_eq!(chain[&Vertex::Node(NodeId::Block(1))], 2);
-
-        assert_eq!(
-            rows(&linked(&[(0, 1), (1, 0)]), &BTreeMap::new()),
-            Err("the connections form a cycle, so no node can be lowest".to_owned())
-        );
     }
 }

@@ -5,9 +5,9 @@ use std::{error::Error, fmt};
 use proc_macro2::Span;
 use syn::{File, Item, ItemFn, Meta};
 
+mod captions;
 mod layout;
 mod svg;
-mod topology;
 
 /// An error produced while selecting, validating, or rendering a kaalang flow.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,13 +31,12 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// The flow is valid, but this layout could not place it under RFC 0002 §8:
-    /// either a connection route or a wire label breaks the spatial contract.
-    /// This does not make the authored flow invalid or prove that no conforming
-    /// diagram exists.
+    /// The flow is semantically valid, but construction or final geometry could
+    /// not satisfy RFC 0002 §8. The construction search is incomplete, so this
+    /// does not establish that the topology has no conforming diagram.
     UnroutableTopology {
         name: String,
-        /// The spatial rule the deterministic layout could not meet, naming the
+        /// The spatial rule the realized geometry could not meet, naming the
         /// connections, or the label and node, that break it.
         reason: String,
     },
@@ -108,8 +107,9 @@ impl Error for RenderError {}
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
 /// [`RenderError::InvalidLabelCharacter`] when an authored description
 /// contains a character XML 1.0 cannot represent, and
-/// [`RenderError::UnroutableTopology`] when the deterministic layout cannot
-/// route every connection and place every label under RFC 0002 §8.
+/// [`RenderError::UnroutableTopology`] when realizing the model's checked
+/// arrangement as geometry cannot route every connection and place every label
+/// under RFC 0002 §8.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;

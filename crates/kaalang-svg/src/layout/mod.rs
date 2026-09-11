@@ -1,19 +1,17 @@
 //! Places the visual topology on rows and columns, routes its connections, and
 //! positions the labels its exits and nodes own.
 
-use std::collections::BTreeMap;
-
-use kaalang_model::SemanticModel;
+use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
+use kaalang_model::{Arrangement, SemanticModel};
 use syn::{ReturnType, Signature, spanned::Spanned};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::topology::{self, Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
+use crate::captions::{self, Captions};
 
 mod action;
 mod choice;
 mod end;
 mod label;
-mod place;
 mod question;
 mod route;
 #[cfg(test)]
@@ -63,9 +61,13 @@ const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 pub(crate) struct Scene {
     pub(crate) width: i32,
     pub(crate) height: i32,
-    /// The projection this scene places. Node roles and the labels the exits
-    /// and nodes own are read from here rather than copied.
+    /// The structure this scene places, as the validated model settled it.
     pub(crate) topology: Topology,
+    /// The checked arrangement it realizes. Ranks, columns, corridors, and
+    /// contours are decisions, not suggestions.
+    pub(crate) arrangement: Arrangement,
+    /// The strings its nodes, exits, and junctions show.
+    pub(crate) captions: Captions,
     pub(crate) nodes: Vec<Node>,
     pub(crate) parameters: Option<ParameterPanel>,
     pub(crate) connections: Vec<Connection>,
@@ -93,10 +95,92 @@ pub(crate) struct Node {
     pub(crate) lines: Vec<String>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Point {
-    pub(crate) x: i32,
-    pub(crate) y: i32,
+/// One point of the diagram, in pixels. The model's own check reads the same
+/// type over its abstract grid, so the crossing rules of `geometry` decide for
+/// both.
+pub(crate) use kaalang_model::geometry::Point;
+
+/// Closes every row the finished drawing leaves empty.
+///
+/// The arrangement keeps a rank of its own for each iteration tail, because a
+/// return leaves one horizontally and anything else on that rank stands in its
+/// way. RFC 0003 §2 then lets the return leave at a side exit instead, and
+/// `compact_returns` takes that offer: the rank's band is left holding nothing
+/// but the connections passing through it, while the two node rows around it
+/// sit a row further apart for no reason. Closing the band shortens those
+/// connections and lifts everything below it, which is what puts two
+/// consecutive blocks one gap apart again.
+///
+/// Rows are closed from the bottom up, so the bands above one keep the
+/// positions `rows` recorded. A band counts as empty only when no route has a
+/// point in it — a junction drawn on its own rank has one there, and so does
+/// every bend and endpoint — so closing it cannot bring two of them together.
+/// `route::verify` has the final word all the same.
+fn close_unused_rows(scene: &mut Scene, rows: &Rows) {
+    for row in (0..rows.height.len()).rev() {
+        let (top, bottom) = (rows.top[row], rows.top[row + 1]);
+        if rows.height[row] != 0 || bottom <= top {
+            continue;
+        }
+        if scene
+            .connections
+            .iter()
+            .flat_map(|connection| &connection.points)
+            .any(|point| point.y >= top && point.y < bottom)
+        {
+            continue;
+        }
+        shift(scene, bottom, top - bottom);
+        if route::verify(scene).is_some() {
+            shift(scene, top, bottom - top);
+        }
+    }
+}
+
+/// Moves every node, panel, and route point at or below `from` by `delta`.
+fn shift(scene: &mut Scene, from: i32, delta: i32) {
+    for connection in &mut scene.connections {
+        for point in &mut connection.points {
+            if point.y >= from {
+                point.y += delta;
+            }
+        }
+    }
+    for node in &mut scene.nodes {
+        if node.y >= from {
+            node.y += delta;
+        }
+    }
+    if let Some(parameters) = &mut scene.parameters
+        && parameters.y >= from
+    {
+        parameters.y += delta;
+    }
+}
+
+/// The rails of the loops nested inside this one, as already drawn.
+fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
+    let loop_ = scene.topology.loops[index];
+    scene
+        .topology
+        .loops
+        .iter()
+        .enumerate()
+        .filter(|&(other, _)| other != index)
+        .filter_map(|(_, other)| {
+            // The second point of a return is the column it climbs in; its
+            // first and last are the tail and the entry.
+            let rail = scene
+                .connections
+                .iter()
+                .find(|edge| edge.source == Source::Junction(other.tail))?
+                .points
+                .get(1)?
+                .x;
+            Some((other.header, rail))
+        })
+        .filter(|(header, _)| *header != loop_.header)
+        .collect()
 }
 
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
@@ -138,103 +222,74 @@ impl LabelKind {
     }
 }
 
-/// Routes each loop return to its entry junction, innermost first.
-fn route_loops(scene: &mut Scene, model: &SemanticModel) -> Result<(), (Destination, String)> {
-    let gap = vertical_gap(&scene.topology);
+/// Shortens each sole tail arrival and brings its return in with it, keeping
+/// the side and lane the arrangement chose. RFC 0003 §2 prefers turning
+/// upward at a side exit over descending to the tail's row and returning; a
+/// shortening that breaks RFC 0002 §8 is dropped, leaving the arrangement the
+/// arrangement already made valid.
+///
+/// Only `route::verify` decides that, and only over the connections: the
+/// labels are placed after this and checked then, and where a label bounds a
+/// shortening it is `compact_arrival` that reads its rectangle.
+fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
+    let gap = vertical_gap(scene);
     let labels = label::place_labels(scene);
-    for loop_index in (0..scene.topology.loops.len()).rev() {
-        let loop_ = &scene.topology.loops[loop_index];
-        let (header, entry, tail) = (loop_.header, loop_.entry, loop_.tail);
-        let block = &model.flow.blocks[header];
-        let source = Source::Junction(tail);
-        let destination = Destination::Junction(entry);
-        let incoming = scene
+    for index in (0..scene.topology.loops.len()).rev() {
+        let loop_ = scene.topology.loops[index];
+        let arrivals = scene
             .connections
             .iter()
             .enumerate()
-            .filter_map(|(index, edge)| {
-                (edge.destination == Destination::Junction(tail)).then_some(index)
-            })
+            .filter(|(_, edge)| edge.destination == Destination::Junction(loop_.tail))
+            .map(|(edge, _)| edge)
             .collect::<Vec<_>>();
-        let arrival = *incoming.first().expect("a repeating body reaches its tail");
-        let points = scene.connections[arrival].points.clone();
-        let end = *scene
-            .connections
-            .iter()
-            .find(|edge| edge.source == Source::Junction(entry))
-            .and_then(|edge| edge.points.first())
-            .expect("the loop entry leads into its body");
-        let body_end = block.loop_end.expect("a loop owns a body");
-        let body_nodes = scene.nodes.iter().filter(|node| {
-            matches!(node.id, NodeId::Block(index) if (header..body_end).contains(&index))
-                || matches!(node.id, NodeId::Case { choice, .. } if (header..body_end).contains(&choice))
-        }).collect::<Vec<_>>();
-        let compact = (incoming.len() == 1)
-            .then(|| compact_arrival(&points, gap, end.y, &labels))
-            .flatten();
-        let prefer_left = loop_.prefer_left;
-        let mut routed = false;
-        let mut blocked = String::new();
-        // ponytail: bounded side lanes and lower tails; broaden contours if
-        // a real flow needs a return that bends around several obstacles.
-        for points in compact.into_iter().chain(std::iter::once(points)) {
-            let from = *points.last().expect("an arrival has a route");
-            let (left, right) = body_nodes
+        let ([arrival], Some(back)) = (
+            arrivals.as_slice(),
+            scene
+                .connections
                 .iter()
-                .map(|node| Scene::bounds(node))
-                .filter(|&(_, top, _, bottom)| bottom > end.y && top < from.y)
-                .fold(
-                    (from.x.min(end.x), from.x.max(end.x)),
-                    |(left, right), (l, _, r, _)| (left.min(l), right.max(r)),
-                );
-            scene.connections[arrival].points = points;
-            for offset in 1..=scene.topology.connections.len() + 2 {
-                for use_left in [prefer_left, !prefer_left] {
-                    let aside = if use_left {
-                        left - offset as i32 * LANE
-                    } else {
-                        right + offset as i32 * LANE
-                    };
-                    let points = vec![
-                        from,
-                        Point {
-                            x: aside,
-                            y: from.y,
-                        },
-                        Point { x: aside, y: end.y },
-                        end,
-                    ];
-                    scene.connections.push(Connection {
-                        source,
-                        destination,
-                        points,
-                    });
-                    match route::verify(scene) {
-                        None => {
-                            routed = true;
-                            break;
-                        }
-                        Some(reason) => blocked = reason,
-                    }
-                    scene.connections.pop();
-                }
-                if routed {
-                    break;
-                }
-            }
-            if routed {
-                break;
-            }
-        }
-        let name = block.description.as_deref().unwrap_or("loop");
-        if !routed {
-            return Err((
-                Destination::Junction(tail),
-                format!("cannot route the return to loop `{name}` without a crossing: {blocked}"),
-            ));
+                .position(|edge| edge.source == Source::Junction(loop_.tail)),
+        ) else {
+            continue;
+        };
+        let arrival = *arrival;
+        let end = *scene.connections[back]
+            .points
+            .last()
+            .expect("a return reaches its entry");
+        let Some(compact) =
+            compact_arrival(&scene.connections[arrival].points, gap, end.y, &labels)
+        else {
+            continue;
+        };
+        let kept = (
+            scene.connections[arrival].points.clone(),
+            scene.connections[back].points.clone(),
+        );
+        let from = *compact.last().expect("a shortened arrival has a route");
+        scene.connections[arrival].points = compact;
+        let nested = nested_rails(scene, index);
+        let aside = route::contour_x(scene, model, index, from, end, &nested);
+        scene.connections[back].points = straighten_return(from, aside, end);
+        if route::verify(scene).is_some() {
+            scene.connections[arrival].points = kept.0;
+            scene.connections[back].points = kept.1;
         }
     }
-    Ok(())
+}
+
+fn straighten_return(from: Point, aside: i32, end: Point) -> Vec<Point> {
+    let mut points = vec![
+        from,
+        Point {
+            x: aside,
+            y: from.y,
+        },
+        Point { x: aside, y: end.y },
+        end,
+    ];
+    points.dedup();
+    points
 }
 
 /// A sole arrival can turn earlier without reserving a node's row or column.
@@ -324,8 +379,6 @@ pub(crate) fn layout(
     parameters: &[String],
     return_type: &str,
 ) -> Result<Scene, String> {
-    let topology = topology::project(model, start, return_type);
-    let attempts = 4 * topology.connections.len() + 8;
     let mut scene = Scene {
         width: 0,
         height: 0,
@@ -333,91 +386,54 @@ pub(crate) fn layout(
         parameters: parameter_panel(parameters),
         connections: Vec::new(),
         labels: Vec::new(),
-        topology,
+        captions: captions::derive(model, start, return_type),
+        arrangement: kaalang_model::construct(&model.flow, &model.merges, &model.topology)
+            .map_err(|error| error.to_string())?,
+        topology: model.topology.clone(),
     };
 
-    // Routing asks for more room rather than settling for a crossing: a lower
-    // row for a destination, or a column of its own for a run. Both only ever
-    // add room, so the loop cannot cycle.
-    let mut delays = BTreeMap::new();
-    let mut shapes: BTreeMap<usize, route::Shape> = BTreeMap::new();
-    let mut blocking = String::new();
-    for _ in 0..attempts {
-        let placement = place::place(&scene.topology, model, &delays)?;
-        scene.nodes = nodes(&scene.topology, &placement);
-        let blocked = match route::plan(&scene, &placement, &shapes) {
-            Ok(plan) => {
-                let rows = scene.rows(&placement, &plan);
-                scene.lift(&placement, &rows);
-                scene.connections = route::emit(&scene, &placement, &plan, &rows);
-                // The final word on RFC 0002 §8. The planner reasons over
-                // columns and lanes; this reads the emitted geometry, so it
-                // catches anything the planner does not model. It is a refusal
-                // rather than another rung of the ladder because the two are
-                // not proven equivalent: a disagreement means the planner is
-                // wrong, and no amount of extra room would make it right.
-                if let Some(reason) = route::verify(&scene) {
-                    return Err(reason);
-                }
-                if let Err((tail, reason)) = route_loops(&mut scene, model) {
-                    // A terminal branch can block a return on the tail's
-                    // current row. Lower the tail and its dependent boundaries.
-                    *delays.entry(tail).or_insert(0) += 1;
-                    blocking = reason;
-                    continue;
-                }
-                end::adjust(&mut scene);
-                scene.labels = label::place_labels(&scene);
-                scene.indent();
-                scene.fit();
-                // The same final word for the labels. It waits for `indent`
-                // and `fit` because those settle the coordinates and the
-                // canvas the labels are checked against.
-                if let Some(reason) = label::verify(&scene) {
-                    return Err(reason);
-                }
-
-                return Ok(scene);
-            }
-            Err(blocked) => blocked,
-        };
-        // Each blocked run climbs the same ladder: turn sideways later, then
-        // take a column of its own, then drop another row. Every rung only adds
-        // room, so the ladder ends.
-        let route::Blocked { connection, reason } = blocked;
-        blocking = reason;
-        let wire = scene.topology.connections[connection];
-        let destination = wire.destination;
-        let span = placement.row(destination) - placement.row(Vertex::from(wire.source));
-        // A run into a junction already descends in its own column, so
-        // deferring it changes nothing; it climbs straight to the next rung.
-        let into_junction = matches!(wire.destination, Destination::Junction(_));
-        let shape = shapes.entry(connection).or_default();
-        match *shape {
-            // A run confined to one row gap has nowhere else to turn, so its
-            // destination drops a row and the run gains a gap of its own.
-            _ if span < 2 => *delays.entry(destination).or_insert(0) += 1,
-            route::Shape::Direct if into_junction => *shape = route::Shape::Aside,
-            route::Shape::Direct => *shape = route::Shape::Deferred,
-            route::Shape::Deferred => *shape = route::Shape::Aside,
-            route::Shape::Aside => *delays.entry(destination).or_insert(0) += 1,
-        }
+    scene.nodes = nodes(&scene);
+    let rows = scene.rows();
+    scene.lift(&rows);
+    scene.connections = route::emit(&scene, &rows);
+    scene
+        .connections
+        .extend(route::returns(&scene, model, &rows));
+    // The final word on RFC 0002 §8. The arrangement is checked in abstract
+    // ranks and columns; this reads the emitted geometry, so it catches
+    // anything the abstract check does not model. A disagreement means the
+    // realization is wrong, not that another arrangement should be tried.
+    if let Some(reason) = route::verify(&scene) {
+        return Err(reason);
+    }
+    compact_returns(&mut scene, model);
+    end::adjust(&mut scene);
+    close_unused_rows(&mut scene, &rows);
+    scene.labels = label::place_labels(&scene);
+    scene.indent();
+    scene.fit();
+    // The same final word for the labels. It waits for `indent` and `fit`
+    // because those settle the coordinates and the canvas the labels are
+    // checked against.
+    if let Some(reason) = label::verify(&scene) {
+        return Err(reason);
     }
 
-    Err(format!("routing attempts exhausted: {blocking}"))
+    Ok(scene)
 }
 
 /// Every node at its column, with its own dimensions. Rows are added once the
 /// row gaps are known, so the vertical position waits for the routing plan.
-fn nodes(topology: &Topology, placement: &place::Placement) -> Vec<Node> {
-    topology
+fn nodes(scene: &Scene) -> Vec<Node> {
+    scene
+        .topology
         .nodes
         .iter()
         .map(|node| {
-            let (width, height, lines) = node_dimensions(node.kind, &node.label);
+            let (width, height, lines) = node_dimensions(node.kind, scene.captions.label(node.id));
             Node {
                 id: node.id,
-                x: column_x(placement.column(Vertex::Node(node.id))),
+                x: column_x(scene.column(Vertex::Node(node.id))),
                 y: 0,
                 width,
                 height,
@@ -436,12 +452,18 @@ fn nodes(topology: &Topology, placement: &place::Placement) -> Vec<Node> {
 pub(super) struct Rows {
     top: Vec<i32>,
     height: Vec<i32>,
+    /// Per rank gap, how many lanes its sideways runs occupy.
+    lanes: Vec<usize>,
     /// Space between the last horizontal arrival and the following node row;
     /// zero when the row contains only junctions.
     capture_space: Vec<i32>,
 }
 
 impl Rows {
+    pub(super) fn lanes_in(&self, gap: usize) -> usize {
+        self.lanes.get(gap).copied().unwrap_or(0)
+    }
+
     /// Packs horizontal runs toward the following row, leaving the spare room
     /// below the producers rather than pressing the merge against their exits.
     pub(super) fn lane_y(&self, gap: usize, lane: usize, lanes: usize) -> i32 {
@@ -456,44 +478,56 @@ impl Rows {
 }
 
 impl Scene {
-    fn rows(&self, placement: &place::Placement, plan: &route::Plan) -> Rows {
-        let gap = vertical_gap(&self.topology);
-        let mut height = vec![0; placement.rows];
-        let mut capture_space = vec![0; placement.rows + 1];
+    fn rows(&self) -> Rows {
+        let ranks = self.arrangement.ranks;
+        let gap = vertical_gap(self);
+        let mut height = vec![0; ranks];
+        let mut capture_space = vec![0; ranks + 1];
         for node in &self.nodes {
-            let row = placement.row(Vertex::Node(node.id));
+            let row = self.rank(Vertex::Node(node.id));
             height[row] = height[row].max(node.height);
             capture_space[row] = gap;
         }
         if let Some(parameters) = &self.parameters {
-            let row = placement.row(Vertex::Node(NodeId::Start));
+            let row = self.rank(Vertex::Node(NodeId::Start));
             height[row] = height[row].max(parameters.height);
         }
-        let mut top = Vec::with_capacity(placement.rows + 1);
+        let lanes = self.arrangement.gap_lanes.clone();
+        let mut top = Vec::with_capacity(ranks + 1);
         let mut next = MARGIN;
-        for (row, height) in height.iter().enumerate() {
+        for (row, own) in height.iter().enumerate() {
             top.push(next);
-            let lanes = plan.lanes_in(row) as i32;
-            let routing = if lanes == 0 {
+            let count = lanes.get(row).copied().unwrap_or(0) as i32;
+            let routing = if count == 0 {
                 0
             } else {
-                gap + (lanes - 1) * LANE + capture_space[row + 1]
+                gap + (count - 1) * LANE + capture_space[row + 1]
             };
-            next += height + gap.max(routing);
+            next += own + gap.max(routing);
         }
         top.push(next);
 
         Rows {
             top,
             height,
+            lanes,
             capture_space,
         }
     }
 
+    /// The rank and column the arrangement gave one vertex.
+    pub(super) fn rank(&self, vertex: Vertex) -> usize {
+        self.arrangement.rank[&vertex]
+    }
+
+    pub(super) fn column(&self, vertex: Vertex) -> i32 {
+        self.arrangement.column[&vertex]
+    }
+
     /// Centres every node on its row, once the rows have their heights.
-    fn lift(&mut self, placement: &place::Placement, rows: &Rows) {
+    fn lift(&mut self, rows: &Rows) {
         for node in &mut self.nodes {
-            let row = placement.row(Vertex::Node(node.id));
+            let row = self.arrangement.rank[&Vertex::Node(node.id)];
             node.y = rows.top[row] + rows.height[row] / 2;
         }
         let start = self.node(NodeId::Start);
@@ -635,8 +669,8 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
     })
 }
 
-fn column_x(column: usize) -> i32 {
-    MARGIN + NODE_WIDTH / 2 + column as i32 * COLUMN_WIDTH
+fn column_x(column: i32) -> i32 {
+    MARGIN + NODE_WIDTH / 2 + column * COLUMN_WIDTH
 }
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {

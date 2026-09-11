@@ -12,6 +12,22 @@ not independently reinterpret the authored source.
 
 ## 2. Layout
 
+The validated model supplies the topology. After `kaalang_model::build`, the
+renderer calls the shared constructor with the analyzed flow, wire merges, and
+topology. The constructor searches for an arrangement and independently checks
+it against RFC 0002. The renderer assigns dimensions and spacing to its ranks,
+columns, corridors, lanes, and contours. Everything this section adds beyond RFC
+0002 is a presentation preference, relaxable without making a topology invalid.
+
+The current construction search is finite and deterministic, with no retry or
+time budget. It varies iteration-tail ranks, return sides, and connection
+corridors in response to routing conflicts. Its normalization and pruning have
+no completeness proof: failure to find an arrangement is a rendering error, not
+a semantic rejection or proof that no conforming diagram exists. The model
+carries no mandatory or optional arrangement field, and macro expansion does not
+run this search. Moving construction into `build` requires a complete procedure
+for the unchanged RFC 0002 constraints.
+
 Every emitted layout is computed deterministically, including node dimensions,
 row and column assignments, label placement, and connection routing. It
 preserves the row and column ordering and connection-routing constraints
@@ -44,6 +60,24 @@ footprints.
 To draw an implicit merge, including the `end` merge above end, each producer
 descends in its approach column to one horizontal merge rail whose junction lies
 in the continuation's column; routes meet it as RFC 0002 §8 requires.
+
+Every iteration tail sits on a row of its own, with no node beside it. A return
+leaves its tail horizontally, across every column between the tail and its
+contour, so anything else on that row would stand in its way. This costs one row
+gap per repeating loop and changes no column.
+
+That gap is given back where the return does not use it. Turning upward at a
+side exit leaves the tail's row holding nothing but the connections that pass
+through it, and such a row is closed: the connections crossing it shorten, every
+row below it moves up, and two consecutive blocks are left one gap apart. A row
+is closed only when no route bends, starts, or ends on it, so closing one moves
+nothing into anything else, and the crossing rules of RFC 0002 §8 are checked
+again over the result.
+
+Any other junction may share its row with a node: a merge rail reaches only from
+its own producers to the continuation's column, and the crossing rules of RFC
+0002 §8 refuse an arrangement in which such a rail would run through a node, so
+no separate row is needed to keep it clear.
 
 Use one vertical gap throughout a diagram, at least 72 pixels and enlarged when
 labels need more room. Leave at least that gap between consecutive node rows.
@@ -78,27 +112,26 @@ enclosing iteration connects directly to that iteration's tail. Equivalent
 question-and-break loop routes retain their geometry; structural syntax alone
 does not introduce rows or detours.
 
-Return connections are routed separately, innermost loop first, around the body
+Return connections are drawn separately, innermost loop first, around the body
 and horizontally into its entry junction. The arrowhead belongs to that
 horizontal arrival. Returns may move upward; all other geometry checks still
-apply. The preferred contour is right when all repeating summaries select the
-rightmost branch of the first selection in that loop, and left otherwise. The
-tail meets its incoming branches at the end of its rail nearest that contour.
+apply. The iteration tail meets its incoming branches at the end of its rail
+nearest the side the checked arrangement chose for that return.
 
-If no checked return route fits, lower the blocked iteration tail and retry
-placement and routing within the existing bounded attempt budget. Tail
-precedence carries the delay to dependent continuations. If no attempt succeeds,
-rendering fails under §4. Before layout, the shared model rejects a return
-enclosed by two break routes to the same loop's continuation
-([RFC 0001 §4.5](0001-language.md#45-loop)). Other placement or routing limits
-still report rendering failure rather than changing branch order or emitting a
-crossing.
+The shared constructor records the side of the body, the outermost column of
+that body, and the lane beside it each return climbs. Geometry realizes the
+checked contour; failure to find one on either side remains a rendering error.
+It puts the lane just past whatever the body itself occupies in the return's
+vertical span — the node in the recorded column, or the column's own line when
+none is there — and one lane step further out for each later lane.
 
 A tail with one incoming connection may sit on a side exit's horizontal run, or
 after the usual vertical gap below a straight exit. Prefer turning upward there
 over descending to the tail's placement row and immediately returning upward.
-Keep the lower route when the shorter one would cross another connection; the
-tail's forward precedence still determines initial node placement.
+This is a compaction of already valid geometry: it brings the tail and its
+return in together, keeps the side and lane the arrangement chose, and is
+dropped when the shortened route would break RFC 0002 §8, leaving the
+uncompacted arrangement in place.
 
 A sole rightward horizontal arrival may also shorten toward the body instead of
 reserving an empty branch column. Move its tail and return together, keeping the
@@ -161,9 +194,12 @@ source text and builds its validated semantic model. It then either lays out and
 serializes that model or returns a rendering error. It does not invoke
 `cargo check` or perform full Rust type checking.
 
-When its deterministic layout cannot route every connection without violating
-RFC 0002, it returns a rendering error instead of emitting a non-conforming
-diagram. This does not make the validated textual flow invalid.
+`RenderError::InvalidFlow` reports semantic errors from `kaalang_model::build`.
+`RenderError::UnroutableTopology` reports failure to construct an arrangement,
+an internal construction error, or geometry and label placement that cannot
+satisfy RFC 0002 §8. A failed construction search does not change whether the
+flow is valid. Final route and label verifiers remain necessary after assigning
+dimensions and spacing.
 
 ## 5. Command-line interface
 

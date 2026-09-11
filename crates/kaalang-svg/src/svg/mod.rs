@@ -4,7 +4,7 @@ use crate::layout::{
     CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection, LABEL_FONT, LINE_HEIGHT, Label,
     LabelKind, Node, ParameterPanel, Point, Scene,
 };
-use crate::topology::{Destination, ExitId, NodeId, NodeKind, Source};
+use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
@@ -156,7 +156,7 @@ fn describe(scene: &Scene) -> String {
                 described.push_str(" with parameters ");
                 described.push_str(&parameters.parameters.join("; "));
             }
-            let capture = topology.capture_label(node.id);
+            let capture = scene.captions.capture_label(node.id);
             if capture == ["()"] {
                 described.push_str(" capturing nothing");
             } else if !capture.is_empty() {
@@ -166,8 +166,10 @@ fn describe(scene: &Scene) -> String {
             let handovers = topology
                 .exits
                 .iter()
-                .filter(|exit| exit.id.node == node.id && !exit.handover.is_empty())
-                .map(|exit| exit.handover.join(", "))
+                .filter(|exit| exit.id.node == node.id)
+                .map(|exit| scene.captions.handover(exit.id))
+                .filter(|handover| !handover.is_empty())
+                .map(|handover| handover.join(", "))
                 .collect::<Vec<_>>();
             if !handovers.is_empty() {
                 described.push_str(" handing over ");
@@ -178,15 +180,18 @@ fn describe(scene: &Scene) -> String {
                 .iter()
                 .filter(|exit| exit.id.node == node.id)
                 .filter_map(|exit| {
-                    exit.branch_description.as_ref().map(|description| {
-                        format!(
-                            "branch {}: {description}",
-                            exit.id
-                                .branch
-                                .expect("only question branches have descriptions")
-                                + 1
-                        )
-                    })
+                    scene
+                        .captions
+                        .branch_description(exit.id)
+                        .map(|description| {
+                            format!(
+                                "branch {}: {description}",
+                                exit.id
+                                    .branch
+                                    .expect("only question branches have descriptions")
+                                    + 1
+                            )
+                        })
                 })
                 .collect::<Vec<_>>();
             if !branch_descriptions.is_empty() {
@@ -298,25 +303,25 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         };
         return format!("the {part} of {owner}");
     }
-    let projected = &scene.topology.junctions[junction];
-    if projected.is_break {
+    let wires = scene.captions.junction_wires(junction);
+    if scene.topology.junctions[junction].is_break {
         "the loop exit".to_owned()
-    } else if projected.wires.is_empty() {
+    } else if wires.is_empty() {
         "the entry of the loop".to_owned()
     } else {
-        format!("the {} merge", projected.wires.join(" and "))
+        format!("the {} merge", wires.join(" and "))
     }
 }
 
 fn node_name(scene: &Scene, id: NodeId) -> String {
-    let node = scene.topology.node(id);
-    match node.kind {
-        NodeKind::Start => format!("Start: {}", node.label),
-        NodeKind::Action => action::name(&node.label),
-        NodeKind::Question => question::name(&node.label),
-        NodeKind::Select => choice::select_name(&node.label),
-        NodeKind::Case => choice::case_name(&node.label),
-        NodeKind::End => format!("End: {}", node.label),
+    let label = scene.captions.label(id);
+    match scene.topology.node(id).kind {
+        NodeKind::Start => format!("Start: {label}"),
+        NodeKind::Action => action::name(label),
+        NodeKind::Question => question::name(label),
+        NodeKind::Select => choice::select_name(label),
+        NodeKind::Case => choice::case_name(label),
+        NodeKind::End => format!("End: {label}"),
     }
 }
 
@@ -333,7 +338,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         projected.kind,
         NodeKind::Action | NodeKind::Question | NodeKind::Select | NodeKind::Case
     ) {
-        write_title(svg, &projected.label);
+        write_title(svg, scene.captions.label(node.id));
     }
     match projected.kind {
         // Start and end are the two ends of one flow, drawn alike.

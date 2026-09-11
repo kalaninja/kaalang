@@ -16,9 +16,9 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
     let file = crate::parse_file(source).unwrap();
     let function = crate::select_flow(&file.items, flow).unwrap();
     let model = kaalang_model::build(function).unwrap();
-    let topology = topology::project(&model, "example", "u8");
-    let placement = place::place(&topology, &model, &BTreeMap::new()).unwrap();
-    let case = |choice, branch| placement.column(Vertex::Node(NodeId::Case { choice, branch }));
+    let arrangement =
+        kaalang_model::construct(&model.flow, &model.merges, &model.topology).unwrap();
+    let case = |choice, branch| arrangement.column[&Vertex::Node(NodeId::Case { choice, branch })];
     assert!(
         case(0, 2) > case(6, 3),
         "the first terminal case overlaps the inner choice"
@@ -122,7 +122,7 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
     }
 
     assert_eq!(scene.topology.junctions.len(), 2);
-    assert_eq!(scene.topology.junctions[1].wires, ["end"]);
+    assert_eq!(scene.captions.junction_wires(1), ["end"]);
     for junction in 0..2 {
         let common = scene
             .connections
@@ -144,7 +144,7 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
             .unwrap();
         assert!(merge_line[0].y - actions_bottom >= MIN_VERTICAL_GAP / 2);
 
-        let name = scene.topology.junctions[junction].wires.join(", ");
+        let name = scene.captions.junction_wires(junction).join(", ");
         let labels = scene
             .labels
             .iter()
@@ -235,7 +235,7 @@ fn labels_clear_vertical_connections_and_routes_use_free_departure_columns() {
             assert!(route.points.iter().all(|point| point.x <= direct.x));
 
             assert_eq!(scene.topology.junctions.len(), 1);
-            assert_eq!(scene.topology.junctions[0].wires, ["selected"]);
+            assert_eq!(scene.captions.junction_wires(0), ["selected"]);
             let incoming = scene
                 .connections
                 .iter()
@@ -281,11 +281,8 @@ fn labels_beside_one_connection_align_by_their_left_edge() {
 #[test]
 fn nested_question_side_branches_share_their_merge_column() {
     let scene = drawn(fixture!("gallery/logical_formulas", "and"));
-    let junction = scene
-        .topology
-        .junctions
-        .iter()
-        .position(|junction| junction.wires == ["false_result"])
+    let junction = (0..scene.topology.junctions.len())
+        .find(|&junction| scene.captions.junction_wires(junction) == ["false_result"])
         .unwrap();
     let rail = scene.node(NodeId::Start).x + COLUMN_WIDTH;
     let incoming = scene
@@ -445,11 +442,11 @@ fn disjoint_convergence_groups_take_disjoint_footprints() {
 fn independent_producers_and_their_consumers_form_one_sequence() {
     let scene = drawn((SHARED_INPUTS, "shared_inputs"));
     assert_main_sequence(&scene, &[0, 1, 2, 3, 4, 5]);
-    assert!(scene.topology.capture(NodeId::Block(1)).is_empty());
-    assert_eq!(scene.topology.capture_label(NodeId::Block(1)), ["()"]);
+    assert!(scene.captions.capture(NodeId::Block(1)).is_empty());
+    assert_eq!(scene.captions.capture_label(NodeId::Block(1)), ["()"]);
     for consumer in [2, 3] {
         assert_eq!(
-            scene.topology.capture(NodeId::Block(consumer)),
+            scene.captions.capture(NodeId::Block(consumer)),
             ["&first", "&second"]
         );
     }
@@ -460,37 +457,38 @@ fn independent_entry_blocks_continue_on_the_main_column_before_a_question() {
     let scene = drawn(fixture!("wire/behavior", "question_after_one_entry_block"));
     assert_main_sequence(&scene, &[3, 4, 5]);
     assert_eq!(
-        scene.topology.handover(ExitId::of(NodeId::Block(3))),
+        scene.captions.handover(ExitId::of(NodeId::Block(3))),
         ["first"]
     );
-    assert_eq!(scene.topology.capture(NodeId::Block(4)), ["right"]);
-    assert_eq!(scene.topology.capture(NodeId::Block(5)), ["first"]);
+    assert_eq!(scene.captions.capture(NodeId::Block(4)), ["right"]);
+    assert_eq!(scene.captions.capture(NodeId::Block(5)), ["first"]);
 }
 
 #[test]
 fn a_branch_effect_reaches_the_merge_before_common_work() {
     let scene = drawn(fixture!("wire/behavior", "effect_then_common"));
     let topology = &scene.topology;
+    let captions = &scene.captions;
     let effect = ExitId::of(NodeId::Block(2));
     let stamp = Vertex::Node(NodeId::Block(4));
     assert_eq!(topology.junctions.len(), 1);
-    assert_eq!(topology.junctions[0].wires, ["value"]);
-    assert!(topology.handover(effect).is_empty());
+    assert_eq!(captions.junction_wires(0), ["value"]);
+    assert!(captions.handover(effect).is_empty());
     assert_eq!(
         topology.leaving(effect).copied().collect::<Vec<_>>(),
-        [crate::topology::Connection {
+        [kaalang_model::topology::Connection {
             source: Source::Exit(effect),
             destination: Destination::Junction(0),
         }]
     );
     assert_eq!(
         topology.incoming(stamp).copied().collect::<Vec<_>>(),
-        [crate::topology::Connection {
+        [kaalang_model::topology::Connection {
             source: Source::Junction(0),
             destination: stamp,
         }]
     );
-    assert_eq!(topology.capture_label(NodeId::Block(4)), ["()"]);
+    assert_eq!(captions.capture_label(NodeId::Block(4)), ["()"]);
 }
 
 /// A serial stretch stays on the happy path, with one straight connection
@@ -525,9 +523,9 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
     assert_eq!(setup.x, scene.node(NodeId::Start).x);
     assert_eq!(setup.x, question.x);
     assert!(setup.y < question.y);
-    assert!(scene.topology.capture(setup.id).is_empty());
-    assert_eq!(scene.topology.handover(ExitId::of(setup.id)), ["setup"]);
-    assert_eq!(scene.topology.capture(question.id), ["condition"]);
+    assert!(scene.captions.capture(setup.id).is_empty());
+    assert_eq!(scene.captions.handover(ExitId::of(setup.id)), ["setup"]);
+    assert_eq!(scene.captions.capture(question.id), ["condition"]);
     let outgoing = scene
         .connections
         .iter()
@@ -689,12 +687,12 @@ fn an_unused_hand_over_stays_visible_above_an_empty_capture() {
     // The transit connection does not make the action capture `_value`.
     let scene = drawn(fixture!("empty_flow/behavior", "discard_named"));
     assert_eq!(
-        scene.topology.handover(ExitId::of(NodeId::Start)),
+        scene.captions.handover(ExitId::of(NodeId::Start)),
         ["_value"]
     );
     assert_eq!(scene.topology.leaving(ExitId::of(NodeId::Start)).count(), 1);
-    assert!(scene.topology.capture(NodeId::Block(0)).is_empty());
-    assert_eq!(scene.topology.capture_label(NodeId::Block(0)), ["()"]);
+    assert!(scene.captions.capture(NodeId::Block(0)).is_empty());
+    assert_eq!(scene.captions.capture_label(NodeId::Block(0)), ["()"]);
     assert!(
         scene.labels.iter().any(|label| label.lines == ["_value"]),
         "the unused hand-over is not drawn"
@@ -751,7 +749,7 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
     assert_main_sequence(&scene, &[0, 1, 2, 3, 4, 5, 6, 7]);
     for consumer in [3, 4, 5] {
         assert_eq!(
-            scene.topology.capture(NodeId::Block(consumer)),
+            scene.captions.capture(NodeId::Block(consumer)),
             ["&first", "&second", "&third"]
         );
     }
@@ -847,10 +845,10 @@ fn the_end_node_names_only_the_flow_return_type() {
     ] {
         let scene = drawn((source, flow));
         let end = end_node(&scene);
-        assert_eq!(scene.topology.node(end).label, caption, "{flow}");
+        assert_eq!(scene.captions.label(end), caption, "{flow}");
         // The semantic capture remains available to the accessible description,
         // but the terminal route makes the `end` wire visually obvious.
-        assert_eq!(scene.topology.capture(end), ["end"], "{flow}");
+        assert_eq!(scene.captions.capture(end), ["end"], "{flow}");
         assert!(
             scene.labels.iter().all(|label| !label
                 .lines
@@ -882,7 +880,7 @@ fn start_separates_the_flow_name_and_typed_parameters() {
     "#;
     let scene = drawn((source, "example"));
     assert_eq!(
-        scene.topology.node(NodeId::Start).label,
+        scene.captions.label(NodeId::Start),
         "example<'a, T> where T: Copy,"
     );
     let parameters = scene.parameters.as_ref().expect("the flow has parameters");
@@ -1063,7 +1061,7 @@ fn a_single_action_returns_after_the_usual_gap() {
     assert_eq!(start.x, action.x);
     assert_eq!(
         start.y - Scene::bounds(action).3,
-        vertical_gap(&scene.topology),
+        vertical_gap(&scene),
         "the return should turn beside the action instead of below the inner body"
     );
     let incoming = scene
@@ -1116,7 +1114,7 @@ fn terminal_routes_align_with_independent_returns_and_clear_crossing_returns() {
             .map(|point| point.y)
             .max()
             .unwrap();
-        let gap = vertical_gap(&scene.topology);
+        let gap = vertical_gap(&scene);
         assert!(
             terminal_y >= lowest_return,
             "{}: the terminal route clears the returns",
@@ -1138,7 +1136,7 @@ fn distributors_and_loop_tails_leave_the_usual_gap() {
     let source = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
     for flow in ["binary_search", "binary_search_swapped"] {
         let scene = drawn((source, flow));
-        let gap = vertical_gap(&scene.topology);
+        let gap = vertical_gap(&scene);
         let tail = scene.topology.loops[0].tail;
         for incoming in scene
             .connections
@@ -1426,7 +1424,7 @@ fn a_blocked_inner_return_can_lower_its_tail_below_end() {
                 .unwrap();
             assert!(
                 return_edge.points[0].y
-                    >= Scene::bounds(scene.node(end.id)).3 + vertical_gap(&scene.topology)
+                    >= Scene::bounds(scene.node(end.id)).3 + vertical_gap(&scene)
             );
         }
     }
@@ -1437,7 +1435,7 @@ fn named_node<'a>(scene: &'a Scene, description: &str) -> &'a Node {
         .topology
         .nodes
         .iter()
-        .find(|node| node.label == description)
+        .find(|node| scene.captions.label(node.id) == description)
         .expect("the fixture contains the described node")
         .id;
     scene.node(id)
@@ -1489,4 +1487,42 @@ fn an_enclosed_return_is_rejected_before_layout() {
                 if message.contains("reorder the branches")
         ));
     }
+}
+
+#[test]
+fn construction_failure_is_a_render_error() {
+    let source = r#"use kaalang::kaalang;
+
+#[kaalang]
+fn invalid(mut mode: u8) -> u8 {
+    loop {
+        #[choice("Exit or advance?")]
+        #[case("Advance on the left.")]
+        #[case("Exit in the middle.")]
+        #[case("Advance on the right.")]
+        let (first, leave, last) = |mode| match mode {
+            0 => (),
+            1 => (),
+            _ => (),
+        };
+
+        #[action("Advance through the left case.")]
+        |first, &mut mode| *mode = 1;
+
+        |leave| break;
+
+        #[action("Advance through the right case.")]
+        |last, &mut mode| *mode = 1;
+    }
+
+    #[action("Return the selected mode.")]
+    let end = |mode| mode;
+}
+
+fn main() {}
+"#;
+    assert!(matches!(
+        crate::render_source(source, "invalid"),
+        Err(crate::RenderError::UnroutableTopology { .. })
+    ));
 }

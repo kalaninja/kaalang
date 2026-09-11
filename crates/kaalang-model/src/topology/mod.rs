@@ -1,19 +1,24 @@
-//! Projects the validated semantic model into the diagram's visual topology:
-//! its nodes, exits, implicit junctions and connections, before any
-//! coordinate exists.
+//! Projects the analyzed flow into the diagram's visual topology: its nodes,
+//! exits, implicit junctions and connections, before any coordinate exists.
 //!
 //! RFC 0002 §7 defines the drawn connections as the union, over every possible
 //! execution, of the direct precedence between participating nodes. This module
-//! preserves the model's dependencies and merges, reading its verified
-//! execution plan for the same source order codegen emits.
+//! preserves the flow's dependencies and merges, reading its verified execution
+//! plan for the same source order codegen emits.
+//!
+//! Only structure lives here. A node owns its role, an exit owns the producer
+//! occurrences it provides, and a junction owns the merges that meet in it; the
+//! displayed strings are a presentation choice a consumer derives from the
+//! authored flow (RFC 0002 §6).
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::{
-    Block, BlockKind, Execution, ExecutionOutcome, ExecutionPlan, Input, ProducerId, SemanticModel,
+use proc_macro2::Ident;
+
+use crate::model::{
+    Block, BlockKind, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, WireMerge,
 };
-use syn::{FnArg, Ident, Pat, PatIdent, ext::IdentExt};
 
 mod action;
 mod break_block;
@@ -26,7 +31,7 @@ pub(crate) mod question;
 /// derived from a choice. `Flow::blocks` carries the implicit end block last, so
 /// end needs no variant of its own.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum NodeId {
+pub enum NodeId {
     Start,
     Block(usize),
     Case { choice: usize, branch: usize },
@@ -59,7 +64,7 @@ impl PartialOrd for NodeId {
 
 /// The visual role of a node, which decides its shape and its accessible name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum NodeKind {
+pub enum NodeKind {
     Start,
     Action,
     Question,
@@ -72,199 +77,239 @@ pub(crate) enum NodeKind {
 /// exit, so `branch` names the output an exit carries there; every other exit
 /// leaves it unset, a select's distributor and a case's own exit included.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct ExitId {
-    pub(crate) node: NodeId,
-    pub(crate) branch: Option<usize>,
+pub struct ExitId {
+    pub node: NodeId,
+    pub branch: Option<usize>,
 }
 
 impl ExitId {
-    pub(crate) const fn of(node: NodeId) -> Self {
+    #[must_use]
+    pub const fn of(node: NodeId) -> Self {
         Self { node, branch: None }
     }
 }
 
 /// Where a connection starts: an exit or an implicit junction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Source {
+pub enum Source {
     Exit(ExitId),
     Junction(usize),
 }
 
 /// Where a connection ends: a node, or the junction a producer branch enters.
 /// Every destination is a vertex of the precedence graph, so it is that type.
-pub(crate) type Destination = Vertex;
+pub type Destination = Vertex;
 
 /// RFC 0002 §7 identifies a connection by its source exit and its destination,
 /// so connections leaving distinct exits of one node stay distinct even when
 /// they join the same pair of nodes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Connection {
-    pub(crate) source: Source,
-    pub(crate) destination: Destination,
+pub struct Connection {
+    pub source: Source,
+    pub destination: Destination,
 }
 
-/// One node and the labels it owns. RFC 0002 §6 gives the capture list to the
-/// node rather than to an incoming connection, so it is drawn once however many
-/// connections arrive.
-pub(crate) struct Node {
-    pub(crate) id: NodeId,
-    pub(crate) kind: NodeKind,
-    pub(crate) label: String,
-    /// The wires this node captures, in authored order, with capture modifiers.
-    pub(crate) capture: Vec<String>,
+/// One node and the role that decides its shape. RFC 0002 §6 gives the capture
+/// list to the node rather than to an incoming connection, but the displayed
+/// list is derived from the authored block, not stored here.
+#[derive(Clone)]
+pub struct Node {
+    pub id: NodeId,
+    pub kind: NodeKind,
 }
 
-/// One exit and the hand-over it owns: the wires newly provided here, labeled
-/// whether or not any connection leaves.
-pub(crate) struct Exit {
-    pub(crate) id: ExitId,
-    pub(crate) handover: Vec<String>,
-    /// An optional authored description of a question branch.
-    pub(crate) branch_description: Option<String>,
+/// One exit and the hand-over it owns: the producer occurrences newly provided
+/// here, whether or not any connection leaves. A consumer displays them as
+/// RFC 0002 §6 requires.
+#[derive(Clone)]
+pub struct Exit {
+    pub id: ExitId,
+    /// The occurrences this exit provides, in declaration order.
+    pub provides: Vec<ProducerId>,
 }
 
 /// A wire merge, loop entry, iteration tail, or break. Junctions add no
-/// computational node or producer occurrence. Structural captures are unlabeled;
-/// entries and breaks have no merged wires.
+/// computational node or producer occurrence. Structural junctions merge no
+/// wire; entries and breaks are structural.
 ///
 /// Merged wires that the same alternatives provide, ordered behind the same
 /// branch-local work, converge at the same place, so they share one junction:
 /// drawing the meeting twice would repeat one convergence and force the two
 /// copies to cross.
-#[derive(Default)]
-pub(crate) struct Junction {
-    pub(crate) wires: Vec<String>,
-    pub(crate) is_break: bool,
+#[derive(Clone, Default)]
+pub struct Junction {
+    /// The `SemanticModel::merges` entries that meet here, in model order.
+    pub merges: Vec<usize>,
+    pub is_break: bool,
 }
 
-pub(crate) struct Topology {
-    pub(crate) nodes: Vec<Node>,
-    pub(crate) exits: Vec<Exit>,
-    pub(crate) junctions: Vec<Junction>,
-    pub(crate) connections: Vec<Connection>,
+/// The visual topology of one flow: every drawn vertex, the connections between
+/// them, the placement-only precedence they carry, and the loops that return.
+#[derive(Clone, Default)]
+pub struct Topology {
+    pub nodes: Vec<Node>,
+    pub exits: Vec<Exit>,
+    pub junctions: Vec<Junction>,
+    pub connections: Vec<Connection>,
     /// Every node and junction, in authored order, as the connections address
     /// them. Sorted, so a lookup is a binary search.
-    pub(crate) vertices: Vec<Vertex>,
+    pub vertices: Vec<Vertex>,
     /// Structural precedence after the iteration, never drawn as execution.
-    pub(crate) order: Vec<Connection>,
-    pub(crate) back_edges: Vec<Connection>,
-    pub(crate) loops: Vec<Loop>,
+    pub order: Vec<Connection>,
+    pub back_edges: Vec<Connection>,
+    pub loops: Vec<Loop>,
+    /// The junction where alternative producers of `end` meet, when the flow
+    /// reaches end through more than one of them (RFC 0002 §8).
+    pub end_merge: Option<usize>,
+    /// Connection positions by destination and by source, so a neighbour
+    /// lookup is an index rather than a scan of every connection.
+    arrivals: BTreeMap<Vertex, Vec<usize>>,
+    departures: BTreeMap<Vertex, Vec<usize>>,
+}
+
+/// A topology of block nodes joined by one connection per pair, indexed like a
+/// projected one. Only tests need it: they check what happens to shapes the
+/// projection never produces, such as a cycle.
+#[cfg(test)]
+pub(crate) fn linked(pairs: &[(usize, usize)]) -> Topology {
+    let mut topology = Topology {
+        connections: pairs
+            .iter()
+            .map(|&(from, to)| Connection {
+                source: Source::Exit(ExitId::of(NodeId::Block(from))),
+                destination: Destination::Node(NodeId::Block(to)),
+            })
+            .collect(),
+        vertices: pairs
+            .iter()
+            .flat_map(|&(from, to)| [from, to])
+            .map(|block| Vertex::Node(NodeId::Block(block)))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+        ..Topology::default()
+    };
+    topology.index();
+    topology
 }
 
 impl Topology {
-    pub(crate) fn node(&self, id: NodeId) -> &Node {
+    /// The node one id addresses.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the id names no projected node.
+    #[must_use]
+    pub fn node(&self, id: NodeId) -> &Node {
         self.nodes
             .iter()
             .find(|node| node.id == id)
             .expect("every drawn node is projected")
     }
 
+    /// Indexes the connections by their ends. Every change to `connections`
+    /// has to be followed by this, which is why the index is private.
+    fn index(&mut self) {
+        self.arrivals.clear();
+        self.departures.clear();
+        for (position, connection) in self.connections.iter().enumerate() {
+            self.arrivals
+                .entry(connection.destination)
+                .or_default()
+                .push(position);
+            self.departures
+                .entry(Vertex::from(connection.source))
+                .or_default()
+                .push(position);
+        }
+    }
+
+    fn at(&self, positions: Option<&Vec<usize>>) -> impl Iterator<Item = &Connection> {
+        positions
+            .into_iter()
+            .flatten()
+            .map(|&position| &self.connections[position])
+    }
+
     /// The connections leaving one exit, which decide whether its hand-over may
     /// share a label with the capture at the other end.
-    pub(crate) fn leaving(&self, exit: ExitId) -> impl Iterator<Item = &Connection> {
-        self.connections
-            .iter()
+    pub fn leaving(&self, exit: ExitId) -> impl Iterator<Item = &Connection> {
+        self.at(self.departures.get(&Vertex::Node(exit.node)))
             .filter(move |connection| connection.source == Source::Exit(exit))
     }
 
-    pub(crate) fn handover(&self, exit: ExitId) -> &[String] {
-        self.exit(exit).handover.as_slice()
-    }
-
-    pub(crate) fn exit(&self, exit: ExitId) -> &Exit {
+    /// The exit one id addresses.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the id names no projected exit.
+    #[must_use]
+    pub fn exit(&self, exit: ExitId) -> &Exit {
         self.exits
             .iter()
             .find(|owner| owner.id == exit)
             .expect("every addressed exit is projected")
     }
 
-    pub(crate) fn capture(&self, node: NodeId) -> &[String] {
-        self.node(node).capture.as_slice()
+    /// The connections arriving at one vertex.
+    pub fn incoming(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
+        self.at(self.arrivals.get(&vertex))
     }
 
-    /// The displayed capture list. `()` marks an empty input on a connected
-    /// computational node; it is neither a wire name nor a synthetic capture.
-    pub(crate) fn capture_label(&self, node: NodeId) -> Vec<String> {
-        let projected = self.node(node);
-        if projected.capture.is_empty()
-            && matches!(
-                projected.kind,
-                NodeKind::Action | NodeKind::Question | NodeKind::Select
-            )
-            && self.incoming(Vertex::Node(node)).next().is_some()
-        {
-            vec!["()".to_owned()]
-        } else {
-            projected.capture.clone()
-        }
-    }
-
-    pub(crate) fn incoming(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
-        self.connections
-            .iter()
-            .filter(move |connection| connection.destination == vertex)
-    }
-
-    pub(crate) fn outgoing(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
-        self.connections
-            .iter()
-            .filter(move |connection| Vertex::from(connection.source) == vertex)
+    /// The connections leaving one vertex, from any of its exits.
+    pub fn outgoing(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
+        self.at(self.departures.get(&vertex))
     }
 
     /// Whether one forward connection enters the node.
-    pub(crate) fn single_arrival(&self, node: NodeId) -> bool {
+    #[must_use]
+    pub fn single_arrival(&self, node: NodeId) -> bool {
         self.incoming(Vertex::Node(node)).count() == 1
     }
 
-    /// Equal, nonempty displayed lists share a label only at the sole connection
-    /// between their ends. Capture modifiers and the empty-input marker never
-    /// match a bare wire name, and an exit handing over nothing shares no label
-    /// with a node that shows no capture list either.
-    ///
-    /// Only the outdegree check is reached by an authored flow, at a select
-    /// distributor: alternatives meet at a junction, so no node in the current
-    /// fixtures has two incoming connections. RFC 0002 §7 still allows one, and
-    /// the indegree check is kept for it.
-    pub(crate) fn shares_label(&self, connection: &Connection) -> bool {
-        let (Source::Exit(exit), Destination::Node(node)) =
-            (connection.source, connection.destination)
-        else {
-            return false;
-        };
-        // ponytail: two scans of every connection per label; keep counts beside
-        // the exits if a diagram ever outgrows a few dozen connections.
-        !self.handover(exit).is_empty()
-            && self.handover(exit) == self.capture_label(node)
-            && self.leaving(exit).count() == 1
-            && self.single_arrival(node)
+    /// Whether one exit hands over exactly the wires that meet at one junction,
+    /// in the same order: position for position, the occurrences it provides are
+    /// alternatives of the merges that converge there.
+    #[must_use]
+    pub fn provides_merged_wires(
+        &self,
+        merges: &[WireMerge],
+        exit: ExitId,
+        junction: usize,
+    ) -> bool {
+        let group = &self.junctions[junction].merges;
+        let provides = &self.exit(exit).provides;
+        !group.is_empty()
+            && provides.len() == group.len()
+            && provides
+                .iter()
+                .zip(group)
+                .all(|(producer, &merge)| merges[merge].producers.contains(producer))
     }
 }
 
-/// Builds the topology of one validated flow. `start` labels the start node
-/// and `return_type` captions end, both taken from the authored source text.
-pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> Topology {
+/// The analyzed parts the projection reads. `build` holds them before it can
+/// assemble a `SemanticModel`, so the projection takes them directly rather
+/// than through a model that does not exist yet.
+pub(crate) struct Analyzed<'a> {
+    pub(crate) flow: &'a Flow,
+    pub(crate) executions: &'a [Execution],
+    pub(crate) merges: &'a [WireMerge],
+    pub(crate) execution_plan: &'a ExecutionPlan,
+}
+
+/// Builds the visual topology of one validated flow.
+pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     let mut nodes = vec![Node {
         id: NodeId::Start,
         kind: NodeKind::Start,
-        label: start.to_owned(),
-        capture: Vec::new(),
     }];
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
-        handover: model
-            .parameters
-            .iter()
-            .filter_map(|parameter| {
-                let FnArg::Typed(parameter) = parameter else {
-                    return None;
-                };
-                let Pat::Ident(binding) = parameter.pat.as_ref() else {
-                    return None;
-                };
-                Some(provided(binding))
-            })
+        // RFC 0002 §5 shows every named flow input as an output of start.
+        provides: (0..model.flow.flow_inputs.len())
+            .map(ProducerId::FlowInput)
             .collect(),
-        branch_description: None,
     }];
     for (index, block) in model.flow.blocks.iter().enumerate() {
         match block.kind {
@@ -277,7 +322,7 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
                     .iter()
                     .any(|execution| execution.outcome == ExecutionOutcome::End) =>
             {
-                end::project(index, block, return_type, &mut nodes);
+                end::project(index, &mut nodes);
             }
             BlockKind::Loop | BlockKind::Break | BlockKind::End => {}
         }
@@ -315,23 +360,17 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
         junctions: merges
             .iter()
             .map(|group| Junction {
-                wires: group
-                    .iter()
-                    .map(|&merge| {
-                        let ProducerId::BlockOutput { block, output } =
-                            model.merges[merge].producers[0]
-                        else {
-                            unreachable!("a wire merge combines block outputs")
-                        };
-                        provided(model.flow.blocks[block].output_binding(output))
-                    })
-                    .collect(),
+                merges: group.clone(),
                 ..Junction::default()
             })
             .chain((merges.len()..count).map(|_| Junction::default()))
             .collect(),
+        end_merge: end_merge(model, &merges),
         vertices,
+        arrivals: BTreeMap::new(),
+        departures: BTreeMap::new(),
     };
+    topology.index();
     for (&block, &junction) in &structural {
         topology.junctions[junction].is_break = model.flow.blocks[block].kind == BlockKind::Break;
     }
@@ -342,7 +381,7 @@ pub(crate) fn project(model: &SemanticModel, start: &str, return_type: &str) -> 
 
 /// Question outputs only select the existing route into or out of a loop.
 /// Keep junctions for data dependencies, without adding stops for control inputs.
-fn has_structural_data_inputs(model: &SemanticModel, block: usize) -> bool {
+fn has_structural_data_inputs(model: &Analyzed<'_>, block: usize) -> bool {
     model
         .executions
         .iter()
@@ -357,7 +396,7 @@ fn has_structural_data_inputs(model: &SemanticModel, block: usize) -> bool {
 /// The junctions to draw, each the merges that meet in one place, in model
 /// order. A merged wire nobody captures has nothing to draw: its producers
 /// still label their outputs at their own exits, and no routes meet.
-fn merges(model: &SemanticModel) -> Vec<Vec<usize>> {
+fn merges(model: &Analyzed<'_>) -> Vec<Vec<usize>> {
     let precedes = precedes(model);
     // Two merges meet in one place when the same work arrives at both. What
     // arrives is not the producer list: a producer that precedes another block
@@ -407,10 +446,10 @@ fn merges(model: &SemanticModel) -> Vec<Vec<usize>> {
 /// Which blocks each block precedes, over every execution's capture dependencies
 /// and implicit block order. Used to tell which of a merge's antecedents actually arrive at
 /// it and which reach it through another.
-fn precedes(model: &SemanticModel) -> Vec<BTreeSet<usize>> {
+fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
     let blocks = model.flow.blocks.len();
     let mut later = vec![BTreeSet::new(); blocks];
-    for execution in &model.executions {
+    for execution in model.executions {
         for dependency in &execution.dependencies {
             if let ProducerId::BlockOutput { block, .. } = dependency.producer {
                 later[block].insert(dependency.capture.block);
@@ -430,7 +469,7 @@ fn precedes(model: &SemanticModel) -> Vec<BTreeSet<usize>> {
     later
 }
 
-fn consumers<'a>(model: &'a SemanticModel, wire: &'a Ident) -> impl Iterator<Item = usize> + 'a {
+fn consumers<'a>(model: &'a Analyzed<'a>, wire: &'a Ident) -> impl Iterator<Item = usize> + 'a {
     model
         .flow
         .blocks
@@ -448,15 +487,13 @@ fn branch_exits(
     block: &Block,
     exit: fn(usize, usize) -> ExitId,
 ) -> impl Iterator<Item = Exit> {
-    block
-        .outputs
-        .iter()
-        .enumerate()
-        .map(move |(branch, _)| Exit {
-            id: exit(index, branch),
-            handover: vec![provided(block.output_binding(branch))],
-            branch_description: None,
-        })
+    (0..block.outputs.len()).map(move |branch| Exit {
+        id: exit(index, branch),
+        provides: vec![ProducerId::BlockOutput {
+            block: index,
+            output: branch,
+        }],
+    })
 }
 
 /// Whether this kind scopes its outputs per branch, so an output is provided
@@ -469,37 +506,28 @@ fn branches(kind: BlockKind) -> bool {
     }
 }
 
-/// The node and captures common to every flow block.
-fn block_node(index: usize, block: &Block, kind: NodeKind) -> Node {
+/// The node common to every flow block.
+const fn block_node(index: usize, kind: NodeKind) -> Node {
     Node {
         id: NodeId::Block(index),
         kind,
-        label: block.description.clone().unwrap_or_default(),
-        capture: block.inputs.iter().map(captured).collect(),
     }
 }
 
-/// Capture modifiers distinguish the four authored input forms.
-fn captured(input: &Input) -> String {
-    let borrow = if input.borrowed { "&" } else { "" };
-    let mutable = if input.mutable { "mut " } else { "" };
-    format!("{borrow}{mutable}{}", input.alias.unraw())
-}
-
-fn provided(binding: &PatIdent) -> String {
-    let mutable = if binding.mutability.is_some() {
-        "mut "
-    } else {
-        ""
-    };
-    format!("{mutable}{}", binding.ident.unraw())
+/// The junction where alternative producers of `end` meet above the end node.
+fn end_merge(model: &Analyzed<'_>, merges: &[Vec<usize>]) -> Option<usize> {
+    let end = model.flow.blocks.len() - 1;
+    let wire = &model.flow.blocks[end].inputs[0].ident;
+    merges
+        .iter()
+        .position(|group| group.iter().any(|&merge| model.merges[merge].wire == *wire))
 }
 
 /// A vertex of the precedence graph. Junctions take part so that a route
 /// through one suppresses the direct producer-to-consumer connection it
 /// replaces. Structural entries and exits also use junctions instead of nodes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Vertex {
+pub enum Vertex {
     Node(NodeId),
     Junction(usize),
 }
@@ -517,7 +545,7 @@ impl From<Source> for Vertex {
 /// on its own preserves a connection that is direct in one and transitively
 /// redundant in another, as RFC 0002 §7 requires.
 fn connections(
-    model: &SemanticModel,
+    model: &Analyzed<'_>,
     merges: &[Vec<usize>],
     loops: &[Loop],
     structural: &BTreeMap<usize, usize>,
@@ -530,10 +558,10 @@ fn connections(
     };
 
     let mut order = Vec::new();
-    serial_order(&model.execution_plan, &mut order);
+    serial_order(model.execution_plan, &mut order);
     order.retain(|&block| represented(model, structural, block));
     let mut union = BTreeSet::new();
-    for execution in &model.executions {
+    for execution in model.executions {
         let mut direct = serial_connections(model, execution, merges, loops, structural, &order);
         for dependency in &execution.dependencies {
             let capture = dependency.capture;
@@ -634,7 +662,7 @@ fn connections(
 /// Continuing from each producer instead would run the spine past the junction,
 /// leaving the merge a parallel path beside it that no lane order can separate.
 fn serial_connections(
-    model: &SemanticModel,
+    model: &Analyzed<'_>,
     execution: &Execution,
     merges: &[Vec<usize>],
     loops: &[Loop],
@@ -719,7 +747,7 @@ fn serial_connections(
 /// the others keep their own producer connections either way. With no next
 /// block, a completed merge still precedes the iteration tail.
 fn junction_after(
-    model: &SemanticModel,
+    model: &Analyzed<'_>,
     execution: &Execution,
     merges: &[Vec<usize>],
     structural: &BTreeMap<usize, usize>,
@@ -801,7 +829,7 @@ fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
 
 /// Structural statements use junctions instead of computational nodes.
 /// A terminal-only loop without entry captures contributes only its body.
-fn represented(model: &SemanticModel, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
+fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
     !matches!(
         model.flow.blocks[block].kind,
         BlockKind::Loop | BlockKind::Break
@@ -817,7 +845,7 @@ fn destination(structural: &BTreeMap<usize, usize>, block: usize) -> Destination
 }
 
 fn departure(
-    model: &SemanticModel,
+    model: &Analyzed<'_>,
     execution: &Execution,
     structural: &BTreeMap<usize, usize>,
     block: usize,
@@ -842,23 +870,61 @@ fn vertices(nodes: &[Node], junctions: usize) -> Vec<Vertex> {
 }
 
 /// Drops every connection represented through a chain of other connections.
+///
+/// One connection is redundant exactly when a chain of two or more reaches its
+/// destination from its source, so the successors of each vertex are collected
+/// once, deepest first, as bit rows. Every vertex is visited once and every
+/// union costs one word per sixty-four vertices.
 fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection> {
-    // ponytail: a dense closure is O(vertices³) per execution; switch to
-    // per-vertex successor sets if a diagram ever outgrows a few dozen nodes.
     let count = vertices.len();
     let index = |vertex: Vertex| {
         vertices
             .binary_search(&vertex)
             .expect("every connection endpoint is a vertex")
     };
-    let mut precedes = vec![vec![false; count]; count];
+    let words = count.div_ceil(64);
+    let mut successors = vec![Vec::new(); count];
     for connection in direct {
-        precedes[index(connection.source.into())][index(connection.destination)] = true;
+        successors[index(connection.source.into())].push(index(connection.destination));
     }
-    for middle in 0..count {
-        for from in 0..count {
-            for to in 0..count {
-                precedes[from][to] |= precedes[from][middle] && precedes[middle][to];
+
+    // Deepest first, so a successor's own reach is complete before it is used.
+    let mut order = Vec::with_capacity(count);
+    let mut state = vec![0u8; count];
+    for root in 0..count {
+        if state[root] != 0 {
+            continue;
+        }
+        let mut stack = vec![(root, 0usize)];
+        state[root] = 1;
+        while let Some(&mut (vertex, ref mut next)) = stack.last_mut() {
+            if *next < successors[vertex].len() {
+                let successor = successors[vertex][*next];
+                *next += 1;
+                if state[successor] == 0 {
+                    state[successor] = 1;
+                    stack.push((successor, 0));
+                }
+            } else {
+                state[vertex] = 2;
+                order.push(vertex);
+                stack.pop();
+            }
+        }
+    }
+
+    let mut reach = vec![vec![0u64; words]; count];
+    for &vertex in &order {
+        for &successor in &successors[vertex] {
+            reach[vertex][successor / 64] |= 1 << (successor % 64);
+            let (row, of) = reach.split_at_mut(vertex.max(successor));
+            let (row, of) = if vertex < successor {
+                (&mut row[vertex], &of[0])
+            } else {
+                (&mut of[0], &row[successor])
+            };
+            for (word, bits) in row.iter_mut().zip(of) {
+                *word |= *bits;
             }
         }
     }
@@ -869,14 +935,16 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .filter(|connection| {
             let from = index(connection.source.into());
             let to = index(connection.destination);
-            !(0..count).any(|middle| precedes[from][middle] && precedes[middle][to])
+            !successors[from]
+                .iter()
+                .any(|&middle| middle != to && reach[middle][to / 64] & (1 << (to % 64)) != 0)
         })
         .collect()
 }
 
 /// Reports whether one producer occurrence provides its wire in this execution.
 /// A branch output does so only when its own branch was selected.
-fn produced(model: &SemanticModel, execution: &Execution, producer: ProducerId) -> bool {
+fn produced(model: &Analyzed<'_>, execution: &Execution, producer: ProducerId) -> bool {
     match producer {
         ProducerId::FlowInput(_) => true,
         ProducerId::BlockOutput { block, output } => {
@@ -891,7 +959,7 @@ fn produced(model: &SemanticModel, execution: &Execution, producer: ProducerId) 
 /// input, and otherwise the exit that carries that output. A branch output only
 /// ever produces on its own branch, so its position is the selected one and
 /// needs no lookup.
-fn source(model: &SemanticModel, producer: ProducerId) -> Source {
+fn source(model: &Analyzed<'_>, producer: ProducerId) -> Source {
     match producer {
         ProducerId::FlowInput(_) => Source::Exit(ExitId::of(NodeId::Start)),
         ProducerId::BlockOutput { block, output } => exit(model, block, output),
@@ -901,7 +969,7 @@ fn source(model: &SemanticModel, producer: ProducerId) -> Source {
 /// The exit the selected route leaves `block` by. A brancher that takes part
 /// has recorded the branch it took; every other kind has one exit, which carries
 /// every output it provides.
-fn selected_exit(model: &SemanticModel, execution: &Execution, block: usize) -> Source {
+fn selected_exit(model: &Analyzed<'_>, execution: &Execution, block: usize) -> Source {
     let output = if branches(model.flow.blocks[block].kind) {
         execution
             .selected(block)
@@ -912,7 +980,7 @@ fn selected_exit(model: &SemanticModel, execution: &Execution, block: usize) -> 
     exit(model, block, output)
 }
 
-fn exit(model: &SemanticModel, block: usize, output: usize) -> Source {
+fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
     Source::Exit(match model.flow.blocks[block].kind {
         BlockKind::Action => action::exit(block),
         BlockKind::Question => question::exit(block, output),
@@ -923,15 +991,21 @@ fn exit(model: &SemanticModel, block: usize, output: usize) -> Source {
     })
 }
 
+/// One loop that repeats: its header block, the entry junction every arrival
+/// reaches, the iteration tail its repeating routes meet at, and the contour
+/// RFC 0002 §8 prefers for its return.
 #[derive(Clone, Copy)]
-pub(crate) struct Loop {
-    pub(crate) header: usize,
-    pub(crate) entry: usize,
-    pub(crate) tail: usize,
-    pub(crate) prefer_left: bool,
+pub struct Loop {
+    pub header: usize,
+    pub entry: usize,
+    pub tail: usize,
+    /// The preferred contour, not a requirement: RFC 0002 §8 prefers the left
+    /// side unless every repeating route takes the rightmost branch of the
+    /// first selection in the body.
+    pub prefer_left: bool,
 }
 
-fn loops(model: &SemanticModel, wire_merges: usize) -> Vec<Loop> {
+fn loops(model: &Analyzed<'_>, wire_merges: usize) -> Vec<Loop> {
     loop_headers(model)
         .into_iter()
         .enumerate()
@@ -958,6 +1032,7 @@ fn close_loops(topology: &mut Topology) {
             }
         }
         topology.connections = forward;
+        topology.index();
         topology.back_edges.push(Connection {
             source,
             destination: Destination::Junction(loop_.entry),
@@ -980,7 +1055,7 @@ fn defer_continuations(topology: &mut Topology) {
             let boundary = match destination {
                 Vertex::Node(node) => topology.node(node).kind == NodeKind::End,
                 Vertex::Junction(junction) => {
-                    !topology.junctions[junction].wires.is_empty()
+                    !topology.junctions[junction].merges.is_empty()
                         || topology.loops.iter().any(|loop_| loop_.tail == junction)
                 }
             };
@@ -997,7 +1072,7 @@ fn defer_continuations(topology: &mut Topology) {
 }
 
 /// Terminal-only bodies never reach a tail and need no return connection.
-fn loop_headers(model: &SemanticModel) -> Vec<usize> {
+fn loop_headers(model: &Analyzed<'_>) -> Vec<usize> {
     model
         .executions
         .iter()

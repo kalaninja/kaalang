@@ -4,13 +4,19 @@ use syn::{ItemFn, Result};
 
 mod analyze;
 mod choice;
+mod construct;
+pub mod geometry;
 mod model;
 mod parse;
+#[cfg(test)]
+mod performance;
 mod plan;
 mod resolve;
 mod scope;
+pub mod topology;
 
 pub use choice::{choice_match, is_todo_body};
+pub use construct::{Arrangement, Contour, Footprint, Route, Run, Side, construct};
 pub use model::{
     Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
     Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId,
@@ -31,6 +37,12 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     resolve::flow(&flow)?;
     let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
     let execution_plan = plan::flow(&flow, &executions, &merges);
+    let topology = topology::project(&topology::Analyzed {
+        flow: &flow,
+        executions: &executions,
+        merges: &merges,
+        execution_plan: &execution_plan,
+    });
 
     Ok(SemanticModel {
         name: function.sig.ident.clone(),
@@ -41,6 +53,7 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
         executions,
         convergence_groups,
         merges,
+        topology,
     })
 }
 
