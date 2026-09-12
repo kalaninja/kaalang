@@ -157,12 +157,16 @@ mod tests {
                     #[question("Check for an early result?")]
                     let (iterate_2, leave_2) = |stop| stop;
                     |leave_2| break;
-                        #[question("Is the count zero?")]
-                        let (finish, resume) = |iterate_2, count| count == 0;
-                        #[action("Return early.")]
-                        let end = |finish| 99;
+                        // The repeating answer comes first, so the return
+                        // keeps an outer contour: a route that finishes the
+                        // flow from inside the body cannot sit between the
+                        // break and the repeat (RFC 0002 §8).
+                        #[question("Is the count nonzero?")]
+                        let (resume, finish) = |iterate_2, count| count != 0;
                         #[action("Resume after the loop.")]
                         |resume, &mut stop| *stop = false;
+                        #[action("Return early.")]
+                        let end = |finish| 99;
                 };
             },
         ];

@@ -1,7 +1,7 @@
 //! Measures what the topology projection, the construction, and its
-//! verification cost, separately from semantic analysis. Projection runs in
-//! `build`; construction currently runs only when rendering. These measurements
-//! also gate any future move into `build`, in the unoptimized default dev profile.
+//! verification cost, separately from semantic analysis. `build` runs all
+//! three, so every macro expansion pays them, and these measurements are the
+//! gate on that in the unoptimized default dev profile.
 //!
 //! `measure_the_construction_cost` prints the numbers and is ignored by
 //! default, because a wall-clock reading is not a stable assertion. The budget
@@ -62,7 +62,7 @@ fn cost(function: &ItemFn) -> Option<Cost> {
 }
 
 /// Every flow of every behavior and gallery fixture.
-fn corpus() -> Vec<(String, ItemFn)> {
+pub(crate) fn corpus() -> Vec<(String, ItemFn)> {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../kaalang/tests")
         .canonicalize()
@@ -173,9 +173,10 @@ fn stress(loops: usize, actions: usize) -> ItemFn {
 }
 
 /// A flow of `loops` nested loops whose bodies each select `repeat, break,
-/// repeat` over three cases: no arrangement of any of them conforms, so the
-/// search only stops once it has exhausted the space.
-fn refused(loops: usize) -> ItemFn {
+/// repeat` over three cases, above `actions` pairs of straight-line blocks: no
+/// arrangement of any of them conforms, so both searches only stop once they
+/// have exhausted their space.
+fn refused(loops: usize, actions: usize) -> ItemFn {
     let quote = '"';
     let mut body = String::new();
     let indent = |depth: usize| "    ".repeat(depth + 1);
@@ -223,11 +224,25 @@ fn refused(loops: usize) -> ItemFn {
         let close = if depth == 0 { "}" } else { "};" };
         writeln(&mut body, format_args!("{pad}{close}\n"));
     }
+    for action in 0..actions {
+        writeln(
+            &mut body,
+            format_args!(
+                "    #[action({quote}Read step {action}.{quote})]\n    let read_{action} = |&step| *step;\n"
+            ),
+        );
+        writeln(
+            &mut body,
+            format_args!(
+                "    #[action({quote}Use step {action}.{quote})]\n    |read_{action}| ();\n"
+            ),
+        );
+    }
     writeln(
         &mut body,
         format_args!("    #[action({quote}Finish.{quote})]\n    let end = |step| step;\n"),
     );
-    let source = format!("fn refused(step: usize) -> usize {{\n{body}}}\n");
+    let source = format!("fn refused(mut step: usize) -> usize {{\n{body}}}\n");
     syn::parse_str(&source).expect("the refused flow parses")
 }
 
@@ -242,6 +257,29 @@ fn percentile(mut samples: Vec<Duration>, percent: usize) -> Duration {
     samples[index.min(samples.len() - 1)]
 }
 
+/// The same twenty passes over the shapes no arrangement conforms to, which
+/// is what both searches cost when they have to exhaust their spaces.
+fn measure_refusals() {
+    for (loops, actions) in [(1, 0), (4, 0), (8, 0), (8, 64), (4, 120)] {
+        let function = refused(loops, actions);
+        let blocks = crate::parse::flow(&function)
+            .expect("the refused flow parses")
+            .blocks
+            .len();
+        let mut samples = Vec::new();
+        for run in 0..=20 {
+            let measured = cost(&function).expect("the refused flow parses");
+            if run > 0 {
+                samples.push(measured.projection + measured.construction);
+            }
+        }
+        println!(
+            "refused {loops} loops, {blocks} blocks: median {:?}",
+            median(samples)
+        );
+    }
+}
+
 /// One warm-up pass and twenty timed passes over the whole corpus, reporting
 /// the corpus total medians and the per-flow 95th percentile.
 #[test]
@@ -250,14 +288,17 @@ fn measure_the_construction_cost() {
     let corpus = corpus();
     let mut totals = Vec::new();
     let mut analysis_totals = Vec::new();
+    let mut construction_totals = Vec::new();
     let mut per_flow = Vec::new();
     for run in 0..=20 {
         let mut total = Duration::ZERO;
         let mut analysis = Duration::ZERO;
+        let mut construction = Duration::ZERO;
         for (_, function) in &corpus {
             let Some(cost) = cost(function) else { continue };
             total += cost.construction + cost.projection;
             analysis += cost.analysis;
+            construction += cost.construction;
             if run > 0 {
                 per_flow.push(cost.construction + cost.projection);
             }
@@ -265,6 +306,7 @@ fn measure_the_construction_cost() {
         if run > 0 {
             totals.push(total);
             analysis_totals.push(analysis);
+            construction_totals.push(construction);
         }
     }
     println!("corpus flows: {}", corpus.len());
@@ -279,6 +321,10 @@ fn measure_the_construction_cost() {
     println!(
         "construction, per-flow 95th percentile: {:?}",
         percentile(per_flow, 95)
+    );
+    println!(
+        "construction alone, corpus total median: {:?}",
+        median(construction_totals)
     );
 
     for (loops, actions) in [(8, 8), (8, 64), (4, 120)] {
@@ -310,6 +356,23 @@ fn measure_the_construction_cost() {
             );
         }
     }
+
+    measure_refusals();
+
+    let mut samples = Vec::new();
+    for run in 0..=20 {
+        let started = Instant::now();
+        for (_, function) in &corpus {
+            let _ = crate::build(function);
+        }
+        if run > 0 {
+            samples.push(started.elapsed());
+        }
+    }
+    println!(
+        "whole build over the corpus, total median: {:?}",
+        median(samples)
+    );
 }
 
 /// The corpus budget of the plan: one second for a whole pass, and ten
@@ -317,12 +380,16 @@ fn measure_the_construction_cost() {
 ///
 /// These are the published targets themselves, not a multiple of them, because
 /// the plan makes exceeding a target a no-go rather than a warning. The
-/// recorded medians leave more than an order of magnitude of headroom under the
-/// corpus bound and more than ten times under the per-flow one, so a loaded
-/// machine does not fail the suite; a real regression does.
+/// recorded medians leave the corpus bound about nine times over and the
+/// per-flow one about six, so a loaded machine does not fail the suite; a real
+/// regression does.
 const CORPUS_BUDGET: Duration = Duration::from_secs(1);
 const FLOW_BUDGET: Duration = Duration::from_millis(10);
-/// The same for one stress flow.
+/// The same for one stress flow — the plan's published bound, and the tightest
+/// of the three: the largest recorded shape takes about two thirds of a
+/// second, so this one leaves roughly half again rather than an order of
+/// magnitude. Raising it would be a plan change; a machine much slower than
+/// the recorded one will fail it, which is the trade the plan asks for.
 const STRESS_BUDGET: Duration = Duration::from_secs(1);
 
 /// The whole corpus is projected, constructed, and checked inside the corpus
@@ -387,13 +454,14 @@ fn a_stress_flow_stays_inside_its_budget() {
     }
 }
 
-/// Construction failure on nested enclosed-break flows stays inside the stress
-/// budget. These cases exhaust the conflict-guided search, not every possible
-/// arrangement.
+/// Refusing a flow stays inside the stress budget at the sizes the plan names.
+///
+/// This is the worst case of the whole decision: both searches run, and the
+/// deciding sweep only stops once it has visited every state its space holds.
 #[test]
 fn a_refused_flow_stays_inside_its_budget() {
-    for loops in [1, 2, 3] {
-        let function = refused(loops);
+    for (loops, actions) in [(1, 0), (4, 0), (8, 0), (8, 64), (4, 120)] {
+        let function = refused(loops, actions);
         let _ = cost(&function);
         let Some(measured) = cost(&function) else {
             panic!("the refused flow with {loops} loops should parse")
@@ -405,7 +473,7 @@ fn a_refused_flow_stays_inside_its_budget() {
         let elapsed = measured.projection + measured.construction;
         assert!(
             elapsed < STRESS_BUDGET,
-            "refusing the flow with {loops} loops took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
+            "refusing the flow with {loops} loops and {actions} steps took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
         );
     }
 }

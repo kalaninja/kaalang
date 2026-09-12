@@ -16,7 +16,7 @@ mod scope;
 pub mod topology;
 
 pub use choice::{choice_match, is_todo_body};
-pub use construct::{Arrangement, Contour, Footprint, Route, Run, Side, construct};
+pub use construct::{Arrangement, Contour, Route, Run, Side};
 pub use model::{
     Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
     Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId,
@@ -31,6 +31,11 @@ pub use model::{
 /// wires to their producers, walking every possible execution, or deriving
 /// convergence groups, spanned at the offending token so callers can report it
 /// against the authored source.
+///
+/// Returns an impossible-topology error, at the block it concerns, when the
+/// flow's required connections have no conforming diagram under RFC 0002, and
+/// an internal construction error when the independent check rejects the
+/// arrangement the search returned.
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
@@ -44,6 +49,8 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
         execution_plan: &execution_plan,
     });
 
+    let arrangement = construct::construct(&flow, &merges, &topology)?;
+
     Ok(SemanticModel {
         name: function.sig.ident.clone(),
         parameters: function.sig.inputs.iter().cloned().collect(),
@@ -54,6 +61,7 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
         convergence_groups,
         merges,
         topology,
+        arrangement,
     })
 }
 

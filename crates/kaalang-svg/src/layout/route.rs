@@ -13,7 +13,7 @@ use kaalang_model::geometry::{
 use kaalang_model::topology::{Destination, NodeId, Source, Vertex};
 use kaalang_model::{SemanticModel, Side};
 
-use super::{Connection, Point, Rows, Scene, column_x};
+use super::{Connection, Point, Rows, Scene};
 
 pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
     scene
@@ -38,18 +38,18 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
             let mut points = vec![
                 start,
                 Point {
-                    x: column_x(route.departure),
+                    x: scene.column_x(route.departure),
                     y: start.y,
                 },
             ];
             for run in &route.runs {
                 let y = rows.lane_y(run.gap, run.lane, rows.lanes_in(run.gap));
                 points.push(Point {
-                    x: column_x(run.enter),
+                    x: scene.column_x(run.enter),
                     y,
                 });
                 points.push(Point {
-                    x: column_x(run.exit),
+                    x: scene.column_x(run.exit),
                     y,
                 });
             }
@@ -71,7 +71,7 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
     let mut drawn: Vec<(usize, i32)> = Vec::new();
     let mut connections = Vec::new();
     // Innermost first, so a nested rail is stroked before the one that encloses
-    // it and is part of what that one has to clear.
+    // it, as RFC 0002 §7 asks.
     for (index, loop_) in scene.topology.loops.iter().enumerate().rev() {
         let from = junction_point(scene, rows, loop_.tail);
         let end = junction_point(scene, rows, loop_.entry);
@@ -101,15 +101,19 @@ pub(super) fn return_points(from: Point, aside: i32, end: Point) -> Vec<Point> {
 }
 
 /// Where one return climbs: on the side and in the lane the arrangement chose,
-/// just past everything its own body draws in the return's vertical span.
+/// just past everything its whole body draws, independently of its ranks.
+///
+/// A presentation may turn the return upward early, but the body it has to
+/// clear does not shrink with it. Continuation vertices after leaving the
+/// body are excluded by membership, not by their position below the tail.
 ///
 /// The column the arrangement names is not read here, and cannot be: RFC 0003
 /// §2 lets a presentation turn a return upward at a side exit and compact a
 /// sole arrival, so a vertex's pixel position is not `column_x` of its abstract
 /// column. What carries over is the side and the lane — the two choices that
-/// decide whether the return can be drawn at all — while the pixels that those
-/// land on come from the boxes the climb actually passes. `verify` then holds
-/// the result to the same rules the arrangement was checked against.
+/// decide whether the return can be drawn at all — while the pixels those land
+/// on come from the boxes the body actually fills. `verify` then holds the
+/// result to the same rules the arrangement was checked against.
 pub(super) fn contour_x(
     scene: &Scene,
     model: &SemanticModel,
@@ -120,35 +124,69 @@ pub(super) fn contour_x(
 ) -> i32 {
     let loop_ = scene.topology.loops[index];
     let contour = scene.arrangement.contours[index];
+    let (left, right) = body_extent(scene, index).unwrap_or((from.x.min(end.x), from.x.max(end.x)));
+    let (left, right) = (left.min(from.x).min(end.x), right.max(from.x).max(end.x));
+    let step = (contour.lane as i32 + 1) * super::LANE;
+    // A rail already drawn beside a nested body is part of this body too, and
+    // one lane past it is enough: the arrangement put this contour outside
+    // that one, so the lane step above is measured from the body and this only
+    // holds the two apart.
     let body = model.flow.blocks[loop_.header]
         .loop_end
         .expect("a loop owns a body");
-    let (left, right) = scene
-        .nodes
-        .iter()
-        .filter(|node| match node.id {
-            NodeId::Block(block) => (loop_.header..body).contains(&block),
-            NodeId::Case { choice, .. } => (loop_.header..body).contains(&choice),
-            NodeId::Start => false,
-        })
-        .map(Scene::bounds)
-        .filter(|&(_, top, _, bottom)| bottom > end.y && top < from.y)
-        .fold(
-            (from.x.min(end.x), from.x.max(end.x)),
-            |(left, right), (edge, _, beyond, _)| (left.min(edge), right.max(beyond)),
-        );
-    // A rail already drawn beside a nested body is part of this body too.
-    let (left, right) = drawn
+    let nested = drawn
         .iter()
         .filter(|(header, _)| (loop_.header..body).contains(header))
-        .fold((left, right), |(left, right), &(_, rail)| {
-            (left.min(rail), right.max(rail))
-        });
-    let step = (contour.lane as i32 + 1) * super::LANE;
+        .map(|&(_, rail)| rail);
     match contour.side {
-        Side::Left => left - step,
-        Side::Right => right + step,
+        Side::Left => nested.fold(left - step, |aside, rail| aside.min(rail - super::LANE)),
+        Side::Right => nested.fold(right + step, |aside, rail| aside.max(rail + super::LANE)),
     }
+}
+
+/// How far left and right one loop's whole body reaches.
+///
+/// The body is the model's own: every vertex it counts when it places the
+/// return, junctions included. A wire merge or a break inside the body draws
+/// no node and still fills a column, so measuring the boxes alone would leave
+/// the climb a column short of clear. Membership does not depend on ranks:
+/// placing part of the body below the tail does not remove it from the body.
+///
+/// The loop's own entry and tail are left out here and folded in by the
+/// caller, which has them as drawn rather than as numbered: a compaction may
+/// bring the tail's arrival in from the column it was given, and the climb
+/// leaves from where it actually ends.
+fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
+    let loop_ = scene.topology.loops[index];
+    let ends = [Vertex::Junction(loop_.entry), Vertex::Junction(loop_.tail)];
+    scene.bodies[index]
+        .iter()
+        .copied()
+        .filter(|vertex| !ends.contains(vertex))
+        .map(|vertex| match vertex {
+            Vertex::Node(id) => {
+                let (left, _, right, _) = Scene::bounds(scene.node(id));
+                (left, right)
+            }
+            Vertex::Junction(junction) => {
+                let at = scene
+                    .connections
+                    .iter()
+                    .find_map(|edge| {
+                        if edge.source == Source::Junction(junction) {
+                            edge.points.first()
+                        } else if edge.destination == vertex {
+                            edge.points.last()
+                        } else {
+                            None
+                        }
+                    })
+                    .expect("a body junction has an incident route")
+                    .x;
+                (at, at)
+            }
+        })
+        .reduce(|(left, right), (edge, beyond)| (left.min(edge), right.max(beyond)))
 }
 
 fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
@@ -158,7 +196,7 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
         .arrangement
         .deepest_lane(&scene.topology, junction, gap);
     Point {
-        x: column_x(scene.column(Vertex::Junction(junction))),
+        x: scene.column_x(scene.column(Vertex::Junction(junction))),
         y: lane.map_or_else(
             || rows.junction_y(row),
             |lane| rows.lane_y(gap, lane, rows.lanes_in(gap)),
@@ -166,8 +204,75 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     }
 }
 
+/// Each return climbs on the side the arrangement chose, clear of every column
+/// its whole body fills, independently of its ranks (RFC 0002 §8).
+///
+/// The arrangement settles that on its abstract grid; this reads the emitted
+/// climb, so it holds whatever the compactions left behind and does not take
+/// the side and the lane on trust.
+fn verify_returns(scene: &Scene) -> Option<String> {
+    let climbs = scene
+        .topology
+        .loops
+        .iter()
+        .map(|loop_| {
+            let edge = scene
+                .connections
+                .iter()
+                .find(|edge| edge.source == Source::Junction(loop_.tail))?;
+            edge.points
+                .windows(2)
+                .find(|pair| pair[1].y < pair[0].y)
+                .map(|climb| climb[0].x)
+        })
+        .collect::<Vec<_>>();
+    for (index, loop_) in scene.topology.loops.iter().enumerate() {
+        let at = format!("the return of the loop at block {}", loop_.header + 1);
+        let Some(climb) = climbs[index] else {
+            return Some(format!("{at} is not drawn, or does not climb"));
+        };
+        let side = scene.arrangement.contours[index].side;
+        let clear = |other: i32| match side {
+            Side::Left => climb < other,
+            Side::Right => climb > other,
+        };
+        // A return nested in this body climbs beside it too, and the two need
+        // not share a single row — so no crossing check compares them, and
+        // this is the only place the enclosing one is held outside the nested
+        // one (RFC 0002 §8).
+        if let Some(nested) = (0..climbs.len())
+            .filter(|&other| other != index)
+            .filter(|&other| {
+                scene.bodies[index].contains(&Vertex::Junction(scene.topology.loops[other].entry))
+            })
+            .find_map(|other| climbs[other].filter(|&rail| !clear(rail)))
+        {
+            return Some(format!(
+                "{at} climbs inside the return nested in its body at {nested}"
+            ));
+        }
+        // A loop with an empty body has nothing for the climb to be inside.
+        let Some((left, right)) = body_extent(scene, index) else {
+            continue;
+        };
+        if !clear(match side {
+            Side::Left => left,
+            Side::Right => right,
+        }) {
+            return Some(format!("{at} climbs inside its body"));
+        }
+    }
+    None
+}
+
 /// Reports the first RFC 0002 §8 rule the emitted routes break, if any.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
+    if let Some(reason) = super::end::verify(scene) {
+        return Some(reason);
+    }
+    if let Some(reason) = verify_returns(scene) {
+        return Some(reason);
+    }
     for connection in &scene.connections {
         if connection.points.len() < 2 {
             return Some("a connection has no route".to_owned());
@@ -303,7 +408,7 @@ fn touches(connection: &Connection, node: NodeId) -> bool {
 }
 
 /// Whether a segment passes through a rectangle rather than merely touching it.
-fn enters(a: Point, b: Point, bounds: (i32, i32, i32, i32)) -> bool {
+pub(super) fn enters(a: Point, b: Point, bounds: (i32, i32, i32, i32)) -> bool {
     let (left, top, right, bottom) = bounds;
     if a.x == b.x {
         a.x > left && a.x < right && a.y.min(b.y) < bottom && a.y.max(b.y) > top
@@ -328,6 +433,9 @@ mod tests {
             })
             .collect();
         Scene {
+            reach: (0, 0),
+            slack: 0,
+            bodies: Vec::new(),
             width: 10,
             height: 10,
             topology: Topology::default(),

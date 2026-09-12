@@ -9,6 +9,8 @@ use syn::{
 };
 
 mod codegen;
+#[cfg(test)]
+mod performance;
 
 /// Parses and lowers an ordinary Rust function containing a kaalang flow.
 #[proc_macro_attribute]

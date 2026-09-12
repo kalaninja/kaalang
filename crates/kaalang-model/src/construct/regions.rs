@@ -35,10 +35,33 @@ pub(super) fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex
 /// Every vertex a route reaches from `start` without entering `avoided`. The
 /// start itself appears only when a route returns to it.
 fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTreeSet<Vertex> {
+    walk(topology, start, avoided, false)
+}
+
+/// The same, counting placement precedence as reaching.
+///
+/// A loop's iteration tail has no outgoing connection — the projection moved
+/// its forward edges into `Topology::order` — so a branch that repeats appears
+/// to stop there. Only this walk shows that it goes on to whatever the flow
+/// draws below the loop.
+fn carried(topology: &Topology, start: Vertex) -> BTreeSet<Vertex> {
+    walk(topology, start, None, true)
+}
+
+fn walk(
+    topology: &Topology,
+    start: Vertex,
+    avoided: Option<Vertex>,
+    precedence: bool,
+) -> BTreeSet<Vertex> {
     let mut seen = BTreeSet::new();
     let mut frontier = vec![start];
     while let Some(vertex) = frontier.pop() {
-        for connection in topology.outgoing(vertex) {
+        let carried = topology
+            .order
+            .iter()
+            .filter(move |edge| precedence && Vertex::from(edge.source) == vertex);
+        for connection in topology.outgoing(vertex).chain(carried) {
             let next = connection.destination;
             if Some(next) != avoided && seen.insert(next) {
                 frontier.push(next);
@@ -46,6 +69,19 @@ fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTree
         }
     }
     seen
+}
+
+/// Whether the routes leaving one exit carry branches, and so keep the
+/// authored order RFC 0002 §8 gives those branches.
+///
+/// A choice's distributor is the one exit that carries several branches at
+/// once — one connection per case node. Several connections of a question's
+/// branch exit carry one branch to several consumers, and nothing orders those
+/// among themselves.
+pub(super) fn carries_branches(topology: &Topology, exit: ExitId) -> bool {
+    let mut leaving = topology.leaving(exit).peekable();
+    leaving.peek().is_some()
+        && leaving.all(|wire| matches!(wire.destination, Vertex::Node(NodeId::Case { .. })))
 }
 
 /// What each branch of one brancher leads to, including the branch's own case
@@ -58,25 +94,29 @@ pub(super) fn branch_sets(
 ) -> Vec<BTreeSet<Vertex>> {
     (0..flow.blocks[block].branch_count())
         .map(|branch| {
-            let heads: Vec<Vertex> = match flow.blocks[block].kind {
-                BlockKind::Choice => vec![Vertex::Node(NodeId::Case {
-                    choice: block,
-                    branch,
-                })],
-                _ => topology
-                    .leaving(ExitId {
-                        node: NodeId::Block(block),
-                        branch: Some(branch),
-                    })
-                    .map(|connection| connection.destination)
-                    .collect(),
-            };
-            heads
+            branch_heads(topology, flow, block, branch)
                 .into_iter()
                 .flat_map(|head| std::iter::once(head).chain(reachable[&head].iter().copied()))
                 .collect()
         })
         .collect()
+}
+
+/// Where one branch of a brancher begins.
+fn branch_heads(topology: &Topology, flow: &Flow, block: usize, branch: usize) -> Vec<Vertex> {
+    match flow.blocks[block].kind {
+        BlockKind::Choice => vec![Vertex::Node(NodeId::Case {
+            choice: block,
+            branch,
+        })],
+        _ => topology
+            .leaving(ExitId {
+                node: NodeId::Block(block),
+                branch: Some(branch),
+            })
+            .map(|connection| connection.destination)
+            .collect(),
+    }
 }
 
 /// The vertices one brancher's own branches draw, and so the area RFC 0002 §8
@@ -90,6 +130,7 @@ pub(super) fn branch_sets(
 /// remains — dominated by the brancher, and not shared by all of its branches —
 /// is its own, including the shared continuation of a partial merge.
 pub(super) fn footprint_vertices(
+    flow: &Flow,
     topology: &Topology,
     block: usize,
     branches: &[BTreeSet<Vertex>],
@@ -98,16 +139,118 @@ pub(super) fn footprint_vertices(
     for set in branches {
         owned.extend(set.iter().copied());
     }
-    let converged = branches.iter().skip(1).fold(
-        branches.first().cloned().unwrap_or_default(),
-        |common, set| common.intersection(set).copied().collect(),
-    );
+    // What every branch reaches is where they have fully converged. A branch
+    // that repeats reaches it through the iteration tail's placement
+    // precedence rather than through a connection, so this reads the carrying
+    // walk: otherwise the whole flow below the loop looks like the private
+    // continuation of the branches that leave it. Otherwise it is
+    // `branch_sets` — every head of the branch, and the head itself.
+    let converged = (0..flow.blocks[block].branch_count())
+        .map(|branch| {
+            branch_heads(topology, flow, block, branch)
+                .into_iter()
+                .flat_map(|head| std::iter::once(head).chain(carried(topology, head)))
+                .collect::<BTreeSet<_>>()
+        })
+        .reduce(|common, set| common.intersection(&set).copied().collect())
+        .unwrap_or_default();
     let bypassing = bypassing(topology, Vertex::Node(NodeId::Block(block)));
     owned
         .difference(&converged)
         .copied()
         .filter(|vertex| !bypassing.contains(vertex))
         .collect()
+}
+
+/// One convergence group of a brancher: the branches that meet, and
+/// everything those branches draw.
+pub(super) struct Group {
+    /// The branches that reach a common vertex, in authored order.
+    pub(super) members: BTreeSet<usize>,
+    /// Every vertex they draw, the shared continuation included.
+    pub(super) area: BTreeSet<Vertex>,
+}
+
+/// The convergence groups of one brancher, read off the topology.
+///
+/// A vertex two or more branches reach is where they converge; the branches
+/// that reach it are the group, and the area it reserves is everything those
+/// branches draw (RFC 0002 §8). A vertex *every* branch reaches is where the
+/// brancher has fully converged and the flow below it resumes, so it opens no
+/// group, and one a route can reach without passing the brancher belongs to an
+/// enclosing group.
+///
+/// Two meeting points with the same members are one group, so this returns one
+/// entry per distinct set of branches.
+fn groups(branches: &[BTreeSet<Vertex>], own: &BTreeSet<Vertex>) -> Vec<Group> {
+    let mut meeting = BTreeMap::<Vertex, BTreeSet<usize>>::new();
+    for (branch, vertices) in branches.iter().enumerate() {
+        for vertex in vertices.intersection(own) {
+            meeting.entry(*vertex).or_default().insert(branch);
+        }
+    }
+    meeting
+        .into_values()
+        .filter(|members| members.len() >= 2)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .map(|members| Group {
+            area: members
+                .iter()
+                .flat_map(|&branch| branches[branch].intersection(own).copied())
+                .collect(),
+            members,
+        })
+        .collect()
+}
+
+/// What one selection carves out of the topology: what each branch leads to,
+/// which of that it draws, and which branches converge where.
+pub(super) struct Regions {
+    /// What each branch leads to, in authored order.
+    pub(super) branches: Vec<BTreeSet<Vertex>>,
+    /// What the selection draws: dominated by it, not shared by every branch.
+    pub(super) own: BTreeSet<Vertex>,
+    pub(super) groups: Vec<Group>,
+}
+
+impl Regions {
+    /// What one branch draws that no branch of `group` also reaches.
+    ///
+    /// A vertex a member also reaches is part of the group's own area, not of
+    /// this branch, so the group's reserved columns say nothing about it. That
+    /// is the only exception: a continuation this branch shares with its *own*
+    /// co-members is still this branch's side of the diagram, and has to keep
+    /// clear of the group like the rest of it.
+    pub(super) fn outside(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
+        self.branches[branch]
+            .intersection(&self.own)
+            .filter(|vertex| {
+                !group
+                    .members
+                    .iter()
+                    .any(|&member| self.branches[member].contains(vertex))
+            })
+            .copied()
+            .collect()
+    }
+}
+
+/// Reads one selection's regions once. Every caller needs all of them, and
+/// each costs a walk of the topology.
+pub(super) fn regions(
+    flow: &Flow,
+    topology: &Topology,
+    reachable: &BTreeMap<Vertex, BTreeSet<Vertex>>,
+    block: usize,
+) -> Regions {
+    let branches = branch_sets(topology, flow, reachable, block);
+    let own = footprint_vertices(flow, topology, block, &branches);
+    Regions {
+        groups: groups(&branches, &own),
+        branches,
+        own,
+    }
 }
 
 /// Shared computational continuations, paired with each group's first branch.

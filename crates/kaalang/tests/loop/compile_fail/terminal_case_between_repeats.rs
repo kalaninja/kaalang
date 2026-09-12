@@ -24,12 +24,4 @@ fn terminal_case_between_repeats(mut mode: u8) -> u8 {
     }
 }
 
-/// The middle case finishes the flow from inside the body. Nothing forces end
-/// below the iteration tail, so the tail sinks past it and both flanks stay
-/// clear.
-#[test]
-fn a_finishing_case_does_not_block_the_contour() {
-    assert_eq!(terminal_case_between_repeats(0), 7);
-    assert_eq!(terminal_case_between_repeats(1), 7);
-    assert_eq!(terminal_case_between_repeats(2), 7);
-}
+fn main() {}

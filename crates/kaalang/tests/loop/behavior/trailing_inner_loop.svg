@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="724" height="1300" viewBox="0 0 724 1300" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="1228" viewBox="0 0 1104 1228" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for trailing_inner_loop</title>
-  <desc id="kaalang-description">Nodes: Start: trailing_inner_loop; Action: Initialize the counters. capturing nothing handing over mut outer, mut inner; Action: Enter the outer iteration. capturing &amp;mut outer; Question: Is the inner counter below three? capturing &amp;inner handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Increment the inner counter. capturing iterate_1, &amp;mut inner handing over incremented; Question: Has the inner counter reached three? capturing incremented, &amp;inner handing over done / again; Action: Return the outer counter. capturing done, &amp;outer handing over end; Action: Finish the inner iteration. capturing again; End: usize capturing end. Connections: Start: trailing_inner_loop to Action: Initialize the counters.; Action: Initialize the counters. to the entry of the loop; Action: Enter the outer iteration. to the entry of the loop; Question: Is the inner counter below three? branch 1 to Action: Increment the inner counter.; Question: Is the inner counter below three? branch 2 to the iteration tail of the loop; Action: Increment the inner counter. to Question: Has the inner counter reached three?; Question: Has the inner counter reached three? branch 1 to Action: Return the outer counter.; Question: Has the inner counter reached three? branch 2 to Action: Finish the inner iteration.; Action: Return the outer counter. to End: usize; Action: Finish the inner iteration. to the iteration tail of the loop; the entry of the loop to Action: Enter the outer iteration.; the entry of the loop to Question: Is the inner counter below three?; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <desc id="kaalang-description">Nodes: Start: trailing_inner_loop; Action: Initialize the counters. capturing nothing handing over mut outer, mut inner; Action: Enter the outer iteration. capturing &amp;mut outer; Question: Is the inner counter below three? capturing &amp;inner handing over leave_1 / iterate_1 described as branch 1: NO / branch 2: YES; Action: Increment the inner counter. capturing iterate_1, &amp;mut inner handing over incremented; Question: Has the inner counter reached three? capturing incremented, &amp;inner handing over done / again; Action: Return the outer counter. capturing done, &amp;outer handing over end; Action: Finish the inner iteration. capturing again; End: usize capturing end. Connections: Start: trailing_inner_loop to Action: Initialize the counters.; Action: Initialize the counters. to the entry of the loop; Action: Enter the outer iteration. to the entry of the loop; Question: Is the inner counter below three? branch 1 to the iteration tail of the loop; Question: Is the inner counter below three? branch 2 to Action: Increment the inner counter.; Action: Increment the inner counter. to Question: Has the inner counter reached three?; Question: Has the inner counter reached three? branch 1 to Action: Return the outer counter.; Question: Has the inner counter reached three? branch 2 to Action: Finish the inner iteration.; Action: Return the outer counter. to End: usize; Action: Finish the inner iteration. to the iteration tail of the loop; the entry of the loop to Action: Enter the outer iteration.; the entry of the loop to Question: Is the inner counter below three?; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,33 +27,33 @@
       M 192 226 L 192 298
       M 192 434 L 192 506
       M 192 650 L 192 722
-      M 332 614 L 369 614
-      M 192 786 L 192 858
-      M 192 930 L 192 1002
-      M 332 894 L 552 894 L 552 1002
-      M 192 1066 L 192 1138
-      M 552 1066 L 552 1268
+      M 332 614 L 552 614 L 552 722
+      M 552 786 L 552 858
+      M 552 930 L 552 1002
+      M 692 894 L 912 894 L 912 1002
+      M 552 1066 L 552 1138
+      M 912 1066 L 912 1138
       M 192 298 L 192 370
       M 192 506 L 192 578
     "/>
     <path class="connection" d="
-      M 552 1268 L 32 1268 L 32 506 L 192 506
+      M 912 1138 L 1072 1138 L 1072 506 L 192 506
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 369 614 L 389 614 L 389 298 L 192 298
+      M 192 722 L 32 722 L 32 298 L 192 298
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="427" y="883" xml:space="preserve"><tspan x="427" dy="0">again</tspan></text>
+    <text class="connection-label" x="787" y="883" xml:space="preserve"><tspan x="787" dy="0">again</tspan></text>
     <text class="connection-label" x="205" y="244" xml:space="preserve"><tspan x="205" dy="0">mut outer, mut inner</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="205" y="670" xml:space="preserve"><tspan x="205" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="345" y="602" xml:space="preserve"><tspan x="345" dy="0">NO</tspan></text>
-    <text class="connection-label" x="205" y="804" xml:space="preserve"><tspan x="205" dy="0">incremented</tspan></text>
-    <text class="connection-label" x="205" y="948" xml:space="preserve"><tspan x="205" dy="0">done</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="205" y="670" xml:space="preserve"><tspan x="205" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="345" y="602" xml:space="preserve"><tspan x="345" dy="0">YES</tspan></text>
+    <text class="connection-label" x="565" y="804" xml:space="preserve"><tspan x="565" dy="0">incremented</tspan></text>
+    <text class="connection-label" x="565" y="948" xml:space="preserve"><tspan x="565" dy="0">done</tspan></text>
     <text class="connection-label" x="205" y="151" xml:space="preserve"><tspan x="205" dy="0">()</tspan></text>
     <text class="connection-label" x="205" y="359" xml:space="preserve"><tspan x="205" dy="0">&amp;mut outer</tspan></text>
     <text class="connection-label" x="205" y="567" xml:space="preserve"><tspan x="205" dy="0">&amp;inner</tspan></text>
-    <text class="connection-label" x="205" y="711" xml:space="preserve"><tspan x="205" dy="0">iterate_1, &amp;mut inner</tspan></text>
-    <text class="connection-label" x="205" y="847" xml:space="preserve"><tspan x="205" dy="0">incremented, &amp;inner</tspan></text>
-    <text class="connection-label" x="205" y="991" xml:space="preserve"><tspan x="205" dy="0">done, &amp;outer</tspan></text>
+    <text class="connection-label" x="565" y="711" xml:space="preserve"><tspan x="565" dy="0">iterate_1, &amp;mut inner</tspan></text>
+    <text class="connection-label" x="565" y="847" xml:space="preserve"><tspan x="565" dy="0">incremented, &amp;inner</tspan></text>
+    <text class="connection-label" x="565" y="991" xml:space="preserve"><tspan x="565" dy="0">done, &amp;outer</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(192 61)">
@@ -75,27 +75,27 @@
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the inner counter below </tspan><tspan x="0" dy="18">three?</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 754)">
+    <g class="node action" transform="translate(552 754)">
       <title xml:space="preserve">Increment the inner counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the inner counter.</tspan></text>
     </g>
-    <g class="node question" transform="translate(192 894)">
+    <g class="node question" transform="translate(552 894)">
       <title xml:space="preserve">Has the inner counter reached three?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the inner counter </tspan><tspan x="0" dy="18">reached three?</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 1034)">
+    <g class="node action" transform="translate(552 1034)">
       <title xml:space="preserve">Return the outer counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the outer counter.</tspan></text>
     </g>
-    <g class="node action" transform="translate(552 1034)">
+    <g class="node action" transform="translate(912 1034)">
       <title xml:space="preserve">Finish the inner iteration.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the inner iteration.</tspan></text>
     </g>
-    <g class="node end" transform="translate(192 1167)">
+    <g class="node end" transform="translate(552 1167)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

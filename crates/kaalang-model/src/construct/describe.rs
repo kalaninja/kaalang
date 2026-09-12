@@ -9,12 +9,26 @@ use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
 /// The span to report one connection at: the block it leaves.
 pub(super) fn span(flow: &Flow, topology: &Topology, connection: usize) -> Span {
-    let wire = topology.connections[connection];
-    match Vertex::from(wire.source) {
+    vertex_span(
+        flow,
+        topology,
+        Vertex::from(topology.connections[connection].source),
+    )
+}
+
+/// The span to report one vertex at: the block it draws, or the `loop` whose
+/// entry or tail it is.
+pub(super) fn vertex_span(flow: &Flow, topology: &Topology, vertex: Vertex) -> Span {
+    match vertex {
         Vertex::Node(NodeId::Block(block) | NodeId::Case { choice: block, .. }) => {
             flow.blocks[block].span
         }
-        Vertex::Node(NodeId::Start) | Vertex::Junction(_) => flow.end_span(),
+        Vertex::Junction(junction) => topology
+            .loops
+            .iter()
+            .find(|loop_| loop_.tail == junction || loop_.entry == junction)
+            .map_or_else(|| flow.end_span(), |loop_| flow.blocks[loop_.header].span),
+        Vertex::Node(NodeId::Start) => flow.end_span(),
     }
 }
 

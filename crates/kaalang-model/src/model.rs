@@ -5,6 +5,7 @@ use proc_macro2::{Ident, Span};
 use syn::ext::IdentExt;
 use syn::{Expr, FnArg, Lifetime, Pat, PatIdent, ReturnType};
 
+use crate::construct::Arrangement;
 use crate::topology::Topology;
 
 /// A validated kaalang flow: its blocks, finite structural execution summaries, its
@@ -30,6 +31,23 @@ pub struct SemanticModel {
     /// The diagram's structural topology: its nodes, exits, junctions, and the
     /// connections RFC 0002 §7 draws between them.
     pub topology: Topology,
+    /// The checked arrangement of that topology. Every accepted flow has one:
+    /// `build` decides realizability, so a renderer realizes this rather than
+    /// looking for an arrangement of its own.
+    pub arrangement: Arrangement,
+}
+
+impl SemanticModel {
+    /// The vertices one loop's body draws, so a presentation measures the same
+    /// body the construction did when it placed the loop's return
+    /// (RFC 0002 §8).
+    #[must_use]
+    pub fn body_vertices(
+        &self,
+        header: usize,
+    ) -> std::collections::BTreeSet<crate::topology::Vertex> {
+        crate::construct::body_vertices(&self.flow, &self.topology, header)
+    }
 }
 
 /// The logical wire whose value is the flow output. The implicit end block

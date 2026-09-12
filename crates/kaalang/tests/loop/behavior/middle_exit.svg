@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="748" height="878" viewBox="0 0 748 878" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="764" height="878" viewBox="0 0 764 878" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for middle_exit</title>
   <desc id="kaalang-description">Nodes: Start: middle_exit with parameters limit: usize handing over limit; Action: Initialize the counter and log. capturing nothing handing over mut count, mut log; Action: Record the start of the iteration. capturing &amp;count, &amp;mut log; Question: Stop before advancing? capturing &amp;count, limit handing over done / again; Action: Advance and record the rest of the iteration. capturing again, &amp;mut count, &amp;mut log; Action: Return the log after leaving the loop. capturing log handing over end; End: Vec&lt;usize&gt; capturing end. Connections: Start: middle_exit to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the loop; Action: Record the start of the iteration. to Question: Stop before advancing?; Question: Stop before advancing? branch 1 to Action: Return the log after leaving the loop.; Question: Stop before advancing? branch 2 to Action: Advance and record the rest of the iteration.; Action: Advance and record the rest of the iteration. to the iteration tail of the loop; Action: Return the log after leaving the loop. to End: Vec&lt;usize&gt;; the entry of the loop to Action: Record the start of the iteration.; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
   <defs>
@@ -33,7 +33,7 @@
       M 172 298 L 172 370
     "/>
     <path class="connection" d="
-      M 532 788 L 692 788 L 692 298 L 172 298
+      M 532 788 L 732 788 L 732 298 L 172 298
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">limit</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut count, mut log</tspan></text>

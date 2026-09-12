@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1824" height="1456" viewBox="0 0 1824 1456" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for end_below_nested_returns</title>
+  <desc id="kaalang-description">Nodes: Start: end_below_nested_returns with parameters mut mode: u8 handing over mut mode; Select: Which outer route? capturing mode; Case: Enter the inner loop. handing over enter; Case: Finish with seven. handing over seven; Case: Finish with nine. handing over nine; Select: Which inner route? capturing mode; Case: Repeat the inner loop. handing over repeat; Case: Repeat the outer loop. handing over leave; Case: Finish with eleven. handing over eleven; Action: Advance to the next route. capturing repeat, &amp;mut mode; Action: Return eleven. capturing eleven handing over end; Action: Return seven. capturing seven handing over end; Action: Return nine. capturing nine handing over end; End: u8 capturing end. Connections: Start: end_below_nested_returns to the entry of the loop; Select: Which outer route? to Case: Enter the inner loop.; Select: Which outer route? to Case: Finish with seven.; Select: Which outer route? to Case: Finish with nine.; Case: Enter the inner loop. to the entry of the loop; Case: Finish with seven. to Action: Return seven.; Case: Finish with nine. to Action: Return nine.; Select: Which inner route? to Case: Repeat the inner loop.; Select: Which inner route? to Case: Repeat the outer loop.; Select: Which inner route? to Case: Finish with eleven.; Case: Repeat the inner loop. to Action: Advance to the next route.; Case: Repeat the outer loop. to the loop exit; Case: Finish with eleven. to Action: Return eleven.; Action: Advance to the next route. to the iteration tail of the loop; Action: Return eleven. to the end merge; Action: Return seven. to the end merge; Action: Return nine. to the end merge; the end merge to End: u8; the entry of the loop to Select: Which outer route?; the entry of the loop to Select: Which inner route?; the loop exit to the iteration tail of the loop; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 212 90 L 212 162
+      M 212 306 L 212 450
+      M 212 306 L 212 378 L 1292 378 L 1292 450
+      M 212 306 L 212 378 L 1652 378 L 1652 450
+      M 212 520 L 212 592
+      M 1292 520 L 1292 592
+      M 1652 520 L 1652 592
+      M 212 800 L 212 944
+      M 212 800 L 212 872 L 572 872 L 572 944
+      M 212 800 L 212 872 L 932 872 L 932 944
+      M 212 1014 L 212 1086
+      M 572 1014 L 572 1086
+      M 932 1014 L 932 1086
+      M 212 1150 L 212 1222
+      M 932 1150 L 932 1222
+      M 1292 656 L 1292 1222 L 932 1222
+      M 1652 656 L 1652 1222 L 932 1222
+      M 932 1222 L 932 1366
+      M 212 162 L 212 234
+      M 212 592 L 212 728
+      M 572 1086 L 572 1294
+    "/>
+    <path class="connection" d="
+      M 212 1222 L 52 1222 L 52 592 L 212 592
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 572 1294 L 32 1294 L 32 162 L 212 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="1305" y="551" xml:space="preserve"><tspan x="1305" dy="0">seven</tspan></text>
+    <text class="connection-label" x="1665" y="551" xml:space="preserve"><tspan x="1665" dy="0">nine</tspan></text>
+    <text class="connection-label" x="945" y="1045" xml:space="preserve"><tspan x="945" dy="0">eleven</tspan></text>
+    <text class="connection-label" x="225" y="108" xml:space="preserve"><tspan x="225" dy="0">mut mode</tspan></text>
+    <text class="connection-label" x="225" y="538" xml:space="preserve"><tspan x="225" dy="0">enter</tspan></text>
+    <text class="connection-label" x="225" y="1032" xml:space="preserve"><tspan x="225" dy="0">repeat</tspan></text>
+    <text class="connection-label" x="585" y="1032" xml:space="preserve"><tspan x="585" dy="0">leave</tspan></text>
+    <text class="connection-label" x="225" y="223" xml:space="preserve"><tspan x="225" dy="0">mode</tspan></text>
+    <text class="connection-label" x="225" y="717" xml:space="preserve"><tspan x="225" dy="0">mode</tspan></text>
+    <text class="connection-label" x="225" y="1075" xml:space="preserve"><tspan x="225" dy="0">repeat, &amp;mut mode</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 352 61 L 448 61"/>
+    <g class="parameter-panel" transform="translate(568 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+    </g>
+    <g class="node start" transform="translate(212 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">end_below_nested_returns</tspan></text>
+    </g>
+    <g class="node select" transform="translate(212 270)">
+      <title xml:space="preserve">Which outer route?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which outer route?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(212 485)">
+      <title xml:space="preserve">Enter the inner loop.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Enter the inner loop.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1292 485)">
+      <title xml:space="preserve">Finish with seven.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with seven.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1652 485)">
+      <title xml:space="preserve">Finish with nine.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with nine.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(212 764)">
+      <title xml:space="preserve">Which inner route?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which inner route?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(212 979)">
+      <title xml:space="preserve">Repeat the inner loop.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Repeat the inner loop.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(572 979)">
+      <title xml:space="preserve">Repeat the outer loop.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Repeat the outer loop.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(932 979)">
+      <title xml:space="preserve">Finish with eleven.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with eleven.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(212 1118)">
+      <title xml:space="preserve">Advance to the next route.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the next route.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(932 1118)">
+      <title xml:space="preserve">Return eleven.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return eleven.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1292 624)">
+      <title xml:space="preserve">Return seven.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return seven.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1652 624)">
+      <title xml:space="preserve">Return nine.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return nine.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(932 1395)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

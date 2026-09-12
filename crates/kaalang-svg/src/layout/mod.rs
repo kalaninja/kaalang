@@ -1,8 +1,10 @@
 //! Places the visual topology on rows and columns, routes its connections, and
 //! positions the labels its exits and nodes own.
 
+use std::collections::BTreeSet;
+
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
-use kaalang_model::{Arrangement, SemanticModel};
+use kaalang_model::{Arrangement, SemanticModel, Side};
 use syn::{ReturnType, Signature, spanned::Spanned};
 
 use crate::captions::{self, Captions};
@@ -65,6 +67,16 @@ pub(crate) struct Scene {
     /// The checked arrangement it realizes. Ranks, columns, corridors, and
     /// contours are decisions, not suggestions.
     pub(crate) arrangement: Arrangement,
+    /// How far past a body's edge a return's rail reaches, on the left and on
+    /// the right. `column_width` holds a gap wide enough for both at once.
+    reach: (i32, i32),
+    /// Extra room between columns, asked for by a previous pass whose returns
+    /// and labels wanted the same gap. Zero for almost every diagram.
+    slack: i32,
+    /// What each loop's body draws, as the model counted it when it placed the
+    /// return: one entry per `topology.loops`. A presentation measures the
+    /// same body rather than a set of its own.
+    bodies: Vec<BTreeSet<Vertex>>,
     /// The strings its nodes, exits, and junctions show.
     pub(crate) captions: Captions,
     pub(crate) nodes: Vec<Node>,
@@ -157,29 +169,6 @@ fn shift(scene: &mut Scene, from: i32, delta: i32) {
     }
 }
 
-/// The rails of the loops nested inside this one, as already drawn.
-fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
-    scene
-        .topology
-        .loops
-        .iter()
-        .enumerate()
-        .filter(|&(other, _)| other != index)
-        .filter_map(|(_, other)| {
-            // The second point of a return is the column it climbs in; its
-            // first and last are the tail and the entry.
-            let rail = scene
-                .connections
-                .iter()
-                .find(|edge| edge.source == Source::Junction(other.tail))?
-                .points
-                .get(1)?
-                .x;
-            Some((other.header, rail))
-        })
-        .collect()
-}
-
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
 /// leaves and a capture to the node it reaches.
 pub(crate) struct Connection {
@@ -219,19 +208,50 @@ impl LabelKind {
     }
 }
 
+/// The rails of the loops nested inside this one, as already drawn.
+fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
+    scene
+        .topology
+        .loops
+        .iter()
+        .enumerate()
+        .filter(|&(other, _)| other != index)
+        .filter_map(|(_, other)| {
+            // The second point of a return is the column it climbs in; its
+            // first and last are the tail and the entry.
+            let rail = scene
+                .connections
+                .iter()
+                .find(|edge| edge.source == Source::Junction(other.tail))?
+                .points
+                .get(1)?
+                .x;
+            Some((other.header, rail))
+        })
+        .collect()
+}
+
 /// Shortens each sole tail arrival and brings its return in with it, keeping
 /// the side and lane the arrangement chose. RFC 0003 §2 prefers turning
 /// upward at a side exit over descending to the tail's row and returning; a
 /// shortening that breaks RFC 0002 §8 is dropped, leaving the arrangement the
 /// arrangement already made valid.
 ///
-/// Only `route::verify` decides that, and only over the connections: the
-/// labels are placed after this and checked then, and where a label bounds a
-/// shortening it is `compact_arrival` that reads its rectangle.
+/// Only `route::verify` decides that, and only over the connections; the
+/// labels are placed after this and checked then. Where a label bounds a
+/// shortening it is `compact_arrival` that reads its rectangle, and it reads
+/// the labels of the scene as it stands: each accepted shortening moves the
+/// route its labels hang from, so they are placed again for the next loop.
+///
+/// It can move the climb: `compact_arrival` shortens a horizontal arrival, and
+/// the shortened end is what seeds the body extent `contour_x` measures from.
+/// That is why the return is re-emitted here from the same rows the loop
+/// spans, and why `route::verify` has the last word — it holds the re-emitted
+/// climb outside the body like any other.
 fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
     let gap = vertical_gap(scene);
-    let labels = label::place_labels(scene);
     for index in (0..scene.topology.loops.len()).rev() {
+        let labels = label::place_labels(scene);
         let loop_ = scene.topology.loops[index];
         let arrivals = scene
             .connections
@@ -273,6 +293,105 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
             scene.connections[back].points = kept.1;
         }
     }
+}
+
+/// Steps a return further out until its climb clears the labels it would
+/// otherwise strike through.
+///
+/// Labels are placed against the routes, so where they end up is not known
+/// when the returns are drawn, and a label hanging off the body's outermost
+/// route reaches past the rail beside it. Moving out only adds room between
+/// the climb and the body, so RFC 0002 §8 holds either way and `route::verify`
+/// confirms it; a step it refuses is dropped and the climb stays where it was.
+fn clear_labels(scene: &mut Scene) -> i32 {
+    let mut wanted = 0;
+    // Innermost first: an enclosing rail is measured from the one it encloses,
+    // so it has to follow it out rather than be stepped into.
+    for index in (0..scene.topology.loops.len()).rev() {
+        // The rail and every rail outside it on the same side. Moving one
+        // alone would close the lane between them, which the contour rule
+        // refuses — rightly, so the whole chain moves together.
+        let side = scene.arrangement.contours[index].side;
+        let rail = |scene: &Scene, other: usize| {
+            let tail = scene.topology.loops[other].tail;
+            scene
+                .connections
+                .iter()
+                .position(|edge| edge.source == Source::Junction(tail))
+        };
+        let Some(back) = rail(scene, index) else {
+            continue;
+        };
+        let chain = std::iter::once(back)
+            .chain(
+                (0..scene.topology.loops.len())
+                    .filter(|&other| {
+                        other != index
+                            && scene.arrangement.contours[other].side == side
+                            && scene.bodies[other]
+                                .contains(&Vertex::Junction(scene.topology.loops[index].entry))
+                    })
+                    .filter_map(|other| rail(scene, other)),
+            )
+            .collect::<Vec<_>>();
+        let step = match side {
+            Side::Left => -LANE,
+            Side::Right => LANE,
+        };
+        let struck = |scene: &Scene| {
+            scene
+                .labels
+                .iter()
+                .map(label::label_rect)
+                .filter(|rect| {
+                    scene.connections[back]
+                        .points
+                        .windows(2)
+                        .any(|segment| route::enters(segment[0], segment[1], *rect))
+                })
+                .map(|rect| rect.2)
+                .max()
+        };
+        // A single label can span several lanes. Past the outermost label no
+        // climb can strike text; a collision left there is on a horizontal
+        // run, which stepping farther out cannot clear.
+        let rail = scene.connections[back].points[1].x;
+        let outermost = scene.labels.iter().map(label_rect).fold(
+            rail,
+            |outer, (left, _, right, _)| match side {
+                Side::Left => outer.min(left),
+                Side::Right => outer.max(right),
+            },
+        );
+        for _ in 0..rail.abs_diff(outermost).div_ceil(LANE.unsigned_abs()) {
+            if struck(scene).is_none() {
+                break;
+            }
+            let kept = chain
+                .iter()
+                .map(|&edge| scene.connections[edge].points.clone())
+                .collect::<Vec<_>>();
+            for &edge in &chain {
+                for point in &mut scene.connections[edge].points[1..3] {
+                    point.x += step;
+                }
+            }
+            if route::verify(scene).is_some() {
+                for (&edge, points) in chain.iter().zip(kept) {
+                    scene.connections[edge].points = points;
+                }
+                break;
+            }
+        }
+        // Still struck, and nowhere left to step: the gap itself is too
+        // narrow. Ask for enough that the rail clears the label's far edge
+        // once the body it hangs off has moved out with its column.
+        if let Some(edge) = struck(scene) {
+            let rail = scene.connections[back].points[1].x;
+            wanted = wanted.max(((edge - rail).abs() + LANE).max(LANE));
+        }
+    }
+    wanted
 }
 
 fn straighten_return(from: Point, aside: i32, end: Point) -> Vec<Point> {
@@ -356,6 +475,44 @@ fn collapsed_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// How far past its body's edge each return's rail can reach, on the left and
+/// on the right.
+///
+/// A rail sits `(lane + 1)` lanes past the body it climbs, and a lane past any
+/// rail already drawn beside a body nested in that one — so a reach grows
+/// along the deepest chain of nested loops rather than with their number.
+/// `route::contour_x` builds the rails that way; this is the same arithmetic
+/// before any pixel is placed, which is what lets `column_width` use it.
+fn contour_reach(model: &SemanticModel) -> (i32, i32) {
+    let loops = &model.topology.loops;
+    let mut reach = vec![0; loops.len()];
+    // Innermost first: `topology.loops` runs outermost first.
+    for index in (0..loops.len()).rev() {
+        let end = model.flow.blocks[loops[index].header]
+            .loop_end
+            .expect("a loop owns a body");
+        let body = loops[index].header + 1..end;
+        let nested = loops
+            .iter()
+            .enumerate()
+            .filter(|(_, other)| body.contains(&other.header))
+            .map(|(other, _)| reach[other] + LANE)
+            .max()
+            .unwrap_or(0);
+        let lane =
+            i32::try_from(model.arrangement.contours[index].lane).unwrap_or(i32::MAX / LANE) + 1;
+        reach[index] = nested.max(lane * LANE);
+    }
+    let widest = |want| {
+        (0..loops.len())
+            .filter(|&index| model.arrangement.contours[index].side == want)
+            .map(|index| reach[index])
+            .max()
+            .unwrap_or(0)
+    };
+    (widest(Side::Left), widest(Side::Right))
+}
+
 /// Lays out one validated flow, or reports that this layout could not route its
 /// connections under RFC 0002 §8.
 pub(crate) fn layout(
@@ -364,7 +521,47 @@ pub(crate) fn layout(
     parameters: &[String],
     return_type: &str,
 ) -> Result<Scene, String> {
+    // A label is wrapped to fit the standard gap beside its column, and a
+    // return climbs in that same gap. Where the two want it at once — a label
+    // reaching rightward from one column past the rail of the loop in the
+    // next — no rail position clears it, because stepping out goes further
+    // into the label and stepping in goes into the body. The room has to come
+    // from the columns, and how much is only known once the labels are
+    // placed, so the layout is taken again with the gap the last one asked
+    // for. These presentation retries are bounded; exhaustion is a renderer
+    // error, not evidence that the model's topology is impossible.
+    let mut slack = 0;
+    for _ in 0..4 {
+        match attempt(model, start, parameters, return_type, slack) {
+            Ok(scene) => return Ok(scene),
+            Err(Blocked::Refused(reason)) => return Err(reason),
+            Err(Blocked::Narrow(wanted)) => slack += wanted,
+        }
+    }
+    attempt(model, start, parameters, return_type, slack).map_err(|blocked| match blocked {
+        Blocked::Refused(reason) => reason,
+        Blocked::Narrow(_) => "a loop return and a connection label want the same gap".to_owned(),
+    })
+}
+
+/// Why one pass of the layout produced no scene.
+enum Blocked {
+    /// This pass breaks a geometry rule other than the gap conflict below.
+    Refused(String),
+    /// A return could not be drawn clear of a label; the columns need this
+    /// much more room between them.
+    Narrow(i32),
+}
+
+fn attempt(
+    model: &SemanticModel,
+    start: &str,
+    parameters: &[String],
+    return_type: &str,
+    slack: i32,
+) -> Result<Scene, Blocked> {
     let mut scene = Scene {
+        slack,
         width: 0,
         height: 0,
         nodes: Vec::new(),
@@ -372,8 +569,14 @@ pub(crate) fn layout(
         connections: Vec::new(),
         labels: Vec::new(),
         captions: captions::derive(model, start, return_type),
-        arrangement: kaalang_model::construct(&model.flow, &model.merges, &model.topology)
-            .map_err(|error| error.to_string())?,
+        reach: contour_reach(model),
+        bodies: model
+            .topology
+            .loops
+            .iter()
+            .map(|loop_| model.body_vertices(loop_.header))
+            .collect(),
+        arrangement: model.arrangement.clone(),
         topology: model.topology.clone(),
     };
 
@@ -389,19 +592,22 @@ pub(crate) fn layout(
     // anything the abstract check does not model. A disagreement means the
     // realization is wrong, not that another arrangement should be tried.
     if let Some(reason) = route::verify(&scene) {
-        return Err(reason);
+        return Err(Blocked::Refused(reason));
     }
     compact_returns(&mut scene, model);
     end::adjust(&mut scene);
     close_unused_rows(&mut scene, &rows);
     scene.labels = label::place_labels(&scene);
+    let wanted = clear_labels(&mut scene);
+    if wanted > 0 {
+        return Err(Blocked::Narrow(wanted));
+    }
     scene.indent();
     scene.fit();
-    // The same final word for the labels. It waits for `indent` and `fit`
-    // because those settle the coordinates and the canvas the labels are
-    // checked against.
-    if let Some(reason) = label::verify(&scene) {
-        return Err(reason);
+    // Check the complete result after all transformations, including the
+    // coordinates and canvas that `indent` and `fit` settle.
+    if let Some(reason) = route::verify(&scene).or_else(|| label::verify(&scene)) {
+        return Err(Blocked::Refused(reason));
     }
 
     Ok(scene)
@@ -418,7 +624,7 @@ fn nodes(scene: &Scene) -> Vec<Node> {
             let (width, height, lines) = node_dimensions(node.kind, scene.captions.label(node.id));
             Node {
                 id: node.id,
-                x: column_x(scene.column(Vertex::Node(node.id))),
+                x: scene.column_x(scene.column(Vertex::Node(node.id))),
                 y: 0,
                 width,
                 height,
@@ -503,6 +709,33 @@ impl Scene {
     /// The rank and column the arrangement gave one vertex.
     pub(super) fn rank(&self, vertex: Vertex) -> usize {
         self.arrangement.rank[&vertex]
+    }
+
+    /// The centre of one column.
+    ///
+    /// Columns stand `COLUMN_WIDTH` apart unless the arrangement climbs a
+    /// return in a lane deeper than the space that leaves beside a node. Then
+    /// every column moves out far enough to hold that lane and one more, which
+    /// is how a presentation holds whatever lanes the model allowed.
+    ///
+    /// ponytail: one width for the whole diagram, so one deep contour widens
+    /// every gap; give each gap its own width if a diagram looks stretched.
+    pub(super) fn column_x(&self, column: i32) -> i32 {
+        MARGIN + NODE_WIDTH / 2 + column * self.column_width()
+    }
+
+    /// How far apart two columns stand.
+    ///
+    /// Wide enough that the deepest rail reaching into a gap from the left and
+    /// the deepest reaching into it from the right still leave a lane between
+    /// them. `contour_reach` measures both, so a rail pushed out by a chain of
+    /// nested returns is held as well as one pushed out by its own lane.
+    ///
+    /// ponytail: one width for the whole diagram, so one deep contour widens
+    /// every gap; give each gap its own width if a diagram looks stretched.
+    fn column_width(&self) -> i32 {
+        let (left, right) = self.reach;
+        COLUMN_WIDTH.max(NODE_WIDTH + left + right + LANE) + self.slack
     }
 
     pub(super) fn column(&self, vertex: Vertex) -> i32 {
@@ -652,10 +885,6 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
         height: 30 + lines.len() as i32 * LINE_HEIGHT,
         lines,
     })
-}
-
-fn column_x(column: i32) -> i32 {
-    MARGIN + NODE_WIDTH / 2 + column * COLUMN_WIDTH
 }
 
 fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {

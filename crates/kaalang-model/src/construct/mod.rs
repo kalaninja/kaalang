@@ -3,45 +3,65 @@
 //!
 //! RFC 0002 §8 leaves exact ranks and routing space to a presentation but fixes
 //! branch order, the column a shared continuation uses, crossing-free
-//! orthogonal routing, and the contour of a loop return. A renderer requests an
-//! arrangement after semantic validation and realizes it if construction succeeds.
-//! ponytail: this finite heuristic search has no completeness proof; keep failure
-//! in the renderer until normalization and conflict pruning are proved complete.
+//! orthogonal routing, and the contour of a loop return. `build` asks for an
+//! arrangement after semantic validation and carries it with the model, so a
+//! flow whose topology has no conforming diagram is rejected there.
 //!
-//! # The arrangement space
+//! # Two searches
 //!
-//! Everything the search may choose is finite and named here:
+//! `preferred` looks only among the arrangements shaped the way RFC 0002 §8
+//! asks for. Everything it may choose is finite and named here:
 //!
 //! - which iteration tails sink below every vertex precedence leaves free
 //!   (`2^loops` subsets),
 //! - which contour each loop return takes (`2^loops` assignments),
 //! - which corridor shape each connection uses (`3^connections` assignments).
 //!
-//! Nothing else is a choice: ranks, columns, footprints, rails, lanes, and
-//! contour columns are derived from those. The search follows the conflicts its
-//! own planner and contour search report: each failure names a connection to
-//! give more room, or a loop to move or flip, and only those assignments are
-//! tried next. No assignment is visited twice, so the walk ends inside a finite
-//! space; there is no attempt, time, or memory budget.
+//! Nothing else is a choice: ranks, columns, rails, lanes, and
+//! contour columns are derived from those. It follows the conflicts its own
+//! planner and contour search report: each failure names a connection to give
+//! more room, or a loop to move or flip, and only those assignments are tried
+//! next. No assignment is visited twice, so the walk ends inside a finite
+//! space; there is no attempt, time, or memory budget. Its first candidate is
+//! the one RFC 0002 §8 asks for: no tail sinks, every return takes the contour
+//! that section prefers, and every connection turns directly into its
+//! destination's column.
 //!
-//! The first candidate is the one RFC 0002 §8 asks for: no tail sinks, every
-//! return takes the contour that section prefers, and every connection turns
-//! directly into its destination's column. A later candidate is reached only
-//! because that one could not be drawn.
+//! That family is a shape preference, not the contract, so exhausting it
+//! proves nothing. [`sweep`] then decides, and its module documents both
+//! directions of why its sequences are the drawings. Only its exhaustion makes
+//! a flow invalid, and only its obstruction says why.
+//!
+//! Running the preferred search first is not an optimization. Its results are
+//! the arrangements worth drawing; the sweep's normal form spends a rank and a
+//! column on every vertex, which is always drawable and rarely pretty.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use syn::Error;
 
 use crate::model::{Flow, WireMerge};
-use crate::topology::{Destination, ExitId, NodeId, Topology, Vertex};
+use crate::topology::{Destination, ExitId, Topology, Vertex};
 
 mod describe;
+mod end;
 mod loop_block;
 mod place;
 mod regions;
 mod route;
+mod sweep;
 mod verify;
+
+/// The vertices one loop's body draws: its own blocks and their cases, its
+/// entry and tail and those of the loops nested in it, and the junctions a
+/// merge or a break inside it draws.
+///
+/// This is what a return climbs clear of (RFC 0002 §8), and both the
+/// construction and a presentation measure the same set. The blocks alone
+/// would miss the junctions, which draw no node and still occupy a column.
+pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
+    loop_block::body_vertices(flow, topology, header)
+}
 
 /// A checked arrangement of one topology. Ranks and columns are abstract
 /// integers: a presentation assigns dimensions and spacing to them, and may not
@@ -57,9 +77,6 @@ pub struct Arrangement {
     pub column: BTreeMap<Vertex, i32>,
     /// The column each exit leaves by, as an offset from its node's column.
     pub exit_offset: BTreeMap<ExitId, i32>,
-    /// Per branching block, the columns its branches and their shared
-    /// continuations reserve (RFC 0002 §8).
-    pub footprints: BTreeMap<usize, Footprint>,
     /// Per connection, in `Topology::connections` order, its corridor.
     pub routes: Vec<Route>,
     /// Per rank gap, how many lanes its sideways runs occupy.
@@ -85,14 +102,6 @@ impl Arrangement {
             .map(|run| run.lane)
             .max()
     }
-}
-
-/// The branch columns of one question or choice, as offsets from its own
-/// column, and the total number of columns it reserves.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Footprint {
-    pub offsets: Vec<usize>,
-    pub width: usize,
 }
 
 /// One connection's corridor: it leaves its exit in `departure`, arrives from
@@ -186,6 +195,14 @@ pub(super) struct Obstruction {
     pub(super) connection: Option<usize>,
 }
 
+/// Why the preferred search returned no arrangement.
+enum Preferred {
+    /// Every arrangement of this shape was tried, and none conforms.
+    Exhausted,
+    /// The topology contradicts itself, so no shape can draw it.
+    Inconsistent(String),
+}
+
 /// Why one rank and contour assignment yielded no arrangement.
 enum Rejection {
     /// The arrangement cannot be drawn. The search moves to another one.
@@ -196,21 +213,26 @@ enum Rejection {
     Internal(String),
 }
 
-/// Attempts to construct and check an arrangement from analyzed flow parts.
+/// Constructs and independently checks one conforming arrangement, or reports
+/// that the topology has no conforming diagram at all.
 ///
-/// This search is incomplete. Failure does not make the flow invalid, and the
-/// caller must not use it as a semantic acceptance check.
+/// Two searches run in turn. `preferred` looks only among the arrangements
+/// shaped the way RFC 0002 §8 asks for, and its results are the ones worth
+/// drawing. When it finds none, `sweep` decides the question: it accepts
+/// exactly the topologies that can be drawn, so only its exhaustion makes a
+/// flow invalid.
 ///
 /// # Errors
 ///
-/// Reports an obstruction when no searched candidate conforms, or an internal
-/// construction error when the independent verifier rejects a returned candidate.
+/// Reports an impossible topology when the sweep exhausts its space, and an
+/// internal construction error when the independent check rejects an
+/// arrangement either search returned.
 ///
 /// # Panics
 ///
 /// May panic if the inputs are not corresponding analyzed parts of one valid
 /// flow, for example if the implicit end block or referenced vertices are absent.
-pub fn construct(
+pub(crate) fn construct(
     flow: &Flow,
     merges: &[WireMerge],
     topology: &Topology,
@@ -221,6 +243,39 @@ pub fn construct(
             format!("internal kaalang construction error: {reason}"),
         )
     };
+    let checked = |arrangement: Arrangement| match verify::arrangement(flow, topology, &arrangement)
+    {
+        Ok(()) => Ok(arrangement),
+        Err(reason) => Err(internal(reason)),
+    };
+    match preferred(flow, merges, topology) {
+        Ok(arrangement) => return checked(arrangement),
+        Err(Preferred::Inconsistent(reason)) => return Err(internal(reason)),
+        Err(Preferred::Exhausted) => {}
+    }
+    match sweep::search(flow, merges, topology) {
+        Ok(arrangement) => checked(arrangement),
+        Err(blocked) => Err(Error::new(
+            blocked.span,
+            format!(
+                "could not construct a diagram under RFC 0002: {}",
+                blocked.message
+            ),
+        )),
+    }
+}
+
+/// Searches the arrangements shaped the way RFC 0002 §8 prefers, following the
+/// conflicts its own planner and contour search report.
+///
+/// This search is incomplete: `Exhausted` says only that no arrangement of
+/// this shape conforms, and the deciding sweep takes over. `Inconsistent` is a
+/// topology no search can draw.
+fn preferred(
+    flow: &Flow,
+    merges: &[WireMerge],
+    topology: &Topology,
+) -> Result<Arrangement, Preferred> {
     let tails = topology
         .loops
         .iter()
@@ -228,7 +283,7 @@ pub fn construct(
         .collect::<Vec<_>>();
     // RFC 0002 §8 prefers one contour per loop. The search starts there and
     // only flips a return the preferred side cannot hold.
-    let preferred = topology
+    let sides = topology
         .loops
         .iter()
         .map(|loop_| {
@@ -240,30 +295,20 @@ pub fn construct(
         })
         .collect::<Vec<_>>();
 
-    // The obstruction reported is the first one found, which belongs to the
-    // arrangement closest to what RFC 0002 §8 asks for. Later states are
-    // further from it, so their diagnostics describe an arrangement the author
-    // never asked for.
-    let mut blocked = None;
     // The first state is the arrangement RFC 0002 §8 asks for: no tail sinks
     // and every return on the side it prefers. Each failure names the loop to
     // blame, and the walk moves that loop's contour or rank before anything
     // else. No state is visited twice, so it ends.
     let every_tail = tails.iter().copied().collect::<BTreeSet<_>>();
-    let mut pending = vec![(BTreeSet::new(), preferred.clone())];
+    let mut pending = vec![(BTreeSet::new(), sides)];
     let mut seen = BTreeSet::new();
     while let Some((sunk, sides)) = pending.pop() {
         if !seen.insert((sunk.clone(), sides.clone())) {
             continue;
         }
         match corridors(flow, merges, topology, &sunk, &sides) {
-            Ok(arrangement) => {
-                return match verify::arrangement(flow, topology, &arrangement) {
-                    Ok(()) => Ok(arrangement),
-                    Err(reason) => Err(internal(reason)),
-                };
-            }
-            Err(Rejection::Internal(reason)) => return Err(internal(reason)),
+            Ok(arrangement) => return Ok(arrangement),
+            Err(Rejection::Internal(reason)) => return Err(Preferred::Inconsistent(reason)),
             Err(Rejection::Obstructed(reason)) => {
                 if let Some(index) = reason.loop_index {
                     // Pushed in reverse order of preference: flipping one
@@ -280,19 +325,10 @@ pub fn construct(
                     };
                     pending.push((sunk.clone(), flipped));
                 }
-                blocked.get_or_insert(reason);
             }
         }
     }
-
-    let blocked = blocked.unwrap_or_else(|| unarrangeable(flow));
-    Err(Error::new(
-        blocked.span,
-        format!(
-            "could not construct a diagram under RFC 0002: {}",
-            blocked.message
-        ),
-    ))
+    Err(Preferred::Exhausted)
 }
 
 /// Queues every corridor shape later than the one this connection has now.
@@ -424,30 +460,11 @@ fn assemble(topology: &Topology, placement: place::Placement, plan: &route::Plan
         .iter()
         .map(|exit| (exit.id, placement.footprints.offset(exit.id)))
         .collect();
-    let mut footprints = BTreeMap::new();
-    for node in &topology.nodes {
-        if let NodeId::Block(block) = node.id
-            && let (Some(offsets), Some(width)) = (
-                placement.footprints.branch_offsets(block),
-                placement.footprints.total(block),
-            )
-        {
-            footprints.insert(
-                block,
-                Footprint {
-                    offsets: offsets.clone(),
-                    width,
-                },
-            );
-        }
-    }
-
     Arrangement {
         rank: placement.rank,
         ranks: placement.ranks,
         column: placement.column,
         exit_offset,
-        footprints,
         routes,
         gap_lanes: plan.gap_lanes.clone(),
         contours: Vec::new(),

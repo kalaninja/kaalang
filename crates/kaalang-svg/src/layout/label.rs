@@ -396,6 +396,19 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         if let Some((_, what)) = nodes.chain(panel).find(|(other, _)| overlaps(rect, *other)) {
             return Some(format!("the label `{names}` reaches into {what}"));
         }
+        // A return climbs beside a body it was placed clear of, not clear of
+        // the labels that body hangs. Nothing else compares the two: the
+        // climb is not a route with a label of its own, so the crossing check
+        // in `route` never brings them together.
+        if scene
+            .connections
+            .iter()
+            .filter(|edge| scene.is_back_edge(edge))
+            .flat_map(|edge| edge.points.windows(2))
+            .any(|segment| super::route::enters(segment[0], segment[1], rect))
+        {
+            return Some(format!("a loop return crosses the label `{names}`"));
+        }
     }
 
     None
@@ -423,6 +436,9 @@ mod tests {
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
+            reach: (0, 0),
+            slack: 0,
+            bodies: Vec::new(),
             width: 200,
             height: 200,
             topology: Topology::default(),

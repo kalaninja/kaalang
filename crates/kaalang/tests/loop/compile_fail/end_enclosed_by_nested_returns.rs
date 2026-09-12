@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn trailing_inner_loop() -> usize {
+fn end_enclosed_by_nested_returns() -> usize {
     #[action("Initialize the counters.")]
     let (mut outer, mut inner) = || (0, 0);
 
@@ -11,9 +11,9 @@ fn trailing_inner_loop() -> usize {
 
         |&inner| loop {
             #[question("Is the inner counter below three?")]
-            #[no("NO")]
             #[yes("YES")]
-            let (leave_1, iterate_1) = |&inner| *inner < 3;
+            #[no("NO")]
+            let (iterate_1, leave_1) = |&inner| *inner < 3;
 
             |leave_1| break;
 
@@ -32,7 +32,4 @@ fn trailing_inner_loop() -> usize {
     }
 }
 
-#[test]
-fn repeats_the_inner_loop_before_reentering_the_outer_loop() {
-    assert_eq!(trailing_inner_loop(), 1);
-}
+fn main() {}

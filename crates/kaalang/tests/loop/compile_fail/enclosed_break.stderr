@@ -1,0 +1,5 @@
+error: could not construct a diagram under RFC 0002: nothing draws the iteration tail of this loop: however the routes above it are arranged, another route lies between two that meet there. Reorder the branches so the routes that meet sit side by side
+ --> tests/loop/compile_fail/enclosed_break.rs:5:5
+  |
+5 |     loop {
+  |     ^^^^

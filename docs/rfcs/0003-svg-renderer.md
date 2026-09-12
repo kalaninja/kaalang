@@ -12,21 +12,30 @@ not independently reinterpret the authored source.
 
 ## 2. Layout
 
-The validated model supplies the topology. After `kaalang_model::build`, the
-renderer calls the shared constructor with the analyzed flow, wire merges, and
-topology. The constructor searches for an arrangement and independently checks
-it against RFC 0002. The renderer assigns dimensions and spacing to its ranks,
-columns, corridors, lanes, and contours. Everything this section adds beyond RFC
-0002 is a presentation preference, relaxable without making a topology invalid.
+The validated model supplies both the topology and its arrangement.
+`kaalang_model::build` constructs an arrangement and independently checks it
+against RFC 0002 before it returns, so every accepted model carries one and the
+renderer chooses no structure of its own. It assigns dimensions and spacing to
+the recorded ranks, columns, corridors, lanes, and contours. Everything this
+section adds beyond RFC 0002 is a presentation preference, relaxable without
+making a topology invalid.
 
-The current construction search is finite and deterministic, with no retry or
-time budget. It varies iteration-tail ranks, return sides, and connection
-corridors in response to routing conflicts. Its normalization and pruning have
-no completeness proof: failure to find an arrangement is a rendering error, not
-a semantic rejection or proof that no conforming diagram exists. The model
-carries no mandatory or optional arrangement field, and macro expansion does not
-run this search. Moving construction into `build` requires a complete procedure
-for the unchanged RFC 0002 constraints.
+Construction runs two searches in turn, both finite and deterministic, with no
+retry or time budget. The first looks only among the arrangements this section
+prefers, varying iteration-tail ranks, return sides, and connection corridors in
+response to routing conflicts; its results are the ones worth drawing, and
+exhausting it means only that no arrangement of that shape conforms. The second
+decides the question, by sweeping the topology from top to bottom and accepting
+exactly the topologies that have a conforming drawing. Its state space, both
+directions of the correspondence with a drawing, its two exact reductions, and
+its cost are documented in `kaalang_model`'s `construct::sweep` module. Only its
+exhaustion rejects a flow, which `build` reports at the block it concerns.
+
+The arrangement records how many lanes each return climbs beside its column, and
+a presentation holds the columns far enough apart for them. Nothing about a
+renderer's spacing limits which arrangements are admissible: a topology never
+needs more lanes beside one column than it has loops, because only a loop return
+climbs there.
 
 Every emitted layout is computed deterministically, including node dimensions,
 row and column assignments, label placement, and connection routing. It
@@ -52,10 +61,10 @@ branches meet before the sequence; connections carry later captures transitively
 through it.
 
 A group's footprint extends from its leftmost occupied column to its rightmost
-occupied column. A terminal sibling branch that precedes the group remains to
-the left of its footprint; one that follows the group remains to its right. With
-several disjoint groups, intervening terminal branches remain between their
-footprints.
+occupied column, as RFC 0002 §8 requires. That is not a preference: the model
+derives each group and its area from the topology and checks every arrangement
+against them, so a sibling on the wrong side of a footprint is a flow with no
+diagram rather than a diagram this renderer declines to draw.
 
 To draw an implicit merge, including the `end` merge above end, each producer
 descends in its approach column to one horizontal merge rail whose junction lies
@@ -118,12 +127,18 @@ horizontal arrival. Returns may move upward; all other geometry checks still
 apply. The iteration tail meets its incoming branches at the end of its rail
 nearest the side the checked arrangement chose for that return.
 
-The shared constructor records the side of the body, the outermost column of
-that body, and the lane beside it each return climbs. Geometry realizes the
-checked contour; failure to find one on either side remains a rendering error.
-It puts the lane just past whatever the body itself occupies in the return's
-vertical span — the node in the recorded column, or the column's own line when
-none is there — and one lane step further out for each later lane.
+The arrangement records the side of the body, the outermost column of that body,
+and the lane beside it each return climbs. Geometry realizes that side and that
+lane: it puts lane 0 just past everything the body draws, and one lane step
+further out for each later lane. Body membership is independent of ranks, so
+neither placing a body vertex below the tail nor turning the return upward early
+shrinks what it has to clear. The recorded column is not read as a pixel
+position, because a vertex's pixel position is not `column_x` of its abstract
+column once a return turns upward at a side exit or a sole arrival is compacted.
+
+Columns stand far enough apart to hold the lanes the arrangement used, and a gap
+two returns climb into from opposite sides is widened until the two cannot land
+on the same line.
 
 A tail with one incoming connection may sit on a side exit's horizontal run, or
 after the usual vertical gap below a straight exit. Prefer turning upward there
@@ -136,21 +151,25 @@ uncompacted arrangement in place.
 A sole rightward horizontal arrival may also shorten toward the body instead of
 reserving an empty branch column. Move its tail and return together, keeping the
 return beyond the nodes and the ink and halo of labels along its vertical span.
-Wider body nodes below that span do not widen the return. Keep the original
-route when the compact one would cross another connection. Node columns and
-branch order do not change.
+The return still clears the whole body's extent. Keep the original route when
+the compact one would cross another connection. Node columns and branch order do
+not change.
+
+End is ordered after every other vertex during construction, as RFC 0002 §8
+requires. No construction or compaction may put a loop return below it.
 
 After routing the returns, adjust a reachable terminal `end` merge and end using
-the actual geometry. First try the usual vertical gap below all other nodes, so
-independent terminal and return rails can share a row. Horizontal terminal and
-return segments whose horizontal spans overlap must remain at least the usual
-vertical gap apart. If the first position violates that clearance or introduces
-a crossing, also leave the usual vertical gap below the lowest return. Move the
-terminal merge and end together, preserving their common segment's length; when
-the end block has no terminal merge, move the block alone. Move upward to remove
-excess space or downward to provide the required clearance. Keep the original
-placement if both adjusted positions would introduce a crossing or upward
-segment. Place labels after this adjustment.
+the actual geometry. Leave the usual vertical gap below all other nodes. A
+terminal rail may align with an independent return; where their horizontal spans
+overlap, leave the usual vertical gap between them. Move the terminal merge and
+end together, preserving their common segment's length; when the end block has
+no terminal merge, move the block alone. A return beside end may align with its
+top edge, but no connection may descend below that edge. This keeps end last
+without adding an empty row when the return already clears it. Move upward to
+remove excess space or downward to provide the required clearance. Keep the
+original placement if the adjustment would introduce a crossing or upward
+segment. The geometry check also requires end below all other nodes and loop
+returns. Place labels after this adjustment.
 
 ## 3. SVG output
 
@@ -194,12 +213,11 @@ source text and builds its validated semantic model. It then either lays out and
 serializes that model or returns a rendering error. It does not invoke
 `cargo check` or perform full Rust type checking.
 
-`RenderError::InvalidFlow` reports semantic errors from `kaalang_model::build`.
-`RenderError::UnroutableTopology` reports failure to construct an arrangement,
-an internal construction error, or geometry and label placement that cannot
-satisfy RFC 0002 §8. A failed construction search does not change whether the
-flow is valid. Final route and label verifiers remain necessary after assigning
-dimensions and spacing.
+`RenderError::InvalidFlow` reports every error from `kaalang_model::build`,
+including an impossible topology and an internal construction error.
+`RenderError::UnroutableTopology` reports geometry or label placement that
+cannot satisfy RFC 0002 §8 once the checked arrangement is given dimensions and
+spacing. Final route and label verifiers remain necessary after that assignment.
 
 ## 5. Command-line interface
 

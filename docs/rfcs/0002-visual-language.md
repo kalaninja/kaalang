@@ -335,7 +335,13 @@ moves upward. Nodes on alternative branches may share a row.
 The visual language uses columns and rows. Branches are arranged from left to
 right in authored order: question answer/output order and choice case order. The
 first question answer and the first choice case continue down the current
-column; remaining branches appear to their right.
+column; remaining branches appear to their right. The routes that carry them
+descend in the same order. Where one exit fans out to several of them, those
+routes may share the collinear run that exit gives them, so another order among
+them would cross nothing — but it would send a branch written first down beyond
+one written after it, and the diagram would no longer show the authored order.
+Connections leaving one exit that carry no branch of their own are not ordered
+by this clause.
 
 The parameter panel is vertically centred beside start. It does not overlap a
 node, connection, or connection label.
@@ -346,25 +352,40 @@ the group's first branch. Exact lower rows and routing space remain presentation
 choices.
 
 A convergence group reserves enough columns for its shared continuation,
-including any nested question or choice. Later sibling branches start to the
-right of that whole area, even when the shared continuation is wider than the
-group's incoming branches.
+including any nested question or choice. Those columns are a contiguous range,
+from the leftmost to the rightmost the group occupies. Later sibling branches
+start to the right of that whole area, even when the shared continuation is
+wider than the group's incoming branches; an earlier sibling ends to the left of
+it; and a sibling the group encloses, written between two of its branches, stays
+inside it, because leaving would put part of that branch past one written after
+it. Branches that never converge reserve nothing, and their subtrees may
+interleave.
 
-When end is reachable, alternative producers of `end` meet at their implicit
-merge above the end node, mirroring the distributor that fans a select node out
-to its case nodes. Connection routes are simple: they do not intersect or
-overlap themselves. They do not cross one another or pass through a non-endpoint
-node. Meeting at a common endpoint or deliberately sharing a collinear segment
-is not a crossing; connections may share such a segment only when they have the
-same source exit or the same destination node. Other connections do not overlap.
-Forward connections are plain lines without arrowheads. A loop return travels
-upward outside its body and ends horizontally with an arrowhead at its entry
-junction. The common segment below the junction enters the first body block
-without an arrowhead. Prefer the right contour when every repeating route takes
-the rightmost branch of the first selection in the body; otherwise prefer the
-left contour. A loop without a selection prefers the left contour. The return is
-the only exception to downward routing and the only arrowhead. A route contains
-only straight horizontal and vertical segments, so every bend is a right angle.
+When end is reachable, it is the final block of the whole diagram: it occupies a
+row below every other node and junction, including all iteration tails. Every
+loop return stays above end. This is placement order only; an execution may
+still finish from inside a loop. A topology that cannot keep end last without
+crossing connections or changing authored branch order has no conforming
+diagram.
+
+Alternative producers of `end` meet at their implicit merge above the end node,
+mirroring the distributor that fans a select node out to its case nodes.
+Connection routes are simple: they do not intersect or overlap themselves. They
+do not cross one another or pass through a non-endpoint node. Meeting at a
+common endpoint or deliberately sharing a collinear segment is not a crossing;
+connections may share such a segment only when they have the same source exit or
+the same destination node. Other connections do not overlap. Forward connections
+are plain lines without arrowheads. A loop return travels upward outside its
+body and ends horizontally with an arrowhead at its entry junction. It clears
+the whole column range of that body, including nested returns, independently of
+the rows assigned to its vertices. Continuation vertices after leaving the body
+do not belong to it. The common segment below the junction enters the first body
+block without an arrowhead. Prefer the right contour when every repeating route
+takes the rightmost branch of the first selection in the body; otherwise prefer
+the left contour. A loop without a selection prefers the left contour. The
+return is the only exception to downward routing and the only arrowhead. A route
+contains only straight horizontal and vertical segments, so every bend is a
+right angle.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an
@@ -378,5 +399,8 @@ crossing-free orthogonal routing, forward top-to-bottom row order, and branch
 column order. Exact dimensions, colors, typography, spacing, and routing offsets
 are presentation choices.
 
-A validated flow whose required connections cannot be drawn under these rules
-has no conforming diagram.
+Every validated flow has a conforming diagram. A flow whose required connections
+cannot be drawn under these rules is rejected: deciding that is part of
+validating it, and the decision is reported at the block the obstruction
+concerns. Acceptance carries the chosen arrangement with the model, so a
+presentation realizes that one rather than searching for another.

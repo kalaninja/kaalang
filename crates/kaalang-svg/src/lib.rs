@@ -31,9 +31,10 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// The flow is semantically valid, but construction or final geometry could
-    /// not satisfy RFC 0002 §8. The construction search is incomplete, so this
-    /// does not establish that the topology has no conforming diagram.
+    /// The flow has a checked arrangement, but realizing it in pixels — with
+    /// the dimensions its nodes and labels need — broke RFC 0002 §8. A
+    /// topology with no conforming diagram is rejected by `kaalang_model::build`
+    /// and arrives as `InvalidFlow`, so this is a geometry or label failure.
     UnroutableTopology {
         name: String,
         /// The spatial rule the realized geometry could not meet, naming the

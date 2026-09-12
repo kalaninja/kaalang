@@ -255,14 +255,6 @@ impl Footprints {
         }
     }
 
-    pub(super) fn branch_offsets(&self, block: usize) -> Option<&Vec<usize>> {
-        self.offsets.get(&block)
-    }
-
-    pub(super) fn total(&self, block: usize) -> Option<usize> {
-        self.width.get(&block).copied()
-    }
-
     fn span(&self, node: NodeId) -> usize {
         match node {
             NodeId::Block(block) => self.width.get(&block).copied().unwrap_or(1),

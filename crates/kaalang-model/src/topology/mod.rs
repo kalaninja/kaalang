@@ -154,7 +154,7 @@ pub struct Topology {
     /// Every node and junction, in authored order, as the connections address
     /// them. Sorted, so a lookup is a binary search.
     pub vertices: Vec<Vertex>,
-    /// Structural precedence after the iteration, never drawn as execution.
+    /// Placement precedence after an iteration and before end, never drawn as execution.
     pub order: Vec<Connection>,
     pub back_edges: Vec<Connection>,
     pub loops: Vec<Loop>,
@@ -376,6 +376,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     }
     loop_block::order_exits(model, &structural, &mut topology);
     close_loops(&mut topology);
+    end::order(&mut topology);
     topology
 }
 

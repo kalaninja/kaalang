@@ -1,4 +1,4 @@
-//! Aligns terminal routes with independent returns, or clears them when they cross.
+//! Keeps end below the rest of the diagram, including loop returns.
 
 use std::collections::BTreeSet;
 
@@ -115,4 +115,26 @@ fn clears_returns(scene: &Scene, terminal: Destination, y: i32, gap: i32) -> boo
                         || rail[0].x.max(rail[1].x) < segment[0].x.min(segment[1].x)
                 })
         })
+}
+
+/// Compaction may remove space, but nothing may end below the final block.
+pub(super) fn verify(scene: &Scene) -> Option<String> {
+    let end = scene
+        .topology
+        .nodes
+        .iter()
+        .find(|node| node.kind == NodeKind::End)?;
+    let top = Scene::bounds(scene.node(end.id)).1;
+    let misplaced_node = scene
+        .nodes
+        .iter()
+        .any(|node| node.id != end.id && Scene::bounds(node).3 >= top);
+    // A return beside end may align with its top edge; the block itself still
+    // sits below it. No connection may descend alongside the block's body.
+    let misplaced_route = scene
+        .connections
+        .iter()
+        .any(|edge| edge.points.iter().any(|point| point.y > top));
+    (misplaced_node || misplaced_route)
+        .then(|| "end must be below every other node and loop return".to_owned())
 }

@@ -23,6 +23,11 @@ A flow is written as an ordinary Rust function marked with `#[kaalang]`. Source
 order is execution order: each block runs where it is written, in every
 execution that reaches it.
 
+A validated flow is drawable. A flow whose required connections have no
+conforming diagram under [RFC 0002](0002-visual-language.md) is rejected at
+compile time, alongside the syntactic and semantic rules below, so the two views
+of a flow cannot diverge by one of them being impossible.
+
 This RFC defines kaalang's syntax and semantics.
 [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md) describes how the
 language is translated to Rust, and

@@ -33,6 +33,19 @@ pub(super) struct Grid {
     lanes: Vec<usize>,
     /// Whether each rank carries a node, and so reserves a line for captures.
     nodes: Vec<bool>,
+    /// How far apart two columns sit, so that every contour lane a topology can
+    /// need fits between them.
+    scale: i32,
+}
+
+/// How many contour lanes one side of a column offers.
+///
+/// Only a loop return climbs in the space beside a column, and every loop has
+/// one return, so a topology never needs more lanes there than it has loops.
+/// This is a fact about the topology, not about any presentation's spacing: a
+/// renderer holds whatever this many lanes require.
+pub(super) fn contour_lanes(topology: &Topology) -> usize {
+    topology.loops.len()
 }
 
 impl Grid {
@@ -50,6 +63,25 @@ impl Grid {
             step: 2 + i32::try_from(deepest).unwrap_or(i32::MAX - 2),
             lanes: arrangement.gap_lanes.clone(),
             nodes,
+            // Every lane of both sides of a column gets a position of its own,
+            // plus the column's own, so the deepest lane beside one column
+            // never reaches the shallowest lane beside the next.
+            scale: 2 * i32::try_from(contour_lanes(topology)).unwrap_or(i32::MAX / 4) + 1,
+        }
+    }
+
+    /// The position of one column.
+    pub(super) const fn column(&self, column: i32) -> i32 {
+        column * self.scale
+    }
+
+    /// The position of one contour lane beside a column. Lane 0 sits
+    /// immediately outside the column; later lanes step further out.
+    pub(super) const fn contour(&self, contour: super::Contour) -> i32 {
+        let offset = contour.lane as i32 + 1;
+        match contour.side {
+            Side::Left => self.column(contour.column) - offset,
+            Side::Right => self.column(contour.column) + offset,
         }
     }
 
@@ -71,36 +103,6 @@ impl Grid {
         self.rank(gap + 1) - capture - (lanes.saturating_sub(lane + 1)) as i32
     }
 }
-
-/// The position of one column.
-pub(super) const fn at_column(column: i32) -> i32 {
-    column * SCALE
-}
-
-/// The position of one contour lane beside a column. Lane 0 sits immediately
-/// outside the column; later lanes step further out.
-pub(super) const fn at_contour(contour: super::Contour) -> i32 {
-    let offset = contour.lane as i32 + 1;
-    match contour.side {
-        Side::Left => contour.column * SCALE - offset,
-        Side::Right => contour.column * SCALE + offset,
-    }
-}
-
-/// How many contour lanes a side offers before it reaches the next column.
-pub(super) const fn contour_lanes() -> usize {
-    SCALE as usize - 1
-}
-
-/// How far apart two columns sit on the abstract grid, and so how many return
-/// contours fit between them: `SCALE - 1` lanes on the side of each column.
-///
-/// A presentation has to hold that many. The renderer spaces columns
-/// `COLUMN_WIDTH` apart with nodes at most `NODE_WIDTH` wide and steps a
-/// contour out by `LANE` at a time, which leaves room for exactly these three.
-/// Counting lanes per loop instead would let the search choose a lane no
-/// drawing can hold.
-const SCALE: i32 = 4;
 
 /// The line a junction's routes meet on: the deepest lane any of them takes in
 /// the gap above it, so a side route finishes horizontally on the rail rather
@@ -150,27 +152,27 @@ pub(super) fn polyline(
     let source_line = endpoint_line(topology, arrangement, grid, Vertex::from(wire.source));
     let mut points = vec![
         Point {
-            x: at_column(departure),
+            x: grid.column(departure),
             y: source_line,
         },
         Point {
-            x: at_column(route.departure),
+            x: grid.column(route.departure),
             y: source_line,
         },
     ];
     for run in &route.runs {
         let line = grid.lane(run.gap, run.lane);
         points.push(Point {
-            x: at_column(run.enter),
+            x: grid.column(run.enter),
             y: line,
         });
         points.push(Point {
-            x: at_column(run.exit),
+            x: grid.column(run.exit),
             y: line,
         });
     }
     points.push(Point {
-        x: at_column(route.arrival),
+        x: grid.column(route.arrival),
         y: endpoint_line(topology, arrangement, grid, wire.destination),
     });
     straighten(points)
@@ -188,10 +190,10 @@ pub(super) fn return_polyline(
 ) -> Vec<Point> {
     let tail_line = junction_line(topology, arrangement, grid, tail);
     let entry_line = junction_line(topology, arrangement, grid, entry);
-    let aside = at_contour(contour);
+    let aside = grid.contour(contour);
     straighten(vec![
         Point {
-            x: at_column(arrangement.column[&Vertex::Junction(tail)]),
+            x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
             y: tail_line,
         },
         Point {
@@ -203,7 +205,7 @@ pub(super) fn return_polyline(
             y: entry_line,
         },
         Point {
-            x: at_column(arrangement.column[&Vertex::Junction(entry)]),
+            x: grid.column(arrangement.column[&Vertex::Junction(entry)]),
             y: entry_line,
         },
     ])
@@ -263,6 +265,7 @@ pub(crate) fn arrangement(
     arrangement: &Arrangement,
 ) -> Result<(), String> {
     coverage(topology, arrangement)?;
+    super::end::verify(topology, arrangement)?;
     order(topology, arrangement)?;
     branch_columns(flow, topology, arrangement)?;
     let grid = Grid::of(topology, arrangement);
@@ -366,13 +369,9 @@ fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
     Ok(())
 }
 
-/// A selection's branches leave it left to right in authored order, and a
-/// brancher's own area stays inside the columns it reserves, so a later sibling
-/// starts beyond that area (RFC 0002 §8).
-///
-/// The columns here come from the placement and the reserved widths from the
-/// footprints, which are two separate passes — so this relates one to the other
-/// rather than comparing a value with itself.
+/// A selection's branches leave it left to right in authored order, its shared
+/// continuations sit in the column their group's first branch reached, and
+/// each convergence group keeps the columns it reserves (RFC 0002 §8).
 fn branch_columns(
     flow: &Flow,
     topology: &Topology,
@@ -380,6 +379,7 @@ fn branch_columns(
 ) -> Result<(), String> {
     let reachable = super::regions::reachable(topology);
     for block in super::regions::branchers(flow) {
+        let regions = super::regions::regions(flow, topology, &reachable, block);
         let count = flow.blocks[block].branch_count();
         let starts = (0..count)
             .map(|branch| {
@@ -408,12 +408,7 @@ fn branch_columns(
                 block + 1
             ));
         }
-        let Some(footprint) = arrangement.footprints.get(&block) else {
-            return Err(format!("block {} reserves no columns", block + 1));
-        };
-        let reserved = own + i32::try_from(footprint.width).unwrap_or(i32::MAX);
-        let branches = super::regions::branch_sets(topology, flow, &reachable, block);
-        for (entry, first) in super::regions::continuations(topology, block, &branches) {
+        for (entry, first) in super::regions::continuations(topology, block, &regions.branches) {
             // Read the first branch's actual approach, which may have moved
             // through a nested selection since leaving this brancher.
             let mut frontier = vec![entry];
@@ -423,7 +418,7 @@ fn branch_columns(
                     match connection.source {
                         Source::Junction(junction) => frontier.push(Vertex::Junction(junction)),
                         Source::Exit(exit)
-                            if branches[first].contains(&Vertex::Node(exit.node))
+                            if regions.branches[first].contains(&Vertex::Node(exit.node))
                                 || (exit.node == NodeId::Block(block)
                                     && exit.branch == Some(first)) =>
                         {
@@ -446,13 +441,131 @@ fn branch_columns(
                 ));
             }
         }
-        for vertex in super::regions::footprint_vertices(topology, block, &branches) {
-            let column = arrangement.column[&vertex];
-            if column < own || column >= reserved {
+        distributor_order(topology, arrangement, block)?;
+        reserved_columns(arrangement, block, &regions)?;
+    }
+    Ok(())
+}
+
+/// The routes leaving one exit reach their destinations in authored order.
+///
+/// A selection's branches are arranged left to right in authored order
+/// (RFC 0002 §8), and the routes that carry them are too. They may share the
+/// collinear run their common exit gives them, so nothing crosses if they
+/// descend in another order — but then the branch written first would be
+/// drawn beyond the one written after it, and the diagram would no longer
+/// show the authored order it claims to.
+///
+/// It holds only where one exit carries several branches — a choice's
+/// distributor. Several connections of a question's branch exit carry one
+/// branch to several consumers, and nothing orders those among themselves.
+///
+/// On its own this adds little: a route that ends in the column it descends
+/// in is already covered by the branch columns above. What it catches is a
+/// route that descends elsewhere and turns in, which the corridor shapes allow
+/// and no other rule here would see.
+fn distributor_order(
+    topology: &Topology,
+    arrangement: &Arrangement,
+    block: usize,
+) -> Result<(), String> {
+    for exit in topology
+        .exits
+        .iter()
+        .filter(|exit| exit.id.node == NodeId::Block(block))
+        .filter(|exit| super::regions::carries_branches(topology, exit.id))
+    {
+        let descents = topology
+            .leaving(exit.id)
+            .map(|wire| {
+                let index = topology
+                    .connections
+                    .iter()
+                    .position(|other| other == wire)
+                    .expect("a leaving connection is projected");
+                let route = &arrangement.routes[index];
+                route.runs.first().map_or(route.departure, |run| run.exit)
+            })
+            .collect::<Vec<_>>();
+        if !descents.windows(2).all(|pair| pair[0] < pair[1]) {
+            return Err(format!(
+                "block {} sends the routes of {:?} down in the order {descents:?}, not the authored one",
+                block + 1,
+                exit.id
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// A convergence group reserves the columns of everything its branches draw,
+/// and a sibling outside the group stays clear of that whole area on the side
+/// its authored position puts it (RFC 0002 §8).
+///
+/// The group and its area come from the topology — which branches meet, and
+/// what they draw — so this holds an arrangement to a range it did not choose.
+/// Reading a width the same search recorded would compare a value with itself.
+///
+/// Only what the sibling alone draws is held to its side. A vertex two
+/// branches reach is a convergence, and belongs to the area of the group that
+/// meets there.
+///
+/// A branch the group encloses — its authored position falls between two
+/// members — stays inside the band instead: leaving it would put part of the
+/// branch past one written after it, which authored branch order forbids.
+/// Branches that never meet are held to nothing: RFC 0002 §8 reserves columns
+/// for a convergence group, not for every branch, so their subtrees may
+/// interleave.
+fn reserved_columns(
+    arrangement: &Arrangement,
+    block: usize,
+    regions: &super::regions::Regions,
+) -> Result<(), String> {
+    /// Where a sibling of a convergence group sits relative to its members.
+    enum Sits {
+        Before,
+        Inside,
+        After,
+    }
+
+    let column = |vertex: &Vertex| arrangement.column[vertex];
+    for group in &regions.groups {
+        let Some(low) = group.area.iter().map(column).min() else {
+            continue;
+        };
+        let high = group.area.iter().map(column).max().unwrap_or(low);
+        let first = *group.members.first().expect("a group has members");
+        let last = *group.members.last().expect("a group has members");
+        for branch in 0..regions.branches.len() {
+            if group.members.contains(&branch) {
+                continue;
+            }
+            let sits = if branch < first {
+                Sits::Before
+            } else if branch > last {
+                Sits::After
+            } else {
+                Sits::Inside
+            };
+            for vertex in &regions.outside(group, branch) {
+                let at = column(vertex);
+                let kept = match sits {
+                    Sits::Before => at < low,
+                    Sits::After => at > high,
+                    Sits::Inside => low < at && at < high,
+                };
+                if kept {
+                    continue;
+                }
                 return Err(format!(
-                    "block {} draws {vertex:?} in column {column}, outside the columns {own} to {} it reserves",
+                    "block {} draws {vertex:?} of branch {} in column {at}, {} the columns {low} to {high} its convergence group {:?} reserves",
                     block + 1,
-                    reserved - 1
+                    branch + 1,
+                    match sits {
+                        Sits::Inside => "outside",
+                        _ => "inside",
+                    },
+                    group.members
                 ));
             }
         }
@@ -472,7 +585,7 @@ fn vertex_points(
         .map(|&vertex| {
             (
                 Point {
-                    x: at_column(arrangement.column[&vertex]),
+                    x: grid.column(arrangement.column[&vertex]),
                     y: grid.rank(arrangement.rank[&vertex]),
                 },
                 vertex,
@@ -576,22 +689,19 @@ fn returns(
     lines: &[Vec<Point>],
 ) -> Result<(), String> {
     let vertices = vertex_points(topology, arrangement, grid);
+    let chosen = arrangement
+        .contours
+        .iter()
+        .map(|contour| Some(*contour))
+        .collect::<Vec<_>>();
     let mut drawn: Vec<Vec<Point>> = Vec::new();
     for (index, loop_) in topology.loops.iter().enumerate() {
         let contour = arrangement.contours[index];
-        let nested = arrangement
-            .contours
-            .iter()
-            .map(|contour| Some(*contour))
-            .collect::<Vec<_>>();
-        let body =
-            super::loop_block::body_columns(flow, topology, arrangement, loop_.header, &nested);
-        let position = at_contour(contour);
-        let outside = contour.lane < contour_lanes()
-            && body.iter().all(|&column| match contour.side {
-                Side::Left => position < at_column(column),
-                Side::Right => position > at_column(column),
-            });
+        let body = super::loop_block::body_columns(flow, topology, arrangement, loop_.header);
+        let nested = super::loop_block::nested_returns(flow, topology, grid, loop_.header, &chosen);
+        let position = grid.contour(contour);
+        let outside = contour.lane < contour_lanes(topology)
+            && super::loop_block::outside(grid, contour.side, position, &body, &nested);
         if !outside {
             return Err(format!(
                 "the return of the loop at block {} climbs inside its body",
@@ -643,6 +753,24 @@ fn returns(
 mod tests {
     use super::*;
 
+    /// How deep a return may climb beside a column is a fact about the
+    /// topology, not about any renderer's spacing. A presentation holds
+    /// whatever this allows; it does not decide it.
+    #[test]
+    fn the_lane_bound_counts_loops_rather_than_pixels() {
+        let mut topology = Topology::default();
+        assert_eq!(contour_lanes(&topology), 0);
+        for loops in 1..=8 {
+            topology.loops.push(crate::topology::Loop {
+                header: loops,
+                entry: loops * 2,
+                tail: loops * 2 + 1,
+                prefer_left: true,
+            });
+            assert_eq!(contour_lanes(&topology), loops);
+        }
+    }
+
     #[test]
     fn shared_entries_keep_the_first_branch_approach_column() {
         for (source, name, entries) in [
@@ -672,7 +800,7 @@ mod tests {
             ),
         ] {
             let model = crate::build(&crate::tests::fixture(source, name)).unwrap();
-            let valid = crate::construct(&model.flow, &model.merges, &model.topology).unwrap();
+            let valid = model.arrangement.clone();
             branch_columns(&model.flow, &model.topology, &valid).unwrap();
             for entry in entries {
                 let mut moved = valid.clone();
