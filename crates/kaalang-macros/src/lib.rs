@@ -8,6 +8,8 @@ use syn::{
     parse_macro_input,
 };
 
+use kaalang_model::SemanticModel;
+
 mod codegen;
 #[cfg(test)]
 mod performance;
@@ -31,22 +33,48 @@ pub fn kaalang(attributes: TokenStream, item: TokenStream) -> TokenStream {
 fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let model = kaalang_model::build(function)?;
     let bindings = codegen::Bindings::new(&model);
-    let body = codegen::flow(&model.flow, &model.execution_plan, &bindings);
 
-    let implementation_name = syn::Ident::new("__kaalang_flow", Span::mixed_site());
+    let implementation = implementation(function, &model, &bindings)?;
+    let call = call(function, &implementation.sig.ident, &bindings);
+    *function.block = syn::parse2(quote!({
+        #implementation
+        #[allow(clippy::used_underscore_binding)]
+        #call
+    }))?;
+
+    Ok(quote!(#function))
+}
+
+/// Rewrites the authored function into the nested flow implementation.
+fn implementation(
+    function: &ItemFn,
+    model: &SemanticModel,
+    bindings: &codegen::Bindings,
+) -> Result<ItemFn> {
+    let body = codegen::flow(&model.flow, &model.execution_plan, bindings);
+
     let mut implementation = function.clone();
     implementation.attrs.clear();
     implementation.vis = Visibility::Inherited;
-    implementation.sig.ident = implementation_name.clone();
+    implementation.sig.ident = syn::Ident::new("__kaalang_flow", Span::mixed_site());
     implementation.sig.inputs = implementation
         .sig
         .inputs
         .into_iter()
         .filter(|argument| !matches!(argument, FnArg::Typed(argument) if matches!(argument.pat.as_ref(), Pat::Wild(_))))
         .collect();
-    codegen::rename_implementation_inputs(&mut implementation, &bindings);
+    codegen::rename_implementation_inputs(&mut implementation, bindings);
     *implementation.block = syn::parse2(quote!({ #body }))?;
 
+    Ok(implementation)
+}
+
+/// Calls the implementation with the authored parameters and generics.
+fn call(
+    function: &ItemFn,
+    implementation: &syn::Ident,
+    bindings: &codegen::Bindings,
+) -> TokenStream2 {
     let arguments = function.sig.inputs.iter().filter_map(|argument| {
         let FnArg::Typed(argument) = argument else {
             unreachable!("the parser rejects method receivers")
@@ -76,17 +104,10 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
         .collect::<Vec<_>>();
     let generic_arguments =
         (!generic_arguments.is_empty()).then(|| quote!(::<#(#generic_arguments),*>));
-    let call = quote!(#implementation_name #generic_arguments (#(#arguments),*));
-    let call = matches!(function.sig.safety, Safety::Unsafe(_))
+    let call = quote!(#implementation #generic_arguments (#(#arguments),*));
+    matches!(function.sig.safety, Safety::Unsafe(_))
         .then(|| quote!(unsafe { #call }))
-        .unwrap_or(call);
-    *function.block = syn::parse2(quote!({
-        #implementation
-        #[allow(clippy::used_underscore_binding)]
-        #call
-    }))?;
-
-    Ok(quote!(#function))
+        .unwrap_or(call)
 }
 
 #[cfg(test)]
