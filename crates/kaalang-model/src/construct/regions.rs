@@ -1,10 +1,15 @@
 //! The regions a flow's branches carve out of its topology.
 //!
 //! These are facts about the topology alone: which vertices one branch of a
-//! question or choice leads to, and which of them its siblings share. Both the
-//! placement and the check read them — the placement to reserve columns, the
-//! check to hold the columns it is given to RFC 0002 §8. Sharing a fact is not
-//! self-reference; sharing the column arithmetic would be, so that stays apart.
+//! question or choice leads to, and which of them its siblings share. The
+//! deciding search's numbering, the check, and the test-only reference all
+//! read `Regions::outside` and `Regions::reserved` — the two halves of one
+//! definition, each leaving out what the other side also reaches — and one
+//! definition is what makes the three agree; the preferred placement reserves
+//! from `branch_sets` and is held to the check like everything else. Sharing a
+//! fact is not self-reference; sharing the column arithmetic would be, so that
+//! stays apart, and the reference builds its own arithmetic for the same
+//! reason.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -69,19 +74,6 @@ fn walk(
         }
     }
     seen
-}
-
-/// Whether the routes leaving one exit carry branches, and so keep the
-/// authored order RFC 0002 §8 gives those branches.
-///
-/// A choice's distributor is the one exit that carries several branches at
-/// once — one connection per case node. Several connections of a question's
-/// branch exit carry one branch to several consumers, and nothing orders those
-/// among themselves.
-pub(super) fn carries_branches(topology: &Topology, exit: ExitId) -> bool {
-    let mut leaving = topology.leaving(exit).peekable();
-    leaving.peek().is_some()
-        && leaving.all(|wire| matches!(wire.destination, Vertex::Node(NodeId::Case { .. })))
 }
 
 /// What each branch of one brancher leads to, including the branch's own case
@@ -233,6 +225,37 @@ impl Regions {
             })
             .copied()
             .collect()
+    }
+
+    /// What one group reserves against a later sibling: its area, less
+    /// whatever that sibling reaches too (RFC 0002 §8).
+    ///
+    /// The exception is `outside`'s, read from the other side. A vertex the
+    /// sibling also reaches is common ground, and a branch cannot be asked to
+    /// keep clear of something it draws itself — which is unsatisfiable for
+    /// the first branch, whose column RFC 0002 §8 fixes as the brancher's own.
+    ///
+    /// Only a sibling written after every member is held to this set. The
+    /// mirror image — an earlier sibling held left of the area, an enclosed
+    /// one held between the members around it — was tried as a normal form and
+    /// refused a flow that has a diagram; RFC 0003 §2.2 records it.
+    pub(super) fn reserved(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
+        group
+            .area
+            .difference(&self.branches[branch])
+            .copied()
+            .collect()
+    }
+
+    /// The siblings written after every member of one group: the branches RFC
+    /// 0002 §8 holds to the right of what the group draws.
+    pub(super) fn later_siblings(&self, group: &Group) -> std::ops::Range<usize> {
+        let after = group
+            .members
+            .iter()
+            .next_back()
+            .map_or(self.branches.len(), |&last| last + 1);
+        after..self.branches.len()
     }
 }
 

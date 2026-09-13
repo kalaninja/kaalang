@@ -100,6 +100,8 @@ fn measure_the_expansion_cost() {
         model.push(built);
     }
     println!("corpus flows: {}", corpus.len());
+    println!("expansion, corpus totals: samples {expansion:?}");
+    println!("build alone, corpus totals: samples {model:?}");
     println!("expansion, corpus total median: {:?}", median(expansion));
     println!("build alone, corpus total median: {:?}", median(model));
 }

@@ -75,7 +75,18 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
     for (index, loop_) in scene.topology.loops.iter().enumerate().rev() {
         let from = junction_point(scene, rows, loop_.tail);
         let end = junction_point(scene, rows, loop_.entry);
-        let aside = contour_x(scene, model, index, from, end, &drawn);
+        // The body still stands where it was numbered, so the recorded column
+        // is realized through the same map every node and route uses.
+        if !scene.arrangement.return_routes.is_empty() {
+            connections.push(Connection {
+                source: Source::Junction(loop_.tail),
+                destination: Destination::Junction(loop_.entry),
+                points: bent_return(scene, rows, index, from, end),
+            });
+            continue;
+        }
+        let anchor = contour_anchor(scene, index);
+        let aside = contour_x(scene, model, index, from, end, &drawn, anchor);
         drawn.push((loop_.header, aside));
         connections.push(Connection {
             source: Source::Junction(loop_.tail),
@@ -84,6 +95,46 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
         });
     }
     connections
+}
+
+/// A common column map for every climb in a drawing with routing bends.
+/// It preserves the abstract order of both sides of every column, leaving
+/// node boxes and their labels inside the space between a column and a rail.
+pub(super) fn return_x(scene: &Scene, index: usize, column: i32) -> i32 {
+    let contour = scene.arrangement.contours[index];
+    let offset =
+        super::NODE_WIDTH / 2 + super::label::LABEL_WIDTH + (contour.lane as i32 + 1) * super::LANE;
+    scene.column_x(column)
+        + match contour.side {
+            Side::Left => -offset,
+            Side::Right => offset,
+        }
+}
+
+fn bent_return(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Point) -> Vec<Point> {
+    let x = |column| return_x(scene, index, column);
+    let Some(route) = scene.arrangement.return_routes.get(&index) else {
+        return return_points(from, x(scene.arrangement.contours[index].column), end);
+    };
+    let mut points = vec![
+        from,
+        Point {
+            x: x(route.arrival),
+            y: from.y,
+        },
+    ];
+    for run in route.runs.iter().rev() {
+        let y = rows.lane_y(run.gap, run.lane, rows.lanes_in(run.gap));
+        points.extend([Point { x: x(run.exit), y }, Point { x: x(run.enter), y }]);
+    }
+    points.extend([
+        Point {
+            x: x(route.departure),
+            y: end.y,
+        },
+        end,
+    ]);
+    straighten(points)
 }
 
 /// The climb of one loop return: out of its tail, up `aside`, and into its
@@ -100,20 +151,120 @@ pub(super) fn return_points(from: Point, aside: i32, end: Point) -> Vec<Point> {
     ]
 }
 
-/// Where one return climbs: on the side and in the lane the arrangement chose,
-/// just past everything its whole body draws, independently of its ranks.
+/// Realize the recorded boundary, allowing an exclusive outermost tail column
+/// to close with its sole straight arrival. No other vertex, exit, route or
+/// contour may use that column or lie beyond it. The moved boundary stays outside every
+/// other drawn route, so shortening cannot exchange it with another corridor.
+/// A separately recorded far contour keeps its original column.
+pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
+    let contour = scene.arrangement.contours[index];
+    let tail = Vertex::Junction(scene.topology.loops[index].tail);
+    let origin =
+        scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
+    let anchor = origin + scene.column_x(contour.column);
+    let arrivals = scene
+        .topology
+        .connections
+        .iter()
+        .enumerate()
+        .filter(|(_, edge)| edge.destination == tail)
+        .collect::<Vec<_>>();
+    let [(arrival_index, arrival)] = arrivals.as_slice() else {
+        return anchor;
+    };
+    let route = &scene.arrangement.routes[*arrival_index];
+    if route.departure != contour.column
+        || route.arrival != contour.column
+        || !route.runs.is_empty()
+    {
+        return anchor;
+    }
+    let before = |column| match contour.side {
+        Side::Left => column > contour.column,
+        Side::Right => column < contour.column,
+    };
+    let mut others = scene
+        .arrangement
+        .column
+        .iter()
+        .filter(|(vertex, _)| **vertex != tail)
+        .map(|(_, &column)| column)
+        .chain(
+            scene
+                .arrangement
+                .exit_offset
+                .iter()
+                .filter(|(exit, _)| Source::Exit(**exit) != arrival.source)
+                .map(|(exit, offset)| scene.column(Vertex::Node(exit.node)) + offset),
+        )
+        .chain(
+            scene
+                .topology
+                .connections
+                .iter()
+                .zip(&scene.arrangement.routes)
+                .filter(|(edge, _)| edge.destination != tail)
+                .flat_map(|(_, route)| {
+                    [route.departure, route.arrival]
+                        .into_iter()
+                        .chain(route.runs.iter().flat_map(|run| [run.enter, run.exit]))
+                }),
+        )
+        .chain(
+            scene
+                .arrangement
+                .contours
+                .iter()
+                .enumerate()
+                .filter(|(other, _)| *other != index)
+                .map(|(_, other)| other.column),
+        );
+    if !scene.arrangement.return_routes.is_empty()
+        || contour.column != scene.column(tail)
+        || !others.all(before)
+    {
+        return anchor;
+    }
+    let from = scene
+        .connections
+        .iter()
+        .find(|edge| edge.destination == tail)
+        .and_then(|edge| edge.points.last())
+        .expect("a tail has its arrival")
+        .x;
+    let occupied = scene
+        .connections
+        .iter()
+        .filter(|edge| edge.destination != tail && Vertex::from(edge.source) != tail)
+        .flat_map(|edge| edge.points.iter().map(|point| point.x));
+    match contour.side {
+        Side::Left => anchor.max(occupied.fold(from, i32::min)),
+        Side::Right => anchor.min(occupied.fold(from, i32::max)),
+    }
+}
+
+/// Where one return climbs: the contour the arrangement recorded, realized in
+/// pixels, and pushed further out by whatever the body's measured boxes need.
+///
+/// All three parts of the recorded contour are realized. The side and the lane
+/// decide whether the return can be drawn at all. The column is realized
+/// through `anchor`, and it is a floor rather than the answer: a measured box
+/// may push the rail further out, and may never bring it back in past the
+/// column the arrangement chose or move it to another corridor. That is what
+/// lets a witness whose return stands beyond the boxes of its body be drawn
+/// where it says.
+///
+/// `anchor` comes from `contour_anchor`: normally the recorded column, or
+/// the safely closed boundary of an exclusive outermost tail column.
 ///
 /// A presentation may turn the return upward early, but the body it has to
-/// clear does not shrink with it. Continuation vertices after leaving the
-/// body are excluded by membership, not by their position below the tail.
+/// clear does not shrink with it. Continuation vertices after leaving the body
+/// are excluded by membership, not by their position below the tail.
 ///
-/// The column the arrangement names is not read here, and cannot be: RFC 0003
-/// §2 lets a presentation turn a return upward at a side exit and compact a
-/// sole arrival, so a vertex's pixel position is not `column_x` of its abstract
-/// column. What carries over is the side and the lane — the two choices that
-/// decide whether the return can be drawn at all — while the pixels those land
-/// on come from the boxes the body actually fills. `verify` then holds the
-/// result to the same rules the arrangement was checked against.
+/// The uncompacted emission is what the compactions fall back on, so it has no
+/// fallback of its own: a rail the recorded column pushes into something is a
+/// renderer defect, and there is no other realization of that arrangement to
+/// draw instead.
 pub(super) fn contour_x(
     scene: &Scene,
     model: &SemanticModel,
@@ -121,11 +272,13 @@ pub(super) fn contour_x(
     from: Point,
     end: Point,
     drawn: &[(usize, i32)],
+    anchor: i32,
 ) -> i32 {
     let loop_ = scene.topology.loops[index];
     let contour = scene.arrangement.contours[index];
     let (left, right) = body_extent(scene, index).unwrap_or((from.x.min(end.x), from.x.max(end.x)));
     let (left, right) = (left.min(from.x).min(end.x), right.max(from.x).max(end.x));
+    let (left, right) = (left.min(anchor), right.max(anchor));
     let step = (contour.lane as i32 + 1) * super::LANE;
     // A rail already drawn beside a nested body is part of this body too, and
     // one lane past it is enough: the arrangement put this contour outside
@@ -220,10 +373,17 @@ fn verify_returns(scene: &Scene) -> Option<String> {
                 .connections
                 .iter()
                 .find(|edge| edge.source == Source::Junction(loop_.tail))?;
-            edge.points
-                .windows(2)
-                .find(|pair| pair[1].y < pair[0].y)
-                .map(|climb| climb[0].x)
+            if !edge.points.windows(2).any(|pair| pair[1].y < pair[0].y)
+                || edge.points.windows(2).any(|pair| pair[1].y > pair[0].y)
+                || edge.points.len() < 4
+            {
+                return None;
+            }
+            let points = &edge.points[1..edge.points.len() - 1];
+            Some((
+                points.iter().map(|p| p.x).min()?,
+                points.iter().map(|p| p.x).max()?,
+            ))
         })
         .collect::<Vec<_>>();
     for (index, loop_) in scene.topology.loops.iter().enumerate() {
@@ -233,8 +393,8 @@ fn verify_returns(scene: &Scene) -> Option<String> {
         };
         let side = scene.arrangement.contours[index].side;
         let clear = |other: i32| match side {
-            Side::Left => climb < other,
-            Side::Right => climb > other,
+            Side::Left => climb.1 < other,
+            Side::Right => climb.0 > other,
         };
         // A return nested in this body climbs beside it too, and the two need
         // not share a single row — so no crossing check compares them, and
@@ -245,16 +405,30 @@ fn verify_returns(scene: &Scene) -> Option<String> {
             .filter(|&other| {
                 scene.bodies[index].contains(&Vertex::Junction(scene.topology.loops[other].entry))
             })
-            .find_map(|other| climbs[other].filter(|&rail| !clear(rail)))
+            .find_map(|other| {
+                climbs[other]
+                    .map(|(left, right)| match side {
+                        Side::Left => left,
+                        Side::Right => right,
+                    })
+                    .filter(|&rail| !clear(rail))
+            })
         {
             return Some(format!(
                 "{at} climbs inside the return nested in its body at {nested}"
             ));
         }
-        // A loop with an empty body has nothing for the climb to be inside.
-        let Some((left, right)) = body_extent(scene, index) else {
-            continue;
-        };
+        // Its own entry and tail are part of the body too. They may have
+        // moved along their rails during compaction, so use their drawn ends.
+        let edge = scene
+            .connections
+            .iter()
+            .find(|edge| edge.source == Source::Junction(loop_.tail))
+            .expect("the climb above has an edge");
+        let endpoints = [edge.points[0].x, edge.points[edge.points.len() - 1].x];
+        let (left, right) = body_extent(scene, index).unwrap_or((endpoints[0], endpoints[0]));
+        let left = left.min(endpoints[0]).min(endpoints[1]);
+        let right = right.max(endpoints[0]).max(endpoints[1]);
         if !clear(match side {
             Side::Left => left,
             Side::Right => right,
@@ -267,6 +441,9 @@ fn verify_returns(scene: &Scene) -> Option<String> {
 
 /// Reports the first RFC 0002 §8 rule the emitted routes break, if any.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
+    if let Some(reason) = super::choice::verify(scene) {
+        return Some(reason);
+    }
     if let Some(reason) = super::end::verify(scene) {
         return Some(reason);
     }
@@ -433,6 +610,7 @@ mod tests {
             })
             .collect();
         Scene {
+            narrow: false,
             reach: (0, 0),
             slack: 0,
             bodies: Vec::new(),

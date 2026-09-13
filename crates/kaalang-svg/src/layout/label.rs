@@ -20,7 +20,8 @@ use super::{
 
 /// A label beside a vertical run must fit before the next column's node,
 /// including clearance and its halo on both sides.
-const LABEL_WIDTH: i32 = COLUMN_WIDTH - NODE_WIDTH / 2 - 2 * (CONNECTION_LABEL_HALO + CLEARANCE);
+pub(super) const LABEL_WIDTH: i32 =
+    COLUMN_WIDTH - NODE_WIDTH / 2 - 2 * (CONNECTION_LABEL_HALO + CLEARANCE);
 /// Clear space between a label's halo and the vertical run or node beside it.
 const CLEARANCE: i32 = 8;
 /// Rise of a label above a horizontal run or a node's top border. Enough for
@@ -373,14 +374,55 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
 /// RFC 0002 §8 keeps every standalone label inside the diagram and clear of the
 /// nodes. `route::verify` holds the connections to their half of that rule;
 /// this holds the labels to theirs, on the same emitted geometry.
+///
+/// A transformation is gated on `clearance` instead, which is the half no later
+/// step repairs. The other two are repaired: a return crossing a label is what
+/// `clear_labels` steps the rail out of, and a label left of the origin is what
+/// `indent` slides the drawing over for. Rejecting a compaction for either
+/// would refuse geometry that is about to be put right.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
+    clearance(scene)
+        .or_else(|| {
+            scene.labels.iter().find_map(|label| {
+                let (left, top, right, bottom) = label_rect(label);
+                (left < 0 || top < 0 || right > scene.width || bottom > scene.height)
+                    .then(|| format!("the label `{}` leaves the canvas", label.lines.join(" ")))
+            })
+        })
+        .or_else(|| {
+            scene.labels.iter().find_map(|label| {
+                let rect = label_rect(label);
+                // A return climbs beside a body it was placed clear of, not clear
+                // of the labels that body hangs. Nothing else compares the two:
+                // the climb is not a route with a label of its own, so the
+                // crossing check in `route` never brings them together.
+                scene
+                    .connections
+                    .iter()
+                    .filter(|edge| scene.is_back_edge(edge))
+                    .flat_map(|edge| edge.points.windows(2))
+                    .any(|segment| super::route::enters(segment[0], segment[1], rect))
+                    .then(|| {
+                        format!(
+                            "a loop return crosses the label `{}`",
+                            label.lines.join(" ")
+                        )
+                    })
+            })
+        })
+}
+
+/// The half of the label contract no later step repairs: a label stays clear of
+/// every node and of the parameter panel.
+///
+/// Nothing moves a label off a node afterwards — `clear_labels` steps rails,
+/// not labels, and `indent` and `fit` move everything together — so this is
+/// what a transformation has to be held to, and the only half of the contract
+/// that means anything before the coordinates are settled.
+pub(super) fn clearance(scene: &Scene) -> Option<String> {
     for label in &scene.labels {
         let rect = label_rect(label);
-        let (left, top, right, bottom) = rect;
         let names = label.lines.join(" ");
-        if left < 0 || top < 0 || right > scene.width || bottom > scene.height {
-            return Some(format!("the label `{names}` leaves the canvas"));
-        }
         let nodes = scene.nodes.iter().map(|node| {
             (
                 Scene::bounds(node),
@@ -396,21 +438,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         if let Some((_, what)) = nodes.chain(panel).find(|(other, _)| overlaps(rect, *other)) {
             return Some(format!("the label `{names}` reaches into {what}"));
         }
-        // A return climbs beside a body it was placed clear of, not clear of
-        // the labels that body hangs. Nothing else compares the two: the
-        // climb is not a route with a label of its own, so the crossing check
-        // in `route` never brings them together.
-        if scene
-            .connections
-            .iter()
-            .filter(|edge| scene.is_back_edge(edge))
-            .flat_map(|edge| edge.points.windows(2))
-            .any(|segment| super::route::enters(segment[0], segment[1], rect))
-        {
-            return Some(format!("a loop return crosses the label `{names}`"));
-        }
     }
-
     None
 }
 
@@ -436,6 +464,7 @@ mod tests {
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
+            narrow: false,
             reach: (0, 0),
             slack: 0,
             bodies: Vec::new(),

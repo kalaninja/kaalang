@@ -15,7 +15,7 @@ use kaalang_model::{Input, ProducerId, SemanticModel};
 use syn::{FnArg, Pat, PatIdent, ext::IdentExt};
 
 /// Every string the diagram shows, keyed by the structural item that owns it.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Captions {
     label: BTreeMap<NodeId, String>,
     capture: BTreeMap<NodeId, Vec<String>>,

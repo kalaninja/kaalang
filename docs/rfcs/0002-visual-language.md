@@ -100,11 +100,14 @@ case nodes.
 
 ### 4.5 case
 
-Each authored case becomes one derived case node. A select-to-case connection
-names nothing at either end, because the case row belongs to the select above
-it. The branch's output wire is handed over at the case node's exit. A choice
-output may carry data or serve as a unit-valued control wire; the diagram shows
-its wire name in either case.
+Each authored case becomes one derived case node. All case nodes belonging to
+one select occupy the same row, in authored order. A case may not be lowered
+below its siblings to route around a convergence or loop return; a topology that
+requires this has no conforming diagram. A select-to-case connection names
+nothing at either end, because the case row belongs to the select above it. The
+branch's output wire is handed over at the case node's exit. A choice output may
+carry data or serve as a unit-valued control wire; the diagram shows its wire
+name in either case.
 
 ### 4.6 end
 
@@ -335,13 +338,7 @@ moves upward. Nodes on alternative branches may share a row.
 The visual language uses columns and rows. Branches are arranged from left to
 right in authored order: question answer/output order and choice case order. The
 first question answer and the first choice case continue down the current
-column; remaining branches appear to their right. The routes that carry them
-descend in the same order. Where one exit fans out to several of them, those
-routes may share the collinear run that exit gives them, so another order among
-them would cross nothing — but it would send a branch written first down beyond
-one written after it, and the diagram would no longer show the authored order.
-Connections leaving one exit that carry no branch of their own are not ordered
-by this clause.
+column; remaining branches appear to their right.
 
 The parameter panel is vertically centred beside start. It does not overlap a
 node, connection, or connection label.
@@ -352,14 +349,13 @@ the group's first branch. Exact lower rows and routing space remain presentation
 choices.
 
 A convergence group reserves enough columns for its shared continuation,
-including any nested question or choice. Those columns are a contiguous range,
-from the leftmost to the rightmost the group occupies. Later sibling branches
-start to the right of that whole area, even when the shared continuation is
-wider than the group's incoming branches; an earlier sibling ends to the left of
-it; and a sibling the group encloses, written between two of its branches, stays
-inside it, because leaving would put part of that branch past one written after
-it. Branches that never converge reserve nothing, and their subtrees may
-interleave.
+including any nested question or choice. Later sibling branches start to the
+right of that whole area, even when the shared continuation is wider than the
+group's incoming branches. The area one branch is held clear of is what the
+group draws and that branch does not: a branch is not asked to keep clear of a
+vertex it draws itself, which the first branch of a selection could never do at
+all, since its column is the selection's own. Branches that never converge
+reserve nothing, and their subtrees may interleave.
 
 When end is reachable, it is the final block of the whole diagram: it occupies a
 row below every other node and junction, including all iteration tails. Every

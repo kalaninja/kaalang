@@ -1,7 +1,8 @@
 //! Places the visual topology on rows and columns, routes its connections, and
 //! positions the labels its exits and nodes own.
 
-use std::collections::BTreeSet;
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
 use kaalang_model::{Arrangement, SemanticModel, Side};
@@ -13,6 +14,7 @@ mod action;
 mod choice;
 mod end;
 mod label;
+mod loop_block;
 mod question;
 mod route;
 #[cfg(test)]
@@ -59,6 +61,7 @@ const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
 /// Text budget inside a case icon.
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
 
+#[derive(Clone)]
 pub(crate) struct Scene {
     pub(crate) width: i32,
     pub(crate) height: i32,
@@ -73,6 +76,8 @@ pub(crate) struct Scene {
     /// Extra room between columns, asked for by a previous pass whose returns
     /// and labels wanted the same gap. Zero for almost every diagram.
     slack: i32,
+    /// Routing-only columns need a lane rather than a full node width.
+    narrow: bool,
     /// What each loop's body draws, as the model counted it when it placed the
     /// return: one entry per `topology.loops`. A presentation measures the
     /// same body rather than a set of its own.
@@ -86,6 +91,7 @@ pub(crate) struct Scene {
 }
 
 /// The flow parameters shown beside start, outside the control-flow topology.
+#[derive(Clone)]
 pub(crate) struct ParameterPanel {
     pub(crate) parameters: Vec<String>,
     pub(crate) x: i32,
@@ -97,6 +103,7 @@ pub(crate) struct ParameterPanel {
 
 /// One placed node. Its role and caption stay in the topology; only geometry
 /// and the wrapped caption lines live here.
+#[derive(Clone)]
 pub(crate) struct Node {
     pub(crate) id: NodeId,
     pub(crate) x: i32,
@@ -115,7 +122,7 @@ pub(crate) use kaalang_model::geometry::Point;
 ///
 /// The arrangement keeps a rank of its own for each iteration tail, because a
 /// return leaves one horizontally and anything else on that rank stands in its
-/// way. RFC 0003 §2 then lets the return leave at a side exit instead, and
+/// way. RFC 0003 §2.5 then lets the return leave at a side exit instead, and
 /// `compact_returns` takes that offer: the rank's band is left holding nothing
 /// but the connections passing through it, while the two node rows around it
 /// sit a row further apart for no reason. Closing the band shortens those
@@ -142,7 +149,7 @@ fn close_unused_rows(scene: &mut Scene, rows: &Rows) {
             continue;
         }
         shift(scene, bottom, top - bottom);
-        if route::verify(scene).is_some() {
+        if !conforms(scene) {
             shift(scene, top, bottom - top);
         }
     }
@@ -171,6 +178,7 @@ fn shift(scene: &mut Scene, from: i32, delta: i32) {
 
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
 /// leaves and a capture to the node it reaches.
+#[derive(Clone)]
 pub(crate) struct Connection {
     pub(crate) source: Source,
     pub(crate) destination: Destination,
@@ -180,6 +188,7 @@ pub(crate) struct Connection {
 /// One placed label, wrapped during layout so the canvas can be sized around
 /// it. `at` is the left end of the first line's baseline, so the serializer
 /// writes the block without deciding where it sits.
+#[derive(Clone)]
 pub(crate) struct Label {
     pub(crate) kind: LabelKind,
     pub(crate) lines: Vec<String>,
@@ -231,23 +240,15 @@ fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
         .collect()
 }
 
-/// Shortens each sole tail arrival and brings its return in with it, keeping
-/// the side and lane the arrangement chose. RFC 0003 §2 prefers turning
-/// upward at a side exit over descending to the tail's row and returning; a
-/// shortening that breaks RFC 0002 §8 is dropped, leaving the arrangement the
-/// arrangement already made valid.
+/// Shortens each sole tail arrival while retaining the recorded contour
+/// boundary, side and lane. RFC 0003 §2.5 prefers turning upward at a side
+/// exit over descending to the tail's row first.
 ///
-/// Only `route::verify` decides that, and only over the connections; the
-/// labels are placed after this and checked then. Where a label bounds a
-/// shortening it is `compact_arrival` that reads its rectangle, and it reads
-/// the labels of the scene as it stands: each accepted shortening moves the
-/// route its labels hang from, so they are placed again for the next loop.
-///
-/// It can move the climb: `compact_arrival` shortens a horizontal arrival, and
-/// the shortened end is what seeds the body extent `contour_x` measures from.
-/// That is why the return is re-emitted here from the same rows the loop
-/// spans, and why `route::verify` has the last word — it holds the re-emitted
-/// climb outside the body like any other.
+/// Labels are placed again for every loop because shortening moves the routes
+/// they hang from. `conforms` checks geometry, labels and witness correspondence;
+/// a failed shortening restores both the arrival and return. An exclusive
+/// outermost tail column may close with its arrival; occupied and separately
+/// recorded contour columns retain their positions.
 fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
     let gap = vertical_gap(scene);
     for index in (0..scene.topology.loops.len()).rev() {
@@ -286,9 +287,10 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
         let from = *compact.last().expect("a shortened arrival has a route");
         scene.connections[arrival].points = compact;
         let nested = nested_rails(scene, index);
-        let aside = route::contour_x(scene, model, index, from, end, &nested);
+        let anchor = route::contour_anchor(scene, index);
+        let aside = route::contour_x(scene, model, index, from, end, &nested, anchor);
         scene.connections[back].points = straighten_return(from, aside, end);
-        if route::verify(scene).is_some() {
+        if !conforms(scene) {
             scene.connections[arrival].points = kept.0;
             scene.connections[back].points = kept.1;
         }
@@ -304,6 +306,11 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
 /// the climb and the body, so RFC 0002 §8 holds either way and `route::verify`
 /// confirms it; a step it refuses is dropped and the climb stays where it was.
 fn clear_labels(scene: &mut Scene) -> i32 {
+    // The elastic realization already reserves label width on both sides of
+    // every return column. Moving just one segment would change its corridor.
+    if !scene.arrangement.return_routes.is_empty() {
+        return 0;
+    }
     let mut wanted = 0;
     // Innermost first: an enclosing rail is measured from the one it encloses,
     // so it has to follow it out rather than be stepped into.
@@ -521,27 +528,49 @@ pub(crate) fn layout(
     parameters: &[String],
     return_type: &str,
 ) -> Result<Scene, String> {
+    layout_spaced(model, start, parameters, return_type, true)
+        .or_else(|_| layout_spaced(model, start, parameters, return_type, false))
+}
+
+fn layout_spaced(
+    model: &SemanticModel,
+    start: &str,
+    parameters: &[String],
+    return_type: &str,
+    narrow: bool,
+) -> Result<Scene, String> {
     // A label is wrapped to fit the standard gap beside its column, and a
     // return climbs in that same gap. Where the two want it at once — a label
     // reaching rightward from one column past the rail of the loop in the
     // next — no rail position clears it, because stepping out goes further
     // into the label and stepping in goes into the body. The room has to come
-    // from the columns, and how much is only known once the labels are
-    // placed, so the layout is taken again with the gap the last one asked
-    // for. These presentation retries are bounded; exhaustion is a renderer
-    // error, not evidence that the model's topology is impossible.
+    // from the columns, and how much is only known once the labels are placed,
+    // so the layout is taken again with the gap the last one asked for.
+    //
+    // That ends, and not by counting attempts. A label is wrapped to a fixed
+    // width and a node measured to a fixed one, neither of which the slack
+    // changes; the slack widens the gap between two columns and nothing else.
+    // Once the gap holds the widest label a connection can hang beside the
+    // deepest a rail reaches past a body, the two cannot want the same pixel,
+    // so a pass asking for more room past that bound is a renderer defect
+    // rather than a topology the columns cannot hold. Every pass adds at least
+    // one lane, so the bound is reached in finitely many.
+    let (left, right) = contour_reach(model);
+    let bound = label::LABEL_WIDTH + left + right + LANE;
     let mut slack = 0;
-    for _ in 0..4 {
-        match attempt(model, start, parameters, return_type, slack) {
+    loop {
+        match attempt(model, start, parameters, return_type, slack, narrow) {
             Ok(scene) => return Ok(scene),
             Err(Blocked::Refused(reason)) => return Err(reason),
-            Err(Blocked::Narrow(wanted)) => slack += wanted,
+            Err(Blocked::Narrow(_)) if slack >= bound => {
+                return Err("a loop return and a connection label want the same gap".to_owned());
+            }
+            // Never past the bound: a pass that asks for more than the gap can
+            // ever need is answered by a pass at the bound itself, so the error
+            // above means the widest gap was tried and still did not hold.
+            Err(Blocked::Narrow(wanted)) => slack = (slack + wanted.max(LANE)).min(bound),
         }
     }
-    attempt(model, start, parameters, return_type, slack).map_err(|blocked| match blocked {
-        Blocked::Refused(reason) => reason,
-        Blocked::Narrow(_) => "a loop return and a connection label want the same gap".to_owned(),
-    })
 }
 
 /// Why one pass of the layout produced no scene.
@@ -553,15 +582,168 @@ enum Blocked {
     Narrow(i32),
 }
 
+/// Whether the scene conforms and still realizes the arrangement it was built
+/// from.
+///
+/// Every transformation below is a change to a scene that already did both, so
+/// this is what decides whether the change is kept. The labels are placed
+/// first, because a transformation moves the routes they hang from and a label
+/// over a node is one of the things nothing later repairs. The canvas is not
+/// settled here and does not need to be: none of these three reads it, and
+/// `finish` fits it once the coordinates stop moving.
+fn conforms(scene: &mut Scene) -> bool {
+    scene.labels = label::place_labels(scene);
+    route::verify(scene).is_none()
+        && label::clearance(scene).is_none()
+        && correspondence(scene).is_none()
+}
+
+/// Whether the pixels still say what the arrangement decided.
+///
+/// The geometry checks hold a scene to RFC 0002 §8; this holds it to the
+/// witness it is supposed to realize, which is a different question. A
+/// transformation can leave crossing-free geometry that draws another
+/// structure — two nodes swapped between columns cross nothing — and only this
+/// sees that.
+///
+/// Three things carry over. Columns: two nodes stand at one x exactly when the
+/// arrangement gave them one column, and a lower column is further left, which
+/// preserves the branch order and every reserved footprint at once. Ranks: a
+/// vertex of a lower rank is never drawn below one of a higher rank, an order a
+/// closed row may flatten but never invert. Incidence: a route still leaves the
+/// port it was given and reaches the node it was given.
+///
+/// A junction may move along its incident rail during compaction, but all of
+/// its incident routes must keep meeting at one point. Returns also retain
+/// the recorded column boundary after indentation shifts the whole scene.
+pub(super) fn correspondence(scene: &Scene) -> Option<String> {
+    for left in &scene.nodes {
+        for right in &scene.nodes {
+            let (here, there) = (
+                scene.column(Vertex::Node(left.id)),
+                scene.column(Vertex::Node(right.id)),
+            );
+            let kept = match here.cmp(&there) {
+                Ordering::Less => left.x < right.x,
+                Ordering::Equal => left.x == right.x,
+                Ordering::Greater => left.x > right.x,
+            };
+            if !kept {
+                return Some(format!(
+                    "{:?} in column {here} and {:?} in column {there} are drawn at {} and {}",
+                    left.id, right.id, left.x, right.x
+                ));
+            }
+            if scene.rank(Vertex::Node(left.id)) < scene.rank(Vertex::Node(right.id))
+                && left.y > right.y
+            {
+                return Some(format!(
+                    "{:?} is ranked above {:?} and drawn below it",
+                    left.id, right.id
+                ));
+            }
+        }
+    }
+    let mut junctions = BTreeMap::new();
+    for connection in &scene.connections {
+        let (Some(first), Some(last)) = (connection.points.first(), connection.points.last())
+        else {
+            return Some("a connection has no route".to_owned());
+        };
+        if let Source::Exit(exit) = connection.source
+            && *first != scene.exit_anchor(exit)
+        {
+            return Some(format!("a connection leaves {exit:?} away from its port"));
+        }
+        if let Vertex::Node(node) = connection.destination
+            && *last != scene.top_anchor(node)
+        {
+            return Some(format!("a connection reaches {node:?} away from its port"));
+        }
+        for (vertex, point) in [
+            (Vertex::from(connection.source), *first),
+            (connection.destination, *last),
+        ] {
+            if let Vertex::Junction(junction) = vertex
+                && let Some(previous) = junctions.insert(junction, point)
+                && previous != point
+            {
+                return Some(format!("the routes of junction {junction} do not meet"));
+            }
+        }
+    }
+    return_correspondence(scene)
+}
+
+fn return_correspondence(scene: &Scene) -> Option<String> {
+    let origin =
+        scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
+    for (index, contour) in scene.arrangement.contours.iter().enumerate() {
+        let tail = scene.topology.loops[index].tail;
+        let Some(edge) = scene
+            .connections
+            .iter()
+            .find(|edge| edge.source == Source::Junction(tail))
+        else {
+            return Some(format!("the return of junction {tail} is missing"));
+        };
+        if let Some(recorded) = scene.arrangement.return_routes.get(&index) {
+            let mut expected = std::iter::once(recorded.arrival)
+                .chain(
+                    recorded
+                        .runs
+                        .iter()
+                        .rev()
+                        .flat_map(|run| [run.exit, run.enter]),
+                )
+                .chain(std::iter::once(recorded.departure))
+                .map(|column| origin + route::return_x(scene, index, column))
+                .collect::<Vec<_>>();
+            expected.dedup();
+            let mut actual = edge
+                .points
+                .iter()
+                .skip(1)
+                .take(edge.points.len().saturating_sub(2))
+                .map(|point| point.x)
+                .collect::<Vec<_>>();
+            actual.dedup();
+            if actual != expected {
+                return Some(format!(
+                    "the return of junction {tail} changed its recorded corridor"
+                ));
+            }
+            continue;
+        }
+        let Some(climb) = edge.points.windows(2).find(|pair| pair[1].y < pair[0].y) else {
+            return Some(format!("the return of junction {tail} has no climb"));
+        };
+        let anchor = route::contour_anchor(scene, index);
+        let offset = (contour.lane as i32 + 1) * LANE;
+        let kept = match contour.side {
+            Side::Left => climb[0].x <= anchor - offset,
+            Side::Right => climb[0].x >= anchor + offset,
+        };
+        if !kept {
+            return Some(format!(
+                "the return of junction {tail} moved inside its recorded contour"
+            ));
+        }
+    }
+    None
+}
+
 fn attempt(
     model: &SemanticModel,
     start: &str,
     parameters: &[String],
     return_type: &str,
     slack: i32,
+    narrow: bool,
 ) -> Result<Scene, Blocked> {
     let mut scene = Scene {
         slack,
+        narrow,
         width: 0,
         height: 0,
         nodes: Vec::new(),
@@ -591,12 +773,46 @@ fn attempt(
     // ranks and columns; this reads the emitted geometry, so it catches
     // anything the abstract check does not model. A disagreement means the
     // realization is wrong, not that another arrangement should be tried.
-    if let Some(reason) = route::verify(&scene) {
+    if let Some(reason) = route::verify(&scene).or_else(|| correspondence(&scene)) {
         return Err(Blocked::Refused(reason));
     }
+
+    // The realization every compaction below starts from, and the one to fall
+    // back on: it conforms and it realizes the arrangement, so a transformation
+    // that cannot be made to hold costs the compact appearance rather than the
+    // diagram.
+    let uncompacted = scene.clone();
+    if !scene.arrangement.return_routes.is_empty() {
+        return finish(scene);
+    }
+    loop_block::compact_entries(&mut scene);
     compact_returns(&mut scene, model);
     end::adjust(&mut scene);
     close_unused_rows(&mut scene, &rows);
+    // Either failure falls back on it, not just a refusal. A compaction pulls
+    // rails inward, so it can put one under a label the uncompacted geometry
+    // cleared; widening the columns for a conflict compaction introduced would
+    // spend room the drawing does not need, and could run out of room the
+    // uncompacted realization never wanted.
+    match finish(scene) {
+        Ok(scene) => Ok(scene),
+        Err(compacted) => match (finish(uncompacted), compacted) {
+            (Ok(scene), _) => Ok(scene),
+            // Both want room: ask for the more of the two, so one pass settles
+            // whichever realization the next attempt keeps.
+            (Err(Blocked::Narrow(fallback)), Blocked::Narrow(wanted)) => {
+                Err(Blocked::Narrow(fallback.max(wanted)))
+            }
+            // The compacted reason is dropped with the compaction it describes.
+            // What has to be explained is the realization that would ship.
+            (Err(fallback), _) => Err(fallback),
+        },
+    }
+}
+
+/// Places the labels, settles the coordinates and the canvas, and checks the
+/// complete scene.
+fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     scene.labels = label::place_labels(&scene);
     let wanted = clear_labels(&mut scene);
     if wanted > 0 {
@@ -604,12 +820,15 @@ fn attempt(
     }
     scene.indent();
     scene.fit();
-    // Check the complete result after all transformations, including the
-    // coordinates and canvas that `indent` and `fit` settle.
-    if let Some(reason) = route::verify(&scene).or_else(|| label::verify(&scene)) {
+    // The complete result after every transformation, including the
+    // coordinates and canvas that `indent` and `fit` settle, against both the
+    // spatial rules and the arrangement it realizes.
+    if let Some(reason) = route::verify(&scene)
+        .or_else(|| label::verify(&scene))
+        .or_else(|| correspondence(&scene))
+    {
         return Err(Blocked::Refused(reason));
     }
-
     Ok(scene)
 }
 
@@ -713,15 +932,38 @@ impl Scene {
 
     /// The centre of one column.
     ///
-    /// Columns stand `COLUMN_WIDTH` apart unless the arrangement climbs a
-    /// return in a lane deeper than the space that leaves beside a node. Then
-    /// every column moves out far enough to hold that lane and one more, which
-    /// is how a presentation holds whatever lanes the model allowed.
-    ///
-    /// ponytail: one width for the whole diagram, so one deep contour widens
-    /// every gap; give each gap its own width if a diagram looks stretched.
+    /// Node and exit columns retain their measured half-width on either side,
+    /// including the space for a question's branch description. A column used
+    /// only by routing needs one lane instead. This map stays strictly
+    /// increasing; if the smaller gaps fail any check, `layout` retries the
+    /// same witness with uniform spacing. Bent returns need that uniform map
+    /// to preserve the order of their offsets from both sides of each column.
     pub(super) fn column_x(&self, column: i32) -> i32 {
-        MARGIN + NODE_WIDTH / 2 + column * self.column_width()
+        let width = self.column_width();
+        if !self.narrow || !self.arrangement.return_routes.is_empty() {
+            return MARGIN + NODE_WIDTH / 2 + column * width;
+        }
+        let half = |at| {
+            if self
+                .topology
+                .nodes
+                .iter()
+                .any(|node| self.column(Vertex::Node(node.id)) == at)
+                || self
+                    .arrangement
+                    .exit_offset
+                    .iter()
+                    .any(|(exit, offset)| self.column(Vertex::Node(exit.node)) + offset == at)
+            {
+                width / 2
+            } else {
+                LANE.midpoint(self.slack)
+            }
+        };
+        let distance: i32 = (0.min(column)..0.max(column))
+            .map(|at| half(at) + half(at + 1))
+            .sum();
+        MARGIN + NODE_WIDTH / 2 + column.signum() * distance
     }
 
     /// How far apart two columns stand.
@@ -735,7 +977,12 @@ impl Scene {
     /// every gap; give each gap its own width if a diagram looks stretched.
     fn column_width(&self) -> i32 {
         let (left, right) = self.reach;
-        COLUMN_WIDTH.max(NODE_WIDTH + left + right + LANE) + self.slack
+        let labels = if self.arrangement.return_routes.is_empty() {
+            0
+        } else {
+            2 * label::LABEL_WIDTH
+        };
+        COLUMN_WIDTH.max(NODE_WIDTH + left + right + LANE + labels) + self.slack
     }
 
     pub(super) fn column(&self, vertex: Vertex) -> i32 {

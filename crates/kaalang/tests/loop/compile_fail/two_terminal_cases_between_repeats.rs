@@ -4,10 +4,10 @@ use kaalang::kaalang;
 fn two_terminal_cases_between_repeats(mut mode: u8) -> u8 {
     loop {
         #[choice("Which route?")]
-        #[case("Advance on the left.")]
+        #[case("Advance from zero.")]
         #[case("Finish with seven.")]
         #[case("Finish with nine.")]
-        #[case("Advance on the right.")]
+        #[case("Advance from another mode.")]
         let (left, seven, nine, right) = |mode| match mode {
             0 => (),
             1 => (),
@@ -21,10 +21,10 @@ fn two_terminal_cases_between_repeats(mut mode: u8) -> u8 {
         #[action("Finish the flow with nine.")]
         let end = |nine| 9;
 
-        #[action("Advance through the left case.")]
+        #[action("Set the mode to one.")]
         |left, &mut mode| *mode = 1;
 
-        #[action("Advance through the right case.")]
+        #[action("Set the mode to one.")]
         |right, &mut mode| *mode = 1;
     }
 }

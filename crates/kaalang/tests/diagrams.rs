@@ -97,3 +97,54 @@ fn read_directory(path: &Path) -> impl Iterator<Item = PathBuf> {
 fn extension_is(path: &Path, extension: &str) -> bool {
     path.extension().is_some_and(|found| found == extension)
 }
+
+/// Every behavior fixture is declared by the `mod.rs` beside it, and every one
+/// that can finish carries a test of its own.
+///
+/// `render_source` reads the file rather than the module tree, so a fixture
+/// renamed out of its module would go on producing a reviewed diagram that
+/// nothing runs. A flow with no reachable end cannot be called at all — it
+/// would not return — so those are exempt from the second half and from
+/// nothing else.
+#[test]
+fn every_behavior_fixture_is_declared_and_executed() {
+    let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
+    let mut checked = 0;
+    for directory in fixture_directories(&tests) {
+        let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
+        for fixture in fs::read_dir(&directory)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| extension_is(path, "rs"))
+        {
+            let stem = fixture.file_stem().unwrap().to_str().unwrap().to_owned();
+            if stem == "mod" {
+                continue;
+            }
+            checked += 1;
+            assert!(
+                declarations.contains(&format!("mod {stem};")),
+                "{} is not declared by the mod.rs beside it",
+                fixture.display()
+            );
+            let source = fs::read_to_string(&fixture).unwrap();
+            if source.contains("#[test]") {
+                continue;
+            }
+            let finishes = kaalang_svg::flow_names(&source)
+                .unwrap()
+                .iter()
+                .any(|flow| {
+                    kaalang_svg::render_source(&source, flow)
+                        .unwrap()
+                        .contains("End:")
+                });
+            assert!(
+                !finishes,
+                "{} declares a flow that finishes and no test that calls it",
+                fixture.display()
+            );
+        }
+    }
+    assert!(checked > 100, "the whole fixture tree should be walked");
+}

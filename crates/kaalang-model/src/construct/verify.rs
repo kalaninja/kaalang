@@ -178,7 +178,7 @@ pub(super) fn polyline(
     straighten(points)
 }
 
-/// One loop return as an orthogonal polyy: out of the tail, up the contour,
+/// One loop return as an orthogonal polyline: out of the tail, up the contour,
 /// and horizontally into the entry (RFC 0002 §8).
 pub(super) fn return_polyline(
     topology: &Topology,
@@ -190,25 +190,66 @@ pub(super) fn return_polyline(
 ) -> Vec<Point> {
     let tail_line = junction_line(topology, arrangement, grid, tail);
     let entry_line = junction_line(topology, arrangement, grid, entry);
-    let aside = grid.contour(contour);
-    straighten(vec![
+    let loop_index = topology
+        .loops
+        .iter()
+        .position(|loop_| loop_.tail == tail)
+        .expect("a projected loop tail");
+    let position = |column| grid.contour(super::Contour { column, ..contour });
+    let Some(route) = arrangement.return_routes.get(&loop_index) else {
+        return straighten(vec![
+            Point {
+                x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
+                y: tail_line,
+            },
+            Point {
+                x: position(contour.column),
+                y: tail_line,
+            },
+            Point {
+                x: position(contour.column),
+                y: entry_line,
+            },
+            Point {
+                x: grid.column(arrangement.column[&Vertex::Junction(entry)]),
+                y: entry_line,
+            },
+        ]);
+    };
+    let mut points = vec![
         Point {
             x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
             y: tail_line,
         },
         Point {
-            x: aside,
+            x: position(route.arrival),
             y: tail_line,
         },
+    ];
+    for run in route.runs.iter().rev() {
+        let y = grid.lane(run.gap, run.lane);
+        points.extend([
+            Point {
+                x: position(run.exit),
+                y,
+            },
+            Point {
+                x: position(run.enter),
+                y,
+            },
+        ]);
+    }
+    points.extend([
         Point {
-            x: aside,
+            x: position(route.departure),
             y: entry_line,
         },
         Point {
             x: grid.column(arrangement.column[&Vertex::Junction(entry)]),
             y: entry_line,
         },
-    ])
+    ]);
+    straighten(points)
 }
 
 /// Where two routes are allowed to meet, and whether they may share a run.
@@ -265,9 +306,11 @@ pub(crate) fn arrangement(
     arrangement: &Arrangement,
 ) -> Result<(), String> {
     coverage(topology, arrangement)?;
+    super::choice::verify(topology, arrangement)?;
     super::end::verify(topology, arrangement)?;
     order(topology, arrangement)?;
     branch_columns(flow, topology, arrangement)?;
+    serial_columns(topology, arrangement)?;
     let grid = Grid::of(topology, arrangement);
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
@@ -301,7 +344,12 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
     if arrangement.gap_lanes.len() != arrangement.ranks {
         return Err("the arrangement counts lanes for a different number of rank gaps".to_owned());
     }
-    for (index, route) in arrangement.routes.iter().enumerate() {
+    for (index, route) in arrangement
+        .routes
+        .iter()
+        .chain(arrangement.return_routes.values())
+        .enumerate()
+    {
         for run in &route.runs {
             let lanes = arrangement.gap_lanes.get(run.gap).copied().unwrap_or(0);
             if run.lane >= lanes {
@@ -311,6 +359,14 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
                     run.lane
                 ));
             }
+        }
+    }
+    for (&index, route) in &arrangement.return_routes {
+        let Some(contour) = arrangement.contours.get(index) else {
+            return Err("a return route names no loop".to_owned());
+        };
+        if route.departure != contour.column {
+            return Err("a return route changes its recorded entry column".to_owned());
         }
     }
     // A corridor has to end at the vertices its connection joins, and leave by
@@ -364,6 +420,38 @@ fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
             if from >= to {
                 return Err(format!("{relation} does not descend: {from} to {to}"));
             }
+        }
+    }
+    Ok(())
+}
+
+/// A sole arrival continues the current column. A case may be reached by a
+/// distributor detour; a tail may finish at either end of its arrival rail.
+fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+    for &vertex in &topology.vertices {
+        if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
+            || topology
+                .loops
+                .iter()
+                .any(|loop_| vertex == Vertex::Junction(loop_.tail))
+        {
+            continue;
+        }
+        let mut incoming = topology.incoming(vertex);
+        let Some(wire) = incoming.next() else {
+            continue;
+        };
+        if incoming.next().is_some() {
+            continue;
+        }
+        let column = match wire.source {
+            Source::Exit(exit) => {
+                arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit]
+            }
+            Source::Junction(junction) => arrangement.column[&Vertex::Junction(junction)],
+        };
+        if arrangement.column[&vertex] != column {
+            return Err(format!("{vertex:?} leaves its serial column {column}"));
         }
     }
     Ok(())
@@ -441,130 +529,52 @@ fn branch_columns(
                 ));
             }
         }
-        distributor_order(topology, arrangement, block)?;
         reserved_columns(arrangement, block, &regions)?;
     }
     Ok(())
 }
 
-/// The routes leaving one exit reach their destinations in authored order.
-///
-/// A selection's branches are arranged left to right in authored order
-/// (RFC 0002 §8), and the routes that carry them are too. They may share the
-/// collinear run their common exit gives them, so nothing crosses if they
-/// descend in another order — but then the branch written first would be
-/// drawn beyond the one written after it, and the diagram would no longer
-/// show the authored order it claims to.
-///
-/// It holds only where one exit carries several branches — a choice's
-/// distributor. Several connections of a question's branch exit carry one
-/// branch to several consumers, and nothing orders those among themselves.
-///
-/// On its own this adds little: a route that ends in the column it descends
-/// in is already covered by the branch columns above. What it catches is a
-/// route that descends elsewhere and turns in, which the corridor shapes allow
-/// and no other rule here would see.
-fn distributor_order(
-    topology: &Topology,
-    arrangement: &Arrangement,
-    block: usize,
-) -> Result<(), String> {
-    for exit in topology
-        .exits
-        .iter()
-        .filter(|exit| exit.id.node == NodeId::Block(block))
-        .filter(|exit| super::regions::carries_branches(topology, exit.id))
-    {
-        let descents = topology
-            .leaving(exit.id)
-            .map(|wire| {
-                let index = topology
-                    .connections
-                    .iter()
-                    .position(|other| other == wire)
-                    .expect("a leaving connection is projected");
-                let route = &arrangement.routes[index];
-                route.runs.first().map_or(route.departure, |run| run.exit)
-            })
-            .collect::<Vec<_>>();
-        if !descents.windows(2).all(|pair| pair[0] < pair[1]) {
-            return Err(format!(
-                "block {} sends the routes of {:?} down in the order {descents:?}, not the authored one",
-                block + 1,
-                exit.id
-            ));
-        }
-    }
-    Ok(())
-}
-
 /// A convergence group reserves the columns of everything its branches draw,
-/// and a sibling outside the group stays clear of that whole area on the side
-/// its authored position puts it (RFC 0002 §8).
+/// and a sibling written after every member of it starts to their right (RFC
+/// 0002 §8).
 ///
-/// The group and its area come from the topology — which branches meet, and
-/// what they draw — so this holds an arrangement to a range it did not choose.
-/// Reading a width the same search recorded would compare a value with itself.
+/// This is the same comparison the deciding search's numbering records, vertex
+/// by vertex, over the same set: what the group draws and the sibling does not,
+/// which `Regions::reserved` derives from the topology, so this holds an
+/// arrangement to an order it did not choose. Reading a width the same search
+/// recorded would compare a value with itself.
 ///
-/// Only what the sibling alone draws is held to its side. A vertex two
-/// branches reach is a convergence, and belongs to the area of the group that
-/// meets there.
+/// A vertex two branches reach is a convergence and belongs to the area of the
+/// group that meets there; a vertex the sibling reaches too is common ground on
+/// both sides of the comparison, so `Regions::reserved` takes it out as
+/// `Regions::outside` takes it out of the branch. Leaving it in would make the
+/// rule unsatisfiable for the first branch, whose column RFC 0002 §8 fixes as
+/// the brancher's own.
 ///
-/// A branch the group encloses — its authored position falls between two
-/// members — stays inside the band instead: leaving it would put part of the
-/// branch past one written after it, which authored branch order forbids.
-/// Branches that never meet are held to nothing: RFC 0002 §8 reserves columns
-/// for a convergence group, not for every branch, so their subtrees may
-/// interleave.
+/// Only a later sibling is held. An earlier sibling and one the group encloses
+/// are held to nothing — RFC 0003 §2.2 records the mirror-image restriction
+/// that was tried and the flow it refused — and neither are branches that never
+/// meet: RFC 0002 §8 reserves columns for a convergence group, not for every
+/// branch, so their subtrees may interleave.
 fn reserved_columns(
     arrangement: &Arrangement,
     block: usize,
     regions: &super::regions::Regions,
 ) -> Result<(), String> {
-    /// Where a sibling of a convergence group sits relative to its members.
-    enum Sits {
-        Before,
-        Inside,
-        After,
-    }
-
     let column = |vertex: &Vertex| arrangement.column[vertex];
     for group in &regions.groups {
-        let Some(low) = group.area.iter().map(column).min() else {
-            continue;
-        };
-        let high = group.area.iter().map(column).max().unwrap_or(low);
-        let first = *group.members.first().expect("a group has members");
-        let last = *group.members.last().expect("a group has members");
-        for branch in 0..regions.branches.len() {
-            if group.members.contains(&branch) {
-                continue;
-            }
-            let sits = if branch < first {
-                Sits::Before
-            } else if branch > last {
-                Sits::After
-            } else {
-                Sits::Inside
-            };
-            for vertex in &regions.outside(group, branch) {
-                let at = column(vertex);
-                let kept = match sits {
-                    Sits::Before => at < low,
-                    Sits::After => at > high,
-                    Sits::Inside => low < at && at < high,
-                };
-                if kept {
+        for branch in regions.later_siblings(group) {
+            let outside = regions.outside(group, branch);
+            for inside in &regions.reserved(group, branch) {
+                let at = column(inside);
+                let Some(wrong) = outside.iter().find(|vertex| column(vertex) <= at) else {
                     continue;
-                }
+                };
                 return Err(format!(
-                    "block {} draws {vertex:?} of branch {} in column {at}, {} the columns {low} to {high} its convergence group {:?} reserves",
+                    "block {} draws {wrong:?} of branch {} in column {}, not right of {inside:?} in column {at}, which its convergence group {:?} reserves",
                     block + 1,
                     branch + 1,
-                    match sits {
-                        Sits::Inside => "outside",
-                        _ => "inside",
-                    },
+                    column(wrong),
                     group.members
                 ));
             }
@@ -586,7 +596,7 @@ fn vertex_points(
             (
                 Point {
                     x: grid.column(arrangement.column[&vertex]),
-                    y: grid.rank(arrangement.rank[&vertex]),
+                    y: endpoint_line(topology, arrangement, grid, vertex),
                 },
                 vertex,
             )
@@ -689,46 +699,66 @@ fn returns(
     lines: &[Vec<Point>],
 ) -> Result<(), String> {
     let vertices = vertex_points(topology, arrangement, grid);
-    let chosen = arrangement
-        .contours
+    let returns = topology
+        .loops
         .iter()
-        .map(|contour| Some(*contour))
+        .enumerate()
+        .map(|(i, loop_)| {
+            return_polyline(
+                topology,
+                arrangement,
+                grid,
+                loop_.tail,
+                loop_.entry,
+                arrangement.contours[i],
+            )
+        })
         .collect::<Vec<_>>();
-    let mut drawn: Vec<Vec<Point>> = Vec::new();
+    let mut drawn: Vec<&Vec<Point>> = Vec::new();
     for (index, loop_) in topology.loops.iter().enumerate() {
         let contour = arrangement.contours[index];
         let body = super::loop_block::body_columns(flow, topology, arrangement, loop_.header);
-        let nested = super::loop_block::nested_returns(flow, topology, grid, loop_.header, &chosen);
-        let position = grid.contour(contour);
+        let end = flow.blocks[loop_.header]
+            .loop_end
+            .expect("a loop owns a body");
+        let nested = topology
+            .loops
+            .iter()
+            .enumerate()
+            .filter(|(_, inner)| (loop_.header + 1..end).contains(&inner.header))
+            .flat_map(|(i, _)| returns[i].iter().map(|p| p.x))
+            .collect::<Vec<_>>();
+        let line = &returns[index];
         let outside = contour.lane < contour_lanes(topology)
-            && super::loop_block::outside(grid, contour.side, position, &body, &nested);
+            && line.len() >= 4
+            && line[1..line.len() - 1]
+                .iter()
+                .all(|p| super::loop_block::outside(grid, contour.side, p.x, &body, &nested));
         if !outside {
             return Err(format!(
                 "the return of the loop at block {} climbs inside its body",
                 loop_.header + 1
             ));
         }
-        let line = return_polyline(
-            topology,
-            arrangement,
-            grid,
-            loop_.tail,
-            loop_.entry,
-            contour,
-        );
+        if line.windows(2).any(|pair| pair[1].y > pair[0].y) {
+            return Err(format!(
+                "the return of the loop at block {} moves downward",
+                loop_.header + 1
+            ));
+        }
         let back = (
             Source::Junction(loop_.tail),
             Destination::Junction(loop_.entry),
         );
         simple(
-            &line,
+            line,
             &vertices,
             &[Vertex::Junction(loop_.tail), Vertex::Junction(loop_.entry)],
             &format!("the return of the loop at block {}", loop_.header + 1),
         )?;
         for (other, points) in lines.iter().enumerate() {
-            let (shared, meetings) = meetings(back, &line, ends(topology, other), points);
-            if !compatible(&line, points, shared, &meetings) {
+            let (shared, meetings) = meetings(back, line, ends(topology, other), points);
+            if !compatible(line, points, shared, &meetings) {
                 return Err(format!(
                     "the return of the loop at block {} crosses connection {}",
                     loop_.header + 1,
@@ -737,7 +767,7 @@ fn returns(
             }
         }
         for earlier in &drawn {
-            if !compatible(&line, earlier, false, &[]) {
+            if !compatible(line, earlier, false, &[]) {
                 return Err(format!(
                     "the return of the loop at block {} crosses another return",
                     loop_.header + 1
@@ -769,6 +799,48 @@ mod tests {
             });
             assert_eq!(contour_lanes(&topology), loops);
         }
+    }
+
+    #[test]
+    fn a_crossing_uses_the_junctions_actual_merge_lane() {
+        let junction = Vertex::Junction(0);
+        let mut topology = Topology::default();
+        topology.vertices = vec![junction];
+        topology.connections = vec![crate::topology::Connection {
+            source: Source::Junction(1),
+            destination: junction,
+        }];
+        let arrangement = Arrangement {
+            ranks: 3,
+            rank: [(junction, 2)].into(),
+            column: [(junction, 0)].into(),
+            gap_lanes: vec![0, 2, 0],
+            routes: vec![super::super::Route {
+                departure: -1,
+                arrival: 0,
+                runs: vec![super::super::Run {
+                    gap: 1,
+                    lane: 0,
+                    enter: -1,
+                    exit: 0,
+                }],
+            }],
+            ..Arrangement::default()
+        };
+        let grid = Grid::of(&topology, &arrangement);
+        let y = junction_line(&topology, &arrangement, &grid, 0);
+        assert_ne!(y, grid.rank(2), "the junction is on an earlier merge lane");
+        let crossing = [Point { x: -2, y }, Point { x: 2, y }];
+        assert!(
+            simple(
+                &crossing,
+                &vertex_points(&topology, &arrangement, &grid),
+                &[],
+                "probe"
+            )
+            .unwrap_err()
+            .contains("passes through")
+        );
     }
 
     #[test]

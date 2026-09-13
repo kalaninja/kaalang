@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use super::{Scene, route, vertical_gap};
+use super::{Scene, vertical_gap};
 use kaalang_model::topology::{Destination, NodeKind, Source};
 
 pub(super) fn adjust(scene: &mut Scene) {
@@ -83,7 +83,7 @@ pub(super) fn adjust(scene: &mut Scene) {
             }
         }
         scene.nodes[end_index].y -= delta;
-        if clears_returns(scene, terminal, y, gap) && route::verify(scene).is_none() {
+        if clears_returns(scene, terminal, y, gap) && super::conforms(scene) {
             return;
         }
         scene.nodes[end_index].y += delta;

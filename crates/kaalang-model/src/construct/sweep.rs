@@ -1,166 +1,7 @@
-//! Decides whether a topology has a conforming diagram at all, by sweeping it
-//! from top to bottom.
-//!
-//! The constructor beside this one searches a family of arrangements shaped
-//! like the ones RFC 0002 §8 prefers. It is fast and its results are the ones
-//! worth drawing, but it commits to ranks and columns before it routes, so its
-//! failure proves nothing. This module decides the question: it accepts a
-//! topology exactly when some sequence of the states below both finishes and
-//! numbers its columns, and the two directions further down say why that is
-//! the same as having a conforming drawing.
-//!
-//! # Lifelines and states
-//!
-//! Reverse every loop return, so it runs from the entry down to the tail
-//! instead of climbing back. Every connection, every placement-only precedence
-//! edge of RFC 0002 §§7–8, and every reversed return then descends, and the
-//! vertices form a directed acyclic graph. The placement edges into end make
-//! it the final vertex; this is a required order, not a search preference.
-//!
-//! A *lifeline* is one connection's own vertical: the column it descends in
-//! between leaving its source and reaching its destination. A *state* is
-//!
-//! - the set of vertices already placed, which is closed under that graph, and
-//! - the *frontier*: the lifelines crossing the cut below them, left to right.
-//!
-//! One step places one vertex, so a path through the state space is as long as
-//! the topology has vertices.
-//!
-//! # Steps
-//!
-//! A vertex `v` can be placed once every predecessor is placed and:
-//!
-//! - **its incoming lifelines are contiguous in the frontier.** This is the
-//!   whole spatial rule. The lifelines `v` consumes meet on its rail, which
-//!   spans them, so another lifeline between two of them would have to cross
-//!   that rail (RFC 0002 §8) — and it cannot end there, because it does not
-//!   join `v`.
-//! - **`v` continues the column of the lifeline at one end of that run**, and
-//!   which end is forced, not chosen. For a convergence it is the leftmost:
-//!   the frontier keeps its order, so the leftmost route reaching `v` is the
-//!   one its group's first branch took, and RFC 0002 §8 sends the shared
-//!   continuation on down that column. An iteration tail instead takes the end
-//!   nearest the side its return climbs, because the return leaves the tail
-//!   horizontally along the rail's own line: a tail at the far end would send
-//!   its return straight back across every route arriving there. No vertex is
-//!   both — a tail is a structural junction and merges no wire — and only the
-//!   start node continues nothing.
-//! - `v`'s outgoing connections take its place in the frontier, in the authored
-//!   order of the exits they leave, and the first of them continues `v`'s own
-//!   lifeline. Connections leaving one exit share a run, so their order among
-//!   themselves is free and the sweep tries each — unless the exit is a
-//!   choice's distributor, where RFC 0002 §8 sends the routes down in the
-//!   order of the branches they carry and `Fanout::fixed` keeps them there.
-//!   They have to take that place
-//!   for the same reason: they leave `v`'s own box sideways before they
-//!   descend, so a lifeline between `v`'s column and one of theirs is crossed.
-//! - a loop entry also emits its reversed return, immediately outside itself on
-//!   one side. That side is the only choice a loop contributes.
-//!
-//! Nothing else moves. Two lifelines cannot exchange places without crossing,
-//! so the frontier keeps its order between steps, sideways movement is
-//! invisible to the search, and a row used only for routing is not a state.
-//!
-//! Two orders the frontier cannot express join it when the columns are
-//! numbered. Both are cases of the same thing: the frontier only orders two
-//! lifelines while both are alive, and a drawing has to hold once one of them
-//! is gone. A convergence group reserves the columns of everything its
-//! branches draw, and its shared continuation is drawn below, by which time a
-//! sibling's own lifelines may have ended; a return climbs outside every
-//! column of its body, including vertices placed after the tail, when the
-//! return's lifeline has already left the frontier.
-//!
-//! Those two are part of the decision, not a formality after it. The walk
-//! numbers the columns when it has placed everything, and a sequence whose
-//! orders contradict each other is no drawing: the walk discards it and carries
-//! on looking, exactly as it does for a vertex it cannot place.
-//!
-//! The return's side decides the contour outright. Every lifeline of the body
-//! is inserted where a body lifeline already was, so the body never reaches
-//! past the return, and the return climbs outside the body's whole column
-//! range for as long as the body lasts. A loop nested in that body opens its
-//! own return inside it, so an enclosing return is outside that one too. That
-//! one the frontier cannot give: the two returns may share no row at all, in
-//! which case they never stand on it together and never cross either. It is
-//! recorded with the column orders instead, beside the body vertices drawn
-//! below the tail, which outlive the frontier for the same reason.
-//!
-//! # Both directions
-//!
-//! *Every conforming drawing is one of these sequences.* Order the vertices by
-//! row. Each connection crosses a horizontal cut once: forward routes descend
-//! (RFC 0002 §8) and a return's climb is monotone, so the crossings give the
-//! frontier its order, and no two may exchange places without crossing. At a
-//! vertex, a lifeline between two the vertex consumes would cross its rail
-//! unless it ends there too, so what it consumes is contiguous; and its
-//! branches leave left to right in authored order.
-//!
-//! *Every sequence whose columns number is a conforming drawing.* Rank a vertex
-//! by its position in the sequence. Order the lifelines by every adjacency the
-//! frontier showed, together with the two orders it cannot express: that
-//! relation may have a cycle, and a sequence that produces one is discarded at
-//! the end of the walk rather than drawn. Where it has none, number it. No
-//! lifeline then passes through a vertex, because no two share a column. Each
-//! connection needs at most two sideways runs, one below its source and one
-//! above its destination, and one rank gap holds at most one of each — so two
-//! lanes per gap are always enough. Both runs span only lifelines their own
-//! vertex consumes or emits, so neither crosses anything.
-//!
-//! The frontier-only part of that relation is acyclic on its own: a connection
-//! is active over one unbroken run of ranks, so three lifelines that pairwise
-//! overlap share a rank and are ordered there. Only the two added orders can
-//! close a cycle.
-//!
-//! # Ending, and what is pruned
-//!
-//! Every step places a vertex, so each search path has at most as many steps as
-//! there are vertices. Each step has finitely many choices, making the whole
-//! search finite without a budget.
-//!
-//! Two reductions cut the space, and both are held to the same boundary: they
-//! apply to a refusal the *state* accounts for, and not to one the column
-//! numbering raises.
-//!
-//! That boundary is the whole of their correctness. A step reads the placed
-//! set and the frontier and nothing else, so any claim about what a state can
-//! still reach is a claim about those two. The numbering is not such a claim:
-//! it reads the finished sequence, including the order of lifelines that died
-//! before the state was reached, so two prefixes arriving at one state may
-//! record different orders and number differently. Rather than argue that they
-//! cannot, `walk` keeps the two refusals apart and spends the extra search
-//! where they differ. `Refused::Placement` means every continuation ran out of
-//! placeable vertices; `Refused::Numbering` means one of them placed
-//! everything and could not number it.
-//!
-//! *One ready vertex is enough* — for a placement refusal. A lifeline has one
-//! destination, so two ready vertices consume disjoint runs of the frontier,
-//! and replacing one run leaves the other exactly where it was. Neither
-//! placement can therefore make the other unready, and either order reaches
-//! the same state. A ready vertex also stays ready until it is placed, for the
-//! same reason. So in any sequence that finishes, the vertex this walk picks
-//! can be swapped forward step by step to the front, which gives a finishing
-//! sequence that starts with it. The swap preserves the state at every cut but
-//! not the sequence, so when the refusal was the numbering's, the walk goes on
-//! to the next ready vertex instead.
-//!
-//! *A refused state stays refused* — again for a placement refusal, which the
-//! placed set and the frontier determine. A state whose refusal involved the
-//! numbering is not remembered at all, so a different route to it is searched
-//! afresh.
-//!
-//! Both are therefore exact, and the search is complete: every sequence the
-//! unreduced walk accepts is one this walk reaches. What the reductions cost
-//! is bounded by how often the numbering refuses, which is never in the corpus
-//! or in any generated shape the suite walks.
-//!
-//! The cost is exponential in the worst case, in the number of closed vertex
-//! sets times the orders their frontier can take, which the emission choices
-//! generate: `k!` per fan-out of `k` unrelated destinations from one exit, and
-//! two per loop for the side its return takes. The frontier itself is the
-//! width of the cut, which stays small for these diagrams.
-//!
-//! The reductions are what `tests::the_reduced_walk_agrees_with_the_whole_state_space`
-//! checks, by walking the same space with neither of them.
+//! Complete sweep of vertex and shared-route exchange events. Connections and
+//! returns may change columns between events; vertices, ports and return
+//! envelopes supply the persistent horizontal constraints. See RFC 0003 §2.1 for the finite space,
+//! the strip-routing construction, and the state-equivalence argument.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -169,946 +10,779 @@ use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, Contour, Obstruction, Route, Run, Side};
 
-/// One active vertical of the frontier.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub(super) enum Lifeline {
-    /// The connection at this index, from its source down to its destination.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Lifeline {
     Wire(usize),
-    /// The reversed return of this loop, from its entry down to its tail.
     Return(usize),
 }
 
-/// The connections leaving one exit, and whether their left-to-right order is
-/// the authored one or free.
-struct Fanout {
-    fixed: bool,
-    connections: Vec<usize>,
+#[derive(Clone)]
+struct Step {
+    vertex: Option<usize>,
+    position: usize,
+    consumed: Vec<Lifeline>,
+    emitted: Vec<Lifeline>,
+    side: Option<Side>,
 }
 
-/// One placed vertex, in rank order. Every choice the walk made is recorded
-/// here, so the same expansion serves any procedure that makes them
-/// differently.
-pub(super) struct Step {
-    pub(super) vertex: usize,
-    /// The lifelines it ends, in the order they stood in the frontier.
-    pub(super) consumed: Vec<Lifeline>,
-    /// Where the emitted lifelines go, once the consumed ones are gone.
-    pub(super) position: usize,
-    pub(super) emitted: Vec<Lifeline>,
-    /// The lifeline whose column the vertex continues. `None` gives it a
-    /// column of its own, which only the start node needs.
-    pub(super) continues: Option<Lifeline>,
+/// Transitive closure of weak (1) and strict (2) column inequalities.
+/// A positive cycle is inconsistent; a cycle of weak inequalities is equality.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Order {
+    size: usize,
+    relation: Vec<u8>,
 }
 
-/// Applies one step to a frontier.
-pub(super) fn replay(frontier: &mut Vec<Lifeline>, step: &Step) {
-    frontier.retain(|lifeline| !step.consumed.contains(lifeline));
-    let position = step.position.min(frontier.len());
-    frontier.splice(position..position, step.emitted.iter().copied());
+impl Order {
+    fn new(size: usize) -> Self {
+        Self {
+            size,
+            relation: vec![0; size * size],
+        }
+    }
+
+    fn at(&self, left: usize, right: usize) -> u8 {
+        if left == right {
+            1
+        } else {
+            self.relation[left * self.size + right]
+        }
+    }
+
+    fn insert(&mut self, left: usize, right: usize, strict: bool) -> bool {
+        let value = if strict { 2 } else { 1 };
+        if self.at(left, right) >= value {
+            return true;
+        }
+        if self.at(right, left) > 0 && (strict || self.at(right, left) == 2) {
+            return false;
+        }
+        let before = (0..self.size)
+            .filter_map(|i| {
+                let v = self.at(i, left);
+                (v > 0).then_some((i, v))
+            })
+            .collect::<Vec<_>>();
+        let after = (0..self.size)
+            .filter_map(|i| {
+                let v = self.at(right, i);
+                (v > 0).then_some((i, v))
+            })
+            .collect::<Vec<_>>();
+        for (i, a) in before {
+            for &(j, b) in &after {
+                let slot = &mut self.relation[i * self.size + j];
+                *slot = (*slot).max(a.max(value).max(b));
+            }
+        }
+        true
+    }
+
+    fn equal(&mut self, a: usize, b: usize) -> bool {
+        self.insert(a, b, false) && self.insert(b, a, false)
+    }
+
+    /// The least nonnegative solution. Every strict edge adds one; all
+    /// inequalities are already transitively closed, so strict-predecessor
+    /// classes can be ranked without another search.
+    fn number(&self) -> Vec<i32> {
+        let mut values = vec![0; self.size];
+        for _ in 0..self.size {
+            let mut changed = false;
+            for i in 0..self.size {
+                for j in 0..self.size {
+                    let edge = self.at(i, j);
+                    if edge == 0 {
+                        continue;
+                    }
+                    let wanted = values[i] + i32::from(edge == 2);
+                    if wanted > values[j] {
+                        values[j] = wanted;
+                        changed = true;
+                    }
+                }
+            }
+            if !changed {
+                return values;
+            }
+        }
+        panic!("an acyclic column order has a finite numbering")
+    }
 }
 
-/// What the frontier looks like below a set of placed vertices. A state that
-/// cannot be finished is remembered by this, and by nothing else.
-type Key = (Vec<u64>, Vec<Lifeline>);
+/// Static column identities and constraints, derived before any event order.
+struct Columns {
+    vertex: Vec<usize>,
+    exits: BTreeMap<ExitId, usize>,
+    returns: Vec<usize>,
+    return_right: Vec<usize>,
+    base: Order,
+    /// An entry equals the minimum of its first branch's approach columns.
+    minima: Vec<(usize, Vec<usize>)>,
+    bodies: Vec<[Vec<usize>; 2]>,
+}
 
-/// The topology facts every step reads, indexed once.
+fn root(parent: &[usize], mut i: usize) -> usize {
+    while parent[i] != i {
+        i = parent[i];
+    }
+    i
+}
+
+fn unite(parent: &mut [usize], a: usize, b: usize) {
+    let a = root(parent, a);
+    let b = root(parent, b);
+    parent[b] = a;
+}
+
+fn index_of(topology: &Topology, vertex: Vertex) -> usize {
+    topology
+        .vertices
+        .binary_search(&vertex)
+        .expect("a projected vertex")
+}
+
+fn serial_identities(
+    topology: &Topology,
+    raw_exits: &BTreeMap<ExitId, usize>,
+    parent: &mut [usize],
+) {
+    let index = |v| index_of(topology, v);
+    for exit in &topology.exits {
+        if exit.id.branch.is_none_or(|branch| branch == 0) {
+            unite(
+                parent,
+                index(Vertex::Node(exit.id.node)),
+                raw_exits[&exit.id],
+            );
+        }
+    }
+    // A case's distributor route may turn before reaching it. Every
+    // other sole arrival is the current serial column; iteration tails
+    // may instead finish at either end of their incoming rail.
+    for &vertex in &topology.vertices {
+        if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
+            || topology
+                .loops
+                .iter()
+                .any(|l| vertex == Vertex::Junction(l.tail))
+        {
+            continue;
+        }
+        let incoming = topology.incoming(vertex).collect::<Vec<_>>();
+        if let [wire] = incoming.as_slice() {
+            let source = match wire.source {
+                Source::Exit(exit) => raw_exits[&exit],
+                Source::Junction(j) => index(Vertex::Junction(j)),
+            };
+            unite(parent, index(vertex), source);
+        }
+    }
+}
+
+type Minimum = (usize, Vec<usize>);
+
+fn branch_rules(
+    flow: &Flow,
+    topology: &Topology,
+    raw_exits: &BTreeMap<ExitId, usize>,
+    parent: &mut [usize],
+) -> (Vec<(usize, usize)>, Vec<Minimum>) {
+    let index = |v| index_of(topology, v);
+    let reachable = super::regions::reachable(topology);
+    let mut inequalities = Vec::new();
+    let mut minima = Vec::new();
+    for block in super::regions::branchers(flow) {
+        let regions = super::regions::regions(flow, topology, &reachable, block);
+        let starts = (0..flow.blocks[block].branch_count())
+            .map(|branch| {
+                if flow.blocks[block].kind == crate::model::BlockKind::Choice {
+                    index(Vertex::Node(NodeId::Case {
+                        choice: block,
+                        branch,
+                    }))
+                } else {
+                    raw_exits[&ExitId {
+                        node: NodeId::Block(block),
+                        branch: Some(branch),
+                    }]
+                }
+            })
+            .collect::<Vec<_>>();
+        unite(parent, index(Vertex::Node(NodeId::Block(block))), starts[0]);
+        inequalities.extend(starts.windows(2).map(|pair| (pair[0], pair[1])));
+        for (entry, first) in super::regions::continuations(topology, block, &regions.branches) {
+            let mut pending = vec![entry];
+            let mut approaches = BTreeSet::new();
+            while let Some(vertex) = pending.pop() {
+                for wire in topology.incoming(vertex) {
+                    match wire.source {
+                        Source::Junction(j) => pending.push(Vertex::Junction(j)),
+                        Source::Exit(exit)
+                            if regions.branches[first].contains(&Vertex::Node(exit.node))
+                                || (exit.node == NodeId::Block(block)
+                                    && exit.branch == Some(first)) =>
+                        {
+                            approaches.insert(raw_exits[&exit]);
+                        }
+                        Source::Exit(_) => {}
+                    }
+                }
+            }
+            if approaches.len() == 1 {
+                unite(
+                    parent,
+                    index(entry),
+                    *approaches
+                        .first()
+                        .expect("projected topology contains the required vertex or loop endpoint"),
+                );
+            } else {
+                minima.push((index(entry), approaches.into_iter().collect::<Vec<_>>()));
+            }
+        }
+        for group in &regions.groups {
+            for branch in regions.later_siblings(group) {
+                for inside in regions.reserved(group, branch) {
+                    for outside in regions.outside(group, branch) {
+                        inequalities.push((index(inside), index(outside)));
+                    }
+                }
+            }
+        }
+    }
+    (inequalities, minima)
+}
+
+impl Columns {
+    fn of(flow: &Flow, topology: &Topology, flexible: bool) -> Option<Self> {
+        let index = |vertex| index_of(topology, vertex);
+        let n = topology.vertices.len();
+        let raw_exits = topology
+            .exits
+            .iter()
+            .enumerate()
+            .map(|(i, e)| (e.id, n + i))
+            .collect::<BTreeMap<_, _>>();
+        let return_start = n + raw_exits.len();
+        let count = topology.loops.len();
+        let mut parent = (0..return_start + 2 * count).collect::<Vec<_>>();
+        if !flexible {
+            for i in 0..count {
+                unite(&mut parent, return_start + i, return_start + count + i);
+            }
+        }
+        serial_identities(topology, &raw_exits, &mut parent);
+        let (inequalities, minima) = branch_rules(flow, topology, &raw_exits, &mut parent);
+        let mut ids = BTreeMap::new();
+        let groups = (0..parent.len())
+            .map(|i| {
+                let next = ids.len();
+                *ids.entry(root(&parent, i)).or_insert(next)
+            })
+            .collect::<Vec<_>>();
+        let mut base = Order::new(ids.len());
+        for (left, right) in inequalities {
+            if !base.insert(groups[left], groups[right], true) {
+                return None;
+            }
+        }
+        for i in 0..count {
+            if !base.insert(
+                groups[return_start + i],
+                groups[return_start + count + i],
+                false,
+            ) {
+                return None;
+            }
+        }
+        let minima = minima
+            .into_iter()
+            .map(|(entry, approaches)| {
+                (
+                    groups[entry],
+                    approaches
+                        .into_iter()
+                        .map(|a| groups[a])
+                        .collect::<BTreeSet<_>>()
+                        .into_iter()
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>();
+        for (entry, approaches) in &minima {
+            if approaches.is_empty() {
+                return None;
+            }
+            for &approach in approaches {
+                if !base.insert(*entry, approach, false) {
+                    return None;
+                }
+            }
+        }
+        let bodies = topology
+            .loops
+            .iter()
+            .map(|loop_| {
+                let end = flow.blocks[loop_.header]
+                    .loop_end
+                    .expect("projected topology contains the required vertex or loop endpoint");
+                std::array::from_fn(|side| {
+                    super::loop_block::body_vertices(flow, topology, loop_.header)
+                        .into_iter()
+                        .map(|vertex| groups[index(vertex)])
+                        .chain(
+                            topology
+                                .loops
+                                .iter()
+                                .enumerate()
+                                .filter(|(_, inner)| {
+                                    (loop_.header + 1..end).contains(&inner.header)
+                                })
+                                .map(|(i, _)| groups[return_start + side * count + i]),
+                        )
+                        .collect()
+                })
+            })
+            .collect();
+        Some(Self {
+            vertex: groups[..n].to_vec(),
+            exits: raw_exits.into_iter().map(|(e, i)| (e, groups[i])).collect(),
+            returns: groups[return_start..return_start + count].to_vec(),
+            return_right: groups[return_start + count..].to_vec(),
+            base,
+            minima,
+            bodies,
+        })
+    }
+
+    fn settle(&self, order: &Order, at: usize) -> Option<Order> {
+        let Some((entry, approaches)) = self.minima.get(at) else {
+            return Some(order.clone());
+        };
+        for &approach in approaches {
+            let mut next = order.clone();
+            if next.equal(*entry, approach)
+                && let Some(settled) = self.settle(&next, at + 1)
+            {
+                return Some(settled);
+            }
+        }
+        None
+    }
+}
+
 struct Sweep<'a> {
+    /// Try completing inner returns before paths that only finish the flow.
+    /// This changes which witness is found first, never which states exist.
+    visit_order: Vec<usize>,
+    events: Vec<Vec<usize>>,
     flow: &'a Flow,
     topology: &'a Topology,
-    vertices: &'a [Vertex],
-    /// Connection indices arriving at each vertex.
+    columns: Columns,
     arrivals: Vec<Vec<usize>>,
-    /// Connection indices leaving each vertex, grouped by exit, exits in
-    /// authored order. A group whose destinations are the cases of one choice
-    /// keeps their authored order; any other group may take any order.
-    departures: Vec<Vec<Fanout>>,
-    /// Vertices that must be placed before each vertex.
+    departures: Vec<Vec<Vec<usize>>>,
     predecessors: Vec<Vec<usize>>,
-    /// The loop whose entry, and the loop whose tail, each vertex is.
     entry_of: Vec<Option<usize>>,
     tail_of: Vec<Option<usize>>,
-    /// The side each loop's return takes first.
-    preferred: Vec<Side>,
-    /// Finished sequences to refuse as though their columns did not number.
-    ///
-    /// No topology reaches that refusal, and the two reductions turn on it, so
-    /// this is how a test reaches the behaviour: the walk must go on to the
-    /// other ready vertices and must not remember the states it passed.
-    #[cfg(test)]
-    unnumbered: std::cell::Cell<usize>,
+    paths: Vec<Vec<bool>>,
+    barriers: Vec<Vec<bool>>,
 }
 
-/// The mutable part of one branch of the walk.
+#[derive(Clone)]
 struct State {
     placed: Vec<bool>,
     frontier: Vec<Lifeline>,
+    sides: Vec<Option<Side>>,
+    order: Order,
 }
 
-/// Searches the whole space for a conforming arrangement.
-///
-/// # Errors
-///
-/// Reports the vertex that could not be drawn in the deepest state the walk
-/// reached, once every state has been visited.
+type Key = (Vec<bool>, Vec<Lifeline>, Vec<Option<Side>>, Order);
+
+pub(super) enum Refusal {
+    Impossible(Obstruction),
+    Internal(String),
+}
+
 pub(super) fn search(
     flow: &Flow,
     merges: &[WireMerge],
     topology: &Topology,
-) -> Result<Arrangement, Obstruction> {
-    let sweep = Sweep::of(flow, topology);
-    let mut state = State {
-        placed: vec![false; topology.vertices.len()],
-        frontier: Vec::new(),
+) -> Result<Arrangement, Refusal> {
+    let Some(mut sweep) = Sweep::of(flow, topology, false) else {
+        return Err(Refusal::Impossible(super::unarrangeable(flow)));
     };
-    let mut failed = BTreeSet::new();
-    let mut deepest = Deepest::default();
-    let mut steps = Vec::new();
-    sweep
-        .walk(&mut state, &mut steps, &mut failed, &mut deepest)
-        .map_err(|_| sweep.obstruction(flow, merges, &deepest))
-}
-
-/// Why a state finishes no drawing.
-///
-/// The two are kept apart because only the first is a fact about the state.
-/// See the reductions in the module documentation.
-enum Refused {
-    /// Every continuation ran out of placeable vertices.
-    Placement,
-    /// Some continuation placed everything and could not number its columns.
-    Numbering,
-}
-
-/// Builds the arrangement one sequence of steps describes, whoever chose them.
-///
-/// The choices live in the steps; everything below this is arithmetic both a
-/// production walk and a test procedure have to do the same way, and the
-/// independent check is what holds it to that.
-#[cfg(test)]
-pub(super) fn expand(flow: &Flow, topology: &Topology, steps: &[Step]) -> Option<Arrangement> {
-    Sweep::of(flow, topology).expand(steps)
-}
-
-/// What a procedure making its own choices still has to read off the topology.
-#[cfg(test)]
-pub(super) struct Index {
-    /// The loop each vertex is the tail of.
-    pub(super) tail_of: Vec<Option<usize>>,
-    pub(super) arrivals: Vec<Vec<usize>>,
-    /// The connections leaving each vertex, grouped by exit in authored
-    /// order, with the groups whose order RFC 0002 §8 fixes marked.
-    pub(super) departures: Vec<Vec<(bool, Vec<usize>)>>,
-    pub(super) predecessors: Vec<Vec<usize>>,
-}
-
-/// Indexes one topology the way the walk does, without any of its choices.
-#[cfg(test)]
-pub(super) fn index(flow: &Flow, topology: &Topology) -> Index {
-    let sweep = Sweep::of(flow, topology);
-    Index {
-        tail_of: sweep.tail_of.clone(),
-        arrivals: sweep.arrivals.clone(),
-        departures: sweep
-            .departures
-            .iter()
-            .map(|exits| {
-                exits
-                    .iter()
-                    .map(|exit| (exit.fixed, exit.connections.clone()))
-                    .collect()
-            })
-            .collect(),
-        predecessors: sweep.predecessors.clone(),
+    match decide(&sweep, merges) {
+        Err(Refusal::Impossible(_)) => {
+            sweep.columns = Columns::of(flow, topology, true)
+                .expect("separating return bounds cannot contradict the static constraints");
+            decide(&sweep, merges)
+        }
+        found => found,
     }
 }
 
-/// The furthest the walk got, and a vertex it could not place there. Reported
-/// when the whole space turns out to hold no arrangement.
-#[derive(Default)]
-struct Deepest {
-    placed: usize,
-    blocked: Option<usize>,
+#[cfg(test)]
+pub(super) fn search_shape(
+    flow: &Flow,
+    merges: &[WireMerge],
+    topology: &Topology,
+    flexible: bool,
+) -> Result<Arrangement, Refusal> {
+    let Some(sweep) = Sweep::of(flow, topology, flexible) else {
+        return Err(Refusal::Impossible(super::unarrangeable(flow)));
+    };
+    decide(&sweep, merges)
+}
+
+fn decide(sweep: &Sweep<'_>, merges: &[WireMerge]) -> Result<Arrangement, Refusal> {
+    let (flow, topology) = (sweep.flow, sweep.topology);
+    let mut state = State {
+        placed: vec![false; topology.vertices.len()],
+        frontier: Vec::new(),
+        sides: vec![None; topology.loops.len()],
+        order: sweep.columns.base.clone(),
+    };
+    let mut deepest = (0, None);
+    if let Some(arrangement) = sweep.walk(
+        &mut state,
+        &mut Vec::new(),
+        &mut BTreeSet::new(),
+        &mut deepest,
+        true,
+    )? {
+        Ok(arrangement)
+    } else {
+        let vertex = deepest.1.map(|i| topology.vertices[i]);
+        let mut obstruction = super::unarrangeable(flow);
+        if let Some(vertex) = vertex {
+            obstruction.span = super::describe::vertex_span(flow, topology, vertex);
+            obstruction.message = format!(
+                "its routes and column constraints have no conforming arrangement; the exhaustive search reached {} before exhausting its alternatives",
+                super::describe::vertex(flow, merges, topology, vertex)
+            );
+        }
+        Err(Refusal::Impossible(obstruction))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Anchor {
+    left: usize,
+    right: usize,
+    return_index: Option<usize>,
+}
+
+impl Anchor {
+    fn fixed(column: usize) -> Self {
+        Self {
+            left: column,
+            right: column,
+            return_index: None,
+        }
+    }
 }
 
 impl<'a> Sweep<'a> {
-    fn of(flow: &'a Flow, topology: &'a Topology) -> Self {
-        let count = topology.vertices.len();
-        let index = |vertex: Vertex| {
+    fn of(flow: &'a Flow, topology: &'a Topology, flexible: bool) -> Option<Self> {
+        let n = topology.vertices.len();
+        let index = |v| {
             topology
                 .vertices
-                .binary_search(&vertex)
-                .expect("every connected vertex is projected")
+                .binary_search(&v)
+                .expect("projected topology contains the required vertex or loop endpoint")
         };
-        let mut arrivals = vec![Vec::new(); count];
-        let mut predecessors = vec![BTreeSet::new(); count];
-        for (position, connection) in topology.connections.iter().enumerate() {
-            let destination = index(connection.destination);
-            arrivals[destination].push(position);
-            predecessors[destination].insert(index(Vertex::from(connection.source)));
+        let mut arrivals = vec![Vec::new(); n];
+        let mut predecessors = vec![BTreeSet::new(); n];
+        let mut exits = vec![BTreeMap::<Source, Vec<usize>>::new(); n];
+        for (i, wire) in topology.connections.iter().enumerate() {
+            arrivals[index(wire.destination)].push(i);
+            predecessors[index(wire.destination)].insert(index(Vertex::from(wire.source)));
+            exits[index(Vertex::from(wire.source))]
+                .entry(wire.source)
+                .or_default()
+                .push(i);
         }
         for edge in &topology.order {
             predecessors[index(edge.destination)].insert(index(Vertex::from(edge.source)));
         }
-        let mut departures = (0..count).map(|_| Vec::new()).collect::<Vec<_>>();
-        for vertex in topology.vertices.iter().copied() {
-            let mut exits = BTreeMap::<Option<ExitId>, Vec<usize>>::new();
-            for (position, connection) in topology.connections.iter().enumerate() {
-                if Vertex::from(connection.source) != vertex {
-                    continue;
-                }
-                let exit = match connection.source {
-                    Source::Exit(exit) => Some(exit),
-                    Source::Junction(_) => None,
-                };
-                exits.entry(exit).or_default().push(position);
+        let mut entry_of = vec![None; n];
+        let mut tail_of = vec![None; n];
+        for (i, loop_) in topology.loops.iter().enumerate() {
+            entry_of[index(Vertex::Junction(loop_.entry))] = Some(i);
+            tail_of[index(Vertex::Junction(loop_.tail))] = Some(i);
+            predecessors[index(Vertex::Junction(loop_.tail))]
+                .insert(index(Vertex::Junction(loop_.entry)));
+        }
+        let mut paths = vec![vec![false; n]; n];
+        let mut precedence = paths.clone();
+        for wire in &topology.connections {
+            paths[index(Vertex::from(wire.source))][index(wire.destination)] = true;
+        }
+        for loop_ in &topology.loops {
+            paths[index(Vertex::Junction(loop_.entry))][index(Vertex::Junction(loop_.tail))] = true;
+        }
+        for (v, incoming) in predecessors.iter().enumerate() {
+            for &p in incoming {
+                precedence[p][v] = true;
             }
-            departures[index(vertex)] = exits
-                .into_iter()
-                .map(|(exit, connections)| Fanout {
-                    // RFC 0002 §8 fixes the order of the branches a choice's
-                    // distributor carries. Every other fan-out leaves one exit
-                    // for unrelated destinations, which may go either way
-                    // round. The check reads the same rule.
-                    fixed: exit
-                        .is_some_and(|exit| super::regions::carries_branches(topology, exit)),
-                    connections,
-                })
-                .collect();
         }
-        let mut entry_of = vec![None; count];
-        let mut tail_of = vec![None; count];
-        for (loop_index, loop_) in topology.loops.iter().enumerate() {
-            entry_of[index(Vertex::Junction(loop_.entry))] = Some(loop_index);
-            tail_of[index(Vertex::Junction(loop_.tail))] = Some(loop_index);
-            // The reversed return descends from the entry to the tail. Its
-            // ends already order those two, so it adds no precedence.
+        close_paths(&mut paths);
+        close_paths(&mut precedence);
+        for (v, row) in precedence.iter_mut().enumerate() {
+            row[v] = false;
         }
-        Self {
+        let barriers = (0..n)
+            .map(|b| {
+                (0..n)
+                    .map(|v| !paths[b][v] && (0..n).any(|t| paths[b][t] && precedence[v][t]))
+                    .collect()
+            })
+            .collect();
+        let mut visit_order = (0..n).collect::<Vec<_>>();
+        visit_order.sort_by_key(|&v| {
+            std::cmp::Reverse(
+                tail_of
+                    .iter()
+                    .enumerate()
+                    .filter(|&(tail, _)| paths[v][tail])
+                    .filter_map(|(_, &index)| index)
+                    .max(),
+            )
+        });
+        Some(Self {
+            visit_order,
+            events: super::choice::events(topology),
             flow,
             topology,
-            vertices: &topology.vertices,
+            columns: Columns::of(flow, topology, flexible)?,
             arrivals,
-            departures,
             predecessors: predecessors
                 .into_iter()
-                .map(|set| set.into_iter().collect())
+                .map(|p| p.into_iter().collect())
+                .collect(),
+            departures: exits
+                .into_iter()
+                .map(|e| e.into_values().collect())
                 .collect(),
             entry_of,
             tail_of,
-            preferred: topology
-                .loops
-                .iter()
-                .map(|loop_| {
-                    if loop_.prefer_left {
-                        Side::Left
-                    } else {
-                        Side::Right
-                    }
-                })
-                .collect(),
-            #[cfg(test)]
-            unnumbered: std::cell::Cell::new(0),
-        }
+            paths,
+            barriers,
+        })
     }
 
-    /// The arrangement this state finishes with, or why it has none.
-    fn walk(
-        &self,
-        state: &mut State,
-        steps: &mut Vec<Step>,
-        failed: &mut BTreeSet<Key>,
-        deepest: &mut Deepest,
-    ) -> Result<Arrangement, Refused> {
-        if state.placed.iter().all(|placed| *placed) {
-            #[cfg(test)]
-            if self.unnumbered.get() > 0 {
-                self.unnumbered.set(self.unnumbered.get() - 1);
-                return Err(Refused::Numbering);
-            }
-            // The columns are part of the decision, not a formality after it.
-            // A sequence whose reserved areas and return sides cannot all hold
-            // at once has no column assignment, so it is not a drawing, and the
-            // walk goes on looking for one that is.
-            return self.expand(steps).ok_or(Refused::Numbering);
-        }
-        let key = key(state);
-        if failed.contains(&key) {
-            return Err(Refused::Placement);
-        }
-        let Some(mut vertex) = (0..self.vertices.len()).find(|&vertex| self.ready(state, vertex))
-        else {
-            deepest.record(state, self.blocked(state));
-            failed.insert(key);
-            return Err(Refused::Placement);
-        };
-        let mut refused = Refused::Placement;
-        loop {
-            let (position, count) = self
-                .consumed(state, vertex)
-                .expect("a ready vertex meets the frontier");
-            let consumed = state.frontier[position..position + count].to_vec();
-            let continues = self.continues(vertex, &consumed);
-            for emitted in self.emissions(vertex) {
-                let removed = state
-                    .frontier
-                    .splice(position..position + count, emitted.iter().copied())
-                    .collect::<Vec<_>>();
-                state.placed[vertex] = true;
-                steps.push(Step {
-                    vertex,
-                    consumed: consumed.clone(),
-                    position,
-                    emitted: emitted.clone(),
-                    continues,
-                });
-                let found = self.walk(state, steps, failed, deepest);
-                steps.pop();
-                state.placed[vertex] = false;
-                state
-                    .frontier
-                    .splice(position..position + emitted.len(), removed);
-                match found {
-                    Ok(arrangement) => return Ok(arrangement),
-                    Err(Refused::Numbering) => refused = Refused::Numbering,
-                    Err(Refused::Placement) => {}
-                }
-            }
-            // One ready vertex is enough while the refusals below it are the
-            // state's own: placing another first reaches the same states. A
-            // numbering refusal is not the state's, so the rest are tried, and
-            // only then are they even looked for.
-            if matches!(refused, Refused::Placement) {
-                break;
-            }
-            let Some(next) =
-                (vertex + 1..self.vertices.len()).find(|&vertex| self.ready(state, vertex))
-            else {
-                break;
-            };
-            vertex = next;
-        }
-        if matches!(refused, Refused::Placement) {
-            failed.insert(key);
-        }
-        Err(refused)
-    }
-
-    /// The lifeline whose column one vertex continues.
-    ///
-    /// This is forced, not chosen. A convergence goes on down the column its
-    /// group's first branch arrived in (RFC 0002 §8), which order preservation
-    /// makes the leftmost route reaching it. An iteration tail instead takes
-    /// the end of its rail nearest the side its return climbs, because the
-    /// return leaves it horizontally along that rail's own line and a tail at
-    /// the far end would send the return back across everything arriving
-    /// there. No vertex is both: a tail is a structural junction and merges no
-    /// wire. Only the start node continues nothing.
-    fn continues(&self, vertex: usize, consumed: &[Lifeline]) -> Option<Lifeline> {
-        // The return climbs on the flank it stands on, which is where the
-        // frontier put it: at one end of what the tail ends.
-        let returns_right = self.tail_of[vertex]
-            .is_some_and(|loop_| consumed.last() == Some(&Lifeline::Return(loop_)));
-        let mut arriving = consumed
-            .iter()
-            .copied()
-            .filter(|lifeline| matches!(lifeline, Lifeline::Wire(_)));
-        if returns_right {
-            arriving.next_back()
-        } else {
-            arriving.next()
-        }
-    }
-
-    /// Whether one vertex can be placed now: everything above it is placed and
-    /// the lifelines meeting there are side by side.
-    fn ready(&self, state: &State, vertex: usize) -> bool {
-        !state.placed[vertex]
-            && self.predecessors[vertex]
-                .iter()
-                .all(|&earlier| state.placed[earlier])
-            && self.consumed(state, vertex).is_some()
-    }
-
-    /// Where one vertex meets the frontier: the position of the lifelines it
-    /// consumes, and how many, when they are contiguous.
     fn consumed(&self, state: &State, vertex: usize) -> Option<(usize, usize)> {
-        let mut wanted = self.arrivals[vertex]
+        let incoming = self.events[vertex]
             .iter()
-            .map(|&connection| Lifeline::Wire(connection))
-            .collect::<BTreeSet<_>>();
-        if let Some(loop_index) = self.tail_of[vertex] {
-            wanted.insert(Lifeline::Return(loop_index));
+            .flat_map(|&v| &self.arrivals[v])
+            .map(|&i| Lifeline::Wire(i))
+            .collect::<Vec<_>>();
+        let mut wanted = incoming.iter().copied().collect::<BTreeSet<_>>();
+        if let Some(i) = self.tail_of[vertex] {
+            wanted.insert(Lifeline::Return(i));
         }
         if wanted.is_empty() {
-            // Only the start node arrives from nowhere, and it goes first.
             return state.frontier.is_empty().then_some((0, 0));
         }
-        let first = state
+        let position = state
             .frontier
             .iter()
-            .position(|lifeline| wanted.contains(lifeline))?;
-        let run = &state.frontier[first..(first + wanted.len()).min(state.frontier.len())];
-        (run.len() == wanted.len() && run.iter().all(|lifeline| wanted.contains(lifeline)))
-            .then_some((first, wanted.len()))
+            .position(|item| wanted.contains(item))?;
+        let end = position + wanted.len();
+        (end <= state.frontier.len()
+            && state.frontier[position..end]
+                .iter()
+                .all(|item| wanted.contains(item))
+            && (self.events[vertex].len() == 1 || state.frontier[position..end] == incoming))
+            .then_some((position, wanted.len()))
     }
 
-    /// Every order the lifelines one vertex emits may take, preferred first.
-    /// Connections leaving one exit share that exit's run, so their order among
-    /// themselves is free; exits keep their authored order. A choice's
-    /// distributor is the exception `Fanout::fixed` names: the routes it fans
-    /// out carry the branches themselves, and RFC 0002 §8 orders those.
-    fn emissions(&self, vertex: usize) -> Vec<Vec<Lifeline>> {
-        let mut orders = vec![Vec::new()];
-        for exit in &self.departures[vertex] {
-            // ponytail: every order of one free fan-out, so `k!` of them; no
-            // fixture leaves one exit for more than two unrelated
-            // destinations. Order them by a rule if a flow ever fans one exit
-            // out widely.
-            let groups = if exit.fixed {
-                vec![exit.connections.clone()]
-            } else {
-                permutations(&exit.connections)
-            };
-            orders = orders
-                .into_iter()
-                .flat_map(|start| {
-                    groups.clone().into_iter().map(move |group| {
-                        let mut next = start.clone();
-                        next.extend(group.into_iter().map(Lifeline::Wire));
-                        next
-                    })
-                })
-                .collect();
-        }
-        let Some(loop_index) = self.entry_of[vertex] else {
-            return orders;
+    fn emissions(&self, vertex: usize) -> Vec<Lifeline> {
+        self.events[vertex]
+            .iter()
+            .flat_map(|&v| self.emissions_of(v))
+            .collect()
+    }
+
+    fn emissions_of(&self, vertex: usize) -> Vec<Lifeline> {
+        let owner = match self.topology.vertices[vertex] {
+            Vertex::Node(NodeId::Block(block) | NodeId::Case { choice: block, .. }) => Some(block),
+            Vertex::Node(NodeId::Start) | Vertex::Junction(_) => None,
         };
-        // A loop entry also opens its return, immediately outside the body it
-        // is about to draw. The preferred side is tried first.
-        let sides = match self.preferred[loop_index] {
-            Side::Left => [Side::Left, Side::Right],
-            Side::Right => [Side::Right, Side::Left],
-        };
-        sides
-            .into_iter()
-            .flat_map(|side| {
-                orders.iter().map(move |order| {
-                    let mut next = order.clone();
-                    match side {
-                        Side::Left => next.insert(0, Lifeline::Return(loop_index)),
-                        Side::Right => next.push(Lifeline::Return(loop_index)),
-                    }
-                    next
-                })
+        let loop_ = self.topology.loops.iter().rev().find(|loop_| {
+            owner.is_some_and(|block| {
+                (loop_.header + 1
+                    ..self.flow.blocks[loop_.header]
+                        .loop_end
+                        .expect("a loop owns its body"))
+                    .contains(&block)
+            })
+        });
+        let joins = (0..self.topology.vertices.len())
+            .filter(|&i| self.arrivals[i].len() > 1 || self.tail_of[i].is_some())
+            .collect::<Vec<_>>();
+        self.departures[vertex]
+            .iter()
+            .flat_map(|group| {
+                let mut group = group.clone();
+                group.sort_by_key(|&wire| {
+                    let destination =
+                        index_of(self.topology, self.topology.connections[wire].destination);
+                    let flank = loop_.is_some_and(|loop_| {
+                        let repeats = self.paths[destination]
+                            [index_of(self.topology, Vertex::Junction(loop_.tail))];
+                        repeats != loop_.prefer_left
+                    });
+                    (
+                        flank,
+                        joins
+                            .iter()
+                            .map(|&v| self.paths[destination][v])
+                            .collect::<Vec<_>>(),
+                    )
+                });
+                group.into_iter().map(Lifeline::Wire)
             })
             .collect()
     }
 
-    /// A vertex every predecessor allows but the frontier does not, in the
-    /// state the walk got furthest in.
-    fn blocked(&self, state: &State) -> Option<usize> {
-        (0..self.vertices.len()).find(|&vertex| {
-            !state.placed[vertex]
-                && self.predecessors[vertex]
-                    .iter()
-                    .all(|&earlier| state.placed[earlier])
-        })
-    }
-
-    fn obstruction(&self, flow: &Flow, merges: &[WireMerge], deepest: &Deepest) -> Obstruction {
-        let Some(vertex) = deepest.blocked else {
-            return super::unarrangeable(flow);
+    fn exchangeable(&self, left: Lifeline, right: Lifeline) -> bool {
+        let (Lifeline::Wire(a), Lifeline::Wire(b)) = (left, right) else {
+            return false;
         };
-        let vertex = self.vertices[vertex];
-        Obstruction {
-            span: super::describe::vertex_span(flow, self.topology, vertex),
-            message: format!(
-                "nothing draws {}: however the routes above it are arranged, another route lies between two that meet there. Reorder the branches so the routes that meet sit side by side",
-                super::describe::vertex(flow, merges, self.topology, vertex)
-            ),
-            loop_index: None,
-            connection: None,
+        let (a, b) = (self.topology.connections[a], self.topology.connections[b]);
+        a.source == b.source || a.destination == b.destination
+    }
+
+    /// Static anchors on the event row. Untouched forward routes may move
+    /// between events; returns choose a position inside their persistent bounds.
+    fn return_anchor(&self, i: usize) -> Anchor {
+        Anchor {
+            left: self.columns.returns[i],
+            right: self.columns.return_right[i],
+            return_index: Some(i),
         }
     }
 
-    /// Turns one finished sequence of steps into the arrangement it describes.
-    ///
-    /// Ranks come from the order the steps placed their vertices, and columns
-    /// from every left-to-right pair the frontier showed, in an order that
-    /// respects all of them. A connection then descends in its own column, with
-    /// a sideways run below its source when it has to leave that source's
-    /// column, and one above its destination when it has to reach it.
-    ///
-    /// ponytail: a rank and a column each, which is what the argument for this
-    /// sequence assumes and so always draws, but it spreads a wide selection
-    /// down a diagonal. Packing the rows needs a lane order per rank gap,
-    /// because several vertices would then share one gap; add that if these
-    /// diagrams ever have to be compact.
-    fn expand(&self, steps: &[Step]) -> Option<Arrangement> {
-        let columns = Columns::of(self, steps)?;
-        let rank = steps
-            .iter()
-            .enumerate()
-            .map(|(rank, step)| (self.vertices[step.vertex], rank))
-            .collect::<BTreeMap<_, _>>();
-        let column = steps
-            .iter()
-            .map(|step| (self.vertices[step.vertex], columns.vertex[step.vertex]))
-            .collect::<BTreeMap<_, _>>();
-        let exit_offset = self.exit_offsets(&columns, &column);
-        let (routes, gap_lanes) =
-            self.corridors(steps.len(), &rank, &column, &exit_offset, &columns);
-        Some(Arrangement {
-            contours: columns.contours.clone(),
-            rank,
-            ranks: steps.len(),
-            column,
-            exit_offset,
-            routes,
-            gap_lanes,
-        })
-    }
-
-    /// The column each exit leaves its node by: the leftmost of the columns its
-    /// own connections descend in. An exit no connection leaves still needs a
-    /// column of its own, so it takes the one after the exit before it.
-    fn exit_offsets(
-        &self,
-        columns: &Columns,
-        column: &BTreeMap<Vertex, i32>,
-    ) -> BTreeMap<ExitId, i32> {
-        let mut offsets = BTreeMap::new();
-        let mut previous: Option<(NodeId, i32)> = None;
-        for exit in &self.topology.exits {
-            let own = column[&Vertex::Node(exit.id.node)];
-            let taken = self
-                .topology
-                .connections
+    fn anchors(&self, frontier: &[Lifeline], sides: &[Option<Side>], step: &Step) -> Vec<Anchor> {
+        let take = |items: &[Lifeline]| {
+            items
                 .iter()
-                .enumerate()
-                .filter(|(_, wire)| wire.source == Source::Exit(exit.id))
-                .map(|(index, _)| columns.wire[index])
-                .min();
-            let offset = match (taken, previous) {
-                (Some(column), _) => column - own,
-                (None, Some((node, before))) if node == exit.id.node => before + 1,
-                (None, _) => 0,
-            };
-            previous = Some((exit.id.node, offset));
-            offsets.insert(exit.id, offset);
-        }
-        offsets
-    }
-
-    /// Every connection's corridor, and how many lanes each rank gap needs.
-    ///
-    /// A connection that reaches the next rank down turns once, in the one gap
-    /// it crosses. A longer one leaves its source's column in the gap below it
-    /// and reaches its destination's column in the gap above that — two runs
-    /// that never share a gap. So one gap holds at most the runs leaving the
-    /// vertex above it and the runs arriving at the vertex below it: two lanes,
-    /// the leaving ones first.
-    fn corridors(
-        &self,
-        ranks: usize,
-        rank: &BTreeMap<Vertex, usize>,
-        column: &BTreeMap<Vertex, i32>,
-        exit_offset: &BTreeMap<ExitId, i32>,
-        columns: &Columns,
-    ) -> (Vec<Route>, Vec<usize>) {
-        let mut leaving = vec![false; ranks];
-        let mut arriving = vec![false; ranks];
-        let mut routes = Vec::with_capacity(self.topology.connections.len());
-        for (index, wire) in self.topology.connections.iter().enumerate() {
-            let source = Vertex::from(wire.source);
-            let departure = match wire.source {
-                Source::Exit(exit) => column[&source] + exit_offset[&exit],
-                Source::Junction(_) => column[&source],
-            };
-            let arrival = column[&wire.destination];
-            let above = rank[&source];
-            let below = rank[&wire.destination];
-            let mut runs = Vec::new();
-            let own = columns.wire[index];
-            if below > above + 1 && departure != own {
-                leaving[above] = true;
-                runs.push(Run {
-                    gap: above,
-                    enter: departure,
-                    exit: own,
-                    lane: 0,
-                });
-            }
-            let enter = if runs.is_empty() { departure } else { own };
-            if enter != arrival {
-                arriving[below - 1] = true;
-                runs.push(Run {
-                    gap: below - 1,
-                    enter,
-                    exit: arrival,
-                    lane: 0,
-                });
-            }
-            routes.push(Route {
-                departure,
-                arrival,
-                runs,
-            });
-        }
-        // A run that arrives takes the lane against the rank below, so a run
-        // that leaves the rank above never turns down through it.
-        let gap_lanes = (0..ranks)
-            .map(|gap| usize::from(leaving[gap]) + usize::from(arriving[gap]))
-            .collect::<Vec<_>>();
-        for (index, route) in routes.iter_mut().enumerate() {
-            let below = rank[&self.topology.connections[index].destination];
-            for run in &mut route.runs {
-                if run.gap == below - 1 && gap_lanes[run.gap] == 2 {
-                    run.lane = 1;
-                }
-            }
-        }
-        (routes, gap_lanes)
-    }
-}
-
-impl Deepest {
-    fn record(&mut self, state: &State, blocked: Option<usize>) {
-        let placed = state.placed.iter().filter(|placed| **placed).count();
-        if blocked.is_some() && placed >= self.placed {
-            self.placed = placed;
-            self.blocked = blocked;
-        }
-    }
-}
-
-/// The placed set packed into words, with the frontier beside it.
-fn key(state: &State) -> Key {
-    let mut bits = vec![0u64; state.placed.len().div_ceil(64)];
-    for (vertex, placed) in state.placed.iter().enumerate() {
-        if *placed {
-            bits[vertex / 64] |= 1 << (vertex % 64);
-        }
-    }
-    (bits, state.frontier.clone())
-}
-
-/// Every order of a handful of connections, the authored one first.
-fn permutations(items: &[usize]) -> Vec<Vec<usize>> {
-    if items.len() <= 1 {
-        return vec![items.to_vec()];
-    }
-    (0..items.len())
-        .flat_map(|taken| {
-            let mut rest = items.to_vec();
-            let first = rest.remove(taken);
-            permutations(&rest).into_iter().map(move |mut order| {
-                order.insert(0, first);
-                order
-            })
-        })
-        .collect()
-}
-
-/// Where every lifeline and every vertex ends up horizontally.
-///
-/// A lifeline never crosses another, so every pair the frontier ever showed
-/// side by side keeps that order for as long as both last. Those pairs have no
-/// cycle: a connection is active over one unbroken run of ranks, so three
-/// lifelines that pairwise overlap share a rank and are ordered there. Any
-/// order that respects all of them therefore numbers the columns.
-struct Columns {
-    /// The column of each vertex, by vertex index.
-    vertex: Vec<i32>,
-    /// The column each connection descends in, by connection index.
-    wire: Vec<i32>,
-    /// The contour of each loop return, by loop index.
-    contours: Vec<Contour>,
-}
-
-impl Columns {
-    fn of(sweep: &Sweep<'_>, steps: &[Step]) -> Option<Self> {
-        // A group is one column: the chain of a vertex's incoming lifeline, the
-        // vertex itself, and the outgoing lifeline that continues it.
-        let mut group_of = BTreeMap::<Lifeline, usize>::new();
-        let mut vertex_group = vec![0usize; sweep.vertices.len()];
-        let mut sides = vec![Side::Left; sweep.topology.loops.len()];
-        let mut groups = 0usize;
-        let mut before_pairs = BTreeSet::<(usize, usize)>::new();
-        let mut frontier = Vec::<Lifeline>::new();
-        for step in steps {
-            let mut fresh = || {
-                groups += 1;
-                groups - 1
-            };
-            let mut own = step.continues.map(|lifeline| group_of[&lifeline]);
-            let own = *own.get_or_insert_with(&mut fresh);
-            vertex_group[step.vertex] = own;
-            let mut continued = false;
-            for &lifeline in &step.emitted {
-                let group = match lifeline {
-                    Lifeline::Wire(_) if !continued => {
-                        continued = true;
-                        own
-                    }
-                    Lifeline::Return(loop_index) => {
-                        sides[loop_index] = if step.emitted[0] == lifeline {
-                            Side::Left
-                        } else {
-                            Side::Right
-                        };
-                        fresh()
-                    }
-                    Lifeline::Wire(_) => fresh(),
-                };
-                group_of.insert(lifeline, group);
-            }
-            replay(&mut frontier, step);
-            for pair in frontier.windows(2) {
-                before_pairs.insert((group_of[&pair[0]], group_of[&pair[1]]));
-            }
-        }
-
-        // A convergence group reserves the columns of everything its branches
-        // draw, and a sibling outside it keeps clear of that whole area
-        // (RFC 0002 §8). The frontier only says so while both are alive: the
-        // group's shared continuation is drawn below, by which time the
-        // sibling's own lifelines may be gone, so those orders are recorded
-        // here instead.
-        let reachable = super::regions::reachable(sweep.topology);
-        for block in super::regions::branchers(sweep.flow) {
-            let regions = super::regions::regions(sweep.flow, sweep.topology, &reachable, block);
-            for group in &regions.groups {
-                let first = *group.members.first().expect("a group has members");
-                let last = *group.members.last().expect("a group has members");
-                for branch in 0..regions.branches.len() {
-                    if group.members.contains(&branch) {
-                        continue;
-                    }
-                    // A sibling the group encloses may sit inside the reserved
-                    // range, so only the two outer sides are an order.
-                    let before = branch < first;
-                    if !before && branch <= last {
-                        continue;
-                    }
-                    for outside in &regions.outside(group, branch) {
-                        for inside in &group.area {
-                            let (left, right) = if before {
-                                (outside, inside)
-                            } else {
-                                (inside, outside)
-                            };
-                            let left = vertex_group[index_of(sweep, *left)];
-                            let right = vertex_group[index_of(sweep, *right)];
-                            if left != right {
-                                before_pairs.insert((left, right));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        let bodies = returns(sweep, &group_of, &vertex_group, &sides, &mut before_pairs);
-
-        let order = extend(groups, &before_pairs)?;
-        Some(Self {
-            vertex: vertex_group.iter().map(|&group| order[group]).collect(),
-            wire: (0..sweep.topology.connections.len())
-                .map(|wire| order[group_of[&Lifeline::Wire(wire)]])
-                .collect(),
-            contours: contours(&sides, &bodies, &order, &|loop_index| {
-                order[group_of[&Lifeline::Return(loop_index)]]
-            }),
-        })
-    }
-}
-
-/// Records where each return stands against the body it leaves, and answers
-/// with the groups that body occupies.
-fn returns(
-    sweep: &Sweep<'_>,
-    group_of: &BTreeMap<Lifeline, usize>,
-    vertex_group: &[usize],
-    sides: &[Side],
-    before_pairs: &mut BTreeSet<(usize, usize)>,
-) -> Vec<Vec<usize>> {
-    // A return climbs outside everything its body draws, and the frontier
-    // only says so while the return is alive. Two things outlive it. A
-    // body vertex placed after the tail — a route that leaves the loop, or
-    // finishes the flow from inside it — is free of the return by then.
-    // And a return nested in that body is never on the frontier beside the
-    // enclosing one at all when their rows do not overlap, which is also
-    // why no crossing check sees it. Both sides are recorded here instead.
-    // Nothing pushes either the other way, so this adds an order, never a
-    // contradiction; where the two sides cannot both hold, the numbering
-    // fails and the walk backtracks onto the other flank.
-    let mut bodies = Vec::with_capacity(sweep.topology.loops.len());
-    for (index, loop_) in sweep.topology.loops.iter().enumerate() {
-        let climb = group_of[&Lifeline::Return(index)];
-        let end = sweep.flow.blocks[loop_.header]
-            .loop_end
-            .expect("a loop owns a body");
-        let body = loop_.header + 1..end;
-        let inner = sweep
-            .topology
-            .loops
-            .iter()
-            .enumerate()
-            .filter(|(_, other)| body.contains(&other.header))
-            .map(|(other, _)| group_of[&Lifeline::Return(other)]);
-        let vertices = super::loop_block::body_vertices(sweep.flow, sweep.topology, loop_.header)
-            .into_iter()
-            .map(|vertex| vertex_group[index_of(sweep, vertex)])
-            .collect::<Vec<_>>();
-        for inside in inner.chain(vertices.iter().copied()) {
-            match sides[index] {
-                Side::Left => before_pairs.insert((climb, inside)),
-                Side::Right => before_pairs.insert((inside, climb)),
-            };
-        }
-        bodies.push(vertices);
-    }
-    bodies
-}
-
-/// Turns the numbered column of each return into the contour a presentation
-/// can realize: a lane counted outward from the column its body's outermost
-/// vertex occupies.
-///
-/// The numbering gives every return a column of its own, which says where it
-/// stands among the body's columns but not how a drawing reaches it — a
-/// presentation has no rail to put in a column, only the space beside the body
-/// it measures. The two are the same order, so the column becomes the body's
-/// edge and the lane counts the returns the numbering put between them. A
-/// return nested in this body is one of those, which is what keeps the
-/// enclosing one a lane further out.
-fn contours(
-    sides: &[Side],
-    bodies: &[Vec<usize>],
-    order: &[i32],
-    climb: &dyn Fn(usize) -> i32,
-) -> Vec<Contour> {
-    (0..sides.len())
-        .map(|index| {
-            let side = sides[index];
-            let at = climb(index);
-            let columns = bodies[index].iter().map(|&group| order[group]);
-            let column = match side {
-                Side::Left => columns.min(),
-                Side::Right => columns.max(),
-            }
-            .expect("a loop owns an entry and a tail");
-            let lane = (0..sides.len())
-                .filter(|&other| other != index && sides[other] == side)
-                .filter(|&other| match side {
-                    Side::Left => column > climb(other) && climb(other) > at,
-                    Side::Right => column < climb(other) && climb(other) < at,
+                .filter_map(|item| match item {
+                    Lifeline::Return(i) => Some(self.return_anchor(*i)),
+                    Lifeline::Wire(_) => None,
                 })
-                .count();
-            Contour { side, column, lane }
-        })
-        .collect()
-}
-
-/// Where one vertex sits in the topology's sorted list.
-fn index_of(sweep: &Sweep<'_>, vertex: Vertex) -> usize {
-    sweep
-        .vertices
-        .binary_search(&vertex)
-        .expect("a drawn vertex is projected")
-}
-
-/// Numbers the groups so that every recorded pair keeps its order. Ties go to
-/// the group created first, so one topology always yields one arrangement.
-///
-/// `None` when the pairs contradict each other. The frontier's own pairs never
-/// do — two lifelines keep their order for as long as both last — but the
-/// reserved areas and return sides added beside them can, and so can a
-/// procedure that reorders the frontier freely.
-fn extend(groups: usize, before: &BTreeSet<(usize, usize)>) -> Option<Vec<i32>> {
-    let mut waiting = vec![0usize; groups];
-    for &(_, right) in before {
-        waiting[right] += 1;
-    }
-    let mut ready = (0..groups)
-        .filter(|&group| waiting[group] == 0)
-        .collect::<BTreeSet<_>>();
-    let mut order = vec![0; groups];
-    for column in 0..groups {
-        let group = ready.pop_first()?;
-        order[group] = i32::try_from(column).unwrap_or(i32::MAX);
-        for &(_, right) in before.iter().filter(|&&(left, _)| left == group) {
-            waiting[right] -= 1;
-            if waiting[right] == 0 {
-                ready.insert(right);
+                .collect::<Vec<_>>()
+        };
+        let Some(vertex) = step.vertex else {
+            return take(frontier);
+        };
+        let mut event = Vec::new();
+        for &v in &self.events[vertex] {
+            event.push(Anchor::fixed(self.columns.vertex[v]));
+            if let Vertex::Node(node) = self.topology.vertices[v] {
+                event.extend(
+                    self.topology
+                        .exits
+                        .iter()
+                        .filter(|e| e.id.node == node && e.id.branch.is_some_and(|b| b > 0))
+                        .map(|e| Anchor::fixed(self.columns.exits[&e.id])),
+                );
             }
         }
-    }
-    Some(order)
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::BTreeSet;
-
-    use super::{State, Step, Sweep};
-
-    /// Walks the whole state space: every ready vertex, every order its
-    /// emissions may take, and no memory of the states already refused.
-    ///
-    /// The production walk takes the first ready vertex and remembers
-    /// refusals. Those two reductions rest on ready vertices commuting, which
-    /// this procedure does not assume, so a disagreement between the two is a
-    /// counterexample to them. Only small topologies are within reach: without
-    /// the reductions the walk is the full interleaving of every subtree.
-    ///
-    /// It succeeds on the same condition the production walk does: a sequence
-    /// that places every vertex *and* numbers its columns. Stopping at the
-    /// last placement would compare two different questions, and the column
-    /// numbering is the half the second reduction does not obviously commute
-    /// with — it reads the whole sequence, not the state the memo keys on.
-    ///
-    /// What it does share is the step itself — `ready`, `consumed`,
-    /// `continues` and `emissions` — and the expansion that numbers and checks
-    /// the result. A procedure sharing neither would have to enumerate raw
-    /// ranks, columns and corridors, which is out of reach at any size worth
-    /// testing; the step is also the part the correspondence argument
-    /// establishes directly, while the reductions are the part that needs a
-    /// counterexample hunt.
-    fn whole_space(sweep: &Sweep<'_>, state: &mut State, steps: &mut Vec<Step>) -> bool {
-        if state.placed.iter().all(|placed| *placed) {
-            return sweep.expand(steps).is_some();
+        if let Some(i) = self.entry_of[vertex].or(self.tail_of[vertex]) {
+            match step
+                .side
+                .or(sides[i])
+                .expect("a loop side is chosen at entry")
+            {
+                Side::Left => event.insert(0, self.return_anchor(i)),
+                Side::Right => event.push(self.return_anchor(i)),
+            }
         }
-        for vertex in 0..sweep.vertices.len() {
-            if !sweep.ready(state, vertex) {
+        let mut anchors = take(&frontier[..step.position]);
+        anchors.extend(event);
+        anchors.extend(take(&frontier[step.position + step.consumed.len()..]));
+        anchors
+    }
+
+    fn constrain(&self, state: &State, step: &Step) -> Option<Order> {
+        let vertex = step.vertex.expect("a vertex event");
+        let mut order = state.order.clone();
+        if let Some(i) = self.entry_of[vertex] {
+            let side = step
+                .side
+                .expect("projected topology contains the required vertex or loop endpoint");
+            let bound = match side {
+                Side::Left => self.columns.return_right[i],
+                Side::Right => self.columns.returns[i],
+            };
+            let flank = usize::from(side == Side::Right);
+            for &body in &self.columns.bodies[i][flank] {
+                let (left, right) = match side {
+                    Side::Left => (bound, body),
+                    Side::Right => (body, bound),
+                };
+                if !order.insert(left, right, true) {
+                    return None;
+                }
+            }
+        }
+        if let Some(i) = self.tail_of[vertex] {
+            let outside = match state.sides[i]
+                .expect("projected topology contains the required vertex or loop endpoint")
+            {
+                Side::Left => step.consumed.first(),
+                Side::Right => step.consumed.last(),
+            };
+            if outside != Some(&Lifeline::Return(i)) {
+                return None;
+            }
+        }
+        let anchors = self.anchors(&state.frontier, &state.sides, step);
+        for (i, left) in anchors.iter().enumerate() {
+            for right in &anchors[i + 1..] {
+                if !order.insert(left.left, right.right, true) {
+                    return None;
+                }
+            }
+        }
+        Some(order)
+    }
+
+    /// A path to a vertex strictly after v separates paths to v on its two
+    /// sides, provided it cannot itself reach v. It cannot meet either path
+    /// before v: such a meeting would make it an ancestor of v. Only the
+    /// already live edges may escape through their common source; exclude
+    /// those from this obstruction. See RFC 0003 §2.1.
+    fn sealed(&self, state: &State) -> bool {
+        let destination = |item: Lifeline| match item {
+            Lifeline::Wire(w) => self.topology.connections[w].destination,
+            Lifeline::Return(i) => Vertex::Junction(self.topology.loops[i].tail),
+        };
+        let ends = state
+            .frontier
+            .iter()
+            .map(|&a| {
+                self.topology
+                    .vertices
+                    .binary_search(&destination(a))
+                    .expect("a projected endpoint")
+            })
+            .collect::<Vec<_>>();
+        for (v, placed) in state.placed.iter().enumerate() {
+            if *placed {
                 continue;
             }
-            let (position, count) = sweep
-                .consumed(state, vertex)
-                .expect("a ready vertex meets the frontier");
-            let consumed = state.frontier[position..position + count].to_vec();
-            let continues = sweep.continues(vertex, &consumed);
-            for emitted in sweep.emissions(vertex) {
-                let removed = state
-                    .frontier
-                    .splice(position..position + count, emitted.iter().copied())
-                    .collect::<Vec<_>>();
-                state.placed[vertex] = true;
-                steps.push(Step {
-                    vertex,
-                    consumed: consumed.clone(),
-                    position,
-                    emitted: emitted.clone(),
-                    continues,
-                });
-                let found = whole_space(sweep, state, steps);
-                steps.pop();
-                state.placed[vertex] = false;
-                state
-                    .frontier
-                    .splice(position..position + emitted.len(), removed);
-                if found {
+            for (at, &barrier) in state.frontier.iter().enumerate() {
+                if !self.barriers[ends[at]][v] {
+                    continue;
+                }
+                let reaches = |i: usize| {
+                    self.paths[ends[i]][v] && !self.exchangeable(state.frontier[i], barrier)
+                };
+                if (0..at).any(reaches) && (at + 1..ends.len()).any(reaches) {
                     return true;
                 }
             }
@@ -1116,108 +790,859 @@ mod tests {
         false
     }
 
-    /// Contradicting column orders have no numbering.
-    ///
-    /// `walk` treats that refusal apart from a placement refusal, and neither
-    /// reduction applies to it, so the branch has to exist whether or not a
-    /// topology reaches it. None does today: the corpus and every generated
-    /// loop shape number every sequence they finish.
+    fn walk(
+        &self,
+        state: &mut State,
+        steps: &mut Vec<Step>,
+        failed: &mut BTreeSet<Key>,
+        deepest: &mut (usize, Option<usize>),
+        memo: bool,
+    ) -> Result<Option<Arrangement>, Refusal> {
+        if state.placed.iter().all(|p| *p) {
+            let Some(order) = self.columns.settle(&state.order, 0) else {
+                return Ok(None);
+            };
+            let built = self.expand(steps, &order);
+            super::verify::arrangement(self.flow, self.topology, &built)
+                .map_err(Refusal::Internal)?;
+            return Ok(Some(built));
+        }
+        if memo && self.sealed(state) {
+            return Ok(None);
+        }
+        let key = (
+            state.placed.clone(),
+            state.frontier.clone(),
+            state.sides.clone(),
+            state.order.clone(),
+        );
+        if memo && failed.contains(&key) {
+            return Ok(None);
+        }
+        // A cut may change order only where two forward routes are allowed
+        // to share a segment. Enumerate its finite exchange orbit, keeping one
+        // shortest trace for each cut. Exchanges add no persistent x constraint.
+        let original = state.frontier.clone();
+        let mut queue = vec![(original.clone(), None::<(usize, usize)>)];
+        let mut seen = BTreeSet::from([original.clone()]);
+        let mut at = 0;
+        while at < queue.len() {
+            let cut = queue[at].0.clone();
+            let mut chain = Vec::new();
+            let mut cursor = at;
+            while let Some((parent, position)) = queue[cursor].1 {
+                chain.push(Step {
+                    vertex: None,
+                    position,
+                    consumed: queue[parent].0[position..position + 2].to_vec(),
+                    emitted: queue[cursor].0[position..position + 2].to_vec(),
+                    side: None,
+                });
+                cursor = parent;
+            }
+            chain.reverse();
+            state.frontier.clone_from(&cut);
+            let kept = steps.len();
+            steps.extend(chain);
+            let result = self.place(state, steps, failed, deepest, memo);
+            steps.truncate(kept);
+            state.frontier.clone_from(&original);
+            if !matches!(&result, Ok(None)) {
+                return result;
+            }
+            for position in 0..cut.len().saturating_sub(1) {
+                if !self.exchangeable(cut[position], cut[position + 1]) {
+                    continue;
+                }
+                let mut next = cut.clone();
+                next.swap(position, position + 1);
+                if seen.insert(next.clone()) {
+                    queue.push((next, Some((at, position))));
+                }
+            }
+            at += 1;
+        }
+        // Memoization is optional: stop growing the cache after 64 MiB of
+        // estimated payload. Omitting an entry repeats work, never rejects a
+        // continuation or changes the finite exhaustive search.
+        let bytes = state.order.relation.len()
+            + state.frontier.len() * size_of::<Lifeline>()
+            + state.placed.len()
+            + state.sides.len() * size_of::<Option<Side>>()
+            + size_of::<Key>()
+            + 128;
+        if memo && failed.len() < 64 * 1024 * 1024 / bytes.max(1) {
+            failed.insert(key);
+        }
+        Ok(None)
+    }
+
+    fn place(
+        &self,
+        state: &mut State,
+        steps: &mut Vec<Step>,
+        failed: &mut BTreeSet<Key>,
+        deepest: &mut (usize, Option<usize>),
+        memo: bool,
+    ) -> Result<Option<Arrangement>, Refusal> {
+        for &vertex in &self.visit_order {
+            if self.events[vertex].is_empty()
+                || state.placed[vertex]
+                || self.events[vertex]
+                    .iter()
+                    .any(|&v| self.predecessors[v].iter().any(|&i| !state.placed[i]))
+            {
+                continue;
+            }
+            if steps.len() >= deepest.0 {
+                *deepest = (steps.len(), Some(vertex));
+            }
+            let Some((position, count)) = self.consumed(state, vertex) else {
+                continue;
+            };
+            let consumed = state.frontier[position..position + count].to_vec();
+            let sides = if let Some(i) = self.entry_of[vertex] {
+                if self.topology.loops[i].prefer_left {
+                    vec![Some(Side::Left), Some(Side::Right)]
+                } else {
+                    vec![Some(Side::Right), Some(Side::Left)]
+                }
+            } else {
+                vec![None]
+            };
+            for side in sides {
+                {
+                    let mut emitted = self.emissions(vertex);
+                    if let Some(i) = self.entry_of[vertex] {
+                        match side.expect(
+                            "projected topology contains the required vertex or loop endpoint",
+                        ) {
+                            Side::Left => emitted.insert(0, Lifeline::Return(i)),
+                            Side::Right => emitted.push(Lifeline::Return(i)),
+                        }
+                    }
+                    let step = Step {
+                        vertex: Some(vertex),
+                        position,
+                        consumed: consumed.clone(),
+                        emitted,
+                        side,
+                    };
+                    let Some(order) = self.constrain(state, &step) else {
+                        continue;
+                    };
+                    let kept = state.clone();
+                    state.order = order;
+                    for &v in &self.events[vertex] {
+                        state.placed[v] = true;
+                    }
+                    if let Some(i) = self.entry_of[vertex] {
+                        state.sides[i] = side;
+                    }
+                    state
+                        .frontier
+                        .splice(position..position + count, step.emitted.iter().copied());
+                    steps.push(step);
+                    let found = self.walk(state, steps, failed, deepest, memo);
+                    steps.pop();
+                    *state = kept;
+                    if !matches!(&found, Ok(None)) {
+                        return found;
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    fn expand(&self, steps: &[Step], order: &Order) -> Arrangement {
+        let room = self.topology.connections.len() as i32 + 2;
+        let values = order
+            .number()
+            .into_iter()
+            .map(|x| {
+                x * (4
+                    * room
+                    * (self.topology.connections.len() + self.topology.loops.len() + 2) as i32)
+            })
+            .collect::<Vec<_>>();
+        let mut built = self.empty_arrangement(steps, &values);
+        let mut frontier = Vec::new();
+        let mut previous = BTreeMap::new();
+        let mut sides = vec![None; self.topology.loops.len()];
+        for (rank, step) in steps.iter().enumerate() {
+            if let Some(i) = step.vertex.and_then(|v| self.entry_of[v]) {
+                sides[i] = step.side;
+                built.contours[i].side = step.side.expect("an entry chooses its side");
+            }
+            let mut spines = vec![0; self.topology.loops.len()];
+            let anchors = self.anchors(&frontier, &sides, step);
+            let mut at = anchors.first().map_or(0, |a| values[a.left] - 4 * room);
+            for anchor in anchors {
+                at = (at + 4 * room).max(values[anchor.left]);
+                assert!(
+                    at <= values[anchor.right],
+                    "ordered intervals have enough room"
+                );
+                if let Some(i) = anchor.return_index {
+                    spines[i] = at;
+                }
+            }
+            let (before, after) = self.row(step, &frontier, &values, &spines, room, &previous);
+            if let Some(i) = step.vertex.and_then(|v| self.entry_of[v]) {
+                let x = after[&Lifeline::Return(i)];
+                built.contours[i].column = x;
+                built.return_routes.insert(
+                    i,
+                    Route {
+                        departure: x,
+                        arrival: x,
+                        runs: Vec::new(),
+                    },
+                );
+            }
+            if let Some(i) = step.vertex.and_then(|v| self.tail_of[v]) {
+                built
+                    .return_routes
+                    .get_mut(&i)
+                    .expect("the return entered before its tail")
+                    .arrival = before[&Lifeline::Return(i)];
+            }
+            if rank > 0 {
+                Self::strip(
+                    rank - 1,
+                    &steps[rank - 1],
+                    step,
+                    &frontier,
+                    &previous,
+                    &before,
+                    &mut built,
+                );
+            }
+            frontier.splice(
+                step.position..step.position + step.consumed.len(),
+                step.emitted.iter().copied(),
+            );
+            previous = after;
+        }
+        built
+            .return_routes
+            .retain(|_, route| !route.runs.is_empty());
+        compress(&mut built);
+        built
+    }
+
+    fn empty_arrangement(&self, steps: &[Step], values: &[i32]) -> Arrangement {
+        Arrangement {
+            rank: steps
+                .iter()
+                .enumerate()
+                .flat_map(|(r, s)| {
+                    s.vertex.into_iter().flat_map(move |v| {
+                        self.events[v]
+                            .iter()
+                            .map(move |&v| (self.topology.vertices[v], r))
+                    })
+                })
+                .collect(),
+            ranks: steps.len(),
+            column: self
+                .topology
+                .vertices
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (v, values[self.columns.vertex[i]]))
+                .collect(),
+            exit_offset: self
+                .columns
+                .exits
+                .iter()
+                .map(|(&e, &i)| {
+                    let own = self
+                        .topology
+                        .vertices
+                        .binary_search(&Vertex::Node(e.node))
+                        .expect("projected topology contains the required vertex or loop endpoint");
+                    (e, values[i] - values[self.columns.vertex[own]])
+                })
+                .collect(),
+            routes: self
+                .topology
+                .connections
+                .iter()
+                .map(|wire| {
+                    let departure = match wire.source {
+                        Source::Exit(exit) => values[self.columns.exits[&exit]],
+                        Source::Junction(j) => values[self.columns.vertex[self
+                            .topology
+                            .vertices
+                            .binary_search(&Vertex::Junction(j))
+                            .expect(
+                                "projected topology contains the required vertex or loop endpoint",
+                            )]],
+                    };
+                    let arrival = values[self.columns.vertex[self
+                        .topology
+                        .vertices
+                        .binary_search(&wire.destination)
+                        .expect(
+                            "projected topology contains the required vertex or loop endpoint",
+                        )]];
+                    Route {
+                        departure,
+                        arrival,
+                        runs: Vec::new(),
+                    }
+                })
+                .collect(),
+            gap_lanes: vec![0; steps.len()],
+            return_routes: BTreeMap::new(),
+            contours: vec![
+                Contour {
+                    side: Side::Left,
+                    column: 0,
+                    lane: 0
+                };
+                self.topology.loops.len()
+            ],
+        }
+    }
+
+    /// Coordinates at a vertex event, with one spare integer per forward
+    /// route on each side of every static anchor. The event's incident routes
+    /// fan out or merge inside that spare space.
+    fn row(
+        &self,
+        step: &Step,
+        frontier: &[Lifeline],
+        values: &[i32],
+        spines: &[i32],
+        room: i32,
+        previous: &BTreeMap<Lifeline, i32>,
+    ) -> (BTreeMap<Lifeline, i32>, BTreeMap<Lifeline, i32>) {
+        let Some(vertex) = step.vertex else {
+            return Self::exchange_row(step, frontier, spines, room);
+        };
+        let own = values[self.columns.vertex[vertex]];
+        let port = |wire: usize| match self.topology.connections[wire].source {
+            Source::Exit(exit) => values[self.columns.exits[&exit]],
+            Source::Junction(_) => own,
+        };
+        let mut event_anchors = self.events[vertex]
+            .iter()
+            .map(|&v| values[self.columns.vertex[v]])
+            .collect::<Vec<_>>();
+        event_anchors.extend(step.emitted.iter().map(|item| match item {
+            Lifeline::Wire(w) => port(*w),
+            Lifeline::Return(i) => spines[*i],
+        }));
+        if let Some(i) = self.tail_of[vertex] {
+            event_anchors.push(spines[i]);
+        }
+        let (left, right) = event_anchors
+            .into_iter()
+            .fold((own, own), |(left, right), x| (left.min(x), right.max(x)));
+        let (left, right) = (left - room, right + room);
+        let mut fixed = BTreeMap::new();
+        for (slice, bound, before_event) in [
+            (&frontier[..step.position], left, true),
+            (
+                &frontier[step.position + step.consumed.len()..],
+                right,
+                false,
+            ),
+        ] {
+            pack_side(
+                slice,
+                bound,
+                before_event,
+                spines,
+                room,
+                previous,
+                &mut fixed,
+            );
+        }
+        let mut before = fixed.clone();
+        let incoming = self.arrivals[vertex].len();
+        let start = if incoming == 1 && matches!(self.topology.vertices[vertex], Vertex::Node(_)) {
+            own
+        } else if self.tail_of[vertex]
+            .is_some_and(|i| step.consumed.last() == Some(&Lifeline::Return(i)))
+        {
+            own - incoming as i32
+        } else {
+            own + 1
+        };
+        let mut offset = 0;
+        for &item in &step.consumed {
+            let x = match item {
+                Lifeline::Return(i) => spines[i],
+                Lifeline::Wire(w) if self.events[vertex].len() > 1 => {
+                    values[self.columns.vertex
+                        [index_of(self.topology, self.topology.connections[w].destination)]]
+                }
+                Lifeline::Wire(_) => {
+                    let x = start + offset;
+                    offset += 1;
+                    x
+                }
+            };
+            before.insert(item, x);
+        }
+        let mut after = fixed;
+        let mut counts = BTreeMap::new();
+        for &item in &step.emitted {
+            let x = match item {
+                Lifeline::Return(i) => spines[i],
+                Lifeline::Wire(w) => {
+                    let at = port(w);
+                    let count = counts.entry(at).or_insert(0);
+                    let x = at + *count;
+                    *count += 1;
+                    x
+                }
+            };
+            after.insert(item, x);
+        }
+        (before, after)
+    }
+
+    fn exchange_row(
+        step: &Step,
+        frontier: &[Lifeline],
+        spines: &[i32],
+        room: i32,
+    ) -> (BTreeMap<Lifeline, i32>, BTreeMap<Lifeline, i32>) {
+        let mut before = BTreeMap::new();
+        let mut at = frontier
+            .iter()
+            .find_map(|item| match item {
+                Lifeline::Return(i) => Some(spines[*i] - room),
+                Lifeline::Wire(_) => None,
+            })
+            .unwrap_or(0)
+            - room;
+        for &item in frontier {
+            if let Lifeline::Return(i) = item {
+                at = spines[i];
+            }
+            before.insert(item, at);
+            at += 1;
+        }
+        let mut after = before.clone();
+        after.insert(step.consumed[0], before[&step.consumed[1]]);
+        after.insert(step.consumed[1], before[&step.consumed[0]]);
+        (before, after)
+    }
+
+    /// Ordered wires can be moved without crossing: leftward moves from left
+    /// to right, then rightward moves from right to left. Shared departures
+    /// split before these moves; arrivals merge on one final common rail.
+    fn strip(
+        gap: usize,
+        above: &Step,
+        below: &Step,
+        frontier: &[Lifeline],
+        start: &BTreeMap<Lifeline, i32>,
+        target: &BTreeMap<Lifeline, i32>,
+        built: &mut Arrangement,
+    ) {
+        let mut lane = 0;
+        for &item in above.emitted.iter().filter(|_| above.vertex.is_some()) {
+            if let Lifeline::Wire(w) = item {
+                let departure = built.routes[w].departure;
+                add_run(&mut built.routes[w], gap, lane, departure, start[&item]);
+            }
+        }
+        lane += 1;
+        for reverse in [false, true] {
+            let mut order = frontier.to_vec();
+            if reverse {
+                order.reverse();
+            }
+            for item in order {
+                let (from, to) = (start[&item], target[&item]);
+                if (to > from && reverse) || (to < from && !reverse) {
+                    let route = match item {
+                        Lifeline::Wire(w) => &mut built.routes[w],
+                        Lifeline::Return(i) => built
+                            .return_routes
+                            .get_mut(&i)
+                            .expect("a live return route"),
+                    };
+                    add_run(route, gap, lane, from, to);
+                    lane += 1;
+                }
+            }
+        }
+        for &item in &below.consumed {
+            if let Lifeline::Wire(w) = item {
+                let arrival = if below.vertex.is_some() {
+                    built.routes[w].arrival
+                } else {
+                    let other = below
+                        .consumed
+                        .iter()
+                        .find(|&&item| item != Lifeline::Wire(w))
+                        .expect("two exchanging wires");
+                    target[other]
+                };
+                add_run(&mut built.routes[w], gap, lane, target[&item], arrival);
+            }
+        }
+        built.gap_lanes[gap] = lane + 1;
+    }
+}
+
+/// Pack paths between return spines on one side of a vertex event.
+fn pack_side(
+    slice: &[Lifeline],
+    bound: i32,
+    before_event: bool,
+    spines: &[i32],
+    room: i32,
+    previous: &BTreeMap<Lifeline, i32>,
+    fixed: &mut BTreeMap<Lifeline, i32>,
+) {
+    let mut at = if before_event {
+        slice
+            .iter()
+            .filter_map(|wire| previous.get(wire))
+            .copied()
+            .min()
+            .unwrap_or(bound)
+            .min(bound)
+            - room
+    } else {
+        bound
+    };
+    let mut run = Vec::new();
+    for &item in slice {
+        if let Lifeline::Return(i) = item {
+            let target = spines[i];
+            let start = at.min(target - room - run.len() as i32);
+            pack(&run, start, target - room, previous, fixed);
+            run.clear();
+            fixed.insert(item, target);
+            at = target + room;
+        } else {
+            run.push(item);
+        }
+    }
+    let end = if before_event {
+        bound
+    } else {
+        run.iter()
+            .filter_map(|wire| previous.get(wire))
+            .copied()
+            .max()
+            .unwrap_or(at)
+            .max(at)
+            + run.len() as i32
+            + room
+    };
+    let start = at.min(end - run.len() as i32);
+    pack(&run, start, end, previous, fixed);
+}
+
+/// Keep a live path where it already stood whenever the new anchor interval
+/// leaves room. Clamping left to right preserves order and reserves one integer
+/// for each remaining path; it changes coordinates, never the search state.
+fn pack(
+    paths: &[Lifeline],
+    mut left: i32,
+    right: i32,
+    previous: &BTreeMap<Lifeline, i32>,
+    placed: &mut BTreeMap<Lifeline, i32>,
+) {
+    for (i, &wire) in paths.iter().enumerate() {
+        let last = right - (paths.len() - i) as i32;
+        let x = previous
+            .get(&wire)
+            .copied()
+            .unwrap_or(left)
+            .clamp(left, last);
+        placed.insert(wire, x);
+        left = x + 1;
+    }
+}
+
+/// Reachability has no distances: one machine word propagates 64 vertices.
+fn close_paths(paths: &mut [Vec<bool>]) {
+    let words = paths.len().div_ceil(64);
+    let mut packed = paths
+        .iter()
+        .map(|row| {
+            let mut bits = vec![0_u64; words];
+            for (v, &reachable) in row.iter().enumerate() {
+                if reachable {
+                    bits[v / 64] |= 1 << (v % 64);
+                }
+            }
+            bits
+        })
+        .collect::<Vec<_>>();
+    for k in 0..paths.len() {
+        let through = packed[k].clone();
+        for row in &mut packed {
+            if row[k / 64] & (1 << (k % 64)) != 0 {
+                for (word, next) in row.iter_mut().zip(&through) {
+                    *word |= next;
+                }
+            }
+        }
+    }
+    for (i, (row, bits)) in paths.iter_mut().zip(packed).enumerate() {
+        for (v, reachable) in row.iter_mut().enumerate() {
+            *reachable = i == v || bits[v / 64] & (1 << (v % 64)) != 0;
+        }
+    }
+}
+
+fn add_run(route: &mut Route, gap: usize, lane: usize, enter: i32, exit: i32) {
+    if enter != exit {
+        route.runs.push(Run {
+            gap,
+            enter,
+            exit,
+            lane,
+        });
+    }
+}
+
+pub(super) fn compress(built: &mut Arrangement) {
+    let coordinates = built
+        .column
+        .values()
+        .copied()
+        .chain(
+            built
+                .exit_offset
+                .iter()
+                .map(|(exit, offset)| built.column[&Vertex::Node(exit.node)] + offset),
+        )
+        .chain(
+            built
+                .routes
+                .iter()
+                .chain(built.return_routes.values())
+                .flat_map(|r| [r.departure, r.arrival]),
+        )
+        .chain(
+            built
+                .routes
+                .iter()
+                .chain(built.return_routes.values())
+                .flat_map(|r| r.runs.iter().flat_map(|s| [s.enter, s.exit])),
+        )
+        .chain(built.contours.iter().map(|c| c.column))
+        .collect::<BTreeSet<_>>();
+    let numbered = coordinates
+        .into_iter()
+        .enumerate()
+        .map(|(i, x)| (x, i as i32))
+        .collect::<BTreeMap<_, _>>();
+    for (exit, offset) in &mut built.exit_offset {
+        let column = built.column[&Vertex::Node(exit.node)];
+        *offset = numbered[&(column + *offset)] - numbered[&column];
+    }
+    for column in built.column.values_mut() {
+        *column = numbered[column];
+    }
+    for contour in &mut built.contours {
+        contour.column = numbered[&contour.column];
+    }
+    let mut used = built
+        .routes
+        .iter()
+        .chain(built.return_routes.values())
+        .flat_map(|route| route.runs.iter().map(|run| (run.gap, run.lane)))
+        .collect::<BTreeSet<_>>();
+    for (&vertex, &rank) in &built.rank {
+        // A junction with a straight arrival sits on its rank's line. An
+        // unused final lane can keep somebody else's bend above that line;
+        // deleting it would make the bend touch the junction or its return.
+        if matches!(vertex, Vertex::Junction(_)) && rank > 0 && built.gap_lanes[rank - 1] > 0 {
+            used.insert((rank - 1, built.gap_lanes[rank - 1] - 1));
+        }
+    }
+    let mut lanes = BTreeMap::new();
+    built.gap_lanes.fill(0);
+    for (gap, lane) in used {
+        lanes.insert((gap, lane), built.gap_lanes[gap]);
+        built.gap_lanes[gap] += 1;
+    }
+    for route in built
+        .routes
+        .iter_mut()
+        .chain(built.return_routes.values_mut())
+    {
+        route.departure = numbered[&route.departure];
+        route.arrival = numbered[&route.arrival];
+        for run in &mut route.runs {
+            run.lane = lanes[&(run.gap, run.lane)];
+            run.enter = numbered[&run.enter];
+            run.exit = numbered[&run.exit];
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn contradicting_column_orders_do_not_number() {
-        assert!(super::extend(2, &BTreeSet::from([(0, 1), (1, 0)])).is_none());
-        assert_eq!(
-            super::extend(2, &BTreeSet::from([(1, 0)])),
-            Some(vec![1, 0])
+    fn normalization_keeps_a_bend_above_a_junction_with_a_straight_arrival() {
+        let parts =
+            super::super::tests::parts_of(&super::super::tests::looping(&["repeat", "break"]))
+                .unwrap();
+        let junction = Vertex::Junction(parts.topology.loops[0].entry);
+        let mut built = Arrangement {
+            rank: BTreeMap::from([(junction, 1)]),
+            ranks: 2,
+            routes: vec![Route {
+                departure: 0,
+                arrival: 1,
+                runs: vec![Run {
+                    gap: 0,
+                    lane: 0,
+                    enter: 0,
+                    exit: 1,
+                }],
+            }],
+            gap_lanes: vec![2, 0],
+            ..Arrangement::default()
+        };
+        let separated = |built: &Arrangement| {
+            let grid = super::super::verify::Grid::of(&parts.topology, built);
+            grid.lane(0, built.routes[0].runs[0].lane) < grid.rank(built.rank[&junction])
+        };
+        assert!(separated(&built));
+        compress(&mut built);
+        assert!(
+            separated(&built),
+            "normalization moved a bend onto the junction line"
         );
     }
 
-    /// A refusal the numbering raised sends the walk on, and is forgotten.
-    ///
-    /// Neither reduction may be applied to it: the numbering reads the whole
-    /// sequence, not the state the memo keys on, so a state it refused may
-    /// still finish by another route and a ready vertex it refused under may
-    /// still be the wrong one to have picked. No topology reaches that
-    /// refusal, so the walk is made to raise it here instead.
-    ///
-    /// Both halves are pinned. Refusing the first finished sequence must still
-    /// leave the walk an arrangement — it has to try the rest — and that
-    /// arrangement must differ from the one it settles on when nothing is
-    /// refused, or the refusal never bit.
     #[test]
-    fn a_numbering_refusal_sends_the_walk_on_and_is_forgotten() {
-        let source = crate::construct::tests::looping(&["repeat", "repeat", "break"]);
-        let parts = crate::construct::tests::parts_of(&source).expect("the probe projects");
-        let Ok(settled) = super::search(&parts.flow, &parts.merges, &parts.topology) else {
-            panic!("the probe has a diagram")
-        };
+    fn strict_cycles_are_refused_and_weak_cycles_are_equalities() {
+        let mut order = Order::new(3);
+        assert!(order.insert(0, 1, false));
+        assert!(order.insert(1, 0, false));
+        assert!(order.insert(1, 2, true));
+        assert!(!order.insert(2, 0, false));
+        assert_eq!(order.number(), [0, 0, 1]);
+    }
 
-        let sweep = Sweep::of(&parts.flow, &parts.topology);
-        sweep.unnumbered.set(1);
+    #[test]
+    fn the_reductions_preserve_all_two_and_three_route_answers() {
+        compare_reductions(super::super::tests::small_decision_cases());
+    }
+
+    #[test]
+    #[ignore = "exhaustive; run explicitly with --release --ignored"]
+    fn the_memoized_walk_agrees_with_the_whole_state_space() {
+        compare_reductions(super::super::tests::decision_cases());
+    }
+
+    #[test]
+    fn a_shared_rail_cannot_lower_a_case_past_its_siblings() {
+        let source = super::super::tests::looping(&["repeat", "break", "repeat"]);
+        let parts = super::super::tests::parts_of(&source).unwrap();
+        let sweep = Sweep::of(&parts.flow, &parts.topology, true).unwrap();
         let mut state = State {
             placed: vec![false; parts.topology.vertices.len()],
             frontier: Vec::new(),
+            sides: vec![None; parts.topology.loops.len()],
+            order: sweep.columns.base.clone(),
         };
-        let Ok(found) = sweep.walk(
+        let mut steps = Vec::new();
+        loop {
+            let vertex = (0..state.placed.len())
+                .find(|&v| {
+                    !state.placed[v]
+                        && sweep.predecessors[v].iter().all(|&p| state.placed[p])
+                        && sweep.consumed(&state, v).is_some()
+                })
+                .unwrap();
+            let (position, count) = sweep.consumed(&state, vertex).unwrap();
+            let mut emitted = sweep.departures[vertex]
+                .iter()
+                .flatten()
+                .copied()
+                .map(Lifeline::Wire)
+                .collect::<Vec<_>>();
+            let side = sweep.entry_of[vertex].map(|i| {
+                emitted.insert(0, Lifeline::Return(i));
+                Side::Left
+            });
+            let step = Step {
+                vertex: Some(vertex),
+                position,
+                consumed: state.frontier[position..position + count].to_vec(),
+                emitted,
+                side,
+            };
+            state.order = sweep.constrain(&state, &step).unwrap();
+            state.placed[vertex] = true;
+            if let Some(i) = sweep.entry_of[vertex] {
+                state.sides[i] = side;
+            }
+            state
+                .frontier
+                .splice(position..position + count, step.emitted.iter().copied());
+            steps.push(step);
+            if sweep.departures[vertex].iter().any(|group| group.len() > 1) {
+                break;
+            }
+        }
+        let result = sweep.walk(
             &mut state,
-            &mut Vec::new(),
-            &mut std::collections::BTreeSet::new(),
-            &mut super::Deepest::default(),
-        ) else {
-            panic!("the walk goes on past a numbering refusal")
-        };
-        assert_eq!(
-            sweep.unnumbered.get(),
-            0,
-            "the refusal should have been used"
+            &mut steps,
+            &mut BTreeSet::new(),
+            &mut (0, None),
+            true,
         );
-        assert_ne!(
-            found.rank, settled.rank,
-            "the refused sequence should not be the one it answers with"
+        assert!(
+            matches!(result, Ok(None)),
+            "the case row must stay together"
         );
     }
 
-    /// Both directions, over flat and nested loop bodies alike, drawable and
-    /// not: a sequence the reduced walk finds is one the whole space finds,
-    /// and a topology the reduced walk refuses has none.
-    ///
-    /// This is the test of the two reductions and of nothing else. It takes
-    /// the same steps the production walk takes, and drops only the choice of
-    /// one ready vertex and the memory of refused states.
-    ///
-    /// It compares against the walk itself, not against `construct`: the
-    /// preferred search runs first there and would answer for every shape it
-    /// happens to draw, which is exactly the set where an unsound reduction
-    /// would stay hidden.
-    #[test]
-    fn the_reduced_walk_agrees_with_the_whole_state_space() {
-        let mut drawn = 0;
-        let mut refused = 0;
-        for source in crate::construct::tests::decision_cases() {
-            // A flow another rule rejects has no topology to arrange, and
-            // realizability never had a say in it.
-            let Some(parts) = crate::construct::tests::parts_of(&source) else {
+    fn compare_reductions(cases: Vec<String>) {
+        for source in cases {
+            let Some(parts) = super::super::tests::parts_of(&source) else {
                 continue;
             };
-            let accepted = super::search(&parts.flow, &parts.merges, &parts.topology).is_ok();
-            if accepted {
-                drawn += 1;
-            } else {
-                refused += 1;
+            // Reductions also run in the deciding family with variable return
+            // positions; the positive straight-return preference cannot hide it.
+            for flexible in [false, true] {
+                let Some(sweep) = Sweep::of(&parts.flow, &parts.topology, flexible) else {
+                    continue;
+                };
+                let initial = State {
+                    placed: vec![false; parts.topology.vertices.len()],
+                    frontier: Vec::new(),
+                    sides: vec![None; parts.topology.loops.len()],
+                    order: sweep.columns.base.clone(),
+                };
+                let outcomes = [false, true].map(|memo| {
+                    let result = sweep.walk(
+                        &mut initial.clone(),
+                        &mut Vec::new(),
+                        &mut BTreeSet::new(),
+                        &mut (0, None),
+                        memo,
+                    );
+                    match result {
+                        Ok(found) => found.is_some(),
+                        Err(Refusal::Internal(reason)) => panic!("{source}\n{reason}"),
+                        Err(Refusal::Impossible(_)) => unreachable!(),
+                    }
+                });
+                assert_eq!(outcomes[0], outcomes[1], "flexible={flexible}\n{source}");
             }
-            let sweep = Sweep::of(&parts.flow, &parts.topology);
-            let mut state = State {
-                placed: vec![false; parts.topology.vertices.len()],
-                frontier: Vec::new(),
-            };
-            assert_eq!(
-                whole_space(&sweep, &mut state, &mut Vec::new()),
-                accepted,
-                "{source}: the walk and the whole state space disagree"
-            );
         }
-        assert!(
-            drawn >= 20 && refused >= 4,
-            "the cases should cover both outcomes: {drawn} drawn, {refused} refused"
-        );
     }
 }

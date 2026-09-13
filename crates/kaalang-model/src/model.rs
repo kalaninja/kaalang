@@ -38,6 +38,25 @@ pub struct SemanticModel {
 }
 
 impl SemanticModel {
+    /// Removes redundant bends and spacing from a diagram with long detours.
+    /// Every replacement passes the complete arrangement verifier. Failure to
+    /// simplify keeps the existing witness; it never rejects the flow.
+    /// This optional presentation work is not part of macro compilation.
+    pub fn compact_arrangement(&mut self) {
+        if self
+            .arrangement
+            .routes
+            .iter()
+            .any(|route| route.runs.len() > 2)
+        {
+            crate::construct::compact::arrangement(
+                &self.flow,
+                &self.topology,
+                &mut self.arrangement,
+            );
+        }
+    }
+
     /// The vertices one loop's body draws, so a presentation measures the same
     /// body the construction did when it placed the loop's return
     /// (RFC 0002 §8).

@@ -170,7 +170,7 @@ impl Search<'_> {
     /// position, which is what a presentation can realize: it measures the
     /// body's boxes and steps that many lanes clear of them, having no column
     /// of its own to put a rail in. A topology never needs more lanes than it
-    /// has loops, because only a return climbs there (RFC 0003 §2).
+    /// has loops, because only a return climbs there (RFC 0003 §2.4).
     fn climb(
         &self,
         flow: &Flow,

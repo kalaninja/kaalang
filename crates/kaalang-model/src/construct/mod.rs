@@ -28,13 +28,16 @@
 //! destination's column.
 //!
 //! That family is a shape preference, not the contract, so exhausting it
-//! proves nothing. [`sweep`] then decides, and its module documents both
-//! directions of why its sequences are the drawings. Only its exhaustion makes
-//! a flow invalid, and only its obstruction says why.
+//! proves nothing — and neither does one candidate of it failing the check.
+//! Either way [`sweep`] then decides, and its module documents both directions
+//! of why its sequences are the drawings. Only its exhaustion makes a flow
+//! invalid, and only its obstruction says why.
 //!
 //! Running the preferred search first is not an optimization. Its results are
 //! the arrangements worth drawing; the sweep's normal form spends a rank and a
-//! column on every vertex, which is always drawable and rarely pretty.
+//! column on every vertex, which is always drawable and rarely pretty. A
+//! renderer can request a checked simplification through
+//! `SemanticModel::compact_arrangement` without adding that work to `build`.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -43,6 +46,8 @@ use syn::Error;
 use crate::model::{Flow, WireMerge};
 use crate::topology::{Destination, ExitId, Topology, Vertex};
 
+mod choice;
+pub(crate) mod compact;
 mod describe;
 mod end;
 mod loop_block;
@@ -83,6 +88,10 @@ pub struct Arrangement {
     pub gap_lanes: Vec<usize>,
     /// Per loop, in `Topology::loops` order, the contour of its return.
     pub contours: Vec<Contour>,
+    /// Optional sideways runs of a return's climb, indexed by loop. Stored in
+    /// downward order from entry to tail; a renderer reverses it. An absent
+    /// route is the straight climb recorded by `Contour`.
+    pub return_routes: BTreeMap<usize, Route>,
 }
 
 impl Arrangement {
@@ -111,7 +120,7 @@ impl Arrangement {
 pub struct Route {
     pub departure: i32,
     pub arrival: i32,
-    /// The sideways runs it makes, one per rank gap that needs one.
+    /// Sideways runs in increasing (gap, lane) order.
     pub runs: Vec<Run>,
 }
 
@@ -124,10 +133,10 @@ pub struct Run {
     pub lane: usize,
 }
 
-/// The contour one loop return climbs: the side of its body, the outermost
-/// column of that body, and which lane beside it the return takes. A
-/// presentation puts lane 0 immediately outside that column's node and each
-/// later lane one step further out.
+/// The side, column boundary and lane of a straight return's climb, or the
+/// entry end of a climb with recorded runs. The boundary may stand beyond the
+/// body's outermost column. A presentation puts lane 0 outside that column's
+/// boxes and each later lane one step further out.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Contour {
     pub side: Side,
@@ -217,16 +226,18 @@ enum Rejection {
 /// that the topology has no conforming diagram at all.
 ///
 /// Two searches run in turn. `preferred` looks only among the arrangements
-/// shaped the way RFC 0002 §8 asks for, and its results are the ones worth
-/// drawing. When it finds none, `sweep` decides the question: it accepts
-/// exactly the topologies that can be drawn, so only its exhaustion makes a
-/// flow invalid.
+/// shaped the way RFC 0003 §2.5 prefers, and its results are the ones worth
+/// drawing. When it finds none — or returns one the check rejects, which is a
+/// defect in that search and not a fact about the topology — `sweep` decides
+/// the question: it accepts exactly the topologies that can be drawn, so only
+/// its exhaustion makes a flow invalid.
 ///
 /// # Errors
 ///
 /// Reports an impossible topology when the sweep exhausts its space, and an
-/// internal construction error when the independent check rejects an
-/// arrangement either search returned.
+/// internal construction error when the independent check rejects the
+/// arrangement the sweep returned, or when the projection contradicts itself.
+/// Inconsistent column constraints refuse a search state, not the whole flow.
 ///
 /// # Panics
 ///
@@ -243,19 +254,24 @@ pub(crate) fn construct(
             format!("internal kaalang construction error: {reason}"),
         )
     };
-    let checked = |arrangement: Arrangement| match verify::arrangement(flow, topology, &arrangement)
-    {
-        Ok(()) => Ok(arrangement),
-        Err(reason) => Err(internal(reason)),
-    };
     match preferred(flow, merges, topology) {
-        Ok(arrangement) => return checked(arrangement),
+        // One bad candidate says nothing about the topology, so the deciding
+        // search still runs. The disagreement is a defect in the preferred
+        // search all the same, and `disagreed` is what stops it being caught
+        // quietly: the suite fails on it, and a release build goes on to the
+        // answer that is not in doubt.
+        Ok(arrangement) => match verify::arrangement(flow, topology, &arrangement) {
+            Ok(()) => return Ok(arrangement),
+            Err(reason) => disagreed(&reason),
+        },
         Err(Preferred::Inconsistent(reason)) => return Err(internal(reason)),
         Err(Preferred::Exhausted) => {}
     }
     match sweep::search(flow, merges, topology) {
-        Ok(arrangement) => checked(arrangement),
-        Err(blocked) => Err(Error::new(
+        // The sweep verifies its completed witness before returning it.
+        Ok(arrangement) => Ok(arrangement),
+        Err(sweep::Refusal::Internal(reason)) => Err(internal(reason)),
+        Err(sweep::Refusal::Impossible(blocked)) => Err(Error::new(
             blocked.span,
             format!(
                 "could not construct a diagram under RFC 0002: {}",
@@ -265,7 +281,22 @@ pub(crate) fn construct(
     }
 }
 
-/// Searches the arrangements shaped the way RFC 0002 §8 prefers, following the
+/// Reports that the preferred search returned an arrangement the independent
+/// check rejects.
+///
+/// The decision does not depend on it — the deciding search runs next either
+/// way — so this must not reject the flow. It is still a defect, and this
+/// crate's own test run is where it is visible: the generated shapes fail on
+/// it here, and a fixture the preferred search misdraws changes the diagram
+/// beside it.
+fn disagreed(reason: &str) {
+    #[cfg(test)]
+    panic!("the preferred search returned an arrangement the check rejects: {reason}");
+    #[cfg(not(test))]
+    let _ = reason;
+}
+
+/// Searches the arrangements shaped the way RFC 0003 §2.5 prefers, following the
 /// conflicts its own planner and contour search report.
 ///
 /// This search is incomplete: `Exhausted` says only that no arrangement of
@@ -468,6 +499,7 @@ fn assemble(topology: &Topology, placement: place::Placement, plan: &route::Plan
         routes,
         gap_lanes: plan.gap_lanes.clone(),
         contours: Vec::new(),
+        return_routes: BTreeMap::new(),
     }
 }
 

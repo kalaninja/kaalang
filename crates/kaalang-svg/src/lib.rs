@@ -32,9 +32,13 @@ pub enum RenderError {
         message: String,
     },
     /// The flow has a checked arrangement, but realizing it in pixels — with
-    /// the dimensions its nodes and labels need — broke RFC 0002 §8. A
-    /// topology with no conforming diagram is rejected by `kaalang_model::build`
-    /// and arrives as `InvalidFlow`, so this is a geometry or label failure.
+    /// the dimensions its nodes and labels need — broke RFC 0002 §8 or drew
+    /// something other than the arrangement. A topology with no conforming
+    /// diagram is rejected by `kaalang_model::build` and arrives as
+    /// `InvalidFlow`, so this is a geometry, label, or correspondence failure,
+    /// and one the uncompacted realization could not avoid either: that
+    /// realization is kept and used whenever a compaction cannot be made to
+    /// hold. Reaching this is a renderer defect rather than an authored one.
     UnroutableTopology {
         name: String,
         /// The spatial rule the realized geometry could not meet, naming the
@@ -114,7 +118,9 @@ impl Error for RenderError {}
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
-    let model = kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
+    let mut model =
+        kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
+    model.compact_arrangement();
     validate_labels(&model)?;
     let start = layout::start_text(source, &function.sig);
     let parameters = layout::parameter_text(source, &function.sig);

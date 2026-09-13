@@ -3,6 +3,7 @@ mod condition_effects;
 mod conditional_entry;
 mod conditional_nested_loop;
 mod count_to;
+mod diverging_middle_branch;
 mod early_end_then_loop;
 mod empty_captures;
 mod empty_loop;
