@@ -15,6 +15,8 @@ fn shared_setup(condition: bool) -> u32 {
 
     #[action("Use the setup on the long branch.")]
     let end = |long, &setup| setup + 2;
+
+    |end| return end;
 }
 
 #[test]

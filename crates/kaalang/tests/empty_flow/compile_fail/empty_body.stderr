@@ -1,4 +1,4 @@
-error: a kaalang flow must produce its `end` wire
+error: this kaalang execution reaches the end of the flow without `return`
  --> tests/empty_flow/compile_fail/empty_body.rs:4:4
   |
 4 | fn invalid() {}

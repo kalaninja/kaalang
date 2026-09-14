@@ -1,5 +1,0 @@
-error: a kaalang break label must name an enclosing loop
- --> tests/loop/compile_fail/unknown_label.rs:6:9
-  |
-6 |         break 'missing;
-  |         ^^^^^^^^^^^^^^

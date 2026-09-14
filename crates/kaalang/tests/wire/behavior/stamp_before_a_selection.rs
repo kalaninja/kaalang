@@ -16,6 +16,8 @@ fn stamp_before_a_selection(flag: bool) -> u64 {
 
     #[action("Finish without it.")]
     let end = |no| 0;
+
+    |end| return end;
 }
 
 #[test]

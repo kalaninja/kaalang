@@ -9,6 +9,13 @@ mod captions;
 mod layout;
 mod svg;
 
+/// Presentation options for one rendered flow.
+#[derive(Clone, Copy, Default)]
+pub struct RenderOptions {
+    /// Replace every validated cycle region with one described loop node.
+    pub collapse_loops: bool,
+}
+
 /// An error produced while selecting, validating, or rendering a kaalang flow.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RenderError {
@@ -116,10 +123,28 @@ impl Error for RenderError {}
 /// arrangement as geometry cannot route every connection and place every label
 /// under RFC 0002 §8.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
+    render_source_with_options(source, flow_name, RenderOptions::default())
+}
+
+/// Renders one flow using the requested presentation options.
+///
+/// # Errors
+///
+/// Returns the same errors as [`render_source`].
+pub fn render_source_with_options(
+    source: &str,
+    flow_name: &str,
+    options: RenderOptions,
+) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
-    let mut model =
-        kaalang_model::build(function).map_err(|error| invalid_flow(flow_name, &error))?;
+    let mut model = kaalang_model::build_with_options(
+        function,
+        kaalang_model::BuildOptions {
+            collapse_loops: options.collapse_loops,
+        },
+    )
+    .map_err(|error| invalid_flow(flow_name, &error))?;
     model.compact_arrangement();
     validate_labels(&model)?;
     let start = layout::start_text(source, &function.sig);
@@ -318,7 +343,7 @@ mod tests {
 
     #[test]
     fn reports_kaalang_arguments_as_an_invalid_flow() {
-        let source = "#[kaalang(unexpected)]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n}\n";
+        let source = "#[kaalang(unexpected)]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -333,7 +358,7 @@ mod tests {
 
     #[test]
     fn reports_model_errors_at_their_source_position() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy the input\")]\n    let input = |input| { input };\n}\n";
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy the input\")]\n    let input = |input| { input };\n    |input| return input;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -363,6 +388,8 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Build the later alternative")]
     let selected = |no| { 2 };
+
+    |end| return end;
 }
 "#;
 
@@ -380,7 +407,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn rejects_characters_that_xml_cannot_represent() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let end = |input| { input };\n}\n";
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -395,7 +422,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn reports_an_invalid_case_description_by_its_position() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    let end = |a| { 1 };\n\n    #[action(\"B\")]\n    let end = |b| { 2 };\n}\n";
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    let end = |a| { 1 };\n\n    #[action(\"B\")]\n    let end = |b| { 2 };\n\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -410,7 +437,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn reports_an_invalid_question_branch_description() {
-        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    let (yes, no) = |condition| { condition };\n    #[action(\"Yes\")]\n    let end = |yes| { 1 };\n    #[action(\"No\")]\n    let end = |no| { 0 };\n}\n";
+        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    let (yes, no) = |condition| { condition };\n    #[action(\"Yes\")]\n    let end = |yes| { 1 };\n    #[action(\"No\")]\n    let end = |no| { 0 };\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),

@@ -1,5 +1,5 @@
 //! Names the parts of a topology the way the author wrote them, so a
-//! diagnostic points at a block description or a loop rather than at an
+//! diagnostic points at a block description or a cycle rather than at an
 //! internal identifier.
 
 use proc_macro2::Span;
@@ -16,7 +16,7 @@ pub(super) fn span(flow: &Flow, topology: &Topology, connection: usize) -> Span 
     )
 }
 
-/// The span to report one vertex at: the block it draws, or the `loop` whose
+/// The span to report one vertex at: the block it draws, or the cycle whose
 /// entry or tail it is.
 pub(super) fn vertex_span(flow: &Flow, topology: &Topology, vertex: Vertex) -> Span {
     match vertex {
@@ -82,12 +82,12 @@ pub(super) fn vertex(
     }
 }
 
-/// One loop, named by its authored label when it has one.
+/// One cycle, named by its authored description.
 pub(super) fn loop_name(flow: &Flow, header: usize) -> String {
-    match &flow.blocks[header].loop_label {
-        Some(label) => format!("the loop `{}`", label.ident),
-        None => "this loop".to_owned(),
-    }
+    flow.blocks[header].description.as_deref().map_or_else(
+        || "this cycle".to_owned(),
+        |text| format!("the cycle `{text}`"),
+    )
 }
 
 fn block_name(flow: &Flow, block: usize) -> String {
@@ -119,14 +119,60 @@ fn junction_name(
         };
         return format!("{part} of {}", loop_name(flow, loop_.header));
     }
-    let wires = topology.junctions[junction]
+    let junction = &topology.junctions[junction];
+    if junction.is_break {
+        return "a cycle break".to_owned();
+    }
+    if junction.is_loop_result {
+        return "a cycle result".to_owned();
+    }
+    let wires = junction
         .merges
         .iter()
         .map(|&merge| flow.wire_name(&merges[merge].wire))
         .collect::<Vec<_>>();
     if wires.is_empty() {
-        "a loop exit".to_owned()
+        "a structural junction".to_owned()
     } else {
         format!("the `{}` merge", wires.join("` and `"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn structural_junctions_use_their_authored_roles() {
+        let source = r#"
+            fn example(value: u8) -> u8 {
+                #[cycle("Finish immediately.")]
+                let result = |value| {
+                    |value| break value;
+                };
+                |result| return result;
+            }
+        "#;
+        let model = crate::build(&crate::tests::fixture(source, "example")).unwrap();
+        let name = |predicate: fn(&crate::topology::Junction) -> bool| {
+            let index = model.topology.junctions.iter().position(predicate).unwrap();
+            junction_name(&model.flow, &model.merges, &model.topology, index)
+        };
+        assert_eq!(name(|junction| junction.is_break), "a cycle break");
+        assert_eq!(name(|junction| junction.is_loop_result), "a cycle result");
+
+        let mut topology = model.topology.clone();
+        topology
+            .junctions
+            .push(crate::topology::Junction::default());
+        assert_eq!(
+            junction_name(
+                &model.flow,
+                &model.merges,
+                &topology,
+                topology.junctions.len() - 1,
+            ),
+            "a structural junction"
+        );
     }
 }

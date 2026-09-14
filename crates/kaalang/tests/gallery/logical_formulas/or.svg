@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1424" height="990" viewBox="0 0 1424 990" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for or</title>
-  <desc id="kaalang-description">Nodes: Start: or with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over true_result / check_b described as branch 1: Yes / branch 2: No; Question: b capturing check_b, b handing over true_result / check_c described as branch 1: Yes / branch 2: No; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: Yes / branch 2: No; Action: Return true. capturing true_result handing over end; Action: Return false. capturing false_result handing over end; End: bool capturing end. Connections: Start: or to Question: a; Question: a branch 1 to the true_result merge; Question: a branch 2 to Question: b; Question: b branch 1 to the true_result merge; Question: b branch 2 to Question: c; Question: c branch 1 to the true_result merge; Question: c branch 2 to Action: Return false.; Action: Return true. to the end merge; Action: Return false. to the end merge; the true_result merge to Action: Return true.; the end merge to End: bool.</desc>
+  <desc id="kaalang-description">Nodes: Start: or with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over true_result / check_b described as branch 1: Yes / branch 2: No; Question: b capturing check_b, b handing over true_result / check_c described as branch 1: Yes / branch 2: No; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: Yes / branch 2: No; Action: Return true. capturing true_result handing over result; Action: Return false. capturing false_result handing over result; End: bool capturing result. Connections: Start: or to Question: a; Question: a branch 1 to the true_result merge; Question: a branch 2 to Question: b; Question: b branch 1 to the true_result merge; Question: b branch 2 to Question: c; Question: c branch 1 to the true_result merge; Question: c branch 2 to Action: Return false.; Action: Return true. to the result merge; Action: Return false. to the result merge; the true_result merge to Action: Return true.; the result merge to End: bool.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 103 L 172 188
@@ -35,6 +41,7 @@
       M 172 828 L 172 900
     "/>
     <text class="connection-label" x="185" y="638" xml:space="preserve"><tspan x="185" dy="0">true_result</tspan></text>
+    <text class="connection-label" x="185" y="846" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">Yes</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">No</tspan></text>

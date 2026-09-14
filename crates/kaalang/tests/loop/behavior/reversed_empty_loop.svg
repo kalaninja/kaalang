@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="604" viewBox="0 0 680 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="612" viewBox="0 0 708 612" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for reversed_empty_loop</title>
-  <desc id="kaalang-description">Nodes: Start: reversed_empty_loop with parameters mut checks: usize handing over mut checks; Question: Check once more? capturing &amp;mut checks handing over leave_1 / _iterate_1 described as branch 1: NO / branch 2: YES; Action: Return the number of checks. capturing checks handing over end; End: usize capturing end. Connections: Start: reversed_empty_loop to the entry of the loop; Question: Check once more? branch 1 to Action: Return the number of checks.; Question: Check once more? branch 2 to the iteration tail of the loop; Action: Return the number of checks. to End: usize; the entry of the loop to Question: Check once more?; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <desc id="kaalang-description">Cycles: Repeat the check until its first branch leaves. with inputs mut checks and outputs checked. Nodes: Start: reversed_empty_loop with parameters checks: usize handing over checks; Question: Check once more? capturing &amp;mut checks handing over leave_1 / _iterate_1 described as branch 1: NO / branch 2: YES; End: usize capturing checked. Connections: Start: reversed_empty_loop to the entry of the cycle; Question: Check once more? branch 1 to a cycle break; Question: Check once more? branch 2 to the iteration tail of the cycle; the entry of the cycle to Question: Check once more?; the cycle result to End: usize; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,54 +11,61 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Repeat the check until its first branch leaves.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="402" height="358" rx="12"/>
+    <text class="cycle-caption" x="422" y="141" text-anchor="end" xml:space="preserve"><tspan x="422" dy="0">Repeat the check until its first </tspan><tspan x="422" dy="14">branch leaves.</tspan></text>
+    </g>
+  </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 306 L 172 378
-      M 312 270 L 358 270
-      M 172 442 L 172 514
-      M 172 162 L 172 234
+      M 200 90 L 200 162
+      M 200 306 L 200 378
+      M 340 270 L 386 270
+      M 200 162 L 200 234
+      M 200 450 L 200 522
+      M 200 378 L 200 450
     "/>
     <path class="connection" d="
-      M 358 270 L 378 270 L 378 162 L 172 162
+      M 386 270 L 406 270 L 406 162 L 200 162
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">mut checks</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="326" xml:space="preserve"><tspan x="185" dy="0">NO</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="258" xml:space="preserve"><tspan x="325" dy="0">YES</tspan></text>
-    <text class="connection-label" x="185" y="223" xml:space="preserve"><tspan x="185" dy="0">&amp;mut checks</tspan></text>
-    <text class="connection-label" x="185" y="367" xml:space="preserve"><tspan x="185" dy="0">checks</tspan></text>
+    <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">checks</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="326" xml:space="preserve"><tspan x="213" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="258" xml:space="preserve"><tspan x="353" dy="0">YES</tspan></text>
+    <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">&amp;mut checks</tspan></text>
+    <text class="connection-label" x="213" y="511" xml:space="preserve"><tspan x="213" dy="0">checked</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut checks: usize</tspan></text>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">checks: usize</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
+    <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">reversed_empty_loop</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 270)">
+    <g class="node question" transform="translate(200 270)">
       <title xml:space="preserve">Check once more?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Check once more?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 410)">
-      <title xml:space="preserve">Return the number of checks.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the number of checks.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 543)">
+    <g class="node end" transform="translate(200 551)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

@@ -1,0 +1,5 @@
+error: a kaalang break value must name a captured input
+ --> tests/loop/compile_fail/break_uncaptured_value.rs:7:15
+  |
+7 |         break flag;
+  |               ^^^^

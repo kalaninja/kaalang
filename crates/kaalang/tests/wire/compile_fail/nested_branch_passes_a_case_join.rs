@@ -35,6 +35,8 @@ fn invalid(outer: bool, value: u8, inner: bool) -> u8 {
 
     #[action("Take the final step every branch shares.")]
     let end = |ready| { ready + 1 };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -7,8 +7,7 @@ fn skeleton(seed: u32) -> u32 {
     #[action("Leave the first body unwritten.")]
     let started = |&seed| { todo!() };
 
-    #[action("Produce the result.")]
-    let end = |started| { started };
+    |started| return started;
 }
 
 fn main() {

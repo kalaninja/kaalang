@@ -7,6 +7,8 @@ fn document_a_block(input: u32) -> u32 {
     /// Increments by one, because the flow needs a successor.
     #[action("Increment the input.")]
     let end = |input| input + 1;
+
+    |end| return end;
 }
 
 #[test]

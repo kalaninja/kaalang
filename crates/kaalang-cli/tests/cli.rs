@@ -1,17 +1,56 @@
 use std::{fs, path::Path, process::Command};
 
-const SOURCE: &str = r#"
+const SOURCE: &str = r"
 #[kaalang]
 fn route(request: u8) -> u8 {
-    #[action("Use the request.")]
-    let end = |&request| { request };
+    |request| return request;
+}
+";
+
+const CYCLE_SOURCE: &str = r#"
+#[kaalang]
+fn route(request: u8) -> u8 {
+    #[cycle("Use the request.")]
+    let response = |request| {
+        #[action("Copy the request.")]
+        let ready = |request| request;
+
+        |ready| break ready;
+    };
+
+    |response| return response;
 }
 "#;
 
-/// Binary question ports fix the order of the paths between these nested
-/// returns, so end cannot remain below both of them.
-const IMPOSSIBLE: &str =
-    include_str!("../../kaalang/tests/loop/compile_fail/end_enclosed_by_nested_returns.rs");
+/// The break sits between repeating branches, so the expanded cycle has no
+/// conforming arrangement.
+const IMPOSSIBLE: &str = r#"
+#[kaalang]
+fn invalid(mode: u8) -> u8 {
+    #[cycle("Advance until the mode can leave.")]
+    let result = |mut mode| {
+        #[choice("Exit or advance?")]
+        #[case("Advance from zero.")]
+        #[case("Leave the cycle.")]
+        #[case("Advance from another mode.")]
+        let (first, leave, last) = |mode| match mode {
+            0 => (),
+            1 => (),
+            _ => (),
+        };
+
+        #[action("Set the mode to one.")]
+        |first, &mut mode| *mode = 1;
+
+        |leave, mode| break mode;
+
+        #[action("Set the mode to one.")]
+        |last, &mut mode| *mode = 1;
+    };
+
+    |result| return result;
+}
+"#;
 
 #[test]
 fn writes_default_and_explicit_outputs_only_after_success() {
@@ -79,7 +118,7 @@ fn writes_default_and_explicit_outputs_only_after_success() {
         .current_dir(&directory)
         .arg("diagram")
         .arg(&impossible_source)
-        .args(["--flow", "end_enclosed_by_nested_returns", "-o"])
+        .args(["--flow", "invalid", "-o"])
         .arg(&impossible_output)
         .output()
         .unwrap();
@@ -92,7 +131,7 @@ fn writes_default_and_explicit_outputs_only_after_success() {
     );
     assert!(
         matches!(
-            kaalang_svg::render_source(IMPOSSIBLE, "end_enclosed_by_nested_returns"),
+            kaalang_svg::render_source(IMPOSSIBLE, "invalid"),
             Err(kaalang_svg::RenderError::InvalidFlow { .. })
         ),
         "the library should reject it as an invalid flow, not an unroutable one"
@@ -115,25 +154,63 @@ fn writes_default_and_explicit_outputs_only_after_success() {
 }
 
 #[test]
-fn refuses_an_enclosed_break_before_writing_a_diagram() {
-    let directory = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-enclosed-break");
+fn writes_collapsed_default_and_honors_an_explicit_output() {
+    let directory = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-collapsed");
+    let _ = fs::remove_dir_all(&directory);
     fs::create_dir_all(&directory).unwrap();
     let source = directory.join("flow.rs");
-    fs::write(
-        &source,
-        include_str!("../../kaalang/tests/loop/compile_fail/enclosed_break.rs"),
-    )
-    .unwrap();
-    let output = directory.join("diagram.svg");
-    fs::write(&output, "keep this diagram").unwrap();
-    let result = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
+    fs::write(&source, CYCLE_SOURCE).unwrap();
+
+    let default = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
+        .current_dir(&directory)
+        .args(["diagram", "flow.rs", "--flow", "route", "--collapse-loops"])
+        .output()
+        .unwrap();
+    assert!(default.status.success(), "{:?}", default.stderr);
+    let default_path = directory.join("route_collapsed.svg");
+    let default_svg = fs::read_to_string(default_path).unwrap();
+    assert!(default_svg.contains(r#"class="node loop""#));
+    assert!(!directory.join("route.svg").exists());
+
+    let output = directory.join("chosen.svg");
+    let explicit = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
         .arg("diagram")
         .arg(&source)
-        .args(["--flow", "invalid", "-o"])
+        .args(["--flow", "route", "--collapse-loops", "-o"])
         .arg(&output)
         .output()
         .unwrap();
-    assert!(!result.status.success());
-    assert!(String::from_utf8_lossy(&result.stderr).contains("no conforming arrangement"));
-    assert_eq!(fs::read_to_string(output).unwrap(), "keep this diagram");
+    assert!(explicit.status.success(), "{:?}", explicit.stderr);
+    assert_eq!(
+        fs::read_to_string(output).unwrap(),
+        kaalang_svg::render_source_with_options(
+            CYCLE_SOURCE,
+            "route",
+            kaalang_svg::RenderOptions {
+                collapse_loops: true,
+            },
+        )
+        .unwrap()
+    );
+
+    let invalid_source = directory.join("invalid.rs");
+    let preserved_output = directory.join("invalid_collapsed.svg");
+    fs::write(&invalid_source, "#[kaalang] fn invalid(input: u8) -> u8 {}").unwrap();
+    fs::write(&preserved_output, "keep this diagram").unwrap();
+    let invalid = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
+        .current_dir(&directory)
+        .args([
+            "diagram",
+            "invalid.rs",
+            "--flow",
+            "invalid",
+            "--collapse-loops",
+        ])
+        .output()
+        .unwrap();
+    assert!(!invalid.status.success());
+    assert_eq!(
+        fs::read_to_string(preserved_output).unwrap(),
+        "keep this diagram"
+    );
 }

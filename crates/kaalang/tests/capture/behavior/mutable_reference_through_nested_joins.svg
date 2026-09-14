@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1260" viewBox="0 0 1064 1260" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1122" viewBox="0 0 1064 1122" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for mutable_reference_through_nested_joins</title>
-  <desc id="kaalang-description">Nodes: Start: mutable_reference_through_nested_joins with parameters outer: bool; inner: bool; mut text: String handing over outer, inner, mut text; Question: Use the nested branch? capturing outer handing over nested / fallback; Question: Choose the inner mutation. capturing nested, inner handing over first / second; Action: Borrow and append the first suffix. capturing first, &amp;mut text handing over partial; Action: Borrow and append the second suffix. capturing second, &amp;mut text handing over partial; Action: Carry the borrowed value onward. capturing partial handing over view; Action: Borrow on the fallback branch. capturing fallback, &amp;mut text handing over view; Action: Mutate through the reference after both joins. capturing view handing over length; Action: Move the owner after the reference&apos;s last use. capturing text, length handing over end; End: (String, usize) capturing end. Connections: Start: mutable_reference_through_nested_joins to Question: Use the nested branch?; Question: Use the nested branch? branch 1 to Question: Choose the inner mutation.; Question: Use the nested branch? branch 2 to Action: Borrow on the fallback branch.; Question: Choose the inner mutation. branch 1 to Action: Borrow and append the first suffix.; Question: Choose the inner mutation. branch 2 to Action: Borrow and append the second suffix.; Action: Borrow and append the first suffix. to the partial merge; Action: Borrow and append the second suffix. to the partial merge; Action: Carry the borrowed value onward. to the view merge; Action: Borrow on the fallback branch. to the view merge; Action: Mutate through the reference after both joins. to Action: Move the owner after the reference&apos;s last use.; Action: Move the owner after the reference&apos;s last use. to End: (String, usize); the partial merge to Action: Carry the borrowed value onward.; the view merge to Action: Mutate through the reference after both joins..</desc>
+  <desc id="kaalang-description">Nodes: Start: mutable_reference_through_nested_joins with parameters outer: bool; inner: bool; mut text: String handing over outer, inner, mut text; Question: Use the nested branch? capturing outer handing over nested / fallback; Question: Choose the inner mutation. capturing nested, inner handing over first / second; Action: Borrow and append the first suffix. capturing first, &amp;mut text handing over partial; Action: Borrow and append the second suffix. capturing second, &amp;mut text handing over partial; Action: Carry the borrowed value onward. capturing partial handing over view; Action: Borrow on the fallback branch. capturing fallback, &amp;mut text handing over view; Action: Mutate through the reference after both joins. capturing view handing over length; End: (String, usize) capturing text, length. Connections: Start: mutable_reference_through_nested_joins to Question: Use the nested branch?; Question: Use the nested branch? branch 1 to Question: Choose the inner mutation.; Question: Use the nested branch? branch 2 to Action: Borrow on the fallback branch.; Question: Choose the inner mutation. branch 1 to Action: Borrow and append the first suffix.; Question: Choose the inner mutation. branch 2 to Action: Borrow and append the second suffix.; Action: Borrow and append the first suffix. to the partial merge; Action: Borrow and append the second suffix. to the partial merge; Action: Carry the borrowed value onward. to the view merge; Action: Borrow on the fallback branch. to the view merge; Action: Mutate through the reference after both joins. to End: (String, usize); the partial merge to Action: Carry the borrowed value onward.; the view merge to Action: Mutate through the reference after both joins..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 107 L 172 188
@@ -32,7 +38,6 @@
       M 172 750 L 172 822
       M 892 400 L 892 822 L 172 822
       M 172 960 L 172 1032
-      M 172 1098 L 172 1170
       M 172 614 L 172 686
       M 172 822 L 172 894
     "/>
@@ -96,12 +101,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Mutate through the reference </tspan><tspan x="-124" dy="18">after both joins.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1065)">
-      <title xml:space="preserve">Move the owner after the reference&apos;s last use.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Move the owner after the </tspan><tspan x="-124" dy="18">reference&apos;s last use.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 1199)">
+    <g class="node end" transform="translate(172 1061)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(String, usize)</tspan></text>
     </g>

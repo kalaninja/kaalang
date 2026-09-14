@@ -17,6 +17,8 @@ fn branch_log_with_merge(condition: bool, value: String) -> usize {
 
     #[action("Transform.")]
     let end = |ready, value| value.len();
+
+    |end| return end;
 }
 
 #[test]

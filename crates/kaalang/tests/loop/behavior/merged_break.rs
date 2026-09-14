@@ -1,22 +1,22 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn merged_break(stop: bool, mut remaining: usize) -> usize {
-    loop {
+fn merged_break(stop: bool, remaining: usize) -> usize {
+    #[cycle("Count down until either stopping condition is met.")]
+    let result = |stop, mut remaining| {
         #[question("Stop immediately?")]
         let (leave, check) = |stop| stop;
 
         #[question("Has the countdown finished?")]
         let (leave, again) = |check, remaining| remaining == 0;
 
-        |leave| break;
+        |leave, remaining| break remaining;
 
         #[action("Advance the countdown.")]
         |again, &mut remaining| *remaining -= 1;
-    }
+    };
 
-    #[action("Return the remaining count.")]
-    let end = |remaining| remaining;
+    |result| return result;
 }
 
 #[test]

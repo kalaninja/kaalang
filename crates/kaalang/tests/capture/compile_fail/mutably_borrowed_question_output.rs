@@ -10,6 +10,8 @@ fn mutably_borrowed_question_output(condition: bool) -> u8 {
 
     #[action("Use the other branch.")]
     let end = |no| { 0 };
+
+    |end| return end;
 }
 
 fn main() {}

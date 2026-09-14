@@ -1,12 +1,12 @@
-//! Gives loop-local wires distinct internal keys, keeping authored spellings
-//! in capture aliases and output patterns for code generation and diagrams.
+//! Gives cycle interfaces and local wires distinct internal keys, keeping
+//! authored spellings in captures and output patterns.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
-use syn::{Error, Result};
+use syn::{Error, Result, ext::IdentExt};
 
-use crate::model::{END_WIRE, Flow};
+use crate::model::{BlockKind, Flow};
 
 #[derive(Default)]
 struct Scope {
@@ -54,38 +54,40 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             {
                 input.ident = key.clone();
                 input.ident.set_span(input.alias.span());
+            } else if block.parent.is_some() {
+                return Err(Error::new(
+                    input.ident.span(),
+                    "a block inside a kaalang cycle may capture only a cycle input or an earlier local output",
+                ));
             }
         }
         for output in &mut block.outputs {
-            if block.parent.is_some() && *output != END_WIRE && scope.inherited.contains_key(output)
-            {
+            if block.parent.is_some() && scope.inherited.contains_key(output) {
                 return Err(Error::new(
                     output.span(),
-                    "a loop-local output must not redeclare an enclosing wire",
+                    "a cycle-local output must not redeclare a cycle input",
                 ));
             }
             let name = output.clone();
             let key = scope.local.entry(name.clone()).or_insert_with(|| {
-                if block.parent.is_none() || name == END_WIRE {
+                if block.parent.is_none() {
                     return name.clone();
                 }
-                loop {
-                    let key = Ident::new(&format!("__kaalang_scoped_{serial}"), name.span());
-                    serial += 1;
-                    if used.insert(key.clone()) {
-                        return key;
-                    }
-                }
+                fresh(&name, &mut used, &mut serial)
             });
             *output = key.clone();
             output.set_span(name.span());
         }
-        if block.loop_end.is_some() {
-            let inherited = scope
-                .inherited
-                .iter()
-                .chain(&scope.local)
-                .map(|(name, key)| (name.clone(), key.clone()))
+        if block.kind == BlockKind::Loop {
+            let inherited = block
+                .inputs
+                .iter_mut()
+                .map(|input| {
+                    let name = input.alias.unraw();
+                    let binding = fresh(&name, &mut used, &mut serial);
+                    input.binding = Some(binding.clone());
+                    (name, binding)
+                })
                 .collect();
             scopes.insert(
                 Some(index),
@@ -97,4 +99,14 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn fresh(name: &Ident, used: &mut BTreeSet<Ident>, serial: &mut usize) -> Ident {
+    loop {
+        let key = Ident::new(&format!("__kaalang_scoped_{serial}"), name.span());
+        *serial += 1;
+        if used.insert(key.clone()) {
+            return key;
+        }
+    }
 }

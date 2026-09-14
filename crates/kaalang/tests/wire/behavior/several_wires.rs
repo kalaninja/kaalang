@@ -11,8 +11,7 @@ fn several_wires(condition: bool) -> (u32, &'static str) {
     #[action("Build the no pair.")]
     let (number, label) = |no| (2, "no");
 
-    #[action("Use both selected values.")]
-    let end = |label, number| (number, label);
+    |label, number| return (number, label);
 }
 
 #[test]

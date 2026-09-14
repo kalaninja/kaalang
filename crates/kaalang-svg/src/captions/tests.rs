@@ -1,5 +1,5 @@
 use kaalang_model::SemanticModel;
-use kaalang_model::topology::{Connection, Destination, ExitId, NodeId, Source};
+use kaalang_model::topology::{Connection, Destination, ExitId, NodeId, Source, Vertex};
 
 use super::{Captions, derive};
 
@@ -35,6 +35,8 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             let end = |&width, depth| { *width + depth };
             #[action("Use the far value.")]
             let end = |far| { far };
+
+            |end| return end;
         }
     "#,
     );
@@ -68,7 +70,91 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
     }
     assert_eq!(captions.label(NodeId::Block(0)), "Pick a case.");
     assert_eq!(captions.label(NodeId::Start), "example");
-    assert_eq!(captions.label(NodeId::Block(4)), "u8");
+    assert_eq!(captions.label(NodeId::Block(5)), "u8");
+    assert_eq!(captions.capture(NodeId::Block(5)), ["end"]);
+}
+
+#[test]
+fn end_names_the_transferred_value_instead_of_all_return_captures() {
+    for (source, expected) in [
+        (
+            r#"
+            fn example(value: u8) -> u8 {
+                #[action("Keep a guard alive through return.")]
+                let guard = || ();
+                |value, guard| return value;
+            }
+            "#,
+            &["value"][..],
+        ),
+        (
+            r"
+            fn example(left: u8, right: u8) -> (u8, u8) {
+                |left, right| return (left, right);
+            }
+            ",
+            &["left", "right"][..],
+        ),
+        (
+            r"
+            fn example(value: u8) -> (u8,) {
+                |value| return (value,);
+            }
+            ",
+            &["value"][..],
+        ),
+        (
+            r"
+            fn example(value: (u8, u8)) -> (u8, u8) {
+                |value| return value;
+            }
+            ",
+            &["value"][..],
+        ),
+        (
+            r"
+            fn example(value: u8) -> u8 {
+                |value| return (value);
+            }
+            ",
+            &["value"][..],
+        ),
+        (
+            r"
+            fn example() {
+                return ();
+            }
+            ",
+            &["()"][..],
+        ),
+    ] {
+        let (model, captions) = read(source);
+        let end = model
+            .topology
+            .nodes
+            .iter()
+            .find(|node| node.kind == kaalang_model::topology::NodeKind::End)
+            .expect("the flow returns")
+            .id;
+        assert_eq!(captions.capture(end), expected);
+        assert!(model.topology.junctions.is_empty());
+        assert_eq!(model.topology.incoming(Vertex::Node(end)).count(), 1);
+    }
+}
+
+#[test]
+fn a_tuple_return_shares_the_producers_ordered_wire_label() {
+    let (model, captions) = read(
+        r"
+        fn example(left: u8, right: u8) -> (u8, u8) {
+            |left, right| return (left, right);
+        }
+        ",
+    );
+    let [connection] = model.topology.connections.as_slice() else {
+        panic!("the zero-computation flow connects start directly to end");
+    };
+    assert!(captions.shares_label(connection));
 }
 
 #[test]
@@ -89,6 +175,8 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
                 let ({outputs}) = || {{ (1, 2) }};
                 #[action("Use both values.")]
                 let end = |{capture}| {{ 3 }};
+
+                |end| return end;
             }}
         "#
         ));
@@ -161,6 +249,8 @@ fn a_question_branch_description_replaces_its_output_label() {
             let end = |yes| { 1 };
             #[action("Finish later.")]
             let end = |no| { 2 };
+
+            |end| return end;
         }
     "#,
     );

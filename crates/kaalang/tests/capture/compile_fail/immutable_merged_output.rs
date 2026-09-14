@@ -14,8 +14,7 @@ fn immutable_merged_output(condition: bool) -> u32 {
     #[action("Try to mutate the merged wire.")]
     |&mut value| { *value += 1 };
 
-    #[action("Return the value.")]
-    let end = |value| { value };
+    |value| return value;
 }
 
 fn main() {}

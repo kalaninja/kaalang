@@ -3,26 +3,26 @@ use kaalang::kaalang;
 #[kaalang]
 fn middle_exit(limit: usize) -> Vec<usize> {
     #[action("Initialize the counter and log.")]
-    let (mut count, mut log) = || (0, Vec::new());
+    let (initial_count, initial_log) = || (0, Vec::new());
 
-    loop {
+    #[cycle("Record iterations through the requested limit.")]
+    let result_log = |limit, mut initial_count, mut initial_log| {
         #[action("Record the start of the iteration.")]
-        |&count, &mut log| log.push(*count);
+        |&initial_count, &mut initial_log| initial_log.push(*initial_count);
 
         #[question("Stop before advancing?")]
-        let (done, again) = |&count, limit| *count == limit;
+        let (done, again) = |&initial_count, limit| *initial_count == limit;
 
-        |done| break;
+        |done, initial_log| break initial_log;
 
         #[action("Advance and record the rest of the iteration.")]
-        |again, &mut count, &mut log| {
-            *count += 1;
-            log.push(99);
+        |again, &mut initial_count, &mut initial_log| {
+            *initial_count += 1;
+            initial_log.push(99);
         };
-    }
+    };
 
-    #[action("Return the log after leaving the loop.")]
-    let end = |log| log;
+    |result_log| return result_log;
 }
 
 #[test]

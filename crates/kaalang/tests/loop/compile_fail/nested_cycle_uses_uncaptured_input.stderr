@@ -1,0 +1,5 @@
+error: a block inside a kaalang cycle may capture only a cycle input or an earlier local output
+  --> tests/loop/compile_fail/nested_cycle_uses_uncaptured_input.rs:10:14
+   |
+10 |             |text| drop(text);
+   |              ^^^^

@@ -23,6 +23,8 @@ fn convergence_after_a_terminal_case(value: i8) -> &'static str {
 
     #[action("Use the selected value.")]
     let end = |selected| selected;
+
+    |end| return end;
 }
 
 #[test]

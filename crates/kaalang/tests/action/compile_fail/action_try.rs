@@ -11,8 +11,7 @@ fn invalid(value: u32) -> u32 {
         }
     };
 
-    #[action("Produce the result.")]
-    let end = |doubled| { doubled };
+    |doubled| return doubled;
 }
 
 fn main() {}

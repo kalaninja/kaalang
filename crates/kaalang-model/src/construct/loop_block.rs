@@ -1,9 +1,9 @@
-//! Decides the contour of every loop return.
+//! Decides the contour of every iteration back edge.
 //!
-//! RFC 0002 §8 sends a return upward outside its body and horizontally into its
+//! RFC 0002 §8 sends a back edge upward outside its body and horizontally into its
 //! entry junction, and RFC 0002 §7 keeps a break's first wire merge, iteration
 //! tail, or end below the body it leaves. A contour therefore needs a column
-//! outside the body that no route occupies over the return's whole rank span,
+//! outside the body that no route occupies over the back edge's whole rank span,
 //! and two horizontal runs that meet nothing.
 //!
 //! The preferred search tries the lanes beside the body's edge, nearest first.
@@ -21,16 +21,16 @@ use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
 
 use crate::geometry::{Point, compatible};
 
-use super::verify::{Grid, ends, meetings, polyline, return_polyline};
+use super::verify::{Grid, back_edge_polyline, ends, meetings, polyline};
 use super::{Arrangement, Contour, Side};
 
 /// The columns one loop's whole body occupies, independently of its ranks.
 /// Moving a body vertex below the tail does not remove it from the body, and
-/// shortening a return does not shrink the extent it has to clear.
+/// shortening a back edge does not shrink the extent it has to clear.
 ///
-/// A return nested inside this body is not one of them. It climbs beside the
-/// body in a lane of its own, and an enclosing return takes the next lane out
-/// rather than a whole column. `nested_returns` is what holds the two apart:
+/// A back edge nested inside this body is not one of them. It climbs beside the
+/// body in a lane of its own, and an enclosing back edge takes the next lane out
+/// rather than a whole column. `nested_back_edges` is what holds the two apart:
 /// a crossing check cannot, because the rows they span need not overlap.
 pub(super) fn body_columns(
     flow: &Flow,
@@ -66,6 +66,14 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
             vertices.insert(Vertex::Junction(loop_.tail));
         }
     }
+    for boundary in &topology.loop_boundaries {
+        if boundary.header == header {
+            vertices.insert(Vertex::Junction(boundary.entry));
+        } else if body.contains(&boundary.header) {
+            vertices.insert(Vertex::Junction(boundary.entry));
+            vertices.extend(boundary.result.map(Vertex::Junction));
+        }
+    }
     // A wire merge or a break inside the body draws a junction and no node, so
     // the blocks alone miss it. Everything reaching such a junction comes from
     // the body, and a chain of them needs more than one pass.
@@ -77,13 +85,15 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
             if vertices.contains(&vertex) {
                 continue;
             }
-            // Entries and tails belong to their own lexical loop. Those of
-            // this body were inserted above; reaching an enclosing tail or a
-            // following loop does not make that continuation part of the body.
+            // Cycle interfaces and tails belong to their own lexical cycle.
+            // Those of this body were inserted above; reaching an enclosing
+            // boundary or a following cycle does not make that continuation
+            // part of the body.
             if topology
                 .loops
                 .iter()
                 .any(|loop_| junction == loop_.entry || junction == loop_.tail)
+                || topology.junctions[junction].is_loop_result
             {
                 continue;
             }
@@ -99,14 +109,14 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
     vertices
 }
 
-/// Where the returns nested inside one body already climb.
+/// Where the back edges nested inside one body already climb.
 ///
-/// An enclosing return has to stay outside those too, and a crossing check
-/// cannot see one whose rows do not overlap its own: the two returns may share
+/// An enclosing back edge has to stay outside those too, and a crossing check
+/// cannot see one whose rows do not overlap its own: the two back edges may share
 /// no row at all and still leave the enclosing one inside the body it is
-/// supposed to clear. The position carries the nested return's lane, so the
+/// supposed to clear. The position carries the nested back edge's lane, so the
 /// enclosing one only needs the next lane out, not a column of its own.
-pub(super) fn nested_returns(
+pub(super) fn nested_back_edges(
     flow: &Flow,
     topology: &Topology,
     grid: &Grid,
@@ -125,7 +135,7 @@ pub(super) fn nested_returns(
 }
 
 /// Whether one contour climbs outside everything its body occupies: every
-/// column of the body, and every return nested inside it (RFC 0002 §8).
+/// column of the body, and every back edge nested inside it (RFC 0002 §8).
 pub(super) fn outside(
     grid: &Grid,
     side: Side,
@@ -140,7 +150,7 @@ pub(super) fn outside(
     body.iter().all(|&column| clears(grid.column(column))) && nested.iter().copied().all(clears)
 }
 
-/// Where one return ended up, or what stopped the nearest candidate.
+/// Where one back edge ended up, or what stopped the nearest candidate.
 struct Climb {
     placed: Option<(Contour, Vec<Point>)>,
     blocked: String,
@@ -149,7 +159,7 @@ struct Climb {
     culprit: Option<usize>,
 }
 
-/// What one return has to clear, and where it may climb.
+/// What one back edge has to clear, and where it may climb.
 struct Search<'a> {
     grid: &'a Grid,
     lines: &'a [Vec<Point>],
@@ -162,7 +172,7 @@ struct Search<'a> {
 }
 
 impl Search<'_> {
-    /// The nearest contour this return can climb, or why the nearest candidate
+    /// The nearest contour this back edge can climb, or why the nearest candidate
     /// failed.
     ///
     /// The candidates are the lanes beside the body's own edge column, nearest
@@ -170,7 +180,7 @@ impl Search<'_> {
     /// position, which is what a presentation can realize: it measures the
     /// body's boxes and steps that many lanes clear of them, having no column
     /// of its own to put a rail in. A topology never needs more lanes than it
-    /// has loops, because only a return climbs there (RFC 0003 §2.4).
+    /// has cycles, because only a back edge climbs there (RFC 0003 §2.4).
     fn climb(
         &self,
         flow: &Flow,
@@ -198,7 +208,7 @@ impl Search<'_> {
                 culprit = None;
                 continue;
             }
-            let line = return_polyline(
+            let line = back_edge_polyline(
                 topology,
                 arrangement,
                 self.grid,
@@ -222,7 +232,7 @@ impl Search<'_> {
                 .iter()
                 .all(|earlier| compatible(&line, earlier, false, &[]))
             {
-                "it would cross the return of a loop nested inside it".clone_into(&mut blocked);
+                "it would cross the iteration back edge of a nested cycle".clone_into(&mut blocked);
                 culprit = None;
                 continue;
             }
@@ -259,19 +269,19 @@ pub(super) fn contours(
         .collect::<Vec<_>>();
     let mut chosen: Vec<Option<Contour>> = vec![None; topology.loops.len()];
     let mut drawn: Vec<Vec<Point>> = Vec::new();
-    // Innermost first: a nested return becomes part of what the enclosing one
+    // Innermost first: a nested back edge becomes part of what the enclosing one
     // has to clear, and `topology.loops` runs outermost first.
     for index in (0..topology.loops.len()).rev() {
         let loop_ = topology.loops[index];
         let side = sides[index];
         let body = body_columns(flow, topology, arrangement, loop_.header);
-        let nested = nested_returns(flow, topology, &grid, loop_.header, &chosen);
+        let nested = nested_back_edges(flow, topology, &grid, loop_.header, &chosen);
         let edge = match side {
             Side::Left => body.iter().min(),
             Side::Right => body.iter().max(),
         }
         .copied()
-        .expect("a repeating loop owns an entry and a tail");
+        .expect("a repeating cycle owns an entry and a tail");
         let back = (
             Source::Junction(loop_.tail),
             Destination::Junction(loop_.entry),
@@ -301,7 +311,7 @@ pub(super) fn contours(
                 connection: culprit,
                 span: flow.blocks[loop_.header].span,
                 message: format!(
-                    "the return of {} cannot climb the {side} of its body: {blocked}. Reorder the branches so the routes that repeat the body sit at one edge",
+                    "the iteration back edge of {} cannot climb the {side} of its body: {blocked}. Reorder the branches so the routes that repeat the body sit at one edge",
                     super::describe::loop_name(flow, loop_.header)
                 ),
             });

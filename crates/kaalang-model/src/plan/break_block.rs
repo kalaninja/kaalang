@@ -24,6 +24,6 @@ pub(super) fn lower<'e>(flow: &Flow, index: usize) -> Lowered<'e> {
 pub(super) fn replay(replay: &mut Replay<'_>, index: usize, target: usize) -> Option<Exit> {
     replay.enter(index, BlockKind::Break)?;
     (replay.flow.blocks[index].break_target == Some(target)
-        && replay.loop_indices.contains(&target))
+        && replay.loop_indices.last() == Some(&target))
     .then_some(Exit::Break(target))
 }

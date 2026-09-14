@@ -9,8 +9,7 @@ fn generic_reuse_with_copy<T: Copy>(value: T) -> (T, T) {
     #[action("Take the value again.")]
     let second = |value| value;
 
-    #[action("Pair the two values.")]
-    let end = |first, second| (first, second);
+    |first, second| return (first, second);
 }
 
 #[test]

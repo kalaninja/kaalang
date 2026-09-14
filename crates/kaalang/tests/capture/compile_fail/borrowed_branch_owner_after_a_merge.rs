@@ -18,6 +18,8 @@ fn invalid(condition: bool) -> usize {
 
     #[action("Measure the merged view.")]
     let end = |view| { view.len() };
+
+    |end| return end;
 }
 
 fn main() {}

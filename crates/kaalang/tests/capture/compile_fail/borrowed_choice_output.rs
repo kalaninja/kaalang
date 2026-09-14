@@ -17,6 +17,8 @@ fn invalid(input: Option<u8>) -> u8 {
 
     #[action("Produce the absent result.")]
     let end = |absent| { 0 };
+
+    |end| return end;
 }
 
 fn main() {}

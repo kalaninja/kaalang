@@ -21,6 +21,8 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Finish.")]
     let end = |used, noted| { used };
+
+    |end| return end;
 }
 
 fn main() {}

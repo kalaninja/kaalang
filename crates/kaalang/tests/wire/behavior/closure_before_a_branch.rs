@@ -13,6 +13,8 @@ fn closure_before_a_branch(condition: bool, base: u32) -> u32 {
 
     #[action("Subtract one.")]
     let end = |subtract, handler| handler(0) - 1;
+
+    |end| return end;
 }
 
 #[test]

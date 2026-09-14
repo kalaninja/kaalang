@@ -1,9 +1,9 @@
-//! Emits one loop body and the continuation reached by its breaks.
+//! Emits one cycle body and the continuation reached by its breaks.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::{Builder, Lowered, Scope, Unstructured};
-use crate::model::{Execution, ExecutionPlan};
+use crate::model::{Execution, ExecutionPlan, ProducerId};
 
 pub(super) fn lower<'e>(
     builder: &mut Builder<'_>,
@@ -68,13 +68,33 @@ pub(super) fn replay(
 ) -> Option<super::verify::Exit> {
     use super::verify::Exit;
     replay.enter(index, crate::model::BlockKind::Loop)?;
-    let outside = replay.available.clone();
+    let outside = std::mem::replace(
+        &mut replay.available,
+        replay.flow.blocks[index]
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(input, declaration)| {
+                (
+                    declaration
+                        .binding
+                        .clone()
+                        .expect("a cycle capture declares a local binding"),
+                    ProducerId::CycleInput {
+                        block: index,
+                        input,
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>(),
+    );
     match replay.iteration(index, body)? {
         Exit::Break(target) if target == index => {
             replay.available = outside;
+            replay.produce(index);
             replay.walk(next?)
         }
-        exit @ (Exit::End | Exit::Repeat(_) | Exit::Break(_)) => Some(exit),
+        exit @ (Exit::Return(_) | Exit::Repeat(_) | Exit::Break(_)) => Some(exit),
         Exit::Yield(_) => None,
     }
 }

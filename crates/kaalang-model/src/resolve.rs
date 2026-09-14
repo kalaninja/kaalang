@@ -4,11 +4,10 @@ use std::collections::{HashMap, HashSet};
 
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, END_WIRE, Flow};
+use crate::model::Flow;
 
 /// Resolves a parsed flow's wires: every reachable input names an earlier
-/// producer, only the implicit end block captures `end`, and declarations do not
-/// collide with themselves.
+/// producer and declarations do not collide with themselves.
 pub(crate) fn flow(flow: &Flow) -> Result<()> {
     let mut flow_inputs = HashSet::new();
     for input in &flow.flow_inputs {
@@ -29,18 +28,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                     "duplicate kaalang block input",
                 ));
             }
-            if block.kind != BlockKind::End && input.ident == END_WIRE {
-                return Err(Error::new(
-                    input.ident.span(),
-                    "the `end` wire finishes a kaalang flow; no block captures it",
-                ));
-            }
             if !producers.contains(&input.ident) {
-                // A diverging loop never reaches the implicit end.
-                // Completion analysis reports the missing wire only on paths that do.
-                if block.kind == BlockKind::End {
-                    continue;
-                }
                 return Err(Error::new(
                     input.ident.span(),
                     "a kaalang block input must name a flow input or an earlier block output",
@@ -90,6 +78,12 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                 ));
             }
             producers.insert(output.clone());
+        }
+        for input in &block.inputs {
+            if let Some(binding) = &input.binding {
+                producers.insert(binding.clone());
+                output_mutability.insert(binding.clone(), input.mutable);
+            }
         }
         earlier_inputs.extend(block.inputs.iter().map(|input| input.ident.clone()));
     }

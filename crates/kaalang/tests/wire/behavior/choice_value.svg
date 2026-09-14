@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="954" viewBox="0 0 1064 954" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="818" viewBox="0 0 1064 818" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for choice_value</title>
-  <desc id="kaalang-description">Nodes: Start: choice_value with parameters case: u8 handing over case; Select: Choose one of three values. capturing case; Case: First handing over first; Case: Second handing over second; Case: Third handing over third; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Build the third value. capturing third handing over selected; Action: Use the selected value. capturing selected handing over end; End: &amp;&apos;static str capturing end. Connections: Start: choice_value to Select: Choose one of three values.; Select: Choose one of three values. to Case: First; Select: Choose one of three values. to Case: Second; Select: Choose one of three values. to Case: Third; Case: First to Action: Build the first value.; Case: Second to Action: Build the second value.; Case: Third to Action: Build the third value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Build the third value. to the selected merge; Action: Use the selected value. to End: &amp;&apos;static str; the selected merge to Action: Use the selected value..</desc>
+  <desc id="kaalang-description">Nodes: Start: choice_value with parameters case: u8 handing over case; Select: Choose one of three values. capturing case; Case: First handing over first; Case: Second handing over second; Case: Third handing over third; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Build the third value. capturing third handing over selected; End: &amp;&apos;static str capturing selected. Connections: Start: choice_value to Select: Choose one of three values.; Select: Choose one of three values. to Case: First; Select: Choose one of three values. to Case: Second; Select: Choose one of three values. to Case: Third; Case: First to Action: Build the first value.; Case: Second to Action: Build the second value.; Case: Third to Action: Build the third value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Build the third value. to the selected merge; the selected merge to End: &amp;&apos;static str.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 90 L 172 162
@@ -32,7 +38,6 @@
       M 172 584 L 172 656
       M 532 584 L 532 656 L 172 656
       M 892 584 L 892 656 L 172 656
-      M 172 792 L 172 864
       M 172 656 L 172 728
     "/>
     <text class="connection-label" x="185" y="674" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
@@ -86,12 +91,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the third value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 760)">
-      <title xml:space="preserve">Use the selected value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 893)">
+    <g class="node end" transform="translate(172 757)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">&amp;&apos;static str</tspan></text>
     </g>

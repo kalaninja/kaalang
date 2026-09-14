@@ -18,6 +18,7 @@ mod break_block;
 mod choice;
 mod loop_block;
 mod question;
+mod return_block;
 pub(crate) mod verify;
 
 /// Builds the nested branch tree the validated flow lowers to. Every accepted
@@ -48,7 +49,7 @@ pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) 
     ExecutionPlan::End {
         index: end,
         body: Box::new(lowered.plan),
-        gates: builder.gates(executions),
+        gates: builder.gates(),
     }
 }
 
@@ -66,7 +67,7 @@ struct Builder<'a> {
     end: usize,
     merges: &'a [WireMerge],
     /// Producer occurrences that one Rust binding unifies: the alternative
-    /// values a join carries. The end block's capture forms one more class.
+    /// values a join carries.
     classes: Vec<BTreeSet<ProducerId>>,
 }
 
@@ -80,7 +81,7 @@ struct Lowered<'e> {
 }
 
 /// An enclosing selection or loop, with the blocks its joins or normal exit
-/// run. Loop scopes also mark iteration boundaries without a pending successor.
+/// run. Cycle scopes also mark iteration boundaries without a pending successor.
 #[derive(Clone)]
 struct Scope {
     block: usize,
@@ -109,7 +110,7 @@ fn settled(
     done: &BTreeSet<usize>,
 ) -> bool {
     producers(execution, block).all(|producer| match producer {
-        ProducerId::FlowInput(_) => true,
+        ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
         ProducerId::BlockOutput { block, .. } => done.contains(&block),
     }) && merges
         .iter()
@@ -123,7 +124,7 @@ fn settled(
                     ProducerId::BlockOutput { block, .. } => {
                         !execution.participates(*block) || done.contains(block)
                     }
-                    ProducerId::FlowInput(_) => true,
+                    ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
                 })
         })
 }
@@ -172,6 +173,9 @@ impl Builder<'_> {
         }
         if self.flow.blocks[block].kind == BlockKind::Break {
             return Ok(break_block::lower(self.flow, block));
+        }
+        if self.flow.blocks[block].kind == BlockKind::Return {
+            return Ok(return_block::lower(block));
         }
         self.branch(block, executions, &next_done, forbidden, scopes)
     }
@@ -236,16 +240,7 @@ impl Builder<'_> {
                     emitted,
                 });
             }
-            let [wire] = self.flow.blocks[self.end].inputs.as_slice() else {
-                unreachable!("the end block captures exactly one wire")
-            };
-            return Ok(Lowered {
-                plan: ExecutionPlan::EndArrival {
-                    wire: wire.ident.clone(),
-                },
-                yielding: Vec::new(),
-                emitted,
-            });
+            return Err(Unstructured);
         }
 
         let join = target.expect("every shared block belongs to a join of an enclosing scope");
@@ -330,7 +325,11 @@ impl Builder<'_> {
         let plan = match self.flow.blocks[block].kind {
             BlockKind::Question => question::dispatch(block, branches, joins),
             BlockKind::Choice => choice::dispatch(block, branches, joins),
-            BlockKind::Action | BlockKind::End | BlockKind::Loop | BlockKind::Break => {
+            BlockKind::Action
+            | BlockKind::End
+            | BlockKind::Loop
+            | BlockKind::Break
+            | BlockKind::Return => {
                 unreachable!("only questions and choices branch")
             }
         };
@@ -342,9 +341,9 @@ impl Builder<'_> {
     }
 
     /// Blocks that two or more branches run are shared: they run once after
-    /// the join of exactly those branches, never inside one of them. Groups the
-    /// shared blocks by that set of branches, innermost first: a contained
-    /// branch set is strictly smaller, so it joins before the one containing it.
+    /// the join of exactly those branches, never inside one of them. The same
+    /// branches may join repeatedly as a partial execution context widens;
+    /// later narrowing belongs to a selection inside that continuation.
     fn groups(
         &self,
         block: usize,
@@ -352,7 +351,7 @@ impl Builder<'_> {
         done: &BTreeSet<usize>,
         forbidden: &BTreeSet<usize>,
     ) -> Result<Vec<Group>, Unstructured> {
-        let mut groups = BTreeMap::<Vec<usize>, BTreeSet<usize>>::new();
+        let mut groups = BTreeMap::<Vec<usize>, Vec<(BTreeSet<usize>, BTreeSet<usize>)>>::new();
         for candidate in
             (0..self.end).filter(|block| !done.contains(block) && !forbidden.contains(block))
         {
@@ -364,13 +363,41 @@ impl Builder<'_> {
                 })
                 .collect::<Vec<_>>();
             if members.len() >= 2 {
-                groups.entry(members).or_default().insert(candidate);
+                let context = selections
+                    .iter()
+                    .flatten()
+                    .enumerate()
+                    .filter_map(|(execution, run)| run.participates(candidate).then_some(execution))
+                    .collect::<BTreeSet<_>>();
+                let groups = groups.entry(members).or_default();
+                if let Some((scope, blocks)) = groups.last_mut()
+                    && context.is_subset(scope)
+                {
+                    blocks.insert(candidate);
+                } else {
+                    groups.push((context, BTreeSet::from([candidate])));
+                }
             }
         }
-        let mut groups = groups.into_iter().collect::<Vec<_>>();
-        groups.sort_by(|(left, _), (right, _)| {
-            left.len().cmp(&right.len()).then_with(|| left.cmp(right))
+        let mut groups = groups
+            .into_iter()
+            .flat_map(|(branches, groups)| {
+                groups
+                    .into_iter()
+                    .enumerate()
+                    .map(move |(order, (_, blocks))| (branches.clone(), order, blocks))
+            })
+            .collect::<Vec<_>>();
+        groups.sort_by(|(left, left_order, _), (right, right_order, _)| {
+            left.len()
+                .cmp(&right.len())
+                .then_with(|| left.cmp(right))
+                .then_with(|| left_order.cmp(right_order))
         });
+        let groups = groups
+            .into_iter()
+            .map(|(branches, _, blocks)| (branches, blocks))
+            .collect::<Vec<_>>();
         if self.flow.blocks[block].kind == BlockKind::Choice && !choice::joinable(&groups) {
             return Err(Unstructured);
         }
@@ -479,7 +506,7 @@ impl Builder<'_> {
             };
             if producers.len() < 2
                 || producers.iter().all(|producer| match producer {
-                    ProducerId::FlowInput(_) => true,
+                    ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
                     ProducerId::BlockOutput { block, .. } => outside.contains(block),
                 })
             {
@@ -506,18 +533,22 @@ impl Builder<'_> {
             .iter()
             .enumerate()
             .map(|(index, name)| (name, ProducerId::FlowInput(index)));
-        let outputs = done
-            .iter()
-            .filter(|&&block| execution.participates(block))
-            .flat_map(|&block| {
-                let selected = execution.selected(block);
-                self.flow.blocks[block]
-                    .outputs
-                    .iter()
-                    .enumerate()
-                    .filter(move |(output, _)| selected.is_none_or(|branch| branch == *output))
-                    .map(move |(output, name)| (name, ProducerId::BlockOutput { block, output }))
-            });
+        let outputs = done.iter().flat_map(|&block| {
+            self.flow.blocks[block]
+                .outputs
+                .iter()
+                .enumerate()
+                .filter(move |(output, _)| {
+                    self.flow.produces(
+                        execution,
+                        ProducerId::BlockOutput {
+                            block,
+                            output: *output,
+                        },
+                    )
+                })
+                .map(move |(output, name)| (name, ProducerId::BlockOutput { block, output }))
+        });
         flow_inputs
             .chain(outputs)
             .map(|(name, producer)| (name.clone(), producer))
@@ -526,14 +557,8 @@ impl Builder<'_> {
 
     /// Logical names produced more than once that no single binding unifies.
     /// Rust would otherwise never compare the types of such alternatives.
-    fn gates(&self, executions: &[Execution]) -> Vec<Ident> {
-        let mut classes = self.classes.clone();
-        classes.push(
-            executions
-                .iter()
-                .flat_map(|execution| producers(execution, self.end))
-                .collect(),
-        );
+    fn gates(&self) -> Vec<Ident> {
+        let classes = &self.classes;
         let mut occurrences = BTreeMap::<&Ident, BTreeSet<ProducerId>>::new();
         for (block, declaration) in self.flow.blocks.iter().enumerate() {
             for (output, name) in declaration.outputs.iter().enumerate() {
@@ -565,7 +590,9 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
                 serial_order(next, order);
             }
         }
-        ExecutionPlan::Break { index, .. } => order.push(*index),
+        ExecutionPlan::Break { index, .. } | ExecutionPlan::Return { index } => {
+            order.push(*index);
+        }
         ExecutionPlan::Action { index, next } => {
             order.push(*index);
             serial_order(next, order);
@@ -573,13 +600,13 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
         ExecutionPlan::Question {
             index,
             branches,
-            join,
+            joins,
         } => {
             order.push(*index);
             for branch in branches {
                 serial_order(&branch.plan, order);
             }
-            if let Some(join) = join {
+            for join in joins {
                 serial_order(&join.next, order);
             }
         }
@@ -600,9 +627,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
             serial_order(body, order);
             order.push(*index);
         }
-        ExecutionPlan::EndArrival { .. }
-        | ExecutionPlan::Yield { .. }
-        | ExecutionPlan::Repeat { .. } => {}
+        ExecutionPlan::Yield { .. } | ExecutionPlan::Repeat { .. } => {}
     }
 }
 
@@ -619,11 +644,13 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
         ExecutionPlan::Action { next, .. } | ExecutionPlan::End { body: next, .. } => {
             fill_yields(next, wires, target);
         }
-        ExecutionPlan::Question { branches, join, .. } => {
+        ExecutionPlan::Question {
+            branches, joins, ..
+        } => {
             for branch in branches {
                 fill_yields(&mut branch.plan, wires, target);
             }
-            if let Some(join) = join {
+            for join in joins {
                 fill_yields(&mut join.next, wires, target);
             }
         }
@@ -652,9 +679,9 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
                 })
                 .collect();
         }
-        ExecutionPlan::EndArrival { .. }
-        | ExecutionPlan::Yield { .. }
+        ExecutionPlan::Yield { .. }
         | ExecutionPlan::Repeat { .. }
-        | ExecutionPlan::Break { .. } => {}
+        | ExecutionPlan::Break { .. }
+        | ExecutionPlan::Return { .. } => {}
     }
 }

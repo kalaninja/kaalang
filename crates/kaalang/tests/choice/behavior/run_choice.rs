@@ -29,6 +29,8 @@ fn run_choice(value: i32, branch_action_count: &mut usize) -> &'static str {
         *branch_action_count += 1;
         "positive"
     };
+
+    |end| return end;
 }
 
 #[test]

@@ -24,6 +24,8 @@ fn invalid(value: u8) -> u8 {
 
     #[action("Mark the right group.")]
     let (_right, end) = |c| { ((), 3) };
+
+    |end| return end;
 }
 
 fn main() {}

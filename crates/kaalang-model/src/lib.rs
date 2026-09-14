@@ -23,6 +23,13 @@ pub use model::{
     QuestionBranch, SemanticModel, WireMerge,
 };
 
+/// Diagram projection options. Analysis and expanded-topology validation are
+/// identical for both views.
+#[derive(Clone, Copy, Default)]
+pub struct BuildOptions {
+    pub collapse_loops: bool,
+}
+
 /// Builds the validated semantic model for one kaalang flow function.
 ///
 /// # Errors
@@ -37,19 +44,37 @@ pub use model::{
 /// an internal construction error when the independent check rejects the
 /// arrangement the search returned.
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
+    build_with_options(function, BuildOptions::default())
+}
+
+/// Builds a validated semantic model in the requested loop presentation.
+/// Expanded topology is always constructed first, so collapsing cannot hide an
+/// invalid cycle body or an unrealizable expanded diagram.
+///
+/// # Errors
+///
+/// Returns the same parsing, validation, and topology errors as [`build`].
+pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<SemanticModel> {
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
     let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
     let execution_plan = plan::flow(&flow, &executions, &merges);
-    let topology = topology::project(&topology::Analyzed {
+    let analyzed = topology::Analyzed {
         flow: &flow,
         executions: &executions,
         merges: &merges,
         execution_plan: &execution_plan,
-    });
-
-    let arrangement = construct::construct(&flow, &merges, &topology)?;
+    };
+    let expanded = topology::project(&analyzed, false);
+    let expanded_arrangement = construct::construct(&flow, &merges, &expanded)?;
+    let (topology, arrangement) = if options.collapse_loops {
+        let topology = topology::project(&analyzed, true);
+        let arrangement = construct::construct(&flow, &merges, &topology)?;
+        (topology, arrangement)
+    } else {
+        (expanded, expanded_arrangement)
+    };
 
     Ok(SemanticModel {
         name: function.sig.ident.clone(),
@@ -158,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn loop_examples_have_one_verified_body_per_authored_block() {
+    fn cycle_examples_have_one_verified_body_per_authored_block() {
         for (name, source) in [
             (
                 "count_to",
@@ -177,8 +202,8 @@ mod tests {
                 include_str!("../../kaalang/tests/loop/behavior/empty_loop.rs"),
             ),
             (
-                "repeat_until_end",
-                include_str!("../../kaalang/tests/loop/behavior/repeat_until_end.rs"),
+                "repeat_until_break",
+                include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
             ),
             (
                 "nested_loops",
@@ -198,38 +223,41 @@ mod tests {
     }
 
     #[test]
-    fn a_flow_input_named_end_needs_no_computational_block() {
+    fn a_flow_input_named_end_still_needs_an_explicit_return() {
         let function: ItemFn = parse_quote! {
-            fn identity(end: u8) -> u8 {}
+            fn identity(end: u8) -> u8 {
+                |end| return end;
+            }
         };
 
         let model = build(&function).expect("the zero-computation flow is valid");
         assert_eq!(model.flow.flow_inputs, ["end"]);
-        assert_eq!(model.flow.blocks.len(), 1);
+        assert_eq!(model.flow.blocks.len(), 2);
         assert_eq!(model.executions.len(), 1);
-        assert!(model.executions[0].blocks.is_empty());
+        assert_eq!(model.executions[0].blocks, [0]);
         assert_eq!(model.executions[0].dependencies.len(), 1);
         assert!(matches!(
             end_body(&model.execution_plan),
-            ExecutionPlan::EndArrival { wire } if wire == "end"
+            ExecutionPlan::Return { index: 0 }
         ));
     }
 
     #[test]
-    fn a_flow_that_produces_no_end_is_rejected() {
+    fn a_flow_without_a_root_return_is_rejected() {
         assert_eq!(
             message(&parse_quote! {
                 fn nothing() {}
             }),
-            "a kaalang flow must produce its `end` wire"
+            "this kaalang execution reaches the end of the flow without `return`"
         );
     }
 
     #[test]
-    fn an_unconditional_loop_may_repeat_without_reaching_end() {
+    fn an_unconditional_cycle_may_repeat_without_reaching_end() {
         let function: ItemFn = parse_quote! {
             fn forever() -> usize {
-                loop {}
+                #[cycle("Repeat forever")]
+                || {};
             }
         };
 
@@ -246,10 +274,10 @@ mod tests {
         ));
 
         let model = build(&fixture(
-            include_str!("../../kaalang/tests/loop/behavior/repeat_until_end.rs"),
-            "repeat_until_end",
+            include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
+            "repeat_until_break",
         ))
-        .expect("the loop may either repeat or finish");
+        .expect("the cycle may either repeat or finish");
         assert_eq!(
             model
                 .executions
@@ -257,7 +285,7 @@ mod tests {
                 .map(|execution| execution.outcome)
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
-                ExecutionOutcome::End,
+                ExecutionOutcome::Return { block_index: 5 },
                 ExecutionOutcome::Repeat { loop_index: 1 },
             ])
         );
@@ -267,8 +295,7 @@ mod tests {
     fn wildcard_is_not_a_flow_input_but_underscore_name_is() {
         let function: ItemFn = parse_quote! {
             fn discard(_: u8, _value: u8) {
-                #[action("Finish without the flow inputs.")]
-                let end = || {};
+                return;
             }
         };
 
@@ -298,10 +325,12 @@ mod tests {
                 };
 
                 #[action("Use the first path")]
-                let end = |left| { left };
+                let result = |left| { left };
 
                 #[action("Use the second path")]
-                let end = |right| { right };
+                let result = |right| { right };
+
+                |result| return result;
             }
         };
 
@@ -333,7 +362,7 @@ mod tests {
                 branches,
                 joins,
                 ..
-            } if branches.len() == 2 && joins.is_empty()
+            } if branches.len() == 2 && joins.len() == 1
         ));
     }
 
@@ -350,8 +379,7 @@ mod tests {
                 #[action("Build the no value")]
                 let selected = |no| { 2 };
 
-                #[action("Use the selected value")]
-                let end = |selected| { selected };
+                |selected| return selected;
             }
         };
 
@@ -394,13 +422,6 @@ mod tests {
             },
             capture: shared,
         }));
-        assert!(yes.dependencies.contains(&CaptureDependency {
-            producer: ProducerId::BlockOutput {
-                block: 3,
-                output: 0
-            },
-            capture: CaptureId { block: 4, input: 0 },
-        }));
     }
 
     #[test]
@@ -416,17 +437,16 @@ mod tests {
                 #[action("Build the no values")]
                 let (first, second) = |no| { (3, 4) };
 
-                #[action("Use the selected values")]
-                let end = |second, first| { (first, second) };
+                |second, first| return (first, second);
             }
         };
 
         let model = build(&function).expect("the alternative producers are valid");
-        let ExecutionPlan::Question {
-            join: Some(join), ..
-        } = end_body(&model.execution_plan)
-        else {
+        let ExecutionPlan::Question { joins, .. } = end_body(&model.execution_plan) else {
             panic!("the question must record its join")
+        };
+        let [join] = joins.as_slice() else {
+            panic!("the question must record one join")
         };
 
         assert_eq!(join.branches, [0, 1]);
@@ -451,8 +471,7 @@ mod tests {
                 #[action("Produce the second result")]
                 let second = |&input| { *input + 1 };
 
-                #[action("Pair the two results")]
-                let end = |first, second| { (first, second) };
+                |first, second| return (first, second);
             }
         };
 
@@ -463,8 +482,7 @@ mod tests {
             end_body(&model.execution_plan),
             ExecutionPlan::Action { index: 0, next }
                 if matches!(next.as_ref(), ExecutionPlan::Action { index: 1, next }
-                    if matches!(next.as_ref(), ExecutionPlan::Action { index: 2, next }
-                        if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })))
+                    if matches!(next.as_ref(), ExecutionPlan::Return { index: 2 }))
         ));
     }
 
@@ -483,9 +501,10 @@ mod tests {
                 #[question("Choose the left path")]
                 let (a, b) = |left| { left };
                 #[action("Use the left path")]
-                let end = |a, value| { value + 1 };
+                let result = |a, value| { value + 1 };
                 #[action("Use the other left path")]
-                let end = |b, value| { value + 2 };
+                let result = |b, value| { value + 2 };
+                |result| return result;
             }
         };
 
@@ -511,10 +530,12 @@ mod tests {
                 let (yes, no) = |condition| { condition };
 
                 #[action("Use it on the yes branch")]
-                let end = |yes, &prepared| { *prepared };
+                let result = |yes, &prepared| { *prepared };
 
                 #[action("Use it on the no branch")]
-                let end = |no, prepared| { prepared + 1 };
+                let result = |no, prepared| { prepared + 1 };
+
+                |result| return result;
             }
         };
 
@@ -523,12 +544,12 @@ mod tests {
         assert!(matches!(
             end_body(&model.execution_plan),
             ExecutionPlan::Action { index: 0, next }
-                if matches!(next.as_ref(), ExecutionPlan::Question { index: 1, join: None, .. })
+                if matches!(next.as_ref(), ExecutionPlan::Question { index: 1, joins, .. } if !joins.is_empty())
         ));
     }
 
     #[test]
-    fn records_nested_join_and_terminal_case_topology() {
+    fn records_nested_join_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
                 #[question("Take the branching path?")]
@@ -537,7 +558,7 @@ mod tests {
                 #[choice("Which branch?")]
                 #[case("First")]
                 #[case("Second")]
-                #[case("Terminal")]
+                #[case("Third")]
                 let (first, second, third) = |yes, value| {
                     match value {
                         0 => (),
@@ -552,14 +573,16 @@ mod tests {
                 #[action("Build the second value")]
                 let selected = |second| { 2 };
 
-                #[action("Produce the terminal result")]
-                let end = |third| { 3 };
+                #[action("Produce the third result")]
+                let result = |third| { 3 };
 
                 #[action("Produce the selected result")]
-                let end = |selected| { selected };
+                let result = |selected| { selected };
 
                 #[action("Produce the no-branch result")]
-                let end = |no| { 0 };
+                let result = |no| { 0 };
+
+                |result| return result;
             }
         };
 
@@ -568,15 +591,25 @@ mod tests {
         let ExecutionPlan::Question {
             index,
             branches: [yes, no],
-            join: None,
+            joins,
         } = end_body(&model.execution_plan)
         else {
-            panic!("the root must be a question without a join")
+            panic!("the root question must join its results")
+        };
+        let [root_join] = joins.as_slice() else {
+            panic!("the root question must record one join")
         };
         assert_eq!(*index, 0);
         assert!(matches!(
             no.plan.as_ref(),
-            ExecutionPlan::Action { index: 6, .. }
+            ExecutionPlan::Action { index: 6, next }
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
+        ));
+        assert_eq!(root_join.branches, [0, 1]);
+        assert_eq!(root_join.wires, ["result"]);
+        assert!(matches!(
+            root_join.next.as_ref(),
+            ExecutionPlan::Return { index: 7 }
         ));
 
         let ExecutionPlan::Choice {
@@ -602,19 +635,19 @@ mod tests {
         assert!(matches!(
             branches[2].plan.as_ref(),
             ExecutionPlan::Action { index: 4, next }
-                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
-        let [join] = joins.as_slice() else {
-            panic!("the first two cases share one join")
+        let [selected_join] = joins.as_slice() else {
+            panic!("the first two cases share one nested join")
         };
-        assert_eq!(join.branches, [0, 1]);
-        assert_eq!(join.wires, ["selected"]);
+        assert_eq!(selected_join.branches, [0, 1]);
+        assert_eq!(selected_join.wires, ["selected"]);
         assert!(matches!(
-            join.next.as_ref(),
+            selected_join.next.as_ref(),
             ExecutionPlan::Action { index: 5, next }
-                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
-        assert_eq!(count_block(&model, 7), 1);
+        assert_eq!(count_block(&model, 8), 1);
     }
 
     #[test]
@@ -629,7 +662,7 @@ mod tests {
 
     /// The second question opens its own branches while the first question's
     /// are still separate, which is reported before the three executions that
-    /// would leave the flow without its `end` wire.
+    /// would reach the flow boundary without returning.
     #[test]
     fn rejects_a_conjunction_of_independent_branch_outputs() {
         let function: ItemFn = parse_quote! {
@@ -639,7 +672,8 @@ mod tests {
                 #[question("Right?")]
                 let (c, _d) = |right| { right };
                 #[action("Both")]
-                let end = |a, c| { 1 };
+                let result = |a, c| { 1 };
+                |result| return result;
             }
         };
 
@@ -679,13 +713,15 @@ mod tests {
                 let (shared, borrow_gate) = |yes| { ((), ()) };
 
                 #[action("Consume the nested control")]
-                let end = |shared, branch_gate| { 1 };
+                let result = |shared, branch_gate| { 1 };
 
                 #[action("Consume the other nested control")]
-                let end = |skip, branch_gate| { 2 };
+                let result = |skip, branch_gate| { 2 };
 
                 #[action("Borrow only the action output")]
-                let end = |&shared, borrow_gate| { 3 };
+                let result = |&shared, borrow_gate| { 3 };
+
+                |result| return result;
             }
         };
 
@@ -696,13 +732,13 @@ mod tests {
     }
 
     #[test]
-    fn one_choice_may_own_two_joins() {
+    fn one_choice_may_own_disjoint_joins_inside_a_full_join() {
         let function: ItemFn = parse_quote! {
             fn route(value: u8) -> u8 {
                 #[choice("Which group?")]
                 #[case("First of the left group")]
                 #[case("Second of the left group")]
-                #[case("Terminal")]
+                #[case("Direct result")]
                 #[case("First of the right group")]
                 #[case("Second of the right group")]
                 let (a, b, done, c, d) = |value| {
@@ -721,8 +757,8 @@ mod tests {
                 #[action("Build the left value from b")]
                 let left = |b| { 2 };
 
-                #[action("Produce the terminal result")]
-                let end = |done| { 3 };
+                #[action("Produce the direct result")]
+                let result = |done| { 3 };
 
                 #[action("Build the right value from c")]
                 let right = |c| { 4 };
@@ -731,10 +767,12 @@ mod tests {
                 let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                let end = |left| { left };
+                let result = |left| { left };
 
                 #[action("Use the right value")]
-                let end = |right| { right };
+                let result = |right| { right };
+
+                |result| return result;
             }
         };
 
@@ -749,15 +787,15 @@ mod tests {
         assert!(matches!(
             branches[2].plan.as_ref(),
             ExecutionPlan::Action { index: 3, next }
-                if matches!(next.as_ref(), ExecutionPlan::EndArrival { .. })
+                if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
-        let [left, right] = joins.as_slice() else {
-            panic!("the choice owns two joins")
-        };
+        assert_eq!(joins.len(), 3);
+        let left = joins.iter().find(|join| join.wires == ["left"]).unwrap();
+        let right = joins.iter().find(|join| join.wires == ["right"]).unwrap();
+        let result = joins.iter().find(|join| join.wires == ["result"]).unwrap();
         assert_eq!(left.branches, [0, 1]);
-        assert_eq!(left.wires, ["left"]);
         assert_eq!(right.branches, [3, 4]);
-        assert_eq!(right.wires, ["right"]);
+        assert_eq!(result.branches, [0, 1, 2, 3, 4]);
         assert!(matches!(
             left.next.as_ref(),
             ExecutionPlan::Action { index: 6, .. }
@@ -766,7 +804,11 @@ mod tests {
             right.next.as_ref(),
             ExecutionPlan::Action { index: 7, .. }
         ));
-        for block in 0..8 {
+        assert!(matches!(
+            result.next.as_ref(),
+            ExecutionPlan::Return { index: 8 }
+        ));
+        for block in 0..10 {
             assert_eq!(count_block(&model, block), 1, "block {block}");
         }
         assert!(
@@ -798,21 +840,19 @@ mod tests {
     }
 
     #[test]
-    fn an_outside_nested_branch_may_finish_but_not_rejoin_an_ordinary_continuation() {
+    fn a_partial_continuation_may_feed_a_wider_merge() {
         build(&fixture!(
             "wire/behavior",
             "nested_branch_passes_a_question_join"
         ))
-        .expect("the early result is outside the shared merge");
+        .expect("all result producers meet at one valid merge");
 
         let source = include_str!(
             "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
         )
         .replace("let (join, skip)", "let (skip, join)");
-        assert_eq!(
-            message(&fixture(&source, "invalid")),
-            "a nested kaalang branch cannot bypass the `shared` wire merge and rejoin at `ready`; merge before or with the enclosing branches"
-        );
+        build(&fixture(&source, "invalid"))
+            .expect("an adjacent partial continuation may feed the wider ready merge");
     }
 
     /// Two selections can only decide one block while both are open, which the
@@ -837,14 +877,14 @@ mod tests {
     }
 
     #[test]
-    fn one_choice_may_own_two_disjoint_groups_around_terminal_cases() {
+    fn one_choice_may_own_two_disjoint_groups_around_independent_cases() {
         let function: ItemFn = parse_quote! {
             fn route(value: u8) -> u8 {
                 #[choice("Which group?")]
-                #[case("Terminal before both groups")]
+                #[case("Independent before both groups")]
                 #[case("First of the left group")]
                 #[case("Second of the left group")]
-                #[case("Terminal between the groups")]
+                #[case("Independent between the groups")]
                 #[case("First of the right group")]
                 #[case("Second of the right group")]
                 let (first, a, b, between, c, d) = |value| {
@@ -858,8 +898,8 @@ mod tests {
                     }
                 };
 
-                #[action("Produce the first terminal result")]
-                let end = |first| { 0 };
+                #[action("Produce the first independent result")]
+                let result = |first| { 0 };
 
                 #[action("Build the left value from a")]
                 let left = |a| { 1 };
@@ -867,8 +907,8 @@ mod tests {
                 #[action("Build the left value from b")]
                 let left = |b| { 2 };
 
-                #[action("Produce the terminal result between the groups")]
-                let end = |between| { 3 };
+                #[action("Produce the independent result between the groups")]
+                let result = |between| { 3 };
 
                 #[action("Build the right value from c")]
                 let right = |c| { 4 };
@@ -877,16 +917,22 @@ mod tests {
                 let right = |d| { 5 };
 
                 #[action("Use the left value")]
-                let end = |left| { left };
+                let result = |left| { left };
 
                 #[action("Use the right value")]
-                let end = |right| { right };
+                let result = |right| { right };
+
+                |result| return result;
             }
         };
 
         assert_groups(
             &function,
-            &[group(0, &[1, 2], &[7], &[7]), group(0, &[4, 5], &[8], &[8])],
+            &[
+                group(0, &[0, 1, 2, 3, 4, 5], &[9], &[9]),
+                group(0, &[1, 2], &[7], &[7]),
+                group(0, &[4, 5], &[8], &[8]),
+            ],
         );
     }
 
@@ -894,7 +940,10 @@ mod tests {
     fn nested_questions_each_own_a_group_over_the_shared_consumer() {
         assert_groups(
             &fixture!("wire/behavior", "nested_convergence"),
-            &[group(0, &[0, 1], &[5], &[5]), group(1, &[0, 1], &[5], &[5])],
+            &[
+                group(0, &[0, 1], &[5, 6], &[5]),
+                group(1, &[0, 1], &[5, 6], &[5]),
+            ],
         );
     }
 
@@ -902,18 +951,20 @@ mod tests {
     fn branches_of_unequal_depth_have_one_shared_entry() {
         assert_groups(
             &fixture!("wire/behavior", "uneven_depth"),
-            &[group(0, &[0, 1], &[4], &[4])],
+            &[group(0, &[0, 1], &[4, 5], &[4])],
         );
     }
 
-    /// The nested question's terminal branch and the preceding effect stay
-    /// outside the outer group; the nested question itself forms no group
-    /// because only its late branch reaches the shared consumer.
+    /// The selected-value merge closes the outer question before its end value
+    /// joins the early branch at the single return.
     #[test]
-    fn a_continuing_branch_may_hold_a_nested_terminal_branch() {
+    fn nested_questions_may_share_one_result_merge() {
         assert_groups(
             &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
-            &[group(1, &[0, 1], &[6], &[6])],
+            &[
+                group(1, &[0, 1], &[6, 7], &[6]),
+                group(2, &[0, 1], &[7], &[7]),
+            ],
         );
     }
 
@@ -936,11 +987,12 @@ mod tests {
                 let selected = |no, &prepared| { *prepared + 1 };
 
                 #[action("Combine the selected and prepared values")]
-                let end = |selected, prepared| { selected + prepared };
+                let result = |selected, prepared| { selected + prepared };
+                |result| return result;
             }
         };
 
-        assert_groups(&function, &[group(1, &[0, 1], &[4], &[4])]);
+        assert_groups(&function, &[group(1, &[0, 1], &[4, 5], &[4])]);
     }
 
     #[test]
@@ -952,15 +1004,21 @@ mod tests {
     }
 
     #[test]
-    fn alternative_producers_captured_only_by_end_form_no_group() {
-        assert_groups(&fixture!("question/behavior", "run_question"), &[]);
+    fn alternative_producers_captured_by_return_form_a_group() {
+        assert_groups(
+            &fixture!("question/behavior", "run_question"),
+            &[group(0, &[0, 1], &[3], &[3])],
+        );
     }
 
     #[test]
     fn a_terminal_case_stays_outside_the_group_it_follows() {
         assert_groups(
             &fixture!("wire/behavior", "convergence_before_a_terminal_case"),
-            &[group(0, &[0, 1], &[4], &[4])],
+            &[
+                group(0, &[0, 1], &[4], &[4]),
+                group(0, &[0, 1, 2], &[5], &[5]),
+            ],
         );
     }
 
@@ -977,8 +1035,7 @@ mod tests {
                 #[action("Build the no value")]
                 let (selected, _tag) = |no| { (2, 2) };
 
-                #[action("Use the selected value")]
-                let end = |selected| { selected };
+                |selected| return selected;
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -989,18 +1046,20 @@ mod tests {
         assert!(gates.is_empty(), "the join also unifies the unused wire");
 
         let terminal: ItemFn = parse_quote! {
-            fn choose(condition: bool) -> u32 {
+            fn choose(condition: bool) {
                 #[question("Choose a value")]
                 let (yes, no) = |condition| { condition };
 
                 #[action("Build the yes value")]
-                let (selected, _tag) = |yes| { (1, 1u8) };
+                let (result, _tag) = |yes| { ((), 1u8) };
 
-                #[action("Build the no result")]
-                let (end, _tag) = |no| { (2, 2) };
+                |result| return result;
 
-                #[action("Use the selected value")]
-                let end = |selected| { selected };
+                #[action("Build the no tag before diverging")]
+                let (_tag, repeat) = |no| { (2u8, ()) };
+
+                #[cycle("Keep the other route open")]
+                |repeat| {};
             }
         };
         let ExecutionPlan::End { gates, .. } =
@@ -1041,7 +1100,8 @@ mod tests {
             &fixture!("wire/behavior", "question_after_a_partial_merge"),
             &[
                 group(0, &[0, 1], &[3], &[3]),
-                group(0, &[0, 1, 2], &[5, 6, 7], &[5]),
+                group(0, &[0, 1, 2], &[5, 6, 7, 8], &[5]),
+                group(5, &[0, 1], &[8], &[8]),
             ],
         );
     }
@@ -1052,7 +1112,10 @@ mod tests {
     fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
         assert_groups(
             &fixture!("wire/behavior", "question_after_one_entry_block"),
-            &[group(0, &[0, 1], &[3, 4, 5, 6, 7], &[3, 4])],
+            &[
+                group(0, &[0, 1], &[3, 4, 5, 6, 7, 8], &[3, 4]),
+                group(5, &[0, 1], &[8], &[8]),
+            ],
         );
     }
 
@@ -1063,7 +1126,10 @@ mod tests {
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         assert_groups(
             &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
-            &[group(0, &[0, 1], &[4, 5], &[4, 5])],
+            &[
+                group(0, &[0, 1], &[4, 5, 6], &[4, 5]),
+                group(3, &[0, 1], &[6], &[6]),
+            ],
         );
     }
 

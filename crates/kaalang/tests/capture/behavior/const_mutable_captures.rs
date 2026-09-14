@@ -13,8 +13,7 @@ const fn const_mutable_captures(mut value: u32) -> u32 {
         *value += incremented;
     };
 
-    #[action("Return the changed original.")]
-    let end = |value| value;
+    |value| return value;
 }
 
 #[test]

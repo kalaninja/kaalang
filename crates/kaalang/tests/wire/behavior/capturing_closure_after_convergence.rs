@@ -16,6 +16,8 @@ fn capturing_closure_after_convergence(condition: bool) -> u32 {
 
     #[action("Apply the closure.")]
     let end = |add| add(1);
+
+    |end| return end;
 }
 
 #[test]

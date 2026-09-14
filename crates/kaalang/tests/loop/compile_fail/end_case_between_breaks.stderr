@@ -1,5 +1,0 @@
-error: could not construct a diagram under RFC 0002: its routes and column constraints have no conforming arrangement; the exhaustive search reached case `Leave at zero.` before exhausting its alternatives
- --> tests/loop/compile_fail/end_case_between_breaks.rs:6:9
-  |
-6 |         #[choice("Which route?")]
-  |         ^

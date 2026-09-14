@@ -16,6 +16,8 @@ fn mutable_reference_to_a_branch_local(condition: bool, mut fallback: String) ->
 
     #[action("Use the merged reference.")]
     let end = |view| { view.len() };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -1,8 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
-    loop {
+fn terminal_cases_after_repeats(mode: u8) -> u8 {
+    #[cycle("Repeat until either finishing case.")]
+    let result = |mut mode| {
         #[choice("Which route?")]
         #[case("Advance on the left.")]
         #[case("Advance on the right.")]
@@ -16,17 +17,23 @@ fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
         };
 
         #[action("Finish the flow with seven.")]
-        let end = |seven| 7;
+        let seven_result = |seven| 7;
+
+        |seven_result| break seven_result;
 
         #[action("Finish the flow with nine.")]
-        let end = |nine| 9;
+        let nine_result = |nine| 9;
+
+        |nine_result| break nine_result;
 
         #[action("Advance through the left case.")]
         |left, &mut mode| *mode = 1;
 
         #[action("Advance through the right case.")]
         |right, &mut mode| *mode = 1;
-    }
+    };
+
+    |result| return result;
 }
 
 /// Both finishing cases lie outside the two repeating routes.

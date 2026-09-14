@@ -1,4 +1,4 @@
-error: kaalang does not support `while`; use `loop` with a question and `break`
+error: kaalang does not support structural `while`; use a `#[cycle("description")]` block with a question and `break`
  --> tests/loop/compile_fail/while_statement.rs:5:5
   |
 5 | /     #[question("Repeat?")]

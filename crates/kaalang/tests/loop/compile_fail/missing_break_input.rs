@@ -1,12 +1,13 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(flag: bool) -> usize {
-    loop {
+fn invalid() {
+    #[cycle("Capture a missing break input.")]
+    || {
         |missing| break;
-    }
-    #[action("Finish.")]
-    let end = || 0;
+    };
+
+    return;
 }
 
 fn main() {}

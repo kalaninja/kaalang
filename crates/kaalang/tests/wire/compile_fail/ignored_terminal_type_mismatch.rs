@@ -6,13 +6,12 @@ fn invalid(condition: bool) -> u32 {
     let (yes, no) = |condition| { condition };
 
     #[action("Build the yes value and a marker.")]
-    let (selected, _marker) = |yes| { (1, "yes") };
+    let (result, _marker) = |yes| { (1, "yes") };
 
     #[action("Build the no result and a marker.")]
-    let (end, _marker) = |no| { (2, 3u8) };
+    let (result, _marker) = |no| { (2, 3u8) };
 
-    #[action("Use the selected value.")]
-    let end = |selected| { selected };
+    |result| return result;
 }
 
 fn main() {}

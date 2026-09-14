@@ -1,8 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn multiple_exits(mut mode: u8) -> u8 {
-    loop {
+fn multiple_exits(mode: u8) -> u8 {
+    #[cycle("Select an exit after zero or one advances.")]
+    let selected = |mut mode| {
         #[choice("Exit or advance?")]
         #[case("Exit immediately.")]
         #[case("Exit after advancing.")]
@@ -13,16 +14,15 @@ fn multiple_exits(mut mode: u8) -> u8 {
             _ => (),
         };
 
-        |first| break;
+        |first, mode| break mode;
 
         #[action("Advance to the final case.")]
         |advance, &mut mode| *mode = 2;
 
-        |last| break;
-    }
+        |last, mode| break mode;
+    };
 
-    #[action("Return the selected mode.")]
-    let end = |mode| mode;
+    |selected| return selected;
 }
 
 #[test]

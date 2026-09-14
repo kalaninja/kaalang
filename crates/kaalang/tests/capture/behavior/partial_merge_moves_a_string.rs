@@ -45,6 +45,8 @@ fn partial_merge_moves_a_string(source: u8, order: &Cell<u32>) -> String {
         order.set(order.get() * 10 + 5);
         shared
     };
+
+    |end| return end;
 }
 
 #[test]

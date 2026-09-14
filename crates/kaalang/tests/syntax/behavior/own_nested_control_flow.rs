@@ -28,6 +28,8 @@ fn own_nested_control_flow(input: u32) -> u32 {
         };
         halved + successor("1").unwrap_or(0) + original()
     };
+
+    |end| return end;
 }
 
 #[test]

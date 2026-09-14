@@ -6,8 +6,7 @@ fn invalid(input: u32) -> u32 {
     #[question("Omit the question outputs.")]
     |&input| true;
 
-    #[action("Finish.")]
-    let end = |input| { input };
+    |input| return input;
 }
 
 fn main() {}

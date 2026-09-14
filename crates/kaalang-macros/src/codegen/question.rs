@@ -11,9 +11,8 @@ pub(crate) fn emit(
     bindings: &Bindings,
     index: usize,
     branches: &[Branch; 2],
-    converged: Option<&Join>,
+    joins: &[Join],
 ) -> TokenStream2 {
-    let joins = converged.map_or(&[][..], std::slice::from_ref);
     let block = &flow.blocks[index];
     let yes = block
         .question_branches

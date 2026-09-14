@@ -1,5 +1,5 @@
-error: a kaalang block input must name a flow input or an earlier block output
- --> tests/loop/compile_fail/missing_break_input.rs:6:10
+error: a block inside a kaalang cycle may capture only a cycle input or an earlier local output
+ --> tests/loop/compile_fail/missing_break_input.rs:7:10
   |
-6 |         |missing| break;
+7 |         |missing| break;
   |          ^^^^^^^

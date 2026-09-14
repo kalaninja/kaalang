@@ -14,6 +14,8 @@ fn entry_effect_without_wires() -> usize {
 
     #[action("Report the count.")]
     let end = || VISITS.load(Ordering::Relaxed);
+
+    |end| return end;
 }
 
 #[test]

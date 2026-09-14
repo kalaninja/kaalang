@@ -29,6 +29,8 @@ fn expression_bodies(input: Option<u32>, visits: &Cell<u32>) -> u32 {
 
     #[action("Return the default.")]
     let end = |absent| 1;
+
+    |end| return end;
 }
 
 #[test]

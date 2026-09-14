@@ -50,6 +50,8 @@ fn invalid(mode: u8, report: bool) -> u8 {
 
     #[action("Finish the late half quietly.")]
     let end = |late, skipped| { late + skipped };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -47,20 +47,28 @@ fn draws_a_diagram_beside_every_behavior_fixture() {
             }
 
             for flow in names {
-                let svg = kaalang_svg::render_source(&source, &flow)
+                for (suffix, collapse_loops) in std::iter::once(("", false))
+                    .chain(source.contains("#[cycle(").then_some(("_collapsed", true)))
+                {
+                    let svg = kaalang_svg::render_source_with_options(
+                        &source,
+                        &flow,
+                        kaalang_svg::RenderOptions { collapse_loops },
+                    )
                     .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
-                let diagram = directory.join(format!("{flow}.svg"));
-                assert!(
-                    !current.contains(&diagram),
-                    "multiple fixtures draw {}",
-                    diagram.display()
-                );
-                // Rewriting an unchanged diagram would spin file watchers on every run.
-                if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
-                    fs::write(&diagram, svg).unwrap();
+                    let diagram = directory.join(format!("{flow}{suffix}.svg"));
+                    assert!(
+                        !current.contains(&diagram),
+                        "multiple fixtures draw {}",
+                        diagram.display()
+                    );
+                    // Rewriting an unchanged diagram would spin file watchers on every run.
+                    if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
+                        fs::write(&diagram, svg).unwrap();
+                    }
+                    current.push(diagram);
                 }
                 drawn += 1;
-                current.push(diagram);
             }
         }
 

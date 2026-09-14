@@ -11,8 +11,7 @@ fn invalid(condition: bool) -> u32 {
     #[action("Build the no values.")]
     let (number, _log) = |no| { (2, 3u8) };
 
-    #[action("Use the number.")]
-    let end = |number| { number };
+    |number| return number;
 }
 
 fn main() {}

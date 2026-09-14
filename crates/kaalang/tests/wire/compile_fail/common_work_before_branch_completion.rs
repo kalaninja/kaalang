@@ -17,8 +17,7 @@ fn invalid(flag: bool) -> u8 {
     #[action("Local effect.")]
     |local| {};
 
-    #[action("Finish.")]
-    let end = |value| { value };
+    |value| return value;
 }
 
 fn main() {}

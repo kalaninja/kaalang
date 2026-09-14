@@ -1,0 +1,5 @@
+error: kaalang block bodies do not support attributes or labels
+ --> tests/loop/compile_fail/cycle_body_label.rs:6:8
+  |
+6 |     || 'body: {};
+  |        ^^^^^^^^^

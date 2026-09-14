@@ -19,6 +19,8 @@ fn nested_terminal_branch_drops_a_wire(outer: bool, inner: bool) -> u32 {
 
     #[action("Produce the direct result.")]
     let end = |direct| 3;
+
+    |end| return end;
 }
 
 #[test]

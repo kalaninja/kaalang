@@ -1,0 +1,8 @@
+error[E0308]: mismatched types
+  --> tests/loop/compile_fail/incompatible_break_types.rs:15:22
+   |
+10 |         |number_route, number| break number;
+   |                                ------------ expected because of this `break`
+...
+15 |         |text| break text;
+   |                      ^^^^ expected `usize`, found `String`

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="1092" viewBox="0 0 1104 1092" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="1372" viewBox="0 0 1188 1372" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_loops</title>
-  <desc id="kaalang-description">Nodes: Start: nested_loops with parameters limit: usize handing over limit; Action: Initialize the outer counter. capturing nothing handing over mut outer; Action: Initialize the iteration counter. capturing nothing handing over mut inner; Question: Is the iteration counter below the outer counter? capturing &amp;inner, &amp;outer handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Increment the iteration counter. capturing iterate_1, &amp;mut inner; Question: Has the outer counter reached the limit? capturing &amp;outer, &amp;limit handing over done / again; Action: Return the counter. capturing done, &amp;outer handing over end; Action: Increment the outer counter. capturing again, &amp;mut outer; End: usize capturing end. Connections: Start: nested_loops to Action: Initialize the outer counter.; Action: Initialize the outer counter. to the entry of the loop; Action: Initialize the iteration counter. to the entry of the loop; Question: Is the iteration counter below the outer counter? branch 1 to Action: Increment the iteration counter.; Question: Is the iteration counter below the outer counter? branch 2 to Question: Has the outer counter reached the limit?; Action: Increment the iteration counter. to the iteration tail of the loop; Question: Has the outer counter reached the limit? branch 1 to Action: Return the counter.; Question: Has the outer counter reached the limit? branch 2 to Action: Increment the outer counter.; Action: Return the counter. to End: usize; Action: Increment the outer counter. to the iteration tail of the loop; the entry of the loop to Action: Initialize the iteration counter.; the entry of the loop to Question: Is the iteration counter below the outer counter?; Repeat from the iteration tail of the loop to the entry of the loop; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <desc id="kaalang-description">Cycles: Advance the outer counter to the limit. with inputs mut outer, limit and outputs result; Advance the inner counter to the outer counter. with inputs mut inner, &amp;outer and outputs (). Nodes: Start: nested_loops with parameters limit: usize handing over limit; Action: Initialize the outer counter. capturing nothing handing over mut outer; Action: Initialize the iteration counter. capturing nothing handing over mut inner; Question: Is the iteration counter below the outer counter? capturing &amp;inner, outer handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Increment the iteration counter. capturing iterate_1, &amp;mut inner; Question: Has the outer counter reached the limit? capturing &amp;outer, &amp;limit handing over done / again; Action: Increment the outer counter. capturing again, &amp;mut outer; End: usize capturing result. Connections: Start: nested_loops to Action: Initialize the outer counter.; Action: Initialize the outer counter. to the entry of the cycle; Action: Initialize the iteration counter. to the entry of the cycle; Question: Is the iteration counter below the outer counter? branch 1 to Action: Increment the iteration counter.; Question: Is the iteration counter below the outer counter? branch 2 to a cycle break; Action: Increment the iteration counter. to the iteration tail of the cycle; Question: Has the outer counter reached the limit? branch 1 to a cycle break; Question: Has the outer counter reached the limit? branch 2 to Action: Increment the outer counter.; Action: Increment the outer counter. to the iteration tail of the cycle; the entry of the cycle to Action: Initialize the iteration counter.; the cycle result to End: usize; the entry of the cycle to Question: Is the iteration counter below the outer counter?; the cycle result to Question: Has the outer counter reached the limit?; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,98 +11,112 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Advance the outer counter to the limit.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="1124" height="982" rx="12"/>
+    <text class="cycle-caption" x="1144" y="277" text-anchor="end" xml:space="preserve"><tspan x="1144" dy="0">Advance the outer counter to the limit.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Advance the inner counter to the outer counter.</title>
+    <rect class="cycle-boundary" x="60" y="471" width="576" height="422" rx="12"/>
+    <text class="cycle-caption" x="624" y="485" text-anchor="end" xml:space="preserve"><tspan x="624" dy="0">Advance the inner counter to the outer counter.</tspan></text>
+    </g>
+  </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 192 90 L 192 162
-      M 192 226 L 192 298
-      M 192 434 L 192 506
-      M 192 650 L 192 726
-      M 332 614 L 552 614 L 552 722
-      M 192 790 L 192 862
-      M 552 794 L 552 866
-      M 692 758 L 912 758 L 912 866
-      M 552 930 L 552 1002
-      M 912 930 L 912 1002
-      M 192 298 L 192 370
-      M 192 506 L 192 578
+      M 248 90 L 248 162
+      M 248 226 L 248 298
+      M 248 434 L 248 506
+      M 248 650 L 248 722
+      M 388 614 L 608 614 L 608 722
+      M 248 786 L 248 858
+      M 608 1002 L 608 1074
+      M 748 966 L 968 966 L 968 1074
+      M 968 1138 L 968 1210
+      M 248 298 L 248 370
+      M 608 1210 L 608 1282
+      M 248 506 L 248 578
+      M 608 858 L 608 930
+      M 608 722 L 608 858
+      M 608 1074 L 608 1210
     "/>
     <path class="connection" d="
-      M 192 862 L 32 862 L 32 506 L 192 506
+      M 248 858 L 88 858 L 88 506 L 248 506
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 912 1002 L 1072 1002 L 1072 298 L 192 298
+      M 968 1210 L 1128 1210 L 1128 298 L 248 298
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="205" y="108" xml:space="preserve"><tspan x="205" dy="0">limit</tspan></text>
-    <text class="connection-label" x="205" y="244" xml:space="preserve"><tspan x="205" dy="0">mut outer</tspan></text>
-    <text class="connection-label" x="205" y="452" xml:space="preserve"><tspan x="205" dy="0">mut inner</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="205" y="670" xml:space="preserve"><tspan x="205" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="345" y="602" xml:space="preserve"><tspan x="345" dy="0">NO</tspan></text>
-    <text class="connection-label" x="565" y="812" xml:space="preserve"><tspan x="565" dy="0">done</tspan></text>
-    <text class="connection-label" x="705" y="776" xml:space="preserve"><tspan x="705" dy="0">again</tspan></text>
-    <text class="connection-label" x="205" y="151" xml:space="preserve"><tspan x="205" dy="0">()</tspan></text>
-    <text class="connection-label" x="205" y="359" xml:space="preserve"><tspan x="205" dy="0">()</tspan></text>
-    <text class="connection-label" x="205" y="567" xml:space="preserve"><tspan x="205" dy="0">&amp;inner, &amp;outer</tspan></text>
-    <text class="connection-label" x="205" y="715" xml:space="preserve"><tspan x="205" dy="0">iterate_1, &amp;mut inner</tspan></text>
-    <text class="connection-label" x="565" y="711" xml:space="preserve"><tspan x="565" dy="0">&amp;outer, &amp;limit</tspan></text>
-    <text class="connection-label" x="565" y="855" xml:space="preserve"><tspan x="565" dy="0">done, &amp;outer</tspan></text>
-    <text class="connection-label" x="925" y="855" xml:space="preserve"><tspan x="925" dy="0">again, &amp;mut outer</tspan></text>
+    <text class="connection-label" x="261" y="108" xml:space="preserve"><tspan x="261" dy="0">limit</tspan></text>
+    <text class="connection-label" x="261" y="244" xml:space="preserve"><tspan x="261" dy="0">mut outer</tspan></text>
+    <text class="connection-label" x="261" y="452" xml:space="preserve"><tspan x="261" dy="0">mut inner</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="261" y="670" xml:space="preserve"><tspan x="261" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="401" y="602" xml:space="preserve"><tspan x="401" dy="0">NO</tspan></text>
+    <text class="connection-label" x="621" y="1020" xml:space="preserve"><tspan x="621" dy="0">done</tspan></text>
+    <text class="connection-label" x="761" y="984" xml:space="preserve"><tspan x="761" dy="0">again</tspan></text>
+    <text class="connection-label" x="261" y="151" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label" x="261" y="359" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label" x="261" y="567" xml:space="preserve"><tspan x="261" dy="0">&amp;inner, outer</tspan></text>
+    <text class="connection-label" x="261" y="711" xml:space="preserve"><tspan x="261" dy="0">iterate_1, &amp;mut inner</tspan></text>
+    <text class="connection-label" x="621" y="919" xml:space="preserve"><tspan x="621" dy="0">&amp;outer, &amp;limit</tspan></text>
+    <text class="connection-label" x="981" y="1063" xml:space="preserve"><tspan x="981" dy="0">again, &amp;mut outer</tspan></text>
+    <text class="connection-label" x="621" y="1271" xml:space="preserve"><tspan x="621" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 332 61 L 428 61"/>
-    <g class="parameter-panel" transform="translate(548 61)">
+    <path class="parameter-link" d="M 388 61 L 484 61"/>
+    <g class="parameter-panel" transform="translate(604 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
     </g>
-    <g class="node start" transform="translate(192 61)">
+    <g class="node start" transform="translate(248 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_loops</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 194)">
+    <g class="node action" transform="translate(248 194)">
       <title xml:space="preserve">Initialize the outer counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the outer counter.</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 402)">
+    <g class="node action" transform="translate(248 402)">
       <title xml:space="preserve">Initialize the iteration counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the iteration counter.</tspan></text>
     </g>
-    <g class="node question" transform="translate(192 614)">
+    <g class="node question" transform="translate(248 614)">
       <title xml:space="preserve">Is the iteration counter below the outer counter?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the iteration counter </tspan><tspan x="0" dy="18">below the outer counter?</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 758)">
+    <g class="node action" transform="translate(248 754)">
       <title xml:space="preserve">Increment the iteration counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the iteration counter.</tspan></text>
     </g>
-    <g class="node question" transform="translate(552 758)">
+    <g class="node question" transform="translate(608 966)">
       <title xml:space="preserve">Has the outer counter reached the limit?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the outer counter </tspan><tspan x="0" dy="18">reached the limit?</tspan></text>
     </g>
-    <g class="node action" transform="translate(552 898)">
-      <title xml:space="preserve">Return the counter.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the counter.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(912 898)">
+    <g class="node action" transform="translate(968 1106)">
       <title xml:space="preserve">Increment the outer counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the outer counter.</tspan></text>
     </g>
-    <g class="node end" transform="translate(552 1031)">
+    <g class="node end" transform="translate(608 1311)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

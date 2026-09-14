@@ -2,11 +2,10 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn discard_named(_value: u8) {
-    #[action("Finish without the named flow input.")]
-    let end = || {};
+    || return;
 }
 
 #[test]
-fn the_ignored_parameter_is_explicit() {
+fn a_zero_capture_return_can_ignore_a_named_parameter() {
     discard_named(1);
 }

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1072" viewBox="0 0 680 1072" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for result_shapes</title>
+  <desc id="kaalang-description">Nodes: Start: result_shapes with parameters value: usize handing over value; Cycle: Complete without outputs. capturing nothing; Cycle: Produce a named unit result. capturing nothing handing over ready; Cycle: Produce a mutable scalar result. capturing value handing over mut adjusted; Action: Adjust the mutable cycle result. capturing ready, &amp;mut adjusted; Cycle: Destructure a singleton tuple result. capturing value handing over single; Cycle: Destructure two result wires. capturing single handing over left, right; End: (usize, usize, usize, usize) capturing adjusted, single, left, right. Connections: Start: result_shapes to Cycle: Complete without outputs.; Cycle: Complete without outputs. to Cycle: Produce a named unit result.; Cycle: Produce a named unit result. to Cycle: Produce a mutable scalar result.; Cycle: Produce a mutable scalar result. to Action: Adjust the mutable cycle result.; Action: Adjust the mutable cycle result. to Cycle: Destructure a singleton tuple result.; Cycle: Destructure a singleton tuple result. to Cycle: Destructure two result wires.; Cycle: Destructure two result wires. to End: (usize, usize, usize, usize).</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 172 362 L 172 434
+      M 172 500 L 172 572
+      M 172 636 L 172 708
+      M 172 774 L 172 846
+      M 172 910 L 172 982
+    "/>
+    <text class="connection-label" x="185" y="805" xml:space="preserve"><tspan x="185" dy="0">single</tspan></text>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="380" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
+    <text class="connection-label" x="185" y="518" xml:space="preserve"><tspan x="185" dy="0">mut adjusted</tspan></text>
+    <text class="connection-label" x="185" y="928" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="423" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">ready, &amp;mut adjusted</tspan></text>
+    <text class="connection-label" x="185" y="697" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="971" xml:space="preserve"><tspan x="185" dy="0">adjusted, single, left, right</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">result_shapes</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 194)">
+      <title xml:space="preserve">Complete without outputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Complete without outputs.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node loop" transform="translate(172 330)">
+      <title xml:space="preserve">Produce a named unit result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce a named unit result.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node loop" transform="translate(172 467)">
+      <title xml:space="preserve">Produce a mutable scalar result.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce a mutable scalar </tspan><tspan x="-124" dy="18">result.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 604)">
+      <title xml:space="preserve">Adjust the mutable cycle result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Adjust the mutable cycle result.</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 741)">
+      <title xml:space="preserve">Destructure a singleton tuple result.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Destructure a singleton tuple </tspan><tspan x="-124" dy="18">result.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node loop" transform="translate(172 878)">
+      <title xml:space="preserve">Destructure two result wires.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Destructure two result wires.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node end" transform="translate(172 1011)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(usize, usize, usize, usize)</tspan></text>
+    </g>
+  </g>
+</svg>

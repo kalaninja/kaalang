@@ -48,6 +48,8 @@ fn effect_then_common(flag: bool) -> u8 {
         record("finish");
         value + stamp
     };
+
+    |end| return end;
 }
 
 #[test]

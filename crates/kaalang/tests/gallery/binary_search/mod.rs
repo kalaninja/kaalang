@@ -7,13 +7,17 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     #[action("Initialize the search range.")]
     let (mut left, mut right) = |values| (0, values.len());
 
-    |&left, &right| loop {
+    #[cycle("Search the remaining range.")]
+    let result = |values, target, mut left, mut right| {
         #[question("Does the search range contain any elements?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
 
-        |leave| break;
+        #[action("The target is absent.")]
+        let absent = |leave| None;
+
+        |absent| break absent;
 
         #[action("Find the middle index.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
@@ -35,11 +39,12 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         |greater, mid, &mut right| *right = mid;
 
         #[action("The target was found.")]
-        let end = |equal, mid| Some(mid);
+        let found = |equal, mid| Some(mid);
+
+        |found| break found;
     };
 
-    #[action("The target is absent.")]
-    let end = || None;
+    |result| return result;
 }
 
 #[kaalang]
@@ -47,13 +52,17 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     #[action("Initialize the search range.")]
     let (mut left, mut right) = |values| (0, values.len());
 
-    |&left, &right| loop {
+    #[cycle("Search the remaining range.")]
+    let result = |values, target, mut left, mut right| {
         #[question("Does the search range contain any elements?")]
         #[no("NO")]
         #[yes("YES")]
         let (leave, iterate) = |left, right| left < right;
 
-        |leave| break;
+        #[action("The target is absent.")]
+        let absent = |leave| None;
+
+        |absent| break absent;
 
         #[action("Find the middle index.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
@@ -69,7 +78,9 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         };
 
         #[action("The target was found.")]
-        let end = |equal, mid| Some(mid);
+        let found = |equal, mid| Some(mid);
+
+        |found| break found;
 
         #[action("Search the right half.")]
         |less, mid, &mut left| *left = mid + 1;
@@ -78,8 +89,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         |greater, mid, &mut right| *right = mid;
     };
 
-    #[action("The target is absent.")]
-    let end = || None;
+    |result| return result;
 }
 
 #[test]

@@ -1,5 +1,5 @@
 error: a kaalang branch output is consumed, never borrowed
- --> tests/loop/compile_fail/borrowed_break_branch.rs:8:11
-  |
-8 |         |&done| break;
-  |           ^^^^
+  --> tests/loop/compile_fail/borrowed_break_branch.rs:10:11
+   |
+10 |         |&done| break;
+   |           ^^^^

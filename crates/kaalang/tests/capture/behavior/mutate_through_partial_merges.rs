@@ -40,8 +40,7 @@ fn mutate_through_partial_merges(source: u8, refine: bool) -> Vec<u8> {
         shared.push(5);
     };
 
-    #[action("Return the changed value.")]
-    let end = |shared| shared;
+    |shared| return shared;
 }
 
 #[test]

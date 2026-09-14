@@ -1,0 +1,5 @@
+error: a kaalang return value must name a captured input
+ --> tests/end/compile_fail/uncaptured_return_value.rs:5:12
+  |
+5 |     return value;
+  |            ^^^^^

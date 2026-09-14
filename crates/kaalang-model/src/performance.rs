@@ -41,12 +41,15 @@ fn cost(function: &ItemFn) -> Option<Cost> {
     let analysis = started.elapsed();
 
     let started = Instant::now();
-    let topology = crate::topology::project(&Analyzed {
-        flow: &flow,
-        executions: &executions,
-        merges: &merges,
-        execution_plan: &execution_plan,
-    });
+    let topology = crate::topology::project(
+        &Analyzed {
+            flow: &flow,
+            executions: &executions,
+            merges: &merges,
+            execution_plan: &execution_plan,
+        },
+        false,
+    );
     let projection = started.elapsed();
     let started = Instant::now();
     let built = crate::construct::construct(&flow, &merges, &topology);
@@ -125,10 +128,14 @@ fn stress(loops: usize, actions: usize) -> ItemFn {
     let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
         let pad = indent(depth * 2);
+        writeln(
+            &mut body,
+            format_args!("{pad}#[cycle({quote}Level {depth}.{quote})]\n"),
+        );
         let opening = if depth == 0 {
-            "loop {".to_owned()
+            "|step| {".to_owned()
         } else {
-            format!("|stay_{}| loop {{", depth - 1)
+            format!("|stay_{}, step| {{", depth - 1)
         };
         writeln(&mut body, format_args!("{pad}{opening}\n"));
         writeln(
@@ -150,8 +157,7 @@ fn stress(loops: usize, actions: usize) -> ItemFn {
     writeln(&mut body, format_args!("{pad}    |stay_{deepest}| ();\n"));
     for depth in (0..loops).rev() {
         let pad = indent(depth * 2);
-        let close = if depth == 0 { "}" } else { "};" };
-        writeln(&mut body, format_args!("{pad}{close}\n"));
+        writeln(&mut body, format_args!("{pad}}};\n"));
     }
     for index in 0..actions {
         writeln(
@@ -168,10 +174,7 @@ fn stress(loops: usize, actions: usize) -> ItemFn {
         );
         writeln(&mut body, format_args!("    |step_{index}| ();\n"));
     }
-    writeln(
-        &mut body,
-        format_args!("    #[action({quote}Finish.{quote})]\n    let end = |step| step;\n"),
-    );
+    writeln(&mut body, format_args!("    |step| return step;\n"));
     let source = format!("fn stress(step: usize) -> usize {{\n{body}}}\n");
     syn::parse_str(&source).expect("the stress flow parses")
 }
@@ -193,10 +196,14 @@ fn branching_loops(loops: usize, actions: usize, distributor: bool) -> ItemFn {
     let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
         let pad = indent(depth * 2);
+        writeln(
+            &mut body,
+            format_args!("{pad}#[cycle({quote}Level {depth}.{quote})]\n"),
+        );
         let opening = if depth == 0 {
-            "loop {".to_owned()
+            "|step| {".to_owned()
         } else {
-            format!("|stay_{}| loop {{", depth - 1)
+            format!("|stay_{}, step| {{", depth - 1)
         };
         writeln(&mut body, format_args!("{pad}{opening}\n"));
         if distributor {
@@ -247,8 +254,7 @@ fn branching_loops(loops: usize, actions: usize, distributor: bool) -> ItemFn {
     writeln(&mut body, format_args!("{pad}    |stay_{deepest}| ();\n"));
     for depth in (0..loops).rev() {
         let pad = indent(depth * 2);
-        let close = if depth == 0 { "}" } else { "};" };
-        writeln(&mut body, format_args!("{pad}{close}\n"));
+        writeln(&mut body, format_args!("{pad}}};\n"));
     }
     for action in 0..actions {
         writeln(
@@ -264,10 +270,7 @@ fn branching_loops(loops: usize, actions: usize, distributor: bool) -> ItemFn {
             ),
         );
     }
-    writeln(
-        &mut body,
-        format_args!("    #[action({quote}Finish.{quote})]\n    let end = |step| step;\n"),
-    );
+    writeln(&mut body, format_args!("    |step| return step;\n"));
     let source = format!("fn refused(mut step: usize) -> usize {{\n{body}}}\n");
     syn::parse_str(&source).expect("the refused flow parses")
 }
@@ -340,14 +343,7 @@ fn branching(stages: usize) -> ItemFn {
         );
         wire = format!("step_{stage}");
     }
-    writeln(
-        &mut body,
-        format_args!(
-            "    #[action({quote}Finish.{quote})]
-    let end = |{wire}| {wire};
-"
-        ),
-    );
+    writeln(&mut body, format_args!("    |{wire}| return {wire};\n"));
     let source = format!("fn branching(seed: usize) -> usize {{\n{body}}}\n");
     syn::parse_str(&source).expect("the branching flow parses")
 }
@@ -418,12 +414,15 @@ fn measure_branching() {
         let mut samples = Vec::new();
         for run in 0..=20 {
             let started = Instant::now();
-            let topology = crate::topology::project(&Analyzed {
-                flow: &flow,
-                executions: &executions,
-                merges: &merges,
-                execution_plan: &execution_plan,
-            });
+            let topology = crate::topology::project(
+                &Analyzed {
+                    flow: &flow,
+                    executions: &executions,
+                    merges: &merges,
+                    execution_plan: &execution_plan,
+                },
+                false,
+            );
             let built = crate::construct::construct(&flow, &merges, &topology);
             assert!(built.is_ok(), "the branching flow has an arrangement");
             if run > 0 {

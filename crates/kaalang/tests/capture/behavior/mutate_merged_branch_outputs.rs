@@ -23,6 +23,8 @@ fn mutate_merged_branch_outputs(condition: bool, mode: bool) -> usize {
         *selected = ();
         1
     };
+
+    |end| return end;
 }
 
 #[test]

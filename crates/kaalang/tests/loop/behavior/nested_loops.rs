@@ -5,15 +5,17 @@ fn nested_loops(limit: usize) -> usize {
     #[action("Initialize the outer counter.")]
     let mut outer = || 0;
 
-    loop {
+    #[cycle("Advance the outer counter to the limit.")]
+    let result = |mut outer, limit| {
         #[action("Initialize the iteration counter.")]
         let mut inner = || 0;
 
-        |&inner, &outer| loop {
+        #[cycle("Advance the inner counter to the outer counter.")]
+        |mut inner, &outer| {
             #[question("Is the iteration counter below the outer counter?")]
             #[yes("YES")]
             #[no("NO")]
-            let (iterate_1, leave_1) = |&inner, &outer| *inner < *outer;
+            let (iterate_1, leave_1) = |&inner, outer| *inner < *outer;
 
             |leave_1| break;
 
@@ -24,12 +26,13 @@ fn nested_loops(limit: usize) -> usize {
         #[question("Has the outer counter reached the limit?")]
         let (done, again) = |&outer, &limit| *outer == *limit;
 
-        #[action("Return the counter.")]
-        let end = |done, &outer| *outer;
+        |done, outer| break outer;
 
         #[action("Increment the outer counter.")]
         |again, &mut outer| *outer += 1;
-    }
+    };
+
+    |result| return result;
 }
 
 #[test]

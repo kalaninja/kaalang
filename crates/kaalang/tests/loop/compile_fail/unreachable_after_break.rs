@@ -1,14 +1,16 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(flag: bool) -> usize {
-    loop {
+fn invalid() {
+    #[cycle("Break before later work.")]
+    || {
         break;
+
         #[action("Too late.")]
         || {};
-    }
-    #[action("Finish.")]
-    let end = || 0;
+    };
+
+    return;
 }
 
 fn main() {}

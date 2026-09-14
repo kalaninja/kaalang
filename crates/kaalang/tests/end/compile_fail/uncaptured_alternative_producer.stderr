@@ -1,5 +1,5 @@
 error: every kaalang action output must have a consumer
  --> tests/end/compile_fail/uncaptured_alternative_producer.rs:9:17
   |
-9 |     let (value, stray, settled) = |yes| { (1, (), ()) };
+9 |     let (value, stray, settled) = |yes| (1, (), ());
   |                 ^^^^^

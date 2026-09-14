@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="828" viewBox="0 0 1064 828" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="820" viewBox="0 0 760 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for merged_loop</title>
-  <desc id="kaalang-description">Nodes: Start: merged_loop with parameters first: bool; second: bool handing over first, second; Question: Enter immediately? capturing first handing over enter / check; Question: Enter after checking? capturing check, second handing over enter / skip; Action: Skip the loop. capturing skip handing over end; Action: Finish inside the loop. capturing nothing handing over end; End: usize capturing end. Connections: Start: merged_loop to Question: Enter immediately?; Question: Enter immediately? branch 1 to the enter merge; Question: Enter immediately? branch 2 to Question: Enter after checking?; Question: Enter after checking? branch 1 to the enter merge; Question: Enter after checking? branch 2 to Action: Skip the loop.; Action: Skip the loop. to the end merge; Action: Finish inside the loop. to the end merge; the enter merge to Action: Finish inside the loop.; the end merge to End: usize.</desc>
+  <desc id="kaalang-description">Cycles: Produce the first result. with inputs first and outputs result; Produce the second result. with inputs second and outputs result. Nodes: Start: merged_loop with parameters select_first: bool handing over select_first; Question: Select the first cycle? capturing select_first handing over first / second; Action: Build the first value. capturing nothing handing over value; Action: Build the second value. capturing nothing handing over value; End: usize capturing result. Connections: Start: merged_loop to Question: Select the first cycle?; Question: Select the first cycle? branch 1 to the cycle entry; Question: Select the first cycle? branch 2 to the cycle entry; Action: Build the first value. to a cycle break; Action: Build the second value. to a cycle break; the result merge to End: usize; the cycle entry to Action: Build the first value.; the cycle result to the result merge; the cycle entry to Action: Build the second value.; the cycle result to the result merge; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,66 +11,81 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Produce the first result.</title>
+    <rect class="cycle-boundary" x="32" y="271" width="336" height="350" rx="12"/>
+    <text class="cycle-caption" x="356" y="285" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Produce the first </tspan><tspan x="356" dy="14">result.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Produce the second result.</title>
+    <rect class="cycle-boundary" x="392" y="271" width="336" height="350" rx="12"/>
+    <text class="cycle-caption" x="716" y="285" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Produce the second </tspan><tspan x="716" dy="14">result.</tspan></text>
+    </g>
+  </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 94 L 172 170
-      M 172 242 L 172 458
-      M 312 206 L 532 206 L 532 314
-      M 532 386 L 532 458 L 172 458
-      M 672 350 L 892 350 L 892 530
-      M 892 594 L 892 666 L 172 666
-      M 172 594 L 172 666
-      M 172 458 L 172 530
-      M 172 666 L 172 738
+      M 200 90 L 200 162
+      M 200 234 L 200 306
+      M 340 198 L 560 198 L 560 306
+      M 200 442 L 200 514
+      M 560 442 L 560 514
+      M 200 658 L 200 730
+      M 200 306 L 200 378
+      M 200 586 L 200 658
+      M 560 306 L 560 378
+      M 560 586 L 560 658 L 200 658
+      M 200 514 L 200 586
+      M 560 514 L 560 586
     "/>
-    <text class="connection-label" x="185" y="476" xml:space="preserve"><tspan x="185" dy="0">enter</tspan></text>
-    <text class="connection-label" x="770" y="339" xml:space="preserve"><tspan x="770" dy="0">skip</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">first, second</tspan></text>
-    <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">check</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">check, second</tspan></text>
-    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="121" xml:space="preserve"><tspan x="213" dy="0">select_first</tspan></text>
+    <text class="connection-label" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
+    <text class="connection-label" x="353" y="216" xml:space="preserve"><tspan x="353" dy="0">second</tspan></text>
+    <text class="connection-label" x="213" y="460" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="573" y="460" xml:space="preserve"><tspan x="573" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="367" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="573" y="367" xml:space="preserve"><tspan x="573" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="719" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 65 L 408 65"/>
-    <g class="parameter-panel" transform="translate(528 65)">
-      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: bool</tspan><tspan x="-104" dy="18">second: bool</tspan></text>
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">select_first: bool</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 65)">
+    <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">merged_loop</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 206)">
-      <title xml:space="preserve">Enter immediately?</title>
+    <g class="node question" transform="translate(200 198)">
+      <title xml:space="preserve">Select the first cycle?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enter immediately?</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Select the first cycle?</tspan></text>
     </g>
-    <g class="node question" transform="translate(532 350)">
-      <title xml:space="preserve">Enter after checking?</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enter after checking?</tspan></text>
-    </g>
-    <g class="node action" transform="translate(892 562)">
-      <title xml:space="preserve">Skip the loop.</title>
+    <g class="node action" transform="translate(200 410)">
+      <title xml:space="preserve">Build the first value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Skip the loop.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 562)">
-      <title xml:space="preserve">Finish inside the loop.</title>
+    <g class="node action" transform="translate(560 410)">
+      <title xml:space="preserve">Build the second value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish inside the loop.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 767)">
+    <g class="node end" transform="translate(200 759)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

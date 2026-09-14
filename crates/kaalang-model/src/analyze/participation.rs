@@ -106,9 +106,10 @@ mod tests {
                 vec![],     // the outer question
                 vec![0],    // prepare the nested values
                 vec![0],    // the nested question
-                vec![0, 2], // the early end
-                vec![0, 2], // the late end with the extra value
-                vec![0],    // the direct end
+                vec![0, 2], // the early result
+                vec![0, 2], // the late result with the extra value
+                vec![0],    // the direct result
+                vec![],     // the return
             ]
         );
     }
@@ -127,12 +128,13 @@ mod tests {
                 vec![],  // left enabled?
                 vec![3], // work with the right value
                 vec![3], // skip the work
+                vec![],  // return the merged result
             ]
         );
         let source = include_str!("../../../kaalang/tests/wire/behavior/captured_in_one_branch.rs");
         assert_eq!(
             fixture(source, "captured_in_one_branch"),
-            [vec![], vec![0], vec![0]]
+            [vec![], vec![0], vec![0], vec![]]
         );
     }
 }

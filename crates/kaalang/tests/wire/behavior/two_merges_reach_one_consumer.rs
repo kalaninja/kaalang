@@ -25,6 +25,8 @@ fn two_merges_reach_one_consumer(scale: bool, offset: bool) -> u32 {
 
     #[action("Combine both merged values.")]
     let end = |factor, base| factor + base;
+
+    |end| return end;
 }
 
 #[test]

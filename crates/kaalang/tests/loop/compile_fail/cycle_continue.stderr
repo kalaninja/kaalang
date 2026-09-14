@@ -1,0 +1,5 @@
+error: kaalang cycles repeat implicitly and do not support authored `continue`
+ --> tests/loop/compile_fail/cycle_continue.rs:7:9
+  |
+7 |         continue;
+  |         ^^^^^^^^

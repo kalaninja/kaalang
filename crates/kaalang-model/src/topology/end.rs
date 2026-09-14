@@ -2,13 +2,24 @@
 
 use std::collections::BTreeSet;
 
-use super::{Connection, ExitId, Node, NodeKind, Source, Topology, Vertex, block_node};
+use super::{
+    Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology, Vertex, block_node,
+};
+use crate::model::{BlockKind, Flow};
 
 /// End has no exits and no description of its own: its caption is the flow's
 /// return type, which a presentation derives from the authored source
 /// (RFC 0002 §4.6).
 pub(super) fn project(index: usize, nodes: &mut Vec<Node>) {
     nodes.push(block_node(index, NodeKind::End));
+}
+
+/// The visual destination of the structural return. The return is an execution
+/// transfer rather than a vertex, so its dependencies meet at end itself.
+pub(super) fn destination(flow: &Flow) -> Destination {
+    let index = flow.blocks.len() - 1;
+    debug_assert_eq!(flow.blocks[index].kind, BlockKind::End);
+    Destination::Node(NodeId::Block(index))
 }
 
 /// End is the final vertex of a conforming diagram, including after every

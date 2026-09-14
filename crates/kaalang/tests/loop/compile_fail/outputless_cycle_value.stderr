@@ -1,0 +1,7 @@
+error[E0308]: mismatched types
+ --> tests/loop/compile_fail/outputless_cycle_value.rs:6:11
+  |
+5 |     #[cycle("Complete with a value but no output wires.")]
+  |     - this expression has type `usize`
+6 |     |value| {
+  |           ^ expected `usize`, found `()`

@@ -22,6 +22,8 @@ fn borrow_within_branch(condition: bool) -> usize {
 
     #[action("Finish no.")]
     let end = |no| 0;
+
+    |end| return end;
 }
 
 #[test]

@@ -6,7 +6,8 @@ use kaalang::kaalang;
 /// that vertex: only a later sibling is (RFC 0002 §8).
 #[kaalang]
 fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
-    loop {
+    #[cycle("Choose a repeating, diverging, or leaving route.")]
+    let result = |mut mode, stay| {
         #[choice("Which route?")]
         #[case("Advance and repeat.")]
         #[case("Spin forever.")]
@@ -22,7 +23,8 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
         #[action("Advance.")]
         |advance| {};
 
-        |spin| loop {
+        #[cycle("Spin forever.")]
+        |spin| {
             #[action("Spin.")]
             || {};
         };
@@ -33,16 +35,15 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
         #[action("Advance after the decision.")]
         |again| {};
 
-        |leave| break;
-        |leave_now| break;
-    }
+        |leave, mode| break mode;
+        |leave_now, mode| break mode;
+    };
 
-    #[action("Return the mode.")]
-    let end = |mode| mode;
+    |result| return result;
 }
 
 #[test]
-fn the_leaving_routes_return_the_mode() {
+fn the_completing_routes_produce_the_mode() {
     assert_eq!(diverging_middle_branch(3, true), 3);
     assert_eq!(diverging_middle_branch(2, false), 2);
 }

@@ -1,4 +1,4 @@
-//! Break statements use structural junctions, not computational nodes.
+//! Data-capturing break statements use structural junctions, not nodes.
 
 pub(super) fn project(count: &mut usize) -> usize {
     let index = *count;

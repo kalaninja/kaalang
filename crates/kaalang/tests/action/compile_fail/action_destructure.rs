@@ -7,6 +7,8 @@ fn invalid(input: u32) -> u32 {
 
     #[action("Add both outputs.")]
     let end = |left, right| { left + right };
+
+    |end| return end;
 }
 
 fn main() {}

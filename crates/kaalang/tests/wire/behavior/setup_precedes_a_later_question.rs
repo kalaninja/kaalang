@@ -23,6 +23,8 @@ fn setup_precedes_a_later_question(condition: bool, order: &Cell<u8>) -> u8 {
 
     #[action("Use the setup on the long branch.")]
     let end = |long, &setup| setup + 2;
+
+    |end| return end;
 }
 
 #[test]

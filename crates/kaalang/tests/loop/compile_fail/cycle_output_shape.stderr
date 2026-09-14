@@ -1,0 +1,10 @@
+error[E0308]: mismatched types
+ --> tests/loop/compile_fail/cycle_output_shape.rs:6:9
+  |
+5 |     #[cycle("Destructure two outputs from one value.")]
+  |     - this expression has type `usize`
+6 |     let (left, right) = |value| {
+  |         ^^^^^^^^^^^^^ expected `usize`, found `(_, _)`
+  |
+  = note: expected type `usize`
+            found tuple `(_, _)`

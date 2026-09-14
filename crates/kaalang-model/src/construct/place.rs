@@ -135,11 +135,11 @@ pub(super) fn rows(
     Ok(rows)
 }
 
-/// Gives every iteration tail a rank of its own. A return leaves its tail
+/// Gives every iteration tail a rank of its own. A back edge leaves its tail
 /// horizontally, across every column between the tail and its contour, so
-/// anything else on that rank stands in the way. Loop entries keep their ranks,
-/// because RFC 0002 §7 lets a loop entry start alongside the body beside it and
-/// a return arrives at an entry from the column immediately outside that body.
+/// anything else on that rank stands in the way. Cycle entries keep their ranks,
+/// because RFC 0002 §7 lets a cycle entry start alongside the body beside it and
+/// a back edge arrives at an entry from the column immediately outside that body.
 /// No connection joins two vertices of one rank, so splitting a rank keeps
 /// every order it had. Renumbering here also closes the ranks the longest path
 /// left unused, so nothing below has to compact them.
@@ -285,7 +285,7 @@ fn columns(
         let mut column = preferred(topology, &columns, footprints, node);
         let width = footprints.span(node) as i32;
         // A later-authored continuation may occupy free columns to the left
-        // of a loop body already placed on this row.
+        // of a cycle body already placed on this row.
         while (column..column + width).any(|slot| occupied[row].contains(&slot)) {
             column += 1;
         }
@@ -310,7 +310,9 @@ fn columns(
         // The common segment out of the junction descends into the leftmost
         // consumer. Only items on the same row claim this point: successive
         // merges may reuse the same column.
-        let preferred = if let Some(index) = topology
+        let preferred = if let Some(arrival) = super::serial_arrival(topology, vertex) {
+            arrives_from(topology, &columns, footprints, arrival)
+        } else if let Some(index) = topology
             .loops
             .iter()
             .position(|loop_| loop_.tail == junction)
@@ -318,7 +320,7 @@ fn columns(
             let arrivals = topology
                 .incoming(vertex)
                 .map(|connection| arrives_from(topology, &columns, footprints, connection));
-            // The return leaves the end of the rail nearest the contour it
+            // The back edge leaves the end of the rail nearest the contour it
             // takes, without turning back over its incoming branches.
             if sides.get(index).copied() == Some(super::Side::Right) {
                 arrivals.max()
@@ -425,7 +427,7 @@ fn footprints(topology: &Topology, flow: &Flow) -> Footprints {
     };
     // Deepest first, so a nested brancher's width is known before the brancher
     // whose branch contains it asks for it.
-    let mut ordered = super::regions::branchers(flow);
+    let mut ordered = super::regions::branchers(flow, topology);
     ordered.sort_by_key(|&block| reachable[&Vertex::Node(NodeId::Block(block))].len());
     for block in ordered {
         let branches = super::regions::branch_sets(topology, flow, &reachable, block);

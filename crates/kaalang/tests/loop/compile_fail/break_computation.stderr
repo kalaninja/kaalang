@@ -1,0 +1,5 @@
+error: a kaalang break value must be a captured input, a tuple of captured inputs, or `()`
+ --> tests/loop/compile_fail/break_computation.rs:7:15
+  |
+7 |         break 1;
+  |               ^

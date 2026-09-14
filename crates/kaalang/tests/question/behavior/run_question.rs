@@ -12,6 +12,8 @@ fn run_question(condition: bool) -> &'static str {
 
     #[action("Produce the yes result.")]
     let end = |yes| "yes";
+
+    |end| return end;
 }
 
 #[test]

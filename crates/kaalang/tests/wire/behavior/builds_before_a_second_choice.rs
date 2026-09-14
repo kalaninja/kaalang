@@ -41,6 +41,8 @@ fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
 
     #[action("Finish Z.")]
     let end = |z, value| value + 30;
+
+    |end| return end;
 }
 
 #[test]

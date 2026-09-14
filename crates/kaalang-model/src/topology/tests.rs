@@ -12,6 +12,18 @@ fn drawn(source: &str) -> Topology {
     model(source).topology
 }
 
+fn collapsed(source: &str) -> Topology {
+    let function = syn::parse_str(source).expect("the flow parses");
+    crate::build_with_options(
+        &function,
+        crate::BuildOptions {
+            collapse_loops: true,
+        },
+    )
+    .expect("the flow is valid")
+    .topology
+}
+
 /// One flow of an authored fixture file.
 fn fixture(source: &str, flow: &str) -> SemanticModel {
     crate::build(&crate::tests::fixture(source, flow)).expect("the fixture is valid")
@@ -45,13 +57,14 @@ fn merged(model: &SemanticModel, junction: usize) -> Vec<String> {
 }
 
 #[test]
-fn an_empty_unconditional_loop_uses_only_its_entry_and_tail() {
+fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
     let topology = drawn(
-        r"
+        r#"
         fn example() -> usize {
-            loop {}
+            #[cycle("Repeat forever.")]
+            || {};
         }
-    ",
+    "#,
     );
     let loop_ = topology.loops[0];
     assert_eq!(topology.nodes.len(), 1);
@@ -80,37 +93,121 @@ fn an_empty_unconditional_loop_uses_only_its_entry_and_tail() {
 }
 
 #[test]
-fn a_terminal_loop_finishes_before_its_enclosing_end_merge() {
+fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
+    let topology = collapsed(
+        r#"
+        fn forever() -> ! {
+            #[cycle("Never completes.")]
+            let _result = || {};
+        }
+        "#,
+    );
+    let cycle = NodeId::Block(0);
+    assert_eq!(topology.node(cycle).kind, NodeKind::Loop);
+    assert!(!topology.exits.iter().any(|exit| exit.id.node == cycle));
+    assert!(topology.outgoing(Vertex::Node(cycle)).next().is_none());
+}
+
+#[test]
+fn a_collapsed_cycle_omits_its_internal_choice_connections() {
+    let function = crate::tests::fixture(
+        include_str!("../../../kaalang/tests/loop/behavior/diverging_middle_branch.rs"),
+        "diverging_middle_branch",
+    );
+    let topology = crate::build_with_options(
+        &function,
+        crate::BuildOptions {
+            collapse_loops: true,
+        },
+    )
+    .expect("the collapsed cycle hides its internal choice")
+    .topology;
+
+    assert!(
+        topology
+            .nodes
+            .iter()
+            .all(|node| !matches!(node.kind, NodeKind::Select | NodeKind::Case))
+    );
+}
+
+#[test]
+fn capture_free_transfers_redirect_without_structural_junctions() {
+    let topology = drawn(
+        r#"
+        fn example() {
+            #[cycle("Complete immediately.")]
+            let () = || {
+                break;
+            };
+            return;
+        }
+        "#,
+    );
+    let boundary = topology.loop_boundaries[0];
+    let result = boundary.result.expect("the cycle completes");
+    let end = topology
+        .nodes
+        .iter()
+        .find(|node| node.kind == NodeKind::End)
+        .expect("the flow returns")
+        .id;
+
+    assert_eq!(topology.junctions.len(), 2);
+    assert!(topology.junctions.iter().all(|junction| !junction.is_break));
+    assert!(topology.connections.contains(&Connection {
+        source: Source::Junction(boundary.entry),
+        destination: Destination::Junction(result),
+    }));
+    assert!(topology.connections.contains(&Connection {
+        source: Source::Junction(result),
+        destination: Destination::Node(end),
+    }));
+}
+
+#[test]
+fn nested_completing_cycles_reach_the_root_return() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
-            |&flag| loop {
+            #[cycle("Choose the result.")]
+            let result = |flag| {
                 #[question("Flag?")]
                 let (iterate_1, leave_1) = |flag| flag;
-                |leave_1| break;
-                    |iterate_1| loop {
-                        #[action("Return one.")]
-                        let end = || 1;
-                    };
+                #[action("Return two.")]
+                let two = |leave_1| 2;
+                |two| break two;
+                #[cycle("Produce one.")]
+                let one = |iterate_1| {
+                    #[action("Return one.")]
+                    let one = || 1;
+                    |one| break one;
+                };
+                |one| break one;
             };
-            #[action("Return two.")]
-            let end = || 2;
+            |result| return result;
         }
         "#,
     );
     assert!(topology.loops.is_empty());
-    assert_eq!(topology.junctions.len(), 2);
-    assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
-    for block in [4, 5] {
-        assert!(topology.connections.contains(&Connection {
-            source: Source::Exit(ExitId::of(NodeId::Block(block))),
-            destination: Destination::Junction(0),
-        }));
+    let end = topology
+        .nodes
+        .iter()
+        .find(|node| node.kind == NodeKind::End)
+        .expect("the returning flow has an end boundary")
+        .id;
+    for break_ in topology
+        .junctions
+        .iter()
+        .enumerate()
+        .filter_map(|(index, junction)| junction.is_break.then_some(index))
+    {
+        assert!(reaches(
+            &topology,
+            Vertex::Junction(break_),
+            Vertex::Node(end)
+        ));
     }
-    assert!(topology.connections.contains(&Connection {
-        source: Source::Junction(0),
-        destination: Destination::Node(NodeId::Block(6)),
-    }));
 }
 
 #[test]
@@ -118,13 +215,15 @@ fn an_inner_break_reaches_the_outer_iteration_tail() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
-            loop {
-                |&flag| loop {
+            #[cycle("Repeat the outer cycle.")]
+            |flag| {
+                #[cycle("Leave or repeat the inner cycle.")]
+                |flag| {
                     #[question("Flag?")]
-                    let (_iterate_2, leave_2) = |&flag| *flag;
+                    let (_iterate_2, leave_2) = |flag| flag;
                     |leave_2| break;
                 };
-            }
+            };
         }
         "#,
     );
@@ -138,13 +237,15 @@ fn an_inner_break_reaches_the_outer_iteration_tail() {
         }),
         destination: Destination::Junction(inner.tail),
     }));
-    assert!(topology.connections.contains(&Connection {
-        source: Source::Exit(ExitId {
-            node: NodeId::Block(inner.header + 1),
-            branch: Some(1),
-        }),
-        destination: Destination::Junction(outer.tail),
-    }));
+    let leave = ExitId {
+        node: NodeId::Block(inner.header + 1),
+        branch: Some(1),
+    };
+    assert!(topology.leaving(leave).any(|connection| reaches(
+        &topology,
+        connection.destination,
+        Vertex::Junction(outer.tail)
+    )));
 }
 
 #[test]
@@ -152,8 +253,10 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
     let model = model(
         r#"
         fn example(first: bool, second: bool) {
-            loop {
-                loop {
+            #[cycle("Repeat the outer cycle.")]
+            |first, second| {
+                #[cycle("Leave or repeat the inner cycle.")]
+                |first, second| {
                     #[question("Leave immediately?")]
                     let (leave, check) = |first| first;
 
@@ -161,8 +264,8 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
                     let (leave, _again) = |check, second| second;
 
                     |leave| break;
-                }
-            }
+                };
+            };
         }
         "#,
     );
@@ -170,16 +273,22 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
     let merge = (0..topology.junctions.len())
         .find(|&junction| merged(&model, junction) == ["leave"])
         .expect("the question outputs merge before the break");
-    assert_eq!(
-        topology
-            .outgoing(Vertex::Junction(merge))
-            .copied()
-            .collect::<Vec<_>>(),
-        [Connection {
-            source: Source::Junction(merge),
-            destination: Destination::Junction(topology.loops[0].tail),
-        }]
-    );
+    let outgoing = topology
+        .outgoing(Vertex::Junction(merge))
+        .copied()
+        .collect::<Vec<_>>();
+    let [connection] = outgoing.as_slice() else {
+        panic!("the merged wire has one shared continuation")
+    };
+    let Vertex::Junction(break_) = connection.destination else {
+        panic!("the merged wire reaches the inner break")
+    };
+    assert!(topology.junctions[break_].is_break);
+    assert!(reaches(
+        topology,
+        Vertex::Junction(break_),
+        Vertex::Junction(topology.loops[0].tail)
+    ));
 }
 
 #[test]
@@ -192,7 +301,8 @@ fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
             #[action("Prepare the other value.")]
             let value = |needs_work| { () };
             #[action("Use the merged value.")]
-            let end = |value| { 1 };
+            let result = |value| { 1 };
+            |result| return result;
         }
     "#,
     );
@@ -232,9 +342,10 @@ fn every_node_and_exit_has_one_identity() {
             #[action("Split the near value.")]
             let (width, depth, _unused) = |near| { (near, near, ()) };
             #[action("Use both dimensions.")]
-            let end = |&width, depth| { *width + depth };
+            let result = |&width, depth| { *width + depth };
             #[action("Use the far value.")]
-            let end = |far| { far };
+            let result = |far| { far };
+            |result| return result;
         }
     "#,
     );
@@ -290,7 +401,7 @@ fn every_node_and_exit_has_one_identity() {
         !topology
             .exits
             .iter()
-            .any(|exit| exit.id.node == NodeId::Block(4))
+            .any(|exit| exit.id.node == NodeId::Block(5))
     );
 }
 
@@ -340,7 +451,8 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
             #[action("Double the merged value.")]
             let doubled = |&value| { *value * 2 };
             #[action("Add both.")]
-            let end = |value, doubled| { value + doubled };
+            let result = |value, doubled| { value + doubled };
+            |result| return result;
         }
     "#,
     );
@@ -350,10 +462,11 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     )
     .topology;
 
-    // The consumers of the merged wire; the last block of each flow is end.
+    // The consumers of the merged wire, including the end reached through a
+    // structural return in the second flow.
     for (topology, consumers) in [
         (&two_consumers, &[NodeId::Block(3), NodeId::Block(4)][..]),
-        (&only_end, &[NodeId::Block(3)][..]),
+        (&only_end, &[NodeId::Block(4)][..]),
     ] {
         for exit in &topology.exits {
             assert!(
@@ -362,7 +475,14 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
                 exit.id
             );
         }
-        assert_eq!(topology.junctions.len(), 1);
+        assert_eq!(
+            topology
+                .junctions
+                .iter()
+                .filter(|junction| !junction.merges.is_empty())
+                .count(),
+            1
+        );
         assert_eq!(topology.incoming(Vertex::Junction(0)).count(), 2);
         // One common segment leaves the junction however many blocks capture
         // the wire; later consumers are reached through the first.
@@ -386,7 +506,15 @@ fn a_branch_local_block_reaches_the_merge_it_precedes() {
     );
     // `selected` and `noted` arrive from the same two exits, so they share one
     // junction.
-    assert_eq!(model.topology.junctions.len(), 1);
+    assert_eq!(
+        model
+            .topology
+            .junctions
+            .iter()
+            .filter(|junction| !junction.merges.is_empty())
+            .count(),
+        1
+    );
     assert_eq!(merged(&model, 0), ["selected", "noted"]);
 
     for source in [NodeId::Block(1), NodeId::Block(2), NodeId::Block(3)] {

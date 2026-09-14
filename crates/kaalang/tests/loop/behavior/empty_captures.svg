@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="388" viewBox="0 0 344 388" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="676" viewBox="0 0 344 676" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for empty_captures</title>
-  <desc id="kaalang-description">Nodes: Start: const empty_captures; Action: Continue after both loops. capturing nothing handing over end; End: usize capturing end. Connections: Start: const empty_captures to Action: Continue after both loops.; Action: Continue after both loops. to End: usize.</desc>
+  <desc id="kaalang-description">Cycles: Leave through an explicit empty capture list. with inputs () and outputs (); Leave through a bare break. with inputs () and outputs (). Nodes: Start: const empty_captures; Action: Continue after both loops. capturing nothing handing over result; End: usize capturing result. Connections: Start: const empty_captures to the cycle entry; Action: Continue after both loops. to End: usize; the cycle entry to the cycle result; the cycle result to the cycle entry; the cycle entry to the cycle result; the cycle result to Action: Continue after both loops..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,33 +11,52 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Leave through an explicit empty capture list.</title>
+    <rect class="cycle-boundary" x="144" y="127" width="56" height="142" rx="12"/>
+    </g>
+    <g>
+      <title xml:space="preserve">Leave through a bare break.</title>
+    <rect class="cycle-boundary" x="144" y="271" width="56" height="142" rx="12"/>
+    </g>
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 90 L 172 162
-      M 172 226 L 172 298
+      M 172 514 L 172 586
+      M 172 162 L 172 234
+      M 172 234 L 172 306
+      M 172 306 L 172 378
+      M 172 378 L 172 450
     "/>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="545" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="439" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const empty_captures</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 194)">
+    <g class="node action" transform="translate(172 482)">
       <title xml:space="preserve">Continue after both loops.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after both loops.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 327)">
+    <g class="node end" transform="translate(172 615)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

@@ -55,6 +55,8 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
 
     #[action("Use the result.")]
     let end = |selected| selected;
+
+    |end| return end;
 }
 
 #[test]

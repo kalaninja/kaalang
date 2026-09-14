@@ -2,15 +2,18 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(flag: bool) {
-    loop {
+    #[cycle("Create an unused local wire.")]
+    |flag| {
         #[question("Repeat?")]
         let (again, done) = |flag| flag;
+
         |done| break;
-        #[action("Create an unused local wire.")]
+
+        #[action("Create the unused local wire.")]
         let local = |again| 1;
-    }
-    #[action("Finish.")]
-    let end = || {};
+    };
+
+    return;
 }
 
 fn main() {}

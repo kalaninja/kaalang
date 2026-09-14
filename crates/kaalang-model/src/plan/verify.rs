@@ -40,7 +40,9 @@ pub(super) fn plan(
                 repeats: BTreeSet::new(),
             };
             (match (replay.walk(plan), execution.outcome) {
-                (Some(Exit::End), ExecutionOutcome::End) => true,
+                (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
+                    found == block_index
+                }
                 (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { loop_index }) => {
                     found == loop_index
                 }
@@ -72,7 +74,7 @@ pub(crate) fn emitted(plan: &ExecutionPlan) -> Vec<usize> {
 }
 
 pub(super) enum Exit {
-    End,
+    Return(usize),
     Yield(JoinTarget),
     Repeat(usize),
     Break(usize),
@@ -126,14 +128,19 @@ impl Replay<'_> {
         }
         self.last = Some(block);
         self.capture(block)?;
-        let selected = self.execution.selected(block);
-        for (output, name) in self.flow.blocks[block].outputs.iter().enumerate() {
-            if selected.is_none_or(|branch| branch == output) {
-                self.available
-                    .insert(name.clone(), ProducerId::BlockOutput { block, output });
-            }
+        if kind != BlockKind::Loop {
+            self.produce(block);
         }
         Some(())
+    }
+
+    pub(super) fn produce(&mut self, block: usize) {
+        for (output, name) in self.flow.blocks[block].outputs.iter().enumerate() {
+            let producer = ProducerId::BlockOutput { block, output };
+            if self.flow.produces(self.execution, producer) {
+                self.available.insert(name.clone(), producer);
+            }
+        }
     }
 
     pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
@@ -144,6 +151,7 @@ impl Replay<'_> {
             ExecutionPlan::Break { index, target } => {
                 super::break_block::replay(self, *index, *target)
             }
+            ExecutionPlan::Return { index } => super::return_block::replay(self, *index),
             ExecutionPlan::Repeat { index } => (self.loop_indices.last() == Some(index)
                 && self.execution.repeats.contains(index)
                 && self.repeats.insert(*index))
@@ -155,10 +163,10 @@ impl Replay<'_> {
             ExecutionPlan::Question {
                 index,
                 branches,
-                join,
+                joins,
             } => {
                 self.enter(*index, BlockKind::Question)?;
-                self.branch(*index, branches, join.as_slice())
+                self.branch(*index, branches, joins)
             }
             ExecutionPlan::Choice {
                 index,
@@ -169,14 +177,6 @@ impl Replay<'_> {
                 self.branch(*index, branches, joins)
             }
             ExecutionPlan::End { body, .. } => self.walk(body),
-            ExecutionPlan::EndArrival { wire } => {
-                let end = self.flow.blocks.len() - 1;
-                if self.flow.blocks[end].inputs[0].ident != *wire {
-                    return None;
-                }
-                self.capture(end)?;
-                Some(Exit::End)
-            }
             ExecutionPlan::Yield { wires, join } => wires
                 .iter()
                 .all(|wire| self.available.contains_key(wire))
@@ -217,7 +217,6 @@ impl Replay<'_> {
 
 #[cfg(test)]
 mod tests {
-    use proc_macro2::Span;
     use syn::parse_quote;
 
     use super::*;
@@ -226,10 +225,14 @@ mod tests {
     fn rejects_a_break_target_that_is_not_active() {
         let mut model = crate::build(&parse_quote! {
             fn sequential() {
-                loop { break; }
-                loop { break; }
+                #[cycle("Leave the first cycle.")]
+                || { break; };
+                #[cycle("Leave the second cycle.")]
+                || { break; };
                 #[action("Finish.")]
                 let end = || {};
+
+                |end| return end;
             }
         })
         .expect("both loops exit");
@@ -255,18 +258,43 @@ mod tests {
     }
 
     #[test]
+    fn rejects_a_return_outcome_at_a_different_block() {
+        let mut model = crate::build(&parse_quote! {
+            fn returned() -> u8 {
+                #[action("Build the result.")]
+                let result = || 1;
+
+                |result| return result;
+            }
+        })
+        .expect("the flow returns its result");
+        assert_eq!(
+            model.executions[0].outcome,
+            ExecutionOutcome::Return { block_index: 1 }
+        );
+        model.executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        assert!(!plan(
+            &model.flow,
+            &model.execution_plan,
+            &model.executions,
+            &model.merges
+        ));
+    }
+
+    #[test]
     fn rejects_body_work_moved_after_a_break() {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
-                loop {
+                #[cycle("Count to three.")]
+                let final_count = |mut count| {
                     #[question("Finished?")]
                     let (done, again) = |count| count == 3;
-                    |done| break;
+                    |done, count| break count;
                     #[action("Advance.")]
                     |again, &mut count| *count += 1;
-                }
-                #[action("Finish.")]
-                let end = |count| count;
+                };
+
+                |final_count| return final_count;
             }
         })
         .expect("the body work belongs to the repeating branch");
@@ -310,13 +338,15 @@ mod tests {
     fn rejects_a_repeat_that_skips_an_enclosing_iteration_boundary() {
         let mut model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
-                loop {
-                    |&flag| loop {
+                #[cycle("Repeat the outer cycle.")]
+                |flag| {
+                    #[cycle("Repeat the inner cycle.")]
+                    |flag| {
                         #[question("Repeat?")]
-                        let (_iterate_1, leave_1) = |&flag| *flag;
+                        let (_iterate_1, leave_1) = |flag| flag;
                         |leave_1| break;
                     };
-                }
+                };
             }
         })
         .expect("a trailing inner loop can exit and repeat its parent");
@@ -353,14 +383,18 @@ mod tests {
     fn a_diverging_inner_loop_propagates_through_its_parent() {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
-                |&flag| loop {
+                #[cycle("Choose whether to finish.")]
+                |flag| {
                     #[question("Enter the loop?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     |leave_2| break;
-                        |iterate_2| loop {};
+                    #[cycle("Repeat forever.")]
+                    |iterate_2| {};
                 };
                 #[action("Finish.")]
                 let end = || 0;
+
+                |end| return end;
             }
         })
         .expect("the inner loop may diverge instead of reaching end");
@@ -371,7 +405,7 @@ mod tests {
                 .map(|execution| execution.outcome)
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
-                ExecutionOutcome::End,
+                ExecutionOutcome::Return { block_index: 5 },
                 ExecutionOutcome::Repeat { loop_index: 3 }
             ])
         );
@@ -393,6 +427,8 @@ mod tests {
                 let second = || {};
                 #[action("Finish")]
                 let end = |first, second| {};
+
+                |end| return end;
             }
         })
         .expect("the independent effects are valid");
@@ -404,9 +440,7 @@ mod tests {
         ));
         let incomplete = ExecutionPlan::Action {
             index: 0,
-            next: Box::new(ExecutionPlan::EndArrival {
-                wire: Ident::new("absent", Span::call_site()),
-            }),
+            next: Box::new(ExecutionPlan::Return { index: 3 }),
         };
         assert!(!plan(
             &model.flow,
@@ -426,18 +460,17 @@ mod tests {
                 let value = |yes| { 1 };
                 #[action("No value")]
                 let value = |no| { 2 };
-                #[action("Use the value")]
-                let end = |value| { value };
+                |value| return value;
             }
         })
         .expect("the alternative producers are valid");
         let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
             unreachable!()
         };
-        let ExecutionPlan::Question {
-            join: Some(join), ..
-        } = body.as_mut()
-        else {
+        let ExecutionPlan::Question { joins, .. } = body.as_mut() else {
+            unreachable!()
+        };
+        let [join] = joins.as_mut_slice() else {
             unreachable!()
         };
         join.wires.clear();
@@ -459,6 +492,8 @@ mod tests {
                 let second = || {};
                 #[action("Finish")]
                 let end = |first, second| {};
+
+                |end| return end;
             }
         })
         .expect("the effects are valid");
@@ -468,9 +503,7 @@ mod tests {
                 index: 0,
                 next: Box::new(ExecutionPlan::Action {
                     index: 2,
-                    next: Box::new(ExecutionPlan::EndArrival {
-                        wire: Ident::new("end", Span::call_site()),
-                    }),
+                    next: Box::new(ExecutionPlan::Return { index: 3 }),
                 }),
             }),
         };
@@ -498,8 +531,7 @@ mod tests {
                 let done = |no_work| {};
                 #[action("Use the merged value")]
                 let used = |value| { value };
-                #[action("Finish")]
-                let end = |used, done| { used };
+                |used, done| return used;
             }
         };
         let model = crate::build(&function).expect("branch-local work finishes above the capture");
@@ -546,10 +578,11 @@ mod tests {
                     let (setup, fallback) = |seed| { (seed, 0) };
                     #[question("Use the setup?")]
                     let (yes, no) = |flag| { flag };
-                    #[action("Use it.")]
-                    let end = |yes, setup| { setup };
-                    #[action("Skip it.")]
-                    let end = |no, fallback| { fallback };
+                    #[action("Use the setup.")]
+                    let result = |yes, setup| setup;
+                    #[action("Use the fallback.")]
+                    let result = |no, fallback| fallback;
+                    |result| return result;
                 }
             };
             function.block.stmts[1] = selection;
@@ -565,7 +598,8 @@ mod tests {
                             2
                         } else {
                             3
-                        }
+                        },
+                        4
                     ]
                 );
             }
@@ -601,6 +635,8 @@ mod tests {
                 let end = |yes, value| { value };
                 #[action("Report nothing.")]
                 let end = |no, value| { 0 };
+
+                |end| return end;
             }
         };
         let model = crate::build(&function).expect("the merge completes above the selection");
@@ -615,7 +651,7 @@ mod tests {
             .iter()
             .find(|group| group.branching_block == 0)
             .expect("the first question owns a group");
-        assert_eq!(group.continuation, [4, 5]);
+        assert_eq!(group.continuation, [4, 5, 6]);
         assert!(plan(
             &model.flow,
             &model.execution_plan,

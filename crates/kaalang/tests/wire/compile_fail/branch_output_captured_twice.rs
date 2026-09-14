@@ -16,6 +16,8 @@ fn invalid(condition: bool) -> u8 {
 
     #[action("Finish the no branch.")]
     let end = |no| { 0 };
+
+    |end| return end;
 }
 
 fn main() {}

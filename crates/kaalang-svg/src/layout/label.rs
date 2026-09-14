@@ -85,6 +85,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
             .expect("every projected connection is routed");
         let (at, stack, clear) = centre_of(placed);
         labels.extend(wire_label(
+            connection.destination,
             captions.capture_label(node_of(connection.destination)),
             at,
             stack,
@@ -117,6 +118,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         }
         let anchor = scene.top_anchor(node.id);
         labels.extend(wire_label(
+            Vertex::Node(node.id),
             captions.capture_label(node.id),
             Point {
                 x: anchor.x,
@@ -173,6 +175,7 @@ fn place_merge_label(
 
     let anchor = merge_anchor(scene, junction);
     labels.extend(wire_label(
+        Vertex::Junction(junction),
         wires,
         Point {
             x: anchor.x,
@@ -197,6 +200,7 @@ fn place_exit_labels(
             (anchor.y - BRANCH_RISE, Stack::Above)
         };
         labels.push(branch_label(
+            Vertex::Node(exit.node),
             description,
             Point { x: anchor.x, y },
             stack,
@@ -204,6 +208,7 @@ fn place_exit_labels(
         ));
     } else if !skip_handover {
         labels.extend(wire_label(
+            Vertex::Node(exit.node),
             scene.captions.handover(exit),
             Point {
                 x: anchor.x,
@@ -264,32 +269,41 @@ fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
 /// Wrapping an empty label would yield one blank line, so every caller needs
 /// the same guard.
 fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
-    let names = names
-        .iter()
-        .filter(|name| !matches!(name.as_str(), "end" | "mut end"))
-        .cloned()
-        .collect::<Vec<_>>();
     (!names.is_empty()).then(|| wrap_text(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
 }
 
 /// Wraps one label and stacks its lines against `at`. Its left edge, including
 /// the halo, stays clear of the adjacent vertical run or node boundary.
-fn wire_label(names: &[String], at: Point, stack: Stack, clear: i32) -> Option<Label> {
+fn wire_label(
+    owner: Vertex,
+    names: &[String],
+    at: Point,
+    stack: Stack,
+    clear: i32,
+) -> Option<Label> {
     let lines = wrap_wires(names)?;
-    Some(place_label(lines, LabelKind::Wire, at, stack, clear))
+    Some(place_label(owner, lines, LabelKind::Wire, at, stack, clear))
 }
 
-fn branch_label(description: &str, at: Point, stack: Stack, clear: i32) -> Label {
+fn branch_label(owner: Vertex, description: &str, at: Point, stack: Stack, clear: i32) -> Label {
     let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
-    place_label(lines, LabelKind::Branch, at, stack, clear)
+    place_label(owner, lines, LabelKind::Branch, at, stack, clear)
 }
 
-fn place_label(lines: Vec<String>, kind: LabelKind, at: Point, stack: Stack, clear: i32) -> Label {
+fn place_label(
+    owner: Vertex,
+    lines: Vec<String>,
+    kind: LabelKind,
+    at: Point,
+    stack: Stack,
+    clear: i32,
+) -> Label {
     let below_first = (lines.len() as i32 - 1) * kind.line_height();
     let x = (at.x - label_width(&lines, kind.font_size()) / 2)
         .max(clear + CONNECTION_LABEL_HALO + CLEARANCE);
 
     Label {
+        owner,
         kind,
         at: Point {
             x,
@@ -376,7 +390,7 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
 /// this holds the labels to theirs, on the same emitted geometry.
 ///
 /// A transformation is gated on `clearance` instead, which is the half no later
-/// step repairs. The other two are repaired: a return crossing a label is what
+/// step repairs. The other two are repaired: a back edge crossing a label is what
 /// `clear_labels` steps the rail out of, and a label left of the origin is what
 /// `indent` slides the drawing over for. Rejecting a compaction for either
 /// would refuse geometry that is about to be put right.
@@ -392,7 +406,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         .or_else(|| {
             scene.labels.iter().find_map(|label| {
                 let rect = label_rect(label);
-                // A return climbs beside a body it was placed clear of, not clear
+                // A back edge climbs beside a body it was placed clear of, not clear
                 // of the labels that body hangs. Nothing else compares the two:
                 // the climb is not a route with a label of its own, so the
                 // crossing check in `route` never brings them together.
@@ -404,7 +418,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                     .any(|segment| super::route::enters(segment[0], segment[1], rect))
                     .then(|| {
                         format!(
-                            "a loop return crosses the label `{}`",
+                            "an iteration back edge crosses the label `{}`",
                             label.lines.join(" ")
                         )
                     })
@@ -468,6 +482,7 @@ mod tests {
             reach: (0, 0),
             slack: 0,
             bodies: Vec::new(),
+            region_bodies: Vec::new(),
             width: 200,
             height: 200,
             topology: Topology::default(),
@@ -487,10 +502,12 @@ mod tests {
             parameters: None,
             connections: vec![],
             labels: vec![Label {
+                owner: Vertex::Node(NodeId::Block(0)),
                 kind: LabelKind::Wire,
                 lines: vec!["end".to_owned()],
                 at,
             }],
+            loop_regions: Vec::new(),
         }
     }
 

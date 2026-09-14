@@ -24,6 +24,8 @@ fn borrowed_input_through_nested_joins(outer: bool, inner: bool, text: String) -
 
     #[action("Measure the final view.")]
     let end = |view| view.len();
+
+    |end| return end;
 }
 
 #[test]

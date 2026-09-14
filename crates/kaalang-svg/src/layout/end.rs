@@ -1,9 +1,9 @@
-//! Keeps end below the rest of the diagram, including loop returns.
+//! Keeps end below the rest of the diagram, including iteration back edges.
 
 use std::collections::BTreeSet;
 
 use super::{Scene, vertical_gap};
-use kaalang_model::topology::{Destination, NodeKind, Source};
+use kaalang_model::topology::{Destination, NodeKind};
 
 pub(super) fn adjust(scene: &mut Scene) {
     if scene.topology.loops.is_empty() {
@@ -18,25 +18,7 @@ pub(super) fn adjust(scene: &mut Scene) {
     else {
         return;
     };
-    let incoming = scene
-        .topology
-        .incoming(Destination::Node(end))
-        .collect::<Vec<_>>();
-    let terminal = match incoming.as_slice() {
-        [edge] => match edge.source {
-            Source::Junction(junction)
-                if scene.topology.end_merge == Some(junction)
-                    && scene
-                        .topology
-                        .outgoing(Destination::Junction(junction))
-                        .all(|edge| edge.destination == Destination::Node(end)) =>
-            {
-                Destination::Junction(junction)
-            }
-            _ => Destination::Node(end),
-        },
-        _ => Destination::Node(end),
-    };
+    let terminal = Destination::Node(end);
     let old_y = scene
         .connections
         .iter()
@@ -53,7 +35,7 @@ pub(super) fn adjust(scene: &mut Scene) {
         .max()
         .unwrap_or(0)
         + gap;
-    let below_returns = scene
+    let below_back_edges = scene
         .connections
         .iter()
         .filter(|edge| scene.is_back_edge(edge))
@@ -67,23 +49,21 @@ pub(super) fn adjust(scene: &mut Scene) {
         .iter()
         .position(|node| node.id == end)
         .expect("end is placed");
-    for y in BTreeSet::from([below_nodes, below_nodes.max(below_returns)]) {
+    for y in BTreeSet::from([below_nodes, below_nodes.max(below_back_edges)]) {
         let delta = old_y - y;
         let mut saved = Vec::new();
         for (index, edge) in scene.connections.iter_mut().enumerate() {
-            let from_merge = matches!(terminal, Destination::Junction(junction)
-                if edge.source == Source::Junction(junction));
-            if from_merge || edge.destination == terminal {
+            if edge.destination == terminal {
                 saved.push((index, edge.points.clone()));
                 for (position, point) in edge.points.iter_mut().enumerate() {
-                    if from_merge || (position > 0 && point.y == old_y) {
+                    if position > 0 && point.y == old_y {
                         point.y -= delta;
                     }
                 }
             }
         }
         scene.nodes[end_index].y -= delta;
-        if clears_returns(scene, terminal, y, gap) && super::conforms(scene) {
+        if clears_back_edges(scene, terminal, y, gap) && super::conforms(scene) {
             return;
         }
         scene.nodes[end_index].y += delta;
@@ -93,9 +73,9 @@ pub(super) fn adjust(scene: &mut Scene) {
     }
 }
 
-/// Parallel terminal and return rails need the usual gap wherever their
+/// Parallel completion and back edge rails need the usual gap wherever their
 /// horizontal spans overlap, even when their centre lines do not intersect.
-fn clears_returns(scene: &Scene, terminal: Destination, y: i32, gap: i32) -> bool {
+fn clears_back_edges(scene: &Scene, terminal: Destination, y: i32, gap: i32) -> bool {
     scene
         .connections
         .iter()
@@ -129,12 +109,12 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         .nodes
         .iter()
         .any(|node| node.id != end.id && Scene::bounds(node).3 >= top);
-    // A return beside end may align with its top edge; the block itself still
+    // A back edge beside end may align with its top edge; the block itself still
     // sits below it. No connection may descend alongside the block's body.
     let misplaced_route = scene
         .connections
         .iter()
         .any(|edge| edge.points.iter().any(|point| point.y > top));
     (misplaced_node || misplaced_route)
-        .then(|| "end must be below every other node and loop return".to_owned())
+        .then(|| "end must be below every other node and iteration back edge".to_owned())
 }

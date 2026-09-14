@@ -2,18 +2,20 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(flag: bool) {
-    |&flag| loop {
+    #[cycle("Check the flag.")]
+    |flag| {
         #[question("Repeat?")]
-        let (_iterate_1, leave_1) = |flag| {
+        let (_again, leave) = |flag| {
             if flag {
                 break;
             }
             false
         };
-        |leave_1| break;
+
+        |leave| break;
     };
-    #[action("Finish.")]
-    let end = || {};
+
+    return;
 }
 
 fn main() {}

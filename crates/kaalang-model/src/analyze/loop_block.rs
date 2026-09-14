@@ -1,19 +1,49 @@
-//! Enters one unconditional iteration; reaching its end records a repeat.
+//! Enters one cycle iteration; reaching its end records a repeat.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
+use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use super::{State, Walk};
-use crate::model::{Execution, Flow};
+use super::{LoopState, State, Walk};
+use crate::model::{Execution, Flow, ProducerId};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
-    state.loop_inputs.insert(block, state.available.clone());
+    let bindings = walk.flow.blocks[block]
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(input, declaration)| {
+            (
+                declaration
+                    .binding
+                    .clone()
+                    .expect("a cycle capture declares a local binding"),
+                ProducerId::CycleInput { block, input },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let outside = LoopState {
+        available: std::mem::replace(&mut state.available, bindings.clone()),
+        produced: std::mem::replace(
+            &mut state.produced,
+            bindings.keys().cloned().collect::<BTreeSet<Ident>>(),
+        ),
+    };
+    state.loops.insert(block, outside);
     walk.visit(block + 1, state);
 }
 
-/// A loop's own return cannot lie between body routes that break to the same
-/// target. Nested loops validate their own returns; their normal exits converge
+/// Every completing cycle output needs a consumer in some execution.
+pub(super) fn uncaptured(output: &Ident) -> Error {
+    Error::new(
+        output.span(),
+        "every kaalang cycle output must have a consumer",
+    )
+}
+
+/// A cycle's own back edge cannot lie between body routes that break to the same
+/// target. Nested cycles validate their own back edges; their results converge
 /// before the containing iteration continues.
 pub(super) fn validate_routes(flow: &Flow, executions: &[Execution]) -> Result<()> {
     for (header, declaration) in flow.blocks.iter().enumerate() {
@@ -55,7 +85,7 @@ pub(super) fn validate_routes(flow: &Flow, executions: &[Execution]) -> Result<(
             {
                 return Err(Error::new(
                     declaration.span,
-                    "a repeating kaalang branch cannot lie between breaks to the same loop; reorder the branches",
+                    "a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches",
                 ));
             }
         }
@@ -63,10 +93,9 @@ pub(super) fn validate_routes(flow: &Flow, executions: &[Execution]) -> Result<(
     Ok(())
 }
 
-/// A selection stops governing its iteration's branches when that loop ends.
-/// Reaching a later block depends on leaving the loop normally, including when
-/// a nested selection could have returned `end`. This is control order, not
-/// a capture dependency or a wire merge.
+/// A selection stops governing its iteration's branches when that cycle completes.
+/// Reaching a later block depends on completing the cycle. This is control
+/// order, not a capture dependency or a wire merge.
 pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
     std::iter::once(selection)
         .chain(flow.enclosing(selection))
@@ -75,8 +104,6 @@ pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool 
 
 #[cfg(test)]
 mod tests {
-    use syn::{Block, ItemFn, Stmt, parse_quote};
-
     #[test]
     fn moving_the_repeating_case_to_either_edge_is_valid() {
         let source = include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat.rs");
@@ -85,10 +112,34 @@ mod tests {
             crate::build(&crate::tests::fixture(&source, "invalid"))
                 .expect("adjacent exits leave the return an outer contour");
         }
-        let source =
-            include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat_nested.rs")
-                .replace("(advance, last)", "(last, advance)");
-        crate::build(&crate::tests::fixture(&source, "invalid"))
+        let source = r#"
+            #[kaalang]
+            fn invalid(mode: u8) -> u8 {
+                #[cycle("Select an exit from a nested cycle.")]
+                let selected = |mut mode| {
+                    #[cycle("Advance at most once.")]
+                    let inner = |mut mode| {
+                        #[question("Exit immediately?")]
+                        let (first, check) = |mode| mode == 0;
+
+                        |first, mode| break mode;
+
+                        #[question("Advance once?")]
+                        let (last, advance) = |check, mode| mode == 1;
+
+                        #[action("Advance to the final case.")]
+                        |advance, &mut mode| *mode = 2;
+
+                        |last, mode| break mode;
+                    };
+
+                    |inner| break inner;
+                };
+
+                |selected| return selected;
+            }
+        "#;
+        crate::build(&crate::tests::fixture(source, "invalid"))
             .expect("nested questions can place their exits next to each other");
     }
 
@@ -96,8 +147,8 @@ mod tests {
     fn a_converged_selection_does_not_split_loop_exit_routes() {
         let source = include_str!("../../../kaalang/tests/loop/behavior/multiple_exits.rs")
             .replace(
-                "    loop {",
-                r#"    loop {
+                "    let selected = |mut mode| {",
+                r#"    let selected = |mut mode| {
         #[question("Prepare this iteration?")]
         let (left, right) = |mode| mode == 0;
 
@@ -138,89 +189,5 @@ mod tests {
             );
         crate::build(&crate::tests::fixture(&source, "conditional_entry"))
             .expect("routes skipping the loop do not decide its exit order");
-    }
-
-    #[test]
-    fn early_end_wires_do_not_make_later_selections_independent() {
-        let prefixes: [Stmt; 2] = [
-            parse_quote! {
-                |&stop| loop {
-                    #[question("Finish early?")]
-                    let (iterate_1, leave_1) = |stop| stop;
-                    |leave_1| break;
-                        #[action("Return early.")]
-                        let end = |iterate_1| 99;
-                };
-            },
-            parse_quote! {
-                |&stop| loop {
-                    #[question("Check for an early result?")]
-                    let (iterate_2, leave_2) = |stop| stop;
-                    |leave_2| break;
-                        // The repeating answer comes first, so the return
-                        // keeps an outer contour: a route that finishes the
-                        // flow from inside the body cannot sit between the
-                        // break and the repeat (RFC 0002 §8).
-                        #[question("Is the count nonzero?")]
-                        let (resume, finish) = |iterate_2, count| count != 0;
-                        #[action("Resume after the loop.")]
-                        |resume, &mut stop| *stop = false;
-                        #[action("Return early.")]
-                        let end = |finish| 99;
-                };
-            },
-        ];
-        let suffixes: [Block; 3] = [
-            parse_quote! {
-                {
-                    |&count| loop {
-                        #[question("Count up to three?")]
-                        let (iterate_3, leave_3) = |count| count < 3;
-                        |leave_3| break;
-                            #[action("Increment.")]
-                            |iterate_3, &mut count| *count += 1;
-                    };
-                    #[action("Finish.")]
-                    let end = |count| count;
-                }
-            },
-            parse_quote! {
-                {
-                    #[question("Is the count zero?")]
-                    let (zero, nonzero) = |count| count == 0;
-                    #[action("Report zero.")]
-                    let end = |zero| 0;
-                    #[action("Report the count.")]
-                    let end = |nonzero, count| count;
-                }
-            },
-            parse_quote! {
-                {
-                    #[choice("Which count?")]
-                    #[case("Zero.")]
-                    #[case("Nonzero.")]
-                    let (zero, nonzero) = |count| match count { 0 => (), _ => () };
-                    #[action("Report zero.")]
-                    let end = |zero| 0;
-                    #[action("Report the count.")]
-                    let end = |nonzero, count| count;
-                }
-            },
-        ];
-        for prefix in prefixes {
-            for suffix in &suffixes {
-                let mut function: ItemFn = parse_quote! {
-                    fn example(mut stop: bool, mut count: usize) -> usize {}
-                };
-                function.block.stmts.push(prefix.clone());
-                function.block.stmts.extend(suffix.stmts.iter().cloned());
-                let model =
-                    crate::build(&function).expect("normal loop exit admits a later selection");
-                assert!(
-                    model.convergence_groups.is_empty(),
-                    "loop exit order adds no capture-based convergence group"
-                );
-            }
-        }
     }
 }

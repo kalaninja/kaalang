@@ -1,0 +1,5 @@
+error: a block inside a kaalang cycle may capture only a cycle input or an earlier local output
+ --> tests/loop/compile_fail/cycle_result_inside_body.rs:8:10
+  |
+8 |         |result| {};
+  |          ^^^^^^

@@ -2,9 +2,10 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn native_loops(limit: usize) -> usize {
-    'counting: loop {
+    #[cycle("Run native Rust control flow once.")]
+    let result = |limit| {
         #[action("Count with local Rust control flow.")]
-        let end = |limit| {
+        let count = |limit| {
             let mut count = 0;
             'counting: while count < limit {
                 count += 1;
@@ -20,7 +21,11 @@ fn native_loops(limit: usize) -> usize {
             }
             count
         };
-    }
+
+        |count| break count;
+    };
+
+    |result| return result;
 }
 
 #[test]

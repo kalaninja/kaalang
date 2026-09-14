@@ -17,6 +17,8 @@ fn invalid(input: Option<u32>) -> u32 {
 
     #[action("Produce zero for no value.")]
     let end = |absent| { 0 };
+
+    |end| return end;
 }
 
 fn main() {}

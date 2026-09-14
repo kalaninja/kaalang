@@ -3,7 +3,7 @@
 //!
 //! RFC 0002 §8 leaves exact ranks and routing space to a presentation but fixes
 //! branch order, the column a shared continuation uses, crossing-free
-//! orthogonal routing, and the contour of a loop return. `build` asks for an
+//! orthogonal routing, and the contour of an iteration back edge. `build` asks for an
 //! arrangement after semantic validation and carries it with the model, so a
 //! flow whose topology has no conforming diagram is rejected there.
 //!
@@ -14,7 +14,7 @@
 //!
 //! - which iteration tails sink below every vertex precedence leaves free
 //!   (`2^loops` subsets),
-//! - which contour each loop return takes (`2^loops` assignments),
+//! - which contour each iteration back edge takes (`2^loops` assignments),
 //! - which corridor shape each connection uses (`3^connections` assignments).
 //!
 //! Nothing else is a choice: ranks, columns, rails, lanes, and
@@ -23,7 +23,7 @@
 //! more room, or a loop to move or flip, and only those assignments are tried
 //! next. No assignment is visited twice, so the walk ends inside a finite
 //! space; there is no attempt, time, or memory budget. Its first candidate is
-//! the one RFC 0002 §8 asks for: no tail sinks, every return takes the contour
+//! the one RFC 0002 §8 asks for: no tail sinks, every back edge takes the contour
 //! that section prefers, and every connection turns directly into its
 //! destination's column.
 //!
@@ -44,7 +44,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use syn::Error;
 
 use crate::model::{Flow, WireMerge};
-use crate::topology::{Destination, ExitId, Topology, Vertex};
+use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
 
 mod choice;
 pub(crate) mod compact;
@@ -57,11 +57,28 @@ mod route;
 mod sweep;
 mod verify;
 
+/// The sole arrival that keeps an ordinary vertex in its predecessor's
+/// column. A case may be reached by a distributor detour, and an iteration
+/// tail may finish at either end of its incoming rail.
+fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
+    if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
+        || topology
+            .loops
+            .iter()
+            .any(|loop_| vertex == Vertex::Junction(loop_.tail))
+    {
+        return None;
+    }
+    let mut incoming = topology.incoming(vertex);
+    let arrival = incoming.next()?;
+    incoming.next().is_none().then_some(arrival)
+}
+
 /// The vertices one loop's body draws: its own blocks and their cases, its
 /// entry and tail and those of the loops nested in it, and the junctions a
 /// merge or a break inside it draws.
 ///
-/// This is what a return climbs clear of (RFC 0002 §8), and both the
+/// This is what an iteration back edge climbs clear of (RFC 0002 §8), and both the
 /// construction and a presentation measure the same set. The blocks alone
 /// would miss the junctions, which draw no node and still occupy a column.
 pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
@@ -86,12 +103,12 @@ pub struct Arrangement {
     pub routes: Vec<Route>,
     /// Per rank gap, how many lanes its sideways runs occupy.
     pub gap_lanes: Vec<usize>,
-    /// Per loop, in `Topology::loops` order, the contour of its return.
+    /// Per cycle, in `Topology::loops` order, the contour of its iteration back edge.
     pub contours: Vec<Contour>,
-    /// Optional sideways runs of a return's climb, indexed by loop. Stored in
+    /// Optional sideways runs of a back edge's climb, indexed by cycle. Stored in
     /// downward order from entry to tail; a renderer reverses it. An absent
     /// route is the straight climb recorded by `Contour`.
-    pub return_routes: BTreeMap<usize, Route>,
+    pub back_routes: BTreeMap<usize, Route>,
 }
 
 impl Arrangement {
@@ -133,7 +150,7 @@ pub struct Run {
     pub lane: usize,
 }
 
-/// The side, column boundary and lane of a straight return's climb, or the
+/// The side, column boundary and lane of a straight back edge's climb, or the
 /// entry end of a climb with recorded runs. The boundary may stand beyond the
 /// body's outermost column. A presentation puts lane 0 outside that column's
 /// boxes and each later lane one step further out.
@@ -144,7 +161,7 @@ pub struct Contour {
     pub lane: usize,
 }
 
-/// The side of its body a loop return climbs.
+/// The side of its body an iteration back edge climbs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Side {
     Left,
@@ -196,7 +213,7 @@ fn normalize(topology: &Topology, shapes: &mut [Shape]) {
 pub(super) struct Obstruction {
     pub(super) span: proc_macro2::Span,
     pub(super) message: String,
-    /// The loop whose return could not be drawn, when one is to blame. The
+    /// The cycle whose back edge could not be drawn, when one is to blame. The
     /// search changes that loop's rank or contour next.
     pub(super) loop_index: Option<usize>,
     /// The connection in the way, when one is. The search gives that
@@ -313,7 +330,7 @@ fn preferred(
         .map(|loop_| Vertex::Junction(loop_.tail))
         .collect::<Vec<_>>();
     // RFC 0002 §8 prefers one contour per loop. The search starts there and
-    // only flips a return the preferred side cannot hold.
+    // only flips a back edge the preferred side cannot hold.
     let sides = topology
         .loops
         .iter()
@@ -327,7 +344,7 @@ fn preferred(
         .collect::<Vec<_>>();
 
     // The first state is the arrangement RFC 0002 §8 asks for: no tail sinks
-    // and every return on the side it prefers. Each failure names the loop to
+    // and every back edge on the side it prefers. Each failure names the cycle to
     // blame, and the walk moves that loop's contour or rank before anything
     // else. No state is visited twice, so it ends.
     let every_tail = tails.iter().copied().collect::<BTreeSet<_>>();
@@ -448,7 +465,7 @@ fn corridors(
                 return Ok(arrangement);
             }
             Err(reason) => {
-                // A return blocked by one connection may fit once that
+                // A back edge blocked by one connection may fit once that
                 // connection takes a longer corridor, so the same conflict
                 // that moves a contour also moves a shape.
                 if let Some(connection) = reason.connection {
@@ -499,7 +516,7 @@ fn assemble(topology: &Topology, placement: place::Placement, plan: &route::Plan
         routes,
         gap_lanes: plan.gap_lanes.clone(),
         contours: Vec::new(),
-        return_routes: BTreeMap::new(),
+        back_routes: BTreeMap::new(),
     }
 }
 

@@ -11,7 +11,7 @@ which programs are valid and what they mean. This RFC describes how lowering
 implements that contract; it does not add language rules.
 
 Before lowering, the source is parsed, producer occurrences are grouped by
-logical wire identity (including its lexical loop scope), and block-local and
+logical wire identity (including its lexical cycle scope), and block-local and
 branch-dependent invariants are validated. Lowering consumes the resulting
 validated model and its verified execution plan. The
 [visual language](0002-visual-language.md) draws the same source order.
@@ -23,9 +23,9 @@ generated bindings; their plain Rust spellings do not demonstrate macro hygiene.
 The examples omit the signature-preserving outer function that forwards its
 named parameters to the generated implementation. Unit control-wire bindings and
 generated lint attributes are omitted where the branch structure already shows
-their role. Tail result expressions in simplified examples stand for generated
-Rust `return` statements. Internal names and the generator's own data structures
-are implementation details.
+their role. Structural returns are shown as native Rust `return` statements.
+Internal names and the generator's own data structures are implementation
+details.
 
 ## 2. Bindings, scopes, and actions
 
@@ -83,8 +83,10 @@ fn measure(text: String) -> (String, usize, bool) {
     #[action("Measure the text.")]
     let (length, empty) = |&text| { (text.len(), text.is_empty()) };
 
-    #[action("Return the text and its measurements.")]
-    let end = |text, length, empty| { (text, length, empty) };
+    #[action("Package the text and its measurements.")]
+    let result = |text, length, empty| { (text, length, empty) };
+
+    |result| return result;
 }
 ```
 
@@ -96,13 +98,16 @@ fn measure(wire_text: String) -> (String, usize, bool) {
         let text = &wire_text;
         (text.len(), text.is_empty())
     };
-    let wire_end = {
+    let wire_result = {
         let text = wire_text;
         let length = wire_length;
         let empty = wire_empty;
         (text, length, empty)
     };
-    wire_end
+    {
+        let result = wire_result;
+        return result;
+    }
 }
 ```
 
@@ -152,7 +157,9 @@ fn choose(condition: bool) -> u32 {
     let selected = |no| { 2 };
 
     #[action("Add ten to the selected value.")]
-    let end = |selected| { selected + 10 };
+    let result = |selected| { selected + 10 };
+
+    |result| return result;
 }
 ```
 
@@ -170,24 +177,28 @@ fn choose(wire_condition: bool) -> u32 {
             break 'join 2;
         }
     };
-    let wire_end = {
+    let wire_result = {
         let selected = wire_selected;
         selected + 10
     };
-    wire_end
+    {
+        let result = wire_result;
+        return result;
+    }
 }
 ```
 
 Lowering follows the source order the plan verified, including all branch work a
 merge waits for. It does not reorder blocks or introduce concurrent execution.
 
-A partial merge's labeled block nests inside the labeled block of its wider
-merge. A branch can break to the inner label to run the partial merge's
-continuation, or directly to an enclosing label to skip continuations it does
-not enter. The partial continuation can then pass its outputs to the wider join.
-Each label identifies a join destination statically; no generated `Option` or
-`Result` carries a routing tag or stores a wire. Authored `Option` and `Result`
-values remain ordinary data.
+A partial merge's generated labeled block nests inside the generated labeled
+block of its wider merge. Lowering can break to the inner label to run the
+partial merge's continuation, or directly to an enclosing join label to skip
+continuations the branch does not enter. These are hygienic implementation
+labels, not authored cycle targets. The partial continuation can then pass its
+outputs to the wider join. No generated `Option` or `Result` carries a routing
+tag or stores a wire. Authored `Option` and `Result` values remain ordinary
+data.
 
 Joins transfer the values of same-named alternative outputs into their shared
 lexical scope, including names with no later captures. A leading underscore
@@ -232,8 +243,9 @@ case continuation. This scope boundary implements
 
 Nested labeled blocks let each case pass its value directly into an ordinary
 `let` binding. Each arm breaks out of its input and match-arm scopes before its
-continuation runs. The continuation then breaks to its join label or returns the
-flow's `end`. The example evaluates one authored `match`.
+continuation runs. The continuation then breaks to its generated join label or
+executes an authored structural return. The example evaluates one authored
+`match`.
 
 ```rust
 use kaalang::kaalang;
@@ -251,10 +263,12 @@ fn length_or_zero(input: Option<String>) -> usize {
     };
 
     #[action("Measure the supplied text.")]
-    let end = |text| { text.len() };
+    let result = |text| { text.len() };
 
-    #[action("Return zero for absent text.")]
-    let end = |absent| { 0 };
+    #[action("Build zero for absent text.")]
+    let result = |absent| { 0 };
+
+    |result| return result;
 }
 ```
 
@@ -262,45 +276,54 @@ Illustrative Rust:
 
 ```rust
 fn length_or_zero(wire_input: Option<String>) -> usize {
-    let () = 'case_absent: {
-        let wire_text = 'case_text: {
-            let input = wire_input;
-            match input {
-                Some(value) => break 'case_text value,
-                None => break 'case_absent (),
-            }
+    let wire_result = 'merge_result: {
+        let () = 'case_absent: {
+            let wire_text = 'case_text: {
+                let input = wire_input;
+                match input {
+                    Some(value) => break 'case_text value,
+                    None => break 'case_absent (),
+                }
+            };
+            let wire_result = {
+                let text = wire_text;
+                text.len()
+            };
+            break 'merge_result wire_result;
         };
-        let wire_end = {
-            let text = wire_text;
-            text.len()
-        };
-        return wire_end;
+        let wire_result = 0;
+        wire_result
     };
-    return 0;
+    {
+        let result = wire_result;
+        return result;
+    }
 }
 ```
 
-The authored binding `value` ends with its arm. Returning `&value` instead would
-attempt to carry a reference to an arm-owned local across this boundary and Rust
-would reject it. A value borrowing a borrowed input can cross the boundary when
-that input outlives the choice. Placing the continuation inside the authored arm
-would incorrectly extend the local's availability.
+The authored binding `value` ends with its arm. Producing `&value` as the merged
+result would attempt to carry a reference to an arm-owned local across this
+boundary and Rust would reject it. A value borrowing a borrowed input can cross
+the boundary when that input outlives the choice. Placing the continuation
+inside the authored arm would incorrectly extend the local's availability.
 
 Case continuations that reach partial or wider merges break directly to the
-corresponding join labels from §3. A continuation returns from the function only
-when it reaches end.
+corresponding generated join labels from §3. A continuation returns from the
+function only when it executes a structural return.
 
-## 5. End and terminal branches
+## 5. Structural return and terminal branches
 
-Every arrival at the implicit end block becomes a direct Rust `return` of the
-selected `end` value. A merge of alternative `end` producers happens before that
-return, under [RFC 0001 §4.4](0001-language.md#44-end); end does not become a
-separate computational continuation or merge operation.
+The structural return, when present, emits its input aliases and native Rust
+`return` in one scope. A value transfer moves the selected alias or tuple of
+aliases after all captures have been bound. A value-less return emits
+`return ()`. The aliases remain alive through evaluation of the transferred
+value and end as the function returns.
 
-When one branch finishes the flow while its siblings yield a value to an
-enclosing merge, its `return` avoids the continuation it does not enter. This
-generated control transfer implements the end block and does not permit an
-authored `return` in a computational body.
+When one branch provides an alternative root result while its siblings yield a
+value to a narrower merge, a generated break to the enclosing result merge
+avoids the continuation it does not enter. The single authored return follows
+that ordinary named-wire merge. This structural lowering does not permit a Rust
+`return` in a computational body; that remains a validation error.
 
 ```rust
 use kaalang::kaalang;
@@ -313,8 +336,8 @@ fn finish_or_join(refine: bool, finish_early: bool) -> u32 {
     #[question("Finish early?")]
     let (skip, join) = |nested, finish_early| { finish_early };
 
-    #[action("Finish before the shared step.")]
-    let end = |skip| { 100 };
+    #[action("Build the early result.")]
+    let result = |skip| { 100 };
 
     #[action("Build the refined value.")]
     let shared = |join| { 1 };
@@ -323,7 +346,9 @@ fn finish_or_join(refine: bool, finish_early: bool) -> u32 {
     let shared = |direct| { 2 };
 
     #[action("Add ten to the shared value.")]
-    let end = |shared| { shared + 10 };
+    let result = |shared| { shared + 10 };
+
+    |result| return result;
 }
 ```
 
@@ -331,25 +356,32 @@ Illustrative Rust:
 
 ```rust
 fn finish_or_join(wire_refine: bool, wire_finish_early: bool) -> u32 {
-    let wire_shared = if {
-        let refine = wire_refine;
-        refine
-    } {
-        if {
-            let finish_early = wire_finish_early;
-            finish_early
+    let wire_result = 'merge_result: {
+        let wire_shared = if {
+            let refine = wire_refine;
+            refine
         } {
-            return 100;
-        }
-        1
-    } else {
-        2
+            if {
+                let finish_early = wire_finish_early;
+                finish_early
+            } {
+                let wire_result = 100;
+                break 'merge_result wire_result;
+            }
+            1
+        } else {
+            2
+        };
+        let wire_result = {
+            let shared = wire_shared;
+            shared + 10
+        };
+        wire_result
     };
-    let wire_end = {
-        let shared = wire_shared;
-        shared + 10
-    };
-    wire_end
+    {
+        let result = wire_result;
+        return result;
+    }
 }
 ```
 
@@ -361,19 +393,27 @@ binding and a return:
 use kaalang::kaalang;
 
 #[kaalang]
-fn identity<T>(end: T) -> T {}
+fn identity<T>(end: T) -> T {
+    |end| return end;
+}
 ```
 
 Illustrative Rust:
 
 ```rust
 fn identity<T>(wire_end: T) -> T {
-    return wire_end;
+    {
+        let end = wire_end;
+        return end;
+    }
 }
 ```
 
-Rust checks each return value against the authored function return type,
-including `()` when the return type is omitted.
+The name `end` in this example is an ordinary input and local alias. Rust checks
+the return value against the authored function return type, including `()` when
+the return type is omitted. Validation rejects a second structural return and a
+reachable end of the root plan with no return; a fully diverging plan emits no
+return.
 
 ## 6. Placeholders and function attributes
 
@@ -399,93 +439,119 @@ including `const fn`; an `async fn` is rejected before lowering under
 attribute and block and case descriptions are consumed during translation; the
 closure-shaped declarations do not become callable Rust closures.
 
-## 7. Loops
+## 7. Cycles
 
-### 7.1 loop
+### 7.1 Persistent inputs and result bindings
 
-A loop lowers to a native Rust `loop` with a hygienic label. Authored labels
-resolve lexically to loop block indices before lowering; shadowed labels get
-distinct generated names. The plan is `Loop { index, body, next }`, where `next`
-is absent when no execution breaks from this loop. Each body and continuation is
-emitted once.
+A cycle lowers to a value-producing native Rust `loop` with a hygienic generated
+label. Its complete shape is equivalent to:
 
-Entry captures are evaluated once in a separate Rust scope before the loop. The
-aliases end before the first iteration; the body uses the ordinary wire bindings
-and does not receive those aliases as implicit inputs. For example:
+```rust
+let output_pattern = {
+    input_bindings;
+    '__kaalang_cycle: loop {
+        body
+    }
+};
+```
+
+The input bindings are evaluated once, in authored capture order, before the
+first iteration. Unlike ordinary computational aliases, these bindings remain in
+scope for the complete native loop and are the storage visible to nested kaalang
+blocks. A `mut` value capture therefore carries state between iterations, and a
+borrowed capture remains borrowed until the cycle completes or diverges.
+
+The output pattern follows the action machinery. One identifier binds the whole
+native loop value, even when that value is a tuple. A tuple pattern destructures
+only when the source declares it, including a singleton tuple. An omitted output
+or `let ()` binds unit. Outer alternative cycle producers use the ordinary
+type-gate and merge lowering after each cycle has completed; private break sites
+never become outer producer occurrences.
+
+For example:
 
 ```rust
 #[kaalang]
-fn count_to(mut count: usize, limit: usize) -> usize {
-    |&count| 'counting: loop {
+fn count_to(count: usize, limit: usize) -> usize {
+    #[cycle("Count to the limit.")]
+    let total = |mut count, limit| {
         #[question("Has the counter reached the limit?")]
-        let (done, again) = |&count, limit| *count >= limit;
+        let (done, again) = |count, limit| count >= limit;
 
-        |done| break 'counting;
+        |done, count| break count;
 
         #[action("Increment the counter.")]
         |again, &mut count| *count += 1;
     };
 
-    #[action("Return the counter.")]
-    let end = |count| count;
+    |total| return total;
 }
 ```
 
-Illustrative Rust, omitting unused-binding allowances:
+Illustrative Rust, omitting unit control-wire bindings and lint allowances:
 
 ```rust
-fn count_to(mut wire_count: usize, wire_limit: usize) -> usize {
-    { let count = &wire_count; }
-    '__kaalang_loop: loop {
-        let answer = {
-            let count = &wire_count;
-            let limit = wire_limit;
-            *count >= limit
-        };
-        if answer {
-            let wire_done = ();
-            { let done = wire_done; }
-            break '__kaalang_loop;
-        } else {
-            let wire_again = ();
-            {
-                let again = wire_again;
-                let count = &mut wire_count;
+fn count_to(wire_count: usize, wire_limit: usize) -> usize {
+    let wire_total = {
+        let mut cycle_count = wire_count;
+        let cycle_limit = wire_limit;
+        '__kaalang_cycle: loop {
+            if {
+                let count = cycle_count;
+                let limit = cycle_limit;
+                count >= limit
+            } {
+                let count = cycle_count;
+                break '__kaalang_cycle count;
+            } else {
+                let count = &mut cycle_count;
                 *count += 1;
+                continue '__kaalang_cycle;
             }
-            continue '__kaalang_loop;
         }
+    };
+    {
+        let total = wire_total;
+        return total;
     }
-    return wire_count;
 }
 ```
 
-Normal body completion is `Repeat { index }`, emitted as a `continue` to the
-innermost loop's hygienic label. An empty body contains only that generated
-continue. `EndArrival` still returns from the entire function. A repeating
-execution needs no reachable `end` producer, although the model retains the
-implicit end block and the function signature remains the return contract.
+Normal body completion is `Repeat { cycle_index }`, emitted as a `continue` to
+the active cycle's generated label. An empty body contains only that generated
+continue. A cycle with no reachable completion has type `!`, provides no runtime
+result, and has no normal continuation in its enclosing sequence.
 
-### 7.2 break and validation
+### 7.2 Break values and nested cycles
 
-`Break { index, target }` emits the break statement's input aliases in a short
-scope, then `break` to the resolved target's hygienic label. It carries no
-value. The transfer drops every abandoned Rust scope, including nested iteration
-locals, and reaches only the target loop's continuation. Rust checks all moves,
-borrows, and drops; no runtime scope bookkeeping, optional slots, or cloning is
-added.
+A break emits its input aliases and `break 'generated value` inside the same
+Rust scope. A value-less break emits `break 'generated ()`. Binding and moving
+the result before leaving the scope preserves the authored capture semantics and
+lets an owned iteration local move out. Rust rejects a result borrowing an owner
+that the completed iteration drops.
 
-Analysis records at most one representative iteration per loop. Entry saves the
-available outer producer set. A break restores its target's saved set and
-continues after the target region; normal completion records a repeat. The final
-public outcome remains `End` or `Repeat { loop_index }`. Intermediate breaks are
-recorded as participating blocks with explicit targets.
+The target is always the directly containing cycle's generated label. There is
+no authored label resolution or propagation through intervening cycles. A nested
+cycle binds its own result value, after which its parent body continues normally
+and may explicitly break with that value or perform more work. Each body and
+normal continuation is emitted once.
 
-Plan verification replays those same summaries. It checks each authored block
-appears once, captures and execution order agree, repeat targets are innermost,
-and break targets match the resolved active loop. A nested break propagates
-through intervening loops until its target handles it. The continuation runs
-only after a matching break, with the target's original outer producer set.
-Loop-exit order closes abandoned branch ancestry without creating a capture or
-wire merge. Normal Rust control transfers wholly inside a computational body
-remain valid; transfers from that body into a kaalang loop remain rejected.
+On repeat, generated scopes discard iteration-local wire bindings while the
+cycle's input bindings remain. On completion, the body scope ends and only the
+declared result binding enters the parent scope. Rust consequently rejects a
+non-`Copy` persistent input moved on a route that can repeat, while accepting a
+move performed only by a completing break.
+
+Analysis and plan verification record at most one representative iteration per
+cycle. They replay each authored block once, verify captures and source order,
+check that a break belongs to the active cycle, and record public outcomes as
+`Return { block_index }` or `Repeat { cycle_index }`. Break completion is an
+internal result-boundary transfer, not a public outcome. At most one structural
+return appears in the root plan and emits the native return described in §5; a
+fully diverging root plan has none. No cycle plan may contain one.
+
+Rust checks result types, output destructuring, moves, borrows, and drop order.
+Lowering adds no clone, heap allocation, optional result slot, generated state
+machine, or runtime scope bookkeeping. Native Rust control transfers wholly
+inside a computational body remain valid; transfers from that body into a
+kaalang cycle remain rejected.

@@ -1,5 +1,5 @@
 error: every producer of a kaalang wire must be declared before its consumers
-  --> tests/wire/compile_fail/producer_after_consumer.rs:15:9
+  --> tests/wire/compile_fail/producer_after_consumer.rs:14:9
    |
-15 |     let selected = |no| { 2 };
+14 |     let selected = |no| { 2 };
    |         ^^^^^^^^

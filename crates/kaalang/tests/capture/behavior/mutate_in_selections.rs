@@ -40,6 +40,8 @@ fn mutate_in_selections(mut text: String, count: u8, mode: u8) -> String {
 
     #[action("Return the text and selected suffix.")]
     let end = |text, selected| text + &selected;
+
+    |end| return end;
 }
 
 #[test]

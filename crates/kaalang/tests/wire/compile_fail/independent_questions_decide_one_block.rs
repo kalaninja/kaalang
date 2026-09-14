@@ -34,6 +34,8 @@ fn invalid(left: bool, right: bool) -> u8 {
 
     #[action("Use neither note.")]
     let end = |left_absent, right_absent| { left_absent + right_absent };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -23,6 +23,8 @@ fn convergence_before_a_terminal_case(case: u8) -> u32 {
 
     #[action("Use a value from a continuing branch.")]
     let end = |selected| selected * 10;
+
+    |end| return end;
 }
 
 #[test]

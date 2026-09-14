@@ -41,6 +41,8 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
 
     #[action("Finish the last two.")]
     let end = |de| de + 200;
+
+    |end| return end;
 }
 
 #[test]

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="962" viewBox="0 0 704 962" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="826" viewBox="0 0 704 826" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_skeleton_with_a_shared_consumer</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton_with_a_shared_consumer with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Build the negative magnitude. capturing negative handing over magnitude; Action: Build the nonnegative magnitude. capturing nonnegative handing over magnitude; Action: Use the selected magnitude. capturing magnitude handing over end; End: i32 capturing end. Connections: Start: run_choice_skeleton_with_a_shared_consumer to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Build the negative magnitude.; Case: The value is nonnegative. to Action: Build the nonnegative magnitude.; Action: Build the negative magnitude. to the magnitude merge; Action: Build the nonnegative magnitude. to the magnitude merge; Action: Use the selected magnitude. to End: i32; the magnitude merge to Action: Use the selected magnitude..</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton_with_a_shared_consumer with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Build the negative magnitude. capturing negative handing over magnitude; Action: Build the nonnegative magnitude. capturing nonnegative handing over magnitude; End: i32 capturing magnitude. Connections: Start: run_choice_skeleton_with_a_shared_consumer to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Build the negative magnitude.; Case: The value is nonnegative. to Action: Build the nonnegative magnitude.; Action: Build the negative magnitude. to the magnitude merge; Action: Build the nonnegative magnitude. to the magnitude merge; the magnitude merge to End: i32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 98 L 172 170
@@ -29,7 +35,6 @@
       M 532 456 L 532 528
       M 172 592 L 172 664
       M 532 592 L 532 664 L 172 664
-      M 172 800 L 172 872
       M 172 664 L 172 736
     "/>
     <text class="connection-label" x="185" y="682" xml:space="preserve"><tspan x="185" dy="0">magnitude</tspan></text>
@@ -72,12 +77,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the nonnegative magnitude.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 768)">
-      <title xml:space="preserve">Use the selected magnitude.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected magnitude.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 901)">
+    <g class="node end" transform="translate(172 765)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i32</tspan></text>
     </g>

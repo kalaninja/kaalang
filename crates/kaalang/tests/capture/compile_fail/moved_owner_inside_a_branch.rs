@@ -14,18 +14,17 @@ fn invalid(condition: bool) -> usize {
     let view = |&text| { text.as_str() };
 
     #[action("Measure the text.")]
-    let length = |text| { text.len() };
+    let result = |text| { text.len() };
 
     #[action("Log the view.")]
     |view| {
         assert_eq!(view, "hello");
     };
 
-    #[action("Finish yes.")]
-    let end = |length| { length };
-
     #[action("Finish no.")]
-    let end = |no| { 0 };
+    let result = |no| { 0 };
+
+    |result| return result;
 }
 
 fn main() {}

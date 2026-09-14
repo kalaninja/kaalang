@@ -11,8 +11,7 @@ fn invalid(value: String) -> usize {
         assert_eq!(value, "abc");
     };
 
-    #[action("Finish.")]
-    let end = |length| { length };
+    |length| return length;
 }
 
 fn main() {}

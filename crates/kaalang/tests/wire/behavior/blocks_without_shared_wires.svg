@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="668" viewBox="0 0 680 668" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="532" viewBox="0 0 680 532" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for blocks_without_shared_wires</title>
-  <desc id="kaalang-description">Nodes: Start: blocks_without_shared_wires with parameters left: u32; right: u32 handing over left, right; Action: Double the left value. capturing left handing over doubled; Action: Triple the right value. capturing right handing over tripled; Action: Pair the two values. capturing doubled, tripled handing over end; End: (u32, u32) capturing end. Connections: Start: blocks_without_shared_wires to Action: Double the left value.; Action: Double the left value. to Action: Triple the right value.; Action: Triple the right value. to Action: Pair the two values.; Action: Pair the two values. to End: (u32, u32).</desc>
+  <desc id="kaalang-description">Nodes: Start: blocks_without_shared_wires with parameters left: u32; right: u32 handing over left, right; Action: Double the left value. capturing left handing over doubled; Action: Triple the right value. capturing right handing over tripled; End: (u32, u32) capturing doubled, tripled. Connections: Start: blocks_without_shared_wires to Action: Double the left value.; Action: Double the left value. to Action: Triple the right value.; Action: Triple the right value. to End: (u32, u32).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,21 +11,26 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
       M 172 234 L 172 306
       M 172 370 L 172 442
-      M 172 506 L 172 578
     "/>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">doubled</tspan></text>
@@ -54,12 +59,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Triple the right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 474)">
-      <title xml:space="preserve">Pair the two values.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Pair the two values.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 607)">
+    <g class="node end" transform="translate(172 471)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(u32, u32)</tspan></text>
     </g>

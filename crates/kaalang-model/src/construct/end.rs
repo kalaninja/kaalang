@@ -1,4 +1,4 @@
-//! Checks that end finishes the entire diagram, including its loop returns.
+//! Checks that end finishes the entire diagram, including iteration back edges.
 
 use crate::topology::{NodeKind, Topology, Vertex};
 
@@ -20,7 +20,8 @@ pub(super) fn verify(topology: &Topology, arrangement: &Arrangement) -> Result<(
         .any(|vertex| *vertex != end && arrangement.rank[vertex] >= arrangement.rank[&end])
     {
         return Err(
-            "end must be below every other node and junction, including loop returns".to_owned(),
+            "end must be below every other node and junction, including iteration back edges"
+                .to_owned(),
         );
     }
     Ok(())

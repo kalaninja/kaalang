@@ -19,6 +19,8 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Finish without the note.")]
     let end = |stepped, plain| { stepped };
+
+    |end| return end;
 }
 
 fn main() {}

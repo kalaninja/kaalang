@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1588" viewBox="0 0 1424 1588" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1452" viewBox="0 0 1424 1452" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for mutate_through_partial_merges</title>
-  <desc id="kaalang-description">Nodes: Start: mutate_through_partial_merges with parameters source: u8; refine: bool handing over source, refine; Select: Choose the source. capturing source; Case: Refined source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over third; Question: Refine the first source? capturing first, refine handing over yes / no; Action: Build the refined value. capturing yes handing over mut partial; Action: Build the unrefined value. capturing no handing over mut partial; Action: Build the second value. capturing second handing over mut partial; Action: Extend the partially merged value. capturing &amp;mut partial; Action: Carry the partial value to the outer merge. capturing partial handing over mut shared; Action: Build the fallback value. capturing third handing over mut shared; Action: Extend the fully merged value. capturing &amp;mut shared; Action: Return the changed value. capturing shared handing over end; End: Vec&lt;u8&gt; capturing end. Connections: Start: mutate_through_partial_merges to Select: Choose the source.; Select: Choose the source. to Case: Refined source.; Select: Choose the source. to Case: Second source.; Select: Choose the source. to Case: Fallback.; Case: Refined source. to Question: Refine the first source?; Case: Second source. to Action: Build the second value.; Case: Fallback. to Action: Build the fallback value.; Question: Refine the first source? branch 1 to Action: Build the refined value.; Question: Refine the first source? branch 2 to Action: Build the unrefined value.; Action: Build the refined value. to the mut partial merge; Action: Build the unrefined value. to the mut partial merge; Action: Build the second value. to the mut partial merge; Action: Extend the partially merged value. to Action: Carry the partial value to the outer merge.; Action: Carry the partial value to the outer merge. to the mut shared merge; Action: Build the fallback value. to the mut shared merge; Action: Extend the fully merged value. to Action: Return the changed value.; Action: Return the changed value. to End: Vec&lt;u8&gt;; the mut partial merge to Action: Extend the partially merged value.; the mut shared merge to Action: Extend the fully merged value..</desc>
+  <desc id="kaalang-description">Nodes: Start: mutate_through_partial_merges with parameters source: u8; refine: bool handing over source, refine; Select: Choose the source. capturing source; Case: Refined source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over third; Question: Refine the first source? capturing first, refine handing over yes / no; Action: Build the refined value. capturing yes handing over mut partial; Action: Build the unrefined value. capturing no handing over mut partial; Action: Build the second value. capturing second handing over mut partial; Action: Extend the partially merged value. capturing &amp;mut partial; Action: Carry the partial value to the outer merge. capturing partial handing over mut shared; Action: Build the fallback value. capturing third handing over mut shared; Action: Extend the fully merged value. capturing &amp;mut shared; End: Vec&lt;u8&gt; capturing shared. Connections: Start: mutate_through_partial_merges to Select: Choose the source.; Select: Choose the source. to Case: Refined source.; Select: Choose the source. to Case: Second source.; Select: Choose the source. to Case: Fallback.; Case: Refined source. to Question: Refine the first source?; Case: Second source. to Action: Build the second value.; Case: Fallback. to Action: Build the fallback value.; Question: Refine the first source? branch 1 to Action: Build the refined value.; Question: Refine the first source? branch 2 to Action: Build the unrefined value.; Action: Build the refined value. to the mut partial merge; Action: Build the unrefined value. to the mut partial merge; Action: Build the second value. to the mut partial merge; Action: Extend the partially merged value. to Action: Carry the partial value to the outer merge.; Action: Carry the partial value to the outer merge. to the mut shared merge; Action: Build the fallback value. to the mut shared merge; Action: Extend the fully merged value. to End: Vec&lt;u8&gt;; the mut partial merge to Action: Extend the partially merged value.; the mut shared merge to Action: Extend the fully merged value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
@@ -38,7 +44,6 @@
       M 172 1082 L 172 1154
       M 1252 596 L 1252 1154 L 172 1154
       M 172 1290 L 172 1362
-      M 172 1426 L 172 1498
       M 172 808 L 172 880
       M 172 1154 L 172 1226
     "/>
@@ -127,12 +132,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extend the fully merged value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1394)">
-      <title xml:space="preserve">Return the changed value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the changed value.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 1527)">
+    <g class="node end" transform="translate(172 1391)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;u8&gt;</tspan></text>
     </g>

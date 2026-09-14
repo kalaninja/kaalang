@@ -16,6 +16,8 @@ fn uneven_depth(condition: bool) -> u32 {
 
     #[action("Use the selected value.")]
     let end = |selected| selected * 2;
+
+    |end| return end;
 }
 
 #[test]

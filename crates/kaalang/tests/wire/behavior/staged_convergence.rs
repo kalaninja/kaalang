@@ -14,8 +14,7 @@ fn staged_convergence(condition: bool) -> (u32, &'static str) {
     #[action("Use the number first.")]
     let doubled = |number| number * 2;
 
-    #[action("Use the preserved label later.")]
-    let end = |doubled, label| (doubled, label);
+    |doubled, label| return (doubled, label);
 }
 
 #[test]

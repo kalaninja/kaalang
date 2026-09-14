@@ -6,15 +6,16 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     let (run, skip) = |enabled| enabled;
 
     #[action("Start an empty log.")]
-    let mut log = |run| Vec::new();
+    let mut initial_log = |run| Vec::new();
 
-    |&log, &limit| loop {
+    #[cycle("Collect the first steps.")]
+    let log = |mut initial_log, &limit| {
         #[question("Are there more first steps?")]
         #[yes("YES")]
         #[no("NO")]
-        let (iterate_1, leave_1) = |&log, limit| log.len() < limit;
+        let (iterate_1, leave_1) = |&initial_log, limit| initial_log.len() < *limit;
 
-        |leave_1| break;
+        |leave_1, initial_log| break initial_log;
 
         #[action("Build the first step.")]
         let step = |iterate_1| {
@@ -30,16 +31,17 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
         };
 
         #[action("Record the first step.")]
-        |&mut log, step| log.push(step);
+        |&mut initial_log, step| initial_log.push(step);
     };
 
-    |&log, &limit| loop {
+    #[cycle("Collect the second steps.")]
+    let end = |mut log, &limit| {
         #[question("Are there more second steps?")]
         #[yes("YES")]
         #[no("NO")]
-        let (iterate_2, leave_2) = |&log, limit| log.len() < limit * 2;
+        let (iterate_2, leave_2) = |&log, limit| log.len() < *limit * 2;
 
-        |leave_2| break;
+        |leave_2, log| break log;
 
         #[question("Is the log length odd?")]
         let (odd, even) = |iterate_2, &log| log.len() % 2 == 1;
@@ -54,11 +56,10 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
         |&mut log, step| log.push(step);
     };
 
-    #[action("Return the log.")]
-    let end = |log| log;
-
     #[action("Return an empty log.")]
     let end = |skip| Vec::new();
+
+    |end| return end;
 }
 
 #[test]

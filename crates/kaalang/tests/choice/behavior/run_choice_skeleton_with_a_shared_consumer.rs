@@ -14,8 +14,7 @@ fn run_choice_skeleton_with_a_shared_consumer(value: i32) -> i32 {
     #[action("Build the nonnegative magnitude.")]
     let magnitude = |nonnegative| todo!();
 
-    #[action("Use the selected magnitude.")]
-    let end = |magnitude| magnitude;
+    |magnitude| return magnitude;
 }
 
 #[test]

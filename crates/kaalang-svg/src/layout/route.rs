@@ -64,10 +64,10 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
         .collect()
 }
 
-/// Realizes every loop return: out of its tail, up the lane the arrangement
+/// Realizes every iteration back edge: out of its tail, up the lane the arrangement
 /// chose beside its body, and horizontally into its entry junction
 /// (RFC 0002 §8). The lane sits just outside the body it climbs past.
-pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<Connection> {
+pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<Connection> {
     let mut drawn: Vec<(usize, i32)> = Vec::new();
     let mut connections = Vec::new();
     // Innermost first, so a nested rail is stroked before the one that encloses
@@ -77,11 +77,11 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
         let end = junction_point(scene, rows, loop_.entry);
         // The body still stands where it was numbered, so the recorded column
         // is realized through the same map every node and route uses.
-        if !scene.arrangement.return_routes.is_empty() {
+        if !scene.arrangement.back_routes.is_empty() {
             connections.push(Connection {
                 source: Source::Junction(loop_.tail),
                 destination: Destination::Junction(loop_.entry),
-                points: bent_return(scene, rows, index, from, end),
+                points: bent_back_edge(scene, rows, index, from, end),
             });
             continue;
         }
@@ -91,7 +91,7 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
         connections.push(Connection {
             source: Source::Junction(loop_.tail),
             destination: Destination::Junction(loop_.entry),
-            points: straighten(return_points(from, aside, end)),
+            points: straighten(back_edge_points(from, aside, end)),
         });
     }
     connections
@@ -100,7 +100,7 @@ pub(super) fn returns(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<
 /// A common column map for every climb in a drawing with routing bends.
 /// It preserves the abstract order of both sides of every column, leaving
 /// node boxes and their labels inside the space between a column and a rail.
-pub(super) fn return_x(scene: &Scene, index: usize, column: i32) -> i32 {
+pub(super) fn back_edge_x(scene: &Scene, index: usize, column: i32) -> i32 {
     let contour = scene.arrangement.contours[index];
     let offset =
         super::NODE_WIDTH / 2 + super::label::LABEL_WIDTH + (contour.lane as i32 + 1) * super::LANE;
@@ -111,10 +111,10 @@ pub(super) fn return_x(scene: &Scene, index: usize, column: i32) -> i32 {
         }
 }
 
-fn bent_return(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Point) -> Vec<Point> {
-    let x = |column| return_x(scene, index, column);
-    let Some(route) = scene.arrangement.return_routes.get(&index) else {
-        return return_points(from, x(scene.arrangement.contours[index].column), end);
+fn bent_back_edge(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Point) -> Vec<Point> {
+    let x = |column| back_edge_x(scene, index, column);
+    let Some(route) = scene.arrangement.back_routes.get(&index) else {
+        return back_edge_points(from, x(scene.arrangement.contours[index].column), end);
     };
     let mut points = vec![
         from,
@@ -137,9 +137,9 @@ fn bent_return(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Point
     straighten(points)
 }
 
-/// The climb of one loop return: out of its tail, up `aside`, and into its
+/// The climb of one iteration back edge: out of its tail, up `aside`, and into its
 /// entry. Each caller smooths the result its own way.
-pub(super) fn return_points(from: Point, aside: i32, end: Point) -> Vec<Point> {
+pub(super) fn back_edge_points(from: Point, aside: i32, end: Point) -> Vec<Point> {
     vec![
         from,
         Point {
@@ -219,7 +219,7 @@ pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
                 .filter(|(other, _)| *other != index)
                 .map(|(_, other)| other.column),
         );
-    if !scene.arrangement.return_routes.is_empty()
+    if !scene.arrangement.back_routes.is_empty()
         || contour.column != scene.column(tail)
         || !others.all(before)
     {
@@ -243,21 +243,21 @@ pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
     }
 }
 
-/// Where one return climbs: the contour the arrangement recorded, realized in
+/// Where one back edge climbs: the contour the arrangement recorded, realized in
 /// pixels, and pushed further out by whatever the body's measured boxes need.
 ///
 /// All three parts of the recorded contour are realized. The side and the lane
-/// decide whether the return can be drawn at all. The column is realized
+/// decide whether the back edge can be drawn at all. The column is realized
 /// through `anchor`, and it is a floor rather than the answer: a measured box
 /// may push the rail further out, and may never bring it back in past the
 /// column the arrangement chose or move it to another corridor. That is what
-/// lets a witness whose return stands beyond the boxes of its body be drawn
+/// lets a witness whose back edge stands beyond the boxes of its body be drawn
 /// where it says.
 ///
 /// `anchor` comes from `contour_anchor`: normally the recorded column, or
 /// the safely closed boundary of an exclusive outermost tail column.
 ///
-/// A presentation may turn the return upward early, but the body it has to
+/// A presentation may turn the back edge upward early, but the body it has to
 /// clear does not shrink with it. Continuation vertices after leaving the body
 /// are excluded by membership, not by their position below the tail.
 ///
@@ -300,7 +300,7 @@ pub(super) fn contour_x(
 /// How far left and right one loop's whole body reaches.
 ///
 /// The body is the model's own: every vertex it counts when it places the
-/// return, junctions included. A wire merge or a break inside the body draws
+/// back edge, junctions included. A wire merge or a break inside the body draws
 /// no node and still fills a column, so measuring the boxes alone would leave
 /// the climb a column short of clear. Membership does not depend on ranks:
 /// placing part of the body below the tail does not remove it from the body.
@@ -357,13 +357,13 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     }
 }
 
-/// Each return climbs on the side the arrangement chose, clear of every column
+/// Each iteration back edge climbs on the side the arrangement chose, clear of every column
 /// its whole body fills, independently of its ranks (RFC 0002 §8).
 ///
 /// The arrangement settles that on its abstract grid; this reads the emitted
 /// climb, so it holds whatever the compactions left behind and does not take
 /// the side and the lane on trust.
-fn verify_returns(scene: &Scene) -> Option<String> {
+fn verify_back_edges(scene: &Scene) -> Option<String> {
     let climbs = scene
         .topology
         .loops
@@ -387,7 +387,10 @@ fn verify_returns(scene: &Scene) -> Option<String> {
         })
         .collect::<Vec<_>>();
     for (index, loop_) in scene.topology.loops.iter().enumerate() {
-        let at = format!("the return of the loop at block {}", loop_.header + 1);
+        let at = format!(
+            "the iteration back edge of the cycle at block {}",
+            loop_.header + 1
+        );
         let Some(climb) = climbs[index] else {
             return Some(format!("{at} is not drawn, or does not climb"));
         };
@@ -396,7 +399,7 @@ fn verify_returns(scene: &Scene) -> Option<String> {
             Side::Left => climb.1 < other,
             Side::Right => climb.0 > other,
         };
-        // A return nested in this body climbs beside it too, and the two need
+        // A back edge nested in this body climbs beside it too, and the two need
         // not share a single row — so no crossing check compares them, and
         // this is the only place the enclosing one is held outside the nested
         // one (RFC 0002 §8).
@@ -415,7 +418,7 @@ fn verify_returns(scene: &Scene) -> Option<String> {
             })
         {
             return Some(format!(
-                "{at} climbs inside the return nested in its body at {nested}"
+                "{at} climbs inside the back edge nested in its body at {nested}"
             ));
         }
         // Its own entry and tail are part of the body too. They may have
@@ -447,7 +450,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
     if let Some(reason) = super::end::verify(scene) {
         return Some(reason);
     }
-    if let Some(reason) = verify_returns(scene) {
+    if let Some(reason) = verify_back_edges(scene) {
         return Some(reason);
     }
     for connection in &scene.connections {
@@ -490,12 +493,15 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
 
     for (index, connection) in scene.connections.iter().enumerate() {
         for other in &scene.connections[index + 1..] {
+            if collapsed(connection) || collapsed(other) {
+                continue;
+            }
             let shared =
                 connection.source == other.source || connection.destination == other.destination;
             let meetings = if shared {
                 bundle_meetings(&connection.points, &other.points)
             } else {
-                common_ends(connection, other)
+                common_ends(scene, connection, other)
             };
             if !compatible(&connection.points, &other.points, shared, &meetings) {
                 return Some(format!(
@@ -510,14 +516,23 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
     None
 }
 
+/// A structural hop compacted to one point has no ink to intersect.
+fn collapsed(connection: &Connection) -> bool {
+    connection
+        .points
+        .windows(2)
+        .all(|segment| segment[0] == segment[1])
+}
+
 /// Two routes that end at one vertex may meet where they both reach it, and
 /// nowhere else: sharing any length still counts as an overlap.
 ///
 /// The point has to coincide for both, which is what keeps this honest in
 /// pixels. A junction is a single point, so its incoming and outgoing routes do
-/// meet there; a node is a box, so two routes reaching it attach to different
+/// meet there. Two junctions joined by a collapsed structural hop are that same
+/// drawn point. A node is a box, so two routes reaching it attach to different
 /// parts of its boundary and never touch at all.
-fn common_ends(left: &Connection, right: &Connection) -> Vec<Point> {
+fn common_ends(scene: &Scene, left: &Connection, right: &Connection) -> Vec<Point> {
     let ends = |connection: &Connection| {
         [
             (
@@ -530,7 +545,17 @@ fn common_ends(left: &Connection, right: &Connection) -> Vec<Point> {
     let mut meetings = Vec::new();
     for (vertex, point) in ends(left) {
         for (other, at) in ends(right) {
-            if vertex == other && point == at {
+            if point != at {
+                continue;
+            }
+            let collapsed = matches!((vertex, other), (Vertex::Junction(_), Vertex::Junction(_)))
+                && scene.connections.iter().any(|edge| {
+                    let endpoints = (Vertex::from(edge.source), edge.destination);
+                    (endpoints == (vertex, other) || endpoints == (other, vertex))
+                        && collapsed(edge)
+                        && edge.points.first().copied() == point
+                });
+            if vertex == other || collapsed {
                 meetings.extend(point);
             }
         }
@@ -614,6 +639,7 @@ mod tests {
             reach: (0, 0),
             slack: 0,
             bodies: Vec::new(),
+            region_bodies: Vec::new(),
             width: 10,
             height: 10,
             topology: Topology::default(),
@@ -623,6 +649,7 @@ mod tests {
             parameters: None,
             connections,
             labels: vec![],
+            loop_regions: Vec::new(),
         }
     }
 

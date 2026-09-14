@@ -36,8 +36,7 @@ fn mutable_reference_through_nested_joins(
         view.len()
     };
 
-    #[action("Move the owner after the reference's last use.")]
-    let end = |text, length| (text, length);
+    |text, length| return (text, length);
 }
 
 #[test]

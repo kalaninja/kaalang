@@ -1,5 +1,5 @@
 error: this kaalang block runs while the branches of the question `Run?` are still separate; give it an input from one branch, or merge those branches above it
- --> tests/loop/compile_fail/unlisted_branch_entry.rs:7:5
+ --> tests/loop/compile_fail/unlisted_branch_entry.rs:8:5
   |
-7 |     loop {}
-  |     ^^^^
+8 |     #[cycle("Enter without selecting a branch.")]
+  |     ^

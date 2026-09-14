@@ -1,0 +1,5 @@
+error: a kaalang flow may declare at most one structural `return`
+ --> tests/end/compile_fail/multiple_returns.rs:9:21
+  |
+9 |     |second, value| return value;
+  |                     ^^^^^^

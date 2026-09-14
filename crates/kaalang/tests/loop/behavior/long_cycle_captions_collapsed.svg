@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="642" viewBox="0 0 704 642" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for long_cycle_captions</title>
+  <desc id="kaalang-description">Nodes: Start: long_cycle_captions with parameters flag: bool handing over flag; Question: Choose a cycle. capturing flag handing over left / right; Cycle: Collect the available results from the source until there are enough items to complete the current request. capturing left handing over done; Cycle: Read the next item and prepare it for processing. capturing right handing over done; End: () capturing nothing. Connections: Start: long_cycle_captions to Question: Choose a cycle.; Question: Choose a cycle. branch 1 to Cycle: Collect the available results from the source until there are enough items to complete the current request.; Question: Choose a cycle. branch 2 to Cycle: Read the next item and prepare it for processing.; Cycle: Collect the available results from the source until there are enough items to complete the current request. to the done merge; Cycle: Read the next item and prepare it for processing. to the done merge; the done merge to End: ().</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 306
+      M 312 198 L 532 198 L 532 324
+      M 172 408 L 172 480
+      M 532 390 L 532 480 L 172 480
+      M 172 480 L 172 552
+    "/>
+    <text class="connection-label" x="185" y="498" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
+    <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="407" y="187" xml:space="preserve"><tspan x="407" dy="0">right</tspan></text>
+    <text class="connection-label" x="185" y="541" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">long_cycle_captions</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 198)">
+      <title xml:space="preserve">Choose a cycle.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose a cycle.</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 357)">
+      <title xml:space="preserve">Collect the available results from the source until there are enough items to complete the current request.</title>
+      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="8"/>
+      <text class="label" y="-21" xml:space="preserve"><tspan x="-124" dy="0">Collect the available results </tspan><tspan x="-124" dy="18">from the source until there </tspan><tspan x="-124" dy="18">are enough items to complete </tspan><tspan x="-124" dy="18">the current request.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node loop" transform="translate(532 357)">
+      <title xml:space="preserve">Read the next item and prepare it for processing.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Read the next item and </tspan><tspan x="-124" dy="18">prepare it for processing.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node end" transform="translate(172 581)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

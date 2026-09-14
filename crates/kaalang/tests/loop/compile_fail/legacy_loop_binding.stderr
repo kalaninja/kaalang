@@ -1,0 +1,5 @@
+error: the legacy `#[loop]` attribute is no longer supported; use `#[cycle("description")]`
+ --> tests/loop/compile_fail/legacy_loop_binding.rs:5:5
+  |
+5 |     #[r#loop("Use the legacy attribute form.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

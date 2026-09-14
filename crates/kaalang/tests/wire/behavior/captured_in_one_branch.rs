@@ -10,6 +10,8 @@ fn captured_in_one_branch(condition: bool, extra: u32) -> u32 {
 
     #[action("Ignore the extra value.")]
     let end = |no| 0;
+
+    |end| return end;
 }
 
 #[test]

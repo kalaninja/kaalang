@@ -2,20 +2,25 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn first_value(values: &[i32]) -> Option<i32> {
-    loop {
+    #[cycle("Find the first value.")]
+    let result = |values| {
         #[question("Is there a first value?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate_1, leave_1) = |values| !values.is_empty();
 
-        |leave_1| break;
+        #[action("Report that no first value exists.")]
+        let absent = |leave_1| None;
 
-        #[action("Return the first value.")]
-        let end = |iterate_1, values| Some(values[0]);
-    }
+        |absent| break absent;
 
-    #[action("No first value exists.")]
-    let end = || None;
+        #[action("Produce the first value.")]
+        let found = |iterate_1, values| Some(values[0]);
+
+        |found| break found;
+    };
+
+    |result| return result;
 }
 
 #[test]

@@ -3,40 +3,43 @@ use kaalang::kaalang;
 #[kaalang]
 fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str> {
     #[action("Initialize the counter and log.")]
-    let (mut count, mut log) = || (0, Vec::new());
+    let (initial_count, initial_log) = || (0, Vec::new());
 
-    loop {
+    #[cycle("Run work between two stopping checks.")]
+    let log = |before_limit, after_limit, mut initial_count, mut initial_log| {
         #[question("Stop before the work?")]
-        let (stop_before, work) = |&count, before_limit, &mut log| {
-            log.push("check before");
-            *count >= before_limit
+        let (stop_before, work) = |&initial_count, before_limit, &mut initial_log| {
+            initial_log.push("check before");
+            *initial_count >= before_limit
         };
 
-        |stop_before| break;
+        |stop_before, initial_log| break initial_log;
 
         #[action("Perform the work and advance the counter.")]
-        let worked = |work, &mut count, &mut log| {
-            log.push("work");
-            *count += 1;
+        let worked = |work, &mut initial_count, &mut initial_log| {
+            initial_log.push("work");
+            *initial_count += 1;
         };
 
         #[question("Stop after the work?")]
-        let (stop_after, again) = |worked, &count, after_limit, &mut log| {
-            log.push("check after");
-            *count >= after_limit
+        let (stop_after, again) = |worked, &initial_count, after_limit, &mut initial_log| {
+            initial_log.push("check after");
+            *initial_count >= after_limit
         };
 
-        |stop_after| break;
+        |stop_after, initial_log| break initial_log;
 
         #[action("Finish the iteration.")]
-        |again, &mut log| log.push("repeat");
-    }
+        |again, &mut initial_log| initial_log.push("repeat");
+    };
 
     #[action("Continue after the loop.")]
-    let end = |mut log| {
+    let result = |mut log| {
         log.push("done");
         log
     };
+
+    |result| return result;
 }
 
 #[test]

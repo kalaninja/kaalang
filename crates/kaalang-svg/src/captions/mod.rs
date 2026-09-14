@@ -11,8 +11,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use kaalang_model::topology::{
     Connection, Destination, ExitId, NodeId, NodeKind, Source, Topology,
 };
-use kaalang_model::{Input, ProducerId, SemanticModel};
-use syn::{FnArg, Pat, PatIdent, ext::IdentExt};
+use kaalang_model::{BlockKind, Input, ProducerId, SemanticModel};
+use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
 /// Every string the diagram shows, keyed by the structural item that owns it.
 #[derive(Clone, Default)]
@@ -22,6 +22,8 @@ pub(crate) struct Captions {
     capture_label: BTreeMap<NodeId, Vec<String>>,
     handover: BTreeMap<ExitId, Vec<String>>,
     branch_description: BTreeMap<ExitId, String>,
+    loop_inputs: BTreeMap<usize, String>,
+    loop_outputs: BTreeMap<usize, String>,
     /// Per junction, the merged wire names, empty for a structural junction.
     junction: Vec<Vec<String>>,
     shared: BTreeSet<Connection>,
@@ -57,6 +59,14 @@ impl Captions {
         self.branch_description.get(&exit).map(String::as_str)
     }
 
+    pub(crate) fn loop_inputs(&self, block: usize) -> &str {
+        self.loop_inputs.get(&block).map_or("()", String::as_str)
+    }
+
+    pub(crate) fn loop_outputs(&self, block: usize) -> &str {
+        self.loop_outputs.get(&block).map_or("()", String::as_str)
+    }
+
     /// The wires that meet at one junction, in model order.
     pub(crate) fn junction_wires(&self, junction: usize) -> &[String] {
         self.junction.get(junction).map_or(&[], Vec::as_slice)
@@ -70,9 +80,11 @@ impl Captions {
 
 /// Reads every caption of one flow's topology. `start` labels the start node and
 /// `return_type` captions end, both taken from the authored source text.
+#[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
 pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> Captions {
     let topology = &model.topology;
     let parameters = named_parameters(model);
+    let end_input = end_input(model);
     let mut captions = Captions::default();
 
     for node in &topology.nodes {
@@ -89,7 +101,10 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         };
         captions.label.insert(node.id, label);
         // A case represents one choice output and captures nothing of its own.
+        // End shows the transferred value, not every wire the structural
+        // return captures for ordering.
         let capture = match node.id {
+            NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
             NodeId::Block(block) => model.flow.blocks[block]
                 .inputs
                 .iter()
@@ -100,7 +115,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let displayed = if capture.is_empty()
             && matches!(
                 node.kind,
-                NodeKind::Action | NodeKind::Question | NodeKind::Select
+                NodeKind::Action | NodeKind::Loop | NodeKind::Question | NodeKind::Select
             )
             && topology
                 .incoming(Destination::Node(node.id))
@@ -113,6 +128,49 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         };
         captions.capture.insert(node.id, capture);
         captions.capture_label.insert(node.id, displayed);
+    }
+
+    for boundary in &topology.loop_boundaries {
+        let block = &model.flow.blocks[boundary.header];
+        captions.label.insert(
+            NodeId::Block(boundary.header),
+            block.description.clone().unwrap_or_default(),
+        );
+        captions.loop_inputs.insert(
+            boundary.header,
+            if block.inputs.is_empty() {
+                "()".to_owned()
+            } else {
+                block
+                    .inputs
+                    .iter()
+                    .map(captured)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            },
+        );
+        captions.loop_outputs.insert(
+            boundary.header,
+            if block.outputs.is_empty() {
+                "()".to_owned()
+            } else {
+                (0..block.outputs.len())
+                    .map(|output| {
+                        let binding = block.output_binding(output);
+                        format!(
+                            "{}{}",
+                            if binding.mutability.is_some() {
+                                "mut "
+                            } else {
+                                ""
+                            },
+                            binding.ident.unraw()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            },
+        );
     }
 
     for exit in &topology.exits {
@@ -153,6 +211,35 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         .collect();
 
     captions
+}
+
+/// The value transferred into end.
+fn end_input(model: &SemanticModel) -> Vec<String> {
+    model
+        .flow
+        .blocks
+        .iter()
+        .find(|block| block.kind == BlockKind::Return)
+        .map_or_else(Vec::new, |block| transferred(&block.body))
+}
+
+/// Return operands label their wires individually, so an adjacent hand-over can
+/// share the same ordered list. A tuple-valued wire still contributes one name.
+fn transferred(value: &Expr) -> Vec<String> {
+    match value {
+        Expr::Group(group) => transferred(&group.expr),
+        Expr::Paren(parenthesized) => transferred(&parenthesized.expr),
+        Expr::Path(path) => vec![
+            path.path
+                .get_ident()
+                .expect("a return value is one captured input")
+                .unraw()
+                .to_string(),
+        ],
+        Expr::Tuple(tuple) if tuple.elems.is_empty() => vec!["()".to_owned()],
+        Expr::Tuple(tuple) => tuple.elems.iter().flat_map(transferred).collect(),
+        _ => unreachable!("a return value is validated before captions are derived"),
+    }
 }
 
 /// Equal, nonempty displayed lists share a label only at the sole connection
@@ -198,6 +285,14 @@ fn provided(model: &SemanticModel, parameters: &[&PatIdent], producer: ProducerI
         ProducerId::FlowInput(input) => *parameters
             .get(input)
             .expect("a flow input caption names a declared parameter"),
+        ProducerId::CycleInput { block, input } => {
+            let capture = &model.flow.blocks[block].inputs[input];
+            return format!(
+                "{}{}",
+                if capture.mutable { "mut " } else { "" },
+                capture.alias.unraw()
+            );
+        }
         ProducerId::BlockOutput { block, output } => {
             model.flow.blocks[block].output_binding(output)
         }

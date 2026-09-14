@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, END_WIRE, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
+use crate::model::{BlockKind, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
 
 use super::{only_difference, produced};
 
@@ -56,7 +56,19 @@ pub(super) fn flow(
         }
     }
     validate_order(flow, &merges, &successors)?;
-    validate_nesting(flow, executions, &merges, &successors)?;
+    for merge in &merges {
+        let producers = executions
+            .iter()
+            .map(|execution| {
+                merge
+                    .producers
+                    .iter()
+                    .copied()
+                    .find(|&producer| produced(flow, execution, producer))
+            })
+            .collect::<Vec<_>>();
+        validate_adjacency(flow, executions, merge, &producers)?;
+    }
     Ok(merges)
 }
 
@@ -77,76 +89,6 @@ pub(super) fn completion(
         .collect()
 }
 
-/// Merge groups stay adjacent across nested selections. An outside branch may
-/// leave for end, but cannot rejoin an ordinary continuation after its merge.
-fn validate_nesting(
-    flow: &Flow,
-    executions: &[Execution],
-    merges: &[WireMerge],
-    successors: &[BTreeSet<usize>],
-) -> Result<()> {
-    let contexts = merges
-        .iter()
-        .map(|merge| {
-            let producers = executions
-                .iter()
-                .map(|execution| {
-                    merge
-                        .producers
-                        .iter()
-                        .copied()
-                        .find(|&producer| produced(execution, producer))
-                })
-                .collect::<Vec<_>>();
-            validate_adjacency(flow, executions, merge, &producers)?;
-            Ok(producers
-                .iter()
-                .enumerate()
-                .filter_map(|(index, producer)| producer.is_some().then_some(index))
-                .collect::<BTreeSet<_>>())
-        })
-        .collect::<Result<Vec<_>>>()?;
-    let end_wire = &flow.blocks[flow.blocks.len() - 1].inputs[0].ident;
-    let mut offending = None;
-    for (index, context) in contexts.iter().enumerate() {
-        let following = reachable(successors, flow.blocks.len() + index);
-        for &run in context {
-            for (skip, execution) in executions.iter().enumerate() {
-                if context.contains(&skip) {
-                    continue;
-                }
-                let Some(nested) = only_difference(&executions[run], execution) else {
-                    continue;
-                };
-                // A partial merge entirely within this selection is valid.
-                // An enclosing merge also receives a branch outside it.
-                if context.iter().all(|&e| executions[e].participates(nested)) {
-                    continue;
-                }
-                if let Some(later) = merges.iter().enumerate().position(|(later, merge)| {
-                    &merge.wire != end_wire
-                        && following.contains(&(flow.blocks.len() + later))
-                        && contexts[later].contains(&skip)
-                }) {
-                    let violation = (nested, index, later);
-                    offending = Some(offending.map_or(violation, |old| violation.min(old)));
-                }
-            }
-        }
-    }
-    if let Some((nested, skipped, later)) = offending {
-        let skipped = flow.wire_name(&merges[skipped].wire);
-        let later = flow.wire_name(&merges[later].wire);
-        return Err(Error::new(
-            flow.blocks[nested].span,
-            format!(
-                "a nested kaalang branch cannot bypass the `{skipped}` wire merge and rejoin at `{later}`; merge before or with the enclosing branches"
-            ),
-        ));
-    }
-    Ok(())
-}
-
 /// Producer routes occupy one interval in authored branch order.
 fn validate_adjacency(
     flow: &Flow,
@@ -154,14 +96,34 @@ fn validate_adjacency(
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
 ) -> Result<()> {
-    // A repeating summary has not arrived at the flow's terminal merge.
-    // Its later iterations may finish through any of the recorded end routes.
-    let ordered = super::branch_order(&executions.iter().collect::<Vec<_>>(), producers)
-        .into_iter()
-        .filter(|&index| {
-            merge.wire != END_WIRE || executions[index].outcome == ExecutionOutcome::End
+    // A repeating summary stops at its loop tail. It cannot separate routes
+    // of a merge outside that loop because it never reaches the merge.
+    let has_consumer = !merge.after.is_empty();
+    let points = if has_consumer {
+        merge.after.clone()
+    } else {
+        merge
+            .producers
+            .iter()
+            .filter_map(|producer| match producer {
+                ProducerId::BlockOutput { block, .. } => Some(*block),
+                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
+            })
+            .collect::<Vec<_>>()
+    };
+    let (executions, producers): (Vec<_>, Vec<_>) = executions
+        .iter()
+        .zip(producers)
+        .filter(|(execution, _)| match execution.outcome {
+            ExecutionOutcome::Return { .. } => true,
+            ExecutionOutcome::Repeat { loop_index } => points.iter().any(|&block| {
+                (has_consumer && block == loop_index)
+                    || flow.enclosing(block).any(|parent| parent == loop_index)
+            }),
         })
-        .collect::<Vec<_>>();
+        .map(|(execution, producer)| (execution, *producer))
+        .unzip();
+    let ordered = super::branch_order(&executions, &producers);
     let first = ordered.iter().position(|&index| producers[index].is_some());
     let last = ordered
         .iter()
@@ -253,7 +215,7 @@ fn ordering(
         .iter()
         .filter_map(|execution| {
             merge.producers.iter().find_map(|&producer| {
-                produced(execution, producer).then_some((execution, producer))
+                produced(flow, execution, producer).then_some((execution, producer))
             })
         })
         .collect::<Vec<_>>();
@@ -394,6 +356,7 @@ mod tests {
                 #[action("Second value.")] let shared = |second| { 20 };
                 #[action("Finish early.")] let end = |finish, seed| { seed };
                 #[action("Use the value.")] let end = |shared, seed| { shared + seed };
+                |end| return end;
             }
         };
         assert_eq!(
@@ -416,6 +379,7 @@ mod tests {
                 let end = |skip| { 2 };
                 #[action("Mark the last branch.")]
                 let (_marker, end) = |direct| { ((), 3) };
+                |end| return end;
             }
         };
         assert_eq!(
@@ -440,12 +404,72 @@ mod tests {
                 let shared = |refined| { refined + 10 };
                 #[action("Build the direct value.")]
                 let shared = |direct| { 3 };
-                #[action("Use the shared value.")]
-                let end = |shared| { shared };
+                |shared| return shared;
             }
         };
         assert_eq!(merge(&function, "refined").after, [4]);
         assert_eq!(merge(&function, "shared").after, [6]);
+    }
+
+    #[test]
+    fn a_partial_continuation_may_feed_a_wider_merge() {
+        let function: ItemFn = parse_quote! {
+            fn valid(a: bool, b: bool, c: bool) -> bool {
+                #[question("a")]
+                let (check_b, false_result) = |a| { a };
+                #[question("b")]
+                let (check_c, false_result) = |check_b, b| { b };
+                #[question("c")]
+                let (true_result, false_result) = |check_c, c| { c };
+                #[action("Build true.")]
+                let combined = |true_result| { true };
+                #[action("Build false.")]
+                let combined = |false_result| { false };
+                #[action("Use the wider merge.")]
+                let result = |combined| { combined };
+                |result| return result;
+            }
+        };
+
+        let model = build(&function).expect("a partial continuation may feed a wider merge");
+        let false_result = model
+            .merges
+            .iter()
+            .find(|merge| merge.wire == "false_result")
+            .expect("the false routes merge");
+        let combined = model
+            .merges
+            .iter()
+            .find(|merge| merge.wire == "combined")
+            .expect("the partial and direct routes merge");
+        assert_eq!(false_result.after, [4]);
+        assert_eq!(combined.after, [5]);
+    }
+
+    #[test]
+    fn a_repeat_route_does_not_split_a_merge_after_its_loop() {
+        let source = r#"
+            fn valid(run: bool, done: bool, value: u8) -> u8 {
+                #[question("Run the loop?")]
+                let (enter, fallback) = |run| { run };
+                #[cycle("Wait until done.")]
+                let result = |enter, done, value| {
+                    #[question("Done?")]
+                    let (leave, _again) = |done| { done };
+                    |leave, value| break value;
+                };
+                #[action("Use the fallback.")]
+                let result = |fallback| { 2 };
+                |result| return result;
+            }
+        "#;
+        for source in [
+            source.to_owned(),
+            source.replace("(leave, _again)", "(_again, leave)"),
+        ] {
+            let function = syn::parse_str::<ItemFn>(&source).expect("the flow parses");
+            build(&function).expect("a repeat does not reach the merge after its loop");
+        }
     }
 
     #[test]
@@ -458,6 +482,7 @@ mod tests {
                 let shared = |no| { () };
                 #[action("Use the merged value.")]
                 let end = |shared| { 0 };
+                |end| return end;
             }
         };
         let merge = merge(&function, "shared");
@@ -477,6 +502,7 @@ mod tests {
                 let ready = |&shared| { () };
                 #[action("Consume it after the borrow.")]
                 let end = |shared, ready| { 0 };
+                |end| return end;
             }
         };
         assert_eq!(merge(&function, "shared").before, [1]);
@@ -492,6 +518,7 @@ mod tests {
                 let (_marker, end) = |yes| { ((), 1) };
                 #[action("Second marker.")]
                 let (_marker, end) = |no| { ((), 2) };
+                |end| return end;
             }
         };
         let merge = merge(&function, "_marker");
@@ -514,6 +541,7 @@ mod tests {
                 #[action("First marker.")] let (_marker, end) = |a| { ((), 1) };
                 #[action("Middle result.")] let end = |b| { 2 };
                 #[action("Last marker.")] let (_marker, end) = |c| { ((), 3) };
+                |end| return end;
             }
         };
         assert_eq!(
@@ -536,6 +564,7 @@ mod tests {
                 #[action("Left marker.")] let (_left, end) = |a| { ((), 1) };
                 #[action("Both markers.")] let (_left, _right, end) = |b| { ((), (), 2) };
                 #[action("Right marker.")] let (_right, end) = |c| { ((), 3) };
+                |end| return end;
             }
         };
         assert_eq!(

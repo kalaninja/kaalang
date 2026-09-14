@@ -1,18 +1,21 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(mut count: usize) {
-    |&count| loop {
+fn invalid(count: usize) {
+    #[cycle("Try an implicit environment capture.")]
+    |mut count| {
         #[question("Repeat?")]
-        let (iterate_1, leave_1) = |count| count > 0;
-        |leave_1| break;
+        let (again, done) = |count| count > 0;
+
+        |done| break;
+
         #[action("Change the counter without capturing it.")]
-        |iterate_1| {
+        |again| {
             count -= 1;
         };
     };
-    #[action("Finish.")]
-    let end = || {};
+
+    return;
 }
 
 fn main() {}

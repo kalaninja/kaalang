@@ -19,6 +19,8 @@ fn nested_branch_passes_a_question_join(refine: bool, finish_early: bool) -> u32
 
     #[action("Add ten in the shared step.")]
     let end = |shared| shared + 10;
+
+    |end| return end;
 }
 
 #[test]

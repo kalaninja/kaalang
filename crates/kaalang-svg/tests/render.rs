@@ -1,4 +1,4 @@
-use kaalang_svg::{RenderError, render_source};
+use kaalang_svg::{RenderError, RenderOptions, render_source, render_source_with_options};
 
 /// One flow carrying every label case at once, with a distinct wire name for
 /// each so a duplicate in the description is detectable by counting.
@@ -29,6 +29,26 @@ const SOURCE: &str = r#"
 
         #[action("Finish from the far lane.")]
         let end = |far| { 9 };
+
+        |end| return end;
+    }
+"#;
+
+const CYCLE_SOURCE: &str = r#"
+    #[kaalang]
+    fn count_to(count: usize, limit: usize) -> usize {
+        #[cycle("Count to the limit.")]
+        let total = |mut count, limit| {
+            #[question("Has the counter reached the limit?")]
+            let (done, again) = |&count, &limit| *count == *limit;
+
+            |done, count| break count;
+
+            #[action("Increment the counter.")]
+            |again, &mut count| *count += 1;
+        };
+
+        |total| return total;
     }
 "#;
 
@@ -59,6 +79,65 @@ fn renders_an_accessible_standalone_svg() {
     assert!(svg.contains(".question .node-shape { fill: #fffbeb; }"));
     assert!(svg.contains(".select .node-shape, .case .node-shape { fill: #f5f3ff; }"));
     assert!(svg.contains(".branch-label { fill: currentColor; font-weight: 500; }"));
+}
+
+#[test]
+fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
+    let expanded = render_source(CYCLE_SOURCE, "count_to").expect("the cycle expands");
+    let collapsed = render_source_with_options(
+        CYCLE_SOURCE,
+        "count_to",
+        RenderOptions {
+            collapse_loops: true,
+        },
+    )
+    .expect("the cycle collapses");
+
+    assert!(expanded.contains(r#"class="cycle-boundary""#));
+    assert!(!expanded.contains(r#"class="node loop""#));
+    assert!(expanded.contains("Increment the counter."));
+    assert!(!expanded.contains("cycle-interface"));
+    assert!(expanded.contains(r#"<title xml:space="preserve">Count to the limit.</title>"#));
+    assert!(expanded.contains(">Count to the limit.</tspan>"));
+
+    assert!(collapsed.contains(r#"class="node loop""#));
+    assert!(!collapsed.contains(r#"class="cycle-boundary""#));
+    assert!(!collapsed.contains("Increment the counter."));
+    assert!(collapsed.contains("Count to the limit."));
+    assert!(collapsed.contains("Cycle: Count to the limit."));
+    assert!(collapsed.contains(">mut count, limit</tspan>"));
+    assert!(collapsed.contains(">total</tspan>"));
+    assert!(
+        collapsed
+            .contains(".action .label, .loop .label { font-weight: 500; text-anchor: start; }")
+    );
+
+    let invalid = CYCLE_SOURCE.replace("break count", "return count");
+    for collapse_loops in [false, true] {
+        assert!(matches!(
+            render_source_with_options(&invalid, "count_to", RenderOptions { collapse_loops }),
+            Err(RenderError::InvalidFlow { .. })
+        ));
+    }
+}
+
+#[test]
+fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
+    let description = "Collect <the results> & keep processing until there are enough items to complete the current request. ".repeat(3);
+    let source = CYCLE_SOURCE.replace("Count to the limit.", &description);
+    let svg = render_source(&source, "count_to").expect("the long cycle caption renders");
+    let escaped = description
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+    assert!(svg.contains(&format!("<title xml:space=\"preserve\">{escaped}</title>")));
+    let caption = svg
+        .lines()
+        .find(|line| line.contains("<text class=\"cycle-caption\""))
+        .unwrap();
+    assert!(caption.contains("xml:space=\"preserve\""));
+    assert!(caption.contains("…</tspan>"));
+    assert_eq!(caption.matches("<tspan").count(), 2);
 }
 
 #[test]
@@ -153,14 +232,14 @@ fn the_description_names_every_role_and_label_once() {
         "start and cases have no capture marker"
     );
 
-    // A choice is a select, and the end node carries the return type.
+    // A choice is a select, and end carries both the return type and value.
     assert!(
         description.contains("Select: Pick a lane."),
         "the select is not named as one: {description}"
     );
     assert!(
-        description.contains("End: u8"),
-        "the end node does not carry its return type: {description}"
+        description.contains("End: u8 capturing end"),
+        "the end node does not carry its return type and input: {description}"
     );
 
     for (label, what) in [
@@ -185,7 +264,7 @@ fn the_description_names_every_role_and_label_once() {
 #[test]
 fn the_end_label_omits_the_arrow_regardless_of_spacing() {
     for output in ["->u8", "-> u8", "->\n\tu8"] {
-        let source = format!("#[kaalang] fn example(end: u8){output} {{}}");
+        let source = format!("#[kaalang] fn example(end: u8){output} {{ |end| return end; }}");
         let svg = render_source(&source, "example").unwrap();
         assert!(!svg.contains("-&gt;"), "{output}");
         assert!(describe(&svg).contains("End: u8 capturing end"), "{output}");

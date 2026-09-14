@@ -7,6 +7,8 @@ fn mutate_shared_capture(text: String) -> usize {
         text.push('!');
         text.len()
     };
+
+    |end| return end;
 }
 
 fn main() {}

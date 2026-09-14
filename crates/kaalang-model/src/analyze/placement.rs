@@ -69,6 +69,7 @@ fn branches(kind: BlockKind) -> bool {
 /// One implicit junction seen from source order: its last alternative, the
 /// work completing its branches, and each producer occurrence's selections.
 struct Junction<'a> {
+    flow: &'a Flow,
     merge: &'a WireMerge,
     position: usize,
     owners: &'a [(usize, Vec<usize>)],
@@ -77,14 +78,16 @@ struct Junction<'a> {
 
 impl<'a> Junction<'a> {
     fn of(
-        flow: &Flow,
+        flow: &'a Flow,
         ancestry: &[BTreeSet<BranchSelection>],
         merge: &'a WireMerge,
         owners: &'a [(usize, Vec<usize>)],
     ) -> Self {
         let outputs = merge.producers.iter().map(|producer| match *producer {
             ProducerId::BlockOutput { block, output } => (block, output),
-            ProducerId::FlowInput(_) => unreachable!("a wire merge combines block outputs"),
+            ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => {
+                unreachable!("a wire merge combines block outputs")
+            }
         });
         let mut position = 0;
         let mut producers = Vec::with_capacity(merge.producers.len());
@@ -96,6 +99,7 @@ impl<'a> Junction<'a> {
             ));
         }
         Self {
+            flow,
             merge,
             position,
             owners,
@@ -126,7 +130,7 @@ impl<'a> Junction<'a> {
         let Some((_, reached)) = self
             .producers
             .iter()
-            .find(|&&(producer, _)| produced(execution, producer))
+            .find(|&&(producer, _)| produced(self.flow, execution, producer))
         else {
             return false;
         };
@@ -148,7 +152,7 @@ impl<'a> Junction<'a> {
                 .all(|other| {
                     self.producers
                         .iter()
-                        .any(|&(producer, _)| produced(other, producer))
+                        .any(|&(producer, _)| produced(self.flow, other, producer))
                 })
     }
 }

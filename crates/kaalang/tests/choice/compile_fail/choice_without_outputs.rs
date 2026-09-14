@@ -13,8 +13,7 @@ fn invalid(input: u32) -> u32 {
         }
     };
 
-    #[action("Finish.")]
-    let end = |input| { input };
+    |input| return input;
 }
 
 fn main() {}

@@ -12,8 +12,7 @@ fn copy_then_borrow(value: u32) -> u32 {
         assert_eq!(*value, 1);
     };
 
-    #[action("Finish.")]
-    let end = |next| next;
+    |next| return next;
 }
 
 #[test]

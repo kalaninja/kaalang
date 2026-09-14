@@ -20,6 +20,8 @@ fn mutably_borrowed_choice_output(input: Option<String>) -> usize {
 
     #[action("Use zero when absent.")]
     let end = |absent| { 0 };
+
+    |end| return end;
 }
 
 fn main() {}

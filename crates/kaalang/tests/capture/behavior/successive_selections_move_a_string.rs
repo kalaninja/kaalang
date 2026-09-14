@@ -28,6 +28,8 @@ fn successive_selections_move_a_string(condition: bool, long: bool) -> usize {
 
     #[action("Finish with the selected length.")]
     let end = |selected| selected;
+
+    |end| return end;
 }
 
 #[test]

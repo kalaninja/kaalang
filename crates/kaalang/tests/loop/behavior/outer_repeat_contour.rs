@@ -1,8 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn outer_repeat_contour(mut mode: u8) -> u8 {
-    loop {
+fn outer_repeat_contour(mode: u8) -> u8 {
+    #[cycle("Advance until the left route leaves.")]
+    let result = |mut mode| {
         #[choice("Which route?")]
         #[case("Leave on the left.")]
         #[case("Advance in the middle.")]
@@ -13,23 +14,22 @@ fn outer_repeat_contour(mut mode: u8) -> u8 {
             _ => (),
         };
 
-        |leave| break;
+        |leave, mode| break mode;
 
         #[action("Advance through the middle case.")]
         |middle, &mut mode| *mode = 0;
 
         #[action("Advance through the right case.")]
         |right, &mut mode| *mode = 1;
-    }
+    };
 
-    #[action("Return the mode.")]
-    let end = |mode| mode;
+    |result| return result;
 }
 
-/// The only break is the leftmost case, so the return climbs the right of the
-/// body even though RFC 0002 §8 prefers the left contour here.
+/// The only break is the leftmost case, so the iteration back edge climbs the
+/// right of the body even though RFC 0002 §8 prefers the left contour here.
 #[test]
-fn the_return_takes_the_flank_the_break_leaves_clear() {
+fn the_back_edge_takes_the_flank_the_break_leaves_clear() {
     assert_eq!(outer_repeat_contour(0), 0);
     assert_eq!(outer_repeat_contour(1), 0);
     assert_eq!(outer_repeat_contour(2), 0);

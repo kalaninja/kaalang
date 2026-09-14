@@ -1,0 +1,5 @@
+error: structural kaalang loops are no longer supported; use a `#[cycle("description")]` block
+ --> tests/loop/compile_fail/captured_legacy_loop.rs:5:12
+  |
+5 |     |flag| loop {};
+  |            ^^^^^^^

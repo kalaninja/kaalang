@@ -1,0 +1,5 @@
+error: a kaalang cycle body must use braces
+ --> tests/loop/compile_fail/cycle_without_braces.rs:6:8
+  |
+6 |     || break;
+  |        ^^^^^

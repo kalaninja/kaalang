@@ -16,6 +16,8 @@ fn invalid(condition: bool) -> u32 {
 
     #[action("Combine two markers no execution provides together.")]
     let _reused = |_left, _right| { () };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -1,5 +1,0 @@
-error: this kaalang block is unreachable
- --> tests/loop/compile_fail/unreachable_after_loop.rs:7:5
-  |
-7 |     #[action("Finish.")]
-  |     ^

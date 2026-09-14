@@ -1,5 +1,5 @@
 error: could not construct a diagram under RFC 0002: its routes and column constraints have no conforming arrangement; the exhaustive search reached case `Advance from zero.` before exhausting its alternatives
- --> tests/loop/compile_fail/enclosed_break.rs:6:9
+ --> tests/loop/compile_fail/enclosed_break.rs:7:9
   |
-6 |         #[choice("Exit or advance?")]
+7 |         #[choice("Exit or advance?")]
   |         ^

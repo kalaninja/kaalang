@@ -7,6 +7,8 @@ fn invalid(input: u32, trigger: ()) -> (u32, u32) {
 
     #[action("Pair the two values.")]
     let end = |output, input| { (output, input) };
+
+    |end| return end;
 }
 
 fn main() {}

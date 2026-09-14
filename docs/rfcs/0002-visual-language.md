@@ -15,18 +15,20 @@ Terms defined by RFC 0001 keep their meanings. The visual language adds the
 following terms:
 
 - a **diagram** is the complete visual representation of one flow;
-- a **node** is a drawn unit that represents all or part of one block, authored
-  or implicit, except for the synthetic start node; a loop or break is
-  represented by junctions and connections rather than a node;
+- a **node** is a drawn unit that represents all or part of one block, except
+  for the synthetic start and end nodes. An expanded cycle is a bounded region,
+  a collapsed cycle is one node, a break is represented by routes and any needed
+  structural junction, and a return is represented by its route to end;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
 - a **parameter panel** is the non-executable rectangle to the right of start
   that lists the flow's authored Rust parameters;
-- an **exit** is an outgoing attachment point of a node; start and action nodes
-  each have one non-branching exit, a question has one branch-specific exit per
-  answer, a select has one distributor exit, each case has one exit associated
-  with its choice branch, and end has no exit;
+- an **exit** is an outgoing attachment point of a node; start, action, and a
+  normally completing collapsed cycle each have one non-branching exit, a
+  question has one branch-specific exit per answer, a select has one distributor
+  exit, each case has one exit associated with its choice branch, and end has no
+  exit;
 - a **hand-over** is the ordered sequence of newly provided wires labeled at a
   node exit;
 - a **column** is a vertical layout position at which nodes and vertical
@@ -39,9 +41,21 @@ following terms:
 ## 3. Diagram structure
 
 A diagram contains a visual representation of each reachable block the flow
-declares, authored or implicit. Loops and breaks use structural junctions and
-connections, and the implicit end block has a node only when at least one finite
-execution summary has outcome `End`. No block is duplicated to simplify layout.
+declares. Breaks use structural junctions as needed, while the flow's structural
+return connects directly to end. The implicit visual end boundary has a node
+only when at least one finite execution summary has a `Return` outcome. No block
+is duplicated to simplify layout.
+
+Every cycle is rendered in one of two representations selected for the whole
+diagram. The expanded representation draws its boundary, body, local result
+routes, and iteration back edge. The collapsed representation replaces that
+region with one described loop node. Both project the same validated cycle block
+and preserve the same captures, outputs, branch participation, and source order.
+Internal wires and transfers never cross a cycle boundary directly.
+
+Expanded is the default. A presentation may request that all cycles be
+collapsed; this version has no source attribute, interactive folding state, or
+per-cycle selection for that choice.
 
 Connections preserve the validated model's dependencies, wire merges, and branch
 routes. The serial order they show is the source order RFC 0001 §7 defines, so
@@ -54,9 +68,10 @@ data connections.
 ## 4. Node kinds
 
 An action and a question each become one node. A choice becomes one select node
-and one case node per authored case. A reachable end block becomes one end node.
-Case nodes are visual projections, not additional semantic blocks; loops and
-breaks have no nodes of their own.
+and one case node per authored case. A collapsed cycle becomes one cycle node. A
+reachable flow-completion boundary becomes one end node. Case nodes and the end
+node are visual projections, not additional semantic blocks; breaks and returns
+have no nodes of their own.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
@@ -65,7 +80,8 @@ breaks have no nodes of their own.
 | **question** | a question block        | the block description  | elongated hexagon                     |
 | **select**   | a choice block          | the choice description | skewed parallelogram                  |
 | **case**     | one case of a choice    | the case description   | a shape with a lower triangular point |
-| **end**      | the end block           | the flow's return type | capsule                               |
+| **cycle**    | a collapsed cycle block | the cycle description  | loop-marked rectangle                 |
+| **end**      | flow completion         | the flow's return type | capsule                               |
 
 ### 4.1 start
 
@@ -102,105 +118,132 @@ case nodes.
 
 Each authored case becomes one derived case node. All case nodes belonging to
 one select occupy the same row, in authored order. A case may not be lowered
-below its siblings to route around a convergence or loop return; a topology that
-requires this has no conforming diagram. A select-to-case connection names
-nothing at either end, because the case row belongs to the select above it. The
-branch's output wire is handed over at the case node's exit. A choice output may
-carry data or serve as a unit-valued control wire; the diagram shows its wire
-name in either case.
+below its siblings to route around a convergence or iteration back edge; a
+topology that requires this has no conforming diagram. A select-to-case
+connection names nothing at either end, because the case row belongs to the
+select above it. The branch's output wire is handed over at the case node's
+exit. A choice output may carry data or serve as a unit-valued control wire; the
+diagram shows its wire name in either case.
 
 ### 4.6 end
 
-When at least one execution has outcome `End`, the end node represents the
-flow's implicit end block. That block has no description, so its node carries
-the flow's return type instead: the authored return type, and `()` when the
-function declares none. A diagram has no separate return node. A fully diverging
-flow omits the unreachable end node.
+When at least one execution has a `Return` outcome, the end node represents the
+flow's visual completion boundary. It has no authored description, so its label
+is the authored return type, and `()` when the function declares none. A diagram
+has no separate return node. A fully diverging flow omits the unreachable end
+node.
 
-The end node's label names the type. Its incoming connection does not name the
-`end` wire: every connection reaching end carries that wire, so the endpoint
-already identifies it. The end node remains an ordinary consumer: alternative
-producers of `end` merge above it (section 7), and it is not itself the merge.
+The structural return terminates at the end node. Its arrival is not a
+logical-wire merge. The end node displays the value transferred into the flow
+boundary, which Rust checks against the function signature.
 
-### 4.7 loop
+### 4.7 cycle
 
-A loop has no condition or separate computational node. An entry junction
-receives the initial route and every repeated arrival. Its optional entry
-captures attach the loop to its branch but carry no labels at the junction. The
-body follows that junction once in the finite diagram. Normal body endings meet
-at an unlabeled iteration tail, whose return connects to the entry. An empty
-body connects entry directly to tail. A loop with no repeating route has no tail
-or return connection. If it also has no entry captures, only its body is drawn:
-the entry adds no junction or spacing to the diagram.
+An expanded cycle is enclosed by a visible boundary with a separate loop marker.
+Its description is secondary: the caption wraps into the available space and may
+end with an ellipsis when no more lines fit. If even an ellipsis cannot fit, the
+visible caption may be omitted. The full authored description remains available
+in a tooltip and the accessible diagram description. Caption length does not
+enlarge the boundary or move routes. The boundary does not repeat the cycle's
+input or output list; its entry and result routes show the interface.
 
-Unit-valued question outputs captured by a loop or break only select an existing
-branch route. Their output name or branch description already labels that route;
-the structural capture adds neither another label nor another junction. A loop
-whose only inputs are such outputs follows the same placement rule as a loop
-without entry captures. Loop-entry and break captures remain unlabeled in every
-form; data dependencies still connect to their structural junctions.
+Inside the boundary, an entry junction receives the initial route and every
+iteration back edge. The body follows that junction once in the finite diagram.
+Normal body endings meet at an unlabeled iteration tail whose back edge returns
+to the entry. An empty body connects entry directly to tail. A cycle with no
+repeating route has no tail or back edge. Break routes meet at the result
+boundary, and the cycle's one normal continuation leaves that boundary carrying
+all declared outputs together. A cycle with no reachable break has no normal
+outgoing connection.
+
+Nested cycles have nested boundaries. Every inner route either remains within
+the inner boundary or completes at its result interface before the enclosing
+body continues; no inner wire or transfer connects directly to an outer
+boundary. The boundary remains visible for an empty cycle or a cycle that
+completes on its first iteration; its caption follows the same space limits.
+
+A collapsed cycle becomes one cycle node carrying the same loop marker and
+authored description. Its receiving label lists the authored captures, and its
+hand-over lists the authored output bindings. It has one normal exit when
+completion is reachable, regardless of the number of output wires, and none when
+the cycle fully diverges. Its body, break routes, result junction, and iteration
+back edge are hidden, not removed from validation.
+
+Unit-valued question outputs captured by a cycle or break still select an
+existing branch route. The branch description or output name remains at the
+question exit; the structural dependency adds no duplicate label. A transfer's
+capture junction is likewise unlabeled. A collapsed cycle shows its complete
+capture list on the node; an expanded cycle adds no interface list.
 
 ### 4.8 break
 
-A break redirects its branch connection to the continuation after the targeted
-loop, or to the enclosing iteration tail when that continuation completes an
-outer iteration. A break capturing data uses an unlabeled structural junction
-for its dependencies; a break with no data captures adds no vertex or spacing.
-Neither form has a computational figure, description, or output. Labeled exits
-bypass every intervening loop; they do not traverse those loops' return
-connections. Authored loop labels resolve the destination without adding a
-diagram node. A route producing `end` still finishes the entire flow at the end
-node.
+A break redirects its branch route to the directly containing cycle's result
+boundary. Break routes from nested cycles stop at their own boundary and never
+bypass an enclosing cycle. A break capturing data uses an unlabeled structural
+junction for its dependencies; a break with no data captures adds no vertex or
+spacing. It has no computational figure, description, or output hand-over of its
+own.
+
+### 4.9 return
+
+The flow's structural return redirects its root-owned branch route to the flow's
+end boundary. Its explicit captures participate in dependency and serial-order
+routing, but the route ends directly at end and adds no vertex or spacing. The
+return has no computational figure, description, or wire hand-over of its own.
+RFC 0001 permits at most one root-owned return and none inside a cycle; a fully
+diverging flow has no return or end node.
 
 ## 5. Flow inputs and outputs
 
 The parameter panel shows every flow input with its Rust type. Every named flow
 input is also shown as an output of the start node, even if no block captures
-it. A wildcard flow input produces no wire label. A zero-computation flow is the
-start node connected to the end node by the `end` wire a flow input provides,
-when that flow reaches end.
+it. A wildcard flow input produces no wire label. A zero-computation flow with
+an explicit return connects start to end through that return's route and any
+capture dependency.
 
 ## 6. Wires and labels
 
 Description labels carry the exact authored text. A presentation may wrap or
-escape that text but must not paraphrase, normalize, or synthesize it. No node
-carries a caption naming its block kind. The end node's `()` for an absent
+escape that text but must not paraphrase, normalize, or synthesize it. The
+expanded-cycle caption is the exception in §4.7: it may show only a prefix and
+an ellipsis while retaining the complete description outside the caption. No
+node carries a caption naming its block kind; the cycle's non-textual loop
+marker is independent of its description. The end node's `()` for an absent
 return type states the contract rather than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
 is shared with a later capture or moved to an implicit merge.
 
-Every named flow input and every block output except `end` is labeled once at
-the exit that provides it, or by a shared label as defined below, except for a
-question output replaced by its branch description. The `end` wire and its
-terminal merge are unlabeled because every route carrying it finishes at end.
-When `end` is one part of a multi-output hand-over, the other outputs remain
-labeled in declaration order. This includes an intentionally unused wire whose
-name begins with `_`. The labels at one exit form its hand-over. The start node
-hands over its named flow inputs in signature order, an action hands over all
-its labeled outputs in declaration order, and an undescribed question branch or
-case hands over its labeled branch output. An action declaring no labeled
-outputs therefore carries no hand-over label. A hand-over names newly provided
-wires only; it neither lists wires that remain available nor implies that the
-next node captures every named wire.
+Every named flow input and every block output is normally labeled once at the
+exit that provides it, or by a shared label as defined below, except for a
+question output replaced by its branch description. An expanded cycle is the
+exception: neither structural interface repeats the cycle's input or output
+list. This includes ordinary labels for wires named `end`, `out`, or `result`
+and an intentionally unused wire whose name begins with `_`. The labels at one
+exit form its hand-over. The start node hands over its named flow inputs in
+signature order, an action and a collapsed cycle hand over all their outputs in
+declaration order, and an undescribed question branch or case hands over its
+branch output. A block declaring no outputs therefore carries no hand-over
+label. A hand-over names newly provided wires only; it neither lists wires that
+remain available nor implies that the next node captures every named wire.
 
 A hand-over displays each producer's authored mutability as `name` or
 `mut name`, including named flow inputs. This is permission to mutably borrow
 the wire, not a capture. Alternative producers declare the same mutability and
-retain it in shared merge labels. The `end` wire remains unlabeled even when
-declared with `mut`; an authored question-branch description still replaces its
-output label.
+retain it in shared merge labels. An authored question-branch description still
+replaces its output label.
 
-Every computational block input is labeled beside its receiving node. Value
+Every computational block input and collapsed-cycle input is labeled beside its
+receiving node. An expanded cycle adds no label for its structural entry. Value
 captures are shown as `name` or `mut name`, and borrowed captures as `&name` or
-`&mut name`, according to the authored form. The captures of a node are drawn
-once however many connections arrive there, because the capture list belongs to
-the node rather than to an incoming connection. All forms establish execution
-dependencies. A wire that remains available for a later capture may pass
-virtually along a transitive connection path without appearing in intermediate
-hand-overs. This version of the visual language does not show wire lifetimes or
-assign a wire to one particular sequence of connections.
+`&mut name`, according to the authored form. The captures are drawn once however
+many connections arrive, because the list belongs to the block rather than to an
+incoming connection. All forms establish execution dependencies. A wire that
+remains available for a later capture may pass virtually along a transitive
+connection path without appearing in intermediate hand-overs. This version of
+the visual language does not show wire lifetimes or assign a wire to one
+particular sequence of connections.
 
 A computational node with an incoming connection and no authored inputs shows
 `()` beside its receiving end. This marks an empty capture list, not a wire or a
@@ -208,6 +251,12 @@ unit-valued input: a connection passing through a node does not mean that the
 node captures the preceding hand-over. Start and case nodes have no such label.
 The first computational node also receives a connection from start when it has
 no inputs.
+
+The end node labels the value transferred by `return`, rather than the return's
+complete capture list. Its input wires are shown as the same comma-separated
+list used by every other receiving label, without the transfer expression's
+tuple punctuation; a unit value is `()`. This receiving label follows the same
+sharing rules as every other capture.
 
 A hand-over and an adjacent capture may share one label only when they are the
 two ends of the same connection, that connection is the only one leaving its
@@ -223,8 +272,8 @@ different hand-over remains at its own exit. The shared label represents the
 alternative hand-overs, not a new producer at the junction. If the merge has one
 outgoing connection, it is the sole connection entering its consumer, and that
 consumer's capture list matches the shared hand-over, the same label also
-represents the capture. The terminal `end` merge is instead unlabeled, as
-described above.
+represents the capture. Structural cycle-result junctions are not wire merges
+and share no wire label.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
 the raw and ordinary spellings of one wire name the same wire, and only the
@@ -238,27 +287,27 @@ represents its corresponding choice output.
 
 Consider one finite structural execution after its branches have been selected.
 A node participates when its represented block executes or its represented case
-is selected. Start always participates; end participates only in an `End`
+is selected. Start always participates; end participates only in a `Return`
 outcome. A producer node precedes a consumer node when a capture dependency from
 the represented producer occurrence to that consumer participates in the
 execution, and this order is transitive. A select node precedes its selected
 case node. Wire production and implicit merges also establish the precedence
 defined by RFC 0001 §7: a merge follows every producer and every block it
 closes, and precedes every block that captures the merged wire. These orderings
-participate in the same per-execution reduction as capture dependencies. In an
-`End` outcome, RFC 0001 makes the producer of `end` the last participating
-block, so every other node precedes the end node.
+participate in the same per-execution reduction as capture dependencies. In a
+`Return` outcome, RFC 0001 makes the structural return the last participating
+item, so every other participating vertex precedes the end node.
 
-Source order supplies the serial order of participating blocks. For each
-execution, add precedence from start to its first authored block and between
-consecutive authored blocks, including loop and break junctions. An `End`
-outcome continues from the last one to end; a `Repeat` outcome continues to the
-corresponding iteration tail. A question leaves through its selected exit; a
-choice continues through its selected case. With no computational blocks, start
-leads directly to end or through a loop's entry to a break, its iteration tail,
-or end, according to the recorded route. These relations participate in the same
-reduction as dependencies and merges. They express the order the flow is written
-in without inventing captures.
+Source order supplies the serial order of participating blocks and transfers.
+For each execution, add precedence from start to its first authored item and
+between consecutive authored items, including cycle-interface and transfer
+junctions. A `Return` outcome continues from its structural return to end; a
+`Repeat` outcome continues to the corresponding iteration tail. A question
+leaves through its selected exit; a choice continues through its selected case.
+With no computational blocks, start leads through the authored cycle or transfer
+junctions to an iteration tail or end according to the recorded route. These
+relations participate in the same reduction as dependencies and merges. They
+express the order the flow is written in without inventing captures.
 
 For example, if two actions capture `left` and `right` after a merge, draw them
 in the order they are written on the happy path. A connection between them does
@@ -289,15 +338,16 @@ connections through participating intermediate nodes already represents it. For
 example, if `P` produces `x`, `A` borrows `x` and produces `a`, and `C` captures
 `x` and `a`, the diagram contains `P → A → C` but no direct `P → C` connection.
 
-Every computational node is reachable from start, including zero-input actions.
-A start or action exit continues to the next block in source order; a consumer
-that captures nothing from it is reached transitively through that sequence. A
-question activates exactly one of its two exits; a select activates exactly one
-outgoing connection from its distributor exit and therefore exactly one case.
-Branch connections retain their selected output even when the next step does not
-capture it directly. A node with several incoming connections waits for every
-one that participates in the current execution. At a convergence, incoming
-connections from alternative branches never participate together.
+Every computational or collapsed-cycle node is reachable from start, including
+zero-input blocks. A start, action, or completed-cycle exit continues to the
+next item in source order; a consumer that captures nothing from it is reached
+transitively through that sequence. A question activates exactly one of its two
+exits; a select activates exactly one outgoing connection from its distributor
+exit and therefore exactly one case. Branch connections retain their selected
+output even when the next step does not capture it directly. A node with several
+incoming connections waits for every one that participates in the current
+execution. At a convergence, incoming connections from alternative branches
+never participate together.
 
 kaalang has no authored merge block or merge icon. Equally named alternative
 outputs meet at an implicit junction of connections before any consumer of the
@@ -312,22 +362,24 @@ by the per-execution transitive reduction. The junction adds neither a
 computational block nor a producer occurrence. Consumers display the captured
 logical wire name once.
 
-For each loop, use one representative iteration per finite summary. A break
-continues after its resolved target; a repeating outcome ends at the loop's
-iteration tail, whose return reaches the entry. End routes reach end directly.
-Entry and break junctions participate in the forward dependency and serial-order
-rules, including dependencies from their explicit captures. No local wire
-travels along a return or escapes a break.
+For each expanded cycle, use one representative iteration per finite summary. A
+break reaches that cycle's result boundary; a repeating outcome ends at its
+iteration tail, whose back edge reaches the entry. The structural return reaches
+end. Cycle-interface and transfer junctions participate in the forward
+dependency and serial-order rules, including dependencies from their explicit
+captures. No iteration-local wire travels along a back edge or crosses the
+boundary directly.
 
-The continuation of a break occupies its branch column beside the other body
-routes. Carry precedence from the tails of the region it leaves through the
-continuation to its first wire merge, iteration tail, or end. Those boundaries
-stay below the body; preceding actions, questions, choices, and loop entries can
-start alongside it. This is layout precedence only, never a drawn execution edge
-from a repeating tail. Nested returns are routed innermost first. A break at the
-end of an inner loop may reach the outer iteration tail instead of a
-computational node. Each authored block is drawn once; these finite summaries do
-not unroll runtime iterations or prove termination.
+The result route of a break occupies its branch column beside the other body
+routes. Carry precedence from the tails of the bounded region through its result
+boundary and outer continuation to the first wire merge, enclosing iteration
+tail, or end. Those boundaries stay below the body; preceding actions,
+questions, choices, and cycle entries can start alongside it. This is layout
+precedence only, never a drawn execution edge from a repeating tail. Nested back
+edges are routed innermost first. A completed inner cycle may feed outer work or
+reach the outer iteration tail through that work's normal route. Each authored
+block is drawn once; finite summaries do not unroll runtime iterations or prove
+termination.
 
 ## 8. Spatial notation
 
@@ -345,8 +397,10 @@ node, connection, or connection label.
 
 Consecutive blocks continue down the current column. After a convergence, the
 entry blocks of its shared continuation form a sequence in the column reached by
-the group's first branch. Exact lower rows and routing space remain presentation
-choices.
+the group's first branch. An expanded cycle boundary encloses every vertex,
+junction, label, and back edge owned by the cycle and leaves its external
+interface on the boundary. Nested boundaries do not overlap or interleave. Exact
+lower rows, boundary padding, and routing space remain presentation choices.
 
 A convergence group reserves enough columns for its shared continuation,
 including any nested question or choice. Later sibling branches start to the
@@ -357,46 +411,47 @@ vertex it draws itself, which the first branch of a selection could never do at
 all, since its column is the selection's own. Branches that never converge
 reserve nothing, and their subtrees may interleave.
 
-When end is reachable, it is the final block of the whole diagram: it occupies a
+When end is reachable, it is the final node of the whole diagram: it occupies a
 row below every other node and junction, including all iteration tails. Every
-loop return stays above end. This is placement order only; an execution may
-still finish from inside a loop. A topology that cannot keep end last without
-crossing connections or changing authored branch order has no conforming
-diagram.
+iteration back edge stays above end. This is placement order only; root branches
+may converge at different depths before the single return. A topology that
+cannot keep end last without crossing connections or changing authored branch
+order has no conforming diagram.
 
-Alternative producers of `end` meet at their implicit merge above the end node,
-mirroring the distributor that fans a select node out to its case nodes.
-Connection routes are simple: they do not intersect or overlap themselves. They
-do not cross one another or pass through a non-endpoint node. Meeting at a
-common endpoint or deliberately sharing a collinear segment is not a crossing;
-connections may share such a segment only when they have the same source exit or
-the same destination node. Other connections do not overlap. Forward connections
-are plain lines without arrowheads. A loop return travels upward outside its
-body and ends horizontally with an arrowhead at its entry junction. It clears
-the whole column range of that body, including nested returns, independently of
-the rows assigned to its vertices. Continuation vertices after leaving the body
-do not belong to it. The common segment below the junction enters the first body
-block without an arrowhead. Prefer the right contour when every repeating route
-takes the rightmost branch of the first selection in the body; otherwise prefer
-the left contour. A loop without a selection prefers the left contour. The
-return is the only exception to downward routing and the only arrowhead. A route
-contains only straight horizontal and vertical segments, so every bend is a
-right angle.
+The structural return reaches end on its arrival rail without declaring a
+logical wire merge. Connection routes are simple: they do not intersect or
+overlap themselves. They do not cross one another or pass through a non-endpoint
+node. Meeting at a common endpoint or deliberately sharing a collinear segment
+is not a crossing; connections may share such a segment only when they have the
+same source exit or the same destination node. Other connections do not overlap.
+Forward connections are plain lines without arrowheads. An iteration back edge
+travels upward inside its cycle boundary, outside the body's content, and ends
+horizontally with an arrowhead at its entry junction. It clears the whole column
+range of that body, including nested cycle boundaries and back edges,
+independently of the rows assigned to its vertices. The cycle's outer
+continuation does not belong to the body. The common segment below the junction
+enters the first body block without an arrowhead. Prefer the right contour when
+every repeating route takes the rightmost branch of the first selection in the
+body; otherwise prefer the left contour. A cycle without a selection prefers the
+left contour. The back edge is the only exception to downward routing and the
+only arrowhead. A route contains only straight horizontal and vertical segments,
+so every bend is a right angle.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an
 incoming side route must not turn down and overlap that continuation. Routes
 already in the junction's column descend straight to the same point.
 
-The visual-language contract covers the diagram's nodes, parameter panel, roles,
-labels, the connection end or ends to which each connection label belongs,
-branch order, implicit convergence, dependency reachability, connections,
-crossing-free orthogonal routing, forward top-to-bottom row order, and branch
-column order. Exact dimensions, colors, typography, spacing, and routing offsets
-are presentation choices.
+The visual-language contract covers the diagram's nodes, cycle boundaries and
+interfaces, parameter panel, roles, labels, the connection end or ends to which
+each connection label belongs, branch order, implicit convergence, dependency
+reachability, connections, crossing-free orthogonal routing, forward
+top-to-bottom row order, and branch column order. Exact dimensions, colors,
+typography, spacing, and routing offsets are presentation choices.
 
-Every validated flow has a conforming diagram. A flow whose required connections
-cannot be drawn under these rules is rejected: deciding that is part of
-validating it, and the decision is reported at the block the obstruction
-concerns. Acceptance carries the chosen arrangement with the model, so a
-presentation realizes that one rather than searching for another.
+Every accepted flow has a conforming expanded diagram. A flow whose expanded
+connections and boundaries cannot be drawn under these rules is rejected before
+view selection. The collapsed projection is then derived from that validated
+model and its own arrangement and geometry are checked. Acceptance carries the
+chosen arrangement with the model, so a presentation realizes that one rather
+than searching for another.

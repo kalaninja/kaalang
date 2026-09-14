@@ -1,13 +1,14 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(flag: bool) -> usize {
-    loop {
+fn invalid() {
+    #[cycle("Try an attributed break.")]
+    || {
         #[action("Exit.")]
         break;
-    }
-    #[action("Finish.")]
-    let end = || 0;
+    };
+
+    return;
 }
 
 fn main() {}

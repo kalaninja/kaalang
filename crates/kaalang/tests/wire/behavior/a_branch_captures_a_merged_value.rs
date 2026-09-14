@@ -19,6 +19,8 @@ fn a_branch_captures_a_merged_value(amount: u8, verbose: bool) -> u8 {
 
     #[action("Report nothing.")]
     let end = |quiet, seen| 0;
+
+    |end| return end;
 }
 
 #[test]

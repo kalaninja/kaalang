@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
 use crate::layout::{
-    CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection, LABEL_FONT, LINE_HEIGHT, Label,
-    LabelKind, Node, ParameterPanel, Point, Scene,
+    CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
+    LINE_HEIGHT, Label, LabelKind, Node, ParameterPanel, Point, Scene,
 };
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
@@ -24,6 +24,7 @@ macro_rules! emit_inline {
 
 mod action;
 mod choice;
+mod loop_block;
 mod question;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
@@ -58,18 +59,26 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape {{ fill: #f0f9ff; }}
       .action .node-shape {{ fill: #f8fafc; }}
+      .loop .node-shape {{ fill: #f0fdf4; stroke-width: 2; }}
+      .loop-marker {{ fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }}
       .question .node-shape {{ fill: #fffbeb; }}
       .select .node-shape, .case .node-shape {{ fill: #f5f3ff; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
-      .action .label {{ font-weight: 500; text-anchor: start; }}
+      .action .label, .loop .label {{ font-weight: 500; text-anchor: start; }}
       .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}
+      .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }}
+      .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }}
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="connections">
+  <g class="cycle-regions">
 "##
     );
+    for region in &scene.loop_regions {
+        loop_block::write(&mut svg, region);
+    }
+    svg.push_str("  </g>\n  <g class=\"connections\">\n");
     if !scene.topology.back_edges.is_empty() {
         svg.push_str("    <defs><marker id=\"loop-arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"9\" refY=\"5\" orient=\"auto\" markerUnits=\"userSpaceOnUse\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"currentColor\"/></marker></defs>\n");
     }
@@ -205,8 +214,23 @@ fn describe(scene: &Scene) -> String {
         })
         .collect::<Vec<_>>()
         .join("; ");
+    let cycles = scene
+        .loop_regions
+        .iter()
+        .map(|region| {
+            format!(
+                "{} with inputs {} and outputs {}",
+                region.description, region.inputs, region.outputs
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
 
-    format!("Nodes: {nodes}. Connections: {connections}.")
+    if cycles.is_empty() {
+        format!("Nodes: {nodes}. Connections: {connections}.")
+    } else {
+        format!("Cycles: {cycles}. Nodes: {nodes}. Connections: {connections}.")
+    }
 }
 
 /// Appends `lead` and the joined `items`, or nothing when there are none.
@@ -289,7 +313,7 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         {
             node_name(scene, NodeId::Block(loop_.header))
         } else {
-            "the loop".to_owned()
+            "the cycle".to_owned()
         };
         let part = if loop_.tail == junction {
             "iteration tail"
@@ -299,10 +323,15 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         return format!("the {part} of {owner}");
     }
     let wires = scene.captions.junction_wires(junction);
-    if scene.topology.junctions[junction].is_break {
-        "the loop exit".to_owned()
+    let junction = &scene.topology.junctions[junction];
+    if junction.is_break {
+        "a cycle break".to_owned()
+    } else if junction.is_loop_result {
+        "the cycle result".to_owned()
+    } else if junction.is_loop_entry {
+        "the cycle entry".to_owned()
     } else if wires.is_empty() {
-        "the entry of the loop".to_owned()
+        "a structural junction".to_owned()
     } else {
         format!("the {} merge", wires.join(" and "))
     }
@@ -313,6 +342,7 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
     match scene.topology.node(id).kind {
         NodeKind::Start => format!("Start: {label}"),
         NodeKind::Action => action::name(label),
+        NodeKind::Loop => format!("Cycle: {label}"),
         NodeKind::Question => question::name(label),
         NodeKind::Select => choice::select_name(label),
         NodeKind::Case => choice::case_name(label),
@@ -331,7 +361,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
     );
     if matches!(
         projected.kind,
-        NodeKind::Action | NodeKind::Question | NodeKind::Select | NodeKind::Case
+        NodeKind::Action | NodeKind::Loop | NodeKind::Question | NodeKind::Select | NodeKind::Case
     ) {
         write_title(svg, scene.captions.label(node.id));
     }
@@ -342,6 +372,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
             write_label(svg, node, 0, 0);
         }
         NodeKind::Action => action::write(svg, node),
+        NodeKind::Loop => loop_block::write_node(svg, node),
         NodeKind::Question => question::write(svg, node),
         NodeKind::Select => choice::write_select(svg, node),
         NodeKind::Case => choice::write_case(svg, node),
@@ -385,6 +416,7 @@ const fn node_class(kind: NodeKind) -> &'static str {
     match kind {
         NodeKind::Start => "start",
         NodeKind::Action => "action",
+        NodeKind::Loop => "loop",
         NodeKind::Question => "question",
         NodeKind::Select => "select",
         NodeKind::Case => "case",

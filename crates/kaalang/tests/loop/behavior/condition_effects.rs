@@ -1,8 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn condition_effects(mut checks: usize) -> usize {
-    |&checks| loop {
+fn condition_effects(checks: usize) -> usize {
+    #[cycle("Repeat the check until it fails.")]
+    let checked = |mut checks| {
         #[question("Check once more?")]
         #[yes("YES")]
         #[no("NO")]
@@ -11,11 +12,10 @@ fn condition_effects(mut checks: usize) -> usize {
             *checks < 4
         };
 
-        |leave_1| break;
+        |leave_1, checks| break checks;
     };
 
-    #[action("Return the number of checks.")]
-    let end = |checks| checks;
+    |checked| return checked;
 }
 
 #[test]

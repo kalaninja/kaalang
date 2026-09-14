@@ -1,11 +1,10 @@
 error[E0308]: mismatched types
- --> tests/end/compile_fail/incompatible_end_producer_types.rs:4:29
-  |
-3 | #[kaalang]
-  | ---------- in this attribute macro expansion
-4 | fn invalid(condition: bool) -> u32 {
-  |                             ^  --- expected `u32` because of return type
-  |                             |
-  |                             expected `u32`, found `&str`
-  |
-  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> tests/end/compile_fail/incompatible_end_producer_types.rs:12:9
+   |
+ 3 | #[kaalang]
+   | ---------- in this attribute macro expansion
+...
+12 |     let end = |no| "no";
+   |         ^^^ expected `u32`, found `&str`
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -18,7 +18,7 @@ use super::{Arrangement, Side};
 
 /// The abstract grid a arrangement describes. Every rank gets a line of its
 /// own and every lane of the gap below it one more; every column gets a
-/// position of its own with room beside it for the return contours that climb
+/// position of its own with room beside it for the back edge contours that climb
 /// between columns.
 ///
 /// The lanes of one gap are packed against the rank below them, exactly as a
@@ -40,8 +40,8 @@ pub(super) struct Grid {
 
 /// How many contour lanes one side of a column offers.
 ///
-/// Only a loop return climbs in the space beside a column, and every loop has
-/// one return, so a topology never needs more lanes there than it has loops.
+/// Only an iteration back edge climbs in the space beside a column, and every
+/// cycle has one, so a topology never needs more lanes there than it has cycles.
 /// This is a fact about the topology, not about any presentation's spacing: a
 /// renderer holds whatever this many lanes require.
 pub(super) fn contour_lanes(topology: &Topology) -> usize {
@@ -178,9 +178,9 @@ pub(super) fn polyline(
     straighten(points)
 }
 
-/// One loop return as an orthogonal polyline: out of the tail, up the contour,
+/// One iteration back edge as an orthogonal polyline: out of the tail, up the contour,
 /// and horizontally into the entry (RFC 0002 §8).
-pub(super) fn return_polyline(
+pub(super) fn back_edge_polyline(
     topology: &Topology,
     arrangement: &Arrangement,
     grid: &Grid,
@@ -194,9 +194,9 @@ pub(super) fn return_polyline(
         .loops
         .iter()
         .position(|loop_| loop_.tail == tail)
-        .expect("a projected loop tail");
+        .expect("a projected cycle tail");
     let position = |column| grid.contour(super::Contour { column, ..contour });
-    let Some(route) = arrangement.return_routes.get(&loop_index) else {
+    let Some(route) = arrangement.back_routes.get(&loop_index) else {
         return straighten(vec![
             Point {
                 x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
@@ -316,7 +316,7 @@ pub(crate) fn arrangement(
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
     routes(topology, arrangement, &grid, &lines)?;
-    returns(flow, topology, arrangement, &grid, &lines)
+    back_edges(flow, topology, arrangement, &grid, &lines)
 }
 
 /// Every vertex has a rank and a column, every connection a corridor, and
@@ -339,7 +339,7 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
         return Err("the arrangement covers a different number of connections".to_owned());
     }
     if arrangement.contours.len() != topology.loops.len() {
-        return Err("the arrangement covers a different number of loop returns".to_owned());
+        return Err("the arrangement covers a different number of iteration back edges".to_owned());
     }
     if arrangement.gap_lanes.len() != arrangement.ranks {
         return Err("the arrangement counts lanes for a different number of rank gaps".to_owned());
@@ -347,7 +347,7 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
     for (index, route) in arrangement
         .routes
         .iter()
-        .chain(arrangement.return_routes.values())
+        .chain(arrangement.back_routes.values())
         .enumerate()
     {
         for run in &route.runs {
@@ -361,12 +361,12 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
             }
         }
     }
-    for (&index, route) in &arrangement.return_routes {
+    for (&index, route) in &arrangement.back_routes {
         let Some(contour) = arrangement.contours.get(index) else {
-            return Err("a return route names no loop".to_owned());
+            return Err("an iteration back edge names no cycle".to_owned());
         };
         if route.departure != contour.column {
-            return Err("a return route changes its recorded entry column".to_owned());
+            return Err("an iteration back edge changes its recorded entry column".to_owned());
         }
     }
     // A corridor has to end at the vertices its connection joins, and leave by
@@ -466,7 +466,7 @@ fn branch_columns(
     arrangement: &Arrangement,
 ) -> Result<(), String> {
     let reachable = super::regions::reachable(topology);
-    for block in super::regions::branchers(flow) {
+    for block in super::regions::branchers(flow, topology) {
         let regions = super::regions::regions(flow, topology, &reachable, block);
         let count = flow.blocks[block].branch_count();
         let starts = (0..count)
@@ -606,7 +606,7 @@ fn vertex_points(
 
 /// One polyline is simple: right-angled, through no vertex it does not join,
 /// and never over itself (RFC 0002 §8). Direction is not checked here, because
-/// a loop return is the one route that climbs.
+/// an iteration back edge is the one route that climbs.
 fn simple(
     points: &[Point],
     vertices: &[(Point, Vertex)],
@@ -689,9 +689,9 @@ fn routes(
     Ok(())
 }
 
-/// Each return climbs outside its body, on the side its contour names, and
+/// Each iteration back edge climbs outside its body, on the side its contour names, and
 /// crosses nothing (RFC 0002 §8).
-fn returns(
+fn back_edges(
     flow: &Flow,
     topology: &Topology,
     arrangement: &Arrangement,
@@ -699,12 +699,12 @@ fn returns(
     lines: &[Vec<Point>],
 ) -> Result<(), String> {
     let vertices = vertex_points(topology, arrangement, grid);
-    let returns = topology
+    let back_edges = topology
         .loops
         .iter()
         .enumerate()
         .map(|(i, loop_)| {
-            return_polyline(
+            back_edge_polyline(
                 topology,
                 arrangement,
                 grid,
@@ -726,9 +726,9 @@ fn returns(
             .iter()
             .enumerate()
             .filter(|(_, inner)| (loop_.header + 1..end).contains(&inner.header))
-            .flat_map(|(i, _)| returns[i].iter().map(|p| p.x))
+            .flat_map(|(i, _)| back_edges[i].iter().map(|p| p.x))
             .collect::<Vec<_>>();
-        let line = &returns[index];
+        let line = &back_edges[index];
         let outside = contour.lane < contour_lanes(topology)
             && line.len() >= 4
             && line[1..line.len() - 1]
@@ -736,13 +736,13 @@ fn returns(
                 .all(|p| super::loop_block::outside(grid, contour.side, p.x, &body, &nested));
         if !outside {
             return Err(format!(
-                "the return of the loop at block {} climbs inside its body",
+                "the iteration back edge of the cycle at block {} climbs inside its body",
                 loop_.header + 1
             ));
         }
         if line.windows(2).any(|pair| pair[1].y > pair[0].y) {
             return Err(format!(
-                "the return of the loop at block {} moves downward",
+                "the iteration back edge of the cycle at block {} moves downward",
                 loop_.header + 1
             ));
         }
@@ -754,13 +754,16 @@ fn returns(
             line,
             &vertices,
             &[Vertex::Junction(loop_.tail), Vertex::Junction(loop_.entry)],
-            &format!("the return of the loop at block {}", loop_.header + 1),
+            &format!(
+                "the iteration back edge of the cycle at block {}",
+                loop_.header + 1
+            ),
         )?;
         for (other, points) in lines.iter().enumerate() {
             let (shared, meetings) = meetings(back, line, ends(topology, other), points);
             if !compatible(line, points, shared, &meetings) {
                 return Err(format!(
-                    "the return of the loop at block {} crosses connection {}",
+                    "the iteration back edge of the cycle at block {} crosses connection {}",
                     loop_.header + 1,
                     other + 1
                 ));
@@ -769,7 +772,7 @@ fn returns(
         for earlier in &drawn {
             if !compatible(line, earlier, false, &[]) {
                 return Err(format!(
-                    "the return of the loop at block {} crosses another return",
+                    "the iteration back edge of the cycle at block {} crosses another back edge",
                     loop_.header + 1
                 ));
             }
@@ -783,11 +786,11 @@ fn returns(
 mod tests {
     use super::*;
 
-    /// How deep a return may climb beside a column is a fact about the
+    /// How deep a back edge may climb beside a column is a fact about the
     /// topology, not about any renderer's spacing. A presentation holds
     /// whatever this allows; it does not decide it.
     #[test]
-    fn the_lane_bound_counts_loops_rather_than_pixels() {
+    fn the_lane_bound_counts_cycles_rather_than_pixels() {
         let mut topology = Topology::default();
         assert_eq!(contour_lanes(&topology), 0);
         for loops in 1..=8 {
@@ -861,7 +864,7 @@ mod tests {
             (
                 include_str!("../../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
                 "blocked_terminal_crossing",
-                vec![6],
+                vec![7],
             ),
             (
                 include_str!(

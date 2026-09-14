@@ -1,6 +1,6 @@
 //! Independent enumeration of vertex events and ordered cuts. Unlike the
 //! production search, this keeps a sparse difference-constraint graph with a
-//! new coordinate for every forward route and return on every event row.
+//! new coordinate for every forward route and back edge on every event row.
 //! Strong components and a DAG longest-path pass solve it; no production
 //! index, transition, state key, numbering, or route
 //! expansion is used. The shared verifier checks the resulting witness.
@@ -141,7 +141,7 @@ pub(super) fn admissible(flow: &Flow, topology: &Topology) -> bool {
 pub(super) fn witness(flow: &Flow, topology: &Topology) -> Option<Arrangement> {
     let mut reference = Reference::new(flow, topology);
     let constraints = reference.initial.clone();
-    // Cheap positive attempts cannot return a negative answer. Try the loop
+    // Cheap positive attempts cannot return a negative answer. Try the cycle
     // sides fairly before spending the test's time on one bad assignment.
     for variation in 0..reference.variations.min(256) {
         reference.quick = true;
@@ -283,7 +283,7 @@ impl<'a> Reference<'a> {
             ..
         } = self;
         let reachable = crate::construct::regions::reachable(topology);
-        for block in crate::construct::regions::branchers(flow) {
+        for block in crate::construct::regions::branchers(flow, topology) {
             let regions = crate::construct::regions::regions(flow, topology, &reachable, block);
             let branch_columns = (0..flow.blocks[block].branch_count())
                 .map(|branch| match flow.blocks[block].kind {
@@ -539,7 +539,7 @@ impl<'a> Reference<'a> {
                 .iter()
                 .map(|a| match a {
                     Active::Edge(w) => self.topology.connections[*w].destination,
-                    Active::Back(_) => unreachable!("a case consumes no return"),
+                    Active::Back(_) => unreachable!("a case consumes no back edge"),
                 })
                 .collect::<Vec<_>>();
             if destinations != members {
@@ -707,7 +707,7 @@ impl<'a> Reference<'a> {
         let own = self.vertices[&vertex];
         let own_loop = entry.or(tail);
         let flank = own_loop.map(|i| sides[i].unwrap());
-        let at_return = own_loop.map(|i| {
+        let at_back_edge = own_loop.map(|i| {
             if entry.is_some() {
                 after[&Active::Back(i)]
             } else {
@@ -716,7 +716,7 @@ impl<'a> Reference<'a> {
         });
         let mut center = Vec::new();
         if flank == Some(Side::Left) {
-            center.push(at_return.unwrap());
+            center.push(at_back_edge.unwrap());
         }
         let arrivals = input
             .iter()
@@ -746,7 +746,7 @@ impl<'a> Reference<'a> {
             }
         }
         if flank == Some(Side::Right) {
-            center.push(at_return.unwrap());
+            center.push(at_back_edge.unwrap());
         }
         let members = self.event_vertices(vertex);
         if members.len() > 1 {
@@ -868,7 +868,7 @@ impl<'a> Reference<'a> {
                 })
                 .collect(),
             gap_lanes: vec![0; events.len()],
-            return_routes: self
+            back_routes: self
                 .topology
                 .loops
                 .iter()
@@ -912,7 +912,7 @@ impl<'a> Reference<'a> {
         };
         Self::draw_strips(events, x, &mut drawing);
         drawing
-            .return_routes
+            .back_routes
             .retain(|_, route| !route.runs.is_empty());
         drawing
     }
@@ -958,7 +958,7 @@ impl<'a> Reference<'a> {
                 let (item, from, to) = movable;
                 let route = match item {
                     Active::Edge(w) => &mut drawing.routes[w],
-                    Active::Back(i) => drawing.return_routes.get_mut(&i).unwrap(),
+                    Active::Back(i) => drawing.back_routes.get_mut(&i).unwrap(),
                 };
                 route.runs.push(Run {
                     gap,

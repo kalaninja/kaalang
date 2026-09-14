@@ -1,8 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn reversed_empty_loop(mut checks: usize) -> usize {
-    |&checks| loop {
+fn reversed_empty_loop(checks: usize) -> usize {
+    #[cycle("Repeat the check until its first branch leaves.")]
+    let checked = |mut checks| {
         #[question("Check once more?")]
         #[no("NO")]
         #[yes("YES")]
@@ -11,11 +12,10 @@ fn reversed_empty_loop(mut checks: usize) -> usize {
             *checks < 4
         };
 
-        |leave_1| break;
+        |leave_1, checks| break checks;
     };
 
-    #[action("Return the number of checks.")]
-    let end = |checks| checks;
+    |checked| return checked;
 }
 
 #[test]

@@ -29,6 +29,8 @@ fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
 
     #[action("Use the other left branch and the right value.")]
     let end = |b, value| value + 2;
+
+    |end| return end;
 }
 
 #[test]

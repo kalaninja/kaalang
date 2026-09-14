@@ -28,6 +28,8 @@ fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
         *cell.borrow_mut() += 1;
         size
     };
+
+    |end| return end;
 }
 
 #[test]

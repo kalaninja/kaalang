@@ -1,5 +1,5 @@
 error: a kaalang block body must not use `break` or `continue` outside its own Rust loops
- --> tests/loop/compile_fail/condition_break.rs:9:17
-  |
-9 |                 break;
-  |                 ^^^^^
+  --> tests/loop/compile_fail/condition_break.rs:10:17
+   |
+10 |                 break;
+   |                 ^^^^^

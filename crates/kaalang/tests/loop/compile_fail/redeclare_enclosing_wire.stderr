@@ -1,5 +1,5 @@
-error: a loop-local output must not redeclare an enclosing wire
- --> tests/loop/compile_fail/redeclare_enclosing_wire.rs:7:13
+error: a cycle-local output must not redeclare a cycle input
+ --> tests/loop/compile_fail/redeclare_enclosing_wire.rs:8:13
   |
-7 |         let count = || 1;
+8 |         let count = || 1;
   |             ^^^^^

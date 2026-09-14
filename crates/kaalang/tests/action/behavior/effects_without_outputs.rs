@@ -33,6 +33,8 @@ fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
 
     #[action("Finish.")]
     let end = |taken, &log| log.get();
+
+    |end| return end;
 }
 
 #[test]

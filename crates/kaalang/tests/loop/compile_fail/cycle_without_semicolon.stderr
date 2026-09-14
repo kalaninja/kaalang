@@ -1,0 +1,6 @@
+error: a kaalang cycle requires a trailing semicolon
+ --> tests/loop/compile_fail/cycle_without_semicolon.rs:5:5
+  |
+5 | /     #[cycle("Omit the trailing semicolon.")]
+6 | |     || {}
+  | |_________^

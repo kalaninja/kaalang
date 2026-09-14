@@ -23,6 +23,8 @@ fn merged_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> usiz
         *cell.borrow_mut() += 1;
         size
     };
+
+    |end| return end;
 }
 
 #[test]

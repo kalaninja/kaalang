@@ -2,17 +2,21 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(flag: bool) -> &'static str {
-    |&flag| loop {
-        #[question("Return a local value?")]
-        let (iterate_1, leave_1) = |flag| flag;
-        |leave_1| break;
+    #[cycle("Try to return a borrowed local.")]
+    let result = |flag| {
+        #[question("Transfer a local value?")]
+        let (done, _again) = |flag| flag;
+
         #[action("Create the local owner.")]
-        let text = |iterate_1| String::from("local");
-        #[action("Return a reference to the local owner.")]
-        let end = |&text| text.as_str();
+        let text = |done| String::from("local");
+
+        #[action("Borrow the local owner.")]
+        let borrowed = |&text| text.as_str();
+
+        |borrowed| break borrowed;
     };
-    #[action("Return a static value.")]
-    let end = || "static";
+
+    |result| return result;
 }
 
 fn main() {}

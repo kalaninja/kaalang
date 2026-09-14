@@ -17,11 +17,17 @@ use crate::model::{BlockKind, Flow};
 use crate::topology::{ExitId, NodeId, Topology, Vertex};
 
 /// Every question and choice of a flow, in authored order.
-pub(super) fn branchers(flow: &Flow) -> Vec<usize> {
+pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
     flow.blocks
         .iter()
         .enumerate()
-        .filter(|(_, block)| matches!(block.kind, BlockKind::Question | BlockKind::Choice))
+        .filter(|(index, block)| {
+            matches!(block.kind, BlockKind::Question | BlockKind::Choice)
+                && topology
+                    .nodes
+                    .iter()
+                    .any(|node| node.id == NodeId::Block(*index))
+        })
         .map(|(block, _)| block)
         .collect()
 }
@@ -38,17 +44,17 @@ pub(super) fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex
 }
 
 /// Every vertex a route reaches from `start` without entering `avoided`. The
-/// start itself appears only when a route returns to it.
+/// start itself appears only when a back edge reaches it.
 fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTreeSet<Vertex> {
     walk(topology, start, avoided, false)
 }
 
 /// The same, counting placement precedence as reaching.
 ///
-/// A loop's iteration tail has no outgoing connection — the projection moved
+/// A cycle's iteration tail has no outgoing connection — the projection moved
 /// its forward edges into `Topology::order` — so a branch that repeats appears
 /// to stop there. Only this walk shows that it goes on to whatever the flow
-/// draws below the loop.
+/// draws below the cycle.
 fn carried(topology: &Topology, start: Vertex) -> BTreeSet<Vertex> {
     walk(topology, start, None, true)
 }

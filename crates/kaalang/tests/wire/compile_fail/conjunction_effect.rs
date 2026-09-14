@@ -14,6 +14,8 @@ fn invalid(left: bool, right: bool) -> u8 {
 
     #[action("Require both selected outputs.")]
     let end = |a, b| { 1 };
+
+    |end| return end;
 }
 
 fn main() {}

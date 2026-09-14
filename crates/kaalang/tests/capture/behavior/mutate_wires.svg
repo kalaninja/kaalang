@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1078" viewBox="0 0 680 1078" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="942" viewBox="0 0 680 942" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for mutate_wires</title>
-  <desc id="kaalang-description">Nodes: Start: mutate_wires with parameters mut r#type: String; count: u32 handing over mut type, count; Action: Increment a local copy. capturing mut count handing over incremented; Action: Append to the original text. capturing &amp;mut type; Action: Measure the changed text. capturing &amp;type handing over length; Action: Move the text and keep the original count. capturing mut type, count, incremented handing over mut text, mut total; Action: Change both action outputs. capturing &amp;mut text, &amp;mut total; Action: Return the changed wires. capturing text, total, length handing over end; End: (String, u32, usize) capturing end. Connections: Start: mutate_wires to Action: Increment a local copy.; Action: Increment a local copy. to Action: Append to the original text.; Action: Append to the original text. to Action: Measure the changed text.; Action: Measure the changed text. to Action: Move the text and keep the original count.; Action: Move the text and keep the original count. to Action: Change both action outputs.; Action: Change both action outputs. to Action: Return the changed wires.; Action: Return the changed wires. to End: (String, u32, usize).</desc>
+  <desc id="kaalang-description">Nodes: Start: mutate_wires with parameters mut r#type: String; count: u32 handing over mut type, count; Action: Increment a local copy. capturing mut count handing over incremented; Action: Append to the original text. capturing &amp;mut type; Action: Measure the changed text. capturing &amp;type handing over length; Action: Move the text and keep the original count. capturing mut type, count, incremented handing over mut text, mut total; Action: Change both action outputs. capturing &amp;mut text, &amp;mut total; End: (String, u32, usize) capturing text, total, length. Connections: Start: mutate_wires to Action: Increment a local copy.; Action: Increment a local copy. to Action: Append to the original text.; Action: Append to the original text. to Action: Measure the changed text.; Action: Measure the changed text. to Action: Move the text and keep the original count.; Action: Move the text and keep the original count. to Action: Change both action outputs.; Action: Change both action outputs. to End: (String, u32, usize).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,15 +11,21 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
@@ -28,7 +34,6 @@
       M 172 506 L 172 578
       M 172 644 L 172 716
       M 172 780 L 172 852
-      M 172 916 L 172 988
     "/>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">mut type, count</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">incremented</tspan></text>
@@ -76,12 +81,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Change both action outputs.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 884)">
-      <title xml:space="preserve">Return the changed wires.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the changed wires.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 1017)">
+    <g class="node end" transform="translate(172 881)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(String, u32, usize)</tspan></text>
     </g>

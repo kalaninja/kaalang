@@ -11,6 +11,8 @@ fn invalid<T>(value: T) -> (T, T) {
 
     #[action("Pair the two values.")]
     let end = |first, second| { (first, second) };
+
+    |end| return end;
 }
 
 fn main() {}

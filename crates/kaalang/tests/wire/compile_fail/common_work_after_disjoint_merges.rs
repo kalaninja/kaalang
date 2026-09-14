@@ -31,11 +31,13 @@ fn invalid(mode: u8) -> u8 {
     #[action("Common effect.")]
     || {};
 
-    #[action("Finish the early half.")]
-    let end = |early| { early };
+    #[action("Use the early value.")]
+    let result = |early| early;
 
-    #[action("Finish the late half.")]
-    let end = |late| { late };
+    #[action("Use the late value.")]
+    let result = |late| late;
+
+    |result| return result;
 }
 
 fn main() {}

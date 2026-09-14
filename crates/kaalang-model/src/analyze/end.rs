@@ -1,47 +1,12 @@
-//! Resolves the implicit end block's `end` capture and rejects the blocks
-//! an execution would still run after it has produced `end`.
+//! Reports a route that reaches the implicit completion boundary without return.
 
 use syn::Error;
 
-use super::{Block, CaptureDependency, CaptureId, State, Walk};
+use crate::model::Flow;
 
-/// Resolves the one wire end captures, recording the occurrence this execution
-/// finishes with.
-pub(super) fn arrive(walk: &mut Walk<'_>, state: &mut State) -> bool {
-    let Some(&producer) = state.available.get(&walk.end_wire) else {
-        walk.incomplete.get_or_insert_with(|| {
-            let produced = walk.flow.flow_inputs.contains(&walk.end_wire)
-                || walk
-                    .flow
-                    .blocks
-                    .iter()
-                    .any(|block| block.outputs.contains(&walk.end_wire));
-            Error::new(
-                walk.end_wire.span(),
-                if produced {
-                    "this kaalang execution does not produce the `end` wire"
-                } else {
-                    "a kaalang flow must produce its `end` wire"
-                },
-            )
-        });
-        return false;
-    };
-    state.dependencies.insert(CaptureDependency {
-        producer,
-        capture: CaptureId {
-            block: walk.end,
-            input: 0,
-        },
-    });
-    true
-}
-
-/// `end` finishes an execution, so the block producing it is the last
-/// participating one in source order.
-pub(super) fn after_end(block: &Block) -> Error {
+pub(super) fn missing_return(flow: &Flow) -> Error {
     Error::new(
-        block.span,
-        "this kaalang block runs after the `end` wire finishes its execution; declare it above the block producing `end`",
+        flow.end_span(),
+        "this kaalang execution reaches the end of the flow without `return`",
     )
 }

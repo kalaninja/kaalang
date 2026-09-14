@@ -2,26 +2,34 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn conditional_nested_loop(flag: bool) -> usize {
-    loop {
+    #[cycle("Choose between a nested cycle and a direct result.")]
+    let result = |flag| {
         #[question("Enter the loop?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate_1, leave_1) = |flag| flag;
 
-        |leave_1| break;
+        #[action("Produce two.")]
+        let two = |leave_1| 2;
 
-        |iterate_1| loop {
-            #[action("Return one.")]
-            let end = || 1;
+        |two| break two;
+
+        #[cycle("Produce one.")]
+        let one = |iterate_1| {
+            #[action("Produce one.")]
+            let one = || 1;
+
+            |one| break one;
         };
-    }
 
-    #[action("Return two.")]
-    let end = || 2;
+        |one| break one;
+    };
+
+    |result| return result;
 }
 
 #[test]
-fn an_inner_loop_returns_through_the_terminal_merge() {
+fn an_inner_cycle_result_reaches_the_terminal_merge() {
     assert_eq!(conditional_nested_loop(true), 1);
     assert_eq!(conditional_nested_loop(false), 2);
 }

@@ -1,12 +1,12 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(flag: bool) -> usize {
+fn invalid(flag: bool) -> ! {
     #[question("Run?")]
     let (_run, _skip) = |flag| flag;
-    loop {}
-    #[action("Finish.")]
-    let end = || 0;
+
+    #[cycle("Enter without selecting a branch.")]
+    || {};
 }
 
 fn main() {}

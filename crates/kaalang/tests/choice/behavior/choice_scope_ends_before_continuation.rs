@@ -44,6 +44,8 @@ fn choice_scope_ends_before_continuation(
         *value += text.len();
         *value
     };
+
+    |end| return end;
 }
 
 #[test]

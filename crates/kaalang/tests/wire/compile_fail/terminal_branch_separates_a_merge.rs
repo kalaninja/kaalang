@@ -19,6 +19,8 @@ fn invalid(refine: bool, finish_early: bool) -> u32 {
 
     #[action("Add ten in the shared step.")]
     let end = |shared| { shared + 10 };
+
+    |end| return end;
 }
 
 fn main() {}

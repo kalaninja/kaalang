@@ -5,20 +5,20 @@ const fn count_to(limit: usize) -> usize {
     #[action("Initialize the counter.")]
     let mut count = || 0;
 
-    |&count, &limit| loop {
+    #[cycle("Count to the limit.")]
+    let total = |mut count, limit| {
         #[question("Is the counter below the limit?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate_1, leave_1) = |&count, &limit| *count < *limit;
 
-        |leave_1| break;
+        |leave_1, count| break count;
 
         #[action("Increment the counter.")]
         |iterate_1, &mut count| *count += 1;
     };
 
-    #[action("Return the counter.")]
-    let end = |count| count;
+    |total| return total;
 }
 
 #[test]

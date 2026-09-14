@@ -1,0 +1,5 @@
+error: a structural return is allowed only in the root kaalang sequence
+  --> tests/loop/compile_fail/return_inside_cycle.rs:10:17
+   |
+10 |         |leave| return;
+   |                 ^^^^^^

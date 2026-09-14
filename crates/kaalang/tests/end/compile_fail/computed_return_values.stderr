@@ -1,0 +1,11 @@
+error: a kaalang return value must be a captured input, a tuple of captured inputs, or `()`
+ --> tests/end/compile_fail/computed_return_values.rs:9:20
+  |
+9 |     |value| return value + 1;
+  |                    ^^^^^^^^^
+
+error: a kaalang return value must be a captured input, a tuple of captured inputs, or `()`
+  --> tests/end/compile_fail/computed_return_values.rs:14:20
+   |
+14 |     |value| return identity(value);
+   |                    ^^^^^^^^^^^^^^^

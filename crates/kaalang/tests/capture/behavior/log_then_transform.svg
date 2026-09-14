@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="662" viewBox="0 0 680 662" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="526" viewBox="0 0 680 526" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for log_then_transform</title>
-  <desc id="kaalang-description">Nodes: Start: log_then_transform with parameters value: String handing over value; Action: Log the value. capturing &amp;value; Action: Transform the value into its length. capturing value handing over length; Action: Finish. capturing length handing over end; End: usize capturing end. Connections: Start: log_then_transform to Action: Log the value.; Action: Log the value. to Action: Transform the value into its length.; Action: Transform the value into its length. to Action: Finish.; Action: Finish. to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: log_then_transform with parameters value: String handing over value; Action: Log the value. capturing &amp;value; Action: Transform the value into its length. capturing value handing over length; End: usize capturing length. Connections: Start: log_then_transform to Action: Log the value.; Action: Log the value. to Action: Transform the value into its length.; Action: Transform the value into its length. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,21 +11,26 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
   <g class="connections">
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 226 L 172 298
       M 172 364 L 172 436
-      M 172 500 L 172 572
     "/>
     <text class="connection-label" x="185" y="395" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
@@ -52,12 +57,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Transform the value into its </tspan><tspan x="-124" dy="18">length.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 468)">
-      <title xml:space="preserve">Finish.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish.</tspan></text>
-    </g>
-    <g class="node end" transform="translate(172 601)">
+    <g class="node end" transform="translate(172 465)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

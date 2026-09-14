@@ -15,6 +15,8 @@ fn invalid(condition: bool, common: String) -> String {
 
     #[action("Use the selected and common wires.")]
     let end = |selected, common| { format!("{common}:{selected}") };
+
+    |end| return end;
 }
 
 fn main() {}

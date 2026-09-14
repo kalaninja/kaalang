@@ -1,5 +1,0 @@
-error: the `end` wire finishes a kaalang flow; no block captures it
- --> tests/end/compile_fail/block_captures_the_end_wire.rs:9:20
-  |
-9 |     let doubled = |end| { end * 2 };
-  |                    ^^^

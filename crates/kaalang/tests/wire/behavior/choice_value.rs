@@ -21,8 +21,7 @@ fn choice_value(case: u8) -> &'static str {
     #[action("Build the third value.")]
     let selected = |third| "third";
 
-    #[action("Use the selected value.")]
-    let end = |selected| selected;
+    |selected| return selected;
 }
 
 #[test]

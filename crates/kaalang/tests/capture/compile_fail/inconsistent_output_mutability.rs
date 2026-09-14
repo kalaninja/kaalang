@@ -10,6 +10,8 @@ fn inconsistent_output_mutability(condition: bool) -> u32 {
 
     #[action("Produce an immutable alternative with the same logical name.")]
     let (r#_value, end) = |no| { (2, 2) };
+
+    |end| return end;
 }
 
 fn main() {}

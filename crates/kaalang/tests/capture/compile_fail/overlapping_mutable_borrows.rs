@@ -10,6 +10,8 @@ fn overlapping_mutable_borrows(mut text: String) -> usize {
         text.push('!');
         first.len()
     };
+
+    |end| return end;
 }
 
 fn main() {}

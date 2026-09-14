@@ -2,18 +2,20 @@ use kaalang::kaalang;
 
 #[kaalang]
 const fn empty_captures() -> usize {
-    || loop {
-        || {
-            break;
-        };
+    #[cycle("Leave through an explicit empty capture list.")]
+    || {
+        || break;
     };
 
-    loop {
+    #[cycle("Leave through a bare break.")]
+    || {
         break;
-    }
+    };
 
     #[action("Continue after both loops.")]
-    let end = || 7;
+    let result = || 7;
+
+    |result| return result;
 }
 
 #[test]

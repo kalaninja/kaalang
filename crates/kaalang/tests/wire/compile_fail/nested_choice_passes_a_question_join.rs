@@ -29,6 +29,8 @@ fn invalid(refine: bool, value: u8) -> u32 {
 
     #[action("Use the later merge.")]
     let end = |ready| { ready + 1 };
+
+    |end| return end;
 }
 
 fn main() {}

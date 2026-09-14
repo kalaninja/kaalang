@@ -16,6 +16,8 @@ fn invalid(flag: bool) -> u64 {
 
     #[action("Finish no.")]
     let end = |no, stamp| { stamp + 1 };
+
+    |end| return end;
 }
 
 fn main() {}

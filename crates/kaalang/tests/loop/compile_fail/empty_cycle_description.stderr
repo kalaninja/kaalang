@@ -1,0 +1,5 @@
+error: a kaalang cycle requires a non-empty description
+ --> tests/loop/compile_fail/empty_cycle_description.rs:5:13
+  |
+5 |     #[cycle("")]
+  |             ^^

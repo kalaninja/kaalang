@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="1596" viewBox="0 0 708 1596" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for result_shapes</title>
+  <desc id="kaalang-description">Cycles: Complete without outputs. with inputs () and outputs (); Produce a named unit result. with inputs () and outputs ready; Produce a mutable scalar result. with inputs value and outputs mut adjusted; Destructure a singleton tuple result. with inputs value and outputs single; Destructure two result wires. with inputs single and outputs left, right. Nodes: Start: result_shapes with parameters value: usize handing over value; Action: Adjust the mutable cycle result. capturing ready, &amp;mut adjusted; Action: Build the singleton tuple. capturing value handing over tuple; Action: Build two results. capturing single handing over pair; End: (usize, usize, usize, usize) capturing adjusted, single, left, right. Connections: Start: result_shapes to the cycle entry; Action: Adjust the mutable cycle result. to the cycle entry; Action: Build the singleton tuple. to a cycle break; Action: Build two results. to a cycle break; the cycle entry to the cycle result; the cycle result to the cycle entry; the cycle entry to the cycle result; the cycle result to the cycle entry; the cycle entry to a cycle break; the cycle result to Action: Adjust the mutable cycle result.; the cycle entry to Action: Build the singleton tuple.; the cycle result to the cycle entry; the cycle entry to Action: Build two results.; the cycle result to End: (usize, usize, usize, usize); a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Complete without outputs.</title>
+    <rect class="cycle-boundary" x="172" y="127" width="56" height="142" rx="12"/>
+    </g>
+    <g>
+      <title xml:space="preserve">Produce a named unit result.</title>
+    <rect class="cycle-boundary" x="172" y="271" width="56" height="142" rx="12"/>
+    </g>
+    <g>
+      <title xml:space="preserve">Produce a mutable scalar result.</title>
+    <rect class="cycle-boundary" x="172" y="415" width="56" height="214" rx="12"/>
+    </g>
+    <g>
+      <title xml:space="preserve">Destructure a singleton tuple result.</title>
+    <rect class="cycle-boundary" x="32" y="767" width="336" height="350" rx="12"/>
+    <text class="cycle-caption" x="356" y="781" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Destructure a </tspan><tspan x="356" dy="14">singleton tuple result.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Destructure two result wires.</title>
+    <rect class="cycle-boundary" x="32" y="1119" width="336" height="350" rx="12"/>
+    <text class="cycle-caption" x="356" y="1133" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Destructure two </tspan><tspan x="356" dy="14">result wires.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 730 L 200 802
+      M 200 938 L 200 1010
+      M 200 1290 L 200 1362
+      M 200 162 L 200 234
+      M 200 234 L 200 306
+      M 200 306 L 200 378
+      M 200 378 L 200 450
+      M 200 450 L 200 522
+      M 200 594 L 200 666
+      M 200 802 L 200 874
+      M 200 1082 L 200 1154
+      M 200 1154 L 200 1226
+      M 200 1434 L 200 1506
+      M 200 522 L 200 594
+      M 200 1010 L 200 1082
+      M 200 1362 L 200 1434
+    "/>
+    <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="956" xml:space="preserve"><tspan x="213" dy="0">tuple</tspan></text>
+    <text class="connection-label" x="213" y="1308" xml:space="preserve"><tspan x="213" dy="0">pair</tspan></text>
+    <text class="connection-label" x="213" y="655" xml:space="preserve"><tspan x="213" dy="0">ready, &amp;mut adjusted</tspan></text>
+    <text class="connection-label" x="213" y="863" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="1215" xml:space="preserve"><tspan x="213" dy="0">single</tspan></text>
+    <text class="connection-label" x="213" y="1495" xml:space="preserve"><tspan x="213" dy="0">adjusted, single, left, right</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">result_shapes</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 698)">
+      <title xml:space="preserve">Adjust the mutable cycle result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Adjust the mutable cycle result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 906)">
+      <title xml:space="preserve">Build the singleton tuple.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the singleton tuple.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 1258)">
+      <title xml:space="preserve">Build two results.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build two results.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1535)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(usize, usize, usize, usize)</tspan></text>
+    </g>
+  </g>
+</svg>

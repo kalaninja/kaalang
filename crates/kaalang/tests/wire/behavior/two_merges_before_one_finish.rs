@@ -24,6 +24,8 @@ fn two_merges_before_one_finish(left: bool, right: bool) -> u8 {
 
     #[action("Finish with both merged values.")]
     let end = |counted, seen| counted + seen;
+
+    |end| return end;
 }
 
 #[test]

@@ -6,15 +6,15 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, ext::IdentExt, token::Mut};
 
-use kaalang_model::{ExecutionPlan, Flow, Input, SemanticModel};
+use kaalang_model::{Block, ExecutionPlan, Flow, Input, SemanticModel};
 
 mod action;
 mod break_block;
 mod choice;
-mod end;
 mod join;
 mod loop_block;
 mod question;
+mod return_block;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -34,6 +34,12 @@ impl Bindings {
             .flow_inputs
             .iter()
             .chain(model.flow.blocks.iter().flat_map(|block| &block.outputs))
+            .chain(model.flow.blocks.iter().flat_map(|block| {
+                block
+                    .inputs
+                    .iter()
+                    .filter_map(|input| input.binding.as_ref())
+            }))
             .enumerate()
             .map(|(index, wire)| {
                 (
@@ -154,6 +160,16 @@ pub(crate) fn tuple(span: Span, idents: &[impl ToTokens]) -> TokenStream2 {
     }
 }
 
+/// Rewrites an authored output pattern to hygienic wire bindings.
+pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2 {
+    let pattern = bindings.pattern(block.output_span, &block.outputs);
+    if block.outputs.len() == 1 && matches!(block.output_pattern, Pat::Tuple(_)) {
+        quote_spanned!(block.output_span=> (#pattern,))
+    } else {
+        pattern
+    }
+}
+
 /// Emits the Rust that runs one verified plan. The plan already proves every
 /// kaalang invariant, including the destination of every branch exit.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
@@ -164,6 +180,7 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         ExecutionPlan::Break { index, target } => {
             break_block::emit(flow, bindings, *index, *target)
         }
+        ExecutionPlan::Return { index } => return_block::emit(flow, bindings, *index),
         ExecutionPlan::Repeat { index } => {
             let label = loop_label(*index, flow.blocks[*index].span);
             quote_spanned!(flow.blocks[*index].span=> continue #label;)
@@ -172,8 +189,8 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         ExecutionPlan::Question {
             index,
             branches,
-            join,
-        } => question::emit(flow, bindings, *index, branches, join.as_ref()),
+            joins,
+        } => question::emit(flow, bindings, *index, branches, joins),
         ExecutionPlan::Choice {
             index,
             branches,
@@ -184,7 +201,6 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             let body = self::flow(flow, body, bindings);
             quote!(#gates #body)
         }
-        ExecutionPlan::EndArrival { wire } => end::arrival(bindings, wire),
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     }
 }
@@ -205,6 +221,11 @@ pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
         }
         body => quote!(#body),
     }
+}
+
+/// Emits no operand for a unit transfer, matching native `break;` and `return;`.
+pub(crate) fn transfer_value(body: &Expr) -> Option<TokenStream2> {
+    (!matches!(body, Expr::Tuple(tuple) if tuple.elems.is_empty())).then(|| block_body(body))
 }
 
 /// Emits block-local aliases for explicitly listed input wires.

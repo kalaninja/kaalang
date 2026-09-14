@@ -18,6 +18,7 @@ mod choice;
 mod end;
 mod loop_block;
 mod question;
+mod return_block;
 
 /// Parses a flow function into its named flow inputs and closure-shaped blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
@@ -56,59 +57,93 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
 }
 
 /// Parses every function-body statement as one kaalang block, then appends the
-/// implicit end block that captures the flow's `end` wire.
+/// implicit completion boundary.
 fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
     let mut blocks = Vec::new();
     statements(&function.block.stmts, None, &mut blocks)?;
+    if let Some(second) = blocks
+        .iter()
+        .filter(|block| block.kind == BlockKind::Return)
+        .nth(1)
+    {
+        return Err(Error::new(
+            second.span,
+            "a kaalang flow may declare at most one structural `return`",
+        ));
+    }
     blocks.push(end::block(function));
 
     Ok(blocks)
 }
 
-/// Flattens lexical loop regions without changing their authored order.
+/// Flattens lexical cycle regions without changing their authored order.
 fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
     for statement in statements {
-        let Stmt::Expr(expression, semicolon) = statement else {
-            let mut block = parse_block(statement)?;
-            block.parent = parent;
-            blocks.push(block);
-            continue;
-        };
         let mut inputs = Vec::new();
         let mut normalized = None;
-        if let Expr::Closure(closure) = expression
-            && closure.attrs.is_empty()
-        {
-            let (captures, body) = block_closure(closure)?;
-            let body = structural_expression(&body);
-            if matches!(body, Expr::Loop(_) | Expr::Break(_)) {
-                if semicolon.is_none() {
-                    return Err(Error::new_spanned(
-                        statement,
-                        "a captured kaalang loop or break requires a trailing semicolon",
-                    ));
+        let expression = if let Stmt::Expr(expression, semicolon) = statement {
+            if let Expr::Closure(closure) = expression
+                && closure.attrs.is_empty()
+            {
+                let (captures, body) = block_closure(closure)?;
+                let body = structural_expression(&body);
+                if matches!(
+                    body,
+                    Expr::Loop(_) | Expr::Break(_) | Expr::Return(_) | Expr::Continue(_)
+                ) {
+                    inputs = captures;
+                    normalized = Some(body.clone());
                 }
-                inputs = captures;
-                normalized = Some(body.clone());
             }
-        }
-        let expression = normalized.as_ref().unwrap_or(expression);
+            let expression = normalized.as_ref().unwrap_or(expression);
+            if matches!(expression, Expr::Break(_) | Expr::Return(_)) && semicolon.is_none() {
+                let kind = if matches!(expression, Expr::Break(_)) {
+                    "break"
+                } else {
+                    "return"
+                };
+                return Err(Error::new_spanned(
+                    statement,
+                    format!("a kaalang {kind} requires a trailing semicolon"),
+                ));
+            }
+            Some(expression)
+        } else {
+            None
+        };
         let mut block = match expression {
-            Expr::Loop(expression) => loop_block::parse(expression, inputs)?,
-            Expr::Break(expression) => break_block::parse(expression, inputs, parent, blocks)?,
-            Expr::While(expression) => {
+            Some(Expr::Loop(expression)) => return Err(loop_block::legacy(expression)),
+            Some(Expr::Break(expression)) => break_block::parse(expression, inputs, parent)?,
+            Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
+            Some(Expr::Continue(expression)) => {
                 return Err(Error::new_spanned(
                     expression,
-                    "kaalang does not support `while`; use `loop` with a question and `break`",
+                    "kaalang cycles repeat implicitly and do not support authored `continue`",
+                ));
+            }
+            Some(Expr::While(expression)) => {
+                return Err(Error::new_spanned(
+                    expression,
+                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `break`",
                 ));
             }
             _ => parse_block(statement)?,
         };
+        if block.kind == BlockKind::Loop && matches!(statement, Stmt::Expr(_, None)) {
+            return Err(Error::new_spanned(
+                statement,
+                "a kaalang cycle requires a trailing semicolon",
+            ));
+        }
         block.parent = parent;
         let index = blocks.len();
         blocks.push(block);
-        if let Expr::Loop(expression) = expression {
-            self::statements(&expression.body.stmts, Some(index), blocks)?;
+        if blocks[index].kind == BlockKind::Loop {
+            let Expr::Block(body) = &blocks[index].body else {
+                unreachable!("a cycle body is normalized to a block")
+            };
+            let statements = body.block.stmts.clone();
+            self::statements(&statements, Some(index), blocks)?;
             blocks[index].loop_end = Some(blocks.len());
         }
     }
@@ -143,7 +178,6 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         span,
         parent: None,
         loop_end: None,
-        loop_label: None,
         break_target: None,
     }
 }
@@ -155,7 +189,6 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let (inputs, body) = block_closure(closure)?;
     let outputs = block_outputs(&output_pattern)?;
     let output_span = output_pattern.span();
-    reject_control_transfers(&body)?;
     let syntax = BlockSyntax {
         kind,
         closure,
@@ -168,11 +201,15 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         body,
     };
 
+    if kind != BlockKind::Loop {
+        reject_control_transfers(&syntax.body)?;
+    }
     match kind {
         BlockKind::Action => action::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::End | BlockKind::Loop | BlockKind::Break => {
+        BlockKind::Loop => loop_block::parse(syntax),
+        BlockKind::End | BlockKind::Break | BlockKind::Return => {
             unreachable!("structural blocks parse separately")
         }
     }
@@ -245,7 +282,6 @@ impl<'a> BlockSyntax<'a> {
             span: self.kind_attribute.span(),
             parent: None,
             loop_end: None,
-            loop_label: None,
             break_target: None,
         }
     }
@@ -370,6 +406,8 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("action") => Role::Kind(BlockKind::Action),
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
+        Some("cycle") => Role::Kind(BlockKind::Loop),
+        Some("loop" | "r#loop") => return Err(loop_block::legacy_attribute(attribute)),
         Some("end") => return Err(end::authored(attribute.span())),
         Some("case" | "yes" | "no") => Role::Companion,
         Some("doc") => Role::Comment,
@@ -450,6 +488,77 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
         mutable,
         ident: alias.unraw(),
         alias,
+        binding: None,
+    }
+}
+
+/// Returns the one value a structural transfer carries, after checking that it
+/// consists only of bindings introduced by that transfer's capture list.
+pub(super) fn transfer_value(
+    value: Option<&Expr>,
+    span: Span,
+    inputs: &[Input],
+    kind: &str,
+) -> Result<Expr> {
+    let value = value
+        .cloned()
+        .unwrap_or_else(|| parse_quote_spanned!(span=> ()));
+    validate_transfer_value(&value, inputs, kind)?;
+    Ok(value)
+}
+
+fn validate_transfer_value(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
+    match value {
+        Expr::Paren(parenthesized) if parenthesized.attrs.is_empty() => {
+            validate_transfer_value(&parenthesized.expr, inputs, kind)
+        }
+        Expr::Group(group) if group.attrs.is_empty() => {
+            validate_transfer_value(&group.expr, inputs, kind)
+        }
+        Expr::Tuple(tuple) if tuple.attrs.is_empty() && tuple.elems.is_empty() => Ok(()),
+        Expr::Tuple(tuple) if tuple.attrs.is_empty() => tuple
+            .elems
+            .iter()
+            .try_for_each(|element| captured_transfer_input(element, inputs, kind)),
+        value => captured_transfer_input(value, inputs, kind),
+    }
+}
+
+fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
+    let Expr::Path(path) = value else {
+        return Err(Error::new_spanned(
+            value,
+            format!(
+                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
+            ),
+        ));
+    };
+    if !path.attrs.is_empty() {
+        return Err(Error::new_spanned(
+            value,
+            format!(
+                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
+            ),
+        ));
+    }
+    let Some(ident) = path.path.get_ident().filter(|_| path.qself.is_none()) else {
+        return Err(Error::new_spanned(
+            value,
+            format!(
+                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
+            ),
+        ));
+    };
+    if inputs
+        .iter()
+        .any(|input| input.alias.unraw() == ident.unraw())
+    {
+        Ok(())
+    } else {
+        Err(Error::new_spanned(
+            ident,
+            format!("a kaalang {kind} value must name a captured input"),
+        ))
     }
 }
 
@@ -596,7 +705,7 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::{block_input, block_outputs, flow};
-    use crate::model::{BlockKind, END_WIRE};
+    use crate::model::BlockKind;
 
     #[test]
     fn captures_preserve_borrowing_mutability_and_authored_spelling() {
@@ -655,28 +764,44 @@ mod tests {
     }
 
     #[test]
-    fn every_flow_ends_with_an_implicit_block_capturing_the_end_wire() {
+    fn every_flow_ends_with_an_implicit_zero_input_block() {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
                 #[action("Double the input.")]
-                let end = |input| { input * 2 };
+                let result = |input| { input * 2 };
+
+                |result| return result;
             }
         };
 
         let flow = flow(&function).expect("the flow parses");
-        let [action, end] = flow.blocks.as_slice() else {
-            panic!("one authored block and the implicit end")
+        let [action, return_block, end] = flow.blocks.as_slice() else {
+            panic!("two authored blocks and the implicit end")
         };
         assert_eq!(action.kind, BlockKind::Action);
+        assert_eq!(return_block.kind, BlockKind::Return);
         assert_eq!(end.kind, BlockKind::End);
         assert!(end.outputs.is_empty());
         assert!(end.description.is_none());
-        let [captured] = end.inputs.as_slice() else {
-            panic!("end captures one wire")
+        assert!(end.inputs.is_empty());
+    }
+
+    #[test]
+    fn a_flow_may_declare_at_most_one_structural_return() {
+        let function: ItemFn = parse_quote! {
+            fn decide(condition: bool, value: u32) -> u32 {
+                #[question("Choose a return.")]
+                let (first, second) = |condition| condition;
+
+                |first, value| return value;
+                |second, value| return value;
+            }
         };
-        assert!(!captured.borrowed);
-        assert!(!captured.mutable);
-        assert_eq!(captured.ident, END_WIRE);
+
+        assert_eq!(
+            error(&function),
+            "a kaalang flow may declare at most one structural `return`"
+        );
     }
 
     #[test]
@@ -693,7 +818,7 @@ mod tests {
 
         assert_eq!(
             error(&function),
-            "a kaalang flow has no end statement; the block that produces the `end` wire finishes it"
+            "a kaalang flow has no end statement; use a structural `return` to finish it"
         );
     }
 

@@ -38,7 +38,7 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
             for route in candidate
                 .routes
                 .iter_mut()
-                .chain(candidate.return_routes.values_mut())
+                .chain(candidate.back_routes.values_mut())
             {
                 for run in &mut route.runs {
                     run.lane -= usize::from(run.gap == gap && run.lane >= lane);
@@ -52,10 +52,10 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
     changed
 }
 
-/// Bring a straight return to the edge of its whole body when the gap is free.
+/// Bring a straight back edge to the edge of its whole body when the gap is free.
 fn contours(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
     let mut changed = false;
-    if built.return_routes.is_empty() {
+    if built.back_routes.is_empty() {
         for (index, loop_) in topology.loops.iter().enumerate().rev() {
             let body = super::body_vertices(flow, topology, loop_.header);
             let columns = body.iter().map(|vertex| built.column[vertex]);
@@ -63,7 +63,7 @@ fn contours(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
                 Side::Left => columns.min(),
                 Side::Right => columns.max(),
             }
-            .expect("a loop body includes its entry and tail");
+            .expect("a cycle body includes its entry and tail");
             if column == built.contours[index].column {
                 continue;
             }
@@ -176,7 +176,7 @@ fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
         for route in candidate
             .routes
             .iter_mut()
-            .chain(candidate.return_routes.values_mut())
+            .chain(candidate.back_routes.values_mut())
         {
             for run in &mut route.runs {
                 if run.gap == rank - 1 {
@@ -222,7 +222,7 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
     for route in built
         .routes
         .iter_mut()
-        .chain(built.return_routes.values_mut())
+        .chain(built.back_routes.values_mut())
     {
         route.departure = map(route.departure);
         route.arrival = map(route.arrival);

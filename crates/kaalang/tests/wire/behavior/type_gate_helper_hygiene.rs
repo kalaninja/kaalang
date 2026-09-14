@@ -14,6 +14,8 @@ fn type_gate_helper_hygiene(condition: bool) -> u8 {
 
     #[action("Call the authored helper for no.")]
     let (end, _marker) = |no| (__kaalang_same_type(2), 4);
+
+    |end| return end;
 }
 
 #[test]

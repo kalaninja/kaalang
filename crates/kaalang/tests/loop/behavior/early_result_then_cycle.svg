@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1460" viewBox="0 0 1140 1460" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for early_result_then_cycle</title>
+  <desc id="kaalang-description">Cycles: Select an early result or continue. with inputs first and outputs early_result; Count to three. with inputs count_more, mut count and outputs end. Nodes: Start: early_result_then_cycle with parameters first: bool; count: usize handing over first, count; Question: Check for an early result? capturing first handing over produce_early / continue_counting described as branch 1: YES / branch 2: NO; Action: Continue to the counter. capturing continue_counting handing over continue_result; Action: Produce the early result. capturing produce_early handing over early_result; Question: Was an early result selected? capturing &amp;early_result handing over finish_early / count_more; Action: Extract the early result. capturing finish_early, early_result handing over end; Question: Has the count reached three? capturing &amp;count handing over leave / iterate described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate, &amp;mut count; End: usize capturing end. Connections: Start: early_result_then_cycle to the cycle entry; Question: Check for an early result? branch 1 to Action: Produce the early result.; Question: Check for an early result? branch 2 to Action: Continue to the counter.; Action: Continue to the counter. to a cycle break; Action: Produce the early result. to a cycle break; Question: Was an early result selected? branch 1 to Action: Extract the early result.; Question: Was an early result selected? branch 2 to the entry of the cycle; Action: Extract the early result. to the end merge; Question: Has the count reached three? branch 1 to a cycle break; Question: Has the count reached three? branch 2 to Action: Increment the count.; Action: Increment the count. to the iteration tail of the cycle; the end merge to End: usize; the cycle entry to Question: Check for an early result?; the cycle result to Question: Was an early result selected?; the entry of the cycle to Question: Has the count reached three?; the cycle result to the end merge; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Select an early result or continue.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="696" height="494" rx="12"/>
+    <text class="cycle-caption" x="716" y="149" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Select an early result or continue.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Count to three.</title>
+    <rect class="cycle-boundary" x="392" y="775" width="716" height="486" rx="12"/>
+    <text class="cycle-caption" x="1096" y="789" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Count to three.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 314 L 200 386
+      M 340 278 L 560 278 L 560 386
+      M 560 450 L 560 522
+      M 200 450 L 200 522
+      M 200 738 L 200 810
+      M 340 702 L 560 702 L 560 810
+      M 200 874 L 200 1298
+      M 560 1018 L 560 1090
+      M 700 982 L 920 982 L 920 1090
+      M 920 1154 L 920 1226
+      M 200 1298 L 200 1370
+      M 200 170 L 200 242
+      M 200 594 L 200 666
+      M 560 810 L 560 946
+      M 560 1226 L 560 1298 L 200 1298
+      M 560 522 L 560 594 L 200 594
+      M 200 522 L 200 594
+      M 560 1090 L 560 1226
+    "/>
+    <path class="connection" d="
+      M 920 1226 L 1080 1226 L 1080 810 L 560 810
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">first, count</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="334" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="266" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label" x="573" y="468" xml:space="preserve"><tspan x="573" dy="0">continue_result</tspan></text>
+    <text class="connection-label" x="213" y="468" xml:space="preserve"><tspan x="213" dy="0">early_result</tspan></text>
+    <text class="connection-label" x="213" y="756" xml:space="preserve"><tspan x="213" dy="0">finish_early</tspan></text>
+    <text class="connection-label" x="353" y="720" xml:space="preserve"><tspan x="353" dy="0">count_more</tspan></text>
+    <text class="connection-label" x="213" y="892" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="573" y="1038" xml:space="preserve"><tspan x="573" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="713" y="970" xml:space="preserve"><tspan x="713" dy="0">NO</tspan></text>
+    <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
+    <text class="connection-label" x="213" y="655" xml:space="preserve"><tspan x="213" dy="0">&amp;early_result</tspan></text>
+    <text class="connection-label" x="213" y="799" xml:space="preserve"><tspan x="213" dy="0">finish_early, early_result</tspan></text>
+    <text class="connection-label" x="573" y="935" xml:space="preserve"><tspan x="573" dy="0">&amp;count</tspan></text>
+    <text class="connection-label" x="933" y="1079" xml:space="preserve"><tspan x="933" dy="0">iterate, &amp;mut count</tspan></text>
+    <text class="connection-label" x="213" y="1359" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: bool</tspan><tspan x="-104" dy="18">count: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">early_result_then_cycle</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 278)">
+      <title xml:space="preserve">Check for an early result?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Check for an early result?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 418)">
+      <title xml:space="preserve">Continue to the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to the counter.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 418)">
+      <title xml:space="preserve">Produce the early result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the early result.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 702)">
+      <title xml:space="preserve">Was an early result selected?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Was an early result </tspan><tspan x="0" dy="18">selected?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 842)">
+      <title xml:space="preserve">Extract the early result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extract the early result.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(560 982)">
+      <title xml:space="preserve">Has the count reached three?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the count reached </tspan><tspan x="0" dy="18">three?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 1122)">
+      <title xml:space="preserve">Increment the count.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the count.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1399)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>

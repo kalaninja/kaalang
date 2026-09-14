@@ -28,6 +28,8 @@ const fn const_partial_merge(source: u8) -> u8 {
 
     #[action("Double the merged value.")]
     let end = |shared| shared * 2;
+
+    |end| return end;
 }
 
 #[test]

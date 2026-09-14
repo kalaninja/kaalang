@@ -1,0 +1,23 @@
+error[E0382]: use of moved value
+  --> tests/loop/compile_fail/cycle_input_move.rs:11:19
+   |
+ 3 | #[kaalang]
+   | ---------- in this attribute macro expansion
+ 4 | fn invalid(text: String) -> usize {
+   |            ---- move occurs because value has type `String`, which does not implement the `Copy` trait
+ 5 |     #[cycle("Move the value into the cycle.")]
+ 6 |     |text| {
+   |      ---- value moved here
+...
+11 |     let result = |text| text.len();
+   |                   ^^^^ value used here after move
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+   |
+ 6 |     |text.clone()| {
+   |          ++++++++
+help: borrow this binding in the pattern to avoid moving the value
+   |
+ 6 |     |ref text| {
+   |      +++

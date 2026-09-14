@@ -1,12 +1,13 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(flag: bool) -> usize {
-    loop {
+fn invalid(flag: bool) {
+    #[cycle("Try duplicate break captures.")]
+    |flag| {
         |flag, flag| break;
-    }
-    #[action("Finish.")]
-    let end = || 0;
+    };
+
+    return;
 }
 
 fn main() {}

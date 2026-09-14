@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use syn::{Error, Result};
 
 use crate::model::{
-    Block, BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
+    BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
     ExecutionOutcome, Flow, ProducerId, WireMerge,
 };
 
@@ -23,11 +23,12 @@ mod merge;
 mod participation;
 mod placement;
 mod question;
+mod return_block;
 
 /// Walks the blocks in source order under every branch selection. Returns the
 /// executions and convergence groups in canonical order, or the earliest
 /// authored violation: a walk error first, then a block placed inside open
-/// branches, then an end-reaching execution without `end`, then an unreachable block,
+/// branches, then an execution that reaches the root boundary without `return`, then an unreachable block,
 /// then a producer occurrence that no execution captures, then an invalid
 /// branch-output continuation, then a block decided by independent questions
 /// or choices, then an invalid wire merge, shared continuation, or loop route order.
@@ -37,7 +38,6 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     let mut walk = Walk {
         flow,
         end,
-        end_wire: flow.blocks[end].inputs[0].ident.clone(),
         executions: BTreeSet::new(),
         error: None,
         incomplete: None,
@@ -56,7 +56,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
             repeats: BTreeSet::new(),
-            loop_inputs: BTreeMap::new(),
+            loops: BTreeMap::new(),
         },
     );
     if let Some((_, error)) = walk.error {
@@ -90,14 +90,8 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
 
 /// Reports whether one producer occurrence provides its wire in this execution.
 /// A branch output does so only when its own branch was selected.
-fn produced(execution: &Execution, producer: ProducerId) -> bool {
-    let ProducerId::BlockOutput { block, output } = producer else {
-        return false;
-    };
-    execution.participates(block)
-        && execution
-            .selected(block)
-            .is_none_or(|branch| branch == output)
+fn produced(flow: &Flow, execution: &Execution, producer: ProducerId) -> bool {
+    flow.produces(execution, producer)
 }
 
 /// The one question or choice that both executions run with different
@@ -165,7 +159,9 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
         preceding[block].extend(flow.enclosing(block));
     }
     for dependency in &execution.dependencies {
-        if let ProducerId::BlockOutput { block, .. } = dependency.producer {
+        if let ProducerId::BlockOutput { block, .. } | ProducerId::CycleInput { block, .. } =
+            dependency.producer
+        {
             preceding[dependency.capture.block].insert(block);
         }
     }
@@ -175,7 +171,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
             .iter()
             .filter_map(|producer| match producer {
                 ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) => None,
+                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
             })
             .chain(merge.before.iter().copied())
             .filter(|&block| execution.participates(block))
@@ -203,7 +199,13 @@ struct State {
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
     repeats: BTreeSet<usize>,
-    loop_inputs: BTreeMap<usize, BTreeMap<Ident, ProducerId>>,
+    loops: BTreeMap<usize, LoopState>,
+}
+
+#[derive(Clone)]
+struct LoopState {
+    available: BTreeMap<Ident, ProducerId>,
+    produced: BTreeSet<Ident>,
 }
 
 impl State {
@@ -226,12 +228,10 @@ impl State {
 struct Walk<'a> {
     flow: &'a Flow,
     end: usize,
-    /// The wire the implicit end block captures.
-    end_wire: Ident,
     executions: BTreeSet<Execution>,
     /// The earliest authored violation so far, keyed by block and occurrence.
     error: Option<((usize, usize), Error)>,
-    /// An execution that reaches the end of the flow without `end`. Reported
+    /// An execution that reaches the root boundary without `return`. Reported
     /// after branch placement, which explains such an execution more directly.
     incomplete: Option<Error>,
 }
@@ -267,17 +267,13 @@ impl Walk<'_> {
             self.visit(block.loop_end.unwrap_or(index + 1), state);
             return;
         }
-        // `end` finishes an execution, so nothing participating may follow it.
-        if state.available.contains_key(&self.end_wire) {
-            self.report((index, 0), end::after_end(block));
-            return;
-        }
         state.enter(self.flow, index);
         match block.kind {
             BlockKind::Action => action::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
             BlockKind::Loop => loop_block::visit(self, index, state),
             BlockKind::Break => break_block::visit(self, index, state),
+            BlockKind::Return => return_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
         }
@@ -319,7 +315,7 @@ impl Walk<'_> {
     /// Reaching the innermost body's boundary records a repeating summary.
     fn close_loops(&mut self, index: usize, state: &mut State) -> bool {
         let Some(header) = state
-            .loop_inputs
+            .loops
             .keys()
             .rev()
             .copied()
@@ -327,14 +323,26 @@ impl Walk<'_> {
         else {
             return false;
         };
-        if state.available.contains_key(&self.end_wire) {
-            self.finish(state.clone());
-            return true;
-        }
-        state.available = state
-            .loop_inputs
-            .remove(&header)
-            .expect("the iteration is open");
+        state.loops.remove(&header).expect("the iteration is open");
+        let bindings = self.flow.blocks[header]
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(input, declaration)| {
+                (
+                    declaration
+                        .binding
+                        .clone()
+                        .expect("a cycle capture declares a local binding"),
+                    ProducerId::CycleInput {
+                        block: header,
+                        input,
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        state.produced = bindings.keys().cloned().collect();
+        state.available = bindings;
         state.repeats.insert(header);
         self.record(
             state.clone(),
@@ -343,12 +351,10 @@ impl Walk<'_> {
         true
     }
 
-    /// Resolves the end block's `end` capture and records the execution.
-    fn finish(&mut self, mut state: State) {
-        if !end::arrive(self, &mut state) {
-            return;
-        }
-        self.record(state, ExecutionOutcome::End);
+    /// Reaching the root boundary without an explicit return is invalid.
+    fn finish(&mut self, _state: State) {
+        self.incomplete
+            .get_or_insert_with(|| end::missing_return(self.flow));
     }
 
     fn record(&mut self, state: State, outcome: ExecutionOutcome) {
@@ -381,7 +387,7 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
 /// Every named producer occurrence has a capture dependency in at least one
 /// execution unless its name begins with `_`. Only the action arm is reached in
 /// practice: an uncaptured question or choice output leaves its execution
-/// without `end`, and the walk reports that first.
+/// without a root return, and the walk reports that first.
 fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let captured = |producer: ProducerId| {
         executions.iter().any(|execution| {
@@ -411,7 +417,8 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
                 BlockKind::Action => action::uncaptured(name),
                 BlockKind::Question => question::uncaptured(name),
                 BlockKind::Choice => choice::uncaptured(name),
-                BlockKind::End | BlockKind::Loop | BlockKind::Break => {
+                BlockKind::Loop => loop_block::uncaptured(name),
+                BlockKind::End | BlockKind::Break | BlockKind::Return => {
                     unreachable!("this kind declares no outputs")
                 }
             });
@@ -481,7 +488,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
         return Err(Error::new(input(capture).ident.span(), message));
     }
     // No fixture reaches the check below: a branch output left without its
-    // consumer also leaves its execution without `end`, which the walk
+    // consumer also leaves its execution without a root return, which the walk
     // reports first. Kept until that is proven rather than observed.
     let missing = captures.iter().filter_map(|(&producer, captures)| {
         let ProducerId::BlockOutput { block, output } = producer else {

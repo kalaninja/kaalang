@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1084" height="830" viewBox="0 0 1084 830" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="902" viewBox="0 0 1140 902" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for terminal_case_after_repeats</title>
-  <desc id="kaalang-description">Nodes: Start: terminal_case_after_repeats with parameters mut mode: u8 handing over mut mode; Select: Which route? capturing mode; Case: Advance on the left. handing over left; Case: Advance on the right. handing over right; Case: Finish after the repeating cases. handing over finish; Action: Finish from the final case. capturing finish handing over end; Action: Advance through the left case. capturing left, &amp;mut mode; Action: Advance through the right case. capturing right, &amp;mut mode; End: u8 capturing end. Connections: Start: terminal_case_after_repeats to the entry of the loop; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Finish after the repeating cases.; Case: Advance on the left. to Action: Advance through the left case.; Case: Advance on the right. to Action: Advance through the right case.; Case: Finish after the repeating cases. to Action: Finish from the final case.; Action: Finish from the final case. to End: u8; Action: Advance through the left case. to the iteration tail of the loop; Action: Advance through the right case. to the iteration tail of the loop; the entry of the loop to Select: Which route?; Repeat from the iteration tail of the loop to the entry of the loop.</desc>
+  <desc id="kaalang-description">Cycles: Repeat until the finishing case. with inputs mut mode and outputs result. Nodes: Start: terminal_case_after_repeats with parameters mode: u8 handing over mode; Select: Which route? capturing mode; Case: Advance on the left. handing over left; Case: Advance on the right. handing over right; Case: Finish after the repeating cases. handing over finish; Action: Finish from the final case. capturing finish handing over result; Action: Advance through the left case. capturing left, &amp;mut mode; Action: Advance through the right case. capturing right, &amp;mut mode; End: u8 capturing result. Connections: Start: terminal_case_after_repeats to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Finish after the repeating cases.; Case: Advance on the left. to Action: Advance through the left case.; Case: Advance on the right. to Action: Advance through the right case.; Case: Finish after the repeating cases. to Action: Finish from the final case.; Action: Finish from the final case. to a cycle break; Action: Advance through the left case. to the iteration tail of the cycle; Action: Advance through the right case. to the iteration tail of the cycle; the entry of the cycle to Select: Which route?; the cycle result to End: u8; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,87 +11,102 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Repeat until the finishing case.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1076" height="648" rx="12"/>
+    <text class="cycle-caption" x="1096" y="141" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Repeat until the finishing case.</tspan></text>
+    </g>
+  </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 192 90 L 192 162
-      M 192 306 L 192 456
-      M 192 306 L 192 378 L 552 378 L 552 456
-      M 192 306 L 192 378 L 912 378 L 912 450
-      M 192 526 L 192 604
-      M 552 526 L 552 604
-      M 912 532 L 912 604
-      M 912 668 L 912 740
-      M 192 668 L 192 740
-      M 552 668 L 552 740 L 192 740
-      M 192 162 L 192 234
+      M 220 90 L 220 162
+      M 220 306 L 220 456
+      M 220 306 L 220 378 L 580 378 L 580 456
+      M 220 306 L 220 378 L 940 378 L 940 450
+      M 220 526 L 220 604
+      M 580 526 L 580 604
+      M 940 532 L 940 604
+      M 940 668 L 940 740
+      M 220 668 L 220 740
+      M 580 668 L 580 740 L 220 740
+      M 220 162 L 220 234
+      M 940 740 L 940 812
+      M 940 740 L 940 740
     "/>
     <path class="connection" d="
-      M 192 740 L 32 740 L 32 162 L 192 162
+      M 220 740 L 60 740 L 60 162 L 220 162
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="925" y="563" xml:space="preserve"><tspan x="925" dy="0">finish</tspan></text>
-    <text class="connection-label" x="205" y="108" xml:space="preserve"><tspan x="205" dy="0">mut mode</tspan></text>
-    <text class="connection-label" x="205" y="544" xml:space="preserve"><tspan x="205" dy="0">left</tspan></text>
-    <text class="connection-label" x="565" y="544" xml:space="preserve"><tspan x="565" dy="0">right</tspan></text>
-    <text class="connection-label" x="205" y="223" xml:space="preserve"><tspan x="205" dy="0">mode</tspan></text>
-    <text class="connection-label" x="205" y="593" xml:space="preserve"><tspan x="205" dy="0">left, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="565" y="593" xml:space="preserve"><tspan x="565" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="953" y="563" xml:space="preserve"><tspan x="953" dy="0">finish</tspan></text>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
+    <text class="connection-label" x="233" y="544" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label" x="593" y="544" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
+    <text class="connection-label" x="953" y="686" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
+    <text class="connection-label" x="233" y="593" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="593" y="593" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="953" y="801" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 332 61 L 428 61"/>
-    <g class="parameter-panel" transform="translate(548 61)">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
     </g>
-    <g class="node start" transform="translate(192 61)">
+    <g class="node start" transform="translate(220 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">terminal_case_after_repeats</tspan></text>
     </g>
-    <g class="node select" transform="translate(192 270)">
+    <g class="node select" transform="translate(220 270)">
       <title xml:space="preserve">Which route?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which route?</tspan></text>
     </g>
-    <g class="node case" transform="translate(192 491)">
+    <g class="node case" transform="translate(220 491)">
       <title xml:space="preserve">Advance on the left.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the left.</tspan></text>
     </g>
-    <g class="node case" transform="translate(552 491)">
+    <g class="node case" transform="translate(580 491)">
       <title xml:space="preserve">Advance on the right.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the right.</tspan></text>
     </g>
-    <g class="node case" transform="translate(912 491)">
+    <g class="node case" transform="translate(940 491)">
       <title xml:space="preserve">Finish after the repeating cases.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Finish after the repeating </tspan><tspan x="0" dy="18">cases.</tspan></text>
     </g>
-    <g class="node action" transform="translate(912 636)">
+    <g class="node action" transform="translate(940 636)">
       <title xml:space="preserve">Finish from the final case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish from the final case.</tspan></text>
     </g>
-    <g class="node action" transform="translate(192 636)">
+    <g class="node action" transform="translate(220 636)">
       <title xml:space="preserve">Advance through the left case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance through the left case.</tspan></text>
     </g>
-    <g class="node action" transform="translate(552 636)">
+    <g class="node action" transform="translate(580 636)">
       <title xml:space="preserve">Advance through the right case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance through the right case.</tspan></text>
     </g>
-    <g class="node end" transform="translate(912 769)">
+    <g class="node end" transform="translate(940 841)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

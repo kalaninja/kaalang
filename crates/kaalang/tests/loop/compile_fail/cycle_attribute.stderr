@@ -1,0 +1,5 @@
+error: kaalang blocks support only comments and kaalang attributes
+ --> tests/loop/compile_fail/cycle_attribute.rs:6:5
+  |
+6 |     #[allow(unused)]
+  |     ^^^^^^^^^^^^^^^^

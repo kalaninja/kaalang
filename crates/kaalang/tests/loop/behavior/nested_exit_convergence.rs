@@ -1,14 +1,16 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn nested_exit_convergence(mut count: usize) -> usize {
-    loop {
-        loop {
+fn nested_exit_convergence(count: usize) -> usize {
+    #[cycle("Count down to zero.")]
+    let result = |mut count| {
+        #[cycle("Converge the inner stopping routes.")]
+        |&mut count| {
             #[choice("Leave the inner loop?")]
             #[case("Leave at zero.")]
             #[case("Leave at one.")]
             #[case("Count down.")]
-            let (zero, one, again) = |count| match count {
+            let (zero, one, again) = |&count| match **count {
                 0 => (),
                 1 => (),
                 _ => (),
@@ -19,20 +21,19 @@ fn nested_exit_convergence(mut count: usize) -> usize {
             |one| break;
 
             #[action("Count down.")]
-            |again, &mut count| *count -= 1;
-        }
+            |again, &mut count| **count -= 1;
+        };
 
         #[question("Finish the outer loop?")]
-        let (done, again) = |count| count == 0;
+        let (done, again) = |&count| *count == 0;
 
-        |done| break;
+        |done, count| break count;
 
         #[action("Count down once more.")]
         |again, &mut count| *count -= 1;
-    }
+    };
 
-    #[action("Return the result.")]
-    let end = |count| count;
+    |result| return result;
 }
 
 #[test]

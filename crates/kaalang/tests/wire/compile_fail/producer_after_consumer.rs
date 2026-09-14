@@ -8,11 +8,11 @@ fn invalid(condition: bool) -> u32 {
     #[action("Build the first value.")]
     let selected = |yes| { 1 };
 
-    #[action("Use the selected value.")]
-    let end = |selected| { selected };
+    |selected| return selected;
 
     #[action("Build the later alternative.")]
     let selected = |no| { 2 };
+
 }
 
 fn main() {}

@@ -6,7 +6,8 @@ use std::{
     process::ExitCode,
 };
 
-const USAGE: &str = "usage: cargo kaalang diagram <source.rs> --flow <name> [-o <path>]";
+const USAGE: &str =
+    "usage: cargo kaalang diagram <source.rs> --flow <name> [--collapse-loops] [-o <path>]";
 
 fn main() -> ExitCode {
     match run(env::args_os()) {
@@ -25,11 +26,21 @@ fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<PathBuf, String>
     let options = parse_arguments(arguments)?;
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("could not read `{}`: {error}", options.source.display()))?;
-    let svg =
-        kaalang_svg::render_source(&source, &options.flow).map_err(|error| error.to_string())?;
-    let output = options
-        .output
-        .unwrap_or_else(|| PathBuf::from(format!("{}.svg", options.flow)));
+    let svg = kaalang_svg::render_source_with_options(
+        &source,
+        &options.flow,
+        kaalang_svg::RenderOptions {
+            collapse_loops: options.collapse_loops,
+        },
+    )
+    .map_err(|error| error.to_string())?;
+    let output = options.output.unwrap_or_else(|| {
+        PathBuf::from(if options.collapse_loops {
+            format!("{}_collapsed.svg", options.flow)
+        } else {
+            format!("{}.svg", options.flow)
+        })
+    });
     // Rendering finished in memory, so a failed flow never touches the output.
     fs::write(&output, &svg)
         .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
@@ -41,6 +52,7 @@ struct Options {
     source: PathBuf,
     flow: String,
     output: Option<PathBuf>,
+    collapse_loops: bool,
 }
 
 fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Options, String> {
@@ -57,6 +69,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
         .ok_or_else(|| USAGE.to_owned())?;
     let mut flow = None;
     let mut output = None;
+    let mut collapse_loops = false;
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
             Some("--flow") if flow.is_none() => {
@@ -76,6 +89,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
                         .ok_or_else(|| "`-o` requires an output path".to_owned())?,
                 );
             }
+            Some("--collapse-loops") if !collapse_loops => collapse_loops = true,
             _ => return Err(USAGE.to_owned()),
         }
     }
@@ -85,6 +99,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
         source,
         flow,
         output,
+        collapse_loops,
     })
 }
 
@@ -108,6 +123,59 @@ mod tests {
             let options = parse_arguments(arguments.into_iter().map(OsString::from)).unwrap();
             assert_eq!(options.source, PathBuf::from("flow.rs"));
             assert_eq!(options.flow, "decide");
+            assert!(!options.collapse_loops);
+        }
+    }
+
+    #[test]
+    fn accepts_collapsed_output_with_or_without_an_explicit_path() {
+        for arguments in [
+            vec![
+                "cargo-kaalang",
+                "diagram",
+                "flow.rs",
+                "--flow",
+                "decide",
+                "--collapse-loops",
+            ],
+            vec![
+                "cargo-kaalang",
+                "diagram",
+                "flow.rs",
+                "--collapse-loops",
+                "-o",
+                "chosen.svg",
+                "--flow",
+                "decide",
+            ],
+        ] {
+            let options = parse_arguments(arguments.into_iter().map(OsString::from)).unwrap();
+            assert!(options.collapse_loops);
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_or_duplicate_collapse_options() {
+        for arguments in [
+            vec![
+                "cargo-kaalang",
+                "diagram",
+                "flow.rs",
+                "--flow",
+                "decide",
+                "--collapsed",
+            ],
+            vec![
+                "cargo-kaalang",
+                "diagram",
+                "flow.rs",
+                "--flow",
+                "decide",
+                "--collapse-loops",
+                "--collapse-loops",
+            ],
+        ] {
+            assert!(parse_arguments(arguments.into_iter().map(OsString::from)).is_err());
         }
     }
 }

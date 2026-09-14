@@ -1,26 +1,31 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn merged_loop(first: bool, second: bool) -> usize {
-    #[question("Enter immediately?")]
-    let (enter, check) = |first| first;
+fn merged_loop(select_first: bool) -> usize {
+    #[question("Select the first cycle?")]
+    let (first, second) = |select_first| select_first;
 
-    #[question("Enter after checking?")]
-    let (enter, skip) = |check, second| second;
+    #[cycle("Produce the first result.")]
+    let result = |first| {
+        #[action("Build the first value.")]
+        let value = || 1;
 
-    #[action("Skip the loop.")]
-    let end = |skip| 0;
-
-    |enter| loop {
-        #[action("Finish inside the loop.")]
-        let end = || 1;
+        |value| break value;
     };
+
+    #[cycle("Produce the second result.")]
+    let result = |second| {
+        #[action("Build the second value.")]
+        let value = || 2;
+
+        |value| break value;
+    };
+
+    |result| return result;
 }
 
 #[test]
-fn merged_question_outputs_share_one_loop_entry() {
-    assert_eq!(merged_loop(false, false), 0);
-    assert_eq!(merged_loop(false, true), 1);
-    assert_eq!(merged_loop(true, false), 1);
-    assert_eq!(merged_loop(true, true), 1);
+fn mutually_exclusive_cycles_merge_their_outer_result_wire() {
+    assert_eq!(merged_loop(true), 1);
+    assert_eq!(merged_loop(false), 2);
 }

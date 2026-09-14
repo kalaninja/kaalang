@@ -8,8 +8,7 @@ fn independent_borrowers(input: u32) -> (u32, u32) {
     #[action("Produce the second value.")]
     let second = |&input| *input + 1;
 
-    #[action("Pair the two values.")]
-    let end = |first, second| (first, second);
+    |first, second| return (first, second);
 }
 
 #[test]

@@ -1,0 +1,5 @@
+error: a kaalang break does not support labels; it completes the current cycle
+ --> tests/loop/compile_fail/labeled_break.rs:7:15
+  |
+7 |         break 'outer;
+  |               ^^^^^^

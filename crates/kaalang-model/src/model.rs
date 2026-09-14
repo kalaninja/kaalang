@@ -3,7 +3,7 @@
 
 use proc_macro2::{Ident, Span};
 use syn::ext::IdentExt;
-use syn::{Expr, FnArg, Lifetime, Pat, PatIdent, ReturnType};
+use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 
 use crate::construct::Arrangement;
 use crate::topology::Topology;
@@ -17,7 +17,7 @@ pub struct SemanticModel {
     pub parameters: Vec<FnArg>,
     /// The authored flow return type.
     pub return_type: ReturnType,
-    /// The resolved blocks and wires, ending with the implicit end block.
+    /// The resolved blocks and wires, ending with the implicit completion boundary.
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
@@ -69,10 +69,6 @@ impl SemanticModel {
     }
 }
 
-/// The logical wire whose value is the flow output. The implicit end block
-/// captures it; no authored block may.
-pub(crate) const END_WIRE: &str = "end";
-
 /// The semantic role of one block. Every kind but `End` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {
@@ -80,6 +76,7 @@ pub enum BlockKind {
     Question,
     Loop,
     Break,
+    Return,
     Choice,
     End,
 }
@@ -87,7 +84,7 @@ pub enum BlockKind {
 /// One kaalang block: an authored statement, or the implicit end block.
 pub struct Block {
     pub kind: BlockKind,
-    /// The exact authored description, absent for loops, breaks, and end.
+    /// The exact authored description, absent for transfers and end.
     pub description: Option<String>,
     /// A question's two answers, paired with its outputs.
     pub question_branches: Vec<QuestionBranch>,
@@ -102,13 +99,11 @@ pub struct Block {
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
     pub span: Span,
-    /// The enclosing loop block, if this block belongs to an iteration.
+    /// The enclosing cycle block, if this block belongs to an iteration.
     pub parent: Option<usize>,
-    /// The exclusive end of a loop body's depth-first block sequence.
+    /// The exclusive end of a cycle body's depth-first block sequence.
     pub loop_end: Option<usize>,
-    /// The authored loop label, resolved lexically by break statements.
-    pub loop_label: Option<Lifetime>,
-    /// The enclosing loop a break exits.
+    /// The enclosing cycle a break exits.
     pub break_target: Option<usize>,
 }
 
@@ -160,6 +155,9 @@ pub struct Input {
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
+    /// The persistent local wire created by a cycle capture. Ordinary block
+    /// captures do not declare a wire and leave this absent.
+    pub binding: Option<Ident>,
 }
 
 /// A flow's named inputs and blocks, wire-validated by the time consumers see it.
@@ -174,6 +172,37 @@ impl Flow {
         std::iter::successors(self.blocks[block].parent, |&header| {
             self.blocks[header].parent
         })
+    }
+
+    /// Whether one cycle has completed in this finite execution. A cycle's
+    /// header participates on every entered iteration, but its result exists
+    /// only after a matching local break.
+    #[must_use]
+    pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
+        execution.blocks.iter().any(|&block| {
+            self.blocks[block].kind == BlockKind::Break
+                && self.blocks[block].break_target == Some(header)
+        })
+    }
+
+    /// Whether one producer occurrence exists in this finite execution.
+    #[must_use]
+    pub(crate) fn produces(&self, execution: &Execution, producer: ProducerId) -> bool {
+        match producer {
+            ProducerId::FlowInput(_) => true,
+            ProducerId::CycleInput { block, .. } => execution.participates(block),
+            ProducerId::BlockOutput { block, output } => {
+                execution.participates(block)
+                    && match self.blocks[block].kind {
+                        BlockKind::Question | BlockKind::Choice => {
+                            execution.selected(block) == Some(output)
+                        }
+                        BlockKind::Loop => self.completes_loop(execution, block),
+                        BlockKind::Action => true,
+                        BlockKind::Break | BlockKind::Return | BlockKind::End => false,
+                    }
+            }
+        }
     }
 
     /// The span of the implicit end block, where a diagnostic about the flow as
@@ -196,17 +225,31 @@ impl Flow {
                     .iter()
                     .position(|output| output == wire)
                     .map(|index| block.output_binding(index).ident.unraw().to_string())
+                    .or_else(|| {
+                        block.inputs.iter().find_map(|input| {
+                            (input.binding.as_ref() == Some(wire))
+                                .then(|| input.alias.unraw().to_string())
+                        })
+                    })
             })
             .unwrap_or_else(|| wire.unraw().to_string())
     }
 }
 
-/// One occurrence that provides a wire: a named flow input or one output of
-/// one block.
+/// One occurrence that provides a wire: a flow input, a persistent cycle
+/// input, or one block output.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ProducerId {
     FlowInput(usize),
-    BlockOutput { block: usize, output: usize },
+    /// One persistent input binding inside a cycle body.
+    CycleInput {
+        block: usize,
+        input: usize,
+    },
+    BlockOutput {
+        block: usize,
+        output: usize,
+    },
 }
 
 /// One block input, identified by the block and the input position.
@@ -233,8 +276,8 @@ pub struct BranchSelection {
 
 /// One structural execution summary: the authored blocks that participate,
 /// the branches it selects, its capture dependencies, and its finite outcome.
-/// Start participates implicitly; end participates for an `End` outcome. Each
-/// loop is represented by zero or one iteration. Source order is the order the
+/// Start participates implicitly; the end boundary is reachable for a `Return`
+/// outcome. Each cycle is represented by zero or one iteration. Source order is the order the
 /// blocks run in, so a summary records which of them take part rather than a
 /// schedule; every vector is sorted and deduplicated. Field order is the derived
 /// sort order: branch selections first.
@@ -243,17 +286,17 @@ pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Loops whose represented iteration reaches its end. Each execution
-    /// summarizes at most one iteration per loop.
+    /// Cycles whose represented iteration reaches its body boundary. Each execution
+    /// summarizes at most one iteration per cycle.
     pub repeats: Vec<usize>,
-    /// Whether this finite summary finishes the flow or repeats a loop.
+    /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
 }
 
 /// The boundary reached by one finite structural execution summary.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ExecutionOutcome {
-    End,
+    Return { block_index: usize },
     Repeat { loop_index: usize },
 }
 
@@ -323,7 +366,9 @@ pub enum ExecutionPlan {
     },
     /// An authored exit from an active enclosing loop.
     Break { index: usize, target: usize },
-    /// Normal completion of an iteration, returning to the loop's entry.
+    /// An authored completion of the root flow.
+    Return { index: usize },
+    /// Normal completion of an iteration along the cycle's back edge.
     Repeat { index: usize },
     Action {
         index: usize,
@@ -332,7 +377,8 @@ pub enum ExecutionPlan {
     Question {
         index: usize,
         branches: [Branch; 2],
-        join: Option<Join>,
+        /// Successive joins from the narrowest execution context outward.
+        joins: Vec<Join>,
     },
     Choice {
         index: usize,
@@ -349,8 +395,6 @@ pub enum ExecutionPlan {
         /// unifies; lowering adds a type gate for each.
         gates: Vec<Ident>,
     },
-    /// One branch hands the `end` wire to end.
-    EndArrival { wire: Ident },
     /// The branch yields alternative producer values to a join.
     Yield { wires: Vec<Ident>, join: JoinTarget },
 }

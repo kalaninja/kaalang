@@ -8,8 +8,7 @@ fn immutable_output(input: String) -> String {
     #[action("Try to borrow the output mutably.")]
     |&mut text| { text.clear() };
 
-    #[action("Return the text.")]
-    let end = |text| { text };
+    |text| return text;
 }
 
 fn main() {}

@@ -27,6 +27,8 @@ fn invalid(outer: bool, late: bool) -> u8 {
 
     #[action("Use the shared value in the direct branch.")]
     let end = |shared, direct_gate| { shared };
+
+    |end| return end;
 }
 
 fn main() {}

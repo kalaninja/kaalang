@@ -13,6 +13,8 @@ fn mutable_borrow_after_move(mut text: String) -> usize {
         text.push('?');
         moved.len()
     };
+
+    |end| return end;
 }
 
 fn main() {}

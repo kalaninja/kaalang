@@ -4,6 +4,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
+use kaalang_model::geometry::straighten;
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
 use kaalang_model::{Arrangement, SemanticModel, Side};
 use syn::{ReturnType, Signature, spanned::Spanned};
@@ -39,6 +40,9 @@ pub(crate) const SELECT_SKEW: i32 = 24;
 /// Font size of a node label. The serializer writes the stylesheet from this,
 /// so measurement and rendering cannot disagree.
 pub(crate) const LABEL_FONT: i32 = 14;
+/// Secondary captions fit two lines in an expanded cycle's top padding.
+pub(crate) const CYCLE_CAPTION_FONT: i32 = 12;
+pub(crate) const CYCLE_CAPTION_LINE_HEIGHT: i32 = 14;
 /// Font size of a connection label, written into the stylesheet the same way.
 pub(crate) const CONNECTION_LABEL_FONT: i32 = 12;
 /// Font size of an authored question-branch description.
@@ -70,24 +74,41 @@ pub(crate) struct Scene {
     /// The checked arrangement it realizes. Ranks, columns, corridors, and
     /// contours are decisions, not suggestions.
     pub(crate) arrangement: Arrangement,
-    /// How far past a body's edge a return's rail reaches, on the left and on
+    /// How far past a body's edge a back edge rail reaches, on the left and on
     /// the right. `column_width` holds a gap wide enough for both at once.
     reach: (i32, i32),
-    /// Extra room between columns, asked for by a previous pass whose returns
+    /// Extra room between columns, asked for by a previous pass whose back edges
     /// and labels wanted the same gap. Zero for almost every diagram.
     slack: i32,
     /// Routing-only columns need a lane rather than a full node width.
     narrow: bool,
-    /// What each loop's body draws, as the model counted it when it placed the
-    /// return: one entry per `topology.loops`. A presentation measures the
+    /// What each cycle's body draws, as the model counted it when it placed the
+    /// back edge: one entry per `topology.loops`. A presentation measures the
     /// same body rather than a set of its own.
     bodies: Vec<BTreeSet<Vertex>>,
+    /// The owned vertices of every expanded cycle boundary, including cycles
+    /// that have no repeating execution and therefore no back edge.
+    region_bodies: Vec<BTreeSet<Vertex>>,
     /// The strings its nodes, exits, and junctions show.
     pub(crate) captions: Captions,
     pub(crate) nodes: Vec<Node>,
     pub(crate) parameters: Option<ParameterPanel>,
     pub(crate) connections: Vec<Connection>,
     pub(crate) labels: Vec<Label>,
+    pub(crate) loop_regions: Vec<LoopRegion>,
+}
+
+/// One described expanded cycle boundary.
+#[derive(Clone)]
+pub(crate) struct LoopRegion {
+    pub(crate) left: i32,
+    pub(crate) top: i32,
+    pub(crate) right: i32,
+    pub(crate) bottom: i32,
+    pub(crate) description: String,
+    pub(crate) caption: Vec<String>,
+    pub(crate) inputs: String,
+    pub(crate) outputs: String,
 }
 
 /// The flow parameters shown beside start, outside the control-flow topology.
@@ -121,9 +142,9 @@ pub(crate) use kaalang_model::geometry::Point;
 /// Closes every row the finished drawing leaves empty.
 ///
 /// The arrangement keeps a rank of its own for each iteration tail, because a
-/// return leaves one horizontally and anything else on that rank stands in its
-/// way. RFC 0003 §2.5 then lets the return leave at a side exit instead, and
-/// `compact_returns` takes that offer: the rank's band is left holding nothing
+/// back edge leaves one horizontally and anything else on that rank stands in
+/// its way. RFC 0003 §2.5 then lets the back edge leave at a side exit instead, and
+/// `compact_back_edges` takes that offer: the rank's band is left holding nothing
 /// but the connections passing through it, while the two node rows around it
 /// sit a row further apart for no reason. Closing the band shortens those
 /// connections and lifts everything below it, which is what puts two
@@ -174,6 +195,14 @@ fn shift(scene: &mut Scene, from: i32, delta: i32) {
     {
         parameters.y += delta;
     }
+    for region in &mut scene.loop_regions {
+        if region.top >= from {
+            region.top += delta;
+        }
+        if region.bottom >= from {
+            region.bottom += delta;
+        }
+    }
 }
 
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
@@ -190,6 +219,8 @@ pub(crate) struct Connection {
 /// writes the block without deciding where it sits.
 #[derive(Clone)]
 pub(crate) struct Label {
+    /// The topology vertex whose hand-over, capture, or branch this label describes.
+    pub(crate) owner: Vertex,
     pub(crate) kind: LabelKind,
     pub(crate) lines: Vec<String>,
     pub(crate) at: Point,
@@ -217,7 +248,7 @@ impl LabelKind {
     }
 }
 
-/// The rails of the loops nested inside this one, as already drawn.
+/// The rails of the cycles nested inside this one, as already drawn.
 fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
     scene
         .topology
@@ -226,7 +257,7 @@ fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
         .enumerate()
         .filter(|&(other, _)| other != index)
         .filter_map(|(_, other)| {
-            // The second point of a return is the column it climbs in; its
+            // The second point of a back edge is the column it climbs in; its
             // first and last are the tail and the entry.
             let rail = scene
                 .connections
@@ -244,12 +275,12 @@ fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
 /// boundary, side and lane. RFC 0003 §2.5 prefers turning upward at a side
 /// exit over descending to the tail's row first.
 ///
-/// Labels are placed again for every loop because shortening moves the routes
+/// Labels are placed again for every cycle because shortening moves the routes
 /// they hang from. `conforms` checks geometry, labels and witness correspondence;
-/// a failed shortening restores both the arrival and return. An exclusive
+/// a failed shortening restores both the arrival and back edge. An exclusive
 /// outermost tail column may close with its arrival; occupied and separately
 /// recorded contour columns retain their positions.
-fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
+fn compact_back_edges(scene: &mut Scene, model: &SemanticModel) {
     let gap = vertical_gap(scene);
     for index in (0..scene.topology.loops.len()).rev() {
         let labels = label::place_labels(scene);
@@ -274,7 +305,7 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
         let end = *scene.connections[back]
             .points
             .last()
-            .expect("a return reaches its entry");
+            .expect("a back edge reaches its entry");
         let Some(compact) =
             compact_arrival(&scene.connections[arrival].points, gap, end.y, &labels)
         else {
@@ -289,7 +320,7 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
         let nested = nested_rails(scene, index);
         let anchor = route::contour_anchor(scene, index);
         let aside = route::contour_x(scene, model, index, from, end, &nested, anchor);
-        scene.connections[back].points = straighten_return(from, aside, end);
+        scene.connections[back].points = straighten_back_edge(from, aside, end);
         if !conforms(scene) {
             scene.connections[arrival].points = kept.0;
             scene.connections[back].points = kept.1;
@@ -297,18 +328,127 @@ fn compact_returns(scene: &mut Scene, model: &SemanticModel) {
     }
 }
 
-/// Steps a return further out until its climb clears the labels it would
+/// Aligns a cycle's result rail with its iteration rail when both can use the
+/// first clear level below their producers.
+///
+/// The checked arrangement gives the iteration tail a rank of its own. A
+/// result junction may nevertheless share its drawn rail when the completing
+/// and repeating routes occupy disjoint spans, as in binary search. The full
+/// geometry check keeps the separate ranks whenever that shortcut would cross
+/// another route.
+fn compact_cycle_rails(scene: &mut Scene) {
+    let gap = vertical_gap(scene);
+    let rails = scene
+        .topology
+        .loops
+        .iter()
+        .filter_map(|loop_| {
+            scene
+                .topology
+                .loop_boundaries
+                .iter()
+                .find(|boundary| boundary.header == loop_.header)
+                .and_then(|boundary| boundary.result)
+                .map(|result| (loop_.tail, result))
+        })
+        .collect::<Vec<_>>();
+
+    for (tail, result) in rails.into_iter().rev() {
+        let at = |scene: &Scene, junction| {
+            scene.connections.iter().find_map(|edge| {
+                if edge.source == Source::Junction(junction) {
+                    edge.points.first().map(|point| point.y)
+                } else if edge.destination == Destination::Junction(junction) {
+                    edge.points.last().map(|point| point.y)
+                } else {
+                    None
+                }
+            })
+        };
+        let (Some(tail_y), Some(result_y)) = (at(scene, tail), at(scene, result)) else {
+            continue;
+        };
+        let Some(y) = scene
+            .connections
+            .iter()
+            .filter(|edge| {
+                matches!(edge.destination, Destination::Junction(junction) if junction == tail || junction == result)
+            })
+            .filter_map(|edge| {
+                edge.points.first().map(|point| {
+                    point.y
+                        + if matches!(edge.source, Source::Exit(_)) {
+                            gap
+                        } else {
+                            0
+                        }
+                })
+            })
+            .max()
+        else {
+            continue;
+        };
+        if y > tail_y || y > result_y || tail_y == result_y {
+            continue;
+        }
+
+        let kept = scene.connections.clone();
+        move_junction(scene, tail, y);
+        move_junction(scene, result, y);
+        for edge in &mut scene.connections {
+            let point = edge.points[0];
+            edge.points = straighten(std::mem::take(&mut edge.points));
+            if edge.points.len() == 1 {
+                edge.points.push(point);
+            }
+        }
+        if !conforms(scene) {
+            scene.connections = kept;
+        }
+    }
+}
+
+/// Moves the horizontal run incident to one junction without changing the
+/// rest of any route. A zero-length structural hop remains as two equal points
+/// so the topology still has a routed connection.
+fn move_junction(scene: &mut Scene, junction: usize, y: i32) {
+    for edge in &mut scene.connections {
+        if edge.source == Source::Junction(junction) {
+            let old = edge.points[0].y;
+            let last = edge.points.len() - 1;
+            for point in edge.points[..last]
+                .iter_mut()
+                .take_while(|point| point.y == old)
+            {
+                point.y = y;
+            }
+        }
+        if edge.destination == Destination::Junction(junction) {
+            let old = edge.points.last().expect("a routed connection").y;
+            for point in edge.points[1..]
+                .iter_mut()
+                .rev()
+                .take_while(|point| point.y == old)
+            {
+                point.y = y;
+            }
+        }
+    }
+}
+
+/// Steps a back edge further out until its climb clears the labels it would
 /// otherwise strike through.
 ///
 /// Labels are placed against the routes, so where they end up is not known
-/// when the returns are drawn, and a label hanging off the body's outermost
+/// when the back edges are drawn, and a label hanging off the body's outermost
 /// route reaches past the rail beside it. Moving out only adds room between
 /// the climb and the body, so RFC 0002 §8 holds either way and `route::verify`
 /// confirms it; a step it refuses is dropped and the climb stays where it was.
+#[allow(clippy::too_many_lines)] // One cohesive measure-move-verify pass over each back edge.
 fn clear_labels(scene: &mut Scene) -> i32 {
     // The elastic realization already reserves label width on both sides of
-    // every return column. Moving just one segment would change its corridor.
-    if !scene.arrangement.return_routes.is_empty() {
+    // every back edge column. Moving just one segment would change its corridor.
+    if !scene.arrangement.back_routes.is_empty() {
         return 0;
     }
     let mut wanted = 0;
@@ -345,31 +485,60 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             Side::Left => -LANE,
             Side::Right => LANE,
         };
-        let struck = |scene: &Scene| {
-            scene
+        let boundary = scene
+            .topology
+            .loop_boundaries
+            .iter()
+            .find(|boundary| boundary.header == scene.topology.loops[index].header)
+            .expect("a repeating cycle has a boundary");
+        let (boundary_header, boundary_end) = (boundary.header, boundary.end);
+        let obstructions = |scene: &Scene| {
+            let mut bounds = scene
                 .labels
                 .iter()
                 .map(label::label_rect)
+                .collect::<Vec<_>>();
+            bounds.extend(
+                scene
+                    .topology
+                    .loop_boundaries
+                    .iter()
+                    .zip(loop_block::regions(scene))
+                    .filter(|(nested, _)| {
+                        (boundary_header + 1..boundary_end).contains(&nested.header)
+                    })
+                    .map(|(_, region)| (region.left, region.top, region.right, region.bottom)),
+            );
+            bounds
+        };
+        let struck = |scene: &Scene| {
+            obstructions(scene)
+                .into_iter()
                 .filter(|rect| {
                     scene.connections[back]
                         .points
                         .windows(2)
                         .any(|segment| route::enters(segment[0], segment[1], *rect))
                 })
-                .map(|rect| rect.2)
-                .max()
+                .map(|rect| match side {
+                    Side::Left => rect.0,
+                    Side::Right => rect.2,
+                })
+                .reduce(|outer, edge| match side {
+                    Side::Left => outer.min(edge),
+                    Side::Right => outer.max(edge),
+                })
         };
-        // A single label can span several lanes. Past the outermost label no
-        // climb can strike text; a collision left there is on a horizontal
-        // run, which stepping farther out cannot clear.
+        // A label or nested boundary can span several lanes. Past the
+        // outermost obstruction the climb is clear; a collision left there is
+        // on a horizontal run, which stepping farther out cannot clear.
         let rail = scene.connections[back].points[1].x;
-        let outermost = scene.labels.iter().map(label_rect).fold(
-            rail,
-            |outer, (left, _, right, _)| match side {
+        let outermost = obstructions(scene)
+            .into_iter()
+            .fold(rail, |outer, (left, _, right, _)| match side {
                 Side::Left => outer.min(left),
                 Side::Right => outer.max(right),
-            },
-        );
+            });
         for _ in 0..rail.abs_diff(outermost).div_ceil(LANE.unsigned_abs()) {
             if struck(scene).is_none() {
                 break;
@@ -401,8 +570,8 @@ fn clear_labels(scene: &mut Scene) -> i32 {
     wanted
 }
 
-fn straighten_return(from: Point, aside: i32, end: Point) -> Vec<Point> {
-    let mut points = route::return_points(from, aside, end);
+fn straighten_back_edge(from: Point, aside: i32, end: Point) -> Vec<Point> {
+    let mut points = route::back_edge_points(from, aside, end);
     points.dedup();
     points
 }
@@ -482,12 +651,12 @@ fn collapsed_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// How far past its body's edge each return's rail can reach, on the left and
+/// How far past its body's edge each back edge rail can reach, on the left and
 /// on the right.
 ///
 /// A rail sits `(lane + 1)` lanes past the body it climbs, and a lane past any
 /// rail already drawn beside a body nested in that one — so a reach grows
-/// along the deepest chain of nested loops rather than with their number.
+/// along the deepest chain of nested cycles rather than with their number.
 /// `route::contour_x` builds the rails that way; this is the same arithmetic
 /// before any pixel is placed, which is what lets `column_width` use it.
 fn contour_reach(model: &SemanticModel) -> (i32, i32) {
@@ -540,8 +709,8 @@ fn layout_spaced(
     narrow: bool,
 ) -> Result<Scene, String> {
     // A label is wrapped to fit the standard gap beside its column, and a
-    // return climbs in that same gap. Where the two want it at once — a label
-    // reaching rightward from one column past the rail of the loop in the
+    // back edge climbs in that same gap. Where the two want it at once — a label
+    // reaching rightward from one column past the rail of the cycle in the
     // next — no rail position clears it, because stepping out goes further
     // into the label and stepping in goes into the body. The room has to come
     // from the columns, and how much is only known once the labels are placed,
@@ -563,7 +732,9 @@ fn layout_spaced(
             Ok(scene) => return Ok(scene),
             Err(Blocked::Refused(reason)) => return Err(reason),
             Err(Blocked::Narrow(_)) if slack >= bound => {
-                return Err("a loop return and a connection label want the same gap".to_owned());
+                return Err(
+                    "an iteration back edge and a connection label want the same gap".to_owned(),
+                );
             }
             // Never past the bound: a pass that asks for more than the gap can
             // ever need is answered by a pass at the bound itself, so the error
@@ -577,7 +748,7 @@ fn layout_spaced(
 enum Blocked {
     /// This pass breaks a geometry rule other than the gap conflict below.
     Refused(String),
-    /// A return could not be drawn clear of a label; the columns need this
+    /// A back edge could not be drawn clear of a label; the columns need this
     /// much more room between them.
     Narrow(i32),
 }
@@ -614,7 +785,7 @@ fn conforms(scene: &mut Scene) -> bool {
 /// port it was given and reaches the node it was given.
 ///
 /// A junction may move along its incident rail during compaction, but all of
-/// its incident routes must keep meeting at one point. Returns also retain
+/// its incident routes must keep meeting at one point. Back edges also retain
 /// the recorded column boundary after indentation shifts the whole scene.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
     for left in &scene.nodes {
@@ -672,10 +843,10 @@ pub(super) fn correspondence(scene: &Scene) -> Option<String> {
             }
         }
     }
-    return_correspondence(scene)
+    back_edge_correspondence(scene)
 }
 
-fn return_correspondence(scene: &Scene) -> Option<String> {
+fn back_edge_correspondence(scene: &Scene) -> Option<String> {
     let origin =
         scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
     for (index, contour) in scene.arrangement.contours.iter().enumerate() {
@@ -685,9 +856,11 @@ fn return_correspondence(scene: &Scene) -> Option<String> {
             .iter()
             .find(|edge| edge.source == Source::Junction(tail))
         else {
-            return Some(format!("the return of junction {tail} is missing"));
+            return Some(format!(
+                "the iteration back edge of junction {tail} is missing"
+            ));
         };
-        if let Some(recorded) = scene.arrangement.return_routes.get(&index) {
+        if let Some(recorded) = scene.arrangement.back_routes.get(&index) {
             let mut expected = std::iter::once(recorded.arrival)
                 .chain(
                     recorded
@@ -697,7 +870,7 @@ fn return_correspondence(scene: &Scene) -> Option<String> {
                         .flat_map(|run| [run.exit, run.enter]),
                 )
                 .chain(std::iter::once(recorded.departure))
-                .map(|column| origin + route::return_x(scene, index, column))
+                .map(|column| origin + route::back_edge_x(scene, index, column))
                 .collect::<Vec<_>>();
             expected.dedup();
             let mut actual = edge
@@ -710,13 +883,15 @@ fn return_correspondence(scene: &Scene) -> Option<String> {
             actual.dedup();
             if actual != expected {
                 return Some(format!(
-                    "the return of junction {tail} changed its recorded corridor"
+                    "the iteration back edge of junction {tail} changed its recorded corridor"
                 ));
             }
             continue;
         }
         let Some(climb) = edge.points.windows(2).find(|pair| pair[1].y < pair[0].y) else {
-            return Some(format!("the return of junction {tail} has no climb"));
+            return Some(format!(
+                "the iteration back edge of junction {tail} has no climb"
+            ));
         };
         let anchor = route::contour_anchor(scene, index);
         let offset = (contour.lane as i32 + 1) * LANE;
@@ -726,7 +901,7 @@ fn return_correspondence(scene: &Scene) -> Option<String> {
         };
         if !kept {
             return Some(format!(
-                "the return of junction {tail} moved inside its recorded contour"
+                "the iteration back edge of junction {tail} moved inside its recorded contour"
             ));
         }
     }
@@ -750,6 +925,7 @@ fn attempt(
         parameters: parameter_panel(parameters),
         connections: Vec::new(),
         labels: Vec::new(),
+        loop_regions: Vec::new(),
         captions: captions::derive(model, start, return_type),
         reach: contour_reach(model),
         bodies: model
@@ -757,6 +933,12 @@ fn attempt(
             .loops
             .iter()
             .map(|loop_| model.body_vertices(loop_.header))
+            .collect(),
+        region_bodies: model
+            .topology
+            .loop_boundaries
+            .iter()
+            .map(|boundary| model.body_vertices(boundary.header))
             .collect(),
         arrangement: model.arrangement.clone(),
         topology: model.topology.clone(),
@@ -768,7 +950,7 @@ fn attempt(
     scene.connections = route::emit(&scene, &rows);
     scene
         .connections
-        .extend(route::returns(&scene, model, &rows));
+        .extend(route::back_edges(&scene, model, &rows));
     // The final word on RFC 0002 §8. The arrangement is checked in abstract
     // ranks and columns; this reads the emitted geometry, so it catches
     // anything the abstract check does not model. A disagreement means the
@@ -782,12 +964,13 @@ fn attempt(
     // that cannot be made to hold costs the compact appearance rather than the
     // diagram.
     let uncompacted = scene.clone();
-    if !scene.arrangement.return_routes.is_empty() {
+    if !scene.arrangement.back_routes.is_empty() {
         return finish(scene);
     }
     loop_block::compact_entries(&mut scene);
-    compact_returns(&mut scene, model);
+    compact_back_edges(&mut scene, model);
     end::adjust(&mut scene);
+    compact_cycle_rails(&mut scene);
     close_unused_rows(&mut scene, &rows);
     // Either failure falls back on it, not just a refusal. A compaction pulls
     // rails inward, so it can put one under a label the uncompacted geometry
@@ -818,6 +1001,7 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     if wanted > 0 {
         return Err(Blocked::Narrow(wanted));
     }
+    scene.loop_regions = loop_block::regions(&scene);
     scene.indent();
     scene.fit();
     // The complete result after every transformation, including the
@@ -825,6 +1009,7 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     // spatial rules and the arrangement it realizes.
     if let Some(reason) = route::verify(&scene)
         .or_else(|| label::verify(&scene))
+        .or_else(|| loop_block::verify(&scene))
         .or_else(|| correspondence(&scene))
     {
         return Err(Blocked::Refused(reason));
@@ -936,11 +1121,11 @@ impl Scene {
     /// including the space for a question's branch description. A column used
     /// only by routing needs one lane instead. This map stays strictly
     /// increasing; if the smaller gaps fail any check, `layout` retries the
-    /// same witness with uniform spacing. Bent returns need that uniform map
+    /// same witness with uniform spacing. Bent back edges need that uniform map
     /// to preserve the order of their offsets from both sides of each column.
     pub(super) fn column_x(&self, column: i32) -> i32 {
         let width = self.column_width();
-        if !self.narrow || !self.arrangement.return_routes.is_empty() {
+        if !self.narrow || !self.arrangement.back_routes.is_empty() {
             return MARGIN + NODE_WIDTH / 2 + column * width;
         }
         let half = |at| {
@@ -971,13 +1156,13 @@ impl Scene {
     /// Wide enough that the deepest rail reaching into a gap from the left and
     /// the deepest reaching into it from the right still leave a lane between
     /// them. `contour_reach` measures both, so a rail pushed out by a chain of
-    /// nested returns is held as well as one pushed out by its own lane.
+    /// nested back edges is held as well as one pushed out by its own lane.
     ///
     /// ponytail: one width for the whole diagram, so one deep contour widens
     /// every gap; give each gap its own width if a diagram looks stretched.
     fn column_width(&self) -> i32 {
         let (left, right) = self.reach;
-        let labels = if self.arrangement.return_routes.is_empty() {
+        let labels = if self.arrangement.back_routes.is_empty() {
             0
         } else {
             2 * label::LABEL_WIDTH
@@ -1067,6 +1252,13 @@ impl Scene {
             .map(|point| point.x)
             .min()
             .unwrap_or(MARGIN)
+            .min(
+                self.loop_regions
+                    .iter()
+                    .map(|region| region.left)
+                    .min()
+                    .unwrap_or(MARGIN),
+            )
             .min(MARGIN);
         if left >= MARGIN {
             return;
@@ -1086,6 +1278,10 @@ impl Scene {
         }
         if let Some(parameters) = &mut self.parameters {
             parameters.x += shift;
+        }
+        for region in &mut self.loop_regions {
+            region.left += shift;
+            region.right += shift;
         }
     }
 
@@ -1110,6 +1306,10 @@ impl Scene {
             let (.., parameters_right, parameters_bottom) = Self::parameter_bounds(parameters);
             right = right.max(parameters_right);
             bottom = bottom.max(parameters_bottom);
+        }
+        for region in &self.loop_regions {
+            right = right.max(region.right);
+            bottom = bottom.max(region.bottom);
         }
         self.width = right + MARGIN;
         self.height = bottom + MARGIN;
@@ -1138,6 +1338,7 @@ fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
         NodeKind::Start | NodeKind::End => capsule_dimensions(label),
         NodeKind::Action => action::dimensions(label),
+        NodeKind::Loop => loop_block::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
         }

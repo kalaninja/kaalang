@@ -1,5 +1,5 @@
 //! Complete sweep of vertex and shared-route exchange events. Connections and
-//! returns may change columns between events; vertices, ports and return
+//! back edges may change columns between events; vertices, ports and back edge
 //! envelopes supply the persistent horizontal constraints. See RFC 0003 §2.1 for the finite space,
 //! the strip-routing construction, and the state-equivalence argument.
 
@@ -13,7 +13,7 @@ use super::{Arrangement, Contour, Obstruction, Route, Run, Side};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Lifeline {
     Wire(usize),
-    Return(usize),
+    BackEdge(usize),
 }
 
 #[derive(Clone)]
@@ -114,8 +114,8 @@ impl Order {
 struct Columns {
     vertex: Vec<usize>,
     exits: BTreeMap<ExitId, usize>,
-    returns: Vec<usize>,
-    return_right: Vec<usize>,
+    back_edges: Vec<usize>,
+    back_edge_right: Vec<usize>,
     base: Order,
     /// An entry equals the minimum of its first branch's approach columns.
     minima: Vec<(usize, Vec<usize>)>,
@@ -157,20 +157,9 @@ fn serial_identities(
             );
         }
     }
-    // A case's distributor route may turn before reaching it. Every
-    // other sole arrival is the current serial column; iteration tails
-    // may instead finish at either end of their incoming rail.
+    // Every serial arrival shares its predecessor's current column.
     for &vertex in &topology.vertices {
-        if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
-            || topology
-                .loops
-                .iter()
-                .any(|l| vertex == Vertex::Junction(l.tail))
-        {
-            continue;
-        }
-        let incoming = topology.incoming(vertex).collect::<Vec<_>>();
-        if let [wire] = incoming.as_slice() {
+        if let Some(wire) = super::serial_arrival(topology, vertex) {
             let source = match wire.source {
                 Source::Exit(exit) => raw_exits[&exit],
                 Source::Junction(j) => index(Vertex::Junction(j)),
@@ -192,7 +181,7 @@ fn branch_rules(
     let reachable = super::regions::reachable(topology);
     let mut inequalities = Vec::new();
     let mut minima = Vec::new();
-    for block in super::regions::branchers(flow) {
+    for block in super::regions::branchers(flow, topology) {
         let regions = super::regions::regions(flow, topology, &reachable, block);
         let starts = (0..flow.blocks[block].branch_count())
             .map(|branch| {
@@ -255,6 +244,7 @@ fn branch_rules(
 }
 
 impl Columns {
+    #[allow(clippy::too_many_lines)]
     fn of(flow: &Flow, topology: &Topology, flexible: bool) -> Option<Self> {
         let index = |vertex| index_of(topology, vertex);
         let n = topology.vertices.len();
@@ -264,12 +254,16 @@ impl Columns {
             .enumerate()
             .map(|(i, e)| (e.id, n + i))
             .collect::<BTreeMap<_, _>>();
-        let return_start = n + raw_exits.len();
+        let back_edge_start = n + raw_exits.len();
         let count = topology.loops.len();
-        let mut parent = (0..return_start + 2 * count).collect::<Vec<_>>();
+        let mut parent = (0..back_edge_start + 2 * count).collect::<Vec<_>>();
         if !flexible {
             for i in 0..count {
-                unite(&mut parent, return_start + i, return_start + count + i);
+                unite(
+                    &mut parent,
+                    back_edge_start + i,
+                    back_edge_start + count + i,
+                );
             }
         }
         serial_identities(topology, &raw_exits, &mut parent);
@@ -289,8 +283,8 @@ impl Columns {
         }
         for i in 0..count {
             if !base.insert(
-                groups[return_start + i],
-                groups[return_start + count + i],
+                groups[back_edge_start + i],
+                groups[back_edge_start + count + i],
                 false,
             ) {
                 return None;
@@ -339,7 +333,7 @@ impl Columns {
                                 .filter(|(_, inner)| {
                                     (loop_.header + 1..end).contains(&inner.header)
                                 })
-                                .map(|(i, _)| groups[return_start + side * count + i]),
+                                .map(|(i, _)| groups[back_edge_start + side * count + i]),
                         )
                         .collect()
                 })
@@ -348,8 +342,8 @@ impl Columns {
         Some(Self {
             vertex: groups[..n].to_vec(),
             exits: raw_exits.into_iter().map(|(e, i)| (e, groups[i])).collect(),
-            returns: groups[return_start..return_start + count].to_vec(),
-            return_right: groups[return_start + count..].to_vec(),
+            back_edges: groups[back_edge_start..back_edge_start + count].to_vec(),
+            back_edge_right: groups[back_edge_start + count..].to_vec(),
             base,
             minima,
             bodies,
@@ -373,7 +367,7 @@ impl Columns {
 }
 
 struct Sweep<'a> {
-    /// Try completing inner returns before paths that only finish the flow.
+    /// Try completing inner back edges before paths that only finish the flow.
     /// This changes which witness is found first, never which states exist.
     visit_order: Vec<usize>,
     events: Vec<Vec<usize>>,
@@ -415,7 +409,7 @@ pub(super) fn search(
     match decide(&sweep, merges) {
         Err(Refusal::Impossible(_)) => {
             sweep.columns = Columns::of(flow, topology, true)
-                .expect("separating return bounds cannot contradict the static constraints");
+                .expect("separating back edge bounds cannot contradict the static constraints");
             decide(&sweep, merges)
         }
         found => found,
@@ -470,7 +464,7 @@ fn decide(sweep: &Sweep<'_>, merges: &[WireMerge]) -> Result<Arrangement, Refusa
 struct Anchor {
     left: usize,
     right: usize,
-    return_index: Option<usize>,
+    back_edge_index: Option<usize>,
 }
 
 impl Anchor {
@@ -478,7 +472,7 @@ impl Anchor {
         Self {
             left: column,
             right: column,
-            return_index: None,
+            back_edge_index: None,
         }
     }
 }
@@ -580,7 +574,7 @@ impl<'a> Sweep<'a> {
             .collect::<Vec<_>>();
         let mut wanted = incoming.iter().copied().collect::<BTreeSet<_>>();
         if let Some(i) = self.tail_of[vertex] {
-            wanted.insert(Lifeline::Return(i));
+            wanted.insert(Lifeline::BackEdge(i));
         }
         if wanted.is_empty() {
             return state.frontier.is_empty().then_some((0, 0));
@@ -656,12 +650,12 @@ impl<'a> Sweep<'a> {
     }
 
     /// Static anchors on the event row. Untouched forward routes may move
-    /// between events; returns choose a position inside their persistent bounds.
-    fn return_anchor(&self, i: usize) -> Anchor {
+    /// between events; back edges choose a position inside their persistent bounds.
+    fn back_edge_anchor(&self, i: usize) -> Anchor {
         Anchor {
-            left: self.columns.returns[i],
-            right: self.columns.return_right[i],
-            return_index: Some(i),
+            left: self.columns.back_edges[i],
+            right: self.columns.back_edge_right[i],
+            back_edge_index: Some(i),
         }
     }
 
@@ -670,7 +664,7 @@ impl<'a> Sweep<'a> {
             items
                 .iter()
                 .filter_map(|item| match item {
-                    Lifeline::Return(i) => Some(self.return_anchor(*i)),
+                    Lifeline::BackEdge(i) => Some(self.back_edge_anchor(*i)),
                     Lifeline::Wire(_) => None,
                 })
                 .collect::<Vec<_>>()
@@ -697,8 +691,8 @@ impl<'a> Sweep<'a> {
                 .or(sides[i])
                 .expect("a loop side is chosen at entry")
             {
-                Side::Left => event.insert(0, self.return_anchor(i)),
-                Side::Right => event.push(self.return_anchor(i)),
+                Side::Left => event.insert(0, self.back_edge_anchor(i)),
+                Side::Right => event.push(self.back_edge_anchor(i)),
             }
         }
         let mut anchors = take(&frontier[..step.position]);
@@ -715,8 +709,8 @@ impl<'a> Sweep<'a> {
                 .side
                 .expect("projected topology contains the required vertex or loop endpoint");
             let bound = match side {
-                Side::Left => self.columns.return_right[i],
-                Side::Right => self.columns.returns[i],
+                Side::Left => self.columns.back_edge_right[i],
+                Side::Right => self.columns.back_edges[i],
             };
             let flank = usize::from(side == Side::Right);
             for &body in &self.columns.bodies[i][flank] {
@@ -736,7 +730,7 @@ impl<'a> Sweep<'a> {
                 Side::Left => step.consumed.first(),
                 Side::Right => step.consumed.last(),
             };
-            if outside != Some(&Lifeline::Return(i)) {
+            if outside != Some(&Lifeline::BackEdge(i)) {
                 return None;
             }
         }
@@ -759,7 +753,7 @@ impl<'a> Sweep<'a> {
     fn sealed(&self, state: &State) -> bool {
         let destination = |item: Lifeline| match item {
             Lifeline::Wire(w) => self.topology.connections[w].destination,
-            Lifeline::Return(i) => Vertex::Junction(self.topology.loops[i].tail),
+            Lifeline::BackEdge(i) => Vertex::Junction(self.topology.loops[i].tail),
         };
         let ends = state
             .frontier
@@ -917,8 +911,8 @@ impl<'a> Sweep<'a> {
                         match side.expect(
                             "projected topology contains the required vertex or loop endpoint",
                         ) {
-                            Side::Left => emitted.insert(0, Lifeline::Return(i)),
-                            Side::Right => emitted.push(Lifeline::Return(i)),
+                            Side::Left => emitted.insert(0, Lifeline::BackEdge(i)),
+                            Side::Right => emitted.push(Lifeline::BackEdge(i)),
                         }
                     }
                     let step = Step {
@@ -984,15 +978,15 @@ impl<'a> Sweep<'a> {
                     at <= values[anchor.right],
                     "ordered intervals have enough room"
                 );
-                if let Some(i) = anchor.return_index {
+                if let Some(i) = anchor.back_edge_index {
                     spines[i] = at;
                 }
             }
             let (before, after) = self.row(step, &frontier, &values, &spines, room, &previous);
             if let Some(i) = step.vertex.and_then(|v| self.entry_of[v]) {
-                let x = after[&Lifeline::Return(i)];
+                let x = after[&Lifeline::BackEdge(i)];
                 built.contours[i].column = x;
-                built.return_routes.insert(
+                built.back_routes.insert(
                     i,
                     Route {
                         departure: x,
@@ -1003,10 +997,10 @@ impl<'a> Sweep<'a> {
             }
             if let Some(i) = step.vertex.and_then(|v| self.tail_of[v]) {
                 built
-                    .return_routes
+                    .back_routes
                     .get_mut(&i)
-                    .expect("the return entered before its tail")
-                    .arrival = before[&Lifeline::Return(i)];
+                    .expect("the back edge entered before its tail")
+                    .arrival = before[&Lifeline::BackEdge(i)];
             }
             if rank > 0 {
                 Self::strip(
@@ -1025,9 +1019,7 @@ impl<'a> Sweep<'a> {
             );
             previous = after;
         }
-        built
-            .return_routes
-            .retain(|_, route| !route.runs.is_empty());
+        built.back_routes.retain(|_, route| !route.runs.is_empty());
         compress(&mut built);
         built
     }
@@ -1096,7 +1088,7 @@ impl<'a> Sweep<'a> {
                 })
                 .collect(),
             gap_lanes: vec![0; steps.len()],
-            return_routes: BTreeMap::new(),
+            back_routes: BTreeMap::new(),
             contours: vec![
                 Contour {
                     side: Side::Left,
@@ -1134,7 +1126,7 @@ impl<'a> Sweep<'a> {
             .collect::<Vec<_>>();
         event_anchors.extend(step.emitted.iter().map(|item| match item {
             Lifeline::Wire(w) => port(*w),
-            Lifeline::Return(i) => spines[*i],
+            Lifeline::BackEdge(i) => spines[*i],
         }));
         if let Some(i) = self.tail_of[vertex] {
             event_anchors.push(spines[i]);
@@ -1164,19 +1156,20 @@ impl<'a> Sweep<'a> {
         }
         let mut before = fixed.clone();
         let incoming = self.arrivals[vertex].len();
-        let start = if incoming == 1 && matches!(self.topology.vertices[vertex], Vertex::Node(_)) {
-            own
-        } else if self.tail_of[vertex]
-            .is_some_and(|i| step.consumed.last() == Some(&Lifeline::Return(i)))
-        {
-            own - incoming as i32
-        } else {
-            own + 1
-        };
+        let start =
+            if super::serial_arrival(self.topology, self.topology.vertices[vertex]).is_some() {
+                own
+            } else if self.tail_of[vertex]
+                .is_some_and(|i| step.consumed.last() == Some(&Lifeline::BackEdge(i)))
+            {
+                own - incoming as i32
+            } else {
+                own + 1
+            };
         let mut offset = 0;
         for &item in &step.consumed {
             let x = match item {
-                Lifeline::Return(i) => spines[i],
+                Lifeline::BackEdge(i) => spines[i],
                 Lifeline::Wire(w) if self.events[vertex].len() > 1 => {
                     values[self.columns.vertex
                         [index_of(self.topology, self.topology.connections[w].destination)]]
@@ -1193,7 +1186,7 @@ impl<'a> Sweep<'a> {
         let mut counts = BTreeMap::new();
         for &item in &step.emitted {
             let x = match item {
-                Lifeline::Return(i) => spines[i],
+                Lifeline::BackEdge(i) => spines[i],
                 Lifeline::Wire(w) => {
                     let at = port(w);
                     let count = counts.entry(at).or_insert(0);
@@ -1217,13 +1210,13 @@ impl<'a> Sweep<'a> {
         let mut at = frontier
             .iter()
             .find_map(|item| match item {
-                Lifeline::Return(i) => Some(spines[*i] - room),
+                Lifeline::BackEdge(i) => Some(spines[*i] - room),
                 Lifeline::Wire(_) => None,
             })
             .unwrap_or(0)
             - room;
         for &item in frontier {
-            if let Lifeline::Return(i) = item {
+            if let Lifeline::BackEdge(i) = item {
                 at = spines[i];
             }
             before.insert(item, at);
@@ -1265,10 +1258,10 @@ impl<'a> Sweep<'a> {
                 if (to > from && reverse) || (to < from && !reverse) {
                     let route = match item {
                         Lifeline::Wire(w) => &mut built.routes[w],
-                        Lifeline::Return(i) => built
-                            .return_routes
+                        Lifeline::BackEdge(i) => built
+                            .back_routes
                             .get_mut(&i)
-                            .expect("a live return route"),
+                            .expect("a live iteration back edge"),
                     };
                     add_run(route, gap, lane, from, to);
                     lane += 1;
@@ -1294,7 +1287,7 @@ impl<'a> Sweep<'a> {
     }
 }
 
-/// Pack paths between return spines on one side of a vertex event.
+/// Pack paths between back edge spines on one side of a vertex event.
 fn pack_side(
     slice: &[Lifeline],
     bound: i32,
@@ -1318,7 +1311,7 @@ fn pack_side(
     };
     let mut run = Vec::new();
     for &item in slice {
-        if let Lifeline::Return(i) = item {
+        if let Lifeline::BackEdge(i) = item {
             let target = spines[i];
             let start = at.min(target - room - run.len() as i32);
             pack(&run, start, target - room, previous, fixed);
@@ -1425,14 +1418,14 @@ pub(super) fn compress(built: &mut Arrangement) {
             built
                 .routes
                 .iter()
-                .chain(built.return_routes.values())
+                .chain(built.back_routes.values())
                 .flat_map(|r| [r.departure, r.arrival]),
         )
         .chain(
             built
                 .routes
                 .iter()
-                .chain(built.return_routes.values())
+                .chain(built.back_routes.values())
                 .flat_map(|r| r.runs.iter().flat_map(|s| [s.enter, s.exit])),
         )
         .chain(built.contours.iter().map(|c| c.column))
@@ -1455,14 +1448,19 @@ pub(super) fn compress(built: &mut Arrangement) {
     let mut used = built
         .routes
         .iter()
-        .chain(built.return_routes.values())
+        .chain(built.back_routes.values())
         .flat_map(|route| route.runs.iter().map(|run| (run.gap, run.lane)))
         .collect::<BTreeSet<_>>();
+    let bent_gaps = used.iter().map(|&(gap, _)| gap).collect::<BTreeSet<_>>();
     for (&vertex, &rank) in &built.rank {
         // A junction with a straight arrival sits on its rank's line. An
         // unused final lane can keep somebody else's bend above that line;
-        // deleting it would make the bend touch the junction or its return.
-        if matches!(vertex, Vertex::Junction(_)) && rank > 0 && built.gap_lanes[rank - 1] > 0 {
+        // deleting it would make the bend touch the junction or its back edge.
+        if matches!(vertex, Vertex::Junction(_))
+            && rank > 0
+            && bent_gaps.contains(&(rank - 1))
+            && built.gap_lanes[rank - 1] > 0
+        {
             used.insert((rank - 1, built.gap_lanes[rank - 1] - 1));
         }
     }
@@ -1475,7 +1473,7 @@ pub(super) fn compress(built: &mut Arrangement) {
     for route in built
         .routes
         .iter_mut()
-        .chain(built.return_routes.values_mut())
+        .chain(built.back_routes.values_mut())
     {
         route.departure = numbered[&route.departure];
         route.arrival = numbered[&route.arrival];
@@ -1574,7 +1572,7 @@ mod tests {
                 .map(Lifeline::Wire)
                 .collect::<Vec<_>>();
             let side = sweep.entry_of[vertex].map(|i| {
-                emitted.insert(0, Lifeline::Return(i));
+                emitted.insert(0, Lifeline::BackEdge(i));
                 Side::Left
             });
             let step = Step {
@@ -1615,8 +1613,8 @@ mod tests {
             let Some(parts) = super::super::tests::parts_of(&source) else {
                 continue;
             };
-            // Reductions also run in the deciding family with variable return
-            // positions; the positive straight-return preference cannot hide it.
+            // Reductions also run in the deciding family with variable back edge
+            // positions; the positive straight back edge preference cannot hide it.
             for flexible in [false, true] {
                 let Some(sweep) = Sweep::of(&parts.flow, &parts.topology, flexible) else {
                     continue;

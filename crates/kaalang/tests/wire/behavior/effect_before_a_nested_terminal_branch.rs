@@ -26,6 +26,8 @@ fn effect_before_a_nested_terminal_branch(
 
     #[action("Use the selected value.")]
     let end = |selected, logged| selected * 10;
+
+    |end| return end;
 }
 
 #[test]

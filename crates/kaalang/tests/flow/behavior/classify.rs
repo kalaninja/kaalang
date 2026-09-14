@@ -22,6 +22,8 @@ fn classify(seed: u32, limit: u32) -> u32 {
 
     #[action("Keep the rejected total.")]
     let end = |rejected, total| total;
+
+    |end| return end;
 }
 
 #[test]

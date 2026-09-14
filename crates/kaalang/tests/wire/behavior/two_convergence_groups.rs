@@ -33,6 +33,8 @@ fn two_convergence_groups(quarter: u8) -> u32 {
 
     #[action("Close the late half.")]
     let end = |late| late + 20;
+
+    |end| return end;
 }
 
 #[test]

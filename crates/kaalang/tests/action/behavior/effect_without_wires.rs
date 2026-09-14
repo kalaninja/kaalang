@@ -10,10 +10,12 @@ fn effect_without_wires() {
     let end = || {
         ENTRIES.fetch_add(1, Ordering::Relaxed);
     };
+
+    |end| return end;
 }
 
 #[test]
-fn an_effect_only_action_finishes_the_flow_with_a_unit_end_wire() {
+fn an_effect_only_action_can_produce_and_return_a_unit_end_wire() {
     effect_without_wires();
     assert_eq!(ENTRIES.load(Ordering::Relaxed), 1);
 }

@@ -7,6 +7,8 @@ fn immutable_flow_parameter(value: u8) -> u8 {
         *value += 1;
         *value
     };
+
+    |end| return end;
 }
 
 fn main() {}

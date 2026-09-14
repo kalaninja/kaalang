@@ -12,8 +12,7 @@ fn log_then_transform(value: String) -> usize {
     #[action("Transform the value into its length.")]
     let length = |value| value.len();
 
-    #[action("Finish.")]
-    let end = |length| length;
+    |length| return length;
 }
 
 #[test]

@@ -10,6 +10,8 @@ fn mutable_borrow_with_live_shared_reference(mut text: String) -> usize {
         text.push('!');
         view.len()
     };
+
+    |end| return end;
 }
 
 fn main() {}

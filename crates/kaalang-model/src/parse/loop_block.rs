@@ -1,23 +1,32 @@
-//! Parses a loop and its optional one-time entry captures.
+//! Parses a described, self-contained cycle interface.
 
-use syn::{Error, ExprLoop, Result, spanned::Spanned};
+use syn::{Attribute, Error, Expr, ExprLoop, Result};
 
-use super::structural_block;
-use crate::model::{Block, BlockKind, Input};
+use super::{BlockSyntax, description};
+use crate::model::Block;
 
-pub(super) fn parse(expression: &ExprLoop, inputs: Vec<Input>) -> Result<Block> {
-    if let Some(attribute) = expression.attrs.first() {
+pub(super) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
+    if !matches!(syntax.closure.body.as_ref(), Expr::Block(_)) {
         return Err(Error::new_spanned(
-            attribute,
-            "a kaalang loop does not support attributes",
+            &syntax.closure.body,
+            "a kaalang cycle body must use braces",
         ));
     }
-    if let Some(label) = &expression.label
-        && label.name.ident == "_"
-    {
-        return Err(Error::new_spanned(label, "`'_` is not a valid loop label"));
-    }
-    let mut block = structural_block(BlockKind::Loop, expression.span(), inputs);
-    block.loop_label = expression.label.as_ref().map(|label| label.name.clone());
-    Ok(block)
+    let description = description(syntax.kind_attribute, "kaalang cycle")?;
+    syntax.reject_companions()?;
+    Ok(syntax.into_block(Some(description), Vec::new()))
+}
+
+pub(super) fn legacy(expression: &ExprLoop) -> Error {
+    Error::new_spanned(
+        expression,
+        "structural kaalang loops are no longer supported; use a `#[cycle(\"description\")]` block",
+    )
+}
+
+pub(super) fn legacy_attribute(attribute: &Attribute) -> Error {
+    Error::new_spanned(
+        attribute,
+        "the legacy `#[loop]` attribute is no longer supported; use `#[cycle(\"description\")]`",
+    )
 }

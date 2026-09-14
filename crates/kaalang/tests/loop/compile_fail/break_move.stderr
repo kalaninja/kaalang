@@ -1,21 +1,19 @@
 error[E0382]: use of moved value
-  --> tests/loop/compile_fail/break_move.rs:11:16
+  --> tests/loop/compile_fail/break_move.rs:13:17
    |
  3 | #[kaalang]
    | ---------- in this attribute macro expansion
+ 4 | fn invalid(text: String, done: bool) -> String {
+ 5 |     #[cycle("Move persistent state on a repeating route.")]
+   |     - inside of this loop
+ 6 |     let result = |text, done| {
+   |                   ---- move occurs because value has type `String`, which does not implement the `Copy` trait
 ...
- 6 |     let text = |flag| flag.to_string();
-   |         ---- move occurs because value has type `String`, which does not implement the `Copy` trait
- 7 |     loop {
-   |     ---- inside of this loop
- 8 |         |text| break;
-   |          ---- value moved here
-...
-11 |     let end = |text| text.len();
-   |                ^^^^ value used here after move
+13 |         |again, text| drop(text);
+   |                 ^^^^ value moved here, in previous iteration of loop
    |
    = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider cloning the value if the performance cost is acceptable
    |
- 8 |         |text.clone()| break;
-   |              ++++++++
+13 |         |again, text.clone()| drop(text);
+   |                     ++++++++

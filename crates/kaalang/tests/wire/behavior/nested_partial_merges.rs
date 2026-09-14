@@ -34,8 +34,7 @@ fn nested_partial_merges(source: u8) -> u8 {
     #[action("Fourth value.")]
     let abcd = |d| 4;
 
-    #[action("Finish.")]
-    let end = |abcd| abcd;
+    |abcd| return abcd;
 }
 
 #[test]

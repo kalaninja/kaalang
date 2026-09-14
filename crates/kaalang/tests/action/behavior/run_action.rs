@@ -4,6 +4,8 @@ use kaalang::kaalang;
 fn run_action(input: u32) -> u32 {
     #[action("Increment the input.")]
     let end = |input| input + 1;
+
+    |end| return end;
 }
 
 #[test]

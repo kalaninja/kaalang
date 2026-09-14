@@ -25,6 +25,8 @@ fn fizzbuzz(number: u32) -> String {
 
     #[action("Say the number itself.")]
     let end = |plain| plain.to_string();
+
+    |end| return end;
 }
 
 #[test]

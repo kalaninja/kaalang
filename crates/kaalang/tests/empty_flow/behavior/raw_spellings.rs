@@ -10,6 +10,8 @@ fn raw_spellings(r#type: u8, value: u8) -> u8 {
 
     #[action("Preserve the renamed value.")]
     let r#end = |r#match| r#match;
+
+    |end| return end;
 }
 
 #[test]

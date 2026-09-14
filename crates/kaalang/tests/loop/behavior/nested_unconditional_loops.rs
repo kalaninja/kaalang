@@ -2,21 +2,26 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn nested_unconditional_loops(limit: usize) -> usize {
-    loop {
+    #[cycle("Run the nested counter.")]
+    let result = |limit| {
         #[action("Initialize the counter.")]
         let mut count = || 0;
 
-        loop {
+        #[cycle("Count to the limit.")]
+        let final_count = |mut count, limit| {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 
-            #[action("Return the counter.")]
-            let end = |done, &count| *count;
+            |done, count| break count;
 
             #[action("Increment the counter.")]
             |again, &mut count| *count += 1;
-        }
-    }
+        };
+
+        |final_count| break final_count;
+    };
+
+    |result| return result;
 }
 
 #[test]

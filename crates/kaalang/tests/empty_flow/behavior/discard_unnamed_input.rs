@@ -2,11 +2,10 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn discard_unnamed_input(_: u8) {
-    #[action("Finish without the unnamed flow input.")]
-    let end = || {};
+    return ();
 }
 
 #[test]
-fn the_ignored_parameter_is_explicit() {
+fn an_explicit_unit_return_can_ignore_an_unnamed_parameter() {
     discard_unnamed_input(2);
 }

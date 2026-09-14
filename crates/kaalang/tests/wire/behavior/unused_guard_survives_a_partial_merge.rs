@@ -33,6 +33,8 @@ fn unused_guard_survives_a_partial_merge(source: u8, cell: &RefCell<usize>) -> b
         assert!(cell.try_borrow_mut().is_ok());
         borrowed
     };
+
+    |end| return end;
 }
 
 #[test]

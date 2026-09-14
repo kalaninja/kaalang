@@ -146,8 +146,7 @@ mod tests {
     fn preserves_the_authored_function_signature() {
         let mut function: ItemFn = parse_quote! {
             pub const fn identity<T>(mut r#type: T, _: u8) -> T {
-                #[action("Return the value")]
-                let end = |r#type| r#type;
+                |r#type| return r#type;
             }
         };
         let signature = function.sig.to_token_stream().to_string();
@@ -187,6 +186,8 @@ mod tests {
 
                 #[action("Use the selected value")]
                 let end = |selected| { __kaalang_shared_marker(selected) };
+
+                |end| return end;
             }
         };
 
@@ -195,6 +196,40 @@ mod tests {
         assert_eq!(branching_matches(&function), 0);
         assert!(!expansion.contains("Result"));
         assert!(!expansion.contains("Option"));
+    }
+
+    #[test]
+    fn emits_each_body_once_across_a_question_join_chain() {
+        let mut function: ItemFn = parse_quote! {
+            fn and(a: bool, b: bool, c: bool) -> bool {
+                #[question("a")]
+                #[yes("Yes")]
+                #[no("No")]
+                let (check_b, false_result) = |a| a;
+
+                #[question("b")]
+                #[yes("Yes")]
+                #[no("No")]
+                let (check_c, false_result) = |check_b, b| b;
+
+                #[question("c")]
+                #[yes("Yes")]
+                #[no("No")]
+                let (true_result, false_result) = |check_c, c| c;
+
+                #[action("Return true.")]
+                let end = |true_result| __kaalang_true_marker(true);
+
+                #[action("Return false.")]
+                let end = |false_result| __kaalang_false_marker(false);
+
+                |end| return end;
+            }
+        };
+
+        let expansion = expand(&mut function).expect("the flow expands").to_string();
+        assert_eq!(expansion.matches("__kaalang_true_marker").count(), 1);
+        assert_eq!(expansion.matches("__kaalang_false_marker").count(), 1);
     }
 
     #[test]
@@ -219,6 +254,8 @@ mod tests {
 
                 #[action("Finish")]
                 let end = |selected| { __kaalang_shared_marker(selected) };
+
+                |end| return end;
             }
         };
         let expansion = expand(&mut function).expect("the flow expands").to_string();
@@ -278,6 +315,8 @@ mod tests {
 
                 #[action("Use the right value")]
                 let end = |right| { __kaalang_right_marker(right) };
+
+                |end| return end;
             }
         };
 
@@ -325,9 +364,15 @@ mod tests {
                     Stmt::Expr(expression, _) => expression,
                     _ => panic!("each fixture statement declares a block"),
                 };
+                if matches!(expression, Expr::Break(_) | Expr::Return(_)) {
+                    continue;
+                }
                 let Expr::Closure(closure) = expression else {
                     panic!("each block has a closure initializer");
                 };
+                if matches!(closure.body.as_ref(), Expr::Break(_) | Expr::Return(_)) {
+                    continue;
+                }
                 if !matches!(closure.body.as_ref(), Expr::Block(_)) {
                     let expression = &closure.body;
                     closure.body = parse_quote!({ #expression });

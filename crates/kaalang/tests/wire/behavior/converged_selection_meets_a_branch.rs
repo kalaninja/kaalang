@@ -19,6 +19,8 @@ fn converged_selection_meets_a_branch(left: bool, right: bool) -> u8 {
 
     #[action("Skip the work.")]
     let end = |left_no, right_value| right_value.map_or(0, |_| 0);
+
+    |end| return end;
 }
 
 #[test]

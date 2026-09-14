@@ -18,6 +18,8 @@ fn invalid(condition: bool) -> u8 {
 
     #[action("Use the value inside the no branch.")]
     let end = |value, no_gate| { value };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -32,6 +32,8 @@ fn question_after_a_partial_merge(value: u8, flag: bool) -> u8 {
 
     #[action("Keep a small value.")]
     let end = |small, shared| shared;
+
+    |end| return end;
 }
 
 #[test]

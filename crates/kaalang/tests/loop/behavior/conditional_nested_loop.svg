@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="604" viewBox="0 0 704 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="788" height="1028" viewBox="0 0 788 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for conditional_nested_loop</title>
-  <desc id="kaalang-description">Nodes: Start: conditional_nested_loop with parameters flag: bool handing over flag; Question: Enter the loop? capturing flag handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Return one. capturing nothing handing over end; Action: Return two. capturing nothing handing over end; End: usize capturing end. Connections: Start: conditional_nested_loop to Question: Enter the loop?; Question: Enter the loop? branch 1 to Action: Return one.; Question: Enter the loop? branch 2 to Action: Return two.; Action: Return one. to the end merge; Action: Return two. to the end merge; the end merge to End: usize.</desc>
+  <desc id="kaalang-description">Cycles: Choose between a nested cycle and a direct result. with inputs flag and outputs result; Produce one. with inputs iterate_1 and outputs one. Nodes: Start: conditional_nested_loop with parameters flag: bool handing over flag; Question: Enter the loop? capturing flag handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Produce two. capturing leave_1 handing over two; Action: Produce one. capturing nothing handing over one; End: usize capturing result. Connections: Start: conditional_nested_loop to the cycle entry; Question: Enter the loop? branch 1 to the cycle entry; Question: Enter the loop? branch 2 to Action: Produce two.; Action: Produce two. to a cycle break; Action: Produce one. to a cycle break; the cycle entry to Question: Enter the loop?; the cycle result to End: usize; the cycle entry to Action: Produce one.; the cycle result to a cycle break; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -11,56 +11,81 @@
       .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label { font-weight: 500; text-anchor: start; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Choose between a nested cycle and a direct result.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="724" height="774" rx="12"/>
+    <text class="cycle-caption" x="744" y="141" text-anchor="end" xml:space="preserve"><tspan x="744" dy="0">Choose between a nested cycle and a direct result.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Produce one.</title>
+    <rect class="cycle-boundary" x="60" y="343" width="336" height="414" rx="12"/>
+    <text class="cycle-caption" x="384" y="357" text-anchor="end" xml:space="preserve"><tspan x="384" dy="0">Produce one.</tspan></text>
+    </g>
+  </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 234 L 172 306
-      M 312 198 L 532 198 L 532 306
-      M 172 370 L 172 442
-      M 532 370 L 532 442 L 172 442
-      M 172 442 L 172 514
+      M 228 90 L 228 162
+      M 228 306 L 228 378
+      M 368 270 L 588 270 L 588 378
+      M 588 442 L 588 514
+      M 228 578 L 228 650
+      M 228 162 L 228 234
+      M 228 866 L 228 938
+      M 228 378 L 228 514
+      M 228 722 L 228 794
+      M 588 514 L 588 866 L 228 866
+      M 228 650 L 228 722
+      M 228 794 L 228 866
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="186" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">()</tspan></text>
+    <text class="connection-label" x="241" y="108" xml:space="preserve"><tspan x="241" dy="0">flag</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="241" y="326" xml:space="preserve"><tspan x="241" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="381" y="258" xml:space="preserve"><tspan x="381" dy="0">NO</tspan></text>
+    <text class="connection-label" x="601" y="460" xml:space="preserve"><tspan x="601" dy="0">two</tspan></text>
+    <text class="connection-label" x="241" y="596" xml:space="preserve"><tspan x="241" dy="0">one</tspan></text>
+    <text class="connection-label" x="241" y="223" xml:space="preserve"><tspan x="241" dy="0">flag</tspan></text>
+    <text class="connection-label" x="241" y="503" xml:space="preserve"><tspan x="241" dy="0">()</tspan></text>
+    <text class="connection-label" x="241" y="927" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 368 61 L 464 61"/>
+    <g class="parameter-panel" transform="translate(584 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
+    <g class="node start" transform="translate(228 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">conditional_nested_loop</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 198)">
+    <g class="node question" transform="translate(228 270)">
       <title xml:space="preserve">Enter the loop?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Enter the loop?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 338)">
-      <title xml:space="preserve">Return one.</title>
+    <g class="node action" transform="translate(588 410)">
+      <title xml:space="preserve">Produce two.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return one.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce two.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 338)">
-      <title xml:space="preserve">Return two.</title>
+    <g class="node action" transform="translate(228 546)">
+      <title xml:space="preserve">Produce one.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return two.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce one.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 543)">
+    <g class="node end" transform="translate(228 967)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

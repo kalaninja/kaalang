@@ -11,6 +11,8 @@ fn skeleton(seed: u32) -> u32 {
 
     #[action("Keep the rejected seed.")]
     let end = |rejected, seed| todo!();
+
+    |end| return end;
 }
 
 #[test]

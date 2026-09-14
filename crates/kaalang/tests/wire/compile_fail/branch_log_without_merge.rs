@@ -20,6 +20,8 @@ fn invalid(condition: bool, value: String) -> usize {
 
     #[action("Finish no.")]
     let end = |no, length| { length };
+
+    |end| return end;
 }
 
 fn main() {}

@@ -1,5 +1,0 @@
-error: this kaalang execution does not produce the `end` wire
- --> tests/question/compile_fail/branch_without_end.rs:4:4
-  |
-4 | fn invalid(input: u32) {
-  |    ^^^^^^^
