@@ -10,7 +10,7 @@
 use kaalang_model::geometry::{
     bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
 };
-use kaalang_model::topology::{Destination, NodeId, Source, Vertex};
+use kaalang_model::topology::{Destination, ExitId, NodeId, Source, Vertex};
 use kaalang_model::{SemanticModel, Side};
 
 use super::{Connection, Point, Rows, Scene};
@@ -24,7 +24,7 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
         .map(|(index, wire)| {
             let route = &scene.arrangement.routes[index];
             let start = match wire.source {
-                Source::Exit(exit) => scene.exit_anchor(exit),
+                Source::Exit(exit) => exit_anchor(scene, exit, wire.destination),
                 Source::Junction(junction) => junction_point(scene, rows, junction),
             };
             let end = match wire.destination {
@@ -62,6 +62,17 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
             }
         })
         .collect()
+}
+
+pub(super) fn exit_anchor(scene: &Scene, exit: ExitId, destination: Destination) -> Point {
+    match destination {
+        Destination::Node(NodeId::Case { choice, branch })
+            if exit.node == NodeId::Block(choice) =>
+        {
+            super::choice::exit_anchor(scene.node(exit.node), branch)
+        }
+        _ => scene.exit_anchor(exit),
+    }
 }
 
 /// Realizes every iteration back edge: out of its tail, up the lane the arrangement

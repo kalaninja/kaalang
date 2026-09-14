@@ -370,8 +370,9 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
         }
     }
     // A corridor has to end at the vertices its connection joins, and leave by
-    // a column that exit owns: either its own branch column, or the column of
-    // the merge a later question branch joins at once (RFC 0002 §8).
+    // a column that exit owns: either its own branch column, a case column its
+    // select distributor reaches sideways, or the column of the merge a later
+    // question branch joins at once (RFC 0002 §8).
     for (index, wire) in topology.connections.iter().enumerate() {
         let route = &arrangement.routes[index];
         if route.arrival != arrangement.column[&wire.destination] {
@@ -384,15 +385,19 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
             Source::Exit(exit) => {
                 let own =
                     arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit];
-                // A later question branch may join its merge column at once,
-                // which means turning towards it: the merge is left of the
-                // branch's own column, never right of it.
-                let merge = arrangement.column[&wire.destination];
-                let shortcut = matches!(wire.destination, Destination::Junction(_))
-                    && exit.branch.is_some_and(|branch| branch > 0)
-                    && merge < own
-                    && route.departure == merge;
-                route.departure == own || shortcut
+                if let Some(case) = super::choice::case_destination(wire.source, wire.destination) {
+                    route.departure == arrangement.column[&Vertex::Node(case)]
+                } else {
+                    // A later question branch may join its merge column at
+                    // once, which means turning towards it: the merge is left
+                    // of the branch's own column, never right of it.
+                    let merge = arrangement.column[&wire.destination];
+                    let shortcut = matches!(wire.destination, Destination::Junction(_))
+                        && exit.branch.is_some_and(|branch| branch > 0)
+                        && merge < own
+                        && route.departure == merge;
+                    route.departure == own || shortcut
+                }
             }
             Source::Junction(junction) => {
                 route.departure == arrangement.column[&Vertex::Junction(junction)]

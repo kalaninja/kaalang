@@ -620,22 +620,28 @@ impl<'a> Sweep<'a> {
             .iter()
             .flat_map(|group| {
                 let mut group = group.clone();
-                group.sort_by_key(|&wire| {
-                    let destination =
-                        index_of(self.topology, self.topology.connections[wire].destination);
-                    let flank = loop_.is_some_and(|loop_| {
-                        let repeats = self.paths[destination]
-                            [index_of(self.topology, Vertex::Junction(loop_.tail))];
-                        repeats != loop_.prefer_left
+                if !group.iter().all(|&wire| {
+                    let connection = self.topology.connections[wire];
+                    super::choice::case_destination(connection.source, connection.destination)
+                        .is_some()
+                }) {
+                    group.sort_by_key(|&wire| {
+                        let destination =
+                            index_of(self.topology, self.topology.connections[wire].destination);
+                        let flank = loop_.is_some_and(|loop_| {
+                            let repeats = self.paths[destination]
+                                [index_of(self.topology, Vertex::Junction(loop_.tail))];
+                            repeats != loop_.prefer_left
+                        });
+                        (
+                            flank,
+                            joins
+                                .iter()
+                                .map(|&v| self.paths[destination][v])
+                                .collect::<Vec<_>>(),
+                        )
                     });
-                    (
-                        flank,
-                        joins
-                            .iter()
-                            .map(|&v| self.paths[destination][v])
-                            .collect::<Vec<_>>(),
-                    )
-                });
+                }
                 group.into_iter().map(Lifeline::Wire)
             })
             .collect()
@@ -646,7 +652,8 @@ impl<'a> Sweep<'a> {
             return false;
         };
         let (a, b) = (self.topology.connections[a], self.topology.connections[b]);
-        a.source == b.source || a.destination == b.destination
+        (a.source == b.source && super::choice::case_destination(a.source, a.destination).is_none())
+            || a.destination == b.destination
     }
 
     /// Static anchors on the event row. Untouched forward routes may move
@@ -1063,16 +1070,6 @@ impl<'a> Sweep<'a> {
                 .connections
                 .iter()
                 .map(|wire| {
-                    let departure = match wire.source {
-                        Source::Exit(exit) => values[self.columns.exits[&exit]],
-                        Source::Junction(j) => values[self.columns.vertex[self
-                            .topology
-                            .vertices
-                            .binary_search(&Vertex::Junction(j))
-                            .expect(
-                                "projected topology contains the required vertex or loop endpoint",
-                            )]],
-                    };
                     let arrival = values[self.columns.vertex[self
                         .topology
                         .vertices
@@ -1080,6 +1077,25 @@ impl<'a> Sweep<'a> {
                         .expect(
                             "projected topology contains the required vertex or loop endpoint",
                         )]];
+                    let departure = if super::choice::case_destination(
+                        wire.source,
+                        wire.destination,
+                    )
+                    .is_some()
+                    {
+                        arrival
+                    } else {
+                        match wire.source {
+                            Source::Exit(exit) => values[self.columns.exits[&exit]],
+                            Source::Junction(j) => values[self.columns.vertex[self
+                                .topology
+                                .vertices
+                                .binary_search(&Vertex::Junction(j))
+                                .expect(
+                                    "projected topology contains the required vertex or loop endpoint",
+                                )]],
+                        }
+                    };
                     Route {
                         departure,
                         arrival,
@@ -1116,9 +1132,18 @@ impl<'a> Sweep<'a> {
             return Self::exchange_row(step, frontier, spines, room);
         };
         let own = values[self.columns.vertex[vertex]];
-        let port = |wire: usize| match self.topology.connections[wire].source {
-            Source::Exit(exit) => values[self.columns.exits[&exit]],
-            Source::Junction(_) => own,
+        let port = |wire: usize| {
+            let connection = self.topology.connections[wire];
+            if let Some(case) =
+                super::choice::case_destination(connection.source, connection.destination)
+            {
+                values[self.columns.vertex[index_of(self.topology, Vertex::Node(case))]]
+            } else {
+                match connection.source {
+                    Source::Exit(exit) => values[self.columns.exits[&exit]],
+                    Source::Junction(_) => own,
+                }
+            }
         };
         let mut event_anchors = self.events[vertex]
             .iter()

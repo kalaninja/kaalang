@@ -2,7 +2,8 @@
 //! sideways runs that share one rank gap.
 //!
 //! A route descends in its exit's column, except that a question's side exit
-//! may join a merge column immediately. It crosses each rank gap it needs
+//! may join a merge column immediately and a select's distributor leaves
+//! sideways in each later case's column. It crosses each rank gap it needs
 //! sideways in one lane and enters its destination from above. Two connections
 //! may share a run only when they leave one exit or reach one destination,
 //! which is what draws a fan-out, a select's distributor, and a wire merge as
@@ -459,14 +460,18 @@ fn bundled(topology: &Topology, left: usize, right: usize) -> bool {
     pair.0.source == pair.1.source || pair.0.destination == pair.1.destination
 }
 
-/// The column one connection leaves its exit by. A later question branch whose
-/// merge lies to its right joins that column immediately, so the side exit
-/// reaches the merge rail without a detour.
+/// The column one connection leaves its exit by. A select connection uses its
+/// case's column. A later question branch whose merge lies to its right joins
+/// that column immediately, so the side exit reaches the merge rail without a
+/// detour.
 pub(super) fn departure_column(
     placement: &Placement,
     source: Source,
     destination: Destination,
 ) -> i32 {
+    if let Some(case) = super::choice::case_destination(source, destination) {
+        return placement.column(Vertex::Node(case));
+    }
     if let (Source::Exit(exit), Destination::Junction(junction)) = (source, destination) {
         let merge = placement.column(Vertex::Junction(junction));
         if exit.branch.is_some_and(|branch| branch > 0)

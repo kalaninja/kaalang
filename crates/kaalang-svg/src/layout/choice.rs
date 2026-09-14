@@ -1,12 +1,27 @@
-//! Sizes case nodes and checks their common row.
+//! Sizes case nodes, checks their common row, and anchors their distributor.
 
 use std::collections::BTreeMap;
 
-use super::{NodeId, Scene};
+use super::{Node, NodeId, Point, Scene};
 
 use super::{
-    CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, text::wrap_text,
+    CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, SELECT_SKEW,
+    text::wrap_text,
 };
+
+pub(super) fn exit_anchor(node: &Node, branch: usize) -> Point {
+    if branch == 0 {
+        Point {
+            x: node.x,
+            y: node.y + node.height / 2,
+        }
+    } else {
+        Point {
+            x: node.x + (node.width - SELECT_SKEW) / 2,
+            y: node.y,
+        }
+    }
+}
 
 pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
     let lines = wrap_text(label, CASE_LABEL_WIDTH, LABEL_FONT);

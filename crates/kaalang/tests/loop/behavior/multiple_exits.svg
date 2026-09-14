@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="890" viewBox="0 0 1140 890" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="818" viewBox="0 0 1140 818" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for multiple_exits</title>
   <desc id="kaalang-description">Cycles: Select an exit after zero or one advances. with inputs mut mode and outputs selected. Nodes: Start: multiple_exits with parameters mode: u8 handing over mode; Select: Exit or advance? capturing mode; Case: Exit immediately. handing over first; Case: Exit after advancing. handing over last; Case: Advance once. handing over advance; Action: Advance to the final case. capturing advance, &amp;mut mode; End: u8 capturing selected. Connections: Start: multiple_exits to the entry of the cycle; Select: Exit or advance? to Case: Exit immediately.; Select: Exit or advance? to Case: Exit after advancing.; Select: Exit or advance? to Case: Advance once.; Case: Exit immediately. to a cycle break; Case: Exit after advancing. to a cycle break; Case: Advance once. to Action: Advance to the final case.; Action: Advance to the final case. to the iteration tail of the cycle; the entry of the cycle to Select: Exit or advance?; the cycle result to End: u8; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -27,7 +27,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Select an exit after zero or one advances.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1076" height="636" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="127" width="1076" height="564" rx="12"/>
     <text class="cycle-caption" x="1096" y="141" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Select an exit after zero or one advances.</tspan></text>
     </g>
   </g>
@@ -35,28 +35,28 @@
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 200 90 L 200 162
-      M 200 306 L 200 450
-      M 200 306 L 200 378 L 560 378 L 560 450
-      M 200 306 L 200 378 L 920 378 L 920 450
-      M 200 520 L 200 592
-      M 560 520 L 560 592
-      M 920 520 L 920 592
-      M 920 656 L 920 728
+      M 200 306 L 200 378
+      M 328 270 L 560 270 L 560 378
+      M 328 270 L 920 270 L 920 378
+      M 200 448 L 200 520
+      M 560 448 L 560 520
+      M 920 448 L 920 520
+      M 920 584 L 920 656
       M 200 162 L 200 234
-      M 200 728 L 200 800
-      M 200 592 L 200 728
-      M 560 592 L 560 728 L 200 728
+      M 200 656 L 200 728
+      M 200 520 L 200 656
+      M 560 520 L 560 656 L 200 656
     "/>
     <path class="connection" d="
-      M 920 728 L 1080 728 L 1080 162 L 200 162
+      M 920 656 L 1080 656 L 1080 162 L 200 162
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
-    <text class="connection-label" x="213" y="538" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
-    <text class="connection-label" x="573" y="538" xml:space="preserve"><tspan x="573" dy="0">last</tspan></text>
-    <text class="connection-label" x="933" y="538" xml:space="preserve"><tspan x="933" dy="0">advance</tspan></text>
+    <text class="connection-label" x="213" y="466" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
+    <text class="connection-label" x="573" y="466" xml:space="preserve"><tspan x="573" dy="0">last</tspan></text>
+    <text class="connection-label" x="933" y="466" xml:space="preserve"><tspan x="933" dy="0">advance</tspan></text>
     <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
-    <text class="connection-label" x="933" y="581" xml:space="preserve"><tspan x="933" dy="0">advance, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="213" y="789" xml:space="preserve"><tspan x="213" dy="0">selected</tspan></text>
+    <text class="connection-label" x="933" y="509" xml:space="preserve"><tspan x="933" dy="0">advance, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="213" y="717" xml:space="preserve"><tspan x="213" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -73,27 +73,27 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Exit or advance?</tspan></text>
     </g>
-    <g class="node case" transform="translate(200 485)">
+    <g class="node case" transform="translate(200 413)">
       <title xml:space="preserve">Exit immediately.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Exit immediately.</tspan></text>
     </g>
-    <g class="node case" transform="translate(560 485)">
+    <g class="node case" transform="translate(560 413)">
       <title xml:space="preserve">Exit after advancing.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Exit after advancing.</tspan></text>
     </g>
-    <g class="node case" transform="translate(920 485)">
+    <g class="node case" transform="translate(920 413)">
       <title xml:space="preserve">Advance once.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance once.</tspan></text>
     </g>
-    <g class="node action" transform="translate(920 624)">
+    <g class="node action" transform="translate(920 552)">
       <title xml:space="preserve">Advance to the final case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the final case.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 829)">
+    <g class="node end" transform="translate(200 757)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

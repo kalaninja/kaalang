@@ -112,7 +112,9 @@ ordinary question therefore needs no synthesized answer labels.
 A choice block becomes one select node. Its branches preserve authored case
 order, and the diagram must not reorder them according to their patterns or
 layout position. Its distributor exit has exactly one connection to each of its
-case nodes.
+case nodes. The first connection leaves the select's lower edge; the remaining
+connections leave its right edge and fan out horizontally, like a question's
+later branches.
 
 ### 4.5 case
 

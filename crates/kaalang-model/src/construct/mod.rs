@@ -97,7 +97,8 @@ pub struct Arrangement {
     pub ranks: usize,
     /// Abstract column of every vertex.
     pub column: BTreeMap<Vertex, i32>,
-    /// The column each exit leaves by, as an offset from its node's column.
+    /// The default branch column each exit owns, as an offset from its node's
+    /// column. A select distributor may also leave by a destination case's column.
     pub exit_offset: BTreeMap<ExitId, i32>,
     /// Per connection, in `Topology::connections` order, its corridor.
     pub routes: Vec<Route>,

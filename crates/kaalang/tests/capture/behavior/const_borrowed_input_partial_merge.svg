@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1192" viewBox="0 0 1064 1192" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1120" viewBox="0 0 1064 1120" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_borrowed_input_partial_merge</title>
   <desc id="kaalang-description">Nodes: Start: const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end. Connections: Start: const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
   <defs>
@@ -29,30 +29,30 @@
   <g class="connections">
     <path class="connection" d="
       M 172 116 L 172 188
-      M 172 260 L 172 404
-      M 172 260 L 172 332 L 532 332 L 532 404
-      M 172 260 L 172 332 L 892 332 L 892 404
-      M 172 474 L 172 547
-      M 532 474 L 532 546
-      M 892 474 L 892 547
-      M 172 611 L 172 684
-      M 532 612 L 532 684 L 172 684
+      M 172 260 L 172 332
+      M 300 224 L 532 224 L 532 332
+      M 300 224 L 892 224 L 892 332
+      M 172 402 L 172 475
+      M 532 402 L 532 474
+      M 892 402 L 892 475
+      M 172 539 L 172 612
+      M 532 540 L 532 612 L 172 612
+      M 172 750 L 172 822
+      M 892 539 L 892 822 L 172 822
+      M 172 958 L 172 1030
+      M 172 612 L 172 684
       M 172 822 L 172 894
-      M 892 611 L 892 894 L 172 894
-      M 172 1030 L 172 1102
-      M 172 684 L 172 756
-      M 172 894 L 172 966
     "/>
-    <text class="connection-label" x="185" y="702" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
-    <text class="connection-label" x="185" y="912" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
-    <text class="connection-label" x="905" y="505" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
-    <text class="connection-label" x="185" y="1061" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="630" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label" x="185" y="840" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label" x="905" y="433" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label" x="185" y="989" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">source, bytes</tspan></text>
-    <text class="connection-label" x="185" y="492" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="545" y="492" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="420" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
-    <text class="connection-label" x="185" y="536" xml:space="preserve"><tspan x="185" dy="0">first, bytes</tspan></text>
-    <text class="connection-label" x="545" y="535" xml:space="preserve"><tspan x="545" dy="0">second, bytes</tspan></text>
+    <text class="connection-label" x="185" y="464" xml:space="preserve"><tspan x="185" dy="0">first, bytes</tspan></text>
+    <text class="connection-label" x="545" y="463" xml:space="preserve"><tspan x="545" dy="0">second, bytes</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
@@ -69,47 +69,47 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which source?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 439)">
+    <g class="node case" transform="translate(172 367)">
       <title xml:space="preserve">First source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 439)">
+    <g class="node case" transform="translate(532 367)">
       <title xml:space="preserve">Second source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 439)">
+    <g class="node case" transform="translate(892 367)">
       <title xml:space="preserve">Fallback.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Fallback.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 579)">
+    <g class="node action" transform="translate(172 507)">
       <title xml:space="preserve">Use the input on the first branch.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the input on the first branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 579)">
+    <g class="node action" transform="translate(532 507)">
       <title xml:space="preserve">Use the input on the second branch.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the input on the second </tspan><tspan x="-124" dy="18">branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 789)">
+    <g class="node action" transform="translate(172 717)">
       <title xml:space="preserve">Carry the partially merged slice onward.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Carry the partially merged slice </tspan><tspan x="-124" dy="18">onward.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 579)">
+    <g class="node action" transform="translate(892 507)">
       <title xml:space="preserve">Use the fallback slice.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the fallback slice.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 998)">
+    <g class="node action" transform="translate(172 926)">
       <title xml:space="preserve">Measure the merged slice.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the merged slice.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1131)">
+    <g class="node end" transform="translate(172 1059)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

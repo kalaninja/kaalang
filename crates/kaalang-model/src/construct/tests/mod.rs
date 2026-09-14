@@ -1170,13 +1170,18 @@ fn a_sibling_inside_a_reserved_footprint_is_caught() {
     // The corridors follow the columns they join, so the coverage rules still
     // hold and the reserved columns are what objects.
     for (index, wire) in model.topology.connections.iter().enumerate() {
-        let departure = match wire.source {
-            Source::Exit(exit) => {
-                broken.column[&Vertex::Node(exit.node)] + broken.exit_offset[&exit]
-            }
-            Source::Junction(junction) => broken.column[&Vertex::Junction(junction)],
-        };
         let arrival = broken.column[&wire.destination];
+        let departure = if super::choice::case_destination(wire.source, wire.destination).is_some()
+        {
+            arrival
+        } else {
+            match wire.source {
+                Source::Exit(exit) => {
+                    broken.column[&Vertex::Node(exit.node)] + broken.exit_offset[&exit]
+                }
+                Source::Junction(junction) => broken.column[&Vertex::Junction(junction)],
+            }
+        };
         broken.routes[index].departure = departure;
         broken.routes[index].arrival = arrival;
     }

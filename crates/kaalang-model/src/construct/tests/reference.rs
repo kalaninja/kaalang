@@ -8,7 +8,7 @@
 use super::verify;
 use crate::construct::{Arrangement, Contour, Route, Run, Side};
 use crate::model::{BlockKind, Flow};
-use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
+use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
 use std::collections::{BTreeMap, BTreeSet};
 
 const STATES: usize = 40_000_000;
@@ -360,6 +360,19 @@ impl<'a> Reference<'a> {
         variable
     }
 
+    fn departure(&self, wire: Connection) -> usize {
+        if let Some(case) =
+            crate::construct::choice::case_destination(wire.source, wire.destination)
+        {
+            self.vertices[&Vertex::Node(case)]
+        } else {
+            match wire.source {
+                Source::Exit(exit) => self.ports[&exit],
+                Source::Junction(junction) => self.vertices[&Vertex::Junction(junction)],
+            }
+        }
+    }
+
     fn enumerate(
         &mut self,
         events: &mut Vec<Event>,
@@ -448,7 +461,13 @@ impl<'a> Reference<'a> {
                         let shared = if let (Active::Edge(a), Active::Edge(b)) = (left, right) {
                             let (a, b) =
                                 (self.topology.connections[a], self.topology.connections[b]);
-                            a.source == b.source || a.destination == b.destination
+                            (a.source == b.source
+                                && crate::construct::choice::case_destination(
+                                    a.source,
+                                    a.destination,
+                                )
+                                .is_none())
+                                || a.destination == b.destination
                         } else {
                             false
                         };
@@ -571,8 +590,24 @@ impl<'a> Reference<'a> {
         }
         let mut emissions = vec![Vec::new()];
         for group in departures.values() {
-            let mut options = Vec::new();
-            permute(group.clone(), 0, &mut options);
+            let mut options = if group.iter().all(|item| {
+                let Active::Edge(wire) = item else {
+                    return false;
+                };
+                let connection = self.topology.connections[*wire];
+                crate::construct::choice::case_destination(
+                    connection.source,
+                    connection.destination,
+                )
+                .is_some()
+            }) {
+                vec![group.clone()]
+            } else {
+                Vec::new()
+            };
+            if options.is_empty() {
+                permute(group.clone(), 0, &mut options);
+            }
             let mut next = Vec::new();
             for prefix in emissions {
                 for option in &options {
@@ -733,10 +768,8 @@ impl<'a> Reference<'a> {
         let mut previous_port = None;
         for &item in output {
             if let Active::Edge(w) = item {
-                let port = match self.topology.connections[w].source {
-                    Source::Exit(exit) => self.ports[&exit],
-                    Source::Junction(_) => own,
-                };
+                let connection = self.topology.connections[w];
+                let port = self.departure(connection);
                 // The first port is equal to the node's column.
                 if previous_port.is_some() && previous_port != Some(port) {
                     center.push(port);
@@ -858,13 +891,13 @@ impl<'a> Reference<'a> {
                 .topology
                 .connections
                 .iter()
-                .map(|wire| Route {
-                    departure: match wire.source {
-                        Source::Exit(e) => x[self.ports[&e]],
-                        Source::Junction(j) => x[self.vertices[&Vertex::Junction(j)]],
-                    },
-                    arrival: x[self.vertices[&wire.destination]],
-                    runs: Vec::new(),
+                .map(|wire| {
+                    let arrival = x[self.vertices[&wire.destination]];
+                    Route {
+                        departure: x[self.departure(*wire)],
+                        arrival,
+                        runs: Vec::new(),
+                    }
                 })
                 .collect(),
             gap_lanes: vec![0; events.len()],

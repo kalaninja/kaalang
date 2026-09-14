@@ -822,7 +822,7 @@ pub(super) fn correspondence(scene: &Scene) -> Option<String> {
             return Some("a connection has no route".to_owned());
         };
         if let Source::Exit(exit) = connection.source
-            && *first != scene.exit_anchor(exit)
+            && *first != route::exit_anchor(scene, exit, connection.destination)
         {
             return Some(format!("a connection leaves {exit:?} away from its port"));
         }
@@ -1227,7 +1227,8 @@ impl Scene {
         }
     }
 
-    /// Where one exit's connections leave the node boundary.
+    /// The default boundary anchor for one exit. Select-to-case connections
+    /// override it according to their destination branch.
     pub(super) fn exit_anchor(&self, exit: ExitId) -> Point {
         let node = self.node(exit.node);
         match self.topology.node(exit.node).kind {

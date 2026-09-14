@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="890" viewBox="0 0 1500 890" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="818" viewBox="0 0 1500 818" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for terminal_cases_after_repeats</title>
   <desc id="kaalang-description">Cycles: Repeat until either finishing case. with inputs mut mode and outputs result. Nodes: Start: terminal_cases_after_repeats with parameters mode: u8 handing over mode; Select: Which route? capturing mode; Case: Advance on the left. handing over left; Case: Advance on the right. handing over right; Case: Finish with seven. handing over seven; Case: Finish with nine. handing over nine; Action: Finish the flow with seven. capturing seven handing over seven_result; Action: Finish the flow with nine. capturing nine handing over nine_result; Action: Advance through the left case. capturing left, &amp;mut mode; Action: Advance through the right case. capturing right, &amp;mut mode; End: u8 capturing result. Connections: Start: terminal_cases_after_repeats to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Finish with seven.; Select: Which route? to Case: Finish with nine.; Case: Advance on the left. to Action: Advance through the left case.; Case: Advance on the right. to Action: Advance through the right case.; Case: Finish with seven. to Action: Finish the flow with seven.; Case: Finish with nine. to Action: Finish the flow with nine.; Action: Finish the flow with seven. to a cycle break; Action: Finish the flow with nine. to a cycle break; Action: Advance through the left case. to the iteration tail of the cycle; Action: Advance through the right case. to the iteration tail of the cycle; the entry of the cycle to Select: Which route?; the cycle result to End: u8; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -27,7 +27,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Repeat until either finishing case.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1436" height="636" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="127" width="1436" height="564" rx="12"/>
     <text class="cycle-caption" x="1456" y="141" text-anchor="end" xml:space="preserve"><tspan x="1456" dy="0">Repeat until either finishing case.</tspan></text>
     </g>
   </g>
@@ -35,37 +35,37 @@
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 220 90 L 220 162
-      M 220 306 L 220 450
-      M 220 306 L 220 378 L 580 378 L 580 450
-      M 220 306 L 220 378 L 940 378 L 940 450
-      M 220 306 L 220 378 L 1300 378 L 1300 450
-      M 220 520 L 220 592
-      M 580 520 L 580 592
-      M 940 520 L 940 592
-      M 1300 520 L 1300 592
-      M 940 656 L 940 728
-      M 1300 656 L 1300 728
-      M 220 656 L 220 728
-      M 580 656 L 580 728 L 220 728
+      M 220 306 L 220 378
+      M 348 270 L 580 270 L 580 378
+      M 348 270 L 940 270 L 940 378
+      M 348 270 L 1300 270 L 1300 378
+      M 220 448 L 220 520
+      M 580 448 L 580 520
+      M 940 448 L 940 520
+      M 1300 448 L 1300 520
+      M 940 584 L 940 656
+      M 1300 584 L 1300 656
+      M 220 584 L 220 656
+      M 580 584 L 580 656 L 220 656
       M 220 162 L 220 234
-      M 940 728 L 940 800
-      M 940 728 L 940 728
-      M 1300 728 L 940 728
+      M 940 656 L 940 728
+      M 940 656 L 940 656
+      M 1300 656 L 940 656
     "/>
     <path class="connection" d="
-      M 220 728 L 60 728 L 60 162 L 220 162
+      M 220 656 L 60 656 L 60 162 L 220 162
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="953" y="551" xml:space="preserve"><tspan x="953" dy="0">seven</tspan></text>
-    <text class="connection-label" x="1313" y="551" xml:space="preserve"><tspan x="1313" dy="0">nine</tspan></text>
+    <text class="connection-label" x="953" y="479" xml:space="preserve"><tspan x="953" dy="0">seven</tspan></text>
+    <text class="connection-label" x="1313" y="479" xml:space="preserve"><tspan x="1313" dy="0">nine</tspan></text>
     <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="233" y="538" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
-    <text class="connection-label" x="593" y="538" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
-    <text class="connection-label" x="953" y="674" xml:space="preserve"><tspan x="953" dy="0">seven_result</tspan></text>
-    <text class="connection-label" x="1313" y="674" xml:space="preserve"><tspan x="1313" dy="0">nine_result</tspan></text>
+    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
+    <text class="connection-label" x="953" y="602" xml:space="preserve"><tspan x="953" dy="0">seven_result</tspan></text>
+    <text class="connection-label" x="1313" y="602" xml:space="preserve"><tspan x="1313" dy="0">nine_result</tspan></text>
     <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="233" y="581" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="593" y="581" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="953" y="789" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="593" y="509" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="953" y="717" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 61 L 456 61"/>
@@ -82,47 +82,47 @@
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which route?</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 485)">
+    <g class="node case" transform="translate(220 413)">
       <title xml:space="preserve">Advance on the left.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the left.</tspan></text>
     </g>
-    <g class="node case" transform="translate(580 485)">
+    <g class="node case" transform="translate(580 413)">
       <title xml:space="preserve">Advance on the right.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the right.</tspan></text>
     </g>
-    <g class="node case" transform="translate(940 485)">
+    <g class="node case" transform="translate(940 413)">
       <title xml:space="preserve">Finish with seven.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with seven.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1300 485)">
+    <g class="node case" transform="translate(1300 413)">
       <title xml:space="preserve">Finish with nine.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with nine.</tspan></text>
     </g>
-    <g class="node action" transform="translate(940 624)">
+    <g class="node action" transform="translate(940 552)">
       <title xml:space="preserve">Finish the flow with seven.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the flow with seven.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1300 624)">
+    <g class="node action" transform="translate(1300 552)">
       <title xml:space="preserve">Finish the flow with nine.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the flow with nine.</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 624)">
+    <g class="node action" transform="translate(220 552)">
       <title xml:space="preserve">Advance through the left case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance through the left case.</tspan></text>
     </g>
-    <g class="node action" transform="translate(580 624)">
+    <g class="node action" transform="translate(580 552)">
       <title xml:space="preserve">Advance through the right case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance through the right case.</tspan></text>
     </g>
-    <g class="node end" transform="translate(940 829)">
+    <g class="node end" transform="translate(940 757)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

@@ -189,7 +189,7 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
 }
 
 #[test]
-fn case_routes_share_one_distributor_rail() {
+fn case_routes_leave_the_select_like_question_branches() {
     for fixture in [
         fixture!("loop/behavior", "diverging_middle_branch"),
         fixture!("loop/behavior", "terminal_cases_after_repeats"),
@@ -202,6 +202,7 @@ fn case_routes_share_one_distributor_rail() {
             .iter()
             .filter(|node| node.kind == NodeKind::Select)
         {
+            let select_node = scene.node(select.id);
             let routes = scene
                 .connections
                 .iter()
@@ -210,29 +211,23 @@ fn case_routes_share_one_distributor_rail() {
                         && matches!(wire.destination, Destination::Node(NodeId::Case { .. }))
                 })
                 .collect::<Vec<_>>();
-            let rails = routes
-                .iter()
-                .flat_map(|wire| wire.points.windows(2))
-                .filter(|pair| pair[0].y == pair[1].y && pair[0].x != pair[1].x)
-                .map(|pair| pair[0].y)
-                .collect::<BTreeSet<_>>();
-            assert_eq!(
-                rails.len(),
-                1,
-                "{}: the distributor split into separate rails",
-                fixture.1
-            );
             for route in routes {
-                let straight = matches!(
-                    route.destination,
-                    Destination::Node(NodeId::Case { branch: 0, .. })
-                );
-                assert_eq!(
-                    route.points.len(),
-                    if straight { 2 } else { 4 },
-                    "{}: the distributor has extra bends",
-                    fixture.1
-                );
+                let Destination::Node(NodeId::Case { branch, .. }) = route.destination else {
+                    unreachable!()
+                };
+                let start = route.points[0];
+                if branch == 0 {
+                    assert_eq!(start.x, select_node.x);
+                    assert_eq!(start.y, select_node.y + select_node.height / 2);
+                    assert_eq!(route.points.len(), 2);
+                } else {
+                    assert_eq!(
+                        start.x,
+                        select_node.x + (select_node.width - SELECT_SKEW) / 2
+                    );
+                    assert_eq!(start.y, select_node.y);
+                    assert_eq!(route.points.len(), 3);
+                }
             }
         }
     }
@@ -1569,6 +1564,7 @@ fn distributors_and_independent_cycle_rails_leave_the_usual_gap() {
             );
         }
         for branch in [1, 2] {
+            let select = scene.node(NodeId::Block(6));
             let connection = scene
                 .connections
                 .iter()
@@ -1576,11 +1572,15 @@ fn distributors_and_independent_cycle_rails_leave_the_usual_gap() {
                     edge.destination == Destination::Node(NodeId::Case { choice: 6, branch })
                 })
                 .unwrap();
-            let [start, turn, across, end] = connection.points[..] else {
-                panic!("{flow}: the distributor should have two bends");
+            let [start, turn, end] = connection.points[..] else {
+                panic!("{flow}: the distributor should leave sideways");
             };
-            assert_eq!(turn.y - start.y, gap, "{flow}: below select");
-            assert_eq!(end.y - across.y, gap, "{flow}: above case");
+            assert_eq!(start.y, select.y, "{flow}: beside select");
+            assert_eq!(
+                end.y - turn.y - select.height / 2,
+                gap,
+                "{flow}: above case"
+            );
         }
     }
 }

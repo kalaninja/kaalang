@@ -2,9 +2,23 @@
 
 use std::collections::BTreeMap;
 
-use crate::topology::{NodeId, Topology, Vertex};
+use crate::topology::{Destination, ExitId, NodeId, Source, Topology, Vertex};
 
 use super::Arrangement;
+
+/// The case reached directly from its choice's distributor.
+pub(super) fn case_destination(source: Source, destination: Destination) -> Option<NodeId> {
+    match (source, destination) {
+        (
+            Source::Exit(ExitId {
+                node: NodeId::Block(block),
+                branch: None,
+            }),
+            Vertex::Node(case @ NodeId::Case { choice, .. }),
+        ) if block == choice => Some(case),
+        _ => None,
+    }
+}
 
 /// Each vertex is one event, except that the first case represents its whole
 /// choice's case row. Other cases have no event of their own.
