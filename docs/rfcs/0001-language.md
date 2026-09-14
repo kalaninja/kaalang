@@ -129,7 +129,14 @@ pattern `let ()`, declares none. An action body must then evaluate to `()`,
 while every completing route of an outputless cycle must transfer `()`. An
 action body may be a Rust expression or a braced block. For example,
 `let output = |input| input + 1;` and `let output = |input| { input + 1 };` are
-equivalent. A cycle body is always a braced nested kaalang sequence.
+equivalent. A cycle body is always a braced nested kaalang sequence. An action
+or cycle with neither inputs nor outputs may omit both the output declaration
+and empty capture list by writing its attributed braced body directly. For
+example, `#[action("Log.")] { log(); }` is shorthand for
+`#[action("Log.")] || { log(); };`. The shorthand's braces delimit the
+declaration, so its trailing semicolon is optional. This is the computational
+block counterpart of writing `break;` or `return;` without an empty capture
+list.
 
 Block attributes precede the statement. Output patterns contain only simple
 identifiers with optional `mut`, a flat tuple of those bindings, or `()`. Type
@@ -183,6 +190,15 @@ to `()`, and the block hands nothing over:
 |&value| {
     println!("{value}")
 };
+```
+
+With no input wires, the same kind of action uses the bare-body shorthand:
+
+```rust
+#[action("Log flow entry.")]
+{
+    println!("start")
+}
 ```
 
 A named unit-valued output remains useful when a later block in the same branch
@@ -292,13 +308,14 @@ let total = |mut count, limit| {
 };
 ```
 
-The `#[cycle("description")]` attribute, output pattern, capture list, braces,
-and trailing semicolon are required by the common block syntax. Omitting `let`
-or writing `let ()` declares no output wires. A cycle has no condition, authored
-label, case declarations, or alternate kind spelling. A native Rust `loop`,
-`while`, or `for` remains permitted inside a computational block body under §3;
-it is not a kaalang cycle. The former bare or captured structural `loop { ... }`
-forms are invalid in a kaalang sequence.
+The `#[cycle("description")]` attribute and braces are required. In the closure
+spelling, the capture list and trailing semicolon are also required. Omitting
+`let` or writing `let ()` declares no output wires. A cycle with no inputs or
+outputs may instead use §3's bare-body shorthand. A cycle has no condition,
+authored label, case declarations, or alternate kind spelling. A native Rust
+`loop`, `while`, or `for` remains permitted inside a computational block body
+under §3; it is not a kaalang cycle. The former bare or captured structural
+`loop { ... }` forms are invalid in a kaalang sequence.
 
 Cycle captures use the four ordinary forms of §6. They are evaluated once before
 the first iteration and create bindings local to the cycle body. Those bindings
@@ -352,9 +369,9 @@ outputless cycle completes with unit:
 #[kaalang]
 fn complete_once() {
     #[cycle("Complete on the first iteration.")]
-    || {
+    {
         break;
-    };
+    }
 
     return;
 }
@@ -509,10 +526,11 @@ describes how lowering preserves placeholders and function attributes.
 
 The function body contains computational declarations, cycle declarations, and
 structural break and return statements (§4). Each statement declares one
-authored block or transfer. Every block declaration requires its semicolon,
-including the last declaration. A final action without an output declaration may
-omit its semicolon like any Rust tail expression, but that does not return from
-the flow.
+authored block or transfer. Every closure-shaped block declaration requires its
+semicolon, including the last declaration. A bare-body shorthand is delimited by
+its braces and may omit the semicolon. A final action without an output
+declaration may also omit its semicolon like any Rust tail expression, but that
+does not return from the flow.
 
 ### 5.1 Zero-computation flow
 

@@ -4,13 +4,13 @@ use kaalang::kaalang;
 
 static VISITS: AtomicUsize = AtomicUsize::new(0);
 
-/// The bare spelling of an effect: no inputs, no outputs, at flow entry.
+/// The shortest spelling of an effect: no inputs, no outputs, at flow entry.
 #[kaalang]
 fn entry_effect_without_wires() -> usize {
     #[action("Count the flow entry.")]
-    || {
+    {
         VISITS.fetch_add(1, Ordering::Relaxed);
-    };
+    }
 
     #[action("Report the count.")]
     let end = || VISITS.load(Ordering::Relaxed);

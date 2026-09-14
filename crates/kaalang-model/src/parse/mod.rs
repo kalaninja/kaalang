@@ -20,7 +20,7 @@ mod loop_block;
 mod question;
 mod return_block;
 
-/// Parses a flow function into its named flow inputs and closure-shaped blocks.
+/// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     if let Some(asyncness) = &function.sig.asyncness {
         return Err(Error::new(
@@ -129,7 +129,10 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             }
             _ => parse_block(statement)?,
         };
-        if block.kind == BlockKind::Loop && matches!(statement, Stmt::Expr(_, None)) {
+        if block.kind == BlockKind::Loop
+            && matches!(statement, Stmt::Expr(_, None))
+            && !matches!(statement, Stmt::Expr(Expr::Block(_), _))
+        {
             return Err(Error::new_spanned(
                 statement,
                 "a kaalang cycle requires a trailing semicolon",
@@ -182,11 +185,14 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
     }
 }
 
-/// Parses one closure-shaped statement and hands it to its kind's parser.
+/// Parses one statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
     let (attributes, output_pattern, closure) = block_statement(statement)?;
     let (kind, kind_attribute, companions) = block_kind(attributes, statement.span())?;
-    let (inputs, body) = block_closure(closure)?;
+    let (inputs, body) = match closure {
+        Some(closure) => block_closure(closure)?,
+        None => (Vec::new(), bare_block_body(statement)?),
+    };
     let outputs = block_outputs(&output_pattern)?;
     let output_span = output_pattern.span();
     let syntax = BlockSyntax {
@@ -215,10 +221,10 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     }
 }
 
-/// One block's closure parts, before its kind decides which rules apply.
+/// One block's syntax, before its kind decides which rules apply.
 pub(crate) struct BlockSyntax<'a> {
     pub(crate) kind: BlockKind,
-    pub(crate) closure: &'a ExprClosure,
+    pub(crate) closure: Option<&'a ExprClosure>,
     pub(crate) kind_attribute: &'a Attribute,
     /// Attributes that accompany the one declaring the kind, such as `#[case]`.
     pub(crate) companions: Vec<&'a Attribute>,
@@ -256,7 +262,8 @@ impl<'a> BlockSyntax<'a> {
     pub(crate) fn require_inputs(&self, name: &str) -> Result<()> {
         if self.inputs.is_empty() {
             return Err(Error::new(
-                self.closure.inputs_end.span(),
+                self.closure
+                    .map_or_else(|| self.body.span(), |closure| closure.inputs_end.span()),
                 format!("a kaalang {name} requires at least one input"),
             ));
         }
@@ -299,9 +306,9 @@ fn unexpected_companion(companion: &Attribute) -> Error {
     )
 }
 
-/// Extracts a block's attributes, output pattern, and closure initializer.
-/// An expression statement declares an action without outputs.
-fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, &ExprClosure)> {
+/// Extracts a block's attributes, interfaces, and body. An expression statement
+/// declares no outputs; a bare block additionally declares no inputs.
+fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprClosure>)> {
     let (attributes, pattern, expression) = match statement {
         Stmt::Local(local) => {
             let Some(initializer) = &local.init else {
@@ -326,8 +333,11 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, &ExprClosure)
             return Ok((
                 &closure.attrs,
                 parse_quote_spanned!(closure.inputs_end.span()=> ()),
-                closure,
+                Some(closure),
             ));
+        }
+        Stmt::Expr(Expr::Block(block), _) => {
+            return Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None));
         }
         _ => {
             return Err(Error::new_spanned(
@@ -348,7 +358,27 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, &ExprClosure)
             "kaalang block attributes belong before the statement",
         ));
     }
-    Ok((attributes, pattern, closure))
+    Ok((attributes, pattern, Some(closure)))
+}
+
+fn bare_block_body(statement: &Stmt) -> Result<Expr> {
+    let Stmt::Expr(Expr::Block(block), _) = statement else {
+        unreachable!("a missing closure denotes a bare block body")
+    };
+    if block.label.is_some()
+        || block
+            .attrs
+            .iter()
+            .any(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)))
+    {
+        return Err(Error::new_spanned(
+            block,
+            "kaalang block bodies do not support attributes or labels",
+        ));
+    }
+    let mut body = block.clone();
+    body.attrs.clear();
+    Ok(Expr::Block(body))
 }
 
 /// Determines which kind a block declares, that it declares exactly one, and

@@ -6,9 +6,12 @@ use super::{BlockSyntax, description};
 use crate::model::Block;
 
 pub(super) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    if !matches!(syntax.closure.body.as_ref(), Expr::Block(_)) {
+    if syntax
+        .closure
+        .is_some_and(|closure| !matches!(closure.body.as_ref(), Expr::Block(_)))
+    {
         return Err(Error::new_spanned(
-            &syntax.closure.body,
+            &syntax.body,
             "a kaalang cycle body must use braces",
         ));
     }

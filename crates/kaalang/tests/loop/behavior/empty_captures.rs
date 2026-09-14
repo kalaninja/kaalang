@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 const fn empty_captures() -> usize {
     #[cycle("Leave through an explicit empty capture list.")]
-    || {
+    {
         || break;
-    };
+    }
 
     #[cycle("Leave through a bare break.")]
     || {
@@ -19,7 +19,7 @@ const fn empty_captures() -> usize {
 }
 
 #[test]
-fn empty_capture_lists_and_bare_breaks_leave_normally() {
+fn zero_interface_shorthand_and_bare_breaks_leave_normally() {
     const SEVEN: usize = empty_captures();
     assert_eq!(SEVEN, 7);
 }
