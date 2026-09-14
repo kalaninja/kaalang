@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="604" viewBox="0 0 704 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for skeleton</title>
-  <desc id="kaalang-description">Nodes: Start: skeleton with parameters seed: u32 handing over seed; Question: Accept the seed? capturing &amp;seed handing over accepted / rejected; Action: Keep the accepted seed. capturing accepted, seed handing over end; Action: Keep the rejected seed. capturing rejected, seed handing over end; End: u32 capturing end. Connections: Start: skeleton to Question: Accept the seed?; Question: Accept the seed? branch 1 to Action: Keep the accepted seed.; Question: Accept the seed? branch 2 to Action: Keep the rejected seed.; Action: Keep the accepted seed. to the end merge; Action: Keep the rejected seed. to the end merge; the end merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: skeleton with parameters seed: u32 handing over seed; Question: Accept the seed? capturing &amp;seed handing over accepted / rejected; Action: Keep the accepted seed. capturing accepted, seed handing over end; Action: Keep the rejected seed. capturing rejected, seed handing over end; End: u32 capturing end; Merge: end. Connections: Start: skeleton to Question: Accept the seed?; Question: Accept the seed? branch 1 to Action: Keep the accepted seed.; Question: Accept the seed? branch 2 to Action: Keep the rejected seed.; Action: Keep the accepted seed. to the end merge; Action: Keep the rejected seed. to the end merge; the end merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -48,6 +48,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">seed: u32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 442)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

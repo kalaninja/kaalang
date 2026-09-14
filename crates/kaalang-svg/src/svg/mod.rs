@@ -105,6 +105,11 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     if let Some(parameters) = &scene.parameters {
         write_parameter_panel(&mut svg, scene.node(NodeId::Start), parameters);
     }
+    for junction in 0..scene.topology.junctions.len() {
+        if !scene.topology.junctions[junction].merges.is_empty() {
+            write_merge(&mut svg, scene, junction);
+        }
+    }
     for node in &scene.nodes {
         write_node(&mut svg, scene, node);
     }
@@ -139,6 +144,36 @@ fn write_connection_label(svg: &mut String, label: &Label) {
     write_lines(svg, &label.lines, x, label.kind.line_height());
 }
 
+fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
+    let point = scene
+        .connections
+        .iter()
+        .find_map(|connection| {
+            if connection.source == Source::Junction(junction) {
+                connection.points.first()
+            } else if connection.destination == Destination::Junction(junction) {
+                connection.points.last()
+            } else {
+                None
+            }
+        })
+        .expect("a merge has an incident route");
+    emit!(
+        svg,
+        "    <g class=\"node merge\" transform=\"translate({} {})\">",
+        point.x,
+        point.y
+    );
+    emit!(
+        svg,
+        "      <title xml:space=\"preserve\">{}</title>",
+        escape(&merge_name(scene, junction))
+    );
+    svg.push_str(
+        "      <circle class=\"node-shape\" r=\"4\" style=\"fill: currentColor\"/>\n    </g>\n",
+    );
+}
+
 /// Writes the lines of one `<text>` as `<tspan>`s and closes it. The first line
 /// sits on the text's own baseline; each later one drops by `line_height`.
 fn write_lines(svg: &mut String, lines: &[String], x: i32, line_height: i32) {
@@ -150,11 +185,10 @@ fn write_lines(svg: &mut String, lines: &[String], x: i32, line_height: i32) {
 }
 
 /// Describes the diagram once: each node with the labels it and its exits own,
-/// then each connection as the pair of ends it joins. A junction is not a node,
-/// so it appears only as a connection end.
+/// then each connection as the pair of ends it joins.
 fn describe(scene: &Scene) -> String {
     let topology = &scene.topology;
-    let nodes = topology
+    let mut nodes = topology
         .nodes
         .iter()
         .map(|node| {
@@ -195,8 +229,21 @@ fn describe(scene: &Scene) -> String {
             push_phrase(&mut described, " described as ", &branches, " / ");
             described
         })
-        .collect::<Vec<_>>()
-        .join("; ");
+        .collect::<Vec<_>>();
+    nodes.extend(
+        topology
+            .junctions
+            .iter()
+            .enumerate()
+            .filter(|(_, junction)| !junction.merges.is_empty())
+            .map(|(junction, _)| {
+                format!(
+                    "Merge: {}",
+                    scene.captions.junction_wires(junction).join(", ")
+                )
+            }),
+    );
+    let nodes = nodes.join("; ");
     let connections = scene
         .connections
         .iter()

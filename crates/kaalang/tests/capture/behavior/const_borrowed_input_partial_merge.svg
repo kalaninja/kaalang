@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1120" viewBox="0 0 1064 1120" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_borrowed_input_partial_merge</title>
-  <desc id="kaalang-description">Nodes: Start: const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end. Connections: Start: const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
+  <desc id="kaalang-description">Nodes: Start: const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end; Merge: partial; Merge: view. Connections: Start: const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -59,6 +59,14 @@
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan><tspan x="-104" dy="18">bytes: &amp;[u8]</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 612)">
+      <title xml:space="preserve">the partial merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 822)">
+      <title xml:space="preserve">the view merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>

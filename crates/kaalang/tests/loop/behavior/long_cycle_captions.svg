@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="820" viewBox="0 0 760 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for long_cycle_captions</title>
-  <desc id="kaalang-description">Cycles: Collect the available results from the source until there are enough items to complete the current request. with inputs left and outputs done; Read the next item and prepare it for processing. with inputs right and outputs done. Nodes: Start: long_cycle_captions with parameters flag: bool handing over flag; Question: Choose a cycle. capturing flag handing over left / right; Action: Collect the results. capturing left handing over ready; Action: Read the item. capturing right handing over ready; End: () capturing nothing. Connections: Start: long_cycle_captions to Question: Choose a cycle.; Question: Choose a cycle. branch 1 to the cycle entry; Question: Choose a cycle. branch 2 to the cycle entry; Action: Collect the results. to a cycle break; Action: Read the item. to a cycle break; the done merge to End: (); the cycle entry to Action: Collect the results.; the cycle result to the done merge; the cycle entry to Action: Read the item.; the cycle result to the done merge; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
+  <desc id="kaalang-description">Cycles: Collect the available results from the source until there are enough items to complete the current request. with inputs left and outputs done; Read the next item and prepare it for processing. with inputs right and outputs done. Nodes: Start: long_cycle_captions with parameters flag: bool handing over flag; Question: Choose a cycle. capturing flag handing over left / right; Action: Collect the results. capturing left handing over ready; Action: Read the item. capturing right handing over ready; End: () capturing nothing; Merge: done. Connections: Start: long_cycle_captions to Question: Choose a cycle.; Question: Choose a cycle. branch 1 to the cycle entry; Question: Choose a cycle. branch 2 to the cycle entry; Action: Collect the results. to a cycle break; Action: Read the item. to a cycle break; the done merge to End: (); the cycle entry to Action: Collect the results.; the cycle result to the done merge; the cycle entry to Action: Read the item.; the cycle result to the done merge; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -65,6 +65,10 @@
     <g class="parameter-panel" transform="translate(556 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 658)">
+      <title xml:space="preserve">the done merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

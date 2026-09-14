@@ -66,6 +66,8 @@ fn renders_an_accessible_standalone_svg() {
         r#"<title xml:space="preserve">Split &lt;the&gt; near lane &amp; measure it.</title>"#
     ));
     assert_eq!(svg.matches(r#"class="node end""#).count(), 1);
+    assert_eq!(svg.matches(r#"class="node merge""#).count(), 1);
+    assert!(svg.contains(r#"<circle class="node-shape" r="4""#));
     assert_eq!(svg.matches(r#"class="parameter-panel""#).count(), 1);
     // Distributors and merge rails share one paint operation, so overlapping
     // branches cannot darken their antialiased edges by repeated strokes.
@@ -240,6 +242,10 @@ fn the_description_names_every_role_and_label_once() {
     assert!(
         description.contains("End: u8 capturing end"),
         "the end node does not carry its return type and input: {description}"
+    );
+    assert!(
+        description.contains("Merge: end"),
+        "the merge is not named as a node"
     );
 
     for (label, what) in [

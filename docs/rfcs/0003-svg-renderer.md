@@ -336,25 +336,25 @@ A column becomes an x through one map, `column_x`, used by every node, every
 route and every back edge alike, and that map is strictly increasing in the
 column — so two nodes share an x exactly when the arrangement gave them one
 column, and the branch order and every reserved footprint carry over into the
-nodes that occupy them. A junction is the exception, and deliberately: it owns
-no box, its position is where its routes meet, and §2.5 lets a compaction move
-that in across a column boundary rather than reserve an empty column for it.
-What holds a junction is the crossing rules over the routes that meet there and
-the contour rules over the rail that leaves it, both checked after every
-compaction. An outermost column used only by an iteration tail, its sole
-straight incoming corridor and its back edge may close with that arrival. Its
-contour boundary moves with the tail, staying outside every other drawn route.
-Any other vertex, exit, route or contour using that column or a column beyond it
-prevents this compaction; a separately recorded far contour keeps its original
-boundary. Geometry, labels and witness correspondence are checked before keeping
-the change. The fallback distance between two columns is chosen once, as the
-widest of the standard column, a node box with the deepest rail reaching into
-the gap from each side and a lane between them, and whatever slack a previous
-pass asked for. So every node box fits inside its own column and every contour
-lane the arrangement used fits beside it, because the width was measured from
-those two things. A rank becomes a row whose height is the tallest box on it and
-whose gap holds the lanes the arrangement recorded for it plus the labels that
-hang there, each measured before the row is placed.
+nodes that occupy them. A junction is the exception, and deliberately: even a
+visible merge node owns no layout box, its marker is centred where its routes
+meet, and §2.5 lets a compaction move that point across a column boundary rather
+than reserve an empty column for it. What holds a junction is the crossing rules
+over the routes that meet there and the contour rules over the rail that leaves
+it, both checked after every compaction. An outermost column used only by an
+iteration tail, its sole straight incoming corridor and its back edge may close
+with that arrival. Its contour boundary moves with the tail, staying outside
+every other drawn route. Any other vertex, exit, route or contour using that
+column or a column beyond it prevents this compaction; a separately recorded far
+contour keeps its original boundary. Geometry, labels and witness correspondence
+are checked before keeping the change. The fallback distance between two columns
+is chosen once, as the widest of the standard column, a node box with the
+deepest rail reaching into the gap from each side and a lane between them, and
+whatever slack a previous pass asked for. So every node box fits inside its own
+column and every contour lane the arrangement used fits beside it, because the
+width was measured from those two things. A rank becomes a row whose height is
+the tallest box on it and whose gap holds the lanes the arrangement recorded for
+it plus the labels that hang there, each measured before the row is placed.
 
 For straight back edge drawings, a presentation first tries smaller gaps around
 columns carrying only routes or junctions. Node and exit columns retain their
@@ -443,8 +443,9 @@ reach is common ground.
 
 To draw an implicit wire merge, each producer descends in its approach column to
 one horizontal merge rail whose junction lies in the continuation's column;
-routes meet it as RFC 0002 §8 requires. Connections into the structural return
-share a separate arrival rail at end; it is not a wire merge.
+routes meet at a small filled circular node as RFC 0002 §8 requires. Connections
+into the structural return share a separate arrival rail at end; it is not a
+wire merge.
 
 Every iteration tail starts on a row of its own, with no node beside it. A back
 edge leaves its tail horizontally, across every column between the tail and its
@@ -463,10 +464,10 @@ is closed only when no route bends, starts, or ends on it, so closing one moves
 nothing into anything else, and the crossing rules of RFC 0002 §8 are checked
 again over the result.
 
-Any other junction may share its row with a node: a merge rail reaches only from
-its own producers to the continuation's column, and the crossing rules of RFC
-0002 §8 refuse an arrangement in which such a rail would run through a node, so
-no separate row is needed to keep it clear.
+Any junction, including a merge node, may share its row with another node: a
+merge rail reaches only from its own producers to the continuation's column, and
+the crossing rules of RFC 0002 §8 refuse an arrangement in which such a rail
+would run through another node, so no separate row is needed to keep it clear.
 
 Use one vertical gap throughout a diagram, at least 72 pixels and enlarged when
 labels need more room. Leave at least that gap between consecutive node rows.
@@ -567,8 +568,8 @@ change without changing the visual language.
 
 Serialize forward connections as subpaths of one SVG path, so shared
 distributors and merge rails are stroked once without darkening their
-antialiased edges. Keep iteration back edge paths separate for their arrowhead
-markers.
+antialiased edges. Draw merge nodes over that path. Keep iteration back edge
+paths separate for their arrowhead markers.
 
 The renderer preserves Unicode text and escapes XML content. For the start label
 and each row of the parameter panel, it takes the source content defined by RFC

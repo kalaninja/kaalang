@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="722" height="750" viewBox="0 0 722 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for early_result_then_cycle</title>
-  <desc id="kaalang-description">Nodes: Start: early_result_then_cycle with parameters first: bool; count: usize handing over first, count; Cycle: Select an early result or continue. capturing first handing over early_result; Question: Was an early result selected? capturing &amp;early_result handing over finish_early / count_more; Action: Extract the early result. capturing finish_early, early_result handing over end; Cycle: Count to three. capturing count_more, mut count handing over end; End: usize capturing end. Connections: Start: early_result_then_cycle to Cycle: Select an early result or continue.; Cycle: Select an early result or continue. to Question: Was an early result selected?; Question: Was an early result selected? branch 1 to Action: Extract the early result.; Question: Was an early result selected? branch 2 to Cycle: Count to three.; Action: Extract the early result. to the end merge; Cycle: Count to three. to the end merge; the end merge to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: early_result_then_cycle with parameters first: bool; count: usize handing over first, count; Cycle: Select an early result or continue. capturing first handing over early_result; Question: Was an early result selected? capturing &amp;early_result handing over finish_early / count_more; Action: Extract the early result. capturing finish_early, early_result handing over end; Cycle: Count to three. capturing count_more, mut count handing over end; End: usize capturing end; Merge: end. Connections: Start: early_result_then_cycle to Cycle: Select an early result or continue.; Cycle: Select an early result or continue. to Question: Was an early result selected?; Question: Was an early result selected? branch 1 to Action: Extract the early result.; Question: Was an early result selected? branch 2 to Cycle: Count to three.; Action: Extract the early result. to the end merge; Cycle: Count to three. to the end merge; the end merge to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -51,6 +51,10 @@
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: bool</tspan><tspan x="-104" dy="18">count: usize</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 588)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

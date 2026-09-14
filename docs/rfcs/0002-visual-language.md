@@ -15,10 +15,11 @@ Terms defined by RFC 0001 keep their meanings. The visual language adds the
 following terms:
 
 - a **diagram** is the complete visual representation of one flow;
-- a **node** is a drawn unit that represents all or part of one block, except
-  for the synthetic start and end nodes. An expanded cycle is a bounded region,
-  a collapsed cycle is one node, a break is represented by routes and any needed
-  structural junction, and a return is represented by its route to end;
+- a **node** is a drawn unit that represents all or part of one block, an
+  implicit wire merge, or one of the synthetic start and end nodes. An expanded
+  cycle is a bounded region, a collapsed cycle is one node, a break is
+  represented by routes and any needed structural junction, and a return is
+  represented by its route to end;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
@@ -68,10 +69,11 @@ data connections.
 ## 4. Node kinds
 
 An action and a question each become one node. A choice becomes one select node
-and one case node per authored case. A collapsed cycle becomes one cycle node. A
-reachable flow-completion boundary becomes one end node. Case nodes and the end
-node are visual projections, not additional semantic blocks; breaks and returns
-have no nodes of their own.
+and one case node per authored case. A collapsed cycle becomes one cycle node.
+An implicit wire merge becomes one merge node. A reachable flow-completion
+boundary becomes one end node. Case, merge, and end nodes are visual
+projections, not additional semantic blocks; breaks and returns have no nodes of
+their own.
 
 | Node kind    | Represents              | Label source           | Shape                                 |
 | ------------ | ----------------------- | ---------------------- | ------------------------------------- |
@@ -80,6 +82,7 @@ have no nodes of their own.
 | **question** | a question block        | the block description  | elongated hexagon                     |
 | **select**   | a choice block          | the choice description | skewed parallelogram                  |
 | **case**     | one case of a choice    | the case description   | a shape with a lower triangular point |
+| **merge**    | an implicit wire merge  | none                   | small filled circle                   |
 | **cycle**    | a collapsed cycle block | the cycle description  | loop-marked rectangle                 |
 | **end**      | flow completion         | the flow's return type | capsule                               |
 
@@ -195,6 +198,13 @@ return has no computational figure, description, or wire hand-over of its own.
 RFC 0001 permits at most one root-owned return and none inside a cycle; a fully
 diverging flow has no return or end node.
 
+### 4.10 merge
+
+An implicit wire merge becomes a small filled circular node at its convergence
+point. It has no authored description, input, output, or computation and adds no
+producer occurrence. Its shared wire label remains a connection label.
+Structural junctions that merge no wire have no node of their own.
+
 ## 5. Flow inputs and outputs
 
 The parameter panel shows every flow input with its Rust type. Every named flow
@@ -271,9 +281,9 @@ Identical hand-overs from alternative exits may share one label beside their
 merge when each exit has only one outgoing connection and all those connections
 reach that merge. The displayed lists must match in both names and order; a
 different hand-over remains at its own exit. The shared label represents the
-alternative hand-overs, not a new producer at the junction. If the merge has one
-outgoing connection, it is the sole connection entering its consumer, and that
-consumer's capture list matches the shared hand-over, the same label also
+alternative hand-overs, not a new producer at the merge node. If the merge has
+one outgoing connection, it is the sole connection entering its consumer, and
+that consumer's capture list matches the shared hand-over, the same label also
 represents the capture. Structural cycle-result junctions are not wire merges
 and share no wire label.
 
@@ -351,18 +361,17 @@ incoming connections waits for every one that participates in the current
 execution. At a convergence, incoming connections from alternative branches
 never participate together.
 
-kaalang has no authored merge block or merge icon. Equally named alternative
-outputs meet at an implicit junction of connections before any consumer of the
-merged wire. The common segment from that junction leads to its consumer or
-consumers; the junction is the convergence point, not a consumer node. Which
-branches converge there, what finishes before it, and what may bypass it are RFC
-0001 §7's rules; the diagram draws them and adds none. When a question or choice
-is written between a junction and the consumers of the merged wire, the serial
-order routes the junction through that selection. This connection adds no
-capture label to it, and connections already represented through it are omitted
-by the per-execution transitive reduction. The junction adds neither a
-computational block nor a producer occurrence. Consumers display the captured
-logical wire name once.
+kaalang has no authored merge block. Equally named alternative outputs meet at
+an implicit merge node before any consumer of the merged wire. The common
+segment from that node leads to its consumer or consumers; the merge node is a
+convergence point, not a consumer. Which branches converge there, what finishes
+before it, and what may bypass it are RFC 0001 §7's rules; the diagram draws
+them and adds none. When a question or choice is written between a merge and the
+consumers of the merged wire, the serial order routes the merge through that
+selection. This connection adds no capture label to it, and connections already
+represented through it are omitted by the per-execution transitive reduction.
+The merge node adds neither a computational block nor a producer occurrence.
+Consumers display the captured logical wire name once.
 
 For each expanded cycle, use one representative iteration per finite summary. A
 break reaches that cycle's result boundary; a repeating outcome ends at its

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="964" viewBox="0 0 704 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for converged_selection_meets_a_branch</title>
-  <desc id="kaalang-description">Nodes: Start: converged_selection_meets_a_branch with parameters left: bool; right: bool handing over left, right; Question: Right enabled? capturing right handing over b / right_no; Action: Provide the right value. capturing b handing over right_value; Action: Provide no right value. capturing right_no handing over right_value; Question: Left enabled? capturing left handing over a / left_no; Action: Work with the right value. capturing a, right_value handing over end; Action: Skip the work. capturing left_no, right_value handing over end; End: u8 capturing end. Connections: Start: converged_selection_meets_a_branch to Question: Right enabled?; Question: Right enabled? branch 1 to Action: Provide the right value.; Question: Right enabled? branch 2 to Action: Provide no right value.; Action: Provide the right value. to the right_value merge; Action: Provide no right value. to the right_value merge; Question: Left enabled? branch 1 to Action: Work with the right value.; Question: Left enabled? branch 2 to Action: Skip the work.; Action: Work with the right value. to the end merge; Action: Skip the work. to the end merge; the right_value merge to Question: Left enabled?; the end merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: converged_selection_meets_a_branch with parameters left: bool; right: bool handing over left, right; Question: Right enabled? capturing right handing over b / right_no; Action: Provide the right value. capturing b handing over right_value; Action: Provide no right value. capturing right_no handing over right_value; Question: Left enabled? capturing left handing over a / left_no; Action: Work with the right value. capturing a, right_value handing over end; Action: Skip the work. capturing left_no, right_value handing over end; End: u8 capturing end; Merge: right_value; Merge: end. Connections: Start: converged_selection_meets_a_branch to Question: Right enabled?; Question: Right enabled? branch 1 to Action: Provide the right value.; Question: Right enabled? branch 2 to Action: Provide no right value.; Action: Provide the right value. to the right_value merge; Action: Provide no right value. to the right_value merge; Question: Left enabled? branch 1 to Action: Work with the right value.; Question: Left enabled? branch 2 to Action: Skip the work.; Action: Work with the right value. to the end merge; Action: Skip the work. to the end merge; the right_value merge to Question: Left enabled?; the end merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -57,6 +57,14 @@
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 450)">
+      <title xml:space="preserve">the right_value merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 802)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="740" viewBox="0 0 704 740" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for shared_setup</title>
-  <desc id="kaalang-description">Nodes: Start: shared_setup with parameters condition: bool handing over condition; Action: Prepare the shared setup. capturing nothing handing over setup; Question: Take the short branch? capturing condition handing over short / long; Action: Use the setup on the short branch. capturing short, &amp;setup handing over end; Action: Use the setup on the long branch. capturing long, &amp;setup handing over end; End: u32 capturing end. Connections: Start: shared_setup to Action: Prepare the shared setup.; Action: Prepare the shared setup. to Question: Take the short branch?; Question: Take the short branch? branch 1 to Action: Use the setup on the short branch.; Question: Take the short branch? branch 2 to Action: Use the setup on the long branch.; Action: Use the setup on the short branch. to the end merge; Action: Use the setup on the long branch. to the end merge; the end merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: shared_setup with parameters condition: bool handing over condition; Action: Prepare the shared setup. capturing nothing handing over setup; Question: Take the short branch? capturing condition handing over short / long; Action: Use the setup on the short branch. capturing short, &amp;setup handing over end; Action: Use the setup on the long branch. capturing long, &amp;setup handing over end; End: u32 capturing end; Merge: end. Connections: Start: shared_setup to Action: Prepare the shared setup.; Action: Prepare the shared setup. to Question: Take the short branch?; Question: Take the short branch? branch 1 to Action: Use the setup on the short branch.; Question: Take the short branch? branch 2 to Action: Use the setup on the long branch.; Action: Use the setup on the short branch. to the end merge; Action: Use the setup on the long branch. to the end merge; the end merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -51,6 +51,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 578)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

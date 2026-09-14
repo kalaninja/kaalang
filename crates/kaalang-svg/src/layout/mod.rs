@@ -1039,7 +1039,7 @@ fn nodes(scene: &Scene) -> Vec<Node> {
 }
 
 /// Top edge and height of every row, in row order. A junction row carries no
-/// node, so it is only the lane its routes meet in.
+/// box, so it is only the lane its routes meet in.
 ///
 /// `top` and `capture_space` carry one entry past the last row, the bottom edge
 /// of the diagram, so that the row gap below a row is always addressable as
@@ -1065,7 +1065,7 @@ impl Rows {
         self.top[gap + 1] - self.capture_space[gap + 1] - (lanes - lane - 1) as i32 * LANE
     }
 
-    /// A junction row carries no node, so the routes that meet there meet on
+    /// A junction row carries no box, so the routes that meet there meet on
     /// the row's own line.
     pub(super) fn junction_y(&self, row: usize) -> i32 {
         self.top[row]

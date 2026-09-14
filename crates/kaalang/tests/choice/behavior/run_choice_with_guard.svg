@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="758" viewBox="0 0 704 758" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_guard</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_with_guard with parameters value: i32 handing over value; Select: Is the value a positive even number? capturing value; Case: The value is positive and even. handing over positive_even; Case: The value is not positive and even. handing over other; Action: Produce the positive-even result. capturing positive_even handing over end; Action: Produce the other result. capturing other handing over end; End: i32 capturing end. Connections: Start: run_choice_with_guard to Select: Is the value a positive even number?; Select: Is the value a positive even number? to Case: The value is positive and even.; Select: Is the value a positive even number? to Case: The value is not positive and even.; Case: The value is positive and even. to Action: Produce the positive-even result.; Case: The value is not positive and even. to Action: Produce the other result.; Action: Produce the positive-even result. to the end merge; Action: Produce the other result. to the end merge; the end merge to End: i32.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_with_guard with parameters value: i32 handing over value; Select: Is the value a positive even number? capturing value; Case: The value is positive and even. handing over positive_even; Case: The value is not positive and even. handing over other; Action: Produce the positive-even result. capturing positive_even handing over end; Action: Produce the other result. capturing other handing over end; End: i32 capturing end; Merge: end. Connections: Start: run_choice_with_guard to Select: Is the value a positive even number?; Select: Is the value a positive even number? to Case: The value is positive and even.; Select: Is the value a positive even number? to Case: The value is not positive and even.; Case: The value is positive and even. to Action: Produce the positive-even result.; Case: The value is not positive and even. to Action: Produce the other result.; Action: Produce the positive-even result. to the end merge; Action: Produce the other result. to the end merge; the end merge to End: i32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -47,6 +47,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 596)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

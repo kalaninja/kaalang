@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="746" viewBox="0 0 704 746" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_skeleton</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Produce the negative result. capturing negative handing over end; Action: Produce the nonnegative result. capturing nonnegative handing over end; End: &amp;&apos;static str capturing end. Connections: Start: run_choice_skeleton to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Produce the negative result.; Case: The value is nonnegative. to Action: Produce the nonnegative result.; Action: Produce the negative result. to the end merge; Action: Produce the nonnegative result. to the end merge; the end merge to End: &amp;&apos;static str.</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Produce the negative result. capturing negative handing over end; Action: Produce the nonnegative result. capturing nonnegative handing over end; End: &amp;&apos;static str capturing end; Merge: end. Connections: Start: run_choice_skeleton to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Produce the negative result.; Case: The value is nonnegative. to Action: Produce the nonnegative result.; Action: Produce the negative result. to the end merge; Action: Produce the nonnegative result. to the end merge; the end merge to End: &amp;&apos;static str.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -47,6 +47,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 584)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

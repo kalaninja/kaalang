@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="604" viewBox="0 0 704 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for type_gate_helper_hygiene</title>
-  <desc id="kaalang-description">Nodes: Start: type_gate_helper_hygiene with parameters condition: bool handing over condition; Question: Choose a value. capturing condition handing over yes / no; Action: Call the authored helper for yes. capturing yes handing over end, _marker; Action: Call the authored helper for no. capturing no handing over end, _marker; End: u8 capturing end. Connections: Start: type_gate_helper_hygiene to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Call the authored helper for yes.; Question: Choose a value. branch 2 to Action: Call the authored helper for no.; Action: Call the authored helper for yes. to the end merge; Action: Call the authored helper for no. to the end merge; the end merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: type_gate_helper_hygiene with parameters condition: bool handing over condition; Question: Choose a value. capturing condition handing over yes / no; Action: Call the authored helper for yes. capturing yes handing over end, _marker; Action: Call the authored helper for no. capturing no handing over end, _marker; End: u8 capturing end; Merge: end. Connections: Start: type_gate_helper_hygiene to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Call the authored helper for yes.; Question: Choose a value. branch 2 to Action: Call the authored helper for no.; Action: Call the authored helper for yes. to the end merge; Action: Call the authored helper for no. to the end merge; the end merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -47,6 +47,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 442)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

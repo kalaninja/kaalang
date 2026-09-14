@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="754" viewBox="0 0 704 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_shadowing</title>
-  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing with parameters value: i32; selected: Option&lt;i32&gt; handing over value, selected; Select: Was a value selected? capturing &amp;value, selected; Case: A value was selected. handing over selected_value; Case: No value was selected. handing over absent; Action: Produce the selected pair. capturing selected_value, value handing over end; Action: Produce the fallback pair. capturing absent, value handing over end; End: (i32, i32) capturing end. Connections: Start: run_choice_with_shadowing to Select: Was a value selected?; Select: Was a value selected? to Case: A value was selected.; Select: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair.; Case: No value was selected. to Action: Produce the fallback pair.; Action: Produce the selected pair. to the end merge; Action: Produce the fallback pair. to the end merge; the end merge to End: (i32, i32).</desc>
+  <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing with parameters value: i32; selected: Option&lt;i32&gt; handing over value, selected; Select: Was a value selected? capturing &amp;value, selected; Case: A value was selected. handing over selected_value; Case: No value was selected. handing over absent; Action: Produce the selected pair. capturing selected_value, value handing over end; Action: Produce the fallback pair. capturing absent, value handing over end; End: (i32, i32) capturing end; Merge: end. Connections: Start: run_choice_with_shadowing to Select: Was a value selected?; Select: Was a value selected? to Case: A value was selected.; Select: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair.; Case: No value was selected. to Action: Produce the fallback pair.; Action: Produce the selected pair. to the end merge; Action: Produce the fallback pair. to the end merge; the end merge to End: (i32, i32).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -50,6 +50,10 @@
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan><tspan x="-104" dy="18">selected: Option&lt;i32&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 592)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

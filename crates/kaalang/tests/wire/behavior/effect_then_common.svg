@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="1012" viewBox="0 0 704 1012" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for effect_then_common</title>
-  <desc id="kaalang-description">Nodes: Start: effect_then_common with parameters flag: bool handing over flag; Question: Choose. capturing flag handing over yes / no; Action: Yes value. capturing yes handing over value, local; Action: Local effect. capturing local; Action: No value. capturing no handing over value; Action: Common stamp. capturing nothing handing over stamp; Action: Finish. capturing value, stamp handing over end; End: u8 capturing end. Connections: Start: effect_then_common to Question: Choose.; Question: Choose. branch 1 to Action: Yes value.; Question: Choose. branch 2 to Action: No value.; Action: Yes value. to Action: Local effect.; Action: Local effect. to the value merge; Action: No value. to the value merge; Action: Common stamp. to Action: Finish.; Action: Finish. to End: u8; the value merge to Action: Common stamp..</desc>
+  <desc id="kaalang-description">Nodes: Start: effect_then_common with parameters flag: bool handing over flag; Question: Choose. capturing flag handing over yes / no; Action: Yes value. capturing yes handing over value, local; Action: Local effect. capturing local; Action: No value. capturing no handing over value; Action: Common stamp. capturing nothing handing over stamp; Action: Finish. capturing value, stamp handing over end; End: u8 capturing end; Merge: value. Connections: Start: effect_then_common to Question: Choose.; Question: Choose. branch 1 to Action: Yes value.; Question: Choose. branch 2 to Action: No value.; Action: Yes value. to Action: Local effect.; Action: Local effect. to the value merge; Action: No value. to the value merge; Action: Common stamp. to Action: Finish.; Action: Finish. to End: u8; the value merge to Action: Common stamp..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -54,6 +54,10 @@
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 578)">
+      <title xml:space="preserve">the value merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
