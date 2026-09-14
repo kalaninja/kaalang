@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1236" viewBox="0 0 704 1236" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1252" viewBox="0 0 704 1252" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for successive_selections_move_a_string</title>
   <desc id="kaalang-description">Nodes: Start: successive_selections_move_a_string with parameters condition: bool; long: bool handing over condition, long; Question: Which text? capturing condition handing over first / second; Action: Build the first text. capturing first handing over text; Action: Build the second text. capturing second handing over text; Action: Measure the merged text. capturing text handing over length; Question: Is it long enough? capturing &amp;length, long handing over yes / no; Action: Keep the length. capturing yes, length handing over selected; Action: Scale the short length. capturing no, length handing over selected; Action: Finish with the selected length. capturing selected handing over end; End: usize capturing end; Merge: text; Merge: selected. Connections: Start: successive_selections_move_a_string to Question: Which text?; Question: Which text? branch 1 to Action: Build the first text.; Question: Which text? branch 2 to Action: Build the second text.; Action: Build the first text. to the text merge; Action: Build the second text. to the text merge; Action: Measure the merged text. to Question: Is it long enough?; Question: Is it long enough? branch 1 to Action: Keep the length.; Question: Is it long enough? branch 2 to Action: Scale the short length.; Action: Keep the length. to the selected merge; Action: Scale the short length. to the selected merge; Action: Finish with the selected length. to End: usize; the text merge to Action: Measure the merged text.; the selected merge to Action: Finish with the selected length..</desc>
   <defs>
@@ -31,30 +31,30 @@
       M 172 98 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 586 L 172 658
-      M 172 730 L 172 802
-      M 312 694 L 532 694 L 532 802
-      M 172 866 L 172 938
-      M 532 866 L 532 938 L 172 938
-      M 172 1074 L 172 1146
-      M 172 450 L 172 522
-      M 172 938 L 172 1010
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 594 L 172 666
+      M 172 738 L 172 810
+      M 312 702 L 532 702 L 532 810
+      M 172 874 L 172 950
+      M 532 874 L 532 950 L 172 950
+      M 172 1090 L 172 1162
+      M 172 454 L 172 530
+      M 172 950 L 172 1026
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">text</tspan></text>
-    <text class="connection-label" x="185" y="956" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="402" y="195" xml:space="preserve"><tspan x="402" dy="0">second</tspan></text>
-    <text class="connection-label" x="185" y="1105" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">text</tspan></text>
+    <text class="connection-label" x="185" y="968" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="1151" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">condition, long</tspan></text>
-    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
-    <text class="connection-label" x="185" y="748" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="325" y="712" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
+    <text class="connection-label" x="185" y="756" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="325" y="720" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="647" xml:space="preserve"><tspan x="185" dy="0">&amp;length, long</tspan></text>
-    <text class="connection-label" x="185" y="791" xml:space="preserve"><tspan x="185" dy="0">yes, length</tspan></text>
-    <text class="connection-label" x="545" y="791" xml:space="preserve"><tspan x="545" dy="0">no, length</tspan></text>
+    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">&amp;length, long</tspan></text>
+    <text class="connection-label" x="185" y="799" xml:space="preserve"><tspan x="185" dy="0">yes, length</tspan></text>
+    <text class="connection-label" x="545" y="799" xml:space="preserve"><tspan x="545" dy="0">no, length</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -62,11 +62,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">long: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the text merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 938)">
+    <g class="node merge" transform="translate(172 950)">
       <title xml:space="preserve">the selected merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -89,32 +89,32 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second text.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 554)">
+    <g class="node action" transform="translate(172 562)">
       <title xml:space="preserve">Measure the merged text.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the merged text.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 694)">
+    <g class="node question" transform="translate(172 702)">
       <title xml:space="preserve">Is it long enough?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it long enough?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 834)">
+    <g class="node action" transform="translate(172 842)">
       <title xml:space="preserve">Keep the length.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the length.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 834)">
+    <g class="node action" transform="translate(532 842)">
       <title xml:space="preserve">Scale the short length.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Scale the short length.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1042)">
+    <g class="node action" transform="translate(172 1058)">
       <title xml:space="preserve">Finish with the selected length.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish with the selected length.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1175)">
+    <g class="node end" transform="translate(172 1191)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

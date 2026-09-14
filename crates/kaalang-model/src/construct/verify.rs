@@ -14,25 +14,21 @@ use crate::geometry::{
 use crate::model::Flow;
 use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
 
-use super::{Arrangement, Side};
+use super::{Arrangement, RunLine, Side};
 
 /// The abstract grid a arrangement describes. Every rank gets a line of its
 /// own and every lane of the gap below it one more; every column gets a
 /// position of its own with room beside it for the back edge contours that climb
 /// between columns.
 ///
-/// The lanes of one gap are packed against the rank below them, exactly as a
-/// presentation packs them against the following node row. A rank carrying a
-/// node keeps one line clear for the captures drawn above it, and a rank
-/// carrying only junctions does not — so on such a rank the deepest lane of the
-/// gap above coincides with the rank's own line. That coincidence is real in
-/// pixels, so the check has to see it too.
+/// Gap lanes stay above the following occupied rank. Nodes and junctions use
+/// the same rank line, independently of their incoming routes.
 pub(super) struct Grid {
     step: i32,
     /// How many lanes each rank gap uses.
     lanes: Vec<usize>,
-    /// Whether each rank carries a node, and so reserves a line for captures.
-    nodes: Vec<bool>,
+    /// Whether each rank carries a vertex, clear of gap lanes.
+    occupied: Vec<bool>,
     /// How far apart two columns sit, so that every contour lane a topology can
     /// need fits between them.
     scale: i32,
@@ -51,10 +47,10 @@ pub(super) fn contour_lanes(topology: &Topology) -> usize {
 impl Grid {
     pub(super) fn of(topology: &Topology, arrangement: &Arrangement) -> Self {
         let deepest = arrangement.gap_lanes.iter().copied().max().unwrap_or(0);
-        let mut nodes = vec![false; arrangement.ranks + 1];
-        for node in &topology.nodes {
-            if let Some(&rank) = arrangement.rank.get(&Vertex::Node(node.id))
-                && let Some(carries) = nodes.get_mut(rank)
+        let mut occupied = vec![false; arrangement.ranks + 1];
+        for &vertex in &topology.vertices {
+            if let Some(&rank) = arrangement.rank.get(&vertex)
+                && let Some(carries) = occupied.get_mut(rank)
             {
                 *carries = true;
             }
@@ -62,7 +58,7 @@ impl Grid {
         Self {
             step: 2 + i32::try_from(deepest).unwrap_or(i32::MAX - 2),
             lanes: arrangement.gap_lanes.clone(),
-            nodes,
+            occupied,
             // Every lane of both sides of a column gets a position of its own,
             // plus the column's own, so the deepest lane beside one column
             // never reaches the shallowest lane beside the next.
@@ -90,6 +86,13 @@ impl Grid {
         rank as i32 * self.step
     }
 
+    pub(super) fn line(&self, line: RunLine) -> i32 {
+        match line {
+            RunLine::Rank(rank) => self.rank(rank),
+            RunLine::Lane { gap, lane } => self.lane(gap, lane),
+        }
+    }
+
     /// The line one lane of one rank gap occupies, packed against the rank
     /// below it.
     ///
@@ -98,42 +101,9 @@ impl Grid {
     /// nothing for an arrangement the search produces; it keeps the check
     /// reporting rather than panicking on one it never would.
     pub(super) fn lane(&self, gap: usize, lane: usize) -> i32 {
-        let capture = i32::from(self.nodes.get(gap + 1).copied().unwrap_or(false));
+        let capture = i32::from(self.occupied.get(gap + 1).copied().unwrap_or(false));
         let lanes = self.lanes.get(gap).copied().unwrap_or(lane + 1);
         self.rank(gap + 1) - capture - (lanes.saturating_sub(lane + 1)) as i32
-    }
-}
-
-/// The line a junction's routes meet on: the deepest lane any of them takes in
-/// the gap above it, so a side route finishes horizontally on the rail rather
-/// than turning down over the continuation below it (RFC 0002 §8).
-pub(super) fn junction_line(
-    topology: &Topology,
-    arrangement: &Arrangement,
-    grid: &Grid,
-    junction: usize,
-) -> i32 {
-    let rank = arrangement.rank[&Vertex::Junction(junction)];
-    // Every junction has a producer above it, so it never sits on the first
-    // rank; a projection that put one there has no rail to meet on.
-    let Some(gap) = rank.checked_sub(1) else {
-        return grid.rank(rank);
-    };
-    arrangement
-        .deepest_lane(topology, junction, gap)
-        .map_or_else(|| grid.rank(rank), |lane| grid.lane(gap, lane))
-}
-
-/// The line one endpoint of a route sits on.
-fn endpoint_line(
-    topology: &Topology,
-    arrangement: &Arrangement,
-    grid: &Grid,
-    vertex: Vertex,
-) -> i32 {
-    match vertex {
-        Vertex::Node(_) => grid.rank(arrangement.rank[&vertex]),
-        Vertex::Junction(junction) => junction_line(topology, arrangement, grid, junction),
     }
 }
 
@@ -149,7 +119,8 @@ pub(super) fn polyline(
     // A route leaves its node's own boundary, whatever branch column it then
     // descends in: the exit is on the node, not on the column beside it.
     let departure = arrangement.column[&Vertex::from(wire.source)];
-    let source_line = endpoint_line(topology, arrangement, grid, Vertex::from(wire.source));
+    let source_line = grid.rank(arrangement.rank[&Vertex::from(wire.source)]);
+    let destination_line = grid.rank(arrangement.rank[&wire.destination]);
     let mut points = vec![
         Point {
             x: grid.column(departure),
@@ -161,7 +132,7 @@ pub(super) fn polyline(
         },
     ];
     for run in &route.runs {
-        let line = grid.lane(run.gap, run.lane);
+        let line = grid.line(run.line);
         points.push(Point {
             x: grid.column(run.enter),
             y: line,
@@ -173,7 +144,7 @@ pub(super) fn polyline(
     }
     points.push(Point {
         x: grid.column(route.arrival),
-        y: endpoint_line(topology, arrangement, grid, wire.destination),
+        y: destination_line,
     });
     straighten(points)
 }
@@ -188,8 +159,8 @@ pub(super) fn back_edge_polyline(
     entry: usize,
     contour: super::Contour,
 ) -> Vec<Point> {
-    let tail_line = junction_line(topology, arrangement, grid, tail);
-    let entry_line = junction_line(topology, arrangement, grid, entry);
+    let tail_line = grid.rank(arrangement.rank[&Vertex::Junction(tail)]);
+    let entry_line = grid.rank(arrangement.rank[&Vertex::Junction(entry)]);
     let loop_index = topology
         .loops
         .iter()
@@ -227,7 +198,7 @@ pub(super) fn back_edge_polyline(
         },
     ];
     for run in route.runs.iter().rev() {
-        let y = grid.lane(run.gap, run.lane);
+        let y = grid.line(run.line);
         points.extend([
             Point {
                 x: position(run.exit),
@@ -351,13 +322,23 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
         .enumerate()
     {
         for run in &route.runs {
-            let lanes = arrangement.gap_lanes.get(run.gap).copied().unwrap_or(0);
-            if run.lane >= lanes {
-                return Err(format!(
-                    "connection {} takes lane {} of a rank gap with {lanes}",
-                    index + 1,
-                    run.lane
-                ));
+            match run.line {
+                RunLine::Rank(rank) if rank >= arrangement.ranks => {
+                    return Err(format!(
+                        "connection {} runs on an absent rank {rank}",
+                        index + 1
+                    ));
+                }
+                RunLine::Lane { gap, lane } => {
+                    let lanes = arrangement.gap_lanes.get(gap).copied().unwrap_or(0);
+                    if lane >= lanes {
+                        return Err(format!(
+                            "connection {} takes lane {lane} of a rank gap with {lanes}",
+                            index + 1,
+                        ));
+                    }
+                }
+                RunLine::Rank(_) => {}
             }
         }
     }
@@ -413,16 +394,29 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
     Ok(())
 }
 
-/// Forward connections descend, and so does placement-only precedence.
+/// Forward connections descend, except for a side exit that ends at a wire merge
+/// or its sole iteration tail on its row. A cycle's own tail and result may share
+/// a row when their routes are disjoint; other placement-only relations descend.
 fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
-    for (relation, edges) in [
-        ("a connection", &topology.connections),
-        ("placement precedence", &topology.order),
+    for (relation, edges, same_row) in [
+        ("a connection", &topology.connections, true),
+        ("placement precedence", &topology.order, false),
     ] {
         for edge in edges {
             let from = arrangement.rank[&Vertex::from(edge.source)];
             let to = arrangement.rank[&edge.destination];
-            if from >= to {
+            let aligned = if same_row {
+                topology.same_row_junction(edge)
+            } else {
+                topology.loops.iter().any(|loop_| {
+                    edge.source == Source::Junction(loop_.tail)
+                        && topology.loop_boundaries.iter().any(|boundary| {
+                            boundary.header == loop_.header
+                                && boundary.result.map(Vertex::from) == Some(edge.destination)
+                        })
+                })
+            };
+            if from > to || (from == to && !aligned) {
                 return Err(format!("{relation} does not descend: {from} to {to}"));
             }
         }
@@ -601,7 +595,7 @@ fn vertex_points(
             (
                 Point {
                     x: grid.column(arrangement.column[&vertex]),
-                    y: endpoint_line(topology, arrangement, grid, vertex),
+                    y: grid.rank(arrangement.rank[&vertex]),
                 },
                 vertex,
             )
@@ -665,11 +659,7 @@ fn routes(
         }
         // RFC 0002 §8: an incoming side route must not turn down over the
         // continuation the junction's outgoing connection owns.
-        if matches!(
-            topology.connections[index].destination,
-            Destination::Junction(_)
-        ) && turns_downward(points)
-        {
+        if matches!(wire.destination, Destination::Junction(_)) && turns_downward(points) {
             return Err(format!(
                 "connection {} turns downward before its merge",
                 index + 1
@@ -810,7 +800,7 @@ mod tests {
     }
 
     #[test]
-    fn a_crossing_uses_the_junctions_actual_merge_lane() {
+    fn a_crossing_uses_the_structural_junctions_rank() {
         let junction = Vertex::Junction(0);
         let mut topology = Topology::default();
         topology.vertices = vec![junction];
@@ -827,8 +817,7 @@ mod tests {
                 departure: -1,
                 arrival: 0,
                 runs: vec![super::super::Run {
-                    gap: 1,
-                    lane: 0,
+                    line: RunLine::Lane { gap: 1, lane: 0 },
                     enter: -1,
                     exit: 0,
                 }],
@@ -836,8 +825,11 @@ mod tests {
             ..Arrangement::default()
         };
         let grid = Grid::of(&topology, &arrangement);
-        let y = junction_line(&topology, &arrangement, &grid, 0);
-        assert_ne!(y, grid.rank(2), "the junction is on an earlier merge lane");
+        let y = grid.rank(arrangement.rank[&junction]);
+        assert!(
+            grid.lane(1, 0) < y,
+            "a routing lane stays above the junction"
+        );
         let crossing = [Point { x: -2, y }, Point { x: 2, y }];
         assert!(
             simple(

@@ -1,8 +1,9 @@
 //! Assigns a rank and a column to every node and junction.
 //!
-//! RFC 0002 §8 runs execution time from top to bottom, so a rank comes from
-//! connection reachability, including the chosen serial order and the
-//! placement-only precedence a break carries out of the region it leaves.
+//! RFC 0002 §8 runs execution time from top to bottom or along a side exit into
+//! a merge on the same row, so a rank comes from connection reachability,
+//! including the chosen serial order and the placement-only precedence a break
+//! carries out of the region it leaves.
 //! Branches run left to right in authored order, and a brancher reserves the
 //! whole footprint its branches occupy, so that nested branchers and the
 //! convergence groups they share compose without corrupting each other.
@@ -13,7 +14,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::{Flow, WireMerge};
+use crate::model::Flow;
 use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
 
 #[derive(Clone)]
@@ -44,11 +45,10 @@ impl Placement {
 pub(super) fn place(
     topology: &Topology,
     flow: &Flow,
-    merges: &[WireMerge],
     sunk: &BTreeSet<Vertex>,
     sides: &[super::Side],
 ) -> Result<Placement, String> {
-    let rank = rows(topology, merges, sunk)?;
+    let rank = rows(topology, sunk)?;
     let ranks_used = rank.values().copied().max().unwrap_or(0) + 1;
     let footprints = footprints(topology, flow);
     Ok(Placement {
@@ -59,9 +59,10 @@ pub(super) fn place(
     })
 }
 
-/// Longest-path ranking: a node sits below every predecessor, a junction below
-/// every producer branch and every block ordered before it. Start owns row 0;
-/// every computational node is reached from it in the chosen serial order.
+/// Longest-path ranking: a node sits below every predecessor. A wire merge or a
+/// sole iteration tail may share its side producer's row; other junctions sit
+/// below their producers and every block ordered before them. Start owns row 0; every
+/// computational node is reached from it in the chosen serial order.
 ///
 /// Dependency depth is only the earliest row an item may take. Two further
 /// passes lower items from there: the tails the caller asks to sink go below
@@ -71,7 +72,6 @@ pub(super) fn place(
 /// its runs.
 pub(super) fn rows(
     topology: &Topology,
-    merges: &[WireMerge],
     sunk: &BTreeSet<Vertex>,
 ) -> Result<BTreeMap<Vertex, usize>, String> {
     // A sunk vertex may take any rank its predecessors allow, so it goes below
@@ -113,14 +113,17 @@ pub(super) fn rows(
         pending.remove(&ready);
         let row = topology
             .incoming(ready)
+            .map(|connection| (connection, !topology.same_row_junction(connection)))
             .chain(
                 topology
                     .order
                     .iter()
-                    .filter(|edge| edge.destination == ready),
+                    .filter(|edge| edge.destination == ready)
+                    .map(|connection| (connection, true)),
             )
-            .map(|connection| Vertex::from(connection.source))
-            .map(|predecessor| rows[&predecessor] + 1)
+            .map(|(connection, descends)| {
+                rows[&Vertex::from(connection.source)] + usize::from(descends)
+            })
             .max()
             .unwrap_or(usize::from(ready != Vertex::Node(NodeId::Start)));
         let lowest = if sunk.contains(&ready) {
@@ -130,7 +133,6 @@ pub(super) fn rows(
         };
         rows.insert(ready, row.max(lowest));
     }
-    align_merge_producers(topology, merges, &mut rows);
     separate_junctions(topology, &mut rows);
     Ok(rows)
 }
@@ -140,8 +142,8 @@ pub(super) fn rows(
 /// anything else on that rank stands in the way. Cycle entries keep their ranks,
 /// because RFC 0002 §7 lets a cycle entry start alongside the body beside it and
 /// a back edge arrives at an entry from the column immediately outside that body.
-/// No connection joins two vertices of one rank, so splitting a rank keeps
-/// every order it had. Renumbering here also closes the ranks the longest path
+/// Splitting a rank only adds descent to forward connections and preserves
+/// their order. Renumbering here also closes the ranks the longest path
 /// left unused, so nothing below has to compact them.
 fn separate_junctions(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
     let alone = topology
@@ -167,71 +169,6 @@ fn separate_junctions(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
         for vertex in isolated {
             rows.insert(vertex, next);
             next += 1;
-        }
-    }
-}
-
-/// A pair of alternative blocks reached directly from a question and a merge
-/// of question branches finish on the same row. That internal junction must not
-/// make the two outcomes look sequential.
-fn align_merge_producers(
-    topology: &Topology,
-    merges: &[WireMerge],
-    rows: &mut BTreeMap<Vertex, usize>,
-) {
-    for junction in 0..topology.junctions.len() {
-        let producers = topology
-            .incoming(Vertex::Junction(junction))
-            .filter_map(|connection| match connection.source {
-                Source::Exit(exit)
-                    if exit.branch.is_none()
-                        && topology.provides_merged_wires(merges, exit, junction) =>
-                {
-                    Some(Vertex::Node(exit.node))
-                }
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        let follows = |producer: Vertex, source: fn(Source) -> bool| {
-            topology
-                .incoming(producer)
-                .any(|connection| source(connection.source))
-        };
-        let follows_question_merge = |producer| {
-            topology.incoming(producer).any(|connection| {
-                let Source::Junction(inner) = connection.source else {
-                    return false;
-                };
-                topology
-                    .incoming(Vertex::Junction(inner))
-                    .all(|incoming| matches!(incoming.source, Source::Exit(exit) if exit.branch.is_some()))
-            })
-        };
-        if producers.len() != 2
-            || topology.incoming(Vertex::Junction(junction)).count() != 2
-            || producers
-                .iter()
-                .filter(|&&producer| follows_question_merge(producer))
-                .count()
-                != 1
-            || producers
-                .iter()
-                .filter(|&&producer| {
-                    follows(
-                        producer,
-                        |source| matches!(source, Source::Exit(exit) if exit.branch.is_some()),
-                    )
-                })
-                .count()
-                != 1
-        {
-            continue;
-        }
-        let Some(row) = producers.iter().map(|producer| rows[producer]).max() else {
-            continue;
-        };
-        for producer in producers {
-            rows.insert(producer, row);
         }
     }
 }

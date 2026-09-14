@@ -17,14 +17,12 @@ fn terminal_cases_after_repeats(mode: u8) -> u8 {
         };
 
         #[action("Finish the flow with seven.")]
-        let seven_result = |seven| 7;
-
-        |seven_result| break seven_result;
+        let selected = |seven| 7;
 
         #[action("Finish the flow with nine.")]
-        let nine_result = |nine| 9;
+        let selected = |nine| 9;
 
-        |nine_result| break nine_result;
+        |selected| break selected;
 
         #[action("Advance through the left case.")]
         |left, &mut mode| *mode = 1;

@@ -18,9 +18,7 @@ fn trailing_inner_loop() -> usize {
             let (leave_1, iterate_1) = |&inner| **inner < 3;
 
             #[action("Request another outer pass.")]
-            let repeat_outer = |leave_1| None;
-
-            |repeat_outer| break repeat_outer;
+            let outcome = |leave_1| None;
 
             #[action("Increment the inner counter.")]
             let incremented = |iterate_1, &mut inner| **inner += 1;
@@ -29,9 +27,9 @@ fn trailing_inner_loop() -> usize {
             let (done, again) = |incremented, &inner| **inner == 3;
 
             #[action("Produce the outer counter.")]
-            let result = |done, outer| Some(*outer);
+            let outcome = |done, outer| Some(*outer);
 
-            |result| break result;
+            |outcome| break outcome;
 
             #[action("Finish the inner iteration.")]
             |again| {};

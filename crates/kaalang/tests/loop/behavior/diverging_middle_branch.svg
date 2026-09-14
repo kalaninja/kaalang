@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1398" viewBox="0 0 1840 1398" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1860" height="1062" viewBox="0 0 1860 1062" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for diverging_middle_branch</title>
-  <desc id="kaalang-description">Cycles: Choose a repeating, diverging, or leaving route. with inputs mut mode, stay and outputs result; Spin forever. with inputs spin and outputs (). Nodes: Start: diverging_middle_branch with parameters mode: u8; stay: bool handing over mode, stay; Select: Which route? capturing mode; Case: Advance and repeat. handing over advance; Case: Spin forever. handing over spin; Case: Advance, then repeat or leave. handing over decide; Case: Leave at once. handing over leave_now; Action: Advance. capturing advance; Action: Spin. capturing nothing; Question: Stay in the loop? capturing decide, stay handing over again / leave; Action: Advance after the decision. capturing again; End: u8 capturing result. Connections: Start: diverging_middle_branch to the entry of the cycle; Select: Which route? to Case: Advance and repeat.; Select: Which route? to Case: Spin forever.; Select: Which route? to Case: Advance, then repeat or leave.; Select: Which route? to Case: Leave at once.; Case: Advance and repeat. to Action: Advance.; Case: Spin forever. to the entry of the cycle; Case: Advance, then repeat or leave. to Question: Stay in the loop?; Case: Leave at once. to a cycle break; Action: Advance. to the iteration tail of the cycle; Action: Spin. to the iteration tail of the cycle; Question: Stay in the loop? branch 1 to Action: Advance after the decision.; Question: Stay in the loop? branch 2 to a cycle break; Action: Advance after the decision. to the iteration tail of the cycle; the entry of the cycle to Select: Which route?; the cycle result to End: u8; the entry of the cycle to Action: Spin.; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Choose a repeating, diverging, or leaving route. with inputs mut mode, stay and outputs result; Spin forever. with inputs spin and outputs (). Nodes: Start: diverging_middle_branch with parameters mode: u8; stay: bool handing over mode, stay; Select: Which route? capturing mode; Case: Advance and repeat. handing over advance; Case: Spin forever. handing over spin; Case: Advance, then repeat or leave. handing over decide; Case: Leave at once. handing over leave_now; Action: Advance. capturing advance; Action: Spin. capturing nothing; Question: Stay in the loop? capturing decide, stay handing over again / leave; Action: Advance after the decision. capturing again; Action: Leave after the decision. capturing leave, mode handing over selected; Action: Leave immediately. capturing leave_now, mode handing over selected; End: u8 capturing result; Merge: selected. Connections: Start: diverging_middle_branch to the entry of the cycle; Select: Which route? to Case: Advance and repeat.; Select: Which route? to Case: Spin forever.; Select: Which route? to Case: Advance, then repeat or leave.; Select: Which route? to Case: Leave at once.; Case: Advance and repeat. to Action: Advance.; Case: Spin forever. to the entry of the cycle; Case: Advance, then repeat or leave. to Question: Stay in the loop?; Case: Leave at once. to Action: Leave immediately.; Action: Advance. to the iteration tail of the cycle; Action: Spin. to the iteration tail of the cycle; Question: Stay in the loop? branch 1 to Action: Advance after the decision.; Question: Stay in the loop? branch 2 to Action: Leave after the decision.; Action: Advance after the decision. to the iteration tail of the cycle; Action: Leave after the decision. to the selected merge at the cycle result; Action: Leave immediately. to the selected merge at the cycle result; the selected merge at the cycle result to End: u8; the entry of the cycle to Select: Which route?; the entry of the cycle to Action: Spin.; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,13 +27,13 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Choose a repeating, diverging, or leaving route.</title>
-    <rect class="cycle-boundary" x="32" y="135" width="1776" height="1136" rx="12"/>
-    <text class="cycle-caption" x="1796" y="149" text-anchor="end" xml:space="preserve"><tspan x="1796" dy="0">Choose a repeating, diverging, or leaving route.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="135" width="1796" height="796" rx="12"/>
+    <text class="cycle-caption" x="1816" y="149" text-anchor="end" xml:space="preserve"><tspan x="1816" dy="0">Choose a repeating, diverging, or leaving route.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Spin forever.</title>
-    <rect class="cycle-boundary" x="392" y="641" width="356" height="278" rx="12"/>
-    <text class="cycle-caption" x="736" y="655" text-anchor="end" xml:space="preserve"><tspan x="736" dy="0">Spin forever.</tspan></text>
+    <rect class="cycle-boundary" x="392" y="541" width="356" height="314" rx="12"/>
+    <text class="cycle-caption" x="736" y="555" text-anchor="end" xml:space="preserve"><tspan x="736" dy="0">Spin forever.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -44,44 +44,51 @@
       M 348 278 L 580 278 L 580 392
       M 348 278 L 940 278 L 940 386
       M 348 278 L 1660 278 L 1660 392
-      M 220 462 L 220 540
-      M 580 462 L 580 676
-      M 940 468 L 940 956
-      M 1660 462 L 1660 540
-      M 220 604 L 220 1236
-      M 580 812 L 580 884
-      M 940 1028 L 940 1100
-      M 1080 992 L 1300 992 L 1300 1100
-      M 940 1164 L 940 1236 L 220 1236
+      M 220 462 L 220 544
+      M 580 462 L 580 576
+      M 940 468 L 940 540
+      M 1660 462 L 1660 544
+      M 220 608 L 220 896
+      M 580 748 L 580 820
+      M 940 612 L 940 684
+      M 1080 576 L 1300 576 L 1300 684
+      M 940 748 L 940 896 L 220 896
+      M 1300 748 L 1300 896
+      M 1660 608 L 1660 896 L 1300 896
+      M 1300 896 L 1300 972
       M 220 170 L 220 242
-      M 1300 1236 L 1300 1308
-      M 580 676 L 580 748
-      M 1300 1100 L 1300 1236
-      M 1660 540 L 1660 1236 L 1300 1236
+      M 580 576 L 580 684
     "/>
     <path class="connection" d="
-      M 580 884 L 420 884 L 420 676 L 580 676
+      M 580 820 L 420 820 L 420 576 L 580 576
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 220 1236 L 60 1236 L 60 170 L 220 170
+      M 220 896 L 60 896 L 60 170 L 220 170
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="233" y="496" xml:space="preserve"><tspan x="233" dy="0">advance</tspan></text>
-    <text class="connection-label" x="953" y="1059" xml:space="preserve"><tspan x="953" dy="0">again</tspan></text>
+    <text class="connection-label" x="1313" y="914" xml:space="preserve"><tspan x="1313" dy="0">selected</tspan></text>
+    <text class="connection-label" x="233" y="533" xml:space="preserve"><tspan x="233" dy="0">advance</tspan></text>
+    <text class="connection-label" x="953" y="673" xml:space="preserve"><tspan x="953" dy="0">again</tspan></text>
     <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mode, stay</tspan></text>
     <text class="connection-label" x="593" y="480" xml:space="preserve"><tspan x="593" dy="0">spin</tspan></text>
     <text class="connection-label" x="953" y="486" xml:space="preserve"><tspan x="953" dy="0">decide</tspan></text>
     <text class="connection-label" x="1673" y="480" xml:space="preserve"><tspan x="1673" dy="0">leave_now</tspan></text>
-    <text class="connection-label" x="1093" y="1010" xml:space="preserve"><tspan x="1093" dy="0">leave</tspan></text>
+    <text class="connection-label" x="1093" y="594" xml:space="preserve"><tspan x="1093" dy="0">leave</tspan></text>
     <text class="connection-label" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="593" y="737" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
-    <text class="connection-label" x="953" y="945" xml:space="preserve"><tspan x="953" dy="0">decide, stay</tspan></text>
-    <text class="connection-label" x="1313" y="1297" xml:space="preserve"><tspan x="1313" dy="0">result</tspan></text>
+    <text class="connection-label" x="593" y="673" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
+    <text class="connection-label" x="953" y="529" xml:space="preserve"><tspan x="953" dy="0">decide, stay</tspan></text>
+    <text class="connection-label" x="1313" y="673" xml:space="preserve"><tspan x="1313" dy="0">leave, mode</tspan></text>
+    <text class="connection-label" x="1673" y="533" xml:space="preserve"><tspan x="1673" dy="0">leave_now, mode</tspan></text>
+    <text class="connection-label" x="1313" y="961" xml:space="preserve"><tspan x="1313" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 65 L 456 65"/>
     <g class="parameter-panel" transform="translate(576 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan><tspan x="-104" dy="18">stay: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(1300 896)">
+      <title xml:space="preserve">the selected merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
@@ -112,27 +119,37 @@
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Leave at once.</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 572)">
+    <g class="node action" transform="translate(220 576)">
       <title xml:space="preserve">Advance.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance.</tspan></text>
     </g>
-    <g class="node action" transform="translate(580 780)">
+    <g class="node action" transform="translate(580 716)">
       <title xml:space="preserve">Spin.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Spin.</tspan></text>
     </g>
-    <g class="node question" transform="translate(940 992)">
+    <g class="node question" transform="translate(940 576)">
       <title xml:space="preserve">Stay in the loop?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stay in the loop?</tspan></text>
     </g>
-    <g class="node action" transform="translate(940 1132)">
+    <g class="node action" transform="translate(940 716)">
       <title xml:space="preserve">Advance after the decision.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance after the decision.</tspan></text>
     </g>
-    <g class="node end" transform="translate(1300 1337)">
+    <g class="node action" transform="translate(1300 716)">
+      <title xml:space="preserve">Leave after the decision.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Leave after the decision.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1660 576)">
+      <title xml:space="preserve">Leave immediately.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Leave immediately.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(1300 1001)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

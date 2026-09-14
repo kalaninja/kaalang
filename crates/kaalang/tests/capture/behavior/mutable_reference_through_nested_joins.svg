@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1122" viewBox="0 0 1064 1122" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1138" viewBox="0 0 1064 1138" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for mutable_reference_through_nested_joins</title>
   <desc id="kaalang-description">Nodes: Start: mutable_reference_through_nested_joins with parameters outer: bool; inner: bool; mut text: String handing over outer, inner, mut text; Question: Use the nested branch? capturing outer handing over nested / fallback; Question: Choose the inner mutation. capturing nested, inner handing over first / second; Action: Borrow and append the first suffix. capturing first, &amp;mut text handing over partial; Action: Borrow and append the second suffix. capturing second, &amp;mut text handing over partial; Action: Carry the borrowed value onward. capturing partial handing over view; Action: Borrow on the fallback branch. capturing fallback, &amp;mut text handing over view; Action: Mutate through the reference after both joins. capturing view handing over length; End: (String, usize) capturing text, length; Merge: partial; Merge: view. Connections: Start: mutable_reference_through_nested_joins to Question: Use the nested branch?; Question: Use the nested branch? branch 1 to Question: Choose the inner mutation.; Question: Use the nested branch? branch 2 to Action: Borrow on the fallback branch.; Question: Choose the inner mutation. branch 1 to Action: Borrow and append the first suffix.; Question: Choose the inner mutation. branch 2 to Action: Borrow and append the second suffix.; Action: Borrow and append the first suffix. to the partial merge; Action: Borrow and append the second suffix. to the partial merge; Action: Carry the borrowed value onward. to the view merge; Action: Borrow on the fallback branch. to the view merge; Action: Mutate through the reference after both joins. to End: (String, usize); the partial merge to Action: Carry the borrowed value onward.; the view merge to Action: Mutate through the reference after both joins..</desc>
   <defs>
@@ -33,28 +33,28 @@
       M 312 224 L 892 224 L 892 336
       M 172 404 L 172 476
       M 312 368 L 532 368 L 532 476
-      M 172 542 L 172 614
-      M 532 542 L 532 614 L 172 614
-      M 172 750 L 172 822
-      M 892 400 L 892 822 L 172 822
-      M 172 960 L 172 1032
-      M 172 614 L 172 686
-      M 172 822 L 172 894
+      M 172 542 L 172 618
+      M 532 542 L 532 618 L 172 618
+      M 172 758 L 172 834
+      M 892 400 L 892 834 L 172 834
+      M 172 976 L 172 1048
+      M 172 618 L 172 694
+      M 172 834 L 172 910
     "/>
-    <text class="connection-label" x="185" y="632" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
-    <text class="connection-label" x="185" y="840" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label" x="185" y="636" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label" x="185" y="852" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
     <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">outer, inner, mut text</tspan></text>
     <text class="connection-label" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
     <text class="connection-label" x="325" y="242" xml:space="preserve"><tspan x="325" dy="0">fallback</tspan></text>
     <text class="connection-label" x="185" y="422" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
     <text class="connection-label" x="325" y="386" xml:space="preserve"><tspan x="325" dy="0">second</tspan></text>
-    <text class="connection-label" x="185" y="978" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
+    <text class="connection-label" x="185" y="994" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">outer</tspan></text>
     <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">nested, inner</tspan></text>
     <text class="connection-label" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">first, &amp;mut text</tspan></text>
     <text class="connection-label" x="545" y="465" xml:space="preserve"><tspan x="545" dy="0">second, &amp;mut text</tspan></text>
     <text class="connection-label" x="905" y="325" xml:space="preserve"><tspan x="905" dy="0">fallback, &amp;mut text</tspan></text>
-    <text class="connection-label" x="185" y="1021" xml:space="preserve"><tspan x="185" dy="0">text, length</tspan></text>
+    <text class="connection-label" x="185" y="1037" xml:space="preserve"><tspan x="185" dy="0">text, length</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
@@ -62,11 +62,11 @@
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
       <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan><tspan x="-104" dy="18">mut text: String</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 614)">
+    <g class="node merge" transform="translate(172 618)">
       <title xml:space="preserve">the partial merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 822)">
+    <g class="node merge" transform="translate(172 834)">
       <title xml:space="preserve">the view merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -94,7 +94,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Borrow and append the second </tspan><tspan x="-124" dy="18">suffix.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 718)">
+    <g class="node action" transform="translate(172 726)">
       <title xml:space="preserve">Carry the borrowed value onward.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Carry the borrowed value onward.</tspan></text>
@@ -104,12 +104,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow on the fallback branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 927)">
+    <g class="node action" transform="translate(172 943)">
       <title xml:space="preserve">Mutate through the reference after both joins.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Mutate through the reference </tspan><tspan x="-124" dy="18">after both joins.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1061)">
+    <g class="node end" transform="translate(172 1077)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(String, usize)</tspan></text>
     </g>

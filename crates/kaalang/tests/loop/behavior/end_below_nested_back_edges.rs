@@ -30,35 +30,29 @@ fn end_below_nested_back_edges(mode: u8) -> u8 {
             |repeat, &mut mode| **mode += 1;
 
             #[action("Continue with the outer cycle.")]
-            let continue_outer = |leave| None;
-
-            |continue_outer| break continue_outer;
+            let outcome = |leave| None;
 
             #[action("Produce eleven.")]
-            let eleven_result = |eleven| Some(11);
+            let outcome = |eleven| Some(11);
 
-            |eleven_result| break eleven_result;
+            |outcome| break outcome;
         };
 
         #[question("Did the inner cycle produce a result?")]
         let (_repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
 
         #[action("Extract the inner result.")]
-        let extracted = |finish_inner, inner_result| {
+        let selected = |finish_inner, inner_result| {
             inner_result.expect("the completing inner route has a result")
         };
 
-        |extracted| break extracted;
-
         #[action("Produce seven.")]
-        let seven_result = |seven| 7;
-
-        |seven_result| break seven_result;
+        let selected = |seven| 7;
 
         #[action("Produce nine.")]
-        let nine_result = |nine| 9;
+        let selected = |nine| 9;
 
-        |nine_result| break nine_result;
+        |selected| break selected;
     };
 
     |result| return result;

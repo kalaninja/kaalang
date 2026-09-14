@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="606" viewBox="0 0 704 606" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="614" viewBox="0 0 704 614" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_alternative_producers</title>
   <desc id="kaalang-description">Nodes: Start: const const_alternative_producers with parameters condition: bool handing over condition; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value and an unused marker. capturing yes handing over end, _marker; Action: Build the no value and an unused marker. capturing no handing over end, _marker; End: u8 capturing end; Merge: end. Connections: Start: const const_alternative_producers to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value and an unused marker.; Question: Choose a value. branch 2 to Action: Build the no value and an unused marker.; Action: Build the yes value and an unused marker. to the end merge; Action: Build the no value and an unused marker. to the end merge; the end merge to End: u8.</desc>
   <defs>
@@ -31,16 +31,16 @@
       M 172 90 L 172 162
       M 172 234 L 172 306
       M 312 198 L 532 198 L 532 306
-      M 172 372 L 172 444
-      M 532 372 L 532 444 L 172 444
-      M 172 444 L 172 516
+      M 172 372 L 172 448
+      M 532 372 L 532 448 L 172 448
+      M 172 448 L 172 524
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="416" y="187" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">end, _marker</tspan></text>
     <text class="connection-label" x="545" y="390" xml:space="preserve"><tspan x="545" dy="0">end, _marker</tspan></text>
-    <text class="connection-label" x="185" y="505" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="513" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -48,7 +48,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 444)">
+    <g class="node merge" transform="translate(172 448)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -71,7 +71,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the no value and an unused </tspan><tspan x="-124" dy="18">marker.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 545)">
+    <g class="node end" transform="translate(172 553)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

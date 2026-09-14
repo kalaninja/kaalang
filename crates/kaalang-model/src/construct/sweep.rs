@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::model::{Flow, WireMerge};
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
-use super::{Arrangement, Contour, Obstruction, Route, Run, Side};
+use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Lifeline {
@@ -1010,10 +1010,9 @@ impl<'a> Sweep<'a> {
                     .arrival = before[&Lifeline::BackEdge(i)];
             }
             if rank > 0 {
-                Self::strip(
+                self.strip(
                     rank - 1,
-                    &steps[rank - 1],
-                    step,
+                    [&steps[rank - 1], step],
                     &frontier,
                     &previous,
                     &before,
@@ -1181,16 +1180,19 @@ impl<'a> Sweep<'a> {
         }
         let mut before = fixed.clone();
         let incoming = self.arrivals[vertex].len();
-        let start =
-            if super::serial_arrival(self.topology, self.topology.vertices[vertex]).is_some() {
-                own
-            } else if self.tail_of[vertex]
-                .is_some_and(|i| step.consumed.last() == Some(&Lifeline::BackEdge(i)))
-            {
-                own - incoming as i32
-            } else {
-                own + 1
-            };
+        // Junction arrivals keep room for a final horizontal on the rank;
+        // an earlier gap bend must not finish straight down into the junction.
+        let start = if matches!(self.topology.vertices[vertex], Vertex::Node(_))
+            && super::serial_arrival(self.topology, self.topology.vertices[vertex]).is_some()
+        {
+            own
+        } else if self.tail_of[vertex]
+            .is_some_and(|i| step.consumed.last() == Some(&Lifeline::BackEdge(i)))
+        {
+            own - incoming as i32
+        } else {
+            own + 1
+        };
         let mut offset = 0;
         for &item in &step.consumed {
             let x = match item {
@@ -1257,9 +1259,9 @@ impl<'a> Sweep<'a> {
     /// to right, then rightward moves from right to left. Shared departures
     /// split before these moves; arrivals merge on one final common rail.
     fn strip(
+        &self,
         gap: usize,
-        above: &Step,
-        below: &Step,
+        [above, below]: [&Step; 2],
         frontier: &[Lifeline],
         start: &BTreeMap<Lifeline, i32>,
         target: &BTreeMap<Lifeline, i32>,
@@ -1269,7 +1271,12 @@ impl<'a> Sweep<'a> {
         for &item in above.emitted.iter().filter(|_| above.vertex.is_some()) {
             if let Lifeline::Wire(w) = item {
                 let departure = built.routes[w].departure;
-                add_run(&mut built.routes[w], gap, lane, departure, start[&item]);
+                add_run(
+                    &mut built.routes[w],
+                    RunLine::Lane { gap, lane },
+                    departure,
+                    start[&item],
+                );
             }
         }
         lane += 1;
@@ -1288,7 +1295,7 @@ impl<'a> Sweep<'a> {
                             .get_mut(&i)
                             .expect("a live iteration back edge"),
                     };
-                    add_run(route, gap, lane, from, to);
+                    add_run(route, RunLine::Lane { gap, lane }, from, to);
                     lane += 1;
                 }
             }
@@ -1305,7 +1312,16 @@ impl<'a> Sweep<'a> {
                         .expect("two exchanging wires");
                     target[other]
                 };
-                add_run(&mut built.routes[w], gap, lane, target[&item], arrival);
+                let position = if below.vertex.is_some()
+                    && matches!(
+                        self.topology.connections[w].destination,
+                        Vertex::Junction(_)
+                    ) {
+                    RunLine::Rank(gap + 1)
+                } else {
+                    RunLine::Lane { gap, lane }
+                };
+                add_run(&mut built.routes[w], position, target[&item], arrival);
             }
         }
         built.gap_lanes[gap] = lane + 1;
@@ -1417,14 +1433,9 @@ fn close_paths(paths: &mut [Vec<bool>]) {
     }
 }
 
-fn add_run(route: &mut Route, gap: usize, lane: usize, enter: i32, exit: i32) {
+fn add_run(route: &mut Route, line: RunLine, enter: i32, exit: i32) {
     if enter != exit {
-        route.runs.push(Run {
-            gap,
-            enter,
-            exit,
-            lane,
-        });
+        route.runs.push(Run { line, enter, exit });
     }
 }
 
@@ -1470,25 +1481,16 @@ pub(super) fn compress(built: &mut Arrangement) {
     for contour in &mut built.contours {
         contour.column = numbered[&contour.column];
     }
-    let mut used = built
+    let used = built
         .routes
         .iter()
         .chain(built.back_routes.values())
-        .flat_map(|route| route.runs.iter().map(|run| (run.gap, run.lane)))
+        .flat_map(|route| &route.runs)
+        .filter_map(|run| match run.line {
+            RunLine::Lane { gap, lane } => Some((gap, lane)),
+            RunLine::Rank(_) => None,
+        })
         .collect::<BTreeSet<_>>();
-    let bent_gaps = used.iter().map(|&(gap, _)| gap).collect::<BTreeSet<_>>();
-    for (&vertex, &rank) in &built.rank {
-        // A junction with a straight arrival sits on its rank's line. An
-        // unused final lane can keep somebody else's bend above that line;
-        // deleting it would make the bend touch the junction or its back edge.
-        if matches!(vertex, Vertex::Junction(_))
-            && rank > 0
-            && bent_gaps.contains(&(rank - 1))
-            && built.gap_lanes[rank - 1] > 0
-        {
-            used.insert((rank - 1, built.gap_lanes[rank - 1] - 1));
-        }
-    }
     let mut lanes = BTreeMap::new();
     built.gap_lanes.fill(0);
     for (gap, lane) in used {
@@ -1503,7 +1505,9 @@ pub(super) fn compress(built: &mut Arrangement) {
         route.departure = numbered[&route.departure];
         route.arrival = numbered[&route.arrival];
         for run in &mut route.runs {
-            run.lane = lanes[&(run.gap, run.lane)];
+            if let RunLine::Lane { gap, lane } = &mut run.line {
+                *lane = lanes[&(*gap, *lane)];
+            }
             run.enter = numbered[&run.enter];
             run.exit = numbered[&run.exit];
         }
@@ -1527,8 +1531,7 @@ mod tests {
                 departure: 0,
                 arrival: 1,
                 runs: vec![Run {
-                    gap: 0,
-                    lane: 0,
+                    line: RunLine::Lane { gap: 0, lane: 0 },
                     enter: 0,
                     exit: 1,
                 }],
@@ -1538,10 +1541,14 @@ mod tests {
         };
         let separated = |built: &Arrangement| {
             let grid = super::super::verify::Grid::of(&parts.topology, built);
-            grid.lane(0, built.routes[0].runs[0].lane) < grid.rank(built.rank[&junction])
+            grid.line(built.routes[0].runs[0].line) < grid.rank(built.rank[&junction])
         };
         assert!(separated(&built));
         compress(&mut built);
+        assert_eq!(
+            built.gap_lanes[0], 1,
+            "unused lanes no longer hold a junction"
+        );
         assert!(
             separated(&built),
             "normalization moved a bend onto the junction line"

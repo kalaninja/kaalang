@@ -33,7 +33,7 @@
       M 172 386 L 172 465
       M 172 529 L 172 608
     "/>
-    <text class="connection-label" x="185" y="563" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="597" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">before_limit, after_limit</tspan></text>
     <text class="connection-label" x="185" y="259" xml:space="preserve"><tspan x="185" dy="0">initial_count, initial_log</tspan></text>
     <text class="connection-label" x="185" y="404" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>

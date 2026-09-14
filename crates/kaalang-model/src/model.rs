@@ -38,16 +38,17 @@ pub struct SemanticModel {
 }
 
 impl SemanticModel {
-    /// Removes redundant bends and spacing from a diagram with long detours.
+    /// Removes redundant bends and spacing from cycles and long route detours.
     /// Every replacement passes the complete arrangement verifier. Failure to
     /// simplify keeps the existing witness; it never rejects the flow.
     /// This optional presentation work is not part of macro compilation.
     pub fn compact_arrangement(&mut self) {
-        if self
-            .arrangement
-            .routes
-            .iter()
-            .any(|route| route.runs.len() > 2)
+        if !self.topology.loops.is_empty()
+            || self
+                .arrangement
+                .routes
+                .iter()
+                .any(|route| route.runs.len() > 2)
         {
             crate::construct::compact::arrangement(
                 &self.flow,

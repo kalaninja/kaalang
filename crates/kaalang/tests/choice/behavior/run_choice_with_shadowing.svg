@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="754" viewBox="0 0 704 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="762" viewBox="0 0 704 762" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_with_shadowing</title>
   <desc id="kaalang-description">Nodes: Start: run_choice_with_shadowing with parameters value: i32; selected: Option&lt;i32&gt; handing over value, selected; Select: Was a value selected? capturing &amp;value, selected; Case: A value was selected. handing over selected_value; Case: No value was selected. handing over absent; Action: Produce the selected pair. capturing selected_value, value handing over end; Action: Produce the fallback pair. capturing absent, value handing over end; End: (i32, i32) capturing end; Merge: end. Connections: Start: run_choice_with_shadowing to Select: Was a value selected?; Select: Was a value selected? to Case: A value was selected.; Select: Was a value selected? to Case: No value was selected.; Case: A value was selected. to Action: Produce the selected pair.; Case: No value was selected. to Action: Produce the fallback pair.; Action: Produce the selected pair. to the end merge; Action: Produce the fallback pair. to the end merge; the end merge to End: (i32, i32).</desc>
   <defs>
@@ -33,11 +33,11 @@
       M 300 206 L 532 206 L 532 314
       M 172 384 L 172 456
       M 532 384 L 532 456
-      M 172 520 L 172 592
-      M 532 520 L 532 592 L 172 592
-      M 172 592 L 172 664
+      M 172 520 L 172 596
+      M 532 520 L 532 596 L 172 596
+      M 172 596 L 172 672
     "/>
-    <text class="connection-label" x="185" y="610" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">value, selected</tspan></text>
     <text class="connection-label" x="185" y="402" xml:space="preserve"><tspan x="185" dy="0">selected_value</tspan></text>
     <text class="connection-label" x="545" y="402" xml:space="preserve"><tspan x="545" dy="0">absent</tspan></text>
@@ -51,7 +51,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan><tspan x="-104" dy="18">selected: Option&lt;i32&gt;</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 592)">
+    <g class="node merge" transform="translate(172 596)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -84,7 +84,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the fallback pair.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 693)">
+    <g class="node end" transform="translate(172 701)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(i32, i32)</tspan></text>
     </g>

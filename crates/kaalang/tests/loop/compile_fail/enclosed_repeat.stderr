@@ -1,5 +1,5 @@
-error: a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches
- --> tests/loop/compile_fail/enclosed_repeat.rs:5:5
-  |
-5 |     #[cycle("Put a repeating route between breaks.")]
-  |     ^
+error: branches in a kaalang choice convergence group must be adjacent
+  --> tests/loop/compile_fail/enclosed_repeat.rs:11:21
+   |
+11 |         let (first, advance, last) = |mode| match mode {
+   |                     ^^^^^^^

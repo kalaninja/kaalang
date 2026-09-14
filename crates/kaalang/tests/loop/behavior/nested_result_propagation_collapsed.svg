@@ -33,7 +33,7 @@
       M 172 390 L 172 462
       M 172 526 L 172 598
     "/>
-    <text class="connection-label" x="185" y="557" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="587" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">limit, log</tspan></text>
     <text class="connection-label" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">mut count</tspan></text>
     <text class="connection-label" x="185" y="408" xml:space="preserve"><tspan x="185" dy="0">final_count, final_log</tspan></text>

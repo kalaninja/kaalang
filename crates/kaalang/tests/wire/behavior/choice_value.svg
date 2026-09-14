@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="746" viewBox="0 0 1064 746" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="754" viewBox="0 0 1064 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for choice_value</title>
   <desc id="kaalang-description">Nodes: Start: choice_value with parameters case: u8 handing over case; Select: Choose one of three values. capturing case; Case: First handing over first; Case: Second handing over second; Case: Third handing over third; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Build the third value. capturing third handing over selected; End: &amp;&apos;static str capturing selected; Merge: selected. Connections: Start: choice_value to Select: Choose one of three values.; Select: Choose one of three values. to Case: First; Select: Choose one of three values. to Case: Second; Select: Choose one of three values. to Case: Third; Case: First to Action: Build the first value.; Case: Second to Action: Build the second value.; Case: Third to Action: Build the third value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Build the third value. to the selected merge; the selected merge to End: &amp;&apos;static str.</desc>
   <defs>
@@ -35,16 +35,16 @@
       M 172 376 L 172 448
       M 532 376 L 532 448
       M 892 376 L 892 448
-      M 172 512 L 172 584
-      M 532 512 L 532 584 L 172 584
-      M 892 512 L 892 584 L 172 584
-      M 172 584 L 172 656
+      M 172 512 L 172 588
+      M 532 512 L 532 588 L 172 588
+      M 892 512 L 892 588 L 172 588
+      M 172 588 L 172 664
     "/>
-    <text class="connection-label" x="185" y="602" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">case</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
-    <text class="connection-label" x="905" y="407" xml:space="preserve"><tspan x="905" dy="0">third</tspan></text>
+    <text class="connection-label" x="185" y="606" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">case</tspan></text>
+    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="905" y="437" xml:space="preserve"><tspan x="905" dy="0">third</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -52,7 +52,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">case: u8</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 584)">
+    <g class="node merge" transform="translate(172 588)">
       <title xml:space="preserve">the selected merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -95,7 +95,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the third value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 685)">
+    <g class="node end" transform="translate(172 693)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">&amp;&apos;static str</tspan></text>
     </g>

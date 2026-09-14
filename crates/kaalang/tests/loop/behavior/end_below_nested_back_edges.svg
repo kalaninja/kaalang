@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1664" viewBox="0 0 1900 1664" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1608" viewBox="0 0 1920 1608" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for end_below_nested_back_edges</title>
-  <desc id="kaalang-description">Cycles: Choose an outer route until one produces a result. with inputs mut mode and outputs result; Choose an inner route until one completes. with inputs enter, &amp;mut mode and outputs inner_result. Nodes: Start: end_below_nested_back_edges with parameters mode: u8 handing over mode; Select: Which outer route? capturing mode; Case: Enter the inner loop. handing over enter; Case: Finish with seven. handing over seven; Case: Finish with nine. handing over nine; Select: Which inner route? capturing &amp;mode; Case: Repeat the inner loop. handing over repeat; Case: Repeat the outer loop. handing over leave; Case: Finish with eleven. handing over eleven; Action: Advance to the next route. capturing repeat, &amp;mut mode; Action: Continue with the outer cycle. capturing leave handing over continue_outer; Action: Produce eleven. capturing eleven handing over eleven_result; Question: Did the inner cycle produce a result? capturing &amp;inner_result handing over _repeat_outer / finish_inner; Action: Extract the inner result. capturing finish_inner, inner_result handing over extracted; Action: Produce seven. capturing seven handing over seven_result; Action: Produce nine. capturing nine handing over nine_result; End: u8 capturing result. Connections: Start: end_below_nested_back_edges to the entry of the cycle; Select: Which outer route? to Case: Enter the inner loop.; Select: Which outer route? to Case: Finish with seven.; Select: Which outer route? to Case: Finish with nine.; Case: Enter the inner loop. to the entry of the cycle; Case: Finish with seven. to Action: Produce seven.; Case: Finish with nine. to Action: Produce nine.; Select: Which inner route? to Case: Repeat the inner loop.; Select: Which inner route? to Case: Repeat the outer loop.; Select: Which inner route? to Case: Finish with eleven.; Case: Repeat the inner loop. to Action: Advance to the next route.; Case: Repeat the outer loop. to Action: Continue with the outer cycle.; Case: Finish with eleven. to Action: Produce eleven.; Action: Advance to the next route. to the iteration tail of the cycle; Action: Continue with the outer cycle. to a cycle break; Action: Produce eleven. to a cycle break; Question: Did the inner cycle produce a result? branch 1 to the iteration tail of the cycle; Question: Did the inner cycle produce a result? branch 2 to Action: Extract the inner result.; Action: Extract the inner result. to a cycle break; Action: Produce seven. to a cycle break; Action: Produce nine. to a cycle break; the entry of the cycle to Select: Which outer route?; the cycle result to End: u8; the entry of the cycle to Select: Which inner route?; the cycle result to Question: Did the inner cycle produce a result?; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Choose an outer route until one produces a result. with inputs mut mode and outputs result; Choose an inner route until one completes. with inputs enter, &amp;mut mode and outputs inner_result. Nodes: Start: end_below_nested_back_edges with parameters mode: u8 handing over mode; Select: Which outer route? capturing mode; Case: Enter the inner loop. handing over enter; Case: Finish with seven. handing over seven; Case: Finish with nine. handing over nine; Select: Which inner route? capturing &amp;mode; Case: Repeat the inner loop. handing over repeat; Case: Repeat the outer loop. handing over leave; Case: Finish with eleven. handing over eleven; Action: Advance to the next route. capturing repeat, &amp;mut mode; Action: Continue with the outer cycle. capturing leave handing over outcome; Action: Produce eleven. capturing eleven handing over outcome; Question: Did the inner cycle produce a result? capturing &amp;inner_result handing over _repeat_outer / finish_inner; Action: Extract the inner result. capturing finish_inner, inner_result handing over selected; Action: Produce seven. capturing seven handing over selected; Action: Produce nine. capturing nine handing over selected; End: u8 capturing result; Merge: outcome; Merge: selected. Connections: Start: end_below_nested_back_edges to the entry of the cycle; Select: Which outer route? to Case: Enter the inner loop.; Select: Which outer route? to Case: Finish with seven.; Select: Which outer route? to Case: Finish with nine.; Case: Enter the inner loop. to the entry of the cycle; Case: Finish with seven. to Action: Produce seven.; Case: Finish with nine. to Action: Produce nine.; Select: Which inner route? to Case: Repeat the inner loop.; Select: Which inner route? to Case: Repeat the outer loop.; Select: Which inner route? to Case: Finish with eleven.; Case: Repeat the inner loop. to Action: Advance to the next route.; Case: Repeat the outer loop. to Action: Continue with the outer cycle.; Case: Finish with eleven. to Action: Produce eleven.; Action: Advance to the next route. to the iteration tail of the cycle; Action: Continue with the outer cycle. to the outcome merge at the cycle result; Action: Produce eleven. to the outcome merge at the cycle result; Question: Did the inner cycle produce a result? branch 1 to the iteration tail of the cycle; Question: Did the inner cycle produce a result? branch 2 to Action: Extract the inner result.; Action: Extract the inner result. to the selected merge at the cycle result; Action: Produce seven. to the selected merge at the cycle result; Action: Produce nine. to the selected merge at the cycle result; the outcome merge at the cycle result to Question: Did the inner cycle produce a result?; the selected merge at the cycle result to End: u8; the entry of the cycle to Select: Which outer route?; the entry of the cycle to Select: Which inner route?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,162 +27,162 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Choose an outer route until one produces a result.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1836" height="1410" rx="12"/>
-    <text class="cycle-caption" x="1856" y="141" text-anchor="end" xml:space="preserve"><tspan x="1856" dy="0">Choose an outer route until one produces a result.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="127" width="1856" height="1350" rx="12"/>
+    <text class="cycle-caption" x="1876" y="141" text-anchor="end" xml:space="preserve"><tspan x="1876" dy="0">Choose an outer route until one produces a result.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Choose an inner route until one completes.</title>
-    <rect class="cycle-boundary" x="72" y="485" width="1076" height="628" rx="12"/>
-    <text class="cycle-caption" x="1136" y="499" text-anchor="end" xml:space="preserve"><tspan x="1136" dy="0">Choose an inner route until one completes.</tspan></text>
+    <rect class="cycle-boundary" x="92" y="517" width="1076" height="600" rx="12"/>
+    <text class="cycle-caption" x="1156" y="531" text-anchor="end" xml:space="preserve"><tspan x="1156" dy="0">Choose an inner route until one completes.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 260 90 L 260 162
-      M 260 306 L 260 378
-      M 388 270 L 1340 270 L 1340 378
-      M 388 270 L 1700 270 L 1700 378
-      M 260 448 L 260 520
-      M 1340 448 L 1340 520
-      M 1700 448 L 1700 520
-      M 260 728 L 260 800
-      M 388 692 L 620 692 L 620 800
-      M 388 692 L 980 692 L 980 800
-      M 260 870 L 260 942
-      M 620 870 L 620 942
-      M 980 870 L 980 942
-      M 260 1006 L 260 1078
-      M 620 1006 L 620 1078
-      M 980 1006 L 980 1078
-      M 620 1222 L 620 1294
-      M 760 1186 L 980 1186 L 980 1294
-      M 980 1358 L 980 1430
-      M 1340 584 L 1340 656
-      M 1700 584 L 1700 656
-      M 260 162 L 260 234
-      M 980 1502 L 980 1574
-      M 260 520 L 260 656
-      M 620 1078 L 620 1150
-      M 620 1078 L 620 1078
-      M 980 1078 L 620 1078
-      M 980 1430 L 980 1502
-      M 1340 656 L 1340 1502 L 980 1502
-      M 1700 656 L 1700 1502 L 980 1502
+      M 280 90 L 280 162
+      M 280 306 L 280 378
+      M 408 270 L 1360 270 L 1360 378
+      M 408 270 L 1720 270 L 1720 378
+      M 280 448 L 280 552
+      M 1360 448 L 1360 520
+      M 1720 448 L 1720 520
+      M 280 728 L 280 800
+      M 408 692 L 640 692 L 640 800
+      M 408 692 L 1000 692 L 1000 800
+      M 280 870 L 280 942
+      M 640 870 L 640 942
+      M 1000 870 L 1000 942
+      M 280 1006 L 280 1082
+      M 640 1006 L 640 1082
+      M 1000 1006 L 1000 1082 L 640 1082
+      M 640 1230 L 640 1334
+      M 780 1194 L 1000 1194 L 1000 1302
+      M 1000 1366 L 1000 1442
+      M 1360 584 L 1360 1442 L 1000 1442
+      M 1720 584 L 1720 1442 L 1000 1442
+      M 640 1082 L 640 1158
+      M 1000 1442 L 1000 1518
+      M 280 162 L 280 234
+      M 280 552 L 280 656
     "/>
     <path class="connection" d="
-      M 260 1078 L 100 1078 L 100 520 L 260 520
+      M 280 1082 L 120 1082 L 120 552 L 280 552
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 620 1294 L 60 1294 L 60 162 L 260 162
+      M 640 1334 L 60 1334 L 60 162 L 280 162
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="1353" y="479" xml:space="preserve"><tspan x="1353" dy="0">seven</tspan></text>
-    <text class="connection-label" x="1713" y="479" xml:space="preserve"><tspan x="1713" dy="0">nine</tspan></text>
-    <text class="connection-label" x="633" y="901" xml:space="preserve"><tspan x="633" dy="0">leave</tspan></text>
-    <text class="connection-label" x="993" y="901" xml:space="preserve"><tspan x="993" dy="0">eleven</tspan></text>
-    <text class="connection-label" x="273" y="108" xml:space="preserve"><tspan x="273" dy="0">mode</tspan></text>
-    <text class="connection-label" x="273" y="466" xml:space="preserve"><tspan x="273" dy="0">enter</tspan></text>
-    <text class="connection-label" x="273" y="888" xml:space="preserve"><tspan x="273" dy="0">repeat</tspan></text>
-    <text class="connection-label" x="633" y="1024" xml:space="preserve"><tspan x="633" dy="0">continue_outer</tspan></text>
-    <text class="connection-label" x="993" y="1024" xml:space="preserve"><tspan x="993" dy="0">eleven_result</tspan></text>
-    <text class="connection-label" x="633" y="1240" xml:space="preserve"><tspan x="633" dy="0">_repeat_outer</tspan></text>
-    <text class="connection-label" x="773" y="1204" xml:space="preserve"><tspan x="773" dy="0">finish_inner</tspan></text>
-    <text class="connection-label" x="993" y="1376" xml:space="preserve"><tspan x="993" dy="0">extracted</tspan></text>
-    <text class="connection-label" x="1353" y="602" xml:space="preserve"><tspan x="1353" dy="0">seven_result</tspan></text>
-    <text class="connection-label" x="1713" y="602" xml:space="preserve"><tspan x="1713" dy="0">nine_result</tspan></text>
-    <text class="connection-label" x="273" y="223" xml:space="preserve"><tspan x="273" dy="0">mode</tspan></text>
-    <text class="connection-label" x="273" y="645" xml:space="preserve"><tspan x="273" dy="0">&amp;mode</tspan></text>
-    <text class="connection-label" x="273" y="931" xml:space="preserve"><tspan x="273" dy="0">repeat, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="633" y="1139" xml:space="preserve"><tspan x="633" dy="0">&amp;inner_result</tspan></text>
-    <text class="connection-label" x="993" y="1283" xml:space="preserve"><tspan x="993" dy="0">finish_inner, inner_result</tspan></text>
-    <text class="connection-label" x="993" y="1563" xml:space="preserve"><tspan x="993" dy="0">result</tspan></text>
+    <text class="connection-label" x="653" y="1100" xml:space="preserve"><tspan x="653" dy="0">outcome</tspan></text>
+    <text class="connection-label" x="1013" y="1460" xml:space="preserve"><tspan x="1013" dy="0">selected</tspan></text>
+    <text class="connection-label" x="1373" y="509" xml:space="preserve"><tspan x="1373" dy="0">seven</tspan></text>
+    <text class="connection-label" x="1733" y="509" xml:space="preserve"><tspan x="1733" dy="0">nine</tspan></text>
+    <text class="connection-label" x="653" y="931" xml:space="preserve"><tspan x="653" dy="0">leave</tspan></text>
+    <text class="connection-label" x="1013" y="931" xml:space="preserve"><tspan x="1013" dy="0">eleven</tspan></text>
+    <text class="connection-label" x="293" y="108" xml:space="preserve"><tspan x="293" dy="0">mode</tspan></text>
+    <text class="connection-label" x="293" y="466" xml:space="preserve"><tspan x="293" dy="0">enter</tspan></text>
+    <text class="connection-label" x="293" y="888" xml:space="preserve"><tspan x="293" dy="0">repeat</tspan></text>
+    <text class="connection-label" x="653" y="1248" xml:space="preserve"><tspan x="653" dy="0">_repeat_outer</tspan></text>
+    <text class="connection-label" x="793" y="1212" xml:space="preserve"><tspan x="793" dy="0">finish_inner</tspan></text>
+    <text class="connection-label" x="293" y="223" xml:space="preserve"><tspan x="293" dy="0">mode</tspan></text>
+    <text class="connection-label" x="293" y="645" xml:space="preserve"><tspan x="293" dy="0">&amp;mode</tspan></text>
+    <text class="connection-label" x="293" y="931" xml:space="preserve"><tspan x="293" dy="0">repeat, &amp;mut mode</tspan></text>
+    <text class="connection-label" x="653" y="1147" xml:space="preserve"><tspan x="653" dy="0">&amp;inner_result</tspan></text>
+    <text class="connection-label" x="1013" y="1291" xml:space="preserve"><tspan x="1013" dy="0">finish_inner, inner_result</tspan></text>
+    <text class="connection-label" x="1013" y="1507" xml:space="preserve"><tspan x="1013" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 400 61 L 496 61"/>
-    <g class="parameter-panel" transform="translate(616 61)">
+    <path class="parameter-link" d="M 420 61 L 516 61"/>
+    <g class="parameter-panel" transform="translate(636 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
     </g>
-    <g class="node start" transform="translate(260 61)">
+    <g class="node merge" transform="translate(640 1082)">
+      <title xml:space="preserve">the outcome merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(1000 1442)">
+      <title xml:space="preserve">the selected merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(280 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">end_below_nested_back_edges</tspan></text>
     </g>
-    <g class="node select" transform="translate(260 270)">
+    <g class="node select" transform="translate(280 270)">
       <title xml:space="preserve">Which outer route?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which outer route?</tspan></text>
     </g>
-    <g class="node case" transform="translate(260 413)">
+    <g class="node case" transform="translate(280 413)">
       <title xml:space="preserve">Enter the inner loop.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Enter the inner loop.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1340 413)">
+    <g class="node case" transform="translate(1360 413)">
       <title xml:space="preserve">Finish with seven.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with seven.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1700 413)">
+    <g class="node case" transform="translate(1720 413)">
       <title xml:space="preserve">Finish with nine.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with nine.</tspan></text>
     </g>
-    <g class="node select" transform="translate(260 692)">
+    <g class="node select" transform="translate(280 692)">
       <title xml:space="preserve">Which inner route?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which inner route?</tspan></text>
     </g>
-    <g class="node case" transform="translate(260 835)">
+    <g class="node case" transform="translate(280 835)">
       <title xml:space="preserve">Repeat the inner loop.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Repeat the inner loop.</tspan></text>
     </g>
-    <g class="node case" transform="translate(620 835)">
+    <g class="node case" transform="translate(640 835)">
       <title xml:space="preserve">Repeat the outer loop.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Repeat the outer loop.</tspan></text>
     </g>
-    <g class="node case" transform="translate(980 835)">
+    <g class="node case" transform="translate(1000 835)">
       <title xml:space="preserve">Finish with eleven.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with eleven.</tspan></text>
     </g>
-    <g class="node action" transform="translate(260 974)">
+    <g class="node action" transform="translate(280 974)">
       <title xml:space="preserve">Advance to the next route.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the next route.</tspan></text>
     </g>
-    <g class="node action" transform="translate(620 974)">
+    <g class="node action" transform="translate(640 974)">
       <title xml:space="preserve">Continue with the outer cycle.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue with the outer cycle.</tspan></text>
     </g>
-    <g class="node action" transform="translate(980 974)">
+    <g class="node action" transform="translate(1000 974)">
       <title xml:space="preserve">Produce eleven.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce eleven.</tspan></text>
     </g>
-    <g class="node question" transform="translate(620 1186)">
+    <g class="node question" transform="translate(640 1194)">
       <title xml:space="preserve">Did the inner cycle produce a result?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Did the inner cycle produce </tspan><tspan x="0" dy="18">a result?</tspan></text>
     </g>
-    <g class="node action" transform="translate(980 1326)">
+    <g class="node action" transform="translate(1000 1334)">
       <title xml:space="preserve">Extract the inner result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extract the inner result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1340 552)">
+    <g class="node action" transform="translate(1360 552)">
       <title xml:space="preserve">Produce seven.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce seven.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1700 552)">
+    <g class="node action" transform="translate(1720 552)">
       <title xml:space="preserve">Produce nine.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce nine.</tspan></text>
     </g>
-    <g class="node end" transform="translate(980 1603)">
+    <g class="node end" transform="translate(1000 1547)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

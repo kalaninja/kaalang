@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 /// The first and third routes meet at the iteration tail, the third and fourth
-/// after the loop, and the second never leaves its own loop. A sibling that
+/// before the break, and the second never leaves its own loop. A sibling that
 /// ends before either group's vertex is placed must not be held to a side of
 /// that vertex: only a later sibling is (RFC 0002 §8).
 #[kaalang]
@@ -35,8 +35,11 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
         #[action("Advance after the decision.")]
         |again| {};
 
-        |leave, mode| break mode;
-        |leave_now, mode| break mode;
+        #[action("Leave after the decision.")]
+        let selected = |leave, mode| mode;
+        #[action("Leave immediately.")]
+        let selected = |leave_now, mode| mode;
+        |selected| break selected;
     };
 
     |result| return result;

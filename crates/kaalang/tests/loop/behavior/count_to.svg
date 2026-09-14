@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="752" height="812" viewBox="0 0 752 812" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for count_to</title>
-  <desc id="kaalang-description">Cycles: Count to the limit. with inputs mut count, limit and outputs total. Nodes: Start: const count_to with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut count; Question: Is the counter below the limit? capturing &amp;count, &amp;limit handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Increment the counter. capturing iterate_1, &amp;mut count; End: usize capturing total. Connections: Start: const count_to to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the cycle; Question: Is the counter below the limit? branch 1 to Action: Increment the counter.; Question: Is the counter below the limit? branch 2 to a cycle break; Action: Increment the counter. to the iteration tail of the cycle; the entry of the cycle to Question: Is the counter below the limit?; the cycle result to End: usize; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count to the limit. with inputs mut count, limit and outputs total. Nodes: Start: const count_to with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut count; Question: Is the counter below the limit? capturing &amp;count, &amp;limit handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Increment the counter. capturing iterate_1, &amp;mut count; End: usize capturing total. Connections: Start: const count_to to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the cycle; Question: Is the counter below the limit? branch 1 to Action: Increment the counter.; Question: Is the counter below the limit? branch 2 to End: usize; Action: Increment the counter. to the iteration tail of the cycle; the entry of the cycle to Question: Is the counter below the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,8 +27,8 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Count to the limit.</title>
-    <rect class="cycle-boundary" x="32" y="263" width="576" height="422" rx="12"/>
-    <text class="cycle-caption" x="596" y="277" text-anchor="end" xml:space="preserve"><tspan x="596" dy="0">Count to the limit.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="263" width="393" height="422" rx="12"/>
+    <text class="cycle-caption" x="413" y="277" text-anchor="end" xml:space="preserve"><tspan x="413" dy="0">Count to the limit.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -37,11 +37,9 @@
       M 220 90 L 220 162
       M 220 226 L 220 298
       M 220 442 L 220 514
-      M 360 406 L 580 406 L 580 514
+      M 360 406 L 580 406 L 580 722
       M 220 578 L 220 650
       M 220 298 L 220 370
-      M 580 650 L 580 722
-      M 580 514 L 580 650
     "/>
     <path class="connection" d="
       M 220 650 L 60 650 L 60 298 L 220 298

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="750" viewBox="0 0 704 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="758" viewBox="0 0 704 758" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for closure_before_a_branch</title>
   <desc id="kaalang-description">Nodes: Start: closure_before_a_branch with parameters condition: bool; base: u32 handing over condition, base; Action: Build a handler either branch may consume. capturing base handing over handler; Question: Add or subtract? capturing condition handing over add / subtract; Action: Add one. capturing add, handler handing over end; Action: Subtract one. capturing subtract, handler handing over end; End: u32 capturing end; Merge: end. Connections: Start: closure_before_a_branch to Action: Build a handler either branch may consume.; Action: Build a handler either branch may consume. to Question: Add or subtract?; Question: Add or subtract? branch 1 to Action: Add one.; Question: Add or subtract? branch 2 to Action: Subtract one.; Action: Add one. to the end merge; Action: Subtract one. to the end merge; the end merge to End: u32.</desc>
   <defs>
@@ -32,11 +32,11 @@
       M 172 236 L 172 308
       M 172 380 L 172 452
       M 312 344 L 532 344 L 532 452
-      M 172 516 L 172 588
-      M 532 516 L 532 588 L 172 588
-      M 172 588 L 172 660
+      M 172 516 L 172 592
+      M 532 516 L 532 592 L 172 592
+      M 172 592 L 172 668
     "/>
-    <text class="connection-label" x="185" y="606" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="610" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, base</tspan></text>
     <text class="connection-label" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">handler</tspan></text>
     <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">add</tspan></text>
@@ -52,7 +52,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">base: u32</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 588)">
+    <g class="node merge" transform="translate(172 592)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -80,7 +80,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Subtract one.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 689)">
+    <g class="node end" transform="translate(172 697)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

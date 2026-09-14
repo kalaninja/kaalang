@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="956" viewBox="0 0 780 956" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nearest_cycle_breaks</title>
-  <desc id="kaalang-description">Cycles: Run passes until two have finished. with inputs mut count and outputs result; Complete the inner pass immediately. with inputs () and outputs (). Nodes: Start: const nearest_cycle_breaks with parameters count: usize handing over count; Action: Advance the outer pass. capturing &amp;mut count handing over advanced; Question: Have two passes finished? capturing advanced, &amp;count handing over done / again; Action: Finish this pass. capturing again; End: usize capturing result. Connections: Start: const nearest_cycle_breaks to the entry of the cycle; Action: Advance the outer pass. to Question: Have two passes finished?; Question: Have two passes finished? branch 1 to a cycle break; Question: Have two passes finished? branch 2 to Action: Finish this pass.; Action: Finish this pass. to the iteration tail of the cycle; the entry of the cycle to the cycle entry; the cycle result to End: usize; the cycle entry to the cycle result; the cycle result to Action: Advance the outer pass.; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Run passes until two have finished. with inputs mut count and outputs result; Complete the inner pass immediately. with inputs () and outputs (). Nodes: Start: const nearest_cycle_breaks with parameters count: usize handing over count; Action: Advance the outer pass. capturing &amp;mut count handing over advanced; Question: Have two passes finished? capturing advanced, &amp;count handing over done / again; Action: Finish this pass. capturing again; End: usize capturing result. Connections: Start: const nearest_cycle_breaks to the entry of the cycle; Action: Advance the outer pass. to Question: Have two passes finished?; Question: Have two passes finished? branch 1 to End: usize; Question: Have two passes finished? branch 2 to Action: Finish this pass.; Action: Finish this pass. to the iteration tail of the cycle; the entry of the cycle to the cycle entry; the cycle entry to the cycle result; the cycle result to Action: Advance the outer pass.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -40,19 +40,17 @@
     <path class="connection" d="
       M 200 90 L 200 162
       M 200 442 L 200 514
-      M 200 586 L 200 658
+      M 200 586 L 200 866
       M 340 550 L 560 550 L 560 658
       M 560 722 L 560 794
       M 200 162 L 200 234
-      M 200 794 L 200 866
       M 200 234 L 200 306
       M 200 306 L 200 378
-      M 200 658 L 200 794
     "/>
     <path class="connection" d="
       M 560 794 L 720 794 L 720 162 L 200 162
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="435" y="539" xml:space="preserve"><tspan x="435" dy="0">again</tspan></text>
+    <text class="connection-label" x="573" y="647" xml:space="preserve"><tspan x="573" dy="0">again</tspan></text>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">count</tspan></text>
     <text class="connection-label" x="213" y="460" xml:space="preserve"><tspan x="213" dy="0">advanced</tspan></text>
     <text class="connection-label" x="213" y="604" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>

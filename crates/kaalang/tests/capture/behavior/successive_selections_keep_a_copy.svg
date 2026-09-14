@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1238" viewBox="0 0 704 1238" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1254" viewBox="0 0 704 1254" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for successive_selections_keep_a_copy</title>
   <desc id="kaalang-description">Nodes: Start: successive_selections_keep_a_copy with parameters condition: bool; long: bool handing over condition, long; Question: Which seed? capturing condition handing over first / second; Action: Build the first seed. capturing first handing over seed; Action: Build the second seed. capturing second handing over seed; Action: Scale the merged seed. capturing seed handing over scaled; Question: Is it large? capturing &amp;scaled, long handing over yes / no; Action: Include the original seed. capturing yes handing over include_seed; Action: Use the scaled value alone. capturing no handing over include_seed; Action: Finish with the selected adjustment. capturing include_seed, scaled, seed handing over end; End: u32 capturing end; Merge: seed; Merge: include_seed. Connections: Start: successive_selections_keep_a_copy to Question: Which seed?; Question: Which seed? branch 1 to Action: Build the first seed.; Question: Which seed? branch 2 to Action: Build the second seed.; Action: Build the first seed. to the seed merge; Action: Build the second seed. to the seed merge; Action: Scale the merged seed. to Question: Is it large?; Question: Is it large? branch 1 to Action: Include the original seed.; Question: Is it large? branch 2 to Action: Use the scaled value alone.; Action: Include the original seed. to the include_seed merge; Action: Use the scaled value alone. to the include_seed merge; Action: Finish with the selected adjustment. to End: u32; the seed merge to Action: Scale the merged seed.; the include_seed merge to Action: Finish with the selected adjustment..</desc>
   <defs>
@@ -31,29 +31,29 @@
       M 172 94 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 586 L 172 658
-      M 172 730 L 172 802
-      M 312 694 L 532 694 L 532 802
-      M 172 866 L 172 938
-      M 532 866 L 532 938 L 172 938
-      M 172 1076 L 172 1148
-      M 172 450 L 172 522
-      M 172 938 L 172 1010
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 594 L 172 666
+      M 172 738 L 172 810
+      M 312 702 L 532 702 L 532 810
+      M 172 874 L 172 950
+      M 532 874 L 532 950 L 172 950
+      M 172 1092 L 172 1164
+      M 172 454 L 172 530
+      M 172 950 L 172 1026
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">seed</tspan></text>
-    <text class="connection-label" x="185" y="956" xml:space="preserve"><tspan x="185" dy="0">include_seed</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="402" y="195" xml:space="preserve"><tspan x="402" dy="0">second</tspan></text>
-    <text class="connection-label" x="185" y="761" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="416" y="683" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="1107" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">seed</tspan></text>
+    <text class="connection-label" x="185" y="968" xml:space="preserve"><tspan x="185" dy="0">include_seed</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="799" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="545" y="799" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="1153" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, long</tspan></text>
-    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
+    <text class="connection-label" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="647" xml:space="preserve"><tspan x="185" dy="0">&amp;scaled, long</tspan></text>
-    <text class="connection-label" x="185" y="999" xml:space="preserve"><tspan x="185" dy="0">include_seed, scaled, seed</tspan></text>
+    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">&amp;scaled, long</tspan></text>
+    <text class="connection-label" x="185" y="1015" xml:space="preserve"><tspan x="185" dy="0">include_seed, scaled, seed</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -61,11 +61,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">long: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the seed merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 938)">
+    <g class="node merge" transform="translate(172 950)">
       <title xml:space="preserve">the include_seed merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -88,32 +88,32 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second seed.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 554)">
+    <g class="node action" transform="translate(172 562)">
       <title xml:space="preserve">Scale the merged seed.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Scale the merged seed.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 694)">
+    <g class="node question" transform="translate(172 702)">
       <title xml:space="preserve">Is it large?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it large?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 834)">
+    <g class="node action" transform="translate(172 842)">
       <title xml:space="preserve">Include the original seed.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Include the original seed.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 834)">
+    <g class="node action" transform="translate(532 842)">
       <title xml:space="preserve">Use the scaled value alone.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the scaled value alone.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1043)">
+    <g class="node action" transform="translate(172 1059)">
       <title xml:space="preserve">Finish with the selected adjustment.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish with the selected </tspan><tspan x="-124" dy="18">adjustment.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1177)">
+    <g class="node end" transform="translate(172 1193)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

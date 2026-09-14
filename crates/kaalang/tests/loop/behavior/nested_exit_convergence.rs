@@ -16,9 +16,13 @@ fn nested_exit_convergence(count: usize) -> usize {
                 _ => (),
             };
 
-            |zero| break;
+            #[action("Finish at zero.")]
+            let done = |zero| {};
 
-            |one| break;
+            #[action("Finish at one.")]
+            let done = |one| {};
+
+            |done| break;
 
             #[action("Count down.")]
             |again, &mut count| **count -= 1;

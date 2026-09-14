@@ -175,20 +175,26 @@ allowed by their common source or destination.
 Node, port, arrival and back edge rails span only their own contiguous group; no
 other lifeline or vertex lies between their ends. Every route is monotone and
 simple. Side arrivals into a junction finish on the merge rail rather than
-descending over its outgoing connection. Distinct event rows keep precedence,
-and the last vertex is end. Each finite strip uses at most one move per live
-path plus departure and arrival lanes. Removing unused lanes and compressing all
-used x coordinates to consecutive integers preserves every strict order and
-equality. Back edge coordinates use lane zero beside those integer columns; the
-separation between distinct columns keeps the harmless lane offset from changing
-any order.
+descending over its outgoing connection. Distinct event rows keep precedence; a
+later side exit may meet its wire merge on the same row, with precedence carried
+by the horizontal segment. Compaction may also place an iteration tail on the
+row of its sole side arrival. The last vertex is end. Each finite strip uses at
+most one move per live path plus departure and arrival lanes. Removing unused
+lanes and compressing all used x coordinates to consecutive integers preserves
+every strict order and equality. Back edge coordinates use lane zero beside
+those integer columns; the separation between distinct columns keeps the
+harmless lane offset from changing any order.
 
 The resulting `Arrangement` records all forward and back edge runs, including
-routing-only rows. The verifier reconstructs the polylines independently and
-checks coverage, columns, regions, precedence, whole-body and nested back edge
-clearance, simplicity, permitted meetings, crossings and end placement. A failed
-reconstruction is an internal implementation error, never an authored
-impossibility diagnostic.
+routing-only rows. Each sideways run explicitly names either a rank line or a
+lane in a rank gap. Every junction's final sideways arrival names its rank and
+does not occupy a gap lane, including cycle entries, iteration tails, breaks and
+results. The planner checks the route at that recorded position; verification
+and rendering never relocate the final run based on its destination kind. The
+verifier reconstructs the polylines independently and checks coverage, columns,
+regions, precedence, whole-body and nested back edge clearance, simplicity,
+permitted meetings, crossings and end placement. A failed reconstruction is an
+internal implementation error, never an authored impossibility diagnostic.
 
 #### State sufficiency and exact reductions
 
@@ -266,21 +272,31 @@ never reorders cases.
 
 ### 2.3 Independent checks
 
-Before rendering, `SemanticModel::compact_arrangement` may simplify a witness
-with long routing detours. This is optional presentation work, outside macro
-compilation. It shortens successive runs, joins compatible horizontal lanes,
-closes unused column space, brings straight contours toward their bodies and
-lifts vertices into earlier ranks. It may not split a choice's common case row.
-Each candidate is normalized and checked by the complete arrangement verifier
-before replacing the current witness. The SVG renderer realizes that checked
-replacement. An unsuccessful simplification keeps the current witness and never
-rejects a flow; it is not a second decision procedure or an additional language
-restriction. The normal form remains the fallback, not the required appearance.
+Before rendering, `SemanticModel::compact_arrangement` simplifies repeating
+cycles and witnesses with long routing detours. This is optional presentation
+work, outside macro compilation. It shortens successive runs, joins compatible
+horizontal lanes, closes unused column space, brings straight contours toward
+their bodies and lifts vertices into earlier ranks. It may not split a choice's
+common case row. Each candidate is normalized and checked by the complete
+arrangement verifier before replacing the current witness. The SVG renderer
+realizes that checked replacement. An unsuccessful simplification keeps the
+current witness and never rejects a flow; it is not a second decision procedure
+or an additional language restriction. The normal form remains the fallback, not
+the required appearance.
 
-Normalization preserves the position of junctions relative to routing lanes. An
-unused last lane above a junction can separate a foreign bend from its straight
-arrival or back edge. Such a lane cannot be removed merely because no sideways
-run occupies it.
+Normalization keeps all junctions on their rank lines and removes unused gap
+lanes. Rank runs do not reserve gap lanes. Lifting a junction moves its arrival
+runs with its rank, and folding rows remaps both rank runs and gap lanes before
+the candidate is checked.
+
+A cycle's authored break and result are one topology junction. This avoids an
+empty transfer row without merging separate vertices during measurement.
+Alternative exit routes converge at ordinary wire merges. When the result's only
+incoming connection is the merge's only outgoing connection, the topology uses
+that merge as the result, retaining its marker and wire label. No separate
+result row is needed after the final merge. The lower boundary contains the
+merge's complete wrapped label even when it extends beyond the usual result
+padding.
 
 The arrangement verifier derives body and region membership from the topology,
 not from the chosen event order. Pixel verification independently checks all
@@ -311,19 +327,19 @@ test sets supplements the correspondence argument; it does not replace it.
 
 The rule-to-constraint inventory is:
 
-| Required rule                                | Construction and independent check                                                                     | Regression                                                                                     |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Forward and placement order                  | DAG predecessors; `verify::order`                                                                      | `the_verifier_rejects_every_mutation`                                                          |
-| Authored port/case order and common case row | Static exit/case inequalities; indivisible case-row events; `choice::verify`, `verify::branch_columns` | `the_verifier_rejects_a_case_on_a_different_row`, `all_cases_of_a_choice_share_a_row`          |
-| Serial and shared-entry columns              | Column identities and minimum clauses; `serial_columns` and `branch_columns`                           | `shared_entries_keep_the_first_branch_approach_column`                                         |
-| Later-sibling reservation                    | Persistent region inequalities; `reserved_columns`                                                     | `a_sibling_inside_a_reserved_footprint_is_caught`                                              |
-| Noncrossing simple orthogonal routes         | Contiguous events and ordered strips; `verify::routes`                                                 | `a_shared_rail_cannot_lower_a_case_past_its_siblings`                                          |
-| Actual junction incidence and merge arrival  | Final common rail; junction coordinates and pixel incidence                                            | `a_crossing_uses_the_junctions_actual_merge_lane`, `side_routes_end_horizontally_at_the_merge` |
-| Whole-body and nested-edge clearance         | Back edge envelopes and independent pixel checks                                                       | a body vertex below its tail; an edge entering its own or a nested cycle body                  |
-| Recorded contour column, lane and bends      | Complete back edge routes; coverage, polyline and correspondence checks                                | bent and far contours, label clearance, and four nested contours sharing one side              |
-| Expanded cycle boundary containment          | Region ownership and independent geometry checks                                                       | escaped vertices, labels, routes, and nested boundaries                                        |
-| End last, including after tails              | End precedence; both end verifiers                                                                     | `a_misplaced_end_is_caught_by_the_geometry_check`                                              |
-| Finite captions and panel clearance          | Measured rows and gaps; label, geometry and canvas checks                                              | `every_generated_shape_the_model_accepts_also_renders`, caption and contour mutation tests     |
+| Required rule                                | Construction and independent check                                                                     | Regression                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Forward and placement order                  | DAG predecessors; `verify::order`                                                                      | `the_verifier_rejects_every_mutation`                                                        |
+| Authored port/case order and common case row | Static exit/case inequalities; indivisible case-row events; `choice::verify`, `verify::branch_columns` | `the_verifier_rejects_a_case_on_a_different_row`, `all_cases_of_a_choice_share_a_row`        |
+| Serial and shared-entry columns              | Column identities and minimum clauses; `serial_columns` and `branch_columns`                           | `shared_entries_keep_the_first_branch_approach_column`                                       |
+| Later-sibling reservation                    | Persistent region inequalities; `reserved_columns`                                                     | `a_sibling_inside_a_reserved_footprint_is_caught`                                            |
+| Noncrossing simple orthogonal routes         | Contiguous events and ordered strips; `verify::routes`                                                 | `a_shared_rail_cannot_lower_a_case_past_its_siblings`                                        |
+| Actual junction incidence and merge arrival  | Final common rail; junction coordinates and pixel incidence                                            | `a_crossing_uses_the_structural_junctions_rank`, `side_routes_end_horizontally_at_the_merge` |
+| Whole-body and nested-edge clearance         | Back edge envelopes and independent pixel checks                                                       | a body vertex below its tail; an edge entering its own or a nested cycle body                |
+| Recorded contour column, lane and bends      | Complete back edge routes; coverage, polyline and correspondence checks                                | bent and far contours, label clearance, and four nested contours sharing one side            |
+| Expanded cycle boundary containment          | Region ownership and independent geometry checks                                                       | escaped vertices, labels, routes, and nested boundaries                                      |
+| End last, including after tails              | End precedence; both end verifiers                                                                     | `a_misplaced_end_is_caught_by_the_geometry_check`                                            |
+| Finite captions and panel clearance          | Measured rows and gaps; label, geometry and canvas checks                                              | `every_generated_shape_the_model_accepts_also_renders`, caption and contour mutation tests   |
 
 ### 2.4 Why every checked arrangement has a realization
 
@@ -336,25 +352,20 @@ A column becomes an x through one map, `column_x`, used by every node, every
 route and every back edge alike, and that map is strictly increasing in the
 column — so two nodes share an x exactly when the arrangement gave them one
 column, and the branch order and every reserved footprint carry over into the
-nodes that occupy them. A junction is the exception, and deliberately: even a
-visible merge node owns no layout box, its marker is centred where its routes
-meet, and §2.5 lets a compaction move that point across a column boundary rather
-than reserve an empty column for it. What holds a junction is the crossing rules
-over the routes that meet there and the contour rules over the rail that leaves
-it, both checked after every compaction. An outermost column used only by an
-iteration tail, its sole straight incoming corridor and its back edge may close
-with that arrival. Its contour boundary moves with the tail, staying outside
-every other drawn route. Any other vertex, exit, route or contour using that
-column or a column beyond it prevents this compaction; a separately recorded far
-contour keeps its original boundary. Geometry, labels and witness correspondence
-are checked before keeping the change. The fallback distance between two columns
-is chosen once, as the widest of the standard column, a node box with the
-deepest rail reaching into the gap from each side and a lane between them, and
-whatever slack a previous pass asked for. So every node box fits inside its own
-column and every contour lane the arrangement used fits beside it, because the
-width was measured from those two things. A rank becomes a row whose height is
-the tallest box on it and whose gap holds the lanes the arrangement recorded for
-it plus the labels that hang there, each measured before the row is placed.
+nodes that occupy them. A visible merge follows the same map: its marker is
+centred in the junction's arranged column and reserves its diameter in that
+rank's row. Structural junctions have no marker but use the same row centres.
+All incident routes meet at that recorded point. The renderer does not move
+cycle entries or tails along their incident rails; compaction changes the
+arrangement before it is verified and measured. The fallback distance between
+two columns is chosen once, as the widest of the standard column, a node box
+with the deepest rail reaching into the gap from each side and a lane between
+them, and whatever slack a previous pass asked for. So every node box fits
+inside its own column and every contour lane the arrangement used fits beside
+it, because the width was measured from those two things. A rank becomes a row
+whose height is the tallest box or merge marker on it and whose gap holds the
+lanes the arrangement recorded for it plus the labels that hang there, each
+measured before the row is placed.
 
 For straight back edge drawings, a presentation first tries smaller gaps around
 columns carrying only routes or junctions. Node and exit columns retain their
@@ -377,15 +388,15 @@ renderer defect rather than an arrangement the columns cannot hold.
 When a witness records bends in a back edge, all back edges use one common map
 from column, side and lane to pixels. It reserves the measured node half-width
 and the fixed wrapped-label width before the first contour lane on each side.
-Column gaps hold both sides at once. Each recorded run uses its own rank-gap
+Column gaps hold both sides at once. Each recorded run uses its own rank or gap
 lane and is emitted in reverse order, because back edge routes are recorded from
-entry to tail. This direct realization keeps its bends and does not undergo
-straight back edge compaction. The ordinary straight back edge realization
-retains the compact geometry and bounded label-clearance adjustment above.
+entry to tail. This direct realization keeps its bends. Straight back edges
+retain their recorded entry and tail rows and use the bounded label-clearance
+adjustment above.
 
-The compactions below are transformations of a realization that already
-conforms, each kept only if the result still conforms and still realizes the
-arrangement; the uncompacted realization is kept and drawn when one does not.
+The renderer preserves every vertex's measured row centre. It may widen column
+gaps and move a straight back edge farther outside its body to clear labels, but
+it does not change the arrangement's rows or move individual junctions.
 
 The arrangement records how many lanes each back edge climbs beside its column,
 and a presentation holds the columns far enough apart for them. Nothing about a
@@ -401,11 +412,22 @@ boundary contributes one measured box to its parent footprint. A collapsed cycle
 uses the ordinary node-spacing rules; its hidden expanded geometry does not
 enlarge the collapsed view.
 
+When a non-repeating cycle enters its first body node directly, the top padding
+starts at that node's incoming anchor. Its capture label remains inside the
+boundary. Shared labels use the ordinary capture position as on every other
+connection, so sharing alone does not enlarge the padding. A wrapped label may
+still enlarge the boundary. No separate entry row is measured. When a body exit
+supplies the result directly, no separate result row is measured. The bottom
+padding follows the lowest body node, nested boundary, or return route, and
+expands if necessary to contain its labels. A question's result uses the exiting
+branch's anchor; lifting its other branch's return route also lifts the lower
+boundary when nothing remains below.
+
 The caption uses up to two small lines in the existing top padding, to the right
-of incoming routes. It wraps to that available width and ends with an ellipsis
-if more text remains. If no ellipsis fits, only the tooltip and accessible
-description carry the text. Captions never enlarge a boundary, so equivalent
-content envelopes keep equal bounds regardless of their descriptions.
+of incoming routes and input labels. It wraps to that available width and ends
+with an ellipsis if more text remains. If no ellipsis fits, only the tooltip and
+accessible description carry the text. Captions never enlarge a boundary, so
+equivalent content envelopes keep equal bounds regardless of their descriptions.
 
 ### 2.5 Presentation
 
@@ -441,71 +463,81 @@ its area from the topology and holds every arrangement to RFC 0002 §8. What the
 sibling is held clear of is what the group draws and it does not; a vertex both
 reach is common ground.
 
-To draw an implicit wire merge, each producer descends in its approach column to
-one horizontal merge rail whose junction lies in the continuation's column;
-routes meet at a small filled circular node as RFC 0002 §8 requires. Connections
-into the structural return share a separate arrival rail at end; it is not a
-wire merge.
+To draw an implicit wire merge, earlier producers descend in their approach
+columns to the merge node's row. When the last producer reaches it from a later
+branch's side exit, the merge shares that producer's row. The last sideways run
+forms a horizontal merge rail on that row and ends at the junction in the
+continuation's column. Routes meet at a small filled circular node as RFC 0002
+§8 requires. Connections into the structural return share a separate arrival
+rail at end; it is not a wire merge.
 
 Every iteration tail starts on a row of its own, with no node beside it. A back
 edge leaves its tail horizontally, across every column between the tail and its
-contour, so an unrelated route on that row would stand in its way. A cycle's
-result merge rail may align with the tail when their horizontal spans are
-disjoint; the renderer keeps the separate rows when that compaction would cross
-another route. An intervening structural hop may collapse to their shared point.
-The initial separation costs one row gap per repeating cycle and changes no
-column.
+contour, so an unrelated route on that row would stand in its way. Optional
+arrangement compaction may remove rows only when the complete verifier accepts
+the replacement. A tail reached only by a side exit may share that exit's row,
+so an empty repeating branch needs no descent before its return contour. A
+result interface may share its own iteration tail's row when all of their routes
+are disjoint, so a straight result does not reserve an empty row below the back
+edge. Only an enclosing tail reached by a sole side exit drops precedence from
+alternative outcomes inside a nested cycle. Other arrivals retain that order to
+keep the return below the nested frame. Its contour still clears the whole body.
+Compaction also checks every enclosing back edge against the rectangular
+envelope of each nested body's vertices, interfaces, internal connections, and
+back edges. It rejects both row and column reductions that enter that envelope,
+even when the individual routes do not cross. Pixel measurement supplies the
+frame padding and lane clearance. Other placement-only relations still descend.
+The renderer keeps the resulting entry, tail and result rows; it never moves the
+turning point of a back edge or aligns separate result and tail rows after
+measurement.
 
-That gap is given back where the back edge does not use it. Turning upward at a
-side exit leaves the tail's row holding nothing but the connections that pass
-through it, and such a row is closed: the connections crossing it shorten, every
-row below it moves up, and two consecutive blocks are left one gap apart. A row
-is closed only when no route bends, starts, or ends on it, so closing one moves
-nothing into anything else, and the crossing rules of RFC 0002 §8 are checked
-again over the result.
-
-Any junction, including a merge node, may share its row with another node: a
-merge rail reaches only from its own producers to the continuation's column, and
-the crossing rules of RFC 0002 §8 refuse an arrangement in which such a rail
-would run through another node, so no separate row is needed to keep it clear.
+Every node and junction occupies the centre of its arranged row and column cell.
+A visible merge may share its row with another node: a merge rail reaches only
+from its own producers to the continuation's column, and the crossing rules of
+RFC 0002 §8 refuse an arrangement in which such a rail would run through another
+node, so no exclusive row is needed to keep it clear.
 
 Use one vertical gap throughout a diagram, at least 72 pixels and enlarged when
-labels need more room. Leave at least that gap between consecutive node rows.
-For horizontal runs in row gaps, reserve it both below the preceding node row
-and above the following node row. Wire-merge junctions, cycle-body entries,
-iteration tails, breaks, and end have no duplicate capture labels. End's
-transferred value follows the same merge-sharing rule as any other capture.
-Additional horizontal lanes stay 20 pixels apart. This gives select
-distributors, merge rails, and iteration tails the same clearance.
+labels need more room. Leave at least that gap between consecutive occupied
+rows, measuring a merge row from the marker's edge. For horizontal runs in row
+gaps, reserve it both below the preceding node row and above the following node
+row. Wire-merge junctions, cycle-body entries, iteration tails, breaks, and end
+have no duplicate capture labels. End's transferred value follows the same
+merge-sharing rule as any other capture. Additional horizontal lanes stay 20
+pixels apart. This gives select distributors, merge rails, and iteration tails
+the same clearance.
 
-A cycle boundary fits its caption into the existing top padding; its body entry
-does not by itself reserve an extra node row. When there is room, lift the entry
-and its first body node together within the boundary. Keep the usual gap on both
-sides of the entry and retain the original geometry if crossings, labels,
-boundary containment, or witness correspondence prevent the move. Right-align
-the cycle caption inside the boundary's top edge, away from the usual left-side
-routes.
+A cycle boundary fits its caption into the existing top padding. Its entry and
+tail occupy the centres of their arranged rows, including rows shared with
+ordinary nodes. Structural junctions need no box height of their own.
+Right-align the cycle caption inside the boundary's top edge, away from the
+usual left-side routes.
 
 Questions in expanded cycle bodies use the ordinary question layout and authored
 answer order. The cycle boundary and breaks have no computational nodes. Each
 repeating cycle has an iteration tail and back edge to its entry; an empty body
-connects entry directly to tail. A break with no data captures redirects the
-incoming route to the result boundary without an intermediate vertex. Data
-captures use an unlabeled junction in the incoming branch column. Chains of
-structural junctions use their downstream columns instead of falling back to the
-root column. Unit-valued question outputs that only gate structural statements
-remain labeled at the question exit and add no duplicate capture label or
-placement row. A cycle that completes immediately still draws its description,
-entry and result routes, and boundary.
+connects entry directly to tail. A break redirects the incoming route and any
+explicit capture dependencies to the result interface without an intermediate
+vertex. Chains of structural junctions use their downstream columns instead of
+falling back to the root column. Unit-valued question outputs that only gate
+structural statements remain labeled at the question exit and add no duplicate
+capture label or placement row. A cycle that completes immediately still draws
+its description, entry and result routes, and boundary.
 
 Forward connections and iteration-tail precedence form an acyclic placement
 graph. Carry each completed region's tail precedence through its result boundary
-and outer continuation. Stop at the first wire merge, enclosing iteration tail,
-or end; those boundaries stay below the body. The continuation's preceding
-blocks may fill their branch columns alongside the body, regardless of block
-kind or branch order. This precedence is not drawn. An inner cycle completes at
-its own result boundary before its parent body can reach an enclosing iteration
-tail.
+and outer continuation. Stop at the first wire merge or end; those boundaries
+stay below the body. An enclosing iteration tail reached only by a side exit
+needs no additional precedence; other tails retain it to clear nested frames.
+The continuation's preceding blocks may fill their branch columns alongside the
+body, regardless of block kind or branch order. This precedence is not drawn. An
+inner cycle completes at its own result boundary before its parent body can
+reach an enclosing iteration tail.
+
+When nested boundaries end on the same row, their bottom padding stacks. Reserve
+the additional layers before the following row so its nodes and capture labels
+stay outside the completed regions. This adds room for the frames without
+lowering an iteration tail or adding an empty grid row.
 
 Back edge connections are drawn separately, innermost cycle first, around the
 body and horizontally into its entry junction. The arrowhead belongs to that
@@ -517,46 +549,28 @@ The arrangement records the side of the body, the outermost column of that body,
 and the lane beside it each back edge climbs. Geometry realizes that side and
 that lane: it puts lane 0 just past everything the body draws, and one lane step
 further out for each later lane. Body membership is independent of ranks, so
-neither placing a body vertex below the tail nor turning the back edge upward
-early shrinks what it has to clear. The recorded column is not read as a pixel
-position, because a vertex's pixel position is not `column_x` of its abstract
-column once a back edge turns upward at a side exit or a sole arrival is
-compacted.
+placing a body vertex below the tail never shrinks what the back edge has to
+clear. The recorded column uses the same `column_x` map as vertices; the rail
+stands outside both that boundary and the measured body.
+
+Leave at least one 20-pixel lane between an enclosing back edge and a nested
+cycle frame. Treat the frame plus this clearance as an obstruction when placing
+the rail, and check the gap again against the final boundaries.
 
 Columns stand far enough apart to hold the lanes the arrangement used, and a gap
 two back edges climb into from opposite sides is widened until the two cannot
 land on the same line.
 
-A tail with one incoming connection may sit on a side exit's horizontal run, or
-after the usual vertical gap below a straight exit. Prefer turning upward there
-over descending to the tail's placement row and immediately climbing upward.
-This is a compaction of already valid geometry: it brings the tail and its back
-edge in together, keeps the side and lane the arrangement chose, and is dropped
-when the shortened route would break RFC 0002 §8, leaving the uncompacted
-arrangement in place.
-
-A sole rightward horizontal arrival may also shorten toward the body instead of
-reserving an empty branch column. Move its tail and back edge together, keeping
-the back edge beyond the nodes and the ink and halo of labels along its vertical
-span. The back edge still clears the whole body's extent. Keep the original
-route when the compact one would cross another connection. Node columns and
-branch order do not change.
+A tail with one incoming connection still occupies its recorded row and column.
+If compaction aligns it with its sole side exit, the arrival is horizontal and
+the back edge starts at that same row. Otherwise the arrival descends to the
+recorded row before the back edge turns upward. Routing-only columns use the
+narrow spacing described above, without moving their vertices.
 
 End is ordered after every other vertex during construction, as RFC 0002 §8
-requires. No construction or compaction may put a cycle back edge below it.
-
-After routing back edges, adjust end and the incoming connections for the
-structural return using the actual geometry. Leave the usual vertical gap below
-all other nodes. The shared arrival rail may align with an independent back
-edge; where their horizontal spans overlap, leave the usual vertical gap between
-them. Move the rail and end together, preserving their common segment's length.
-A back edge beside end may align with its top edge, but no connection may
-descend below that edge. This keeps end last without adding an empty row when
-the back edge already clears it. Move upward to remove excess space or downward
-to provide the required clearance. Keep the original placement if the adjustment
-would introduce a crossing or upward segment. The geometry check also requires
-end below all other nodes and cycle back edges. Place labels after this
-adjustment.
+requires. It stays in that recorded row, below all other vertices and iteration
+back edges. Its incoming routes retain the gap lanes selected by the
+arrangement.
 
 ## 3. SVG output
 
@@ -625,9 +639,9 @@ the model-supplied arrangement or returns a rendering error. It does not invoke
 including an impossible expanded topology and an internal construction error.
 `RenderError::UnroutableTopology` reports a renderer defect in geometry, labels
 or witness correspondence for the selected projection after assigning dimensions
-and spacing. Failed compaction falls back to the uncompacted realization, so it
-cannot normally produce this error. Final route, label and correspondence checks
-remain necessary after that assignment.
+and spacing. Optional arrangement compaction retains the original witness when a
+candidate fails verification. Final route, label and correspondence checks
+remain necessary after measurement.
 
 ## 5. Command-line interface
 

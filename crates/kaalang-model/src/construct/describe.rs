@@ -120,11 +120,11 @@ fn junction_name(
         return format!("{part} of {}", loop_name(flow, loop_.header));
     }
     let junction = &topology.junctions[junction];
-    if junction.is_break {
-        return "a cycle break".to_owned();
-    }
     if junction.is_loop_result {
         return "a cycle result".to_owned();
+    }
+    if junction.is_break {
+        return "a cycle break".to_owned();
     }
     let wires = junction
         .merges
@@ -146,7 +146,7 @@ mod tests {
     fn structural_junctions_use_their_authored_roles() {
         let source = r#"
             fn example(value: u8) -> u8 {
-                #[cycle("Finish immediately.")]
+                #[cycle("Choose the result.")]
                 let result = |value| {
                     |value| break value;
                 };
@@ -158,7 +158,7 @@ mod tests {
             let index = model.topology.junctions.iter().position(predicate).unwrap();
             junction_name(&model.flow, &model.merges, &model.topology, index)
         };
-        assert_eq!(name(|junction| junction.is_break), "a cycle break");
+        assert_eq!(name(|junction| junction.is_break), "a cycle result");
         assert_eq!(name(|junction| junction.is_loop_result), "a cycle result");
 
         let mut topology = model.topology.clone();

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="854" viewBox="0 0 1360 854" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="752" height="862" viewBox="0 0 752 862" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_break_routes</title>
-  <desc id="kaalang-description">Cycles: Leave from any nested question. with inputs a, b, c and outputs (). Nodes: Start: nested_break_routes with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: First? capturing a handing over next / stop_a; Question: Second? capturing next, b handing over next_b / stop_b; Question: Third? capturing next_b, c handing over _again / stop_c; End: () capturing nothing. Connections: Start: nested_break_routes to the entry of the cycle; Question: First? branch 1 to Question: Second?; Question: First? branch 2 to a cycle break; Question: Second? branch 1 to Question: Third?; Question: Second? branch 2 to a cycle break; Question: Third? branch 1 to the iteration tail of the cycle; Question: Third? branch 2 to a cycle break; the entry of the cycle to Question: First?; the cycle result to End: (); a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Leave from any nested question. with inputs a, b, c and outputs (). Nodes: Start: nested_break_routes with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: First? capturing a handing over next / stop; Question: Second? capturing next, b handing over next_b / stop; Question: Third? capturing next_b, c handing over _again / stop; End: () capturing nothing; Merge: stop. Connections: Start: nested_break_routes to the entry of the cycle; Question: First? branch 1 to Question: Second?; Question: First? branch 2 to the stop merge at the cycle result; Question: Second? branch 1 to Question: Third?; Question: Second? branch 2 to the stop merge at the cycle result; Question: Third? branch 1 to the iteration tail of the cycle; Question: Third? branch 2 to the stop merge at the cycle result; the stop merge at the cycle result to End: (); the entry of the cycle to Question: First?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,8 +27,8 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Leave from any nested question.</title>
-    <rect class="cycle-boundary" x="32" y="153" width="1296" height="574" rx="12"/>
-    <text class="cycle-caption" x="1316" y="167" text-anchor="end" xml:space="preserve"><tspan x="1316" dy="0">Leave from any nested question.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="153" width="620" height="578" rx="12"/>
+    <text class="cycle-caption" x="640" y="167" text-anchor="end" xml:space="preserve"><tspan x="640" dy="0">Leave from any nested question.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -36,37 +36,36 @@
     <path class="connection" d="
       M 220 103 L 220 188
       M 220 332 L 220 404
-      M 360 296 L 1300 296 L 1300 404
+      M 360 296 L 580 296 L 580 696
       M 220 476 L 220 548
-      M 360 440 L 940 440 L 940 548
-      M 220 620 L 220 692
-      M 360 584 L 580 584 L 580 692
+      M 360 440 L 580 440 L 580 696
+      M 220 620 L 220 696
+      M 360 584 L 580 584 L 580 696
+      M 580 696 L 580 772
       M 220 188 L 220 260
-      M 580 692 L 580 764
-      M 580 692 L 580 692
-      M 940 548 L 940 692 L 580 692
-      M 1300 404 L 1300 692 L 580 692
     "/>
     <path class="connection" d="
-      M 220 692 L 60 692 L 60 188 L 220 188
+      M 220 696 L 60 696 L 60 188 L 220 188
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="593" y="714" xml:space="preserve"><tspan x="593" dy="0">stop</tspan></text>
     <text class="connection-label" x="233" y="121" xml:space="preserve"><tspan x="233" dy="0">a, b, c</tspan></text>
     <text class="connection-label" x="233" y="350" xml:space="preserve"><tspan x="233" dy="0">next</tspan></text>
-    <text class="connection-label" x="373" y="314" xml:space="preserve"><tspan x="373" dy="0">stop_a</tspan></text>
     <text class="connection-label" x="233" y="494" xml:space="preserve"><tspan x="233" dy="0">next_b</tspan></text>
-    <text class="connection-label" x="373" y="458" xml:space="preserve"><tspan x="373" dy="0">stop_b</tspan></text>
     <text class="connection-label" x="233" y="638" xml:space="preserve"><tspan x="233" dy="0">_again</tspan></text>
-    <text class="connection-label" x="373" y="602" xml:space="preserve"><tspan x="373" dy="0">stop_c</tspan></text>
     <text class="connection-label" x="233" y="249" xml:space="preserve"><tspan x="233" dy="0">a</tspan></text>
     <text class="connection-label" x="233" y="393" xml:space="preserve"><tspan x="233" dy="0">next, b</tspan></text>
     <text class="connection-label" x="233" y="537" xml:space="preserve"><tspan x="233" dy="0">next_b, c</tspan></text>
-    <text class="connection-label" x="593" y="753" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
+    <text class="connection-label" x="593" y="761" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 74 L 456 74"/>
     <g class="parameter-panel" transform="translate(576 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
       <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(580 696)">
+      <title xml:space="preserve">the stop merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(220 74)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
@@ -87,7 +86,7 @@
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Third?</tspan></text>
     </g>
-    <g class="node end" transform="translate(580 793)">
+    <g class="node end" transform="translate(580 801)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>

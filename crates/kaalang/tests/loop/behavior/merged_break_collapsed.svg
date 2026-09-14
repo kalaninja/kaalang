@@ -31,7 +31,7 @@
       M 172 94 L 172 170
       M 172 236 L 172 308
     "/>
-    <text class="connection-label" x="185" y="267" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">stop, remaining</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">stop, mut remaining</tspan></text>
   </g>

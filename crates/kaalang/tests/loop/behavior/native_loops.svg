@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="708" height="606" viewBox="0 0 708 606" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="390" viewBox="0 0 708 390" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for native_loops</title>
-  <desc id="kaalang-description">Cycles: Run native Rust control flow once. with inputs limit and outputs result. Nodes: Start: native_loops with parameters limit: usize handing over limit; Action: Count with local Rust control flow. capturing limit handing over count; End: usize capturing result. Connections: Start: native_loops to the cycle entry; Action: Count with local Rust control flow. to a cycle break; the cycle entry to Action: Count with local Rust control flow.; the cycle result to End: usize; a cycle break to the cycle result.</desc>
+  <desc id="kaalang-description">Cycles: Run native Rust control flow once. with inputs limit and outputs result. Nodes: Start: native_loops with parameters limit: usize handing over limit; Action: Count with local Rust control flow. capturing limit handing over count; End: usize capturing result. Connections: Start: native_loops to Action: Count with local Rust control flow.; Action: Count with local Rust control flow. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,22 +27,18 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Run native Rust control flow once.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="336" height="352" rx="12"/>
-    <text class="cycle-caption" x="356" y="141" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Run native Rust </tspan><tspan x="356" dy="14">control flow once.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="127" width="336" height="136" rx="12"/>
+    <text class="cycle-caption" x="356" y="141" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Run native </tspan><tspan x="356" dy="14">Rust control …</tspan></text>
     </g>
   </g>
   <g class="connections">
     <path class="connection" d="
       M 200 90 L 200 162
-      M 200 300 L 200 372
-      M 200 162 L 200 234
-      M 200 444 L 200 516
-      M 200 372 L 200 444
+      M 200 228 L 200 300
     "/>
-    <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">limit</tspan></text>
-    <text class="connection-label" x="213" y="318" xml:space="preserve"><tspan x="213" dy="0">count</tspan></text>
-    <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">limit</tspan></text>
-    <text class="connection-label" x="213" y="505" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">limit</tspan></text>
+    <text class="connection-label" x="213" y="246" xml:space="preserve"><tspan x="213" dy="0">count</tspan></text>
+    <text class="connection-label" x="213" y="289" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -54,12 +50,12 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">native_loops</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 267)">
+    <g class="node action" transform="translate(200 195)">
       <title xml:space="preserve">Count with local Rust control flow.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Count with local Rust control </tspan><tspan x="-124" dy="18">flow.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 545)">
+    <g class="node end" transform="translate(200 329)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

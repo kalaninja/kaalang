@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="756" viewBox="0 0 704 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for branch_log_in_each_branch</title>
   <desc id="kaalang-description">Nodes: Start: branch_log_in_each_branch with parameters condition: bool; value: String handing over condition, value; Question: Log the value? capturing condition handing over yes / no; Action: Log. capturing yes, &amp;value handing over logged; Action: Transform after logging. capturing logged, value handing over end; Action: Transform without logging. capturing no, value handing over end; End: usize capturing end; Merge: end. Connections: Start: branch_log_in_each_branch to Question: Log the value?; Question: Log the value? branch 1 to Action: Log.; Question: Log the value? branch 2 to Action: Transform without logging.; Action: Log. to Action: Transform after logging.; Action: Transform after logging. to the end merge; Action: Transform without logging. to the end merge; the end merge to End: usize.</desc>
   <defs>
@@ -32,11 +32,11 @@
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
       M 172 378 L 172 450
-      M 172 514 L 172 586
-      M 532 378 L 532 586 L 172 586
-      M 172 586 L 172 658
+      M 172 514 L 172 590
+      M 532 378 L 532 590 L 172 590
+      M 172 590 L 172 666
     "/>
-    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, value</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
@@ -52,7 +52,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">value: String</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 586)">
+    <g class="node merge" transform="translate(172 590)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -80,7 +80,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Transform without logging.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 687)">
+    <g class="node end" transform="translate(172 695)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

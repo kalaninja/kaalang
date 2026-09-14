@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use crate::layout::{
     CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
-    LINE_HEIGHT, Label, LabelKind, Node, ParameterPanel, Point, Scene,
+    LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, Node, ParameterPanel, Point, Scene,
 };
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
@@ -169,9 +169,11 @@ fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
         "      <title xml:space=\"preserve\">{}</title>",
         escape(&merge_name(scene, junction))
     );
-    svg.push_str(
-        "      <circle class=\"node-shape\" r=\"4\" style=\"fill: currentColor\"/>\n    </g>\n",
+    emit!(
+        svg,
+        "      <circle class=\"node-shape\" r=\"{MERGE_RADIUS}\" style=\"fill: currentColor\"/>"
     );
+    svg.push_str("    </g>\n");
 }
 
 /// Writes the lines of one `<text>` as `<tspan>`s and closes it. The first line
@@ -371,10 +373,12 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
     }
     let wires = scene.captions.junction_wires(junction);
     let junction = &scene.topology.junctions[junction];
-    if junction.is_break {
-        "a cycle break".to_owned()
+    if junction.is_loop_result && !wires.is_empty() {
+        format!("the {} merge at the cycle result", wires.join(" and "))
     } else if junction.is_loop_result {
         "the cycle result".to_owned()
+    } else if junction.is_break {
+        "a cycle break".to_owned()
     } else if junction.is_loop_entry {
         "the cycle entry".to_owned()
     } else if wires.is_empty() {

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="894" viewBox="0 0 1064 894" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="902" viewBox="0 0 1064 902" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_terminal_branch_drops_a_wire</title>
   <desc id="kaalang-description">Nodes: Start: nested_terminal_branch_drops_a_wire with parameters outer: bool; inner: bool handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Action: Prepare the nested values. capturing nested handing over probe, extra; Question: Finish early? capturing probe, inner handing over early / late; Action: Produce the early result without the extra value. capturing early handing over end; Action: Combine the late result with the extra value. capturing late, extra handing over end; Action: Produce the direct result. capturing direct handing over end; End: u32 capturing end; Merge: end. Connections: Start: nested_terminal_branch_drops_a_wire to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Action: Prepare the nested values.; Question: Take the nested branch? branch 2 to Action: Produce the direct result.; Action: Prepare the nested values. to Question: Finish early?; Question: Finish early? branch 1 to Action: Produce the early result without the extra value.; Question: Finish early? branch 2 to Action: Combine the late result with the extra value.; Action: Produce the early result without the extra value. to the end merge; Action: Combine the late result with the extra value. to the end merge; Action: Produce the direct result. to the end merge; the end merge to End: u32.</desc>
   <defs>
@@ -34,15 +34,15 @@
       M 172 378 L 172 450
       M 172 522 L 172 594
       M 312 486 L 532 486 L 532 594
-      M 172 660 L 172 732
-      M 532 660 L 532 732 L 172 732
-      M 892 378 L 892 732 L 172 732
-      M 172 732 L 172 804
+      M 172 660 L 172 736
+      M 532 660 L 532 736 L 172 736
+      M 892 378 L 892 736 L 172 736
+      M 172 736 L 172 812
     "/>
-    <text class="connection-label" x="185" y="750" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
-    <text class="connection-label" x="584" y="195" xml:space="preserve"><tspan x="584" dy="0">direct</tspan></text>
-    <text class="connection-label" x="185" y="553" xml:space="preserve"><tspan x="185" dy="0">early</tspan></text>
+    <text class="connection-label" x="185" y="754" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
+    <text class="connection-label" x="905" y="303" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label" x="185" y="583" xml:space="preserve"><tspan x="185" dy="0">early</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">outer, inner</tspan></text>
     <text class="connection-label" x="185" y="396" xml:space="preserve"><tspan x="185" dy="0">probe, extra</tspan></text>
     <text class="connection-label" x="325" y="504" xml:space="preserve"><tspan x="325" dy="0">late</tspan></text>
@@ -56,7 +56,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 732)">
+    <g class="node merge" transform="translate(172 736)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -94,7 +94,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the direct result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 833)">
+    <g class="node end" transform="translate(172 841)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

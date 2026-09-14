@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="756" viewBox="0 0 704 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for question_value</title>
   <desc id="kaalang-description">Nodes: Start: question_value with parameters condition: bool; shared_runs: &amp;mut usize handing over condition, shared_runs; Question: Choose a value. capturing condition handing over yes / no; Action: Build the yes value. capturing yes handing over selected; Action: Build the no value. capturing no handing over selected; Action: Use the selected value once. capturing selected, shared_runs handing over end; End: u32 capturing end; Merge: selected. Connections: Start: question_value to Question: Choose a value.; Question: Choose a value. branch 1 to Action: Build the yes value.; Question: Choose a value. branch 2 to Action: Build the no value.; Action: Build the yes value. to the selected merge; Action: Build the no value. to the selected merge; Action: Use the selected value once. to End: u32; the selected merge to Action: Use the selected value once..</desc>
   <defs>
@@ -31,18 +31,18 @@
       M 172 94 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 586 L 172 658
-      M 172 450 L 172 522
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 594 L 172 666
+      M 172 454 L 172 530
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="416" y="195" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="617" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, shared_runs</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">selected, shared_runs</tspan></text>
+    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">selected, shared_runs</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -50,7 +50,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">shared_runs: &amp;mut usize</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the selected merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -73,12 +73,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the no value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 554)">
+    <g class="node action" transform="translate(172 562)">
       <title xml:space="preserve">Use the selected value once.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value once.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 687)">
+    <g class="node end" transform="translate(172 695)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

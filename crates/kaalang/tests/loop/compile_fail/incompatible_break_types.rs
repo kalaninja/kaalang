@@ -7,12 +7,13 @@ fn invalid(number: usize, choose_number: bool) -> usize {
         #[question("Provide the number?")]
         let (number_route, text_route) = |choose_number| choose_number;
 
-        |number_route, number| break number;
+        #[action("Keep the number.")]
+        let selected = |number_route, number| number;
 
         #[action("Build text.")]
-        let text = |text_route| String::from("text");
+        let selected = |text_route| String::from("text");
 
-        |text| break text;
+        |selected| break selected;
     };
 
     |result| return result;

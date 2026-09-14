@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1170" viewBox="0 0 1064 1170" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1178" viewBox="0 0 1064 1178" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for expression_bodies</title>
   <desc id="kaalang-description">Nodes: Start: expression_bodies with parameters input: Option&lt;u32&gt;; visits: &amp;Cell&lt;u32&gt; handing over input, visits; Action: Record a visit. capturing visits; Select: Was a value supplied? capturing input; Case: Use the supplied value. handing over value; Case: Use a default. handing over absent; Action: Capture the supplied branch value. capturing value handing over number; Question: Is the value positive? capturing &amp;number handing over positive / zero; Action: Double the positive value. capturing positive, number handing over end; Action: Return zero. capturing zero handing over end; Action: Return the default. capturing absent handing over end; End: u32 capturing end; Merge: end. Connections: Start: expression_bodies to Action: Record a visit.; Action: Record a visit. to Select: Was a value supplied?; Select: Was a value supplied? to Case: Use the supplied value.; Select: Was a value supplied? to Case: Use a default.; Case: Use the supplied value. to Action: Capture the supplied branch value.; Case: Use a default. to Action: Return the default.; Action: Capture the supplied branch value. to Question: Is the value positive?; Question: Is the value positive? branch 1 to Action: Double the positive value.; Question: Is the value positive? branch 2 to Action: Return zero.; Action: Double the positive value. to the end merge; Action: Return zero. to the end merge; Action: Return the default. to the end merge; the end merge to End: u32.</desc>
   <defs>
@@ -37,15 +37,15 @@
       M 172 656 L 172 728
       M 172 800 L 172 872
       M 312 764 L 532 764 L 532 872
-      M 172 936 L 172 1008
-      M 532 936 L 532 1008 L 172 1008
-      M 892 656 L 892 1008 L 172 1008
-      M 172 1008 L 172 1080
+      M 172 936 L 172 1012
+      M 532 936 L 532 1012 L 172 1012
+      M 892 656 L 892 1012 L 172 1012
+      M 172 1012 L 172 1088
     "/>
-    <text class="connection-label" x="185" y="1026" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="551" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="905" y="551" xml:space="preserve"><tspan x="905" dy="0">absent</tspan></text>
-    <text class="connection-label" x="409" y="753" xml:space="preserve"><tspan x="409" dy="0">zero</tspan></text>
+    <text class="connection-label" x="185" y="1030" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="581" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="905" y="581" xml:space="preserve"><tspan x="905" dy="0">absent</tspan></text>
+    <text class="connection-label" x="545" y="861" xml:space="preserve"><tspan x="545" dy="0">zero</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">input, visits</tspan></text>
     <text class="connection-label" x="185" y="674" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
     <text class="connection-label" x="185" y="818" xml:space="preserve"><tspan x="185" dy="0">positive</tspan></text>
@@ -60,7 +60,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">input: Option&lt;u32&gt;</tspan><tspan x="-104" dy="18">visits: &amp;Cell&lt;u32&gt;</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 1008)">
+    <g class="node merge" transform="translate(172 1012)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -113,7 +113,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the default.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1109)">
+    <g class="node end" transform="translate(172 1117)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

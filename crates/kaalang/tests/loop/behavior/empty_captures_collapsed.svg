@@ -33,7 +33,7 @@
       M 172 364 L 172 436
       M 172 500 L 172 572
     "/>
-    <text class="connection-label" x="185" y="531" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>

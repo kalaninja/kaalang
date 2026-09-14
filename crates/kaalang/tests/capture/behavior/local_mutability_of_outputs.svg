@@ -33,7 +33,7 @@
       M 172 372 L 172 444
       M 172 510 L 172 582
     "/>
-    <text class="connection-label" x="185" y="127" xml:space="preserve"><tspan x="185" dy="0">input, number</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">input, number</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">text, count</tspan></text>
     <text class="connection-label" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">mut changed, incremented</tspan></text>
     <text class="connection-label" x="185" y="528" xml:space="preserve"><tspan x="185" dy="0">mut end</tspan></text>

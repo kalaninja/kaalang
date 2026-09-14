@@ -29,9 +29,11 @@ pub(crate) fn looping(routes: &[&str]) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match *route {
-            "break" => format!("        |case_{index}, mode| break mode;"),
+            "break" => format!(
+                "        #[action(\"Keep the mode from case {index}.\")]\n        let completed = |case_{index}, mode| mode;"
+            ),
             "finish" => format!(
-                "        #[action(\"Finish from case {index}.\")]\n        let result_{index} = |case_{index}| 7;\n        |result_{index}| break result_{index};"
+                "        #[action(\"Finish from case {index}.\")]\n        let completed = |case_{index}| 7;"
             ),
             _ => format!(
                 "        #[action(\"Advance in case {index}.\")]\n        |case_{index}| ();"
@@ -40,6 +42,11 @@ pub(crate) fn looping(routes: &[&str]) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     let completes = routes.iter().any(|route| *route != "repeat");
+    let transfer = if completes {
+        "\n        |completed| break completed;"
+    } else {
+        ""
+    };
     let (output, after) = if completes {
         ("let result = ", "\n    |result| return result;")
     } else {
@@ -54,7 +61,7 @@ pub(crate) fn looping(routes: &[&str]) -> String {
         let ({outputs}) = |mode| match mode {{
 {arms}
         }};
-{bodies}
+{bodies}{transfer}
     }};{after}
 }}
 "
@@ -98,15 +105,17 @@ pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match (*route, propagates) {
-            ("break", false) => format!("        |i{index}| break;"),
+            ("break", false) => format!(
+                "        #[action(\"Complete the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| ();"
+            ),
             ("break", true) => format!(
-                "        #[action(\"Complete only the inner cycle from i{index}.\")]\n        let inner_only_{index} = |i{index}| None;\n        |inner_only_{index}| break inner_only_{index};"
+                "        #[action(\"Complete only the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| None;"
             ),
             ("propagate", _) => format!(
-                "        #[action(\"Complete the outer cycle from i{index}.\")]\n        let outer_result_{index} = |i{index}, mode| Some(mode);\n        |outer_result_{index}| break outer_result_{index};"
+                "        #[action(\"Complete the outer cycle from i{index}.\")]\n        let inner_value = |i{index}, mode| Some(mode);"
             ),
             ("finish", _) => format!(
-                "        #[action(\"Finish from i{index}.\")]\n        let finish_result_{index} = |i{index}| Some(7);\n        |finish_result_{index}| break finish_result_{index};"
+                "        #[action(\"Finish from i{index}.\")]\n        let inner_value = |i{index}| Some(7);"
             ),
             _ => format!(
                 "        #[action(\"Advance in i{index}.\")]\n        |i{index}| ();"
@@ -114,13 +123,18 @@ pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let inner_transfer = if inner.iter().any(|route| *route != "repeat") {
+        "\n        |inner_value| break inner_value;"
+    } else {
+        ""
+    };
     let inner_cycle = if propagates {
         format!(
-            "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |mode| {{\n{inner_selection}\n{inner_bodies}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let propagated = |finish_outer, inner_result| inner_result.unwrap();\n        |propagated| break propagated;"
+            "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
         )
     } else {
         format!(
-            "        #[cycle(\"Exercise the generated inner routes.\")]\n        |mode| {{\n{inner_selection}\n{inner_bodies}\n        }};"
+            "        #[cycle(\"Exercise the generated inner routes.\")]\n        |mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
         )
     };
     let outer_selection = selection(outer, "o");
@@ -128,9 +142,11 @@ pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match *route {
-            "break" => format!("        |o{index}, mode| break mode;"),
+            "break" => format!(
+                "        #[action(\"Keep the mode from o{index}.\")]\n        let completed = |o{index}, mode| mode;"
+            ),
             "finish" => format!(
-                "        #[action(\"Finish from o{index}.\")]\n        let result_{index} = |o{index}| 7;\n        |result_{index}| break result_{index};"
+                "        #[action(\"Finish from o{index}.\")]\n        let completed = |o{index}| 7;"
             ),
             "inner" => inner_cycle.clone(),
             _ => format!(
@@ -143,13 +159,18 @@ pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .any(|route| matches!(*route, "break" | "finish"))
         || outer.contains(&"inner") && propagates;
+    let transfer = if completes {
+        "\n        |completed| break completed;"
+    } else {
+        ""
+    };
     let (output, after) = if completes {
         ("let result = ", "\n    |result| return result;")
     } else {
         ("", "")
     };
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outer routes.\")]\n    {output}|mode| {{\n{outer_selection}\n{outer_bodies}\n    }};{after}\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outer routes.\")]\n    {output}|mode| {{\n{outer_selection}\n{outer_bodies}{transfer}\n    }};{after}\n}}\n"
     )
 }
 

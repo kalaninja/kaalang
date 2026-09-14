@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2144" height="1600" viewBox="0 0 2144 1600" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="2144" height="1544" viewBox="0 0 2144 1544" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for blocked_terminal_crossing</title>
   <desc id="kaalang-description">Nodes: Start: blocked_terminal_crossing with parameters request: u8 handing over request; Select: Choose an outer case. capturing request; Case: Build the left shared value. handing over left; Case: Build the right shared value. handing over right; Case: Finish after one step. handing over first; Case: Finish after two steps. handing over second; Action: Build the left shared value. capturing left handing over shared; Action: Build the right shared value. capturing right handing over shared; Action: Produce the first terminal result. capturing first handing over end; Action: Take one more step toward the second terminal result. capturing second handing over stepped; Action: Produce the second terminal result. capturing stepped handing over end; Select: Choose an inner case wide enough to block both terminal columns. capturing shared; Case: Build A. handing over a; Case: Build B. handing over b; Case: Build C. handing over c; Case: Build D. handing over d; Action: Build result A. capturing a handing over selected; Action: Build result B. capturing b handing over selected; Action: Build result C. capturing c handing over selected; Action: Build result D. capturing d handing over selected; Action: Use the result. capturing selected handing over end; End: u8 capturing end; Merge: shared; Merge: end; Merge: selected. Connections: Start: blocked_terminal_crossing to Select: Choose an outer case.; Select: Choose an outer case. to Case: Build the left shared value.; Select: Choose an outer case. to Case: Build the right shared value.; Select: Choose an outer case. to Case: Finish after one step.; Select: Choose an outer case. to Case: Finish after two steps.; Case: Build the left shared value. to Action: Build the left shared value.; Case: Build the right shared value. to Action: Build the right shared value.; Case: Finish after one step. to Action: Produce the first terminal result.; Case: Finish after two steps. to Action: Take one more step toward the second terminal result.; Action: Build the left shared value. to the shared merge; Action: Build the right shared value. to the shared merge; Action: Produce the first terminal result. to the end merge; Action: Take one more step toward the second terminal result. to Action: Produce the second terminal result.; Action: Produce the second terminal result. to the end merge; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build A.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build B.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build C.; Select: Choose an inner case wide enough to block both terminal columns. to Case: Build D.; Case: Build A. to Action: Build result A.; Case: Build B. to Action: Build result B.; Case: Build C. to Action: Build result C.; Case: Build D. to Action: Build result D.; Action: Build result A. to the selected merge; Action: Build result B. to the selected merge; Action: Build result C. to the selected merge; Action: Build result D. to the selected merge; Action: Use the result. to the end merge; the shared merge to Select: Choose an inner case wide enough to block both terminal columns.; the end merge to End: u8; the selected merge to Action: Use the result..</desc>
   <defs>
@@ -37,41 +37,41 @@
       M 532 376 L 532 449
       M 1612 376 L 1612 449
       M 1972 376 L 1972 448
-      M 172 513 L 172 586
-      M 532 513 L 532 586 L 172 586
-      M 1612 513 L 1612 1438 L 172 1438
-      M 1972 514 L 1972 658
-      M 1972 724 L 1972 1438 L 172 1438
-      M 172 880 L 172 952
-      M 300 838 L 532 838 L 532 952
-      M 300 838 L 892 838 L 892 952
-      M 300 838 L 1252 838 L 1252 952
-      M 172 1022 L 172 1094
-      M 532 1022 L 532 1094
-      M 892 1022 L 892 1094
-      M 1252 1022 L 1252 1094
-      M 172 1158 L 172 1230
-      M 532 1158 L 532 1230 L 172 1230
-      M 892 1158 L 892 1230 L 172 1230
-      M 1252 1158 L 1252 1230 L 172 1230
-      M 172 1366 L 172 1438
-      M 172 586 L 172 796
-      M 172 1438 L 172 1510
-      M 172 1230 L 172 1302
+      M 172 513 L 172 619
+      M 532 513 L 532 619 L 172 619
+      M 1612 513 L 1612 1378 L 172 1378
+      M 1972 514 L 1972 586
+      M 1972 652 L 1972 1378 L 172 1378
+      M 172 808 L 172 880
+      M 300 766 L 532 766 L 532 880
+      M 300 766 L 892 766 L 892 880
+      M 300 766 L 1252 766 L 1252 880
+      M 172 950 L 172 1022
+      M 532 950 L 532 1022
+      M 892 950 L 892 1022
+      M 1252 950 L 1252 1022
+      M 172 1086 L 172 1162
+      M 532 1086 L 532 1162 L 172 1162
+      M 892 1086 L 892 1162 L 172 1162
+      M 1252 1086 L 1252 1162 L 172 1162
+      M 172 1302 L 172 1378
+      M 172 619 L 172 724
+      M 172 1378 L 172 1454
+      M 172 1162 L 172 1238
     "/>
-    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
-    <text class="connection-label" x="185" y="1456" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="1248" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">request</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
-    <text class="connection-label" x="1625" y="407" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
-    <text class="connection-label" x="1985" y="407" xml:space="preserve"><tspan x="1985" dy="0">second</tspan></text>
-    <text class="connection-label" x="1985" y="581" xml:space="preserve"><tspan x="1985" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="185" y="1053" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="545" y="1053" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
-    <text class="connection-label" x="905" y="1053" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
-    <text class="connection-label" x="1265" y="1053" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
+    <text class="connection-label" x="185" y="637" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label" x="185" y="1396" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="1180" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">request</tspan></text>
+    <text class="connection-label" x="185" y="438" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="545" y="438" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
+    <text class="connection-label" x="1625" y="438" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
+    <text class="connection-label" x="1985" y="437" xml:space="preserve"><tspan x="1985" dy="0">second</tspan></text>
+    <text class="connection-label" x="1985" y="575" xml:space="preserve"><tspan x="1985" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="185" y="1011" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="545" y="1011" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
+    <text class="connection-label" x="905" y="1011" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
+    <text class="connection-label" x="1265" y="1011" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -79,15 +79,15 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">request: u8</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 586)">
+    <g class="node merge" transform="translate(172 619)">
       <title xml:space="preserve">the shared merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 1438)">
+    <g class="node merge" transform="translate(172 1378)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 1230)">
+    <g class="node merge" transform="translate(172 1162)">
       <title xml:space="preserve">the selected merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -140,62 +140,62 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take one more step toward the </tspan><tspan x="-124" dy="18">second terminal result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1972 691)">
+    <g class="node action" transform="translate(1972 619)">
       <title xml:space="preserve">Produce the second terminal result.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the second terminal </tspan><tspan x="-124" dy="18">result.</tspan></text>
     </g>
-    <g class="node select" transform="translate(172 838)">
+    <g class="node select" transform="translate(172 766)">
       <title xml:space="preserve">Choose an inner case wide enough to block both terminal columns.</title>
       <polygon class="node-shape" points="-116,-42 140,-42 116,42 -140,42"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Choose an inner case wide </tspan><tspan x="0" dy="18">enough to block both </tspan><tspan x="0" dy="18">terminal columns.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 987)">
+    <g class="node case" transform="translate(172 915)">
       <title xml:space="preserve">Build A.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build A.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 987)">
+    <g class="node case" transform="translate(532 915)">
       <title xml:space="preserve">Build B.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build B.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 987)">
+    <g class="node case" transform="translate(892 915)">
       <title xml:space="preserve">Build C.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build C.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1252 987)">
+    <g class="node case" transform="translate(1252 915)">
       <title xml:space="preserve">Build D.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build D.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1126)">
+    <g class="node action" transform="translate(172 1054)">
       <title xml:space="preserve">Build result A.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result A.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 1126)">
+    <g class="node action" transform="translate(532 1054)">
       <title xml:space="preserve">Build result B.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result B.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 1126)">
+    <g class="node action" transform="translate(892 1054)">
       <title xml:space="preserve">Build result C.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result C.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 1126)">
+    <g class="node action" transform="translate(1252 1054)">
       <title xml:space="preserve">Build result D.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build result D.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1334)">
+    <g class="node action" transform="translate(172 1270)">
       <title xml:space="preserve">Use the result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1539)">
+    <g class="node end" transform="translate(172 1483)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

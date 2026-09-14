@@ -23,7 +23,7 @@ use crate::model::{Flow, WireMerge};
 use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
 
 use super::place::Placement;
-use super::{Shape, describe};
+use super::{Run, RunLine, Shape, describe};
 
 /// What one connection does in one rank gap: it enters from above at `enter`,
 /// leaves downward at `exit`, and needs a lane when those differ.
@@ -59,6 +59,8 @@ pub(super) struct Plan {
     /// Lane of each sideways run, keyed by connection and gap.
     pub(super) lanes: BTreeMap<(usize, usize), usize>,
     pub(super) gap_lanes: Vec<usize>,
+    /// Final sideways arrivals on junction rows, outside the rank gaps.
+    pub(super) arrivals: BTreeMap<usize, Run>,
 }
 
 /// Which connection the search has to move when one rank gap has no
@@ -125,6 +127,30 @@ pub(super) fn plan(
         .map(|(index, &(.., waypoint))| waypoint.unwrap_or_else(|| own[&index]))
         .collect::<Vec<_>>();
 
+    let arrivals = spans
+        .iter()
+        .enumerate()
+        .filter_map(|(index, &(top, bottom, start, end, _))| {
+            let enter = if top == bottom {
+                start
+            } else {
+                descents[index]
+            };
+            (matches!(
+                topology.connections[index].destination,
+                Destination::Junction(_)
+            ) && enter != end)
+                .then_some((
+                    index,
+                    Run {
+                        line: RunLine::Rank(bottom),
+                        enter,
+                        exit: end,
+                    },
+                ))
+        })
+        .collect::<BTreeMap<_, _>>();
+
     let crossings = spans
         .iter()
         .enumerate()
@@ -135,7 +161,11 @@ pub(super) fn plan(
                     let crossing = Crossing {
                         connection: index,
                         enter: if gap == top { start } else { waypoint },
-                        exit: if gap + 1 == bottom { end } else { waypoint },
+                        exit: if gap + 1 == bottom && !arrivals.contains_key(&index) {
+                            end
+                        } else {
+                            waypoint
+                        },
                     };
                     (gap, crossing)
                 })
@@ -147,6 +177,7 @@ pub(super) fn plan(
         crossings,
         lanes: BTreeMap::new(),
         gap_lanes: vec![0; placement.ranks],
+        arrivals,
     };
     assign_lanes(flow, merges, topology, &mut plan)?;
 

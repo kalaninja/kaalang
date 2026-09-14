@@ -30,7 +30,7 @@
     <path class="connection" d="
       M 172 94 L 172 170
     "/>
-    <text class="connection-label" x="185" y="127" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

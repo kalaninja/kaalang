@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="740" viewBox="0 0 704 740" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for shared_setup</title>
   <desc id="kaalang-description">Nodes: Start: shared_setup with parameters condition: bool handing over condition; Action: Prepare the shared setup. capturing nothing handing over setup; Question: Take the short branch? capturing condition handing over short / long; Action: Use the setup on the short branch. capturing short, &amp;setup handing over end; Action: Use the setup on the long branch. capturing long, &amp;setup handing over end; End: u32 capturing end; Merge: end. Connections: Start: shared_setup to Action: Prepare the shared setup.; Action: Prepare the shared setup. to Question: Take the short branch?; Question: Take the short branch? branch 1 to Action: Use the setup on the short branch.; Question: Take the short branch? branch 2 to Action: Use the setup on the long branch.; Action: Use the setup on the short branch. to the end merge; Action: Use the setup on the long branch. to the end merge; the end merge to End: u32.</desc>
   <defs>
@@ -32,11 +32,11 @@
       M 172 226 L 172 298
       M 172 370 L 172 442
       M 312 334 L 532 334 L 532 442
-      M 172 506 L 172 578
-      M 532 506 L 532 578 L 172 578
-      M 172 578 L 172 650
+      M 172 506 L 172 582
+      M 532 506 L 532 582 L 172 582
+      M 172 582 L 172 658
     "/>
-    <text class="connection-label" x="185" y="596" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="600" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">setup</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">short</tspan></text>
@@ -52,7 +52,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 578)">
+    <g class="node merge" transform="translate(172 582)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -80,7 +80,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the setup on the long branch.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 679)">
+    <g class="node end" transform="translate(172 687)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

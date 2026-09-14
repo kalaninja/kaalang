@@ -563,6 +563,20 @@ const FLOW_BUDGET: Duration = Duration::from_millis(10);
 /// a plan change; measurements record the hardware and default debug profile.
 const STRESS_BUDGET: Duration = Duration::from_secs(1);
 
+#[test]
+fn a_serial_flow_with_a_cycle_compacts_inside_its_budget() {
+    let mut model = crate::build(&stress(1, 40)).unwrap();
+    let ranks = model.arrangement.rank.clone();
+    let started = Instant::now();
+    model.compact_arrangement();
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed < STRESS_BUDGET,
+        "compacting a serial flow took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
+    );
+    assert_eq!(model.arrangement.rank, ranks);
+}
+
 /// The whole corpus is projected, constructed, and checked inside the corpus
 /// budget, and each flow's 95th percentile meets the per-flow target.
 #[test]

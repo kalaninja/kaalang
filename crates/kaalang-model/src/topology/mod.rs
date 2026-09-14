@@ -130,8 +130,8 @@ pub struct Exit {
 }
 
 /// A wire merge, cycle entry, iteration tail, break, or cycle result. Junctions
-/// add no computational node or producer occurrence. Structural junctions
-/// merge no wire; entries and breaks are structural.
+/// add no computational node or producer occurrence. A cycle result may share
+/// the wire merge that feeds its break; other structural junctions merge no wire.
 ///
 /// Merged wires that the same alternatives provide, ordered behind the same
 /// branch-local work, converge at the same place, so they share one junction:
@@ -269,6 +269,19 @@ impl Topology {
         self.incoming(Vertex::Node(node)).count() == 1
     }
 
+    /// A side exit may meet a visible merge or its sole iteration tail on its row.
+    /// A tail with no other arrivals needs no empty row before turning upward.
+    pub(crate) fn same_row_junction(&self, connection: &Connection) -> bool {
+        matches!(
+            (connection.source, connection.destination),
+            (Source::Exit(exit), Destination::Junction(junction))
+                if exit.branch.is_some_and(|branch| branch > 0)
+                    && (self.junctions.get(junction).is_some_and(|junction| !junction.merges.is_empty())
+                        || self.loops.iter().any(|loop_| loop_.tail == junction)
+                            && self.incoming(connection.destination).count() == 1)
+        )
+    }
+
     /// Whether one exit hands over exactly the wires that meet at one junction,
     /// in the same order: position for position, the occurrences it provides are
     /// alternatives of the merges that converge there.
@@ -367,9 +380,9 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
                 BlockKind::Loop => loop_boundaries
                     .iter()
                     .find(|boundary| boundary.header == block)
-                    .map(|boundary| boundary.entry)?,
+                    .map(LoopBoundary::entry_junction)?,
                 BlockKind::Break if statement.inputs.is_empty() => return None,
-                BlockKind::Break => break_block::project(&mut count),
+                BlockKind::Break => break_block::result(model.flow, &loop_boundaries, block),
                 _ => unreachable!("only structural statements have junctions"),
             };
             Some((block, junction))
@@ -410,8 +423,8 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
         topology.junctions[junction].is_break = model.flow.blocks[block].kind == BlockKind::Break;
     }
     for boundary in &topology.loop_boundaries {
-        topology.junctions[boundary.entry].is_loop_entry = true;
-        if let Some(result) = boundary.result {
+        topology.junctions[boundary.entry_junction()].is_loop_entry = true;
+        if let Some(result) = boundary.result_junction() {
             topology.junctions[result].is_loop_result = true;
         }
     }
@@ -421,6 +434,7 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
     close_loops(&mut topology);
     if !collapse_loops {
         loop_block::order_boundaries(&mut topology);
+        loop_block::coalesce_boundaries(&mut topology);
     }
     end::order(&mut topology);
     topology
@@ -767,7 +781,7 @@ fn serial_connections(
             }
         }
         let break_result = (model.flow.blocks[block].kind == BlockKind::Break && !collapse_loops)
-            .then(|| cycle_result(model.flow, boundaries, block));
+            .then(|| break_block::result(model.flow, boundaries, block));
         if let Some(result) = break_result
             && !structural.contains_key(&block)
         {
@@ -794,10 +808,6 @@ fn serial_connections(
             collapse_loops,
         );
         if let Some(result) = break_result {
-            direct.insert(Connection {
-                source: exit,
-                destination: Destination::Junction(result),
-            });
             previous = Source::Junction(result);
             continue;
         }
@@ -834,17 +844,6 @@ fn serial_connections(
         }
     }
     direct
-}
-
-fn cycle_result(flow: &Flow, boundaries: &[LoopBoundary], block: usize) -> usize {
-    let target = flow.blocks[block]
-        .break_target
-        .expect("a break has a cycle target");
-    boundaries
-        .iter()
-        .find(|boundary| boundary.header == target)
-        .and_then(|boundary| boundary.result)
-        .expect("a completed cycle has a result boundary")
 }
 
 /// The junction the route may continue from after `block`: one this execution
@@ -1039,7 +1038,7 @@ fn source(
                 .iter()
                 .find(|boundary| boundary.header == block)
                 .expect("an expanded cycle input has an entry boundary")
-                .entry,
+                .entry_junction(),
         ),
         ProducerId::BlockOutput { block, output: _ }
             if model.flow.blocks[block].kind == BlockKind::Loop && !collapse_loops =>
@@ -1048,7 +1047,7 @@ fn source(
                 boundaries
                     .iter()
                     .find(|boundary| boundary.header == block)
-                    .and_then(|boundary| boundary.result)
+                    .and_then(LoopBoundary::result_junction)
                     .expect("a produced cycle result has a boundary"),
             )
         }
@@ -1112,9 +1111,30 @@ pub struct Loop {
 pub struct LoopBoundary {
     pub header: usize,
     pub end: usize,
-    pub entry: usize,
-    /// Absent when no finite execution completes the cycle.
-    pub result: Option<usize>,
+    /// A junction when routes meet here, or the first body node otherwise.
+    pub entry: Vertex,
+    /// A junction or the body exit supplying the result, including its branch.
+    /// Absent when the cycle never completes.
+    pub result: Option<Source>,
+}
+
+impl LoopBoundary {
+    /// Projection allocates entry junctions before removing redundant ones.
+    fn entry_junction(&self) -> usize {
+        let Vertex::Junction(junction) = self.entry else {
+            unreachable!("entry junctions are read before boundary coalescing");
+        };
+        junction
+    }
+
+    fn result_junction(&self) -> Option<usize> {
+        self.result.map(|result| {
+            let Source::Junction(junction) = result else {
+                unreachable!("result junctions are read before boundary coalescing");
+            };
+            junction
+        })
+    }
 }
 
 fn boundaries(model: &Analyzed<'_>, count: &mut usize) -> Vec<LoopBoundary> {
@@ -1141,8 +1161,8 @@ fn boundaries(model: &Analyzed<'_>, count: &mut usize) -> Vec<LoopBoundary> {
                 end: model.flow.blocks[header]
                     .loop_end
                     .expect("a cycle owns a body"),
-                entry,
-                result,
+                entry: Vertex::Junction(entry),
+                result: result.map(Source::Junction),
             }
         })
         .collect()
@@ -1161,7 +1181,7 @@ fn loops(model: &Analyzed<'_>, boundaries: &[LoopBoundary], count: &mut usize) -
                     .iter()
                     .find(|boundary| boundary.header == header)
                     .expect("every expanded cycle has a boundary")
-                    .entry,
+                    .entry_junction(),
                 prefer_left: loop_block::prefer_left(model, header),
             }
         })

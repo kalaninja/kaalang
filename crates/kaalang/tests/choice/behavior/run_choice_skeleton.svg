@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="746" viewBox="0 0 704 746" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="754" viewBox="0 0 704 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for run_choice_skeleton</title>
   <desc id="kaalang-description">Nodes: Start: run_choice_skeleton with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Produce the negative result. capturing negative handing over end; Action: Produce the nonnegative result. capturing nonnegative handing over end; End: &amp;&apos;static str capturing end; Merge: end. Connections: Start: run_choice_skeleton to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Produce the negative result.; Case: The value is nonnegative. to Action: Produce the nonnegative result.; Action: Produce the negative result. to the end merge; Action: Produce the nonnegative result. to the end merge; the end merge to End: &amp;&apos;static str.</desc>
   <defs>
@@ -33,14 +33,14 @@
       M 300 198 L 532 198 L 532 306
       M 172 376 L 172 448
       M 532 376 L 532 448
-      M 172 512 L 172 584
-      M 532 512 L 532 584 L 172 584
-      M 172 584 L 172 656
+      M 172 512 L 172 588
+      M 532 512 L 532 588 L 172 588
+      M 172 588 L 172 664
     "/>
-    <text class="connection-label" x="185" y="602" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">negative</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">nonnegative</tspan></text>
+    <text class="connection-label" x="185" y="606" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">negative</tspan></text>
+    <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">nonnegative</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -48,7 +48,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 584)">
+    <g class="node merge" transform="translate(172 588)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -81,7 +81,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the nonnegative result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 685)">
+    <g class="node end" transform="translate(172 693)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">&amp;&apos;static str</tspan></text>
     </g>

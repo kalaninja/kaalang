@@ -18,8 +18,8 @@ following terms:
 - a **node** is a drawn unit that represents all or part of one block, an
   implicit wire merge, or one of the synthetic start and end nodes. An expanded
   cycle is a bounded region, a collapsed cycle is one node, a break is
-  represented by routes and any needed structural junction, and a return is
-  represented by its route to end;
+  represented by its route to the cycle result, and a return is represented by
+  its route to end;
 - a **connection** is one drawn control-flow link between nodes, not a wire;
   connections need not correspond one-to-one with wire dependencies;
 - a **label** is text attached to a node or connection;
@@ -42,10 +42,10 @@ following terms:
 ## 3. Diagram structure
 
 A diagram contains a visual representation of each reachable block the flow
-declares. Breaks use structural junctions as needed, while the flow's structural
-return connects directly to end. The implicit visual end boundary has a node
-only when at least one finite execution summary has a `Return` outcome. No block
-is duplicated to simplify layout.
+declares. Breaks connect to their cycle's result interface, while the flow's
+structural return connects directly to end. The implicit visual end boundary has
+a node only when at least one finite execution summary has a `Return` outcome.
+No block is duplicated to simplify layout.
 
 Every cycle is rendered in one of two representations selected for the whole
 diagram. The expanded representation draws its boundary, body, local result
@@ -161,6 +161,11 @@ boundary, and the cycle's one normal continuation leaves that boundary carrying
 all declared outputs together. A cycle with no reachable break has no normal
 outgoing connection.
 
+Without a repeating route, an entry that only leads to the first body node can
+use that node directly when it has no other arrival. The boundary still leaves
+padding above the node and contains its input label, but no separate entry
+junction reserves a row for an absent back edge.
+
 Nested cycles have nested boundaries. Every inner route either remains within
 the inner boundary or completes at its result interface before the enclosing
 body continues; no inner wire or transfer connects directly to an outer
@@ -171,8 +176,8 @@ A collapsed cycle becomes one cycle node carrying the same loop marker and
 authored description. Its receiving label lists the authored captures, and its
 hand-over lists the authored output bindings. It has one normal exit when
 completion is reachable, regardless of the number of output wires, and none when
-the cycle fully diverges. Its body, break routes, result junction, and iteration
-back edge are hidden, not removed from validation.
+the cycle fully diverges. Its body, break routes, result interface, and
+iteration back edge are hidden, not removed from validation.
 
 Unit-valued question outputs captured by a cycle or break still select an
 existing branch route. The branch description or output name remains at the
@@ -184,10 +189,16 @@ capture list on the node; an expanded cycle adds no interface list.
 
 A break redirects its branch route to the directly containing cycle's result
 boundary. Break routes from nested cycles stop at their own boundary and never
-bypass an enclosing cycle. A break capturing data uses an unlabeled structural
-junction for its dependencies; a break with no data captures adds no vertex or
-spacing. It has no computational figure, description, or output hand-over of its
-own.
+bypass an enclosing cycle. RFC 0001 permits at most one break per cycle. Its
+explicit captures reach the cycle's result interface; the break adds no separate
+vertex or spacing. Alternative exit routes merge using ordinary wire merges.
+When a merge only feeds the break and supplies its only incoming route, that
+merge is also the result junction. A body exit that only feeds the break and
+supplies its only incoming route can supply the result directly, without a
+separate junction or row. A question keeps the identity of the exiting branch;
+its other branch can still repeat. The boundary retains padding below its body
+and return routes and contains their labels. A break has no computational
+figure, description, or output hand-over of its own.
 
 ### 4.9 return
 
@@ -275,7 +286,11 @@ two ends of the same connection, that connection is the only one leaving its
 source exit and the only one entering its destination node, and the two lists
 have the same nonempty displayed names in the same order. `name`, `mut name`,
 `&name`, and `&mut name` do not match each other, and an empty hand-over shares
-nothing. The shared label represents both connection-end labels.
+nothing. The shared label represents both connection-end labels and stays beside
+the receiving node, in the ordinary capture position. A body exit that directly
+supplies a cycle result keeps its hand-over inside the boundary; it does not
+share that label with the continuation's capture, which receives the cycle's
+outputs as a separate transfer.
 
 Identical hand-overs from alternative exits may share one label beside their
 merge when each exit has only one outgoing connection and all those connections
@@ -284,8 +299,8 @@ different hand-over remains at its own exit. The shared label represents the
 alternative hand-overs, not a new producer at the merge node. If the merge has
 one outgoing connection, it is the sole connection entering its consumer, and
 that consumer's capture list matches the shared hand-over, the same label also
-represents the capture. Structural cycle-result junctions are not wire merges
-and share no wire label.
+represents the capture. A cycle-result junction shares a wire label only when it
+is also an ordinary wire merge.
 
 Wire labels use logical wire names. A raw identifier appears without its `r#`:
 the raw and ordinary spellings of one wire name the same wire, and only the
@@ -381,27 +396,45 @@ dependency and serial-order rules, including dependencies from their explicit
 captures. No iteration-local wire travels along a back edge or crosses the
 boundary directly.
 
+The cycle's authored break uses the cycle's result interface. A sole body exit
+can supply that interface directly; its continuation follows the placement rules
+below. No separate transfer point or connection duplicates the result. A wire
+merge that only feeds this result, with no other arrival at the result, shares
+its junction and keeps its visible merge marker and wire label.
+
 The result route of a break occupies its branch column beside the other body
 routes. Carry precedence from the tails of the bounded region through its result
-boundary and outer continuation to the first wire merge, enclosing iteration
-tail, or end. Those boundaries stay below the body; preceding actions,
-questions, choices, and cycle entries can start alongside it. This is layout
-precedence only, never a drawn execution edge from a repeating tail. Nested back
-edges are routed innermost first. A completed inner cycle may feed outer work or
-reach the outer iteration tail through that work's normal route. Each authored
-block is drawn once; finite summaries do not unroll runtime iterations or prove
-termination.
+boundary and outer continuation to the first wire merge or end. Those boundaries
+stay below the body; preceding actions, questions, choices, and cycle entries
+can start alongside it. A cycle result may share its own iteration tail's row
+when their routes are disjoint; its continuation's first merge or end still
+stays below both. An enclosing iteration tail reached only by a side exit may
+turn upward beside an unfinished inner body if the return clears its whole
+boundary. A body column occupied on a different row still lies inside that
+boundary. Other arrivals retain the body's precedence so the return cannot turn
+through a nested boundary. Its return contour clears the whole body, including
+nested cycles below the tail. This is layout precedence only, never a drawn
+execution edge from a repeating tail. Nested back edges are routed innermost
+first. A completed inner cycle may feed outer work or reach the outer iteration
+tail through that work's normal route. Each authored block is drawn once; finite
+summaries do not unroll runtime iterations or prove termination.
 
 ## 8. Spatial notation
 
-Along each forward connection, execution time runs from top to bottom: the
-destination node occupies a lower row than its source node, and the route never
-moves upward. Nodes on alternative branches may share a row.
+Along each forward connection, execution time runs from top to bottom or from a
+side exit into an implicit merge or its sole iteration tail on the same row.
+Every other destination node occupies a lower row than its source node, and a
+route never moves upward. Nodes on alternative branches may share a row. This
+also applies beside a cycle with no completing route: source order alone does
+not place its independent siblings above or below its boundary.
 
-The visual language uses columns and rows. Branches are arranged from left to
-right in authored order: question answer/output order and choice case order. The
-first question answer and the first choice case continue down the current
-column; remaining branches appear to their right.
+The visual language uses columns and rows. Every node and junction, including
+cycle entries and iteration tails, occupies its cell centre. Horizontal arrivals
+into junctions and the ends of iteration back edges follow their row centres.
+Branches are arranged from left to right in authored order: question
+answer/output order and choice case order. The first question answer and the
+first choice case continue down the current column; remaining branches appear to
+their right.
 
 The parameter panel is vertically centred beside start. It does not overlap a
 node, connection, or connection label.
@@ -439,19 +472,28 @@ Forward connections are plain lines without arrowheads. An iteration back edge
 travels upward inside its cycle boundary, outside the body's content, and ends
 horizontally with an arrowhead at its entry junction. It clears the whole column
 range of that body, including nested cycle boundaries and back edges,
-independently of the rows assigned to its vertices. The cycle's outer
-continuation does not belong to the body. The common segment below the junction
-enters the first body block without an arrowhead. Prefer the right contour when
-every repeating route takes the rightmost branch of the first selection in the
-body; otherwise prefer the left contour. A cycle without a selection prefers the
-left contour. The back edge is the only exception to downward routing and the
-only arrowhead. A route contains only straight horizontal and vertical segments,
-so every bend is a right angle.
+independently of the rows assigned to its vertices. Leave at least one routing
+lane between an enclosing back edge and a nested cycle boundary. The cycle's
+outer continuation does not belong to the body. The common segment below the
+junction enters the first body block without an arrowhead. Prefer the right
+contour when every repeating route takes the rightmost branch of the first
+selection in the body; otherwise prefer the left contour. A cycle without a
+selection prefers the left contour. The back edge is the only exception to
+downward routing and the only arrowhead. A route contains only straight
+horizontal and vertical segments, so every bend is a right angle.
+
+When the only route reaching an iteration tail is a side exit, the tail may
+share that exit's row if all route and precedence checks still hold. An empty
+repeating branch then reaches the return contour horizontally and turns upward
+without descending to an unused row.
 
 At an implicit merge, side routes finish horizontally at the junction on the
 merge rail. The outgoing connection alone owns the vertical below that point: an
 incoming side route must not turn down and overlap that continuation. Routes
-already in the junction's column descend straight to the same point.
+already in the junction's column descend straight to the same point. When the
+last producer reaches the merge from a later branch's side exit, the merge may
+share that producer's row; the earlier producers descend to that horizontal
+rail.
 
 The visual-language contract covers the diagram's nodes, cycle boundaries and
 interfaces, parameter panel, roles, labels, the connection end or ends to which

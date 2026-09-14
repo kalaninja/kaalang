@@ -6,7 +6,7 @@
 //! expansion is used. The shared verifier checks the resulting witness.
 
 use super::verify;
-use crate::construct::{Arrangement, Contour, Route, Run, Side};
+use crate::construct::{Arrangement, Contour, Route, Run, RunLine, Side};
 use crate::model::{BlockKind, Flow};
 use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
 use std::collections::{BTreeMap, BTreeSet};
@@ -943,13 +943,13 @@ impl<'a> Reference<'a> {
                 })
                 .collect(),
         };
-        Self::draw_strips(events, x, &mut drawing);
+        self.draw_strips(events, x, &mut drawing);
         drawing
             .back_routes
             .retain(|_, route| !route.runs.is_empty());
         drawing
     }
-    fn draw_strips(events: &[Event], x: &[i32], drawing: &mut Arrangement) {
+    fn draw_strips(&self, events: &[Event], x: &[i32], drawing: &mut Arrangement) {
         for (gap, pair) in events.windows(2).enumerate() {
             let (above, below) = (&pair[0], &pair[1]);
             let mut current = above
@@ -962,8 +962,7 @@ impl<'a> Reference<'a> {
                     let route = &mut drawing.routes[w];
                     if route.departure != current[&item] {
                         route.runs.push(Run {
-                            gap,
-                            lane: 0,
+                            line: RunLine::Lane { gap, lane: 0 },
                             enter: route.departure,
                             exit: current[&item],
                         });
@@ -994,8 +993,7 @@ impl<'a> Reference<'a> {
                     Active::Back(i) => drawing.back_routes.get_mut(&i).unwrap(),
                 };
                 route.runs.push(Run {
-                    gap,
-                    lane,
+                    line: RunLine::Lane { gap, lane },
                     enter: from,
                     exit: to,
                 });
@@ -1013,9 +1011,17 @@ impl<'a> Reference<'a> {
                         current[other]
                     };
                     if enter != arrival {
+                        let position = if below.vertex.is_some()
+                            && matches!(
+                                self.topology.connections[w].destination,
+                                Vertex::Junction(_)
+                            ) {
+                            RunLine::Rank(gap + 1)
+                        } else {
+                            RunLine::Lane { gap, lane }
+                        };
                         route.runs.push(Run {
-                            gap,
-                            lane,
+                            line: position,
                             enter,
                             exit: arrival,
                         });

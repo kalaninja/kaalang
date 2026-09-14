@@ -16,12 +16,16 @@ fn invalid(mode: u8) -> u8 {
                 _ => (),
             };
 
-            |first, mode| break mode;
+            #[action("Keep the immediate result.")]
+        let selected = |first, mode| mode;
 
             #[action("Advance to the final case.")]
             |advance, &mut mode| *mode = 2;
 
-            |last, mode| break mode;
+            #[action("Keep the later result.")]
+        let selected = |last, mode| mode;
+
+        |selected| break selected;
         };
 
         |nested| break nested;

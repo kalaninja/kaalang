@@ -31,7 +31,7 @@ mod return_block;
 /// branches, then an execution that reaches the root boundary without `return`, then an unreachable block,
 /// then a producer occurrence that no execution captures, then an invalid
 /// branch-output continuation, then a block decided by independent questions
-/// or choices, then an invalid wire merge, shared continuation, or loop route order.
+/// or choices, then an invalid wire merge or shared continuation.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
     let end = flow.blocks.len() - 1;
     debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
@@ -84,7 +84,6 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
-    loop_block::validate_routes(flow, &executions)?;
     Ok((executions, convergence_groups, merges))
 }
 

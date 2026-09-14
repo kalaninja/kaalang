@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1208" height="1242" viewBox="0 0 1208 1242" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1228" height="1250" viewBox="0 0 1228 1250" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_exit_convergence</title>
-  <desc id="kaalang-description">Cycles: Count down to zero. with inputs mut count and outputs result; Converge the inner stopping routes. with inputs &amp;mut count and outputs (). Nodes: Start: nested_exit_convergence with parameters count: usize handing over count; Select: Leave the inner loop? capturing &amp;count; Case: Leave at zero. handing over zero; Case: Leave at one. handing over one; Case: Count down. handing over again; Action: Count down. capturing again, &amp;mut count; Question: Finish the outer loop? capturing &amp;count handing over done / again; Action: Count down once more. capturing again, &amp;mut count; End: usize capturing result. Connections: Start: nested_exit_convergence to the entry of the cycle; Select: Leave the inner loop? to Case: Leave at zero.; Select: Leave the inner loop? to Case: Leave at one.; Select: Leave the inner loop? to Case: Count down.; Case: Leave at zero. to a cycle break; Case: Leave at one. to a cycle break; Case: Count down. to Action: Count down.; Action: Count down. to the iteration tail of the cycle; Question: Finish the outer loop? branch 1 to a cycle break; Question: Finish the outer loop? branch 2 to Action: Count down once more.; Action: Count down once more. to the iteration tail of the cycle; the entry of the cycle to the entry of the cycle; the cycle result to End: usize; the entry of the cycle to Select: Leave the inner loop?; the cycle result to Question: Finish the outer loop?; a cycle break to the cycle result; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count down to zero. with inputs mut count and outputs result; Converge the inner stopping routes. with inputs &amp;mut count and outputs (). Nodes: Start: nested_exit_convergence with parameters count: usize handing over count; Select: Leave the inner loop? capturing &amp;count; Case: Leave at zero. handing over zero; Case: Leave at one. handing over one; Case: Count down. handing over again; Action: Finish at zero. capturing zero handing over done; Action: Finish at one. capturing one handing over done; Action: Count down. capturing again, &amp;mut count; Question: Finish the outer loop? capturing &amp;count handing over done / again; Action: Count down once more. capturing again, &amp;mut count; End: usize capturing result; Merge: done. Connections: Start: nested_exit_convergence to the entry of the cycle; Select: Leave the inner loop? to Case: Leave at zero.; Select: Leave the inner loop? to Case: Leave at one.; Select: Leave the inner loop? to Case: Count down.; Case: Leave at zero. to Action: Finish at zero.; Case: Leave at one. to Action: Finish at one.; Case: Count down. to Action: Count down.; Action: Finish at zero. to the done merge at the cycle result; Action: Finish at one. to the done merge at the cycle result; Action: Count down. to the iteration tail of the cycle; Question: Finish the outer loop? branch 1 to End: usize; Question: Finish the outer loop? branch 2 to Action: Count down once more.; Action: Count down once more. to the iteration tail of the cycle; the done merge at the cycle result to Question: Finish the outer loop?; the entry of the cycle to the entry of the cycle; the entry of the cycle to Select: Leave the inner loop?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,12 +27,12 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Count down to zero.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1144" height="988" rx="12"/>
-    <text class="cycle-caption" x="1164" y="141" text-anchor="end" xml:space="preserve"><tspan x="1164" dy="0">Count down to zero.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="127" width="1164" height="996" rx="12"/>
+    <text class="cycle-caption" x="1184" y="141" text-anchor="end" xml:space="preserve"><tspan x="1184" dy="0">Count down to zero.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Converge the inner stopping routes.</title>
-    <rect class="cycle-boundary" x="60" y="199" width="1076" height="564" rx="12"/>
+    <rect class="cycle-boundary" x="60" y="199" width="1076" height="568" rx="12"/>
     <text class="cycle-caption" x="1124" y="213" text-anchor="end" xml:space="preserve"><tspan x="1124" dy="0">Converge the inner stopping routes.</tspan></text>
     </g>
   </g>
@@ -46,41 +46,44 @@
       M 228 520 L 228 592
       M 588 520 L 588 592
       M 948 520 L 948 592
-      M 948 656 L 948 728
-      M 228 872 L 228 944
-      M 368 836 L 588 836 L 588 944
-      M 588 1008 L 588 1080
+      M 228 656 L 228 732
+      M 588 656 L 588 732 L 228 732
+      M 948 656 L 948 732
+      M 228 880 L 228 1160
+      M 368 844 L 588 844 L 588 952
+      M 588 1016 L 588 1088
+      M 228 732 L 228 808
       M 228 162 L 228 234
-      M 228 1080 L 228 1152
       M 228 234 L 228 306
-      M 228 728 L 228 800
-      M 228 592 L 228 728
-      M 588 592 L 588 728 L 228 728
-      M 228 944 L 228 1080
     "/>
     <path class="connection" d="
-      M 948 728 L 1108 728 L 1108 234 L 228 234
+      M 948 732 L 1108 732 L 1108 234 L 228 234
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 588 1080 L 1148 1080 L 1148 162 L 228 162
+      M 588 1088 L 1168 1088 L 1168 162 L 228 162
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="241" y="750" xml:space="preserve"><tspan x="241" dy="0">done</tspan></text>
+    <text class="connection-label" x="241" y="581" xml:space="preserve"><tspan x="241" dy="0">zero</tspan></text>
+    <text class="connection-label" x="601" y="581" xml:space="preserve"><tspan x="601" dy="0">one</tspan></text>
     <text class="connection-label" x="241" y="108" xml:space="preserve"><tspan x="241" dy="0">count</tspan></text>
-    <text class="connection-label" x="241" y="538" xml:space="preserve"><tspan x="241" dy="0">zero</tspan></text>
-    <text class="connection-label" x="601" y="538" xml:space="preserve"><tspan x="601" dy="0">one</tspan></text>
     <text class="connection-label" x="961" y="538" xml:space="preserve"><tspan x="961" dy="0">again</tspan></text>
-    <text class="connection-label" x="241" y="890" xml:space="preserve"><tspan x="241" dy="0">done</tspan></text>
-    <text class="connection-label" x="381" y="854" xml:space="preserve"><tspan x="381" dy="0">again</tspan></text>
+    <text class="connection-label" x="241" y="898" xml:space="preserve"><tspan x="241" dy="0">done</tspan></text>
+    <text class="connection-label" x="381" y="862" xml:space="preserve"><tspan x="381" dy="0">again</tspan></text>
     <text class="connection-label" x="241" y="295" xml:space="preserve"><tspan x="241" dy="0">&amp;count</tspan></text>
     <text class="connection-label" x="961" y="581" xml:space="preserve"><tspan x="961" dy="0">again, &amp;mut count</tspan></text>
-    <text class="connection-label" x="241" y="789" xml:space="preserve"><tspan x="241" dy="0">&amp;count</tspan></text>
-    <text class="connection-label" x="601" y="933" xml:space="preserve"><tspan x="601" dy="0">again, &amp;mut count</tspan></text>
-    <text class="connection-label" x="241" y="1141" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
+    <text class="connection-label" x="241" y="797" xml:space="preserve"><tspan x="241" dy="0">&amp;count</tspan></text>
+    <text class="connection-label" x="601" y="941" xml:space="preserve"><tspan x="601" dy="0">again, &amp;mut count</tspan></text>
+    <text class="connection-label" x="241" y="1149" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 368 61 L 464 61"/>
     <g class="parameter-panel" transform="translate(584 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">count: usize</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(228 732)">
+      <title xml:space="preserve">the done merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(228 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
@@ -106,22 +109,32 @@
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Count down.</tspan></text>
     </g>
+    <g class="node action" transform="translate(228 624)">
+      <title xml:space="preserve">Finish at zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish at zero.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(588 624)">
+      <title xml:space="preserve">Finish at one.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish at one.</tspan></text>
+    </g>
     <g class="node action" transform="translate(948 624)">
       <title xml:space="preserve">Count down.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down.</tspan></text>
     </g>
-    <g class="node question" transform="translate(228 836)">
+    <g class="node question" transform="translate(228 844)">
       <title xml:space="preserve">Finish the outer loop?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish the outer loop?</tspan></text>
     </g>
-    <g class="node action" transform="translate(588 976)">
+    <g class="node action" transform="translate(588 984)">
       <title xml:space="preserve">Count down once more.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down once more.</tspan></text>
     </g>
-    <g class="node end" transform="translate(228 1181)">
+    <g class="node end" transform="translate(228 1189)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

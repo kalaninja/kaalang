@@ -1,5 +1,5 @@
-error: a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches
- --> tests/loop/compile_fail/nested_completion_encloses_repeat.rs:7:9
-  |
-7 |         #[cycle("Put a repeating route between completions.")]
-  |         ^
+error: branches in a kaalang choice convergence group must be adjacent
+  --> tests/loop/compile_fail/nested_completion_encloses_repeat.rs:13:25
+   |
+13 |             let (first, advance, last) = |mode| match mode {
+   |                         ^^^^^^^

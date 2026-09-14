@@ -36,46 +36,257 @@ fn sibling_branches_start_at_the_top_of_their_columns() {
         .topology
         .loop_boundaries
         .iter()
-        .find(|boundary| boundary.header == 4)
+        .find(|boundary| scene.captions.label(NodeId::Block(boundary.header)) == "Produce one.")
         .unwrap()
         .entry;
-    assert_eq!(
-        scene.rank(Vertex::Node(sibling.id)),
-        scene.rank(Vertex::Junction(entry)),
-    );
-}
-
-#[test]
-fn a_diverging_cycle_keeps_its_sibling_outside_the_boundary() {
-    let scene = drawn(fixture!("loop/behavior", "diverging_middle_branch"));
-    let spin = named_node(&scene, "Spin.");
-    let region = scene
-        .loop_regions
-        .iter()
-        .find(|region| region.description == "Spin forever.")
-        .expect("the inner cycle has a boundary");
-    assert!(Scene::bounds(named_node(&scene, "Advance.")).3 <= region.top);
+    assert_eq!(scene.rank(Vertex::Node(sibling.id)), scene.rank(entry),);
     let incoming = scene
         .connections
         .iter()
-        .find(|edge| edge.destination == Destination::Node(spin.id))
+        .find(|edge| edge.destination == entry)
         .unwrap();
+    assert_eq!(incoming.points.last().unwrap().y, Scene::bounds(sibling).1);
+}
+
+#[test]
+fn cycle_junctions_stay_at_the_centres_of_their_rows() {
+    for fixture in [
+        fixture!("loop/behavior", "conditional_nested_loop"),
+        fixture!("loop/behavior", "merged_break"),
+        fixture!("loop/behavior", "count_to"),
+        (
+            include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
+            "binary_search",
+        ),
+    ] {
+        let scene = drawn(fixture);
+        let rows = scene.rows();
+        for edge in &scene.connections {
+            for (vertex, point) in [
+                (Vertex::from(edge.source), edge.points.first().unwrap()),
+                (edge.destination, edge.points.last().unwrap()),
+            ] {
+                if let Vertex::Junction(_) = vertex {
+                    assert_eq!(
+                        point.y,
+                        rows.line_y(RunLine::Rank(scene.rank(vertex))),
+                        "{}: {vertex:?} must stay at the row centre",
+                        fixture.1,
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn a_shifted_cycle_entry_is_rejected_even_when_its_routes_still_meet() {
+    let mut scene = drawn(fixture!("loop/behavior", "merged_break"));
+    let entry = scene.topology.loops[0].entry;
+    let y = scene
+        .rows()
+        .line_y(RunLine::Rank(scene.rank(Vertex::Junction(entry))));
+    for point in scene
+        .connections
+        .iter_mut()
+        .flat_map(|edge| &mut edge.points)
+    {
+        if point.y == y {
+            point.y -= 1;
+        }
+    }
+    assert_eq!(route::verify(&scene), None, "the shifted routes still meet");
     assert_eq!(
-        Scene::bounds(spin).1 - incoming.points[0].y,
-        vertical_gap(&scene),
-        "the back edge arrow still leaves the usual gap above the body"
+        correspondence(&scene),
+        Some(format!(
+            "junction {entry} is drawn away from its row centre"
+        ))
     );
 }
 
 #[test]
-fn work_after_a_diverging_sibling_starts_below_its_boundary() {
-    let scene = drawn(fixture!("loop/behavior", "diverging_middle_branch"));
+fn a_tail_shifted_off_its_column_is_rejected() {
+    let mut scene = drawn(fixture!("loop/behavior", "reversed_empty_loop"));
+    let tail = scene.topology.loops[0].tail;
+    for edge in &mut scene.connections {
+        if edge.source == Source::Junction(tail) {
+            edge.points.first_mut().unwrap().x += 5;
+        }
+        if edge.destination == Vertex::Junction(tail) {
+            edge.points.last_mut().unwrap().x += 5;
+        }
+    }
+    assert_eq!(
+        route::verify(&scene),
+        None,
+        "the shifted tail still connects"
+    );
+    assert_eq!(label::verify(&scene), None);
+    assert_eq!(loop_block::verify(&scene), None);
+    assert_eq!(
+        correspondence(&scene),
+        Some(format!(
+            "junction {tail} is drawn away from its column centre"
+        ))
+    );
+}
+
+#[test]
+fn a_cycle_without_repetition_enters_its_first_node_directly() {
+    for (fixture, caption) in [
+        (
+            fixture!("loop/behavior", "early_result_then_cycle"),
+            "Check for an early result?",
+        ),
+        (
+            fixture!("loop/behavior", "first_value"),
+            "Is there a first value?",
+        ),
+    ] {
+        let scene = drawn(fixture);
+        let first = named_node(&scene, caption);
+        let incoming = scene
+            .connections
+            .iter()
+            .find(|edge| edge.destination == Destination::Node(first.id))
+            .unwrap();
+        assert_eq!(incoming.source, Source::Exit(ExitId::of(NodeId::Start)));
+        assert_eq!(scene.rank(Vertex::Node(first.id)), 1);
+        assert!(Scene::bounds(first).1 - scene.loop_regions[0].top >= 35);
+        let Source::Junction(result) = scene.topology.loop_boundaries[0].result.unwrap() else {
+            panic!("the cycle completes through a wire merge");
+        };
+        assert!(!scene.topology.junctions[result].merges.is_empty());
+        let result_y = scene
+            .connections
+            .iter()
+            .find(|edge| edge.source == Source::Junction(result))
+            .unwrap()
+            .points[0]
+            .y;
+        assert_eq!(scene.loop_regions[0].bottom - result_y, 35);
+    }
+}
+
+#[test]
+fn a_nonrepeating_cycle_does_not_reserve_a_result_row() {
+    let scene = drawn(fixture!("loop/behavior", "conditional_nested_loop"));
+    let last = named_node(&scene, "Produce one.");
     let region = scene
         .loop_regions
         .iter()
-        .find(|region| region.description == "Spin forever.")
+        .find(|region| region.description == "Produce one.")
+        .unwrap();
+    assert_eq!(
+        scene.topology.loop_boundaries[1].result,
+        Some(Source::Exit(ExitId::of(last.id)))
+    );
+    assert_eq!(region.bottom - Scene::bounds(last).3, 35);
+}
+
+#[test]
+fn shared_wire_labels_stay_at_the_receiving_node() {
+    let fixture = fixture!("loop/behavior", "conditional_entry");
+    for repetitions in [1, 40] {
+        let run = "run".repeat(repetitions);
+        let skip = "skip".repeat(repetitions);
+        let source = fixture.0.replace("run", &run).replace("skip", &skip);
+        let scene = drawn((&source, fixture.1));
+        for (name, caption) in [
+            (run, "Initialize the selected counter."),
+            (skip, "Skip the counter."),
+        ] {
+            let node = named_node(&scene, caption);
+            let labels = scene
+                .labels
+                .iter()
+                .filter(|label| label.lines.concat() == name)
+                .collect::<Vec<_>>();
+            assert_eq!(labels.len(), 1, "one label represents both ends");
+            assert_eq!(labels[0].owner, Vertex::Node(node.id));
+            assert_eq!(label_rect(labels[0]).3, scene.top_anchor(node.id).y);
+            assert!(labels[0].at.x > node.x);
+        }
+    }
+}
+
+#[test]
+fn cycle_entry_labels_use_the_same_padding_when_shared() {
+    let fixture = fixture!("loop/behavior", "conditional_nested_loop");
+    for name in ["flag".to_owned(), "a_long_input_wire_name".repeat(8)] {
+        let source = fixture.0.replace("flag", &name);
+        let scene = drawn((&source, fixture.1));
+        for (boundary, region) in scene
+            .topology
+            .loop_boundaries
+            .iter()
+            .zip(&scene.loop_regions)
+        {
+            let Vertex::Node(node) = boundary.entry else {
+                panic!("both cycles enter their first body node directly");
+            };
+            let input = scene
+                .labels
+                .iter()
+                .find(|label| label.owner == boundary.entry)
+                .unwrap();
+            assert!(label_rect(input).1 >= region.top);
+            if input.lines.len() == 1 {
+                assert_eq!(scene.top_anchor(node).y - region.top, 35);
+            }
+        }
+        assert_eq!(
+            scene
+                .labels
+                .iter()
+                .filter(|label| label.lines.concat() == name)
+                .count(),
+            1
+        );
+    }
+}
+
+#[test]
+fn a_direct_cycle_entry_leaves_caption_space_beside_its_input_label() {
+    let scene = drawn(fixture!("loop/behavior", "whole_tuple_result"));
+    let boundary = &scene.topology.loop_boundaries[0];
+    let region = &scene.loop_regions[0];
+    let input = scene
+        .labels
+        .iter()
+        .find(|label| label.owner == boundary.entry)
+        .unwrap();
+    let width = region
+        .caption
+        .iter()
+        .map(|line| text::text_width(line, CYCLE_CAPTION_FONT))
+        .max()
+        .unwrap();
+    assert!(region.right - 12 - width > label_rect(input).2);
+}
+
+#[test]
+fn a_diverging_cycle_and_its_siblings_share_the_next_row() {
+    let scene = drawn(fixture!("loop/behavior", "diverging_middle_branch"));
+    let spin = named_node(&scene, "Spin.");
+    let cycle = scene
+        .topology
+        .loop_boundaries
+        .iter()
+        .find(|boundary| boundary.result.is_none())
         .expect("the inner cycle has a boundary");
-    assert!(Scene::bounds(named_node(&scene, "Stay in the loop?")).1 >= region.bottom);
+    for caption in ["Advance.", "Stay in the loop?", "Leave immediately."] {
+        assert_eq!(
+            scene.rank(Vertex::Node(named_node(&scene, caption).id)),
+            scene.rank(cycle.entry),
+            "{caption} is independent of the diverging cycle"
+        );
+    }
+    assert_eq!(
+        scene.rank(Vertex::Node(spin.id)),
+        scene.rank(cycle.entry) + 1,
+        "the cycle body starts in the next row"
+    );
 }
 
 #[test]
@@ -85,7 +296,7 @@ fn a_cycle_boundary_does_not_overlap_its_interface_rails() {
     let entry = scene
         .connections
         .iter()
-        .find(|edge| edge.destination == Destination::Junction(entry))
+        .find(|edge| edge.destination == entry)
         .and_then(|edge| edge.points.last())
         .copied()
         .expect("the cycle has an entry interface");
@@ -97,16 +308,53 @@ fn a_cycle_boundary_does_not_overlap_its_interface_rails() {
     let result = scene
         .connections
         .iter()
-        .find(|edge| edge.source == Source::Junction(result))
+        .find(|edge| edge.source == result)
         .and_then(|edge| edge.points.first())
         .copied()
         .expect("the result interface has a continuation");
-    assert_eq!(scene.loop_regions[0].bottom - result.y, top_padding);
+    let tail = scene.topology.loops[0].tail;
+    let tail_y = scene
+        .connections
+        .iter()
+        .find(|edge| edge.source == Source::Junction(tail))
+        .unwrap()
+        .points[0]
+        .y;
+    assert!(
+        result.y < tail_y,
+        "the question supplies the result directly"
+    );
+    assert_eq!(scene.loop_regions[0].bottom - tail_y, top_padding);
 
     scene.loop_regions[0].top = entry.y;
     assert!(
         loop_block::verify(&scene).is_some_and(|reason| reason.contains("boundary overlaps route"))
     );
+}
+
+#[test]
+fn a_direct_cycle_result_adds_no_row_below_the_tail() {
+    let scene = drawn(fixture!("loop/behavior", "condition_effects"));
+    let loop_ = scene.topology.loops[0];
+    let Source::Exit(result) = scene.topology.loop_boundaries[0].result.unwrap() else {
+        panic!("the question supplies the cycle result directly");
+    };
+    assert_eq!(result.branch, Some(1));
+    let end = scene
+        .topology
+        .nodes
+        .iter()
+        .find(|node| node.kind == NodeKind::End)
+        .unwrap();
+    assert_eq!(
+        scene.rank(Vertex::Node(end.id)),
+        scene.rank(Vertex::Junction(loop_.tail)) + 1,
+    );
+    let tail_y = scene
+        .rows()
+        .line_y(RunLine::Rank(scene.rank(Vertex::Junction(loop_.tail))));
+    assert_eq!(scene.loop_regions[0].bottom - tail_y, 35);
+    assert_eq!(scene.height, 540);
 }
 
 #[test]
@@ -142,7 +390,7 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
     let reference = drawn((source, "example"));
     let unicode = "👩‍💻e\u{301}".repeat(64);
     for (description, shortened) in [
-        ("Collect all available results.", false),
+        ("Collect the results.", false),
         (
             "Collect the available results from the source until there are enough items to complete the current request.",
             true,
@@ -373,11 +621,40 @@ fn side_routes_end_horizontally_at_the_merge() {
                 assert_eq!(
                     points[points.len() - 2].y,
                     end.y,
-                    "{flow}: a side route turns down before its merge"
+                    "{flow}: a side route turns down before its merge: {points:?}"
                 );
             }
         }
     }
+}
+
+#[test]
+fn a_merge_side_route_cannot_join_above_its_marker() {
+    let mut scene = drawn(fixture!("wire/behavior", "two_merges_reach_one_consumer"));
+    let incoming = scene
+        .connections
+        .iter_mut()
+        .find(|edge| {
+            matches!(edge.destination, Destination::Junction(junction)
+                if !scene.topology.junctions[junction].merges.is_empty())
+                && edge.points.len() == 3
+        })
+        .expect("the fixture has a sideways merge arrival");
+    let end = *incoming.points.last().unwrap();
+    // Keep the endpoint, but join the other producer above the merge marker.
+    incoming.points[1].y -= LANE;
+    incoming.points.insert(
+        2,
+        Point {
+            x: end.x,
+            y: end.y - LANE,
+        },
+    );
+
+    assert_eq!(
+        route::verify(&scene).as_deref(),
+        Some("a merge side route turns downward before its endpoint")
+    );
 }
 
 #[test]
@@ -464,6 +741,60 @@ fn sequential_questions_leave_sideways_and_merge_on_the_main_column() {
         assert_eq!(labels.len(), 1, "one shared label for {name}");
         assert!(labels[0].at.y > merge_line[0].y);
         assert!(labels[0].at.y < common.points.last().unwrap().y);
+    }
+}
+
+#[test]
+fn merges_occupy_their_rows_and_columns() {
+    let scene = drawn(fixture!(
+        "wire/behavior",
+        "a_branch_captures_a_merged_value"
+    ));
+    let gap = vertical_gap(&scene);
+    for (junction, _) in scene
+        .topology
+        .junctions
+        .iter()
+        .enumerate()
+        .filter(|(_, junction)| !junction.merges.is_empty())
+    {
+        assert_eq!(
+            scene.arrangement.gap_lanes[scene.rank(Vertex::Junction(junction)) - 1],
+            0,
+            "the merge rail occupies its row, not a lane in the gap above it"
+        );
+        let incoming = scene
+            .connections
+            .iter()
+            .filter(|connection| connection.destination == Destination::Junction(junction))
+            .collect::<Vec<_>>();
+        let outgoing = scene
+            .connections
+            .iter()
+            .find(|connection| connection.source == Source::Junction(junction))
+            .unwrap();
+        let merge = *outgoing.points.first().unwrap();
+        let above = incoming
+            .iter()
+            .filter_map(|connection| match connection.source {
+                Source::Exit(exit) => Some(Scene::bounds(scene.node(exit.node)).3),
+                Source::Junction(_) => None,
+            })
+            .max()
+            .unwrap();
+        let Destination::Node(below) = outgoing.destination else {
+            panic!("the fixture's merges lead to nodes")
+        };
+
+        assert_eq!(
+            merge.x,
+            scene.column_x(scene.column(Vertex::Junction(junction)))
+        );
+        assert_eq!(merge.y - MERGE_RADIUS - above, gap);
+        assert_eq!(
+            Scene::bounds(scene.node(below)).1 - merge.y - MERGE_RADIUS,
+            gap
+        );
     }
 }
 
@@ -588,7 +919,7 @@ fn labels_beside_one_connection_align_by_their_left_edge() {
 }
 
 #[test]
-fn nested_question_results_share_the_false_result_column() {
+fn nested_question_results_merge_on_the_last_question_row() {
     let scene = drawn(fixture!("gallery/logical_formulas", "and"));
     let junction = (0..scene.topology.junctions.len())
         .find(|&junction| scene.captions.junction_wires(junction) == ["false_result"])
@@ -605,6 +936,14 @@ fn nested_question_results_share_the_false_result_column() {
         incoming
             .iter()
             .all(|connection| connection.points.last().unwrap().x == rail)
+    );
+    assert_eq!(
+        incoming[0].points.last().unwrap().y,
+        named_node(&scene, "c").y
+    );
+    assert_eq!(
+        named_node(&scene, "Return true.").y,
+        named_node(&scene, "Return false.").y
     );
 }
 
@@ -919,43 +1258,6 @@ fn long_wire_labels_clear_a_tall_neighbor() {
     );
     let scene = drawn((&source, "example"));
     assert!(scene.labels.iter().any(|label| label.lines.len() > 1));
-}
-
-#[test]
-fn a_wrapped_question_label_stays_above_its_horizontal_run() {
-    let scene = drawn((
-        r#"
-        #[kaalang]
-        fn example(condition: bool) -> u8 {
-            #[question("Choose a branch.")]
-            let (yes, a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection) = |condition| { condition };
-            #[action("Take the first branch.")]
-            let end = |yes| { 1 };
-            #[action("Take the second branch.")]
-            let end = |a_long_branch_name_that_wraps_several_times_above_its_horizontal_connection| { 2 };
-
-            |end| return end;
-        }
-    "#,
-        "example",
-    ));
-    let label = scene
-        .labels
-        .iter()
-        .find(|label| label.lines.len() > 1)
-        .unwrap();
-    let branch = scene
-        .connections
-        .iter()
-        .find(|connection| {
-            connection.source
-                == Source::Exit(ExitId {
-                    node: NodeId::Block(0),
-                    branch: Some(1),
-                })
-        })
-        .unwrap();
-    assert!(label_rect(label).3 <= branch.points[0].y);
 }
 
 #[test]
@@ -1410,8 +1712,70 @@ fn continuation_starts_below_the_completed_nested_cycle() {
     }
     assert!(
         loop_block::verify(&crossed)
-            .is_some_and(|reason| reason.contains("crossed by external route")),
+            .is_some_and(|reason| reason.contains("back edge runs too close")),
         "the boundary verifier must reject a foreign route through the cycle"
+    );
+}
+
+#[test]
+fn enclosing_back_edges_leave_a_lane_beside_nested_boundaries() {
+    for fixture in [
+        fixture!("loop/behavior", "nested_exit_convergence"),
+        fixture!("loop/behavior", "nested_search"),
+        FOUR_LANES,
+    ] {
+        let scene = drawn(fixture);
+        for outer in &scene.topology.loops {
+            let back = scene
+                .connections
+                .iter()
+                .find(|edge| edge.source == Source::Junction(outer.tail))
+                .unwrap();
+            let boundary = scene
+                .topology
+                .loop_boundaries
+                .iter()
+                .find(|boundary| boundary.header == outer.header)
+                .unwrap();
+            for (nested, region) in scene
+                .topology
+                .loop_boundaries
+                .iter()
+                .zip(&scene.loop_regions)
+                .filter(|(nested, _)| (boundary.header + 1..boundary.end).contains(&nested.header))
+            {
+                let clearance = (
+                    region.left - LANE,
+                    region.top - LANE,
+                    region.right + LANE,
+                    region.bottom + LANE,
+                );
+                assert!(
+                    back.points
+                        .windows(2)
+                        .all(|segment| { !route::enters(segment[0], segment[1], clearance) }),
+                    "{}: cycle {} needs a lane around cycle {}",
+                    fixture.1,
+                    outer.header,
+                    nested.header
+                );
+            }
+        }
+    }
+    let mut close = drawn(fixture!("loop/behavior", "nested_exit_convergence"));
+    let x = close.loop_regions[1].right + LANE - 1;
+    let back = close
+        .connections
+        .iter_mut()
+        .find(|edge| edge.source == Source::Junction(close.topology.loops[0].tail))
+        .unwrap();
+    for point in &mut back.points[1..3] {
+        point.x = x;
+    }
+    assert_eq!(route::verify(&close), None);
+    assert_eq!(
+        loop_block::verify(&close).as_deref(),
+        Some("cycle 0 back edge runs too close to cycle 1")
     );
 }
 
@@ -1432,34 +1796,65 @@ fn a_following_cycle_starts_below_the_preceding_boundary() {
 }
 
 #[test]
-fn a_single_side_exit_turns_up_without_descending_to_the_iteration_tail() {
+fn a_single_side_exit_repeats_without_descending_to_an_empty_row() {
+    for fixture in [
+        fixture!("loop/behavior", "reversed_empty_loop"),
+        fixture!("loop/behavior", "empty_trailing_loop"),
+        fixture!("loop/behavior", "nested_loop_tail"),
+    ] {
+        let scene = drawn(fixture);
+        let loop_ = &scene.topology.loops[0];
+        let incoming = scene
+            .connections
+            .iter()
+            .filter(|edge| edge.destination == Destination::Junction(loop_.tail))
+            .collect::<Vec<_>>();
+        assert_eq!(incoming.len(), 1);
+        let incoming = incoming[0];
+        let departure = incoming.points[0];
+        let tail_y = scene
+            .rows()
+            .line_y(RunLine::Rank(scene.rank(Vertex::Junction(loop_.tail))));
+        assert_eq!(tail_y, departure.y, "{}", fixture.1);
+        assert_eq!(
+            incoming.points.last().unwrap().y,
+            tail_y,
+            "the tail shares the side exit's row"
+        );
+        assert!(incoming.points.iter().all(|point| point.y == departure.y));
+        let back_edge = scene
+            .connections
+            .iter()
+            .find(|edge| edge.source == Source::Junction(loop_.tail))
+            .unwrap();
+        assert_eq!(incoming.points.last(), back_edge.points.first());
+        assert!(
+            back_edge
+                .points
+                .windows(2)
+                .all(|segment| segment[1].y <= segment[0].y)
+        );
+        if scene.loop_regions.len() == 2 {
+            assert_eq!(
+                scene.loop_regions[0].bottom - scene.loop_regions[1].bottom,
+                35,
+                "the outer boundary keeps only its padding below the inner cycle"
+            );
+        }
+    }
     let fixture = fixture!("loop/behavior", "reversed_empty_loop");
     let scene = drawn(fixture);
-    let loop_ = &scene.topology.loops[0];
-    let incoming = scene
-        .connections
+    let question = named_node(&scene, "Check once more?");
+    assert_eq!(scene.loop_regions[0].bottom - Scene::bounds(question).3, 35);
+    let end = scene
+        .topology
+        .nodes
         .iter()
-        .filter(|edge| edge.destination == Destination::Junction(loop_.tail))
-        .collect::<Vec<_>>();
-    assert_eq!(incoming.len(), 1);
-    let incoming = incoming[0];
-    let departure = incoming.points[0];
-    assert!(
-        incoming.points.iter().all(|point| point.y == departure.y),
-        "{}: the side exit should reach the back edge horizontally",
-        fixture.1
-    );
-    let back_edge = scene
-        .connections
-        .iter()
-        .find(|edge| edge.source == Source::Junction(loop_.tail))
+        .find(|node| node.kind == NodeKind::End)
         .unwrap();
-    assert_eq!(incoming.points.last(), back_edge.points.first());
-    assert!(
-        back_edge
-            .points
-            .windows(2)
-            .all(|segment| segment[1].y <= segment[0].y)
+    assert_eq!(
+        scene.top_anchor(end.id).y - Scene::bounds(question).3,
+        vertical_gap(&scene)
     );
 }
 
@@ -1477,7 +1872,7 @@ fn a_single_action_reaches_the_back_edge_after_the_usual_gap() {
     assert_eq!(start.x, action.x);
     assert_eq!(
         start.y - Scene::bounds(action).3,
-        vertical_gap(&scene),
+        vertical_gap(&scene) + scene.rows().height[scene.rank(Vertex::Junction(outer.tail))] / 2,
         "the back edge should turn beside the action instead of below the inner body"
     );
     let incoming = scene
@@ -1530,15 +1925,18 @@ fn flow_returns_align_with_independent_back_edges_and_clear_crossing_back_edges(
 }
 
 #[test]
-fn distributors_and_independent_cycle_rails_leave_the_usual_gap() {
+fn distributors_keep_the_usual_gap_and_cycle_rails_keep_their_rows() {
     let source = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
     for flow in ["binary_search", "binary_search_swapped"] {
         let scene = drawn((source, flow));
         let gap = vertical_gap(&scene);
         let tail = scene.topology.loops[0].tail;
-        let result = scene.topology.loop_boundaries[0]
+        let Source::Junction(result) = scene.topology.loop_boundaries[0]
             .result
-            .expect("binary search completes its cycle");
+            .expect("binary search completes its cycle")
+        else {
+            panic!("binary search completes through a wire merge");
+        };
         let back_edge = scene
             .connections
             .iter()
@@ -1551,26 +1949,49 @@ fn distributors_and_independent_cycle_rails_leave_the_usual_gap() {
             .and_then(|edge| edge.points.first())
             .expect("the cycle result reaches end")
             .y;
-        assert_eq!(back_edge.points[0].y, result_y, "{flow}: bottom rails");
+        assert_eq!(
+            result_y, back_edge.points[0].y,
+            "{flow}: the final merge and tail need no empty result row"
+        );
+        assert!(!scene.topology.junctions[result].merges.is_empty());
+        assert!(
+            crate::render_source(source, flow)
+                .unwrap()
+                .contains("the outcome merge at the cycle result")
+        );
+        let entry_y = scene
+            .connections
+            .iter()
+            .find(|edge| edge.destination == Destination::Junction(scene.topology.loops[0].entry))
+            .unwrap()
+            .points
+            .last()
+            .unwrap()
+            .y;
+        assert_eq!(
+            scene.loop_regions[0].bottom - result_y,
+            entry_y - scene.loop_regions[0].top,
+            "{flow}: the lower boundary follows the final merge"
+        );
         for incoming in scene
             .connections
             .iter()
             .filter(|edge| edge.destination == Destination::Junction(tail))
         {
-            assert_eq!(
-                incoming.points.last().unwrap().y - incoming.points[0].y,
-                gap,
-                "{flow}: iteration tail"
+            assert!(
+                incoming.points.last().unwrap().y - incoming.points[0].y >= gap,
+                "{flow}: the arranged tail leaves at least the usual gap"
             );
         }
+        let select = named_node(&scene, "Compare the middle element with the target.");
+        let NodeId::Block(choice) = select.id else {
+            panic!("the distributor is an authored choice");
+        };
         for branch in [1, 2] {
-            let select = scene.node(NodeId::Block(6));
             let connection = scene
                 .connections
                 .iter()
-                .find(|edge| {
-                    edge.destination == Destination::Node(NodeId::Case { choice: 6, branch })
-                })
+                .find(|edge| edge.destination == Destination::Node(NodeId::Case { choice, branch }))
                 .unwrap();
             let [start, turn, end] = connection.points[..] else {
                 panic!("{flow}: the distributor should leave sideways");
@@ -1582,6 +2003,23 @@ fn distributors_and_independent_cycle_rails_leave_the_usual_gap() {
                 "{flow}: above case"
             );
         }
+    }
+}
+
+#[test]
+fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
+    let source = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
+    for repeats in [2, 8] {
+        let source = source.replace("outcome", &"a_long_outcome_wire_name".repeat(repeats));
+        let scene = drawn((&source, "binary_search"));
+        let result = scene.topology.loop_boundaries[0].result.unwrap();
+        let label = scene
+            .labels
+            .iter()
+            .find(|label| label.owner == Vertex::from(result))
+            .expect("the final merge retains its wire label");
+        assert!(label.lines.len() > 1);
+        assert!(label_rect(label).3 <= scene.loop_regions[0].bottom);
     }
 }
 
@@ -1752,7 +2190,7 @@ fn nested_cycle_boundaries_render_with_and_without_end() {
     }
 }
 
-/// A compacted back edge still clears every node of its body.
+/// A back edge still clears every node of its body.
 #[test]
 fn iteration_back_edges_clear_the_whole_body() {
     let fixture = fixture!("loop/behavior", "empty_trailing_loop");
@@ -1784,7 +2222,7 @@ fn iteration_back_edges_clear_the_whole_body() {
 }
 
 #[test]
-fn a_compact_side_back_edge_clears_a_wrapped_branch_description() {
+fn a_side_back_edge_clears_a_wrapped_branch_description() {
     let (source, flow) = fixture!("loop/behavior", "empty_trailing_loop");
     let description = "Restart the entire outer iteration after the inner cycle finishes.";
     let source = source.replace("#[no(\"NO\")]", &format!("#[no(\"{description}\")]"));
@@ -1871,19 +2309,7 @@ fn end_sits_below_nested_back_edges_when_an_alternative_arrangement_allows_it() 
     assert!(top > lowest_back_edge, "end should finish the diagram");
 }
 
-/// The geometry check catches an end that is not last, whichever way it is
-/// not last.
-///
-/// No flow reaches this: `kaalang_model` orders every other vertex before end
-/// and checks the ranks, so the renderer only has to hold on to that through
-/// compaction. The mutations stand in for a compaction that lets go of it.
-/// A back edge driven inside the body it leaves is caught by the same gate the
-/// compactions revert on.
-///
-/// `verify_back_edges` runs inside `route::verify`, so `compact_back_edges`,
-/// `end::adjust` and `close_unused_rows` each undo a move that breaks the
-/// contour rule instead of failing the whole drawing. Pulling one climb back
-/// over its own body is what that gate has to see.
+/// Pulling a back edge over its body is rejected by the final geometry check.
 #[test]
 fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
     let fixture = fixture!("loop/behavior", "trailing_inner_loop");
@@ -1934,12 +2360,10 @@ fn a_disconnected_junction_is_caught_by_the_geometry_gates() {
         .y -= 1;
 
     // A gap creates no crossing. The routes must still meet at one point.
-    let accepted_compaction = conforms(&mut scene);
-    let accepted_final = finish(scene).is_ok();
-    assert_eq!(
-        (accepted_compaction, accepted_final),
-        (false, false),
-        "a disconnected junction must fail both compaction and final validation"
+    assert!(correspondence(&scene).is_some());
+    assert!(
+        finish(scene).is_err(),
+        "a disconnected junction must fail validation"
     );
 }
 
@@ -1971,8 +2395,7 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
         super::end::verify(&raised).is_some(),
         "a node below end should be caught"
     );
-    // The rule is only kept through the compactions because the gate they
-    // revert on runs it, so the wiring is part of what this pins.
+    // Final geometry verification also checks end placement.
     assert_eq!(
         super::route::verify(&raised).as_deref(),
         Some("end must be below every other node and iteration back edge"),
@@ -2023,9 +2446,9 @@ fn cycle_and_break_captures_are_unlabeled() {
     assert!(
         scene
             .topology
-            .junctions
+            .loop_boundaries
             .iter()
-            .any(|junction| junction.is_break)
+            .any(|boundary| boundary.result.is_some())
     );
     for capture in [
         "entry, mut ticket, &count, &mut log",
@@ -2043,9 +2466,9 @@ fn cycle_and_break_captures_are_unlabeled() {
     assert!(
         selected
             .topology
-            .junctions
+            .loop_boundaries
             .iter()
-            .any(|junction| junction.is_break)
+            .any(|boundary| boundary.result.is_some())
     );
     assert!(selected.labels.iter().any(|label| label.lines == ["done"]));
 }
@@ -2230,9 +2653,11 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
                         _ => (),
                     };
 
-                    |zero| break;
-
-                    |one| break;
+                    #[action("Finish at zero.")]
+                    let done = |zero| {};
+                    #[action("Finish at one.")]
+                    let done = |one| {};
+                    |done| break;
 
                     #[action("Count down.")]
                     |wwwwwwww, &mut count| **count -= 1;
@@ -2284,6 +2709,7 @@ fn translating_the_drawing_preserves_its_back_edge_contours() {
         parameters.x -= 2000;
     }
     assert_eq!(route::verify(&scene), None);
+    assert_eq!(correspondence(&scene), None);
 }
 
 #[test]
@@ -2389,10 +2815,10 @@ fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
     }
 }
 
-/// Unlike `FAR_CONTOUR`, this tail has one arrival, so `compact_back_edges`
-/// shortens it. The model test checks the same farther contour as a witness.
+/// A sole tail arrival also keeps a separately recorded far contour.
+/// The model test checks the same farther contour as a witness.
 #[test]
-fn a_compacted_back_edge_keeps_its_recorded_far_contour() {
+fn a_sole_tail_arrival_keeps_its_recorded_far_contour() {
     let scene = drawn_with(
         fixture!("loop/behavior", "reversed_empty_loop"),
         |arrangement| {
@@ -2409,14 +2835,14 @@ fn a_compacted_back_edge_keeps_its_recorded_far_contour() {
             .filter(|edge| edge.destination == Vertex::Junction(tail))
             .count(),
         1,
-        "the witness must exercise sole-arrival compaction"
+        "the witness must have one tail arrival"
     );
     let anchor = scene.node(NodeId::Start).x + scene.column_x(scene.arrangement.contours[0].column)
         - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
     let drawn_at = rail(&scene, 0);
     assert!(
         drawn_at >= anchor + LANE,
-        "the compacted back edge must stay outside its recorded column: {drawn_at} against {anchor}"
+        "the back edge must stay outside its recorded column: {drawn_at} against {anchor}"
     );
 }
 
@@ -2536,7 +2962,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     for source in &sources {
         let file = crate::parse_file(source).expect("the probe is valid Rust");
         let function = crate::select_flow(&file.items, "probe").expect("the probe declares it");
-        let model = match kaalang_model::build(function) {
+        let mut model = match kaalang_model::build(function) {
             Ok(model) => model,
             Err(error) => {
                 assert!(
@@ -2548,6 +2974,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
             }
         };
         drawn += 1;
+        model.compact_arrangement();
         let start = start_text(source, &function.sig);
         let parameters = parameter_text(source, &function.sig);
         let scene = layout(
@@ -2614,7 +3041,7 @@ fn a_back_edge_clears_its_drawn_entry_and_tail() {
 }
 
 #[test]
-fn shortening_a_tail_also_closes_its_exclusive_contour_column() {
+fn an_exclusive_tail_column_uses_narrow_spacing() {
     for fixture in [
         fixture!("loop/behavior", "empty_trailing_loop"),
         fixture!("loop/behavior", "reversed_empty_loop"),
@@ -2631,7 +3058,7 @@ fn shortening_a_tail_also_closes_its_exclusive_contour_column() {
         let distance = rail(&scene, 0) - back.points[0].x;
         assert!(
             distance >= LANE && distance % LANE == 0,
-            "{}: the shortened tail needs contour lanes, not an empty column",
+            "{}: the tail needs only contour lanes beside its column",
             fixture.1
         );
         assert_eq!(correspondence(&scene), None);

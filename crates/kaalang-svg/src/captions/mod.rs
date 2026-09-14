@@ -256,6 +256,11 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
         return false;
     };
     !captions.handover(exit).is_empty()
+        // The body's hand-over and the cycle's output are separate transfers,
+        // even when a body exit supplies the cycle's result directly.
+        && !topology.loop_boundaries.iter().any(|boundary| {
+            boundary.result == Some(connection.source)
+        })
         && captions.handover(exit) == captions.capture_label(node)
         && topology.leaving(exit).count() == 1
         && topology.single_arrival(node)

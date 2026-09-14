@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="740" viewBox="0 0 704 740" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for stamp_before_a_selection</title>
   <desc id="kaalang-description">Nodes: Start: stamp_before_a_selection with parameters flag: bool handing over flag; Action: Stamp. capturing nothing handing over stamp; Question: Which way? capturing flag handing over yes / no; Action: Finish with the stamp. capturing yes, stamp handing over end; Action: Finish without it. capturing no handing over end; End: u64 capturing end; Merge: end. Connections: Start: stamp_before_a_selection to Action: Stamp.; Action: Stamp. to Question: Which way?; Question: Which way? branch 1 to Action: Finish with the stamp.; Question: Which way? branch 2 to Action: Finish without it.; Action: Finish with the stamp. to the end merge; Action: Finish without it. to the end merge; the end merge to End: u64.</desc>
   <defs>
@@ -32,12 +32,12 @@
       M 172 226 L 172 298
       M 172 370 L 172 442
       M 312 334 L 532 334 L 532 442
-      M 172 506 L 172 578
-      M 532 506 L 532 578 L 172 578
-      M 172 578 L 172 650
+      M 172 506 L 172 582
+      M 532 506 L 532 582 L 172 582
+      M 172 582 L 172 658
     "/>
-    <text class="connection-label" x="185" y="596" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="416" y="323" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="600" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="545" y="431" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">stamp</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
@@ -51,7 +51,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 578)">
+    <g class="node merge" transform="translate(172 582)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -79,7 +79,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish without it.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 679)">
+    <g class="node end" transform="translate(172 687)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
     </g>

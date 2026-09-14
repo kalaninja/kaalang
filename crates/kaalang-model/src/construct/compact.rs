@@ -1,12 +1,13 @@
 //! Optional simplification of an already checked diagram witness.
 
-use super::{Arrangement, Run, Side, sweep::compress};
+use super::{Arrangement, Run, RunLine, Side, sweep::compress};
 use crate::model::Flow;
 use crate::topology::{Topology, Vertex};
 
-/// Every replacement passes the complete verifier after normalization. The
-/// original witness remains available whenever a candidate fails. Ranks only
-/// rise. With ranks fixed, contours only approach their bodies, and coordinates,
+/// Every replacement passes the complete verifier after normalization and keeps
+/// back edges outside nested body envelopes. A failed candidate leaves the
+/// original witness available. Ranks only rise. With ranks fixed, contours only
+/// approach their bodies, and coordinates,
 /// lanes and runs only disappear; these finite measures make the iteration terminate.
 ///
 /// ponytail: local simplifications, not a global minimum of bends or area;
@@ -41,7 +42,13 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
                 .chain(candidate.back_routes.values_mut())
             {
                 for run in &mut route.runs {
-                    run.lane -= usize::from(run.gap == gap && run.lane >= lane);
+                    if let RunLine::Lane {
+                        gap: at,
+                        lane: level,
+                    } = &mut run.line
+                    {
+                        *level -= usize::from(*at == gap && *level >= lane);
+                    }
                 }
             }
             if keep(flow, topology, built, candidate) {
@@ -128,7 +135,21 @@ fn columns(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
 fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
     let mut changed = false;
     for &vertex in &topology.vertices {
-        'earlier: for rank in 1..built.rank[&vertex] {
+        // No forward or placement relation may rise. The verifier still decides
+        // which relations may share a row, without constructing earlier candidates.
+        let first = topology
+            .incoming(vertex)
+            .chain(
+                topology
+                    .order
+                    .iter()
+                    .filter(|edge| edge.destination == vertex),
+            )
+            .map(|edge| built.rank[&Vertex::from(edge.source)])
+            .max()
+            .unwrap_or(1)
+            .max(1);
+        'earlier: for rank in first..built.rank[&vertex] {
             let gap = rank - 1;
             for lane in 0..=built.gap_lanes[gap] {
                 let mut candidate = built.clone();
@@ -140,15 +161,20 @@ fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
                     .filter(|(_, wire)| wire.destination == vertex)
                 {
                     let route = &mut candidate.routes[index];
-                    route.runs.retain(|run| run.gap < gap);
+                    route.runs.retain(|run| match run.line {
+                        RunLine::Rank(at) => at < rank,
+                        RunLine::Lane { gap: at, .. } => at < gap,
+                    });
                     let enter = route.runs.last().map_or(route.departure, |run| run.exit);
-                    // A straight arrival can meet a junction in the gap too,
-                    // leaving the following node row free for a side exit.
-                    if enter != route.arrival || matches!(vertex, Vertex::Junction(_)) {
-                        candidate.gap_lanes[gap] = candidate.gap_lanes[gap].max(lane + 1);
+                    if enter != route.arrival {
+                        let line = if matches!(vertex, Vertex::Junction(_)) {
+                            RunLine::Rank(rank)
+                        } else {
+                            candidate.gap_lanes[gap] = candidate.gap_lanes[gap].max(lane + 1);
+                            RunLine::Lane { gap, lane }
+                        };
                         route.runs.push(Run {
-                            gap,
-                            lane,
+                            line,
                             enter,
                             exit: route.arrival,
                         });
@@ -179,10 +205,15 @@ fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
             .chain(candidate.back_routes.values_mut())
         {
             for run in &mut route.runs {
-                if run.gap == rank - 1 {
-                    run.lane += lanes;
+                match &mut run.line {
+                    RunLine::Rank(row) => *row -= usize::from(*row >= rank),
+                    RunLine::Lane { gap, lane } => {
+                        if *gap == rank - 1 {
+                            *lane += lanes;
+                        }
+                        *gap -= usize::from(*gap >= rank - 1);
+                    }
                 }
-                run.gap -= usize::from(run.gap >= rank - 1);
             }
         }
         candidate.gap_lanes[rank - 2] += candidate.gap_lanes.remove(rank - 1);
@@ -201,7 +232,9 @@ fn keep(
     mut candidate: Arrangement,
 ) -> bool {
     compress(&mut candidate);
-    if super::verify::arrangement(flow, topology, &candidate).is_err() {
+    if super::verify::arrangement(flow, topology, &candidate).is_err()
+        || !super::loop_block::clears_nested_boundaries(flow, topology, &candidate)
+    {
         return false;
     }
     *built = candidate;
@@ -236,6 +269,31 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_outer_tail_cannot_join_a_column_inside_a_nested_frame() {
+        let function = crate::tests::fixture(
+            include_str!("../../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
+            "nested_side_returns",
+        );
+        let mut model = crate::build(&function).unwrap();
+        model.compact_arrangement();
+        let tail = Vertex::Junction(model.topology.loops[0].tail);
+        let column = model.arrangement.column[&tail];
+        let mut candidate = model.arrangement.clone();
+        map_columns(&mut candidate, |x| x - i32::from(x >= column));
+        super::super::verify::arrangement(&model.flow, &model.topology, &candidate)
+            .expect("individual vertices and routes still clear each other");
+        assert!(
+            !keep(
+                &model.flow,
+                &model.topology,
+                &mut model.arrangement,
+                candidate,
+            ),
+            "the outer return would cross the nested frame"
+        );
+    }
 
     #[test]
     fn unused_lanes_can_disappear_together_during_compaction() {

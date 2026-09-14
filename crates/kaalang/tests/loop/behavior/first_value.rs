@@ -10,14 +10,12 @@ fn first_value(values: &[i32]) -> Option<i32> {
         let (iterate_1, leave_1) = |values| !values.is_empty();
 
         #[action("Report that no first value exists.")]
-        let absent = |leave_1| None;
-
-        |absent| break absent;
+        let selected = |leave_1| None;
 
         #[action("Produce the first value.")]
-        let found = |iterate_1, values| Some(values[0]);
+        let selected = |iterate_1, values| Some(values[0]);
 
-        |found| break found;
+        |selected| break selected;
     };
 
     |result| return result;

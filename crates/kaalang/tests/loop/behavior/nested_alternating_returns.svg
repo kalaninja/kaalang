@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1632" height="1079" viewBox="0 0 1632 1079" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_alternating_returns</title>
+  <desc id="kaalang-description">Cycles: Repeat level 0. with inputs flag and outputs (); Repeat level 1. with inputs stay_0, flag and outputs (); Repeat level 2. with inputs stay_1, flag and outputs (). Nodes: Start: nested_alternating_returns with parameters flag: bool handing over flag; Question: Leave level 0? capturing flag handing over stay_0 / leave_0; Question: Leave level 1? capturing flag handing over leave_1 / stay_1; Question: Leave level 2? capturing flag handing over _stay_2 / leave_2; End: () capturing nothing. Connections: Start: nested_alternating_returns to the entry of the cycle; Question: Leave level 0? branch 1 to the entry of the cycle; Question: Leave level 0? branch 2 to End: (); Question: Leave level 1? branch 1 to the iteration tail of the cycle; Question: Leave level 1? branch 2 to the entry of the cycle; Question: Leave level 2? branch 1 to the iteration tail of the cycle; Question: Leave level 2? branch 2 to the iteration tail of the cycle; the entry of the cycle to Question: Leave level 0?; the entry of the cycle to Question: Leave level 1?; the entry of the cycle to Question: Leave level 2?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Repeat level 0.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1104" height="825" rx="12"/>
+    <text class="cycle-caption" x="1124" y="141" text-anchor="end" xml:space="preserve"><tspan x="1124" dy="0">Repeat level 0.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Repeat level 1.</title>
+    <rect class="cycle-boundary" x="92" y="343" width="1016" height="537" rx="12"/>
+    <text class="cycle-caption" x="1096" y="357" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Repeat level 1.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Repeat level 2.</title>
+    <rect class="cycle-boundary" x="472" y="559" width="418" height="286" rx="12"/>
+    <text class="cycle-caption" x="878" y="573" text-anchor="end" xml:space="preserve"><tspan x="878" dy="0">Repeat level 2.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 260 90 L 260 162
+      M 260 306 L 260 378
+      M 400 270 L 1460 270 L 1460 989
+      M 260 522 L 260 917
+      M 400 486 L 660 486 L 660 594
+      M 660 738 L 660 810
+      M 800 702 L 1060 702
+      M 260 162 L 260 234
+      M 260 378 L 260 450
+      M 660 594 L 660 666
+    "/>
+    <path class="connection" d="
+      M 660 810 L 500 810 L 500 594 L 660 594
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1060 702 L 1080 702 L 1080 378 L 260 378
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 260 917 L 60 917 L 60 162 L 260 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="273" y="108" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label" x="273" y="324" xml:space="preserve"><tspan x="273" dy="0">stay_0</tspan></text>
+    <text class="connection-label" x="413" y="288" xml:space="preserve"><tspan x="413" dy="0">leave_0</tspan></text>
+    <text class="connection-label" x="273" y="540" xml:space="preserve"><tspan x="273" dy="0">leave_1</tspan></text>
+    <text class="connection-label" x="413" y="504" xml:space="preserve"><tspan x="413" dy="0">stay_1</tspan></text>
+    <text class="connection-label" x="673" y="756" xml:space="preserve"><tspan x="673" dy="0">_stay_2</tspan></text>
+    <text class="connection-label" x="813" y="720" xml:space="preserve"><tspan x="813" dy="0">leave_2</tspan></text>
+    <text class="connection-label" x="273" y="223" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label" x="273" y="439" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label" x="673" y="655" xml:space="preserve"><tspan x="673" dy="0">flag</tspan></text>
+    <text class="connection-label" x="1473" y="978" xml:space="preserve"><tspan x="1473" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 400 61 L 496 61"/>
+    <g class="parameter-panel" transform="translate(616 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
+    </g>
+    <g class="node start" transform="translate(260 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_alternating_returns</tspan></text>
+    </g>
+    <g class="node question" transform="translate(260 270)">
+      <title xml:space="preserve">Leave level 0?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Leave level 0?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(260 486)">
+      <title xml:space="preserve">Leave level 1?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Leave level 1?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(660 702)">
+      <title xml:space="preserve">Leave level 2?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Leave level 2?</tspan></text>
+    </g>
+    <g class="node end" transform="translate(1460 1018)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

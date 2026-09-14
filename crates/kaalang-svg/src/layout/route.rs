@@ -43,7 +43,7 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
                 },
             ];
             for run in &route.runs {
-                let y = rows.lane_y(run.gap, run.lane, rows.lanes_in(run.gap));
+                let y = rows.line_y(run.line);
                 points.push(Point {
                     x: scene.column_x(run.enter),
                     y,
@@ -135,7 +135,7 @@ fn bent_back_edge(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Po
         },
     ];
     for run in route.runs.iter().rev() {
-        let y = rows.lane_y(run.gap, run.lane, rows.lanes_in(run.gap));
+        let y = rows.line_y(run.line);
         points.extend([Point { x: x(run.exit), y }, Point { x: x(run.enter), y }]);
     }
     points.extend([
@@ -162,96 +162,11 @@ pub(super) fn back_edge_points(from: Point, aside: i32, end: Point) -> Vec<Point
     ]
 }
 
-/// Realize the recorded boundary, allowing an exclusive outermost tail column
-/// to close with its sole straight arrival. No other vertex, exit, route or
-/// contour may use that column or lie beyond it. The moved boundary stays outside every
-/// other drawn route, so shortening cannot exchange it with another corridor.
-/// A separately recorded far contour keeps its original column.
+/// The recorded contour column after the scene's horizontal translation.
 pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
-    let contour = scene.arrangement.contours[index];
-    let tail = Vertex::Junction(scene.topology.loops[index].tail);
     let origin =
         scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
-    let anchor = origin + scene.column_x(contour.column);
-    let arrivals = scene
-        .topology
-        .connections
-        .iter()
-        .enumerate()
-        .filter(|(_, edge)| edge.destination == tail)
-        .collect::<Vec<_>>();
-    let [(arrival_index, arrival)] = arrivals.as_slice() else {
-        return anchor;
-    };
-    let route = &scene.arrangement.routes[*arrival_index];
-    if route.departure != contour.column
-        || route.arrival != contour.column
-        || !route.runs.is_empty()
-    {
-        return anchor;
-    }
-    let before = |column| match contour.side {
-        Side::Left => column > contour.column,
-        Side::Right => column < contour.column,
-    };
-    let mut others = scene
-        .arrangement
-        .column
-        .iter()
-        .filter(|(vertex, _)| **vertex != tail)
-        .map(|(_, &column)| column)
-        .chain(
-            scene
-                .arrangement
-                .exit_offset
-                .iter()
-                .filter(|(exit, _)| Source::Exit(**exit) != arrival.source)
-                .map(|(exit, offset)| scene.column(Vertex::Node(exit.node)) + offset),
-        )
-        .chain(
-            scene
-                .topology
-                .connections
-                .iter()
-                .zip(&scene.arrangement.routes)
-                .filter(|(edge, _)| edge.destination != tail)
-                .flat_map(|(_, route)| {
-                    [route.departure, route.arrival]
-                        .into_iter()
-                        .chain(route.runs.iter().flat_map(|run| [run.enter, run.exit]))
-                }),
-        )
-        .chain(
-            scene
-                .arrangement
-                .contours
-                .iter()
-                .enumerate()
-                .filter(|(other, _)| *other != index)
-                .map(|(_, other)| other.column),
-        );
-    if !scene.arrangement.back_routes.is_empty()
-        || contour.column != scene.column(tail)
-        || !others.all(before)
-    {
-        return anchor;
-    }
-    let from = scene
-        .connections
-        .iter()
-        .find(|edge| edge.destination == tail)
-        .and_then(|edge| edge.points.last())
-        .expect("a tail has its arrival")
-        .x;
-    let occupied = scene
-        .connections
-        .iter()
-        .filter(|edge| edge.destination != tail && Vertex::from(edge.source) != tail)
-        .flat_map(|edge| edge.points.iter().map(|point| point.x));
-    match contour.side {
-        Side::Left => anchor.max(occupied.fold(from, i32::min)),
-        Side::Right => anchor.min(occupied.fold(from, i32::max)),
-    }
+    origin + scene.column_x(scene.arrangement.contours[index].column)
 }
 
 /// Where one back edge climbs: the contour the arrangement recorded, realized in
@@ -265,17 +180,9 @@ pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
 /// lets a witness whose back edge stands beyond the boxes of its body be drawn
 /// where it says.
 ///
-/// `anchor` comes from `contour_anchor`: normally the recorded column, or
-/// the safely closed boundary of an exclusive outermost tail column.
-///
-/// A presentation may turn the back edge upward early, but the body it has to
-/// clear does not shrink with it. Continuation vertices after leaving the body
-/// are excluded by membership, not by their position below the tail.
-///
-/// The uncompacted emission is what the compactions fall back on, so it has no
-/// fallback of its own: a rail the recorded column pushes into something is a
-/// renderer defect, and there is no other realization of that arrangement to
-/// draw instead.
+/// `anchor` comes from `contour_anchor` and retains the recorded column even
+/// when the body is narrower. Continuation vertices after leaving the body are
+/// excluded by membership, not by their position below the tail.
 pub(super) fn contour_x(
     scene: &Scene,
     model: &SemanticModel,
@@ -316,10 +223,8 @@ pub(super) fn contour_x(
 /// the climb a column short of clear. Membership does not depend on ranks:
 /// placing part of the body below the tail does not remove it from the body.
 ///
-/// The loop's own entry and tail are left out here and folded in by the
-/// caller, which has them as drawn rather than as numbered: a compaction may
-/// bring the tail's arrival in from the column it was given, and the climb
-/// leaves from where it actually ends.
+/// The loop's own entry and tail are folded in by the caller from the route
+/// endpoints, keeping this measurement independent of the column mapping.
 fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
     let loop_ = scene.topology.loops[index];
     let ends = [Vertex::Junction(loop_.entry), Vertex::Junction(loop_.tail)];
@@ -355,16 +260,9 @@ fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
 
 fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     let row = scene.rank(Vertex::Junction(junction));
-    let gap = row - 1;
-    let lane = scene
-        .arrangement
-        .deepest_lane(&scene.topology, junction, gap);
     Point {
         x: scene.column_x(scene.column(Vertex::Junction(junction))),
-        y: lane.map_or_else(
-            || rows.junction_y(row),
-            |lane| rows.lane_y(gap, lane, rows.lanes_in(gap)),
-        ),
+        y: rows.line_y(kaalang_model::RunLine::Rank(row)),
     }
 }
 
@@ -372,7 +270,7 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
 /// its whole body fills, independently of its ranks (RFC 0002 §8).
 ///
 /// The arrangement settles that on its abstract grid; this reads the emitted
-/// climb, so it holds whatever the compactions left behind and does not take
+/// climb, so it checks the actual geometry and does not take
 /// the side and the lane on trust.
 fn verify_back_edges(scene: &Scene) -> Option<String> {
     let climbs = scene
@@ -432,8 +330,7 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
                 "{at} climbs inside the back edge nested in its body at {nested}"
             ));
         }
-        // Its own entry and tail are part of the body too. They may have
-        // moved along their rails during compaction, so use their drawn ends.
+        // Its own entry and tail are part of the body too; use their drawn ends.
         let edge = scene
             .connections
             .iter()

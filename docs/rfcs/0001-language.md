@@ -343,8 +343,8 @@ A single output identifier binds the whole break value, including a tuple. A
 tuple output pattern destructures that value positionally, including a singleton
 tuple, exactly as for an action. All outputs are conjunctive: every completing
 route provides them together, and individual outputs cannot be selected or
-omitted. Several breaks provide alternative values for the one cycle result;
-outer consumers resolve to the cycle block, not to a private break site.
+omitted. Alternative result wires merge by the ordinary rules before the cycle's
+single break; outer consumers resolve to the cycle block.
 
 For example, these cycles expose the same Rust pair as either one tuple-valued
 wire or two distinct wires:
@@ -418,7 +418,9 @@ fn spin() -> ! {
 
 ### 4.5 break
 
-A structural break has one of these forms:
+A cycle may contain at most one structural break belonging to that cycle. Nested
+cycles each have their own limit; native Rust transfers inside computational
+bodies do not count. When present, the break has one of these forms:
 
 ```rust
 break;
@@ -442,11 +444,15 @@ value-less `break;` is `break ();`. Calls, operators, field access, literals
 other than `()`, and other computations belong in a described computational
 block. A capture-free break cannot name a wire.
 
-Rust checks agreement between every reachable break value and the cycle's output
-pattern. An outputless cycle requires `()`. Moving an iteration-local owned
-value out is permitted; a reference to a local that ends at completion is
-rejected by Rust. Break captures are consumers for producer-usage and
-branch-participation validation.
+Every completing route executes that same break. Alternative exit routes and
+values merge using ordinary wire names before it, just as they do before a
+flow's single return. A cycle with no completing route may omit the break.
+
+Rust checks agreement between the break value and the cycle's output pattern. An
+outputless cycle requires `()`. Moving an iteration-local owned value out is
+permitted; a reference to a local that ends at completion is rejected by Rust.
+Break captures are consumers for producer-usage and branch-participation
+validation.
 
 ### 4.6 return
 
@@ -708,12 +714,12 @@ action executes.
 
 The outputs of one action or one completed cycle appear together: an execution
 that produces them provides all of them, so they are ordinary data wires that
-later blocks borrow or consume under these rules. A cycle with several break
-sites still has one outer producer occurrence. The outputs of a question or
-choice are alternatives: an execution produces exactly one of them. A branch
-output without alternative producers is captured by at most one block or
-transfer, which consumes it using `name` or `mut name`; either kind of borrow or
-a second consumer would give the selected branch a second continuation.
+later blocks borrow or consume under these rules. A completed cycle has one
+outer producer occurrence. The outputs of a question or choice are alternatives:
+an execution produces exactly one of them. A branch output without alternative
+producers is captured by at most one block or transfer, which consumes it using
+`name` or `mut name`; either kind of borrow or a second consumer would give the
+selected branch a second continuation.
 
 That consumer must execute whenever the branch output is selected. Its other
 inputs must therefore be available in every such execution. For example, an
@@ -958,5 +964,7 @@ constraint the grammar leaves open is stated with its rule: descriptions and
 computational control flow in section 3, block and transfer kinds in section 4,
 function forms and flow parameters in section 5, and repeated output names in
 section 6. A flow contains at most one `return_statement`; it belongs to the
-root sequence, and only a fully diverging flow may contain none. Breaks and
-returns have no attributes, descriptions, output patterns, or authored labels.
+root sequence, and only a fully diverging flow may contain none. Each cycle owns
+at most one `break_statement`, excluding those owned by nested cycles; a fully
+diverging cycle may contain none. Breaks and returns have no attributes,
+descriptions, output patterns, or authored labels.

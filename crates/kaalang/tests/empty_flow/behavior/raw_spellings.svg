@@ -32,8 +32,8 @@
       M 172 236 L 172 308
       M 172 372 L 172 444
     "/>
-    <text class="connection-label" x="185" y="127" xml:space="preserve"><tspan x="185" dy="0">type, value</tspan></text>
-    <text class="connection-label" x="185" y="403" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">type, value</tspan></text>
+    <text class="connection-label" x="185" y="433" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">match, _ignored</tspan></text>
     <text class="connection-label" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">match</tspan></text>
   </g>

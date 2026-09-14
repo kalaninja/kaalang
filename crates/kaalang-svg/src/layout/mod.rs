@@ -1,12 +1,10 @@
 //! Places the visual topology on rows and columns, routes its connections, and
 //! positions the labels its exits and nodes own.
 
-use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::geometry::straighten;
 use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
-use kaalang_model::{Arrangement, SemanticModel, Side};
+use kaalang_model::{Arrangement, RunLine, SemanticModel, Side};
 use syn::{ReturnType, Signature, spanned::Spanned};
 
 use crate::captions::{self, Captions};
@@ -29,6 +27,7 @@ const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
 const MIN_VERTICAL_GAP: i32 = 72;
 const NODE_WIDTH: i32 = 280;
+pub(crate) const MERGE_RADIUS: i32 = 4;
 /// Leaves the start hand-over label clear beneath the link to the panel.
 const PARAMETER_PANEL_GAP: i32 = 96;
 const PARAMETER_PANEL_WIDTH: i32 = 240;
@@ -139,72 +138,6 @@ pub(crate) struct Node {
 /// both.
 pub(crate) use kaalang_model::geometry::Point;
 
-/// Closes every row the finished drawing leaves empty.
-///
-/// The arrangement keeps a rank of its own for each iteration tail, because a
-/// back edge leaves one horizontally and anything else on that rank stands in
-/// its way. RFC 0003 §2.5 then lets the back edge leave at a side exit instead, and
-/// `compact_back_edges` takes that offer: the rank's band is left holding nothing
-/// but the connections passing through it, while the two node rows around it
-/// sit a row further apart for no reason. Closing the band shortens those
-/// connections and lifts everything below it, which is what puts two
-/// consecutive blocks one gap apart again.
-///
-/// Rows are closed from the bottom up, so the bands above one keep the
-/// positions `rows` recorded. A band counts as empty only when no route has a
-/// point in it — a junction drawn on its own rank has one there, and so does
-/// every bend and endpoint — so closing it cannot bring two of them together.
-/// `route::verify` has the final word all the same.
-fn close_unused_rows(scene: &mut Scene, rows: &Rows) {
-    for row in (0..rows.height.len()).rev() {
-        let (top, bottom) = (rows.top[row], rows.top[row + 1]);
-        if rows.height[row] != 0 || bottom <= top {
-            continue;
-        }
-        if scene
-            .connections
-            .iter()
-            .flat_map(|connection| &connection.points)
-            .any(|point| point.y >= top && point.y < bottom)
-        {
-            continue;
-        }
-        shift(scene, bottom, top - bottom);
-        if !conforms(scene) {
-            shift(scene, top, bottom - top);
-        }
-    }
-}
-
-/// Moves every node, panel, and route point at or below `from` by `delta`.
-fn shift(scene: &mut Scene, from: i32, delta: i32) {
-    for connection in &mut scene.connections {
-        for point in &mut connection.points {
-            if point.y >= from {
-                point.y += delta;
-            }
-        }
-    }
-    for node in &mut scene.nodes {
-        if node.y >= from {
-            node.y += delta;
-        }
-    }
-    if let Some(parameters) = &mut scene.parameters
-        && parameters.y >= from
-    {
-        parameters.y += delta;
-    }
-    for region in &mut scene.loop_regions {
-        if region.top >= from {
-            region.top += delta;
-        }
-        if region.bottom >= from {
-            region.bottom += delta;
-        }
-    }
-}
-
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
 /// leaves and a capture to the node it reaches.
 #[derive(Clone)]
@@ -248,196 +181,8 @@ impl LabelKind {
     }
 }
 
-/// The rails of the cycles nested inside this one, as already drawn.
-fn nested_rails(scene: &Scene, index: usize) -> Vec<(usize, i32)> {
-    scene
-        .topology
-        .loops
-        .iter()
-        .enumerate()
-        .filter(|&(other, _)| other != index)
-        .filter_map(|(_, other)| {
-            // The second point of a back edge is the column it climbs in; its
-            // first and last are the tail and the entry.
-            let rail = scene
-                .connections
-                .iter()
-                .find(|edge| edge.source == Source::Junction(other.tail))?
-                .points
-                .get(1)?
-                .x;
-            Some((other.header, rail))
-        })
-        .collect()
-}
-
-/// Shortens each sole tail arrival while retaining the recorded contour
-/// boundary, side and lane. RFC 0003 §2.5 prefers turning upward at a side
-/// exit over descending to the tail's row first.
-///
-/// Labels are placed again for every cycle because shortening moves the routes
-/// they hang from. `conforms` checks geometry, labels and witness correspondence;
-/// a failed shortening restores both the arrival and back edge. An exclusive
-/// outermost tail column may close with its arrival; occupied and separately
-/// recorded contour columns retain their positions.
-fn compact_back_edges(scene: &mut Scene, model: &SemanticModel) {
-    let gap = vertical_gap(scene);
-    for index in (0..scene.topology.loops.len()).rev() {
-        let labels = label::place_labels(scene);
-        let loop_ = scene.topology.loops[index];
-        let arrivals = scene
-            .connections
-            .iter()
-            .enumerate()
-            .filter(|(_, edge)| edge.destination == Destination::Junction(loop_.tail))
-            .map(|(edge, _)| edge)
-            .collect::<Vec<_>>();
-        let ([arrival], Some(back)) = (
-            arrivals.as_slice(),
-            scene
-                .connections
-                .iter()
-                .position(|edge| edge.source == Source::Junction(loop_.tail)),
-        ) else {
-            continue;
-        };
-        let arrival = *arrival;
-        let end = *scene.connections[back]
-            .points
-            .last()
-            .expect("a back edge reaches its entry");
-        let Some(compact) =
-            compact_arrival(&scene.connections[arrival].points, gap, end.y, &labels)
-        else {
-            continue;
-        };
-        let kept = (
-            scene.connections[arrival].points.clone(),
-            scene.connections[back].points.clone(),
-        );
-        let from = *compact.last().expect("a shortened arrival has a route");
-        scene.connections[arrival].points = compact;
-        let nested = nested_rails(scene, index);
-        let anchor = route::contour_anchor(scene, index);
-        let aside = route::contour_x(scene, model, index, from, end, &nested, anchor);
-        scene.connections[back].points = straighten_back_edge(from, aside, end);
-        if !conforms(scene) {
-            scene.connections[arrival].points = kept.0;
-            scene.connections[back].points = kept.1;
-        }
-    }
-}
-
-/// Aligns a cycle's result rail with its iteration rail when both can use the
-/// first clear level below their producers.
-///
-/// The checked arrangement gives the iteration tail a rank of its own. A
-/// result junction may nevertheless share its drawn rail when the completing
-/// and repeating routes occupy disjoint spans, as in binary search. The full
-/// geometry check keeps the separate ranks whenever that shortcut would cross
-/// another route.
-fn compact_cycle_rails(scene: &mut Scene) {
-    let gap = vertical_gap(scene);
-    let rails = scene
-        .topology
-        .loops
-        .iter()
-        .filter_map(|loop_| {
-            scene
-                .topology
-                .loop_boundaries
-                .iter()
-                .find(|boundary| boundary.header == loop_.header)
-                .and_then(|boundary| boundary.result)
-                .map(|result| (loop_.tail, result))
-        })
-        .collect::<Vec<_>>();
-
-    for (tail, result) in rails.into_iter().rev() {
-        let at = |scene: &Scene, junction| {
-            scene.connections.iter().find_map(|edge| {
-                if edge.source == Source::Junction(junction) {
-                    edge.points.first().map(|point| point.y)
-                } else if edge.destination == Destination::Junction(junction) {
-                    edge.points.last().map(|point| point.y)
-                } else {
-                    None
-                }
-            })
-        };
-        let (Some(tail_y), Some(result_y)) = (at(scene, tail), at(scene, result)) else {
-            continue;
-        };
-        let Some(y) = scene
-            .connections
-            .iter()
-            .filter(|edge| {
-                matches!(edge.destination, Destination::Junction(junction) if junction == tail || junction == result)
-            })
-            .filter_map(|edge| {
-                edge.points.first().map(|point| {
-                    point.y
-                        + if matches!(edge.source, Source::Exit(_)) {
-                            gap
-                        } else {
-                            0
-                        }
-                })
-            })
-            .max()
-        else {
-            continue;
-        };
-        if y > tail_y || y > result_y || tail_y == result_y {
-            continue;
-        }
-
-        let kept = scene.connections.clone();
-        move_junction(scene, tail, y);
-        move_junction(scene, result, y);
-        for edge in &mut scene.connections {
-            let point = edge.points[0];
-            edge.points = straighten(std::mem::take(&mut edge.points));
-            if edge.points.len() == 1 {
-                edge.points.push(point);
-            }
-        }
-        if !conforms(scene) {
-            scene.connections = kept;
-        }
-    }
-}
-
-/// Moves the horizontal run incident to one junction without changing the
-/// rest of any route. A zero-length structural hop remains as two equal points
-/// so the topology still has a routed connection.
-fn move_junction(scene: &mut Scene, junction: usize, y: i32) {
-    for edge in &mut scene.connections {
-        if edge.source == Source::Junction(junction) {
-            let old = edge.points[0].y;
-            let last = edge.points.len() - 1;
-            for point in edge.points[..last]
-                .iter_mut()
-                .take_while(|point| point.y == old)
-            {
-                point.y = y;
-            }
-        }
-        if edge.destination == Destination::Junction(junction) {
-            let old = edge.points.last().expect("a routed connection").y;
-            for point in edge.points[1..]
-                .iter_mut()
-                .rev()
-                .take_while(|point| point.y == old)
-            {
-                point.y = y;
-            }
-        }
-    }
-}
-
-/// Steps a back edge further out until its climb clears the labels it would
-/// otherwise strike through.
+/// Steps a back edge further out until its climb clears labels and leaves a
+/// routing lane beside nested cycle frames.
 ///
 /// Labels are placed against the routes, so where they end up is not known
 /// when the back edges are drawn, and a label hanging off the body's outermost
@@ -507,7 +252,14 @@ fn clear_labels(scene: &mut Scene) -> i32 {
                     .filter(|(nested, _)| {
                         (boundary_header + 1..boundary_end).contains(&nested.header)
                     })
-                    .map(|(_, region)| (region.left, region.top, region.right, region.bottom)),
+                    .map(|(_, region)| {
+                        (
+                            region.left - LANE,
+                            region.top - LANE,
+                            region.right + LANE,
+                            region.bottom + LANE,
+                        )
+                    }),
             );
             bounds
         };
@@ -568,46 +320,6 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         }
     }
     wanted
-}
-
-fn straighten_back_edge(from: Point, aside: i32, end: Point) -> Vec<Point> {
-    let mut points = route::back_edge_points(from, aside, end);
-    points.dedup();
-    points
-}
-
-/// A sole arrival can turn earlier without reserving a node's row or column.
-/// Side exits keep enough horizontal room for labels above them.
-fn compact_arrival(
-    points: &[Point],
-    gap: i32,
-    entry_y: i32,
-    labels: &[Label],
-) -> Option<Vec<Point>> {
-    let [.., bend, end] = points else {
-        return None;
-    };
-    let mut compact = points.to_vec();
-    let y = bend.y + if points.len() == 2 { gap } else { 0 };
-    if bend.x == end.x && y < end.y {
-        compact.pop();
-        if y != bend.y {
-            compact.push(Point { x: end.x, y });
-        }
-    }
-    if let [start, end] = compact.as_mut_slice()
-        && start.y == end.y
-        && start.x < end.x
-    {
-        let right = labels
-            .iter()
-            .map(label_rect)
-            .filter(|&(_, top, _, bottom)| bottom > entry_y && top < end.y)
-            .map(|(_, _, right, _)| right)
-            .fold(start.x + LANE, i32::max);
-        end.x = end.x.min(right);
-    }
-    (compact != points).then_some(compact)
 }
 
 /// The authored flow header without its parameters and return type.
@@ -753,22 +465,6 @@ enum Blocked {
     Narrow(i32),
 }
 
-/// Whether the scene conforms and still realizes the arrangement it was built
-/// from.
-///
-/// Every transformation below is a change to a scene that already did both, so
-/// this is what decides whether the change is kept. The labels are placed
-/// first, because a transformation moves the routes they hang from and a label
-/// over a node is one of the things nothing later repairs. The canvas is not
-/// settled here and does not need to be: none of these three reads it, and
-/// `finish` fits it once the coordinates stop moving.
-fn conforms(scene: &mut Scene) -> bool {
-    scene.labels = label::place_labels(scene);
-    route::verify(scene).is_none()
-        && label::clearance(scene).is_none()
-        && correspondence(scene).is_none()
-}
-
 /// Whether the pixels still say what the arrangement decided.
 ///
 /// The geometry checks hold a scene to RFC 0002 §8; this holds it to the
@@ -777,42 +473,24 @@ fn conforms(scene: &mut Scene) -> bool {
 /// structure — two nodes swapped between columns cross nothing — and only this
 /// sees that.
 ///
-/// Three things carry over. Columns: two nodes stand at one x exactly when the
-/// arrangement gave them one column, and a lower column is further left, which
-/// preserves the branch order and every reserved footprint at once. Ranks: a
-/// vertex of a lower rank is never drawn below one of a higher rank, an order a
-/// closed row may flatten but never invert. Incidence: a route still leaves the
-/// port it was given and reaches the node it was given.
-///
-/// A junction may move along its incident rail during compaction, but all of
-/// its incident routes must keep meeting at one point. Back edges also retain
-/// the recorded column boundary after indentation shifts the whole scene.
+/// Every node and junction stays on its measured row and column centre,
+/// and incident routes meet at the recorded ports.
+/// Back edges retain their column boundary after indentation shifts the scene.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
-    for left in &scene.nodes {
-        for right in &scene.nodes {
-            let (here, there) = (
-                scene.column(Vertex::Node(left.id)),
-                scene.column(Vertex::Node(right.id)),
-            );
-            let kept = match here.cmp(&there) {
-                Ordering::Less => left.x < right.x,
-                Ordering::Equal => left.x == right.x,
-                Ordering::Greater => left.x > right.x,
-            };
-            if !kept {
-                return Some(format!(
-                    "{:?} in column {here} and {:?} in column {there} are drawn at {} and {}",
-                    left.id, right.id, left.x, right.x
-                ));
-            }
-            if scene.rank(Vertex::Node(left.id)) < scene.rank(Vertex::Node(right.id))
-                && left.y > right.y
-            {
-                return Some(format!(
-                    "{:?} is ranked above {:?} and drawn below it",
-                    left.id, right.id
-                ));
-            }
+    let rows = scene.rows();
+    let origin =
+        scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
+    let column_x = |vertex| origin + scene.column_x(scene.column(vertex));
+    for node in &scene.nodes {
+        let vertex = Vertex::Node(node.id);
+        if node.y != rows.line_y(RunLine::Rank(scene.rank(vertex))) {
+            return Some(format!("{:?} is drawn away from its row centre", node.id));
+        }
+        if node.x != column_x(vertex) {
+            return Some(format!(
+                "{:?} is drawn away from its column centre",
+                node.id
+            ));
         }
     }
     let mut junctions = BTreeMap::new();
@@ -835,11 +513,22 @@ pub(super) fn correspondence(scene: &Scene) -> Option<String> {
             (Vertex::from(connection.source), *first),
             (connection.destination, *last),
         ] {
-            if let Vertex::Junction(junction) = vertex
-                && let Some(previous) = junctions.insert(junction, point)
-                && previous != point
-            {
-                return Some(format!("the routes of junction {junction} do not meet"));
+            if let Vertex::Junction(junction) = vertex {
+                if point.x != column_x(vertex) {
+                    return Some(format!(
+                        "junction {junction} is drawn away from its column centre"
+                    ));
+                }
+                if point.y != rows.line_y(RunLine::Rank(scene.rank(vertex))) {
+                    return Some(format!(
+                        "junction {junction} is drawn away from its row centre"
+                    ));
+                }
+                if let Some(previous) = junctions.insert(junction, point)
+                    && previous != point
+                {
+                    return Some(format!("the routes of junction {junction} do not meet"));
+                }
             }
         }
     }
@@ -959,38 +648,7 @@ fn attempt(
         return Err(Blocked::Refused(reason));
     }
 
-    // The realization every compaction below starts from, and the one to fall
-    // back on: it conforms and it realizes the arrangement, so a transformation
-    // that cannot be made to hold costs the compact appearance rather than the
-    // diagram.
-    let uncompacted = scene.clone();
-    if !scene.arrangement.back_routes.is_empty() {
-        return finish(scene);
-    }
-    loop_block::compact_entries(&mut scene);
-    compact_back_edges(&mut scene, model);
-    end::adjust(&mut scene);
-    compact_cycle_rails(&mut scene);
-    close_unused_rows(&mut scene, &rows);
-    // Either failure falls back on it, not just a refusal. A compaction pulls
-    // rails inward, so it can put one under a label the uncompacted geometry
-    // cleared; widening the columns for a conflict compaction introduced would
-    // spend room the drawing does not need, and could run out of room the
-    // uncompacted realization never wanted.
-    match finish(scene) {
-        Ok(scene) => Ok(scene),
-        Err(compacted) => match (finish(uncompacted), compacted) {
-            (Ok(scene), _) => Ok(scene),
-            // Both want room: ask for the more of the two, so one pass settles
-            // whichever realization the next attempt keeps.
-            (Err(Blocked::Narrow(fallback)), Blocked::Narrow(wanted)) => {
-                Err(Blocked::Narrow(fallback.max(wanted)))
-            }
-            // The compacted reason is dropped with the compaction it describes.
-            // What has to be explained is the realization that would ship.
-            (Err(fallback), _) => Err(fallback),
-        },
-    }
+    finish(scene)
 }
 
 /// Places the labels, settles the coordinates and the canvas, and checks the
@@ -1038,8 +696,8 @@ fn nodes(scene: &Scene) -> Vec<Node> {
         .collect()
 }
 
-/// Top edge and height of every row, in row order. A junction row carries no
-/// box, so it is only the lane its routes meet in.
+/// Top edge and height of every row, in row order. A visible merge reserves its
+/// marker; structural junctions carry no box.
 ///
 /// `top` and `capture_space` carry one entry past the last row, the bottom edge
 /// of the diagram, so that the row gap below a row is always addressable as
@@ -1050,11 +708,18 @@ pub(super) struct Rows {
     /// Per rank gap, how many lanes its sideways runs occupy.
     lanes: Vec<usize>,
     /// Space between the last horizontal arrival and the following node row;
-    /// zero when the row contains only junctions.
+    /// zero when the row contains no vertex.
     capture_space: Vec<i32>,
 }
 
 impl Rows {
+    pub(super) fn line_y(&self, line: RunLine) -> i32 {
+        match line {
+            RunLine::Rank(rank) => self.top[rank] + self.height[rank] / 2,
+            RunLine::Lane { gap, lane } => self.lane_y(gap, lane, self.lanes_in(gap)),
+        }
+    }
+
     pub(super) fn lanes_in(&self, gap: usize) -> usize {
         self.lanes.get(gap).copied().unwrap_or(0)
     }
@@ -1063,12 +728,6 @@ impl Rows {
     /// below the producers rather than pressing the merge against their exits.
     pub(super) fn lane_y(&self, gap: usize, lane: usize, lanes: usize) -> i32 {
         self.top[gap + 1] - self.capture_space[gap + 1] - (lanes - lane - 1) as i32 * LANE
-    }
-
-    /// A junction row carries no box, so the routes that meet there meet on
-    /// the row's own line.
-    pub(super) fn junction_y(&self, row: usize) -> i32 {
-        self.top[row]
     }
 }
 
@@ -1083,11 +742,19 @@ impl Scene {
             height[row] = height[row].max(node.height);
             capture_space[row] = gap;
         }
+        for (junction, node) in self.topology.junctions.iter().enumerate() {
+            let row = self.rank(Vertex::Junction(junction));
+            capture_space[row] = gap;
+            if !node.merges.is_empty() {
+                height[row] = height[row].max(2 * MERGE_RADIUS);
+            }
+        }
         if let Some(parameters) = &self.parameters {
             let row = self.rank(Vertex::Node(NodeId::Start));
             height[row] = height[row].max(parameters.height);
         }
         let lanes = self.arrangement.gap_lanes.clone();
+        let bottom_padding = loop_block::bottom_padding(self);
         let mut top = Vec::with_capacity(ranks + 1);
         let mut next = MARGIN;
         for (row, own) in height.iter().enumerate() {
@@ -1098,7 +765,7 @@ impl Scene {
             } else {
                 gap + (count - 1) * LANE + capture_space[row + 1]
             };
-            next += own + gap.max(routing);
+            next += own + (gap + bottom_padding[row]).max(routing);
         }
         top.push(next);
 
@@ -1178,7 +845,7 @@ impl Scene {
     fn lift(&mut self, rows: &Rows) {
         for node in &mut self.nodes {
             let row = self.arrangement.rank[&Vertex::Node(node.id)];
-            node.y = rows.top[row] + rows.height[row] / 2;
+            node.y = rows.line_y(RunLine::Rank(row));
         }
         let start = self.node(NodeId::Start);
         let (x, y, width) = (start.x, start.y, start.width);

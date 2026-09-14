@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1784" height="1162" viewBox="0 0 1784 1162" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1784" height="1186" viewBox="0 0 1784 1186" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for disjoint_and_nested_groups</title>
   <desc id="kaalang-description">Nodes: Start: disjoint_and_nested_groups with parameters source: u8 handing over source; Select: Which source? capturing source; Case: First. handing over a; Case: Second. handing over b; Case: Third. handing over c; Case: Fourth. handing over d; Case: Fifth. handing over e; Action: First value. capturing a handing over ab; Action: Second value. capturing b handing over ab; Action: Close the first pair. capturing ab handing over abc; Action: Third value. capturing c handing over abc; Action: Finish the first three. capturing abc handing over end; Action: Fourth value. capturing d handing over de; Action: Fifth value. capturing e handing over de; Action: Finish the last two. capturing de handing over end; End: u8 capturing end; Merge: ab; Merge: abc; Merge: end; Merge: de. Connections: Start: disjoint_and_nested_groups to Select: Which source?; Select: Which source? to Case: First.; Select: Which source? to Case: Second.; Select: Which source? to Case: Third.; Select: Which source? to Case: Fourth.; Select: Which source? to Case: Fifth.; Case: First. to Action: First value.; Case: Second. to Action: Second value.; Case: Third. to Action: Third value.; Case: Fourth. to Action: Fourth value.; Case: Fifth. to Action: Fifth value.; Action: First value. to the ab merge; Action: Second value. to the ab merge; Action: Close the first pair. to the abc merge; Action: Third value. to the abc merge; Action: Finish the first three. to the end merge; Action: Fourth value. to the de merge; Action: Fifth value. to the de merge; Action: Finish the last two. to the end merge; the ab merge to Action: Close the first pair.; the abc merge to Action: Finish the first three.; the end merge to End: u8; the de merge to Action: Finish the last two..</desc>
   <defs>
@@ -39,29 +39,29 @@
       M 892 376 L 892 448
       M 1252 376 L 1252 448
       M 1612 376 L 1612 448
-      M 172 512 L 172 584
-      M 532 512 L 532 584 L 172 584
-      M 172 720 L 172 792
-      M 892 512 L 892 792 L 172 792
-      M 172 928 L 172 1000
-      M 1252 512 L 1252 584
-      M 1612 512 L 1612 584 L 1252 584
-      M 1252 720 L 1252 1000 L 172 1000
-      M 172 584 L 172 656
-      M 172 792 L 172 864
-      M 172 1000 L 172 1072
-      M 1252 584 L 1252 656
+      M 172 512 L 172 588
+      M 532 512 L 532 588 L 172 588
+      M 172 728 L 172 804
+      M 892 512 L 892 804 L 172 804
+      M 172 944 L 172 1020
+      M 1252 512 L 1252 588
+      M 1612 512 L 1612 588 L 1252 588
+      M 1252 728 L 1252 1020 L 172 1020
+      M 172 588 L 172 664
+      M 172 804 L 172 880
+      M 172 1020 L 172 1096
+      M 1252 588 L 1252 664
     "/>
-    <text class="connection-label" x="185" y="602" xml:space="preserve"><tspan x="185" dy="0">ab</tspan></text>
-    <text class="connection-label" x="185" y="810" xml:space="preserve"><tspan x="185" dy="0">abc</tspan></text>
-    <text class="connection-label" x="185" y="1018" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="1265" y="602" xml:space="preserve"><tspan x="1265" dy="0">de</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
-    <text class="connection-label" x="185" y="407" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="545" y="407" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
-    <text class="connection-label" x="905" y="407" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
-    <text class="connection-label" x="1265" y="407" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
-    <text class="connection-label" x="1625" y="407" xml:space="preserve"><tspan x="1625" dy="0">e</tspan></text>
+    <text class="connection-label" x="185" y="606" xml:space="preserve"><tspan x="185" dy="0">ab</tspan></text>
+    <text class="connection-label" x="185" y="822" xml:space="preserve"><tspan x="185" dy="0">abc</tspan></text>
+    <text class="connection-label" x="185" y="1038" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="1265" y="606" xml:space="preserve"><tspan x="1265" dy="0">de</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
+    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
+    <text class="connection-label" x="905" y="437" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
+    <text class="connection-label" x="1265" y="437" xml:space="preserve"><tspan x="1265" dy="0">d</tspan></text>
+    <text class="connection-label" x="1625" y="437" xml:space="preserve"><tspan x="1625" dy="0">e</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -69,19 +69,19 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 584)">
+    <g class="node merge" transform="translate(172 588)">
       <title xml:space="preserve">the ab merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 792)">
+    <g class="node merge" transform="translate(172 804)">
       <title xml:space="preserve">the abc merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 1000)">
+    <g class="node merge" transform="translate(172 1020)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(1252 584)">
+    <g class="node merge" transform="translate(1252 588)">
       <title xml:space="preserve">the de merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -129,7 +129,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Second value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 688)">
+    <g class="node action" transform="translate(172 696)">
       <title xml:space="preserve">Close the first pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the first pair.</tspan></text>
@@ -139,7 +139,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Third value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 896)">
+    <g class="node action" transform="translate(172 912)">
       <title xml:space="preserve">Finish the first three.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the first three.</tspan></text>
@@ -154,12 +154,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Fifth value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 688)">
+    <g class="node action" transform="translate(1252 696)">
       <title xml:space="preserve">Finish the last two.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the last two.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1101)">
+    <g class="node end" transform="translate(172 1125)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

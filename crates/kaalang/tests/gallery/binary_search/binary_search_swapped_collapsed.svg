@@ -32,7 +32,7 @@
       M 172 241 L 172 320
       M 172 384 L 172 463
     "/>
-    <text class="connection-label" x="185" y="418" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="452" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">values, target</tspan></text>
     <text class="connection-label" x="185" y="259" xml:space="preserve"><tspan x="185" dy="0">mut left, mut right</tspan></text>
     <text class="connection-label" x="185" y="166" xml:space="preserve"><tspan x="185" dy="0">values</tspan></text>

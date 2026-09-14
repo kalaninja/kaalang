@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1120" viewBox="0 0 1064 1120" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1136" viewBox="0 0 1064 1136" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_borrowed_input_partial_merge</title>
   <desc id="kaalang-description">Nodes: Start: const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end; Merge: partial; Merge: view. Connections: Start: const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
   <defs>
@@ -35,18 +35,18 @@
       M 172 402 L 172 475
       M 532 402 L 532 474
       M 892 402 L 892 475
-      M 172 539 L 172 612
-      M 532 540 L 532 612 L 172 612
-      M 172 750 L 172 822
-      M 892 539 L 892 822 L 172 822
-      M 172 958 L 172 1030
-      M 172 612 L 172 684
-      M 172 822 L 172 894
+      M 172 539 L 172 616
+      M 532 540 L 532 616 L 172 616
+      M 172 758 L 172 834
+      M 892 539 L 892 834 L 172 834
+      M 172 974 L 172 1046
+      M 172 616 L 172 692
+      M 172 834 L 172 910
     "/>
-    <text class="connection-label" x="185" y="630" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
-    <text class="connection-label" x="185" y="840" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
-    <text class="connection-label" x="905" y="433" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
-    <text class="connection-label" x="185" y="989" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="634" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label" x="185" y="852" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label" x="905" y="464" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label" x="185" y="1035" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">source, bytes</tspan></text>
     <text class="connection-label" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
     <text class="connection-label" x="545" y="420" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
@@ -60,11 +60,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan><tspan x="-104" dy="18">bytes: &amp;[u8]</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 612)">
+    <g class="node merge" transform="translate(172 616)">
       <title xml:space="preserve">the partial merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 822)">
+    <g class="node merge" transform="translate(172 834)">
       <title xml:space="preserve">the view merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -102,7 +102,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the input on the second </tspan><tspan x="-124" dy="18">branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 717)">
+    <g class="node action" transform="translate(172 725)">
       <title xml:space="preserve">Carry the partially merged slice onward.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Carry the partially merged slice </tspan><tspan x="-124" dy="18">onward.</tspan></text>
@@ -112,12 +112,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the fallback slice.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 926)">
+    <g class="node action" transform="translate(172 942)">
       <title xml:space="preserve">Measure the merged slice.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Measure the merged slice.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1059)">
+    <g class="node end" transform="translate(172 1075)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

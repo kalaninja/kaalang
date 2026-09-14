@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1012" viewBox="0 0 704 1012" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1020" viewBox="0 0 704 1020" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for effect_then_common</title>
   <desc id="kaalang-description">Nodes: Start: effect_then_common with parameters flag: bool handing over flag; Question: Choose. capturing flag handing over yes / no; Action: Yes value. capturing yes handing over value, local; Action: Local effect. capturing local; Action: No value. capturing no handing over value; Action: Common stamp. capturing nothing handing over stamp; Action: Finish. capturing value, stamp handing over end; End: u8 capturing end; Merge: value. Connections: Start: effect_then_common to Question: Choose.; Question: Choose. branch 1 to Action: Yes value.; Question: Choose. branch 2 to Action: No value.; Action: Yes value. to Action: Local effect.; Action: Local effect. to the value merge; Action: No value. to the value merge; Action: Common stamp. to Action: Finish.; Action: Finish. to End: u8; the value merge to Action: Common stamp..</desc>
   <defs>
@@ -32,22 +32,22 @@
       M 172 234 L 172 306
       M 312 198 L 532 198 L 532 306
       M 172 370 L 172 442
-      M 172 506 L 172 578
-      M 532 370 L 532 578 L 172 578
-      M 172 714 L 172 786
-      M 172 850 L 172 922
-      M 172 578 L 172 650
+      M 172 506 L 172 582
+      M 532 370 L 532 582 L 172 582
+      M 172 722 L 172 794
+      M 172 858 L 172 930
+      M 172 582 L 172 658
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
-    <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="416" y="187" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="881" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="919" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">value, local</tspan></text>
     <text class="connection-label" x="545" y="388" xml:space="preserve"><tspan x="545" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="732" xml:space="preserve"><tspan x="185" dy="0">stamp</tspan></text>
+    <text class="connection-label" x="185" y="740" xml:space="preserve"><tspan x="185" dy="0">stamp</tspan></text>
     <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">local</tspan></text>
-    <text class="connection-label" x="185" y="639" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="775" xml:space="preserve"><tspan x="185" dy="0">value, stamp</tspan></text>
+    <text class="connection-label" x="185" y="647" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="783" xml:space="preserve"><tspan x="185" dy="0">value, stamp</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -55,7 +55,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 578)">
+    <g class="node merge" transform="translate(172 582)">
       <title xml:space="preserve">the value merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -83,17 +83,17 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">No value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 682)">
+    <g class="node action" transform="translate(172 690)">
       <title xml:space="preserve">Common stamp.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Common stamp.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 818)">
+    <g class="node action" transform="translate(172 826)">
       <title xml:space="preserve">Finish.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 951)">
+    <g class="node end" transform="translate(172 959)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

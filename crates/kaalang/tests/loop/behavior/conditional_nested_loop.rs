@@ -10,19 +10,17 @@ fn conditional_nested_loop(flag: bool) -> usize {
         let (iterate_1, leave_1) = |flag| flag;
 
         #[action("Produce two.")]
-        let two = |leave_1| 2;
-
-        |two| break two;
+        let selected = |leave_1| 2;
 
         #[cycle("Produce one.")]
-        let one = |iterate_1| {
+        let selected = |iterate_1| {
             #[action("Produce one.")]
             let one = || 1;
 
             |one| break one;
         };
 
-        |one| break one;
+        |selected| break selected;
     };
 
     |result| return result;

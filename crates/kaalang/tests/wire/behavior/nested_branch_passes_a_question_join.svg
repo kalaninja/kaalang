@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="964" viewBox="0 0 1064 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="980" viewBox="0 0 1064 980" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_branch_passes_a_question_join</title>
   <desc id="kaalang-description">Nodes: Start: nested_branch_passes_a_question_join with parameters refine: bool; finish_early: bool handing over refine, finish_early; Question: Refine the value? capturing refine handing over nested / direct; Question: Finish early? capturing nested, finish_early handing over skip / join; Action: Finish without the shared step. capturing skip handing over end; Action: Build the refined value. capturing join handing over shared; Action: Build the direct value. capturing direct handing over shared; Action: Add ten in the shared step. capturing shared handing over end; End: u32 capturing end; Merge: end; Merge: shared. Connections: Start: nested_branch_passes_a_question_join to Question: Refine the value?; Question: Refine the value? branch 1 to Question: Finish early?; Question: Refine the value? branch 2 to Action: Build the direct value.; Question: Finish early? branch 1 to Action: Finish without the shared step.; Question: Finish early? branch 2 to Action: Build the refined value.; Action: Finish without the shared step. to the end merge; Action: Build the refined value. to the shared merge; Action: Build the direct value. to the shared merge; Action: Add ten in the shared step. to the end merge; the end merge to End: u32; the shared merge to Action: Add ten in the shared step..</desc>
   <defs>
@@ -33,18 +33,18 @@
       M 312 206 L 892 206 L 892 318
       M 172 386 L 172 458
       M 312 350 L 532 350 L 532 458
-      M 172 522 L 172 802
-      M 532 522 L 532 594
-      M 892 382 L 892 594 L 532 594
-      M 532 730 L 532 802 L 172 802
-      M 172 802 L 172 874
-      M 532 594 L 532 666
+      M 172 522 L 172 814
+      M 532 522 L 532 598
+      M 892 382 L 892 598 L 532 598
+      M 532 738 L 532 814 L 172 814
+      M 172 814 L 172 890
+      M 532 598 L 532 674
     "/>
-    <text class="connection-label" x="185" y="820" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="545" y="612" xml:space="preserve"><tspan x="545" dy="0">shared</tspan></text>
-    <text class="connection-label" x="584" y="195" xml:space="preserve"><tspan x="584" dy="0">direct</tspan></text>
-    <text class="connection-label" x="185" y="417" xml:space="preserve"><tspan x="185" dy="0">skip</tspan></text>
-    <text class="connection-label" x="412" y="339" xml:space="preserve"><tspan x="412" dy="0">join</tspan></text>
+    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="545" y="616" xml:space="preserve"><tspan x="545" dy="0">shared</tspan></text>
+    <text class="connection-label" x="905" y="307" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label" x="185" y="447" xml:space="preserve"><tspan x="185" dy="0">skip</tspan></text>
+    <text class="connection-label" x="545" y="447" xml:space="preserve"><tspan x="545" dy="0">join</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">refine, finish_early</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">refine</tspan></text>
@@ -56,11 +56,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">refine: bool</tspan><tspan x="-104" dy="18">finish_early: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 802)">
+    <g class="node merge" transform="translate(172 814)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(532 594)">
+    <g class="node merge" transform="translate(532 598)">
       <title xml:space="preserve">the shared merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -93,12 +93,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 698)">
+    <g class="node action" transform="translate(532 706)">
       <title xml:space="preserve">Add ten in the shared step.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add ten in the shared step.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 903)">
+    <g class="node end" transform="translate(172 919)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

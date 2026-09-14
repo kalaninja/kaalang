@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="818" viewBox="0 0 1140 818" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="826" viewBox="0 0 1140 826" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for multiple_exits</title>
-  <desc id="kaalang-description">Cycles: Select an exit after zero or one advances. with inputs mut mode and outputs selected. Nodes: Start: multiple_exits with parameters mode: u8 handing over mode; Select: Exit or advance? capturing mode; Case: Exit immediately. handing over first; Case: Exit after advancing. handing over last; Case: Advance once. handing over advance; Action: Advance to the final case. capturing advance, &amp;mut mode; End: u8 capturing selected. Connections: Start: multiple_exits to the entry of the cycle; Select: Exit or advance? to Case: Exit immediately.; Select: Exit or advance? to Case: Exit after advancing.; Select: Exit or advance? to Case: Advance once.; Case: Exit immediately. to a cycle break; Case: Exit after advancing. to a cycle break; Case: Advance once. to Action: Advance to the final case.; Action: Advance to the final case. to the iteration tail of the cycle; the entry of the cycle to Select: Exit or advance?; the cycle result to End: u8; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Select an exit after zero or one advances. with inputs mut mode and outputs selected. Nodes: Start: multiple_exits with parameters mode: u8 handing over mode; Select: Exit or advance? capturing mode; Case: Exit immediately. handing over first; Case: Exit after advancing. handing over last; Case: Advance once. handing over advance; Action: Keep the immediate result. capturing first, mode handing over result; Action: Advance to the final case. capturing advance, &amp;mut mode; Action: Keep the result after advancing. capturing last, mode handing over result; End: u8 capturing selected; Merge: result. Connections: Start: multiple_exits to the entry of the cycle; Select: Exit or advance? to Case: Exit immediately.; Select: Exit or advance? to Case: Exit after advancing.; Select: Exit or advance? to Case: Advance once.; Case: Exit immediately. to Action: Keep the immediate result.; Case: Exit after advancing. to Action: Keep the result after advancing.; Case: Advance once. to Action: Advance to the final case.; Action: Keep the immediate result. to the result merge at the cycle result; Action: Advance to the final case. to the iteration tail of the cycle; Action: Keep the result after advancing. to the result merge at the cycle result; the result merge at the cycle result to End: u8; the entry of the cycle to Select: Exit or advance?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,7 +27,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Select an exit after zero or one advances.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1076" height="564" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="127" width="1076" height="568" rx="12"/>
     <text class="cycle-caption" x="1096" y="141" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Select an exit after zero or one advances.</tspan></text>
     </g>
   </g>
@@ -41,28 +41,35 @@
       M 200 448 L 200 520
       M 560 448 L 560 520
       M 920 448 L 920 520
-      M 920 584 L 920 656
+      M 200 584 L 200 660
+      M 920 584 L 920 660
+      M 560 584 L 560 660 L 200 660
+      M 200 660 L 200 736
       M 200 162 L 200 234
-      M 200 656 L 200 728
-      M 200 520 L 200 656
-      M 560 520 L 560 656 L 200 656
     "/>
     <path class="connection" d="
-      M 920 656 L 1080 656 L 1080 162 L 200 162
+      M 920 660 L 1080 660 L 1080 162 L 200 162
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="678" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
     <text class="connection-label" x="213" y="466" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
     <text class="connection-label" x="573" y="466" xml:space="preserve"><tspan x="573" dy="0">last</tspan></text>
     <text class="connection-label" x="933" y="466" xml:space="preserve"><tspan x="933" dy="0">advance</tspan></text>
     <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
+    <text class="connection-label" x="213" y="509" xml:space="preserve"><tspan x="213" dy="0">first, mode</tspan></text>
     <text class="connection-label" x="933" y="509" xml:space="preserve"><tspan x="933" dy="0">advance, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="213" y="717" xml:space="preserve"><tspan x="213" dy="0">selected</tspan></text>
+    <text class="connection-label" x="573" y="509" xml:space="preserve"><tspan x="573" dy="0">last, mode</tspan></text>
+    <text class="connection-label" x="213" y="725" xml:space="preserve"><tspan x="213" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
     <g class="parameter-panel" transform="translate(556 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 660)">
+      <title xml:space="preserve">the result merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
@@ -88,12 +95,22 @@
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance once.</tspan></text>
     </g>
+    <g class="node action" transform="translate(200 552)">
+      <title xml:space="preserve">Keep the immediate result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the immediate result.</tspan></text>
+    </g>
     <g class="node action" transform="translate(920 552)">
       <title xml:space="preserve">Advance to the final case.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance to the final case.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 757)">
+    <g class="node action" transform="translate(560 552)">
+      <title xml:space="preserve">Keep the result after advancing.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the result after advancing.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 765)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

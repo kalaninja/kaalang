@@ -16,7 +16,7 @@ mod scope;
 pub mod topology;
 
 pub use choice::{choice_match, is_todo_body};
-pub use construct::{Arrangement, Contour, Route, Run, Side};
+pub use construct::{Arrangement, Contour, Route, Run, RunLine, Side};
 pub use model::{
     Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
     Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId,

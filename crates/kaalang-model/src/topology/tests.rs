@@ -145,7 +145,7 @@ fn capture_free_transfers_redirect_without_structural_junctions() {
         "#,
     );
     let boundary = topology.loop_boundaries[0];
-    let result = boundary.result.expect("the cycle completes");
+    let result = boundary.result_junction().expect("the cycle completes");
     let end = topology
         .nodes
         .iter()
@@ -156,7 +156,7 @@ fn capture_free_transfers_redirect_without_structural_junctions() {
     assert_eq!(topology.junctions.len(), 2);
     assert!(topology.junctions.iter().all(|junction| !junction.is_break));
     assert!(topology.connections.contains(&Connection {
-        source: Source::Junction(boundary.entry),
+        source: Source::Junction(boundary.entry_junction()),
         destination: Destination::Junction(result),
     }));
     assert!(topology.connections.contains(&Connection {
@@ -175,15 +175,14 @@ fn nested_completing_cycles_reach_the_root_return() {
                 #[question("Flag?")]
                 let (iterate_1, leave_1) = |flag| flag;
                 #[action("Return two.")]
-                let two = |leave_1| 2;
-                |two| break two;
+                let selected = |leave_1| 2;
                 #[cycle("Produce one.")]
-                let one = |iterate_1| {
+                let selected = |iterate_1| {
                     #[action("Return one.")]
                     let one = || 1;
                     |one| break one;
                 };
-                |one| break one;
+                |selected| break selected;
             };
             |result| return result;
         }
@@ -273,22 +272,45 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
     let merge = (0..topology.junctions.len())
         .find(|&junction| merged(&model, junction) == ["leave"])
         .expect("the question outputs merge before the break");
-    let outgoing = topology
-        .outgoing(Vertex::Junction(merge))
-        .copied()
-        .collect::<Vec<_>>();
-    let [connection] = outgoing.as_slice() else {
-        panic!("the merged wire has one shared continuation")
-    };
-    let Vertex::Junction(break_) = connection.destination else {
-        panic!("the merged wire reaches the inner break")
-    };
-    assert!(topology.junctions[break_].is_break);
+    assert_eq!(
+        topology.loop_boundaries[1].result,
+        Some(Source::Junction(merge))
+    );
+    assert!(topology.junctions[merge].is_break);
+    assert!(topology.junctions[merge].is_loop_result);
     assert!(reaches(
         topology,
-        Vertex::Junction(break_),
+        Vertex::Junction(merge),
         Vertex::Junction(topology.loops[0].tail)
     ));
+}
+
+#[test]
+fn work_after_a_merge_keeps_the_cycle_result_separate() {
+    let model = model(
+        r#"
+        fn example(flag: bool) {
+            #[cycle("Choose, then finish.")]
+            |flag| {
+                #[question("Which route?")]
+                let (done, other) = |flag| flag;
+                #[action("Finish the other route.")]
+                let done = |other| {};
+                #[action("Finish after the merge.")]
+                |done| {};
+                |done| break;
+            };
+            return;
+        }
+        "#,
+    );
+    let topology = &model.topology;
+    let merge = (0..topology.junctions.len())
+        .find(|&junction| merged(&model, junction) == ["done"])
+        .unwrap();
+    let result = topology.loop_boundaries[0].result.unwrap();
+    assert_eq!(result, Source::Exit(ExitId::of(NodeId::Block(3))));
+    assert!(reaches(topology, Vertex::Junction(merge), result.into()));
 }
 
 #[test]

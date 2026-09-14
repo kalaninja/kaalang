@@ -1,16 +1,46 @@
-//! Fits an entry and its first body node into space above a sibling row.
-
-use std::collections::BTreeSet;
+//! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
 use kaalang_model::topology::{Destination, NodeId, Source, Vertex};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     CYCLE_CAPTION_FONT, LoopRegion, MARGIN, NODE_LABEL_WIDTH, NODE_WIDTH, Point, Scene,
-    block_dimensions, conforms, label::label_rect, text, vertical_gap,
+    block_dimensions, label::label_rect, text,
 };
 
 const VERTICAL_PADDING: i32 = 35;
+
+/// Nested boundaries ending on one row stack their padding. The usual row gap
+/// holds one boundary; reserve the additional layers before the next row.
+pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
+    let last_rows = scene
+        .region_bodies
+        .iter()
+        .zip(&scene.topology.loop_boundaries)
+        .map(|(body, boundary)| {
+            body.iter()
+                .copied()
+                .chain(boundary.result.map(Vertex::from))
+                .map(|vertex| scene.rank(vertex))
+                .max()
+                .expect("every cycle body includes its entry")
+        })
+        .collect::<Vec<_>>();
+    let mut padding = vec![0; scene.arrangement.ranks];
+    for (boundary, &row) in scene.topology.loop_boundaries.iter().zip(&last_rows) {
+        let layers = scene
+            .topology
+            .loop_boundaries
+            .iter()
+            .zip(&last_rows)
+            .filter(|(outer, last)| {
+                **last == row && (outer.header..outer.end).contains(&boundary.header)
+            })
+            .count();
+        padding[row] = padding[row].max((layers as i32 - 1) * VERTICAL_PADDING);
+    }
+    padding
+}
 
 pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
     block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH - 28, 64)
@@ -18,7 +48,11 @@ pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
 
 #[allow(clippy::too_many_lines)]
 pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
-    let point = |junction| {
+    let point = |vertex| {
+        let junction = match vertex {
+            Vertex::Node(node) => return Some(scene.top_anchor(node)),
+            Vertex::Junction(junction) => junction,
+        };
         scene.connections.iter().find_map(|edge| {
             if edge.source == Source::Junction(junction) {
                 edge.points.first().copied()
@@ -29,14 +63,18 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
             }
         })
     };
+    let exit_point = |source| match source {
+        Source::Exit(exit) => Some(scene.exit_anchor(exit)),
+        Source::Junction(junction) => point(Vertex::Junction(junction)),
+    };
     let mut regions = Vec::<(usize, LoopRegion)>::new();
     for (index, boundary) in scene.topology.loop_boundaries.iter().enumerate().rev() {
         let body = &scene.region_bodies[index];
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
         let owns_vertex = |vertex| {
             body.contains(&vertex)
-                || vertex == Vertex::Junction(boundary.entry)
-                || matches!(vertex, Vertex::Junction(junction) if Some(junction) == boundary.result)
+                || vertex == boundary.entry
+                || Some(vertex) == boundary.result.map(Vertex::from)
         };
         let mut boxes = scene
             .nodes
@@ -50,6 +88,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 .filter(|(header, _)| (boundary.header + 1..boundary.end).contains(header))
                 .map(|(_, region)| (region.left, region.top, region.right, region.bottom)),
         );
+        let body_bottom = boxes.iter().map(|bounds| bounds.3).max();
         boxes.extend(
             scene
                 .labels
@@ -57,10 +96,9 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 .filter(|label| owns_vertex(label.owner))
                 .map(label_rect),
         );
-        let mut points = [Some(boundary.entry), boundary.result]
+        let mut points = [point(boundary.entry), boundary.result.and_then(exit_point)]
             .into_iter()
             .flatten()
-            .filter_map(point)
             .collect::<Vec<_>>();
         points.extend(
             scene
@@ -101,16 +139,12 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
             x: i32::midpoint(left, right),
             y: MARGIN,
         });
-        let bottom_point = boundary
-            .result
-            .and_then(point)
-            .or_else(|| points.iter().max_by_key(|point| point.y).copied())
-            .unwrap_or(entry);
         let description = scene.captions.label(NodeId::Block(boundary.header));
         // Keep the horizontal entry and result rails inside the rectangle.
         // Putting either junction on its edge makes the dashed boundary and
         // the connection share a visible run.
-        let top = entry.y - VERTICAL_PADDING;
+        let top = (entry.y - VERTICAL_PADDING)
+            .min(boxes.iter().map(|bounds| bounds.1).min().unwrap_or(entry.y));
         let caption_left = scene
             .connections
             .iter()
@@ -119,20 +153,30 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 super::route::enters(segment[0], segment[1], (left, top, right, entry.y))
             })
             .map(|segment| segment[0].x.max(segment[1].x))
+            .chain(
+                scene
+                    .labels
+                    .iter()
+                    .map(label_rect)
+                    .filter(|bounds| {
+                        bounds.1 < entry.y && bounds.3 > top && bounds.0 < right && bounds.2 > left
+                    })
+                    .map(|bounds| bounds.2),
+            )
             .max()
             .unwrap_or(left);
-        let body_bottom = boxes
-            .iter()
-            .map(|bounds| bounds.3)
+        let body_bottom = body_bottom
+            .into_iter()
             .chain(points.iter().map(|point| point.y))
             .max()
-            .unwrap_or(bottom_point.y)
-            .max(bottom_point.y);
-        let bottom = if boundary.result.is_some() {
-            bottom_point.y + VERTICAL_PADDING
-        } else {
-            body_bottom + VERTICAL_PADDING
-        };
+            .unwrap_or(entry.y);
+        let bottom = (body_bottom + VERTICAL_PADDING).max(
+            boxes
+                .iter()
+                .map(|bounds| bounds.3)
+                .max()
+                .unwrap_or(body_bottom),
+        );
         regions.push((
             boundary.header,
             LoopRegion {
@@ -204,8 +248,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
         let owns_vertex = |vertex| {
             body.contains(&vertex)
-                || vertex == Vertex::Junction(boundary.entry)
-                || matches!(vertex, Vertex::Junction(junction) if Some(junction) == boundary.result)
+                || vertex == boundary.entry
+                || Some(vertex) == boundary.result.map(Vertex::from)
         };
         for node in &scene.nodes {
             let (left, top, right, bottom) = Scene::bounds(node);
@@ -269,10 +313,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             }
             let source_owned = owns_vertex(Vertex::from(edge.source));
             let destination_owned = owns_vertex(edge.destination);
-            let crosses_interface = edge.destination == Destination::Junction(boundary.entry)
-                || boundary
-                    .result
-                    .is_some_and(|result| edge.source == Source::Junction(result));
+            let crosses_interface =
+                edge.destination == boundary.entry || boundary.result == Some(edge.source);
             if source_owned
                 && destination_owned
                 && edge.points.iter().any(|point| {
@@ -339,6 +381,29 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                     )
                 ));
             }
+            if nested_owned
+                && scene.connections.iter().any(|edge| {
+                    edge.destination == boundary.entry
+                        && scene.is_back_edge(edge)
+                        && edge.points.windows(2).any(|segment| {
+                            super::route::enters(
+                                segment[0],
+                                segment[1],
+                                (
+                                    nested_region.left - super::LANE,
+                                    nested_region.top - super::LANE,
+                                    nested_region.right + super::LANE,
+                                    nested_region.bottom + super::LANE,
+                                ),
+                            )
+                        })
+                })
+            {
+                return Some(format!(
+                    "cycle {} back edge runs too close to cycle {}",
+                    boundary.header, nested.header
+                ));
+            }
         }
     }
     None
@@ -352,96 +417,5 @@ fn overlaps_boundary(segment: &[Point], region: &LoopRegion) -> bool {
     } else {
         (a.x == region.left || a.x == region.right)
             && a.y.min(b.y).max(region.top) < a.y.max(b.y).min(region.bottom)
-    }
-}
-
-pub(super) fn compact_entries(scene: &mut Scene) {
-    let gap = vertical_gap(scene);
-    for index in (0..scene.topology.loops.len()).rev() {
-        let entry = scene.topology.loops[index].entry;
-        let outgoing = scene
-            .topology
-            .outgoing(Vertex::Junction(entry))
-            .collect::<Vec<_>>();
-        let [edge] = outgoing.as_slice() else {
-            continue;
-        };
-        let Destination::Node(node) = edge.destination else {
-            continue;
-        };
-        if scene.topology.incoming(Vertex::Node(node)).count() != 1 {
-            continue;
-        }
-        let arrivals = scene
-            .topology
-            .incoming(Vertex::Junction(entry))
-            .collect::<Vec<_>>();
-        let [initial] = arrivals.as_slice() else {
-            continue;
-        };
-        let initial = scene
-            .connections
-            .iter()
-            .find(|edge| edge.source == initial.source && edge.destination == initial.destination)
-            .expect("the entry has its initial arrival");
-        let [from, old_entry] = initial.points.as_slice() else {
-            continue;
-        };
-        if from.x != old_entry.x {
-            continue;
-        }
-        let (from, old_entry) = (*from, *old_entry);
-        let body = scene.node(node);
-        let (old_y, half) = (body.y, body.height / 2);
-        let rows = scene
-            .nodes
-            .iter()
-            .map(|node| node.y)
-            .filter(|&y| y < old_y)
-            .collect::<BTreeSet<_>>();
-        for y in rows {
-            let entry_y = y - half - gap;
-            if entry_y < from.y + gap || entry_y > old_entry.y {
-                continue;
-            }
-            let mut candidate = scene.clone();
-            candidate
-                .nodes
-                .iter_mut()
-                .find(|placed| placed.id == node)
-                .expect("the first body node is placed")
-                .y = y;
-            for edge in &mut candidate.connections {
-                if Vertex::from(edge.source) == Vertex::Node(node) {
-                    let start = edge.points[0].y;
-                    for point in edge.points.iter_mut().take_while(|point| point.y == start) {
-                        point.y += y - old_y;
-                    }
-                }
-                if edge.destination == Vertex::Node(node) {
-                    edge.points
-                        .last_mut()
-                        .expect("a body arrival has an endpoint")
-                        .y += y - old_y;
-                }
-                if edge.destination == Vertex::Junction(entry) {
-                    for point in edge
-                        .points
-                        .iter_mut()
-                        .rev()
-                        .take_while(|point| point.y == old_entry.y)
-                    {
-                        point.y = entry_y;
-                    }
-                }
-                if edge.source == Source::Junction(entry) {
-                    edge.points[0].y = entry_y;
-                }
-            }
-            if conforms(&mut candidate) {
-                *scene = candidate;
-                break;
-            }
-        }
     }
 }

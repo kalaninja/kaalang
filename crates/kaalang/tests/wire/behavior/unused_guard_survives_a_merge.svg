@@ -35,7 +35,7 @@
       M 532 378 L 532 450 L 172 450 L 172 522
       M 172 588 L 172 660
     "/>
-    <text class="connection-label" x="185" y="619" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="649" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, cell</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>

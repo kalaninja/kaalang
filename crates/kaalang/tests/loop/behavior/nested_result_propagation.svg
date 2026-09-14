@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="836" height="1462" viewBox="0 0 836 1462" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="836" height="1318" viewBox="0 0 836 1318" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_result_propagation</title>
-  <desc id="kaalang-description">Cycles: Search until the inner cycle finds the limit. with inputs mut count, limit, log and outputs final_count, final_log; Advance until the search is done. with inputs mut count, limit, log and outputs next_count, next_log. Nodes: Start: nested_result_propagation with parameters limit: usize; log: Rc&lt;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt;&gt; handing over limit, log; Action: Initialize the counter. capturing nothing handing over mut count; Action: Enter the outer scope. capturing &amp;log handing over _outer; Action: Enter the inner scope. capturing &amp;log handing over inner; Question: Has the search finished? capturing &amp;count, limit handing over done / again; Action: Advance the search. capturing again, &amp;mut count; Action: Continue after the search. capturing final_count, &amp;final_log handing over result; End: usize capturing result. Connections: Start: nested_result_propagation to Action: Initialize the counter.; Action: Initialize the counter. to the cycle entry; Action: Enter the outer scope. to the entry of the cycle; Action: Enter the inner scope. to Question: Has the search finished?; Question: Has the search finished? branch 1 to a cycle break; Question: Has the search finished? branch 2 to Action: Advance the search.; Action: Advance the search. to the iteration tail of the cycle; Action: Continue after the search. to End: usize; the cycle entry to Action: Enter the outer scope.; the cycle result to Action: Continue after the search.; the entry of the cycle to Action: Enter the inner scope.; the cycle result to a cycle break; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Search until the inner cycle finds the limit. with inputs mut count, limit, log and outputs final_count, final_log; Advance until the search is done. with inputs mut count, limit, log and outputs next_count, next_log. Nodes: Start: nested_result_propagation with parameters limit: usize; log: Rc&lt;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt;&gt; handing over limit, log; Action: Initialize the counter. capturing nothing handing over mut count; Action: Enter the outer scope. capturing &amp;log handing over _outer; Action: Enter the inner scope. capturing &amp;log handing over inner; Question: Has the search finished? capturing &amp;count, limit handing over done / again; Action: Advance the search. capturing again, &amp;mut count; Action: Continue after the search. capturing final_count, &amp;final_log handing over result; End: usize capturing result. Connections: Start: nested_result_propagation to Action: Initialize the counter.; Action: Initialize the counter. to Action: Enter the outer scope.; Action: Enter the outer scope. to the entry of the cycle; Action: Enter the inner scope. to Question: Has the search finished?; Question: Has the search finished? branch 1 to the cycle result; Question: Has the search finished? branch 2 to Action: Advance the search.; Action: Advance the search. to the iteration tail of the cycle; Action: Continue after the search. to End: usize; the cycle result to Action: Continue after the search.; the entry of the cycle to Action: Enter the inner scope.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,13 +27,13 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Search until the inner cycle finds the limit.</title>
-    <rect class="cycle-boundary" x="32" y="289" width="772" height="910" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="289" width="772" height="766" rx="12"/>
     <text class="cycle-caption" x="792" y="303" text-anchor="end" xml:space="preserve"><tspan x="792" dy="0">Search until the inner cycle finds the limit.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Advance until the search is done.</title>
-    <rect class="cycle-boundary" x="60" y="497" width="716" height="558" rx="12"/>
-    <text class="cycle-caption" x="764" y="511" text-anchor="end" xml:space="preserve"><tspan x="764" dy="0">Advance until the search is done.</tspan></text>
+    <rect class="cycle-boundary" x="60" y="425" width="716" height="558" rx="12"/>
+    <text class="cycle-caption" x="764" y="439" text-anchor="end" xml:space="preserve"><tspan x="764" dy="0">Advance until the search is done.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -41,35 +41,31 @@
     <path class="connection" d="
       M 228 103 L 228 188
       M 228 252 L 228 324
-      M 228 460 L 228 532
-      M 228 668 L 228 740
-      M 228 812 L 228 884
-      M 368 776 L 588 776 L 588 884
-      M 588 948 L 588 1020
-      M 228 1300 L 228 1372
-      M 228 324 L 228 396
-      M 228 1164 L 228 1236
-      M 228 532 L 228 604
+      M 228 388 L 228 460
+      M 228 596 L 228 668
+      M 228 740 L 228 1020
+      M 368 704 L 588 704 L 588 812
+      M 588 876 L 588 948
+      M 228 1156 L 228 1228
       M 228 1020 L 228 1092
-      M 228 884 L 228 1020
-      M 228 1092 L 228 1164
+      M 228 460 L 228 532
     "/>
     <path class="connection" d="
-      M 588 1020 L 748 1020 L 748 532 L 228 532
+      M 588 948 L 748 948 L 748 460 L 228 460
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="241" y="1331" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
+    <text class="connection-label" x="241" y="1217" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
     <text class="connection-label" x="241" y="121" xml:space="preserve"><tspan x="241" dy="0">limit, log</tspan></text>
     <text class="connection-label" x="241" y="270" xml:space="preserve"><tspan x="241" dy="0">mut count</tspan></text>
-    <text class="connection-label" x="241" y="478" xml:space="preserve"><tspan x="241" dy="0">_outer</tspan></text>
-    <text class="connection-label" x="241" y="686" xml:space="preserve"><tspan x="241" dy="0">inner</tspan></text>
-    <text class="connection-label" x="241" y="830" xml:space="preserve"><tspan x="241" dy="0">done</tspan></text>
-    <text class="connection-label" x="381" y="794" xml:space="preserve"><tspan x="381" dy="0">again</tspan></text>
+    <text class="connection-label" x="241" y="406" xml:space="preserve"><tspan x="241" dy="0">_outer</tspan></text>
+    <text class="connection-label" x="241" y="614" xml:space="preserve"><tspan x="241" dy="0">inner</tspan></text>
+    <text class="connection-label" x="241" y="758" xml:space="preserve"><tspan x="241" dy="0">done</tspan></text>
+    <text class="connection-label" x="381" y="722" xml:space="preserve"><tspan x="381" dy="0">again</tspan></text>
     <text class="connection-label" x="241" y="177" xml:space="preserve"><tspan x="241" dy="0">()</tspan></text>
-    <text class="connection-label" x="241" y="385" xml:space="preserve"><tspan x="241" dy="0">&amp;log</tspan></text>
-    <text class="connection-label" x="241" y="593" xml:space="preserve"><tspan x="241" dy="0">&amp;log</tspan></text>
-    <text class="connection-label" x="241" y="729" xml:space="preserve"><tspan x="241" dy="0">&amp;count, limit</tspan></text>
-    <text class="connection-label" x="601" y="873" xml:space="preserve"><tspan x="601" dy="0">again, &amp;mut count</tspan></text>
-    <text class="connection-label" x="241" y="1225" xml:space="preserve"><tspan x="241" dy="0">final_count, &amp;final_log</tspan></text>
+    <text class="connection-label" x="241" y="313" xml:space="preserve"><tspan x="241" dy="0">&amp;log</tspan></text>
+    <text class="connection-label" x="241" y="521" xml:space="preserve"><tspan x="241" dy="0">&amp;log</tspan></text>
+    <text class="connection-label" x="241" y="657" xml:space="preserve"><tspan x="241" dy="0">&amp;count, limit</tspan></text>
+    <text class="connection-label" x="601" y="801" xml:space="preserve"><tspan x="601" dy="0">again, &amp;mut count</tspan></text>
+    <text class="connection-label" x="241" y="1081" xml:space="preserve"><tspan x="241" dy="0">final_count, &amp;final_log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 368 74 L 464 74"/>
@@ -86,32 +82,32 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter.</tspan></text>
     </g>
-    <g class="node action" transform="translate(228 428)">
+    <g class="node action" transform="translate(228 356)">
       <title xml:space="preserve">Enter the outer scope.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Enter the outer scope.</tspan></text>
     </g>
-    <g class="node action" transform="translate(228 636)">
+    <g class="node action" transform="translate(228 564)">
       <title xml:space="preserve">Enter the inner scope.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Enter the inner scope.</tspan></text>
     </g>
-    <g class="node question" transform="translate(228 776)">
+    <g class="node question" transform="translate(228 704)">
       <title xml:space="preserve">Has the search finished?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Has the search finished?</tspan></text>
     </g>
-    <g class="node action" transform="translate(588 916)">
+    <g class="node action" transform="translate(588 844)">
       <title xml:space="preserve">Advance the search.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance the search.</tspan></text>
     </g>
-    <g class="node action" transform="translate(228 1268)">
+    <g class="node action" transform="translate(228 1124)">
       <title xml:space="preserve">Continue after the search.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after the search.</tspan></text>
     </g>
-    <g class="node end" transform="translate(228 1401)">
+    <g class="node end" transform="translate(228 1257)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

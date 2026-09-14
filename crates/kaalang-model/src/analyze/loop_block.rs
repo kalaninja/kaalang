@@ -3,10 +3,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
-use syn::{Error, Result};
+use syn::Error;
 
 use super::{LoopState, State, Walk};
-use crate::model::{Execution, Flow, ProducerId};
+use crate::model::{Flow, ProducerId};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
     let bindings = walk.flow.blocks[block]
@@ -42,57 +42,6 @@ pub(super) fn uncaptured(output: &Ident) -> Error {
     )
 }
 
-/// A cycle's own back edge cannot lie between body routes that break to the same
-/// target. Nested cycles validate their own back edges; their results converge
-/// before the containing iteration continues.
-pub(super) fn validate_routes(flow: &Flow, executions: &[Execution]) -> Result<()> {
-    for (header, declaration) in flow.blocks.iter().enumerate() {
-        let Some(end) = declaration.loop_end else {
-            continue;
-        };
-        if !executions
-            .iter()
-            .any(|execution| execution.repeats.contains(&header))
-        {
-            continue;
-        }
-        let targets = flow.blocks[header + 1..end]
-            .iter()
-            .filter_map(|block| block.break_target)
-            .filter(|&target| target <= header)
-            .collect::<BTreeSet<_>>();
-        for target in targets {
-            let (routes, exits): (Vec<_>, Vec<_>) = executions
-                .iter()
-                .filter_map(|execution| {
-                    if execution.blocks.iter().any(|&block| {
-                        (header + 1..end).contains(&block)
-                            && flow.blocks[block].break_target == Some(target)
-                    }) {
-                        Some((execution, true))
-                    } else if execution.repeats.contains(&header) {
-                        Some((execution, false))
-                    } else {
-                        None
-                    }
-                })
-                .unzip();
-            let ordered = super::branch_order(&routes, &exits);
-            let first = ordered.iter().position(|&index| exits[index]);
-            let last = ordered.iter().rposition(|&index| exits[index]);
-            if let (Some(first), Some(last)) = (first, last)
-                && ordered[first..=last].iter().any(|&index| !exits[index])
-            {
-                return Err(Error::new(
-                    declaration.span,
-                    "a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches",
-                ));
-            }
-        }
-    }
-    Ok(())
-}
-
 /// A selection stops governing its iteration's branches when that cycle completes.
 /// Reaching a later block depends on completing the cycle. This is control
 /// order, not a capture dependency or a wire merge.
@@ -120,17 +69,15 @@ mod tests {
                     #[cycle("Advance at most once.")]
                     let inner = |mut mode| {
                         #[question("Exit immediately?")]
-                        let (first, check) = |mode| mode == 0;
-
-                        |first, mode| break mode;
+                        let (done, check) = |mode| mode == 0;
 
                         #[question("Advance once?")]
-                        let (last, advance) = |check, mode| mode == 1;
+                        let (done, advance) = |check, mode| mode == 1;
 
                         #[action("Advance to the final case.")]
                         |advance, &mut mode| *mode = 2;
 
-                        |last, mode| break mode;
+                        |done, mode| break mode;
                     };
 
                     |inner| break inner;

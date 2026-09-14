@@ -465,8 +465,8 @@ The output pattern follows the action machinery. One identifier binds the whole
 native loop value, even when that value is a tuple. A tuple pattern destructures
 only when the source declares it, including a singleton tuple. An omitted output
 or `let ()` binds unit. Outer alternative cycle producers use the ordinary
-type-gate and merge lowering after each cycle has completed; private break sites
-never become outer producer occurrences.
+type-gate and merge lowering after each cycle has completed; the private break
+site never becomes an outer producer occurrence.
 
 For example:
 

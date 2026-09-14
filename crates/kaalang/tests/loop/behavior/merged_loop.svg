@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="820" viewBox="0 0 760 820" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="612" viewBox="0 0 760 612" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for merged_loop</title>
-  <desc id="kaalang-description">Cycles: Produce the first result. with inputs first and outputs result; Produce the second result. with inputs second and outputs result. Nodes: Start: merged_loop with parameters select_first: bool handing over select_first; Question: Select the first cycle? capturing select_first handing over first / second; Action: Build the first value. capturing nothing handing over value; Action: Build the second value. capturing nothing handing over value; End: usize capturing result; Merge: result. Connections: Start: merged_loop to Question: Select the first cycle?; Question: Select the first cycle? branch 1 to the cycle entry; Question: Select the first cycle? branch 2 to the cycle entry; Action: Build the first value. to a cycle break; Action: Build the second value. to a cycle break; the result merge to End: usize; the cycle entry to Action: Build the first value.; the cycle result to the result merge; the cycle entry to Action: Build the second value.; the cycle result to the result merge; a cycle break to the cycle result; a cycle break to the cycle result.</desc>
+  <desc id="kaalang-description">Cycles: Produce the first result. with inputs first and outputs result; Produce the second result. with inputs second and outputs result. Nodes: Start: merged_loop with parameters select_first: bool handing over select_first; Question: Select the first cycle? capturing select_first handing over first / second; Action: Build the first value. capturing nothing handing over value; Action: Build the second value. capturing nothing handing over value; End: usize capturing result; Merge: result. Connections: Start: merged_loop to Question: Select the first cycle?; Question: Select the first cycle? branch 1 to Action: Build the first value.; Question: Select the first cycle? branch 2 to Action: Build the second value.; Action: Build the first value. to the result merge; Action: Build the second value. to the result merge; the result merge to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,13 +27,13 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Produce the first result.</title>
-    <rect class="cycle-boundary" x="32" y="271" width="336" height="350" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="271" width="336" height="134" rx="12"/>
     <text class="cycle-caption" x="356" y="285" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Produce the first </tspan><tspan x="356" dy="14">result.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Produce the second result.</title>
-    <rect class="cycle-boundary" x="392" y="271" width="336" height="350" rx="12"/>
-    <text class="cycle-caption" x="716" y="285" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Produce the second </tspan><tspan x="716" dy="14">result.</tspan></text>
+    <rect class="cycle-boundary" x="392" y="271" width="336" height="134" rx="12"/>
+    <text class="cycle-caption" x="716" y="285" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Produce the </tspan><tspan x="716" dy="14">second result.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -41,24 +41,18 @@
       M 200 90 L 200 162
       M 200 234 L 200 306
       M 340 198 L 560 198 L 560 306
-      M 200 442 L 200 514
-      M 560 442 L 560 514
-      M 200 658 L 200 730
-      M 200 306 L 200 378
-      M 200 586 L 200 658
-      M 560 306 L 560 378
-      M 560 586 L 560 658 L 200 658
-      M 200 514 L 200 586
-      M 560 514 L 560 586
+      M 200 370 L 200 446
+      M 560 370 L 560 446 L 200 446
+      M 200 446 L 200 522
     "/>
-    <text class="connection-label" x="213" y="121" xml:space="preserve"><tspan x="213" dy="0">select_first</tspan></text>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">select_first</tspan></text>
     <text class="connection-label" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
     <text class="connection-label" x="353" y="216" xml:space="preserve"><tspan x="353" dy="0">second</tspan></text>
-    <text class="connection-label" x="213" y="460" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
-    <text class="connection-label" x="573" y="460" xml:space="preserve"><tspan x="573" dy="0">value</tspan></text>
-    <text class="connection-label" x="213" y="367" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
-    <text class="connection-label" x="573" y="367" xml:space="preserve"><tspan x="573" dy="0">()</tspan></text>
-    <text class="connection-label" x="213" y="719" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="388" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="573" y="388" xml:space="preserve"><tspan x="573" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="573" y="295" xml:space="preserve"><tspan x="573" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="511" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -66,7 +60,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">select_first: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(200 658)">
+    <g class="node merge" transform="translate(200 446)">
       <title xml:space="preserve">the result merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -79,17 +73,17 @@
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Select the first cycle?</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 410)">
+    <g class="node action" transform="translate(200 338)">
       <title xml:space="preserve">Build the first value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 410)">
+    <g class="node action" transform="translate(560 338)">
       <title xml:space="preserve">Build the second value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 759)">
+    <g class="node end" transform="translate(200 551)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

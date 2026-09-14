@@ -113,7 +113,9 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         };
         let mut block = match expression {
             Some(Expr::Loop(expression)) => return Err(loop_block::legacy(expression)),
-            Some(Expr::Break(expression)) => break_block::parse(expression, inputs, parent)?,
+            Some(Expr::Break(expression)) => {
+                break_block::parse(expression, inputs, parent, blocks)?
+            }
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
                 return Err(Error::new_spanned(

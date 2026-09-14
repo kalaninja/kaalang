@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1100" viewBox="0 0 704 1100" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1116" viewBox="0 0 704 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for two_merges_reach_one_consumer</title>
   <desc id="kaalang-description">Nodes: Start: two_merges_reach_one_consumer with parameters scale: bool; offset: bool handing over scale, offset; Question: Scale the value? capturing scale handing over scaled / plain; Action: Take the scaled factor. capturing scaled handing over factor; Action: Take the plain factor. capturing plain handing over factor; Question: Offset the value? capturing offset handing over shifted / centred; Action: Take the shifted base. capturing shifted handing over base; Action: Take the centred base. capturing centred handing over base; Action: Combine both merged values. capturing factor, base handing over end; End: u32 capturing end; Merge: factor; Merge: base. Connections: Start: two_merges_reach_one_consumer to Question: Scale the value?; Question: Scale the value? branch 1 to Action: Take the scaled factor.; Question: Scale the value? branch 2 to Action: Take the plain factor.; Action: Take the scaled factor. to the factor merge; Action: Take the plain factor. to the factor merge; Question: Offset the value? branch 1 to Action: Take the shifted base.; Question: Offset the value? branch 2 to Action: Take the centred base.; Action: Take the shifted base. to the base merge; Action: Take the centred base. to the base merge; Action: Combine both merged values. to End: u32; the factor merge to Question: Offset the value?; the base merge to Action: Combine both merged values..</desc>
   <defs>
@@ -31,27 +31,27 @@
       M 172 94 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 594 L 172 666
-      M 312 558 L 532 558 L 532 666
-      M 172 730 L 172 802
-      M 532 730 L 532 802 L 172 802
-      M 172 938 L 172 1010
-      M 172 450 L 172 522
-      M 172 802 L 172 874
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 602 L 172 674
+      M 312 566 L 532 566 L 532 674
+      M 172 738 L 172 814
+      M 532 738 L 532 814 L 172 814
+      M 172 954 L 172 1026
+      M 172 454 L 172 530
+      M 172 814 L 172 890
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">factor</tspan></text>
-    <text class="connection-label" x="185" y="820" xml:space="preserve"><tspan x="185" dy="0">base</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
-    <text class="connection-label" x="409" y="195" xml:space="preserve"><tspan x="409" dy="0">plain</tspan></text>
-    <text class="connection-label" x="185" y="625" xml:space="preserve"><tspan x="185" dy="0">shifted</tspan></text>
-    <text class="connection-label" x="399" y="547" xml:space="preserve"><tspan x="399" dy="0">centred</tspan></text>
-    <text class="connection-label" x="185" y="969" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">factor</tspan></text>
+    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">base</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">plain</tspan></text>
+    <text class="connection-label" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">shifted</tspan></text>
+    <text class="connection-label" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">centred</tspan></text>
+    <text class="connection-label" x="185" y="1015" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">scale, offset</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">scale</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">offset</tspan></text>
-    <text class="connection-label" x="185" y="863" xml:space="preserve"><tspan x="185" dy="0">factor, base</tspan></text>
+    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">offset</tspan></text>
+    <text class="connection-label" x="185" y="879" xml:space="preserve"><tspan x="185" dy="0">factor, base</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -59,11 +59,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">scale: bool</tspan><tspan x="-104" dy="18">offset: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the factor merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 802)">
+    <g class="node merge" transform="translate(172 814)">
       <title xml:space="preserve">the base merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -86,27 +86,27 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the plain factor.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 558)">
+    <g class="node question" transform="translate(172 566)">
       <title xml:space="preserve">Offset the value?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Offset the value?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 698)">
+    <g class="node action" transform="translate(172 706)">
       <title xml:space="preserve">Take the shifted base.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the shifted base.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 698)">
+    <g class="node action" transform="translate(532 706)">
       <title xml:space="preserve">Take the centred base.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the centred base.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 906)">
+    <g class="node action" transform="translate(172 922)">
       <title xml:space="preserve">Combine both merged values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Combine both merged values.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1039)">
+    <g class="node end" transform="translate(172 1055)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

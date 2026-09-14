@@ -124,6 +124,25 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
 }
 
 #[test]
+fn renders_nested_cycles_without_crossing_boundaries() {
+    for (source, name) in [
+        (
+            include_str!("../../kaalang/tests/loop/behavior/nested_alternating_returns.rs"),
+            "nested_alternating_returns",
+        ),
+        (
+            include_str!("../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
+            "nested_side_returns",
+        ),
+    ] {
+        let svg = render_source(source, name)
+            .expect("nested cycle back edges clear every enclosed boundary");
+
+        assert_eq!(svg.matches(r#"class="cycle-boundary""#).count(), 3);
+    }
+}
+
+#[test]
 fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
     let description = "Collect <the results> & keep processing until there are enough items to complete the current request. ".repeat(3);
     let source = CYCLE_SOURCE.replace("Count to the limit.", &description);

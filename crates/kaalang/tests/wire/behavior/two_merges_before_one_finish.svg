@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1100" viewBox="0 0 704 1100" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1116" viewBox="0 0 704 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for two_merges_before_one_finish</title>
   <desc id="kaalang-description">Nodes: Start: two_merges_before_one_finish with parameters left: bool; right: bool handing over left, right; Question: Left enabled? capturing left handing over left_yes / left_no; Action: Left value. capturing left_yes handing over counted; Action: Other left value. capturing left_no handing over counted; Question: Right enabled? capturing right handing over right_yes / right_no; Action: Right value. capturing right_yes handing over seen; Action: Other right value. capturing right_no handing over seen; Action: Finish with both merged values. capturing counted, seen handing over end; End: u8 capturing end; Merge: counted; Merge: seen. Connections: Start: two_merges_before_one_finish to Question: Left enabled?; Question: Left enabled? branch 1 to Action: Left value.; Question: Left enabled? branch 2 to Action: Other left value.; Action: Left value. to the counted merge; Action: Other left value. to the counted merge; Question: Right enabled? branch 1 to Action: Right value.; Question: Right enabled? branch 2 to Action: Other right value.; Action: Right value. to the seen merge; Action: Other right value. to the seen merge; Action: Finish with both merged values. to End: u8; the counted merge to Question: Right enabled?; the seen merge to Action: Finish with both merged values..</desc>
   <defs>
@@ -31,27 +31,27 @@
       M 172 94 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 594 L 172 666
-      M 312 558 L 532 558 L 532 666
-      M 172 730 L 172 802
-      M 532 730 L 532 802 L 172 802
-      M 172 938 L 172 1010
-      M 172 450 L 172 522
-      M 172 802 L 172 874
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 602 L 172 674
+      M 312 566 L 532 566 L 532 674
+      M 172 738 L 172 814
+      M 532 738 L 532 814 L 172 814
+      M 172 954 L 172 1026
+      M 172 454 L 172 530
+      M 172 814 L 172 890
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">counted</tspan></text>
-    <text class="connection-label" x="185" y="820" xml:space="preserve"><tspan x="185" dy="0">seen</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">left_yes</tspan></text>
-    <text class="connection-label" x="400" y="195" xml:space="preserve"><tspan x="400" dy="0">left_no</tspan></text>
-    <text class="connection-label" x="185" y="625" xml:space="preserve"><tspan x="185" dy="0">right_yes</tspan></text>
-    <text class="connection-label" x="397" y="547" xml:space="preserve"><tspan x="397" dy="0">right_no</tspan></text>
-    <text class="connection-label" x="185" y="969" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">counted</tspan></text>
+    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">seen</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">left_yes</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">left_no</tspan></text>
+    <text class="connection-label" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">right_yes</tspan></text>
+    <text class="connection-label" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">right_no</tspan></text>
+    <text class="connection-label" x="185" y="1015" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
-    <text class="connection-label" x="185" y="863" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
+    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
+    <text class="connection-label" x="185" y="879" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -59,11 +59,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the counted merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 802)">
+    <g class="node merge" transform="translate(172 814)">
       <title xml:space="preserve">the seen merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -86,27 +86,27 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Other left value.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 558)">
+    <g class="node question" transform="translate(172 566)">
       <title xml:space="preserve">Right enabled?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Right enabled?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 698)">
+    <g class="node action" transform="translate(172 706)">
       <title xml:space="preserve">Right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 698)">
+    <g class="node action" transform="translate(532 706)">
       <title xml:space="preserve">Other right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Other right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 906)">
+    <g class="node action" transform="translate(172 922)">
       <title xml:space="preserve">Finish with both merged values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish with both merged values.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1039)">
+    <g class="node end" transform="translate(172 1055)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

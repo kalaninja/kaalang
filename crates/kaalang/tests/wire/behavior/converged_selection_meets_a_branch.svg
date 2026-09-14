@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="964" viewBox="0 0 704 964" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="980" viewBox="0 0 704 980" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for converged_selection_meets_a_branch</title>
   <desc id="kaalang-description">Nodes: Start: converged_selection_meets_a_branch with parameters left: bool; right: bool handing over left, right; Question: Right enabled? capturing right handing over b / right_no; Action: Provide the right value. capturing b handing over right_value; Action: Provide no right value. capturing right_no handing over right_value; Question: Left enabled? capturing left handing over a / left_no; Action: Work with the right value. capturing a, right_value handing over end; Action: Skip the work. capturing left_no, right_value handing over end; End: u8 capturing end; Merge: right_value; Merge: end. Connections: Start: converged_selection_meets_a_branch to Question: Right enabled?; Question: Right enabled? branch 1 to Action: Provide the right value.; Question: Right enabled? branch 2 to Action: Provide no right value.; Action: Provide the right value. to the right_value merge; Action: Provide no right value. to the right_value merge; Question: Left enabled? branch 1 to Action: Work with the right value.; Question: Left enabled? branch 2 to Action: Skip the work.; Action: Work with the right value. to the end merge; Action: Skip the work. to the end merge; the right_value merge to Question: Left enabled?; the end merge to End: u8.</desc>
   <defs>
@@ -31,26 +31,26 @@
       M 172 98 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 594 L 172 666
-      M 312 558 L 532 558 L 532 666
-      M 172 730 L 172 802
-      M 532 730 L 532 802 L 172 802
-      M 172 450 L 172 522
-      M 172 802 L 172 874
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 602 L 172 674
+      M 312 566 L 532 566 L 532 674
+      M 172 738 L 172 814
+      M 532 738 L 532 814 L 172 814
+      M 172 454 L 172 530
+      M 172 814 L 172 890
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">right_value</tspan></text>
-    <text class="connection-label" x="185" y="820" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="273" xml:space="preserve"><tspan x="185" dy="0">b</tspan></text>
-    <text class="connection-label" x="397" y="195" xml:space="preserve"><tspan x="397" dy="0">right_no</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">right_value</tspan></text>
+    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">b</tspan></text>
+    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">right_no</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="325" y="576" xml:space="preserve"><tspan x="325" dy="0">left_no</tspan></text>
+    <text class="connection-label" x="185" y="620" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label" x="325" y="584" xml:space="preserve"><tspan x="325" dy="0">left_no</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">a, right_value</tspan></text>
-    <text class="connection-label" x="545" y="655" xml:space="preserve"><tspan x="545" dy="0">left_no, right_value</tspan></text>
+    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">a, right_value</tspan></text>
+    <text class="connection-label" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">left_no, right_value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -58,11 +58,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the right_value merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 802)">
+    <g class="node merge" transform="translate(172 814)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -85,22 +85,22 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide no right value.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 558)">
+    <g class="node question" transform="translate(172 566)">
       <title xml:space="preserve">Left enabled?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Left enabled?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 698)">
+    <g class="node action" transform="translate(172 706)">
       <title xml:space="preserve">Work with the right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Work with the right value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 698)">
+    <g class="node action" transform="translate(532 706)">
       <title xml:space="preserve">Skip the work.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Skip the work.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 903)">
+    <g class="node end" transform="translate(172 919)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

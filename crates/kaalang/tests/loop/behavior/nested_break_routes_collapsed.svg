@@ -31,7 +31,7 @@
       M 172 103 L 172 188
       M 172 254 L 172 326
     "/>
-    <text class="connection-label" x="185" y="140" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label" x="185" y="315" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">

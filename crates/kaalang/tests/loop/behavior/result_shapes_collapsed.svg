@@ -36,7 +36,7 @@
       M 172 774 L 172 846
       M 172 910 L 172 982
     "/>
-    <text class="connection-label" x="185" y="805" xml:space="preserve"><tspan x="185" dy="0">single</tspan></text>
+    <text class="connection-label" x="185" y="835" xml:space="preserve"><tspan x="185" dy="0">single</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
     <text class="connection-label" x="185" y="380" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
     <text class="connection-label" x="185" y="518" xml:space="preserve"><tspan x="185" dy="0">mut adjusted</tspan></text>

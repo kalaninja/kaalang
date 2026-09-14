@@ -100,19 +100,18 @@ fn every_three_case_cycle_body_settles_the_same_way() {
 }
 
 /// Semantic obstructions retain their diagnostic priority independently of
-/// construction, including the specific branch-reordering advice of §4.5.
+/// construction, including ordinary convergence rules for cycle exit routes.
 #[test]
 fn semantic_restrictions_keep_their_specific_diagnostics() {
     for (routes, expected) in [
-        // Both value-producing exits are breaks under the cycle contract, so
-        // the branch-reordering rule speaks for either spelling.
+        // Both completing routes provide the wire captured by the single break.
         (
             ["finish", "repeat", "break"],
-            "a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches",
+            "branches in a kaalang choice convergence group must be adjacent",
         ),
         (
             ["break", "repeat", "break"],
-            "a repeating kaalang branch cannot lie between breaks to the same cycle; reorder the branches",
+            "branches in a kaalang choice convergence group must be adjacent",
         ),
     ] {
         let source = looping(&routes);
@@ -160,12 +159,11 @@ fn a_terminal_route_between_two_repeats_is_rejected() {
 /// the search reports it as an internal error rather than blaming the author.
 #[test]
 fn a_cycle_is_refused_rather_than_ranked() {
-    let chain =
-        place::rows(&linked(&[(0, 1)]), &[], &BTreeSet::new()).expect("a chain has an order");
+    let chain = place::rows(&linked(&[(0, 1)]), &BTreeSet::new()).expect("a chain has an order");
     assert!(chain[&Vertex::Node(NodeId::Block(0))] < chain[&Vertex::Node(NodeId::Block(1))]);
 
     assert_eq!(
-        place::rows(&linked(&[(0, 1), (1, 0)]), &[], &BTreeSet::new()),
+        place::rows(&linked(&[(0, 1), (1, 0)]), &BTreeSet::new()),
         Err("the connections form a cycle, so no node can be lowest".to_owned())
     );
 }
@@ -429,8 +427,7 @@ fn nested_break_routes_merge_without_crossing_side_departures() {
     let model = crate::build(&crate::tests::fixture(source, "nested_break_routes")).unwrap();
     let built = arrangement(&model);
     verify::arrangement(&model.flow, &model.topology, &built).unwrap();
-    // The value-bearing break now joins through its structural junction, so
-    // the first exit reaches that junction without a side departure.
+    // The first exit reaches the shared wire merge in its own branch column.
     let outer_exit = model
         .topology
         .connections
@@ -871,13 +868,16 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
     let [outer, inner] = model.topology.loop_boundaries[..] else {
         panic!("the flow has two cycle boundaries");
     };
-    let result = inner.result.expect("the inner cycle completes");
+    let result = inner
+        .result
+        .map(Vertex::from)
+        .expect("the inner cycle completes");
     let body = model.body_vertices(outer.header);
-    assert!(body.contains(&Vertex::Junction(result)));
+    assert!(body.contains(&result));
     assert!(
         model
             .topology
-            .outgoing(Vertex::Junction(result))
+            .outgoing(result)
             .all(|edge| body.contains(&edge.destination))
     );
 }
@@ -920,8 +920,11 @@ const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay
         let (again, leave) = |decide, stay| stay;
         #[action(\"Advance after the decision.\")]
         |again| {};
-        |leave, mode| break mode;
-        |leave_now, mode| break mode;
+        #[action(\"Leave after the decision.\")]
+        let selected = |leave, mode| mode;
+        #[action(\"Leave immediately.\")]
+        let selected = |leave_now, mode| mode;
+        |selected| break selected;
     };
     |result| return result;
 }
@@ -1130,7 +1133,7 @@ pub(super) const fn deep_lane(index: usize) -> usize {
 /// range it did not choose.
 #[test]
 fn a_sibling_inside_a_reserved_footprint_is_caught() {
-    let model = model(&looping(&["repeat", "repeat", "break"]));
+    let model = model(&looping(&["repeat", "repeat", "break", "break"]));
     let reachable = super::regions::reachable(&model.topology);
     let block = super::regions::branchers(&model.flow, &model.topology)[0];
     let regions = super::regions::regions(&model.flow, &model.topology, &reachable, block);
@@ -1138,7 +1141,7 @@ fn a_sibling_inside_a_reserved_footprint_is_caught() {
         .groups
         .iter()
         .find(|group| group.members.len() == 2)
-        .expect("two of the three routes repeat, so they converge");
+        .expect("two routes repeat, so they converge");
     let last = regions.branches.len() - 1;
     // Everything the sibling draws but its own head, whose column authored
     // branch order already fixes: what is left is the part only the reserved
@@ -1154,7 +1157,7 @@ fn a_sibling_inside_a_reserved_footprint_is_caught() {
         .collect::<BTreeSet<_>>();
     assert!(
         !outside.is_empty(),
-        "the break branch draws its own junction"
+        "the exit branch has work outside the repeating group's footprint"
     );
     let inside = group
         .area
@@ -1204,9 +1207,64 @@ fn ordered_question_ports_cover_genuine_refusals_in_both_procedures() {
 }
 
 #[test]
-fn a_value_producing_break_between_breaks_shares_their_merge() {
+fn value_producing_exit_routes_share_the_merge_before_break() {
     let counted = agree(&[looping(&["break", "finish", "break", "repeat"])]);
     assert_eq!(counted.drawn, 1);
+}
+
+#[test]
+fn junction_arrivals_record_their_rank_through_compaction() {
+    let merge = crate::tests::fixture(
+        include_str!("../../../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
+        "two_merges_reach_one_consumer",
+    );
+    for (function, minimum) in [
+        (merge, 2),
+        (
+            syn::parse_str(&looping(&["repeat", "repeat", "break"])).unwrap(),
+            1,
+        ),
+    ] {
+        let model = crate::build(&function).unwrap();
+        let swept = super::sweep::search(&model.flow, &model.merges, &model.topology)
+            .ok()
+            .expect("the sweep can draw the junction arrivals");
+        for mut built in [model.arrangement.clone(), swept] {
+            for compact in [false, true] {
+                if compact {
+                    super::compact::arrangement(&model.flow, &model.topology, &mut built);
+                }
+                verify::arrangement(&model.flow, &model.topology, &built).unwrap();
+                let mut arrivals = 0;
+                for (index, wire) in model.topology.connections.iter().enumerate() {
+                    if !matches!(wire.destination, Vertex::Junction(_)) {
+                        continue;
+                    }
+                    if let Some(run) = built.routes[index].runs.last() {
+                        assert_eq!(
+                            run.line,
+                            super::RunLine::Rank(built.rank[&wire.destination])
+                        );
+                        // Reject both an absent row and a real row below the junction;
+                        // verification must not snap the recorded run back to its endpoint.
+                        for rank in [built.ranks, built.rank[&wire.destination] + 1] {
+                            let mut broken = built.clone();
+                            broken.routes[index].runs.last_mut().unwrap().line =
+                                super::RunLine::Rank(rank);
+                            assert!(
+                                verify::arrangement(&model.flow, &model.topology, &broken).is_err()
+                            );
+                        }
+                        arrivals += 1;
+                    }
+                }
+                assert!(
+                    arrivals >= minimum,
+                    "the fixture exercises sideways junction arrivals"
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -1230,8 +1288,7 @@ fn a_back_edge_can_bend_outside_its_body() {
             departure: contour.column,
             arrival: contour.column + delta,
             runs: vec![super::Run {
-                gap,
-                lane,
+                line: super::RunLine::Lane { gap, lane },
                 enter: contour.column,
                 exit: contour.column + delta,
             }],
@@ -1245,7 +1302,10 @@ fn a_back_edge_can_bend_outside_its_body() {
             .unwrap_err()
             .contains("recorded entry column")
     );
-    bent.back_routes.get_mut(&0).unwrap().runs[0].lane += 1;
+    bent.back_routes.get_mut(&0).unwrap().runs[0].line = super::RunLine::Lane {
+        gap,
+        lane: lane + 1,
+    };
     assert!(
         verify::arrangement(&model.flow, &model.topology, &bent)
             .unwrap_err()

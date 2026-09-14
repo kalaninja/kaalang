@@ -1,10 +1,11 @@
 //! Decides the contour of every iteration back edge.
 //!
 //! RFC 0002 §8 sends a back edge upward outside its body and horizontally into its
-//! entry junction, and RFC 0002 §7 keeps a break's first wire merge, iteration
-//! tail, or end below the body it leaves. A contour therefore needs a column
-//! outside the body that no route occupies over the back edge's whole rank span,
-//! and two horizontal runs that meet nothing.
+//! entry junction, and RFC 0002 §7 keeps a break's first wire merge or end below
+//! the body it leaves. Only a sole side exit may reach an enclosing tail
+//! without carrying the nested body's precedence.
+//! A contour therefore needs a column outside the body that no route occupies
+//! over the back edge's whole rank span, and two horizontal runs that meet nothing.
 //!
 //! The preferred search tries the lanes beside the body's edge, nearest first.
 //! Exhausting them leaves the complete constructor available; it does not
@@ -49,6 +50,11 @@ pub(super) fn body_columns(
 pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
     let end = flow.blocks[header].loop_end.expect("a loop owns a body");
     let body = header + 1..end;
+    let result = topology
+        .loop_boundaries
+        .iter()
+        .find(|boundary| boundary.header == header)
+        .and_then(|boundary| boundary.result);
     let mut vertices = BTreeSet::new();
     for node in &topology.nodes {
         let block = match node.id {
@@ -68,10 +74,14 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
     }
     for boundary in &topology.loop_boundaries {
         if boundary.header == header {
-            vertices.insert(Vertex::Junction(boundary.entry));
+            vertices.insert(boundary.entry);
+            vertices.extend(boundary.result.map(Vertex::from).filter(|result| {
+                matches!(result, Vertex::Junction(junction)
+                        if !topology.junctions[*junction].merges.is_empty())
+            }));
         } else if body.contains(&boundary.header) {
-            vertices.insert(Vertex::Junction(boundary.entry));
-            vertices.extend(boundary.result.map(Vertex::Junction));
+            vertices.insert(boundary.entry);
+            vertices.extend(boundary.result.map(Vertex::from));
         }
     }
     // A wire merge or a break inside the body draws a junction and no node, so
@@ -99,7 +109,9 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
             }
             let mut arrivals = topology.incoming(vertex).peekable();
             if arrivals.peek().is_some()
-                && arrivals.all(|edge| vertices.contains(&Vertex::from(edge.source)))
+                && arrivals.all(|edge| {
+                    Some(edge.source) != result && vertices.contains(&Vertex::from(edge.source))
+                })
             {
                 vertices.insert(vertex);
                 settled = false;
@@ -148,6 +160,99 @@ pub(super) fn outside(
         Side::Right => position > other,
     };
     body.iter().all(|&column| clears(grid.column(column))) && nested.iter().copied().all(clears)
+}
+
+/// Compaction must leave room for each nested frame, not just its individual
+/// vertices and routes. A tail may enter that envelope after either its row
+/// rises or its column joins one occupied farther down in the nested body.
+pub(super) fn clears_nested_boundaries(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+) -> bool {
+    if topology.loop_boundaries.len() < 2 {
+        return true;
+    }
+    let grid = Grid::of(topology, arrangement);
+    let lines = (0..topology.connections.len())
+        .map(|index| polyline(topology, arrangement, &grid, index))
+        .collect::<Vec<_>>();
+    let backs = topology
+        .loops
+        .iter()
+        .enumerate()
+        .map(|(index, loop_)| {
+            back_edge_polyline(
+                topology,
+                arrangement,
+                &grid,
+                loop_.tail,
+                loop_.entry,
+                arrangement.contours[index],
+            )
+        })
+        .collect::<Vec<_>>();
+    for boundary in &topology.loop_boundaries {
+        let outers = topology.loops.iter().enumerate().filter(|(_, loop_)| {
+            let end = flow.blocks[loop_.header]
+                .loop_end
+                .expect("a loop owns a body");
+            (loop_.header + 1..end).contains(&boundary.header)
+        });
+        if outers.clone().next().is_none() {
+            continue;
+        }
+        let mut body = body_vertices(flow, topology, boundary.header);
+        body.extend(boundary.result.map(Vertex::from));
+        let mut points = body
+            .iter()
+            .map(|vertex| Point {
+                x: grid.column(arrangement.column[vertex]),
+                y: grid.rank(arrangement.rank[vertex]),
+            })
+            .collect::<Vec<_>>();
+        points.extend(
+            topology
+                .connections
+                .iter()
+                .zip(&lines)
+                .filter(|(edge, _)| {
+                    body.contains(&Vertex::from(edge.source)) && body.contains(&edge.destination)
+                })
+                .flat_map(|(_, line)| line.iter().copied()),
+        );
+        points.extend(
+            topology
+                .loops
+                .iter()
+                .zip(&backs)
+                .filter(|(loop_, _)| (boundary.header..boundary.end).contains(&loop_.header))
+                .flat_map(|(_, line)| line.iter().copied()),
+        );
+        let first = points.first().expect("a cycle body includes its entry");
+        let (left, top, right, bottom) = points.iter().fold(
+            (first.x, first.y, first.x, first.y),
+            |(left, top, right, bottom), point| {
+                (
+                    left.min(point.x),
+                    top.min(point.y),
+                    right.max(point.x),
+                    bottom.max(point.y),
+                )
+            },
+        );
+        if outers.into_iter().any(|(index, _)| {
+            backs[index].windows(2).any(|segment| {
+                segment[0].x.min(segment[1].x) <= right
+                    && segment[0].x.max(segment[1].x) >= left
+                    && segment[0].y.min(segment[1].y) <= bottom
+                    && segment[0].y.max(segment[1].y) >= top
+            })
+        }) {
+            return false;
+        }
+    }
+    true
 }
 
 /// Where one back edge ended up, or what stopped the nearest candidate.

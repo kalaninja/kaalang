@@ -3,9 +3,9 @@
 //!
 //! RFC 0002 §8 leaves exact ranks and routing space to a presentation but fixes
 //! branch order, the column a shared continuation uses, crossing-free
-//! orthogonal routing, and the contour of an iteration back edge. `build` asks for an
-//! arrangement after semantic validation and carries it with the model, so a
-//! flow whose topology has no conforming diagram is rejected there.
+//! orthogonal routing, and the contour of an iteration back edge. `build` asks
+//! for an arrangement after semantic validation and carries it with the model,
+//! so a flow whose topology has no conforming diagram is rejected there.
 //!
 //! # Two searches
 //!
@@ -90,8 +90,9 @@ pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
 /// reorder or re-route anything recorded here.
 #[derive(Clone, Default)]
 pub struct Arrangement {
-    /// Abstract row of every vertex. A forward connection descends, and so does
-    /// every placement-only precedence edge.
+    /// Abstract row of every vertex. A forward connection descends unless a
+    /// side exit meets a wire merge on its row. Every placement-only precedence
+    /// edge descends.
     pub rank: BTreeMap<Vertex, usize>,
     /// One past the deepest rank in use.
     pub ranks: usize,
@@ -112,43 +113,32 @@ pub struct Arrangement {
     pub back_routes: BTreeMap<usize, Route>,
 }
 
-impl Arrangement {
-    /// The deepest lane any route entering one junction takes in the gap above
-    /// it. Those routes meet on that lane's line, so a side route finishes
-    /// horizontally on the rail rather than turning down over the continuation
-    /// below it (RFC 0002 §8). `None` when none of them runs sideways there.
-    #[must_use]
-    pub fn deepest_lane(&self, topology: &Topology, junction: usize, gap: usize) -> Option<usize> {
-        topology
-            .connections
-            .iter()
-            .enumerate()
-            .filter(|(_, wire)| wire.destination == Destination::Junction(junction))
-            .flat_map(|(index, _)| &self.routes[index].runs)
-            .filter(|run| run.gap == gap)
-            .map(|run| run.lane)
-            .max()
-    }
-}
-
-/// One connection's corridor: it leaves its exit in `departure`, arrives from
-/// above in `arrival`, and each of its sideways runs says which column it
-/// enters that rank gap in and which it leaves by.
+/// One connection's corridor: it leaves its exit in `departure`, reaches its
+/// destination in `arrival`, and each sideways run records its horizontal line
+/// and the columns it joins.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Route {
     pub departure: i32,
     pub arrival: i32,
-    /// Sideways runs in increasing (gap, lane) order.
+    /// Sideways runs in drawing order, each on its recorded rank or gap lane.
     pub runs: Vec<Run>,
 }
 
-/// One sideways run of a corridor, inside one rank gap.
+/// The horizontal line occupied by a sideways run.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RunLine {
+    /// The centre of a vertex row, including a visible merge's arrival rail.
+    Rank(usize),
+    /// A routing lane in the gap below a rank.
+    Lane { gap: usize, lane: usize },
+}
+
+/// One sideways run of a corridor, on a rank or a lane between ranks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Run {
-    pub gap: usize,
+    pub line: RunLine,
     pub enter: i32,
     pub exit: i32,
-    pub lane: usize,
 }
 
 /// The side, column boundary and lane of a straight back edge's climb, or the
@@ -416,8 +406,7 @@ fn corridors(
     sunk: &BTreeSet<Vertex>,
     sides: &[Side],
 ) -> Result<Arrangement, Rejection> {
-    let placement =
-        place::place(topology, flow, merges, sunk, sides).map_err(Rejection::Internal)?;
+    let placement = place::place(topology, flow, sunk, sides).map_err(Rejection::Internal)?;
     let count = topology.connections.len();
     let mut pending = vec![vec![Shape::default(); count]];
     let mut seen = BTreeSet::new();
@@ -496,11 +485,14 @@ fn assemble(topology: &Topology, placement: place::Placement, plan: &route::Plan
                 .iter()
                 .filter(|(_, crossing)| crossing.sideways())
                 .map(|(gap, crossing)| Run {
-                    gap: *gap,
+                    line: RunLine::Lane {
+                        gap: *gap,
+                        lane: plan.lanes[&(index, *gap)],
+                    },
                     enter: crossing.enter,
                     exit: crossing.exit,
-                    lane: plan.lanes[&(index, *gap)],
                 })
+                .chain(plan.arrivals.get(&index).copied())
                 .collect(),
         })
         .collect();

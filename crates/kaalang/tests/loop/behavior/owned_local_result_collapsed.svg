@@ -31,7 +31,7 @@
       M 172 90 L 172 162
       M 172 228 L 172 300
     "/>
-    <text class="connection-label" x="185" y="259" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut count</tspan></text>
   </g>

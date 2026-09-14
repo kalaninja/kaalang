@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="1116" viewBox="0 0 1020 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="935" viewBox="0 0 1000 935" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_loop_tail</title>
-  <desc id="kaalang-description">Cycles: Count to the limit through an inner cycle. with inputs mut count, limit and outputs result; Increment until the current pass is complete. with inputs iterate_1, &amp;mut count, limit and outputs (). Nodes: Start: nested_loop_tail with parameters count: usize; limit: usize handing over count, limit; Question: Is another counting pass needed? capturing &amp;count, &amp;limit handing over leave_1 / iterate_1 described as branch 1: NO / branch 2: YES; Question: Is the count below the limit? capturing &amp;count, &amp;limit handing over iterate_2 / leave_2 described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate_2, &amp;mut count; End: usize capturing result. Connections: Start: nested_loop_tail to the entry of the cycle; Question: Is another counting pass needed? branch 1 to a cycle break; Question: Is another counting pass needed? branch 2 to the entry of the cycle; Question: Is the count below the limit? branch 1 to Action: Increment the count.; Question: Is the count below the limit? branch 2 to a cycle break; Action: Increment the count. to the iteration tail of the cycle; the entry of the cycle to Question: Is another counting pass needed?; the cycle result to End: usize; the entry of the cycle to Question: Is the count below the limit?; the cycle result to the iteration tail of the cycle; a cycle break to the cycle result; a cycle break to the cycle result; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count to the limit through an inner cycle. with inputs mut count, limit and outputs result; Increment until the current pass is complete. with inputs iterate_1, &amp;mut count, limit and outputs (). Nodes: Start: nested_loop_tail with parameters count: usize; limit: usize handing over count, limit; Question: Is another counting pass needed? capturing &amp;count, &amp;limit handing over leave_1 / iterate_1 described as branch 1: NO / branch 2: YES; Question: Is the count below the limit? capturing &amp;count, &amp;limit handing over iterate_2 / leave_2 described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate_2, &amp;mut count; End: usize capturing result. Connections: Start: nested_loop_tail to the entry of the cycle; Question: Is another counting pass needed? branch 1 to End: usize; Question: Is another counting pass needed? branch 2 to the entry of the cycle; Question: Is the count below the limit? branch 1 to Action: Increment the count.; Question: Is the count below the limit? branch 2 to the iteration tail of the cycle; Action: Increment the count. to the iteration tail of the cycle; the entry of the cycle to Question: Is another counting pass needed?; the entry of the cycle to Question: Is the count below the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,36 +27,32 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Count to the limit through an inner cycle.</title>
-    <rect class="cycle-boundary" x="32" y="135" width="956" height="854" rx="12"/>
-    <text class="cycle-caption" x="976" y="149" text-anchor="end" xml:space="preserve"><tspan x="976" dy="0">Count to the limit through an inner cycle.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="135" width="936" height="673" rx="12"/>
+    <text class="cycle-caption" x="956" y="149" text-anchor="end" xml:space="preserve"><tspan x="956" dy="0">Count to the limit through an inner cycle.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Increment until the current pass is complete.</title>
-    <rect class="cycle-boundary" x="372" y="351" width="576" height="494" rx="12"/>
-    <text class="cycle-caption" x="936" y="365" text-anchor="end" xml:space="preserve"><tspan x="936" dy="0">Increment until the current pass is complete.</tspan></text>
+    <rect class="cycle-boundary" x="372" y="351" width="393" height="422" rx="12"/>
+    <text class="cycle-caption" x="753" y="365" text-anchor="end" xml:space="preserve"><tspan x="753" dy="0">Increment until the current </tspan><tspan x="753" dy="14">pass is complete.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 200 94 L 200 170
-      M 200 314 L 200 386
+      M 200 314 L 200 845
       M 340 278 L 560 278 L 560 386
       M 560 530 L 560 602
-      M 700 494 L 920 494 L 920 602
+      M 700 494 L 920 494
       M 560 666 L 560 738
       M 200 170 L 200 242
-      M 200 954 L 200 1026
       M 560 386 L 560 458
-      M 920 810 L 920 882
-      M 200 386 L 200 954
-      M 920 602 L 920 810
     "/>
     <path class="connection" d="
       M 560 738 L 400 738 L 400 386 L 560 386
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 920 882 L 960 882 L 960 170 L 200 170
+      M 920 494 L 940 494 L 940 170 L 200 170
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">count, limit</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="334" xml:space="preserve"><tspan x="213" dy="0">NO</tspan></text>
@@ -66,7 +62,7 @@
     <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;count, &amp;limit</tspan></text>
     <text class="connection-label" x="573" y="447" xml:space="preserve"><tspan x="573" dy="0">&amp;count, &amp;limit</tspan></text>
     <text class="connection-label" x="573" y="591" xml:space="preserve"><tspan x="573" dy="0">iterate_2, &amp;mut count</tspan></text>
-    <text class="connection-label" x="213" y="1015" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="834" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -93,7 +89,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the count.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 1055)">
+    <g class="node end" transform="translate(200 874)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

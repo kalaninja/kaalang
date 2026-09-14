@@ -13,9 +13,7 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
         let (leave_1, iterate_1) = |&row, &rows| *row < rows.len();
 
         #[action("The target is absent.")]
-        let absent = |leave_1| None;
-
-        |absent| break absent;
+        let outcome = |leave_1| None;
 
         #[action("Start at the first column.")]
         let mut column = |iterate_1| 0;
@@ -28,9 +26,7 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
             let (iterate_2, leave_2) = |&column, &row, &rows| *column < (*rows)[**row].len();
 
             #[action("No match exists in this row.")]
-            let absent = |leave_2| None;
-
-            |absent| break absent;
+            let matched = |leave_2| None;
 
             #[question("Does the value differ from the target?")]
             let (different, equal) =
@@ -40,15 +36,18 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
             |different, &mut column| *column += 1;
 
             #[action("Produce the matching position.")]
-            let found = |equal, &row, &column| Some((**row, *column));
+            let matched = |equal, &row, &column| Some((**row, *column));
 
-            |found| break found;
+            |matched| break matched;
         };
 
         #[question("Was the target found in this row?")]
         let (done, again) = |&found| found.is_some();
 
-        |done, found| break found;
+        #[action("Keep the matching position.")]
+        let outcome = |done, found| found;
+
+        |outcome| break outcome;
 
         #[action("Advance to the next row.")]
         |again, &mut row| *row += 1;

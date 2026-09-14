@@ -14,19 +14,23 @@ fn multiple_exits(mode: u8) -> u8 {
             _ => (),
         };
 
-        |first, mode| break mode;
+        #[action("Keep the immediate result.")]
+        let result = |first, mode| mode;
 
         #[action("Advance to the final case.")]
         |advance, &mut mode| *mode = 2;
 
-        |last, mode| break mode;
+        #[action("Keep the result after advancing.")]
+        let result = |last, mode| mode;
+
+        |result| break result;
     };
 
     |selected| return selected;
 }
 
 #[test]
-fn distinct_break_routes_share_one_after_loop_continuation() {
+fn exit_routes_merge_before_the_single_break() {
     assert_eq!(multiple_exits(0), 0);
     assert_eq!(multiple_exits(1), 2);
     assert_eq!(multiple_exits(2), 2);

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="750" viewBox="0 0 704 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="758" viewBox="0 0 704 758" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for merged_guard_survives_a_merge</title>
   <desc id="kaalang-description">Nodes: Start: merged_guard_survives_a_merge with parameters condition: bool; cell: &amp;RefCell&lt;usize&gt; handing over condition, cell; Question: Which branch borrows the cell? capturing condition handing over yes / no; Action: Borrow the cell on the yes branch. capturing yes, cell handing over guard; Action: Borrow the cell on the no branch. capturing no, cell handing over guard; Action: Release the merged guard before borrowing again. capturing guard, cell handing over end; End: usize capturing end; Merge: guard. Connections: Start: merged_guard_survives_a_merge to Question: Which branch borrows the cell?; Question: Which branch borrows the cell? branch 1 to Action: Borrow the cell on the yes branch.; Question: Which branch borrows the cell? branch 2 to Action: Borrow the cell on the no branch.; Action: Borrow the cell on the yes branch. to the guard merge; Action: Borrow the cell on the no branch. to the guard merge; Action: Release the merged guard before borrowing again. to End: usize; the guard merge to Action: Release the merged guard before borrowing again..</desc>
   <defs>
@@ -31,20 +31,20 @@
       M 172 94 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 450
-      M 532 378 L 532 450 L 172 450
-      M 172 588 L 172 660
-      M 172 450 L 172 522
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 596 L 172 668
+      M 172 454 L 172 530
     "/>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">guard</tspan></text>
-    <text class="connection-label" x="185" y="619" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">guard</tspan></text>
+    <text class="connection-label" x="185" y="657" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, cell</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
     <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, cell</tspan></text>
     <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no, cell</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">guard, cell</tspan></text>
+    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">guard, cell</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -52,7 +52,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">cell: &amp;RefCell&lt;usize&gt;</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 450)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the guard merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -75,12 +75,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the cell on the no branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 555)">
+    <g class="node action" transform="translate(172 563)">
       <title xml:space="preserve">Release the merged guard before borrowing again.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Release the merged guard before </tspan><tspan x="-124" dy="18">borrowing again.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 689)">
+    <g class="node end" transform="translate(172 697)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

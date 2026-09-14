@@ -5,16 +5,17 @@
 //! the node that receives it, so each is drawn once however many connections
 //! leave or arrive. The two ends of one connection share a single label only
 //! when that connection is alone at both of them and the displayed lists match.
+//! That shared label uses the capture position beside the receiving node.
 //! Identical alternative hand-overs share a label at their merge; an identical
 //! sole consumer may share that label as well.
 
 use std::collections::BTreeSet;
 
-use kaalang_model::topology::{Destination, ExitId, Source, Vertex};
+use kaalang_model::topology::{Destination, ExitId, NodeId, Source, Vertex};
 
 use super::{
-    BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Connection,
-    Label, LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Scene,
+    BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
+    LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Scene,
     text::{text_width, wrap_text},
 };
 
@@ -34,14 +35,10 @@ const BRANCH_RISE: i32 = BRANCH_LABEL_FONT / 2 + CONNECTION_LABEL_HALO;
 const DROP: i32 = 18;
 /// Drop of a larger question-branch description below its exit.
 const BRANCH_DROP: i32 = 20;
-/// Lifts a baseline so a label's ink straddles the point it marks.
-const BASELINE: i32 = 5;
 
 /// Where a label's lines stack against the point it marks.
 #[derive(Clone, Copy)]
 enum Stack {
-    /// Centred on it, for a label in the middle of a run.
-    Around,
     /// Ending at it, so a wrapped label climbs away from the node below.
     Above,
     /// Starting at it, so a wrapped label hangs away from the node above.
@@ -76,21 +73,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         {
             continue;
         }
-        let placed = scene
-            .connections
-            .iter()
-            .find(|placed| {
-                placed.source == connection.source && placed.destination == connection.destination
-            })
-            .expect("every projected connection is routed");
-        let (at, stack, clear) = centre_of(placed);
-        labels.extend(wire_label(
-            connection.destination,
-            captions.capture_label(node_of(connection.destination)),
-            at,
-            stack,
-            clear,
-        ));
+        labels.extend(capture_label(scene, node_of(connection.destination)));
     }
 
     for exit in &topology.exits {
@@ -116,20 +99,26 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         {
             continue;
         }
-        let anchor = scene.top_anchor(node.id);
-        labels.extend(wire_label(
-            Vertex::Node(node.id),
-            captions.capture_label(node.id),
-            Point {
-                x: anchor.x,
-                y: anchor.y - RISE,
-            },
-            Stack::Above,
-            anchor.x,
-        ));
+        labels.extend(capture_label(scene, node.id));
     }
 
     labels
+}
+
+/// Captures stay above the receiving node, including labels that also represent
+/// the preceding hand-over.
+fn capture_label(scene: &Scene, node: NodeId) -> Option<Label> {
+    let anchor = scene.top_anchor(node);
+    wire_label(
+        Vertex::Node(node),
+        scene.captions.capture_label(node),
+        Point {
+            x: anchor.x,
+            y: anchor.y - RISE,
+        },
+        Stack::Above,
+        anchor.x,
+    )
 }
 
 /// Identical alternative hand-overs share one label beside their merge, and an
@@ -238,33 +227,6 @@ fn merge_anchor(scene: &Scene, junction: usize) -> Point {
         .expect("a merge has incoming routes")
 }
 
-/// The middle of the run a connection leaves on, beside the wire rather than
-/// over it, for the label both of its ends agree on.
-fn centre_of(connection: &Connection) -> (Point, Stack, i32) {
-    let [start, next, ..] = connection.points[..] else {
-        unreachable!("a routed connection has at least two points")
-    };
-    if start.y == next.y {
-        return (
-            Point {
-                x: i32::midpoint(start.x, next.x),
-                y: start.y - RISE,
-            },
-            Stack::Above,
-            start.x,
-        );
-    }
-
-    (
-        Point {
-            x: start.x,
-            y: i32::midpoint(start.y, next.y) - BASELINE,
-        },
-        Stack::Around,
-        start.x,
-    )
-}
-
 /// Wraps the wire names one label draws, or nothing when it names none.
 /// Wrapping an empty label would yield one blank line, so every caller needs
 /// the same guard.
@@ -309,7 +271,6 @@ fn place_label(
             x,
             y: at.y
                 - match stack {
-                    Stack::Around => below_first / 2,
                     Stack::Above => below_first,
                     Stack::Below => 0,
                 },

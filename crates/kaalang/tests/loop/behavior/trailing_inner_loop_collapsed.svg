@@ -32,8 +32,8 @@
       M 172 226 L 172 298
       M 172 364 L 172 436
     "/>
-    <text class="connection-label" x="185" y="257" xml:space="preserve"><tspan x="185" dy="0">mut outer, mut inner</tspan></text>
-    <text class="connection-label" x="185" y="395" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">mut outer, mut inner</tspan></text>
+    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">

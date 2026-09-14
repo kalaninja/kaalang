@@ -1,0 +1,5 @@
+error: a kaalang cycle may declare at most one structural `break`; merge its exit routes before that break
+  --> tests/loop/compile_fail/multiple_breaks.rs:11:25
+   |
+11 |         |second, value| break value;
+   |                         ^^^^^

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="740" viewBox="0 0 704 740" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="748" viewBox="0 0 704 748" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for temporary_borrow_within_branch</title>
   <desc id="kaalang-description">Nodes: Start: temporary_borrow_within_branch with parameters condition: bool handing over condition; Question: Build the temporary text? capturing condition handing over yes / no; Action: Borrow the temporary text. capturing yes handing over owner; Action: Measure the borrowed text. capturing &amp;owner handing over size; Action: Use an empty size. capturing no handing over size; End: usize capturing size; Merge: size. Connections: Start: temporary_borrow_within_branch to Question: Build the temporary text?; Question: Build the temporary text? branch 1 to Action: Borrow the temporary text.; Question: Build the temporary text? branch 2 to Action: Use an empty size.; Action: Borrow the temporary text. to Action: Measure the borrowed text.; Action: Measure the borrowed text. to the size merge; Action: Use an empty size. to the size merge; the size merge to End: usize.</desc>
   <defs>
@@ -32,14 +32,14 @@
       M 172 234 L 172 306
       M 312 198 L 532 198 L 532 306
       M 172 370 L 172 442
-      M 172 506 L 172 578
-      M 532 370 L 532 578 L 172 578
-      M 172 578 L 172 650
+      M 172 506 L 172 582
+      M 532 370 L 532 582 L 172 582
+      M 172 582 L 172 658
     "/>
-    <text class="connection-label" x="185" y="596" xml:space="preserve"><tspan x="185" dy="0">size</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="265" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="416" y="187" xml:space="preserve"><tspan x="416" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="600" xml:space="preserve"><tspan x="185" dy="0">size</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">owner</tspan></text>
     <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">&amp;owner</tspan></text>
   </g>
@@ -49,7 +49,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 578)">
+    <g class="node merge" transform="translate(172 582)">
       <title xml:space="preserve">the size merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -77,7 +77,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use an empty size.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 679)">
+    <g class="node end" transform="translate(172 687)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
