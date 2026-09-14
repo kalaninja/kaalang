@@ -4,4 +4,5 @@
 mod binary_search;
 mod fizzbuzz;
 mod logical_formulas;
+mod loops;
 mod swap;

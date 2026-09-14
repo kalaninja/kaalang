@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1092" height="1174" viewBox="0 0 1092 1174" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for middle_exit</title>
+  <desc id="kaalang-description">Cycles: Average the guess with the number divided by it. with inputs number, mut guess and outputs root. Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: Guess half the number. capturing positive, number handing over mut guess; Action: Average the guess with its quotient. capturing number, guess handing over next; Question: Has the guess stopped shrinking? capturing next, guess handing over done / again described as branch 1: YES / branch 2: NO; Action: Take the smaller guess. capturing again, next, &amp;mut guess; Action: The root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: Guess half the number.; Question: Is the number positive? branch 2 to Action: The root of zero is zero.; Action: Guess half the number. to the entry of the cycle; Action: Average the guess with its quotient. to Question: Has the guess stopped shrinking?; Question: Has the guess stopped shrinking? branch 1 to the root merge; Question: Has the guess stopped shrinking? branch 2 to Action: Take the smaller guess.; Action: Take the smaller guess. to the iteration tail of the cycle; Action: The root of zero is zero. to the root merge; the root merge to End: u64; the entry of the cycle to Action: Average the guess with its quotient.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Average the guess with the number divided by it.</title>
+    <rect class="cycle-boundary" x="32" y="407" width="716" height="560" rx="12"/>
+    <text class="cycle-caption" x="736" y="421" text-anchor="end" xml:space="preserve"><tspan x="736" dy="0">Average the guess with the number divided by it.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 234 L 200 306
+      M 340 198 L 920 198 L 920 306
+      M 200 370 L 200 442
+      M 200 580 L 200 652
+      M 200 724 L 200 1008
+      M 340 688 L 560 688 L 560 796
+      M 560 860 L 560 932
+      M 920 370 L 920 1008 L 200 1008
+      M 200 1008 L 200 1084
+      M 200 442 L 200 514
+    "/>
+    <path class="connection" d="
+      M 560 932 L 720 932 L 720 442 L 200 442
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">number</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="254" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="186" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label" x="213" y="388" xml:space="preserve"><tspan x="213" dy="0">mut guess</tspan></text>
+    <text class="connection-label" x="213" y="598" xml:space="preserve"><tspan x="213" dy="0">next</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="744" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="676" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label" x="933" y="388" xml:space="preserve"><tspan x="933" dy="0">root</tspan></text>
+    <text class="connection-label" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">positive, number</tspan></text>
+    <text class="connection-label" x="213" y="503" xml:space="preserve"><tspan x="213" dy="0">number, guess</tspan></text>
+    <text class="connection-label" x="213" y="641" xml:space="preserve"><tspan x="213" dy="0">next, guess</tspan></text>
+    <text class="connection-label" x="573" y="785" xml:space="preserve"><tspan x="573" dy="0">again, next, &amp;mut guess</tspan></text>
+    <text class="connection-label" x="213" y="1073" xml:space="preserve"><tspan x="213" dy="0">root</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">number: u64</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 1008)">
+      <title xml:space="preserve">the root merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">middle_exit</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 198)">
+      <title xml:space="preserve">Is the number positive?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number positive?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 338)">
+      <title xml:space="preserve">Guess half the number.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Guess half the number.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 547)">
+      <title xml:space="preserve">Average the guess with its quotient.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Average the guess with its </tspan><tspan x="-124" dy="18">quotient.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 688)">
+      <title xml:space="preserve">Has the guess stopped shrinking?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the guess stopped </tspan><tspan x="0" dy="18">shrinking?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 828)">
+      <title xml:space="preserve">Take the smaller guess.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the smaller guess.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 338)">
+      <title xml:space="preserve">The root of zero is zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">The root of zero is zero.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1113)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
+    </g>
+  </g>
+</svg>

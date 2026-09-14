@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="684" viewBox="0 0 780 684" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for while_loop</title>
+  <desc id="kaalang-description">Cycles: Replace the pair with a smaller equivalent one. with inputs mut a, mut b and outputs divisor. Nodes: Start: while_loop with parameters a: u64; b: u64 handing over a, b; Question: Is the second number zero? capturing b handing over done / again described as branch 1: YES / branch 2: NO; Action: Divide and keep the remainder. capturing again, &amp;mut a, &amp;mut b; End: u64 capturing divisor. Connections: Start: while_loop to the entry of the cycle; Question: Is the second number zero? branch 1 to End: u64; Question: Is the second number zero? branch 2 to Action: Divide and keep the remainder.; Action: Divide and keep the remainder. to the iteration tail of the cycle; the entry of the cycle to Question: Is the second number zero?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Replace the pair with a smaller equivalent one.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="716" height="422" rx="12"/>
+    <text class="cycle-caption" x="736" y="149" text-anchor="end" xml:space="preserve"><tspan x="736" dy="0">Replace the pair with a smaller equivalent one.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 314 L 200 594
+      M 340 278 L 560 278 L 560 386
+      M 560 450 L 560 522
+      M 200 170 L 200 242
+    "/>
+    <path class="connection" d="
+      M 560 522 L 720 522 L 720 170 L 200 170
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">a, b</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="334" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="266" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">b</tspan></text>
+    <text class="connection-label" x="573" y="375" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut a, &amp;mut b</tspan></text>
+    <text class="connection-label" x="213" y="583" xml:space="preserve"><tspan x="213" dy="0">divisor</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">a: u64</tspan><tspan x="-104" dy="18">b: u64</tspan></text>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">while_loop</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 278)">
+      <title xml:space="preserve">Is the second number zero?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the second number zero?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 418)">
+      <title xml:space="preserve">Divide and keep the remainder.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Divide and keep the remainder.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 623)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
+    </g>
+  </g>
+</svg>

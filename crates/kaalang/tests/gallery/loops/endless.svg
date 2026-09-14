@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1142" height="725" viewBox="0 0 1142 725" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for endless</title>
+  <desc id="kaalang-description">Cycles: Show the next colour, forever. with inputs mut showing and outputs (). Nodes: Start: endless with parameters showing: Light handing over showing; Select: Which colour is showing? capturing &amp;showing; Case: Red. handing over red; Case: Amber. handing over amber; Case: Green. handing over green; Action: Let the waiting traffic go. capturing red, &amp;mut showing; Action: Stop the traffic. capturing amber, &amp;mut showing; Action: Warn that the light is about to change. capturing green, &amp;mut showing. Connections: Start: endless to the entry of the cycle; Select: Which colour is showing? to Case: Red.; Select: Which colour is showing? to Case: Amber.; Select: Which colour is showing? to Case: Green.; Case: Red. to Action: Let the waiting traffic go.; Case: Amber. to Action: Stop the traffic.; Case: Green. to Action: Warn that the light is about to change.; Action: Let the waiting traffic go. to the iteration tail of the cycle; Action: Stop the traffic. to the iteration tail of the cycle; Action: Warn that the light is about to change. to the iteration tail of the cycle; the entry of the cycle to Select: Which colour is showing?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape { fill: #f8fafc; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Show the next colour, forever.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1078" height="566" rx="12"/>
+    <text class="cycle-caption" x="1098" y="141" text-anchor="end" xml:space="preserve"><tspan x="1098" dy="0">Show the next colour, forever.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 306 L 220 378
+      M 348 270 L 580 270 L 580 378
+      M 348 270 L 940 270 L 940 378
+      M 220 448 L 220 521
+      M 580 448 L 580 521
+      M 940 448 L 940 520
+      M 220 585 L 220 658
+      M 580 585 L 580 658 L 220 658
+      M 940 586 L 940 658 L 220 658
+      M 220 162 L 220 234
+    "/>
+    <path class="connection" d="
+      M 220 658 L 60 658 L 60 162 L 220 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">showing</tspan></text>
+    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">red</tspan></text>
+    <text class="connection-label" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">amber</tspan></text>
+    <text class="connection-label" x="953" y="466" xml:space="preserve"><tspan x="953" dy="0">green</tspan></text>
+    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;showing</tspan></text>
+    <text class="connection-label" x="233" y="510" xml:space="preserve"><tspan x="233" dy="0">red, &amp;mut showing</tspan></text>
+    <text class="connection-label" x="593" y="510" xml:space="preserve"><tspan x="593" dy="0">amber, &amp;mut showing</tspan></text>
+    <text class="connection-label" x="953" y="509" xml:space="preserve"><tspan x="953" dy="0">green, &amp;mut showing</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">showing: Light</tspan></text>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">endless</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 270)">
+      <title xml:space="preserve">Which colour is showing?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which colour is showing?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 413)">
+      <title xml:space="preserve">Red.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Red.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 413)">
+      <title xml:space="preserve">Amber.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Amber.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 413)">
+      <title xml:space="preserve">Green.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Green.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 553)">
+      <title xml:space="preserve">Let the waiting traffic go.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Let the waiting traffic go.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 553)">
+      <title xml:space="preserve">Stop the traffic.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Stop the traffic.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 553)">
+      <title xml:space="preserve">Warn that the light is about to change.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Warn that the light is about to </tspan><tspan x="-124" dy="18">change.</tspan></text>
+    </g>
+  </g>
+</svg>
