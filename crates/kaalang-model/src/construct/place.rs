@@ -44,16 +44,15 @@ impl Placement {
 /// allows.
 pub(super) fn place(
     topology: &Topology,
-    flow: &Flow,
+    footprints: &Footprints,
     sunk: &BTreeSet<Vertex>,
     sides: &[super::Side],
 ) -> Result<Placement, String> {
     let rank = rows(topology, sunk)?;
     let ranks_used = rank.values().copied().max().unwrap_or(0) + 1;
-    let footprints = footprints(topology, flow);
     Ok(Placement {
-        column: columns(topology, &footprints, &rank, ranks_used, sides),
-        footprints,
+        column: columns(topology, footprints, &rank, ranks_used, sides),
+        footprints: footprints.clone(),
         rank,
         ranks: ranks_used,
     })
@@ -356,7 +355,7 @@ fn arrives_from(
     }
 }
 
-fn footprints(topology: &Topology, flow: &Flow) -> Footprints {
+pub(super) fn footprints(topology: &Topology, flow: &Flow) -> Footprints {
     let reachable = super::regions::reachable(topology);
     let mut footprints = Footprints {
         offsets: BTreeMap::new(),

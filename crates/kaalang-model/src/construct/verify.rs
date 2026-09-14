@@ -280,14 +280,15 @@ pub(crate) fn arrangement(
     super::choice::verify(topology, arrangement)?;
     super::end::verify(topology, arrangement)?;
     order(topology, arrangement)?;
-    branch_columns(flow, topology, arrangement)?;
     serial_columns(topology, arrangement)?;
     let grid = Grid::of(topology, arrangement);
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
     routes(topology, arrangement, &grid, &lines)?;
-    back_edges(flow, topology, arrangement, &grid, &lines)
+    back_edges(flow, topology, arrangement, &grid, &lines)?;
+    // Reject crossings before recomputing reachability and branch regions.
+    branch_columns(flow, topology, arrangement)
 }
 
 /// Every vertex has a rank and a column, every connection a corridor, and
@@ -780,6 +781,55 @@ fn back_edges(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Check reserved columns directly: moving the sibling also breaks its
+    /// serial column, which the complete verifier may reject first.
+    #[test]
+    fn a_sibling_inside_a_reserved_footprint_is_caught() {
+        let source = super::super::tests::looping(&["repeat", "repeat", "break", "break"]);
+        let model = crate::build(&syn::parse_str(&source).unwrap()).unwrap();
+        let reachable = super::super::regions::reachable(&model.topology);
+        let block = super::super::regions::branchers(&model.flow, &model.topology)[0];
+        let regions =
+            super::super::regions::regions(&model.flow, &model.topology, &reachable, block);
+        let group = regions
+            .groups
+            .iter()
+            .find(|group| group.members.len() == 2)
+            .expect("two routes repeat, so they converge");
+        let last = regions.branches.len() - 1;
+        let head = Vertex::Node(NodeId::Case {
+            choice: block,
+            branch: last,
+        });
+        let outside = regions
+            .outside(group, last)
+            .into_iter()
+            .filter(|vertex| *vertex != head)
+            .collect::<Vec<_>>();
+        assert!(
+            !outside.is_empty(),
+            "the exit branch has work outside the repeating group's footprint"
+        );
+        let inside = group
+            .area
+            .iter()
+            .map(|vertex| model.arrangement.column[vertex])
+            .max()
+            .expect("the group draws something");
+
+        branch_columns(&model.flow, &model.topology, &model.arrangement).unwrap();
+        let mut broken = model.arrangement.clone();
+        for vertex in outside {
+            broken.column.insert(vertex, inside);
+        }
+        let reason = branch_columns(&model.flow, &model.topology, &broken)
+            .expect_err("a sibling inside the reserved columns does not conform");
+        assert!(
+            reason.contains("its convergence group"),
+            "the reserved columns should be the rule that objects: {reason}"
+        );
+    }
 
     /// How deep a back edge may climb beside a column is a fact about the
     /// topology, not about any renderer's spacing. A presentation holds

@@ -315,6 +315,8 @@ fn preferred(
     merges: &[WireMerge],
     topology: &Topology,
 ) -> Result<Arrangement, Preferred> {
+    // Branch widths depend on topology, not the ranks or contours tried below.
+    let footprints = place::footprints(topology, flow);
     let tails = topology
         .loops
         .iter()
@@ -345,7 +347,7 @@ fn preferred(
         if !seen.insert((sunk.clone(), sides.clone())) {
             continue;
         }
-        match corridors(flow, merges, topology, &sunk, &sides) {
+        match corridors(flow, merges, topology, &footprints, &sunk, &sides) {
             Ok(arrangement) => return Ok(arrangement),
             Err(Rejection::Internal(reason)) => return Err(Preferred::Inconsistent(reason)),
             Err(Rejection::Obstructed(reason)) => {
@@ -403,10 +405,11 @@ fn corridors(
     flow: &Flow,
     merges: &[WireMerge],
     topology: &Topology,
+    footprints: &place::Footprints,
     sunk: &BTreeSet<Vertex>,
     sides: &[Side],
 ) -> Result<Arrangement, Rejection> {
-    let placement = place::place(topology, flow, sunk, sides).map_err(Rejection::Internal)?;
+    let placement = place::place(topology, footprints, sunk, sides).map_err(Rejection::Internal)?;
     let count = topology.connections.len();
     let mut pending = vec![vec![Shape::default(); count]];
     let mut seen = BTreeSet::new();

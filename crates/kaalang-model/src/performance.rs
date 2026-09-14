@@ -121,8 +121,9 @@ fn writeln(body: &mut String, line: std::fmt::Arguments<'_>) {
 
 /// A flow with `loops` nested loops, each attached to its own question's
 /// continuing answer and left by that question's other answer, followed by
-/// `actions` pairs of straight-line blocks.
-fn stress(loops: usize, actions: usize) -> ItemFn {
+/// `actions` pairs of straight-line blocks. An empty deepest tail makes the
+/// enclosing tails return directly from side exits.
+fn stress(loops: usize, actions: usize, empty_tail: bool) -> ItemFn {
     let quote = '"';
     let mut body = String::new();
     let indent = |depth: usize| "    ".repeat(depth + 1);
@@ -142,19 +143,28 @@ fn stress(loops: usize, actions: usize) -> ItemFn {
             &mut body,
             format_args!("{pad}    #[question({quote}Leave level {depth}?{quote})]\n"),
         );
+        let ignored = if empty_tail && depth + 1 == loops {
+            "_"
+        } else {
+            ""
+        };
         writeln(
             &mut body,
-            format_args!("{pad}    let (stay_{depth}, leave_{depth}) = |step| step > {depth};\n"),
+            format_args!(
+                "{pad}    let ({ignored}stay_{depth}, leave_{depth}) = |step| step > {depth};\n"
+            ),
         );
         writeln(&mut body, format_args!("{pad}    |leave_{depth}| break;\n"));
     }
     let deepest = loops - 1;
     let pad = indent(deepest * 2);
-    writeln(
-        &mut body,
-        format_args!("{pad}    #[action({quote}Work at the deepest level.{quote})]\n"),
-    );
-    writeln(&mut body, format_args!("{pad}    |stay_{deepest}| ();\n"));
+    if !empty_tail {
+        writeln(
+            &mut body,
+            format_args!("{pad}    #[action({quote}Work at the deepest level.{quote})]\n"),
+        );
+        writeln(&mut body, format_args!("{pad}    |stay_{deepest}| ();\n"));
+    }
     for depth in (0..loops).rev() {
         let pad = indent(depth * 2);
         writeln(&mut body, format_args!("{pad}}};\n"));
@@ -499,7 +509,7 @@ fn measure_the_construction_cost() {
     );
 
     for (loops, actions) in [(8, 8), (8, 64), (4, 120)] {
-        let function = stress(loops, actions);
+        let function = stress(loops, actions, false);
         let measured = size(&function);
         let mut samples = Vec::new();
         for run in 0..=20 {
@@ -565,7 +575,7 @@ const STRESS_BUDGET: Duration = Duration::from_secs(1);
 
 #[test]
 fn a_serial_flow_with_a_cycle_compacts_inside_its_budget() {
-    let mut model = crate::build(&stress(1, 40)).unwrap();
+    let mut model = crate::build(&stress(1, 40, false)).unwrap();
     let ranks = model.arrangement.rank.clone();
     let started = Instant::now();
     model.compact_arrangement();
@@ -575,6 +585,24 @@ fn a_serial_flow_with_a_cycle_compacts_inside_its_budget() {
         "compacting a serial flow took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
     );
     assert_eq!(model.arrangement.rank, ranks);
+}
+
+#[test]
+fn nested_side_tails_build_and_compact_inside_their_budget() {
+    let function = stress(8, 40, true);
+    let measure = || {
+        let started = Instant::now();
+        let mut model = crate::build(&function).unwrap();
+        model.compact_arrangement();
+        started.elapsed()
+    };
+    let _ = measure();
+    let elapsed = measure();
+    println!("building and compacting nested side tails: {elapsed:?}");
+    assert!(
+        elapsed < STRESS_BUDGET,
+        "building and compacting nested side tails took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
+    );
 }
 
 /// The whole corpus is projected, constructed, and checked inside the corpus
@@ -643,7 +671,7 @@ fn a_stress_flow_stays_inside_its_budget() {
         .map(|(loops, actions)| {
             (
                 format!("{loops} loops and {actions} steps"),
-                stress(loops, actions),
+                stress(loops, actions, false),
             )
         })
         .into_iter()
