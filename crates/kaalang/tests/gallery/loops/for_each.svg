@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1090" viewBox="0 0 760 1090" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_each</title>
+  <desc id="kaalang-description">Cycles: Add every value to the total. with inputs mut cursor, mut running and outputs total. Nodes: Start: for_each with parameters values: &amp;[i32] handing over values; Action: Start the total at zero. capturing nothing handing over mut running; Action: Start at the first value. capturing values handing over mut cursor; Select: Is there another value? capturing &amp;mut cursor; Case: There is one. handing over value; Case: The values ran out. handing over done; Action: Add it to the total. capturing value, &amp;mut running; End: i32 capturing total. Connections: Start: for_each to Action: Start the total at zero.; Action: Start the total at zero. to Action: Start at the first value.; Action: Start at the first value. to the entry of the cycle; Select: Is there another value? to Case: There is one.; Select: Is there another value? to Case: The values ran out.; Case: There is one. to Action: Add it to the total.; Case: The values ran out. to End: i32; Action: Add it to the total. to the iteration tail of the cycle; the entry of the cycle to Select: Is there another value?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Add every value to the total.</title>
+    <rect class="cycle-boundary" x="32" y="399" width="696" height="564" rx="12"/>
+    <text class="cycle-caption" x="716" y="413" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Add every value to the total.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 226 L 220 298
+      M 220 362 L 220 434
+      M 220 578 L 220 650
+      M 348 542 L 580 542 L 580 650
+      M 220 720 L 220 792
+      M 580 720 L 580 1000
+      M 220 856 L 220 928
+      M 220 434 L 220 506
+    "/>
+    <path class="connection" d="
+      M 220 928 L 60 928 L 60 434 L 220 434
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">values</tspan></text>
+    <text class="connection-label" x="233" y="244" xml:space="preserve"><tspan x="233" dy="0">mut running</tspan></text>
+    <text class="connection-label" x="233" y="380" xml:space="preserve"><tspan x="233" dy="0">mut cursor</tspan></text>
+    <text class="connection-label" x="233" y="738" xml:space="preserve"><tspan x="233" dy="0">value</tspan></text>
+    <text class="connection-label" x="593" y="738" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
+    <text class="connection-label" x="233" y="151" xml:space="preserve"><tspan x="233" dy="0">()</tspan></text>
+    <text class="connection-label" x="233" y="287" xml:space="preserve"><tspan x="233" dy="0">values</tspan></text>
+    <text class="connection-label" x="233" y="495" xml:space="preserve"><tspan x="233" dy="0">&amp;mut cursor</tspan></text>
+    <text class="connection-label" x="233" y="781" xml:space="preserve"><tspan x="233" dy="0">value, &amp;mut running</tspan></text>
+    <text class="connection-label" x="593" y="989" xml:space="preserve"><tspan x="593" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i32]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_each</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 194)">
+      <title xml:space="preserve">Start the total at zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start the total at zero.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 330)">
+      <title xml:space="preserve">Start at the first value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start at the first value.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 542)">
+      <title xml:space="preserve">Is there another value?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is there another value?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 685)">
+      <title xml:space="preserve">There is one.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">There is one.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 685)">
+      <title xml:space="preserve">The values ran out.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The values ran out.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 824)">
+      <title xml:space="preserve">Add it to the total.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add it to the total.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 1029)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i32</tspan></text>
+    </g>
+  </g>
+</svg>
