@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="926" viewBox="0 0 704 926" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for inverted_or</title>
-  <desc id="kaalang-description">Nodes: Start: inverted_or with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: No / branch 2: Yes; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: No / branch 2: Yes; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: No / branch 2: Yes; Action: Return true. capturing true_result handing over result; Action: Return false. capturing false_result handing over result; End: bool capturing result; Merge: false_result; Merge: result. Connections: Start: inverted_or to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: Return true.; Question: c branch 2 to the false_result merge; Action: Return true. to the result merge; Action: Return false. to the result merge; the false_result merge to Action: Return false.; the result merge to End: bool.</desc>
+  <desc id="kaalang-description">Nodes: Start: inverted_or with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: No / branch 2: Yes; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: No / branch 2: Yes; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: No / branch 2: Yes; Action: ✅ Return true. capturing true_result handing over result; Action: ❌ Return false. capturing false_result handing over result; End: bool capturing result; Merge: false_result; Merge: result. Connections: Start: inverted_or to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: ✅ Return true.; Question: c branch 2 to the false_result merge; Action: ✅ Return true. to the result merge; Action: ❌ Return false. to the result merge; the false_result merge to Action: ❌ Return false.; the result merge to End: bool.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -88,14 +88,14 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">c</tspan></text>
     </g>
     <g class="node action" transform="translate(172 652)">
-      <title xml:space="preserve">Return true.</title>
+      <title xml:space="preserve">✅ Return true.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return true.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">✅ Return true.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 652)">
-      <title xml:space="preserve">Return false.</title>
+      <title xml:space="preserve">❌ Return false.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return false.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">❌ Return false.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 865)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

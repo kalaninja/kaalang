@@ -14,16 +14,16 @@ fn fizzbuzz(number: u32) -> String {
         _ => number,
     };
 
-    #[action("Say FizzBuzz.")]
+    #[action("🎉 Say FizzBuzz.")]
     let end = |fizz_buzz| String::from("FizzBuzz");
 
-    #[action("Say Fizz.")]
+    #[action("🫧 Say Fizz.")]
     let end = |fizz| String::from("Fizz");
 
-    #[action("Say Buzz.")]
+    #[action("🐝 Say Buzz.")]
     let end = |buzz| String::from("Buzz");
 
-    #[action("Say the number itself.")]
+    #[action("🔢 Say the number itself.")]
     let end = |plain| plain.to_string();
 
     |end| return end;

@@ -924,7 +924,7 @@ fn nested_question_results_merge_on_the_last_question_row() {
     let junction = (0..scene.topology.junctions.len())
         .find(|&junction| scene.captions.junction_wires(junction) == ["false_result"])
         .unwrap();
-    let rail = named_node(&scene, "Return false.").x;
+    let rail = named_node(&scene, "❌ Return false.").x;
     let incoming = scene
         .connections
         .iter()
@@ -942,8 +942,8 @@ fn nested_question_results_merge_on_the_last_question_row() {
         named_node(&scene, "c").y
     );
     assert_eq!(
-        named_node(&scene, "Return true.").y,
-        named_node(&scene, "Return false.").y
+        named_node(&scene, "✅ Return true.").y,
+        named_node(&scene, "❌ Return false.").y
     );
 }
 
@@ -1645,16 +1645,16 @@ fn a_terminal_result_action_starts_beside_the_cycle_body() {
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
                 "binary_search",
             ),
-            "Find the middle index.",
-            "The target is absent.",
+            "📍 Find the middle index.",
+            "🚫 The target is absent.",
         ),
         (
             (
                 include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs"),
                 "binary_search_swapped",
             ),
-            "Find the middle index.",
-            "The target is absent.",
+            "📍 Find the middle index.",
+            "🚫 The target is absent.",
         ),
     ] {
         let scene = drawn(fixture);

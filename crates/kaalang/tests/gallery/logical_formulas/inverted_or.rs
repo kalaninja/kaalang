@@ -17,10 +17,10 @@ fn inverted_or(a: bool, b: bool, c: bool) -> bool {
     #[yes("Yes")]
     let (true_result, false_result) = |check_c, c| c;
 
-    #[action("Return true.")]
+    #[action("✅ Return true.")]
     let result = |true_result| true;
 
-    #[action("Return false.")]
+    #[action("❌ Return false.")]
     let result = |false_result| false;
 
     |result| return result;

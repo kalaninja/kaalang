@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="258" viewBox="0 0 680 258" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="260" viewBox="0 0 680 260" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for endless</title>
-  <desc id="kaalang-description">Nodes: Start: endless with parameters showing: Light handing over showing; Cycle: Show the next colour, forever. capturing mut showing. Connections: Start: endless to Cycle: Show the next colour, forever..</desc>
+  <desc id="kaalang-description">Nodes: Start: endless with parameters showing: Light handing over showing; Cycle: 🚦 Show the next colour, forever. capturing mut showing. Connections: Start: endless to Cycle: 🚦 Show the next colour, forever..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -44,10 +44,10 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">endless</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 194)">
-      <title xml:space="preserve">Show the next colour, forever.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Show the next colour, forever.</tspan></text>
+    <g class="node loop" transform="translate(172 195)">
+      <title xml:space="preserve">🚦 Show the next colour, forever.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🚦 Show the next colour, </tspan><tspan x="-124" dy="18">forever.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
   </g>

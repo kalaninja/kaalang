@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="708" height="878" viewBox="0 0 708 878" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="880" viewBox="0 0 708 880" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for do_while</title>
-  <desc id="kaalang-description">Cycles: Take one digit off the end. with inputs mut number, mut digits and outputs collected. Nodes: Start: do_while with parameters number: u64 handing over number; Action: Start with no digits. capturing nothing handing over mut digits; Action: Record the last digit and drop it. capturing &amp;mut number, &amp;mut digits; Question: Is the number gone? capturing number handing over done / _again described as branch 1: YES / branch 2: NO; Action: Put the digits back in reading order. capturing mut collected handing over result; End: Vec&lt;u8&gt; capturing result. Connections: Start: do_while to Action: Start with no digits.; Action: Start with no digits. to the entry of the cycle; Action: Record the last digit and drop it. to Question: Is the number gone?; Question: Is the number gone? branch 1 to Action: Put the digits back in reading order.; Question: Is the number gone? branch 2 to the iteration tail of the cycle; Action: Put the digits back in reading order. to End: Vec&lt;u8&gt;; the entry of the cycle to Action: Record the last digit and drop it.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Take one digit off the end. with inputs mut number, mut digits and outputs collected. Nodes: Start: do_while with parameters number: u64 handing over number; Action: 📭 Start with no digits. capturing nothing handing over mut digits; Action: ✂️ Record the last digit and drop it. capturing &amp;mut number, &amp;mut digits; Question: Is the number gone? capturing number handing over done / _again described as branch 1: YES / branch 2: NO; Action: 🔄 Put the digits back in reading order. capturing mut collected handing over result; End: Vec&lt;u8&gt; capturing result. Connections: Start: do_while to Action: 📭 Start with no digits.; Action: 📭 Start with no digits. to the entry of the cycle; Action: ✂️ Record the last digit and drop it. to Question: Is the number gone?; Question: Is the number gone? branch 1 to Action: 🔄 Put the digits back in reading order.; Question: Is the number gone? branch 2 to the iteration tail of the cycle; Action: 🔄 Put the digits back in reading order. to End: Vec&lt;u8&gt;; the entry of the cycle to Action: ✂️ Record the last digit and drop it.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -28,7 +28,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Take one digit off the end.</title>
-    <rect class="cycle-boundary" x="32" y="263" width="576" height="350" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="263" width="576" height="352" rx="12"/>
     <text class="cycle-caption" x="596" y="277" text-anchor="end" xml:space="preserve"><tspan x="596" dy="0">Take one digit off the end.</tspan></text>
     </g>
   </g>
@@ -37,24 +37,24 @@
     <path class="connection" d="
       M 200 90 L 200 162
       M 200 226 L 200 298
-      M 200 434 L 200 506
-      M 200 578 L 200 650
-      M 340 542 L 560 542
-      M 200 716 L 200 788
+      M 200 436 L 200 508
+      M 200 580 L 200 652
+      M 340 544 L 560 544
+      M 200 718 L 200 790
       M 200 298 L 200 370
     "/>
     <path class="connection" d="
-      M 560 542 L 580 542 L 580 298 L 200 298
+      M 560 544 L 580 544 L 580 298 L 200 298
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="213" y="777" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="779" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">number</tspan></text>
     <text class="connection-label" x="213" y="244" xml:space="preserve"><tspan x="213" dy="0">mut digits</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="598" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="530" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="600" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="532" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
     <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
     <text class="connection-label" x="213" y="359" xml:space="preserve"><tspan x="213" dy="0">&amp;mut number, &amp;mut digits</tspan></text>
-    <text class="connection-label" x="213" y="495" xml:space="preserve"><tspan x="213" dy="0">number</tspan></text>
-    <text class="connection-label" x="213" y="639" xml:space="preserve"><tspan x="213" dy="0">mut collected</tspan></text>
+    <text class="connection-label" x="213" y="497" xml:space="preserve"><tspan x="213" dy="0">number</tspan></text>
+    <text class="connection-label" x="213" y="641" xml:space="preserve"><tspan x="213" dy="0">mut collected</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -67,26 +67,26 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">do_while</tspan></text>
     </g>
     <g class="node action" transform="translate(200 194)">
-      <title xml:space="preserve">Start with no digits.</title>
+      <title xml:space="preserve">📭 Start with no digits.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with no digits.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">📭 Start with no digits.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 402)">
-      <title xml:space="preserve">Record the last digit and drop it.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record the last digit and drop it.</tspan></text>
+    <g class="node action" transform="translate(200 403)">
+      <title xml:space="preserve">✂️ Record the last digit and drop it.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">✂️ Record the last digit and drop </tspan><tspan x="-124" dy="18">it.</tspan></text>
     </g>
-    <g class="node question" transform="translate(200 542)">
+    <g class="node question" transform="translate(200 544)">
       <title xml:space="preserve">Is the number gone?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number gone?</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 683)">
-      <title xml:space="preserve">Put the digits back in reading order.</title>
+    <g class="node action" transform="translate(200 685)">
+      <title xml:space="preserve">🔄 Put the digits back in reading order.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Put the digits back in reading </tspan><tspan x="-124" dy="18">order.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🔄 Put the digits back in reading </tspan><tspan x="-124" dy="18">order.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 817)">
+    <g class="node end" transform="translate(200 819)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;u8&gt;</tspan></text>
     </g>

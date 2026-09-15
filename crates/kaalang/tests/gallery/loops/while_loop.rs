@@ -15,7 +15,7 @@ fn while_loop(a: u64, b: u64) -> u64 {
 
         |done, a| break a;
 
-        #[action("Divide and keep the remainder.")]
+        #[action("➗ Divide and keep the remainder.")]
         |again, &mut a, &mut b| {
             let remainder = *a % *b;
             *a = *b;

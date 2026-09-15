@@ -6,10 +6,10 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn for_each(values: &[i32]) -> i32 {
-    #[action("Start the total at zero.")]
+    #[action("🧮 Start the total at zero.")]
     let mut running = || 0;
 
-    #[action("Start at the first value.")]
+    #[action("⏮️ Start at the first value.")]
     let mut cursor = |values| values.iter();
 
     #[cycle("Add every value to the total.")]
@@ -24,7 +24,7 @@ fn for_each(values: &[i32]) -> i32 {
 
         |done, running| break running;
 
-        #[action("Add it to the total.")]
+        #[action("➕ Add it to the total.")]
         |value, &mut running| *running += value;
     };
 

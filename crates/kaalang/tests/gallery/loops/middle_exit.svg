@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1092" height="1174" viewBox="0 0 1092 1174" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for middle_exit</title>
-  <desc id="kaalang-description">Cycles: Average the guess with the number divided by it. with inputs number, mut guess and outputs root. Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: Guess half the number. capturing positive, number handing over mut guess; Action: Average the guess with its quotient. capturing number, guess handing over next; Question: Has the guess stopped shrinking? capturing next, guess handing over done / again described as branch 1: YES / branch 2: NO; Action: Take the smaller guess. capturing again, next, &amp;mut guess; Action: The root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: Guess half the number.; Question: Is the number positive? branch 2 to Action: The root of zero is zero.; Action: Guess half the number. to the entry of the cycle; Action: Average the guess with its quotient. to Question: Has the guess stopped shrinking?; Question: Has the guess stopped shrinking? branch 1 to the root merge; Question: Has the guess stopped shrinking? branch 2 to Action: Take the smaller guess.; Action: Take the smaller guess. to the iteration tail of the cycle; Action: The root of zero is zero. to the root merge; the root merge to End: u64; the entry of the cycle to Action: Average the guess with its quotient.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Average the guess with the number divided by it. with inputs number, mut guess and outputs root. Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: 🤔 Guess half the number. capturing positive, number handing over mut guess; Action: ⚖️ Average the guess with its quotient. capturing number, guess handing over next; Question: Has the guess stopped shrinking? capturing next, guess handing over done / again described as branch 1: YES / branch 2: NO; Action: 🔽 Take the smaller guess. capturing again, next, &amp;mut guess; Action: ⭕ The root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: 🤔 Guess half the number.; Question: Is the number positive? branch 2 to Action: ⭕ The root of zero is zero.; Action: 🤔 Guess half the number. to the entry of the cycle; Action: ⚖️ Average the guess with its quotient. to Question: Has the guess stopped shrinking?; Question: Has the guess stopped shrinking? branch 1 to the root merge; Question: Has the guess stopped shrinking? branch 2 to Action: 🔽 Take the smaller guess.; Action: 🔽 Take the smaller guess. to the iteration tail of the cycle; Action: ⭕ The root of zero is zero. to the root merge; the root merge to End: u64; the entry of the cycle to Action: ⚖️ Average the guess with its quotient.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -84,14 +84,14 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number positive?</tspan></text>
     </g>
     <g class="node action" transform="translate(200 338)">
-      <title xml:space="preserve">Guess half the number.</title>
+      <title xml:space="preserve">🤔 Guess half the number.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Guess half the number.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🤔 Guess half the number.</tspan></text>
     </g>
     <g class="node action" transform="translate(200 547)">
-      <title xml:space="preserve">Average the guess with its quotient.</title>
+      <title xml:space="preserve">⚖️ Average the guess with its quotient.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Average the guess with its </tspan><tspan x="-124" dy="18">quotient.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⚖️ Average the guess with its </tspan><tspan x="-124" dy="18">quotient.</tspan></text>
     </g>
     <g class="node question" transform="translate(200 688)">
       <title xml:space="preserve">Has the guess stopped shrinking?</title>
@@ -99,14 +99,14 @@
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the guess stopped </tspan><tspan x="0" dy="18">shrinking?</tspan></text>
     </g>
     <g class="node action" transform="translate(560 828)">
-      <title xml:space="preserve">Take the smaller guess.</title>
+      <title xml:space="preserve">🔽 Take the smaller guess.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the smaller guess.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔽 Take the smaller guess.</tspan></text>
     </g>
     <g class="node action" transform="translate(920 338)">
-      <title xml:space="preserve">The root of zero is zero.</title>
+      <title xml:space="preserve">⭕ The root of zero is zero.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">The root of zero is zero.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⭕ The root of zero is zero.</tspan></text>
     </g>
     <g class="node end" transform="translate(200 1113)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

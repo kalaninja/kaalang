@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1424" height="754" viewBox="0 0 1424 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for fizzbuzz</title>
-  <desc id="kaalang-description">Nodes: Start: fizzbuzz with parameters number: u32 handing over number; Select: Which of three and five divide the number? capturing number; Case: Both three and five divide it. handing over fizz_buzz; Case: Only three divides it. handing over fizz; Case: Only five divides it. handing over buzz; Case: Neither divides it. handing over plain; Action: Say FizzBuzz. capturing fizz_buzz handing over end; Action: Say Fizz. capturing fizz handing over end; Action: Say Buzz. capturing buzz handing over end; Action: Say the number itself. capturing plain handing over end; End: String capturing end; Merge: end. Connections: Start: fizzbuzz to Select: Which of three and five divide the number?; Select: Which of three and five divide the number? to Case: Both three and five divide it.; Select: Which of three and five divide the number? to Case: Only three divides it.; Select: Which of three and five divide the number? to Case: Only five divides it.; Select: Which of three and five divide the number? to Case: Neither divides it.; Case: Both three and five divide it. to Action: Say FizzBuzz.; Case: Only three divides it. to Action: Say Fizz.; Case: Only five divides it. to Action: Say Buzz.; Case: Neither divides it. to Action: Say the number itself.; Action: Say FizzBuzz. to the end merge; Action: Say Fizz. to the end merge; Action: Say Buzz. to the end merge; Action: Say the number itself. to the end merge; the end merge to End: String.</desc>
+  <desc id="kaalang-description">Nodes: Start: fizzbuzz with parameters number: u32 handing over number; Select: Which of three and five divide the number? capturing number; Case: Both three and five divide it. handing over fizz_buzz; Case: Only three divides it. handing over fizz; Case: Only five divides it. handing over buzz; Case: Neither divides it. handing over plain; Action: 🎉 Say FizzBuzz. capturing fizz_buzz handing over end; Action: 🫧 Say Fizz. capturing fizz handing over end; Action: 🐝 Say Buzz. capturing buzz handing over end; Action: 🔢 Say the number itself. capturing plain handing over end; End: String capturing end; Merge: end. Connections: Start: fizzbuzz to Select: Which of three and five divide the number?; Select: Which of three and five divide the number? to Case: Both three and five divide it.; Select: Which of three and five divide the number? to Case: Only three divides it.; Select: Which of three and five divide the number? to Case: Only five divides it.; Select: Which of three and five divide the number? to Case: Neither divides it.; Case: Both three and five divide it. to Action: 🎉 Say FizzBuzz.; Case: Only three divides it. to Action: 🫧 Say Fizz.; Case: Only five divides it. to Action: 🐝 Say Buzz.; Case: Neither divides it. to Action: 🔢 Say the number itself.; Action: 🎉 Say FizzBuzz. to the end merge; Action: 🫧 Say Fizz. to the end merge; Action: 🐝 Say Buzz. to the end merge; Action: 🔢 Say the number itself. to the end merge; the end merge to End: String.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -91,24 +91,24 @@
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Neither divides it.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 480)">
-      <title xml:space="preserve">Say FizzBuzz.</title>
+      <title xml:space="preserve">🎉 Say FizzBuzz.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say FizzBuzz.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🎉 Say FizzBuzz.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 480)">
-      <title xml:space="preserve">Say Fizz.</title>
+      <title xml:space="preserve">🫧 Say Fizz.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say Fizz.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🫧 Say Fizz.</tspan></text>
     </g>
     <g class="node action" transform="translate(892 480)">
-      <title xml:space="preserve">Say Buzz.</title>
+      <title xml:space="preserve">🐝 Say Buzz.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say Buzz.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🐝 Say Buzz.</tspan></text>
     </g>
     <g class="node action" transform="translate(1252 480)">
-      <title xml:space="preserve">Say the number itself.</title>
+      <title xml:space="preserve">🔢 Say the number itself.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Say the number itself.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔢 Say the number itself.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 693)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

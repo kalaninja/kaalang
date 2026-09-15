@@ -11,12 +11,12 @@ fn middle_exit(number: u64) -> u64 {
     #[no("NO")]
     let (positive, zero) = |number| number > 0;
 
-    #[action("Guess half the number.")]
+    #[action("🤔 Guess half the number.")]
     let mut guess = |positive, number| number / 2 + 1;
 
     #[cycle("Average the guess with the number divided by it.")]
     let root = |number, mut guess| {
-        #[action("Average the guess with its quotient.")]
+        #[action("⚖️ Average the guess with its quotient.")]
         let next = |number, guess| u64::midpoint(guess, number / guess);
 
         #[question("Has the guess stopped shrinking?")]
@@ -26,11 +26,11 @@ fn middle_exit(number: u64) -> u64 {
 
         |done, guess| break guess;
 
-        #[action("Take the smaller guess.")]
+        #[action("🔽 Take the smaller guess.")]
         |again, next, &mut guess| *guess = next;
     };
 
-    #[action("The root of zero is zero.")]
+    #[action("⭕ The root of zero is zero.")]
     let root = |zero| 0;
 
     |root| return root;

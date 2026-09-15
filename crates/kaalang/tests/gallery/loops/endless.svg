@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1142" height="725" viewBox="0 0 1142 725" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for endless</title>
-  <desc id="kaalang-description">Cycles: Show the next colour, forever. with inputs mut showing and outputs (). Nodes: Start: endless with parameters showing: Light handing over showing; Select: Which colour is showing? capturing &amp;showing; Case: Red. handing over red; Case: Amber. handing over amber; Case: Green. handing over green; Action: Let the waiting traffic go. capturing red, &amp;mut showing; Action: Stop the traffic. capturing amber, &amp;mut showing; Action: Warn that the light is about to change. capturing green, &amp;mut showing. Connections: Start: endless to the entry of the cycle; Select: Which colour is showing? to Case: Red.; Select: Which colour is showing? to Case: Amber.; Select: Which colour is showing? to Case: Green.; Case: Red. to Action: Let the waiting traffic go.; Case: Amber. to Action: Stop the traffic.; Case: Green. to Action: Warn that the light is about to change.; Action: Let the waiting traffic go. to the iteration tail of the cycle; Action: Stop the traffic. to the iteration tail of the cycle; Action: Warn that the light is about to change. to the iteration tail of the cycle; the entry of the cycle to Select: Which colour is showing?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: 🚦 Show the next colour, forever. with inputs mut showing and outputs (). Nodes: Start: endless with parameters showing: Light handing over showing; Select: Which colour is showing? capturing &amp;showing; Case: 🔴 Red. handing over red; Case: 🟡 Amber. handing over amber; Case: 🟢 Green. handing over green; Action: 🚗 Let the waiting traffic go. capturing red, &amp;mut showing; Action: 🛑 Stop the traffic. capturing amber, &amp;mut showing; Action: ⚠️ Warn that the light is about to change. capturing green, &amp;mut showing. Connections: Start: endless to the entry of the cycle; Select: Which colour is showing? to Case: 🔴 Red.; Select: Which colour is showing? to Case: 🟡 Amber.; Select: Which colour is showing? to Case: 🟢 Green.; Case: 🔴 Red. to Action: 🚗 Let the waiting traffic go.; Case: 🟡 Amber. to Action: 🛑 Stop the traffic.; Case: 🟢 Green. to Action: ⚠️ Warn that the light is about to change.; Action: 🚗 Let the waiting traffic go. to the iteration tail of the cycle; Action: 🛑 Stop the traffic. to the iteration tail of the cycle; Action: ⚠️ Warn that the light is about to change. to the iteration tail of the cycle; the entry of the cycle to Select: Which colour is showing?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,9 +27,9 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
-      <title xml:space="preserve">Show the next colour, forever.</title>
+      <title xml:space="preserve">🚦 Show the next colour, forever.</title>
     <rect class="cycle-boundary" x="32" y="127" width="1078" height="566" rx="12"/>
-    <text class="cycle-caption" x="1098" y="141" text-anchor="end" xml:space="preserve"><tspan x="1098" dy="0">Show the next colour, forever.</tspan></text>
+    <text class="cycle-caption" x="1098" y="141" text-anchor="end" xml:space="preserve"><tspan x="1098" dy="0">🚦 Show the next colour, forever.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -75,34 +75,34 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which colour is showing?</tspan></text>
     </g>
     <g class="node case" transform="translate(220 413)">
-      <title xml:space="preserve">Red.</title>
+      <title xml:space="preserve">🔴 Red.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Red.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">🔴 Red.</tspan></text>
     </g>
     <g class="node case" transform="translate(580 413)">
-      <title xml:space="preserve">Amber.</title>
+      <title xml:space="preserve">🟡 Amber.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Amber.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">🟡 Amber.</tspan></text>
     </g>
     <g class="node case" transform="translate(940 413)">
-      <title xml:space="preserve">Green.</title>
+      <title xml:space="preserve">🟢 Green.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Green.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">🟢 Green.</tspan></text>
     </g>
     <g class="node action" transform="translate(220 553)">
-      <title xml:space="preserve">Let the waiting traffic go.</title>
+      <title xml:space="preserve">🚗 Let the waiting traffic go.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Let the waiting traffic go.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🚗 Let the waiting traffic go.</tspan></text>
     </g>
     <g class="node action" transform="translate(580 553)">
-      <title xml:space="preserve">Stop the traffic.</title>
+      <title xml:space="preserve">🛑 Stop the traffic.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Stop the traffic.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🛑 Stop the traffic.</tspan></text>
     </g>
     <g class="node action" transform="translate(940 553)">
-      <title xml:space="preserve">Warn that the light is about to change.</title>
+      <title xml:space="preserve">⚠️ Warn that the light is about to change.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Warn that the light is about to </tspan><tspan x="-124" dy="18">change.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⚠️ Warn that the light is about to </tspan><tspan x="-124" dy="18">change.</tspan></text>
     </g>
   </g>
 </svg>

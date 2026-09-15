@@ -13,25 +13,25 @@ enum Light {
 #[allow(dead_code)]
 #[kaalang]
 fn endless(showing: Light) -> ! {
-    #[cycle("Show the next colour, forever.")]
+    #[cycle("🚦 Show the next colour, forever.")]
     |mut showing| {
         #[choice("Which colour is showing?")]
-        #[case("Red.")]
-        #[case("Amber.")]
-        #[case("Green.")]
+        #[case("🔴 Red.")]
+        #[case("🟡 Amber.")]
+        #[case("🟢 Green.")]
         let (red, amber, green) = |&showing| match *showing {
             Light::Red => (),
             Light::Amber => (),
             Light::Green => (),
         };
 
-        #[action("Let the waiting traffic go.")]
+        #[action("🚗 Let the waiting traffic go.")]
         |red, &mut showing| *showing = Light::Green;
 
-        #[action("Stop the traffic.")]
+        #[action("🛑 Stop the traffic.")]
         |amber, &mut showing| *showing = Light::Red;
 
-        #[action("Warn that the light is about to change.")]
+        #[action("⚠️ Warn that the light is about to change.")]
         |green, &mut showing| *showing = Light::Amber;
     };
 }
