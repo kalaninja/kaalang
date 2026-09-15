@@ -67,8 +67,10 @@ visualization:
   by block inputs;
 - a **branch** is one alternative continuation selected by a question or choice;
 - a **branch output** is a question or choice output; it selects one branch and
-  is consumed by its implicit merge, or, for a name with no alternative
-  producers, by at most one block whenever that output is selected;
+  is an ordinary wire from there on. A name with alternative producers reaches
+  its implicit merge; a name without them is captured by its first consumer in
+  source order whenever that output is selected, and by any later consumer
+  under the ordinary rules;
 - an **iteration** is one execution of an entered cycle's body; normal
   completion begins the next iteration, and a `break` completes that cycle;
 - a **case** describes one branch of a choice and is not itself a block;
@@ -336,7 +338,7 @@ branch description is optional, but when present it is one nonempty Rust string
 literal. The question body is evaluated exactly once per visit to the question.
 
 Question outputs are distinct unit-valued control wires and branch outputs
-(section 6). The downstream block lists the selected control wire and every data
+(section 6). A downstream block lists the selected control wire and every data
 wire it needs as separate inputs.
 
 ### 4.4 choice
@@ -710,8 +712,10 @@ Break and return captures count as consumers. For flow inputs, action, call, or
 cycle outputs, and merged wires, this requirement is existential rather than
 per-execution: one possible execution establishing the dependency is sufficient.
 A question or choice output without alternative producers must be captured by
-its consumer in every execution selecting the output. For such an output, the
-`_` prefix permits no consumer, but does not make an existing consumer optional.
+its first consumer in source order in every execution selecting the output. For
+such an output, the `_` prefix permits no consumer, but does not make an
+existing first consumer optional. Later consumers are ordinary downstream work
+and may be conditional.
 
 ```rust
 #[question("Which value should be used?")]
@@ -799,29 +803,34 @@ resource in a common action still requires it to be provided wherever that
 action executes.
 
 The outputs of one action, one call, or one completed cycle appear together: an
-execution that produces them provides all of them, so they are ordinary data
-wires that later blocks borrow or consume under these rules. A completed cycle
-has one outer producer occurrence. The outputs of a question or choice are
-alternatives: an execution produces exactly one of them. A branch output without
-alternative producers is captured by at most one block or transfer, which
-consumes it using `name` or `mut name`; either kind of borrow or a second
-consumer would give the selected branch a second continuation.
+execution that produces them provides all of them. A completed cycle has one
+outer producer occurrence. The outputs of a question or choice are alternatives:
+an execution produces exactly one of them. All of them are ordinary data wires
+that later blocks borrow or consume under these rules.
 
-That consumer must execute whenever the branch output is selected. Its other
-inputs must therefore be available in every such execution. For example, an
-action capturing the yes outputs of two independent questions is invalid: either
-question can select yes while the other selects no, leaving the selected output
-without its consumer. The flow must express a nested question or converge
-alternative producers before a consumer that needs both results. Silently
-skipping the consumer is invalid: the selected output would have no
-continuation. Forwarding a branch output through an action does not lift this:
-the questions and choices that decide the action's consumers stay the same
-(section 7).
+A branch output without alternative producers carries its branch's single entry:
+its first consumer or transfer in source order must execute whenever that output
+is selected. Its other inputs must therefore be available in every such
+execution. For example, an action capturing the yes outputs of two independent
+questions is invalid: either question can select yes while the other selects no,
+leaving the selected output without its first consumer. The flow must express a
+nested question or converge alternative producers before a consumer that needs
+both results. Silently skipping that consumer is invalid: the selected output
+would have no continuation. Forwarding a branch output through an action does
+not lift this: the questions and choices that decide the action's consumers stay
+the same (section 7).
+
+Later consumers of the same branch output are ordinary downstream work. They may
+borrow it, and a nested question or choice may decide which of them executes;
+section 7 forbids two independent questions or choices from deciding one block,
+whether that block is the first consumer or a later one. Every consumer of a
+branch output belongs to that branch, so a branch output stays branch-local: it
+must finish its own branch before any merge that closes it, like any other
+branch-local value.
 
 When a branch output shares its name with an alternative producer, its one
 continuation is the implicit merge. Captures after that merge use ordinary
-merged data: they may borrow it with `&name` or `&mut name`, or have different
-consumers in different executions. They do not capture the raw branch output.
+merged data and do not capture the raw branch output.
 
 Every input names a wire provided by a flow input, an earlier block output, or a
 cycle interface binding in the current nested scope. Questions and choices have

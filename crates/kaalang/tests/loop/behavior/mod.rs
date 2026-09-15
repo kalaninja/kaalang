@@ -1,3 +1,4 @@
+mod borrowed_break_branch;
 mod borrowed_result;
 mod collect_steps;
 mod condition_effects;

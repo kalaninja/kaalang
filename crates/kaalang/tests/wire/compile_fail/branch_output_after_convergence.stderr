@@ -1,0 +1,5 @@
+error: this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge
+  --> tests/wire/compile_fail/branch_output_after_convergence.rs:17:5
+   |
+17 |     #[action("Read the yes output again after the shared step.")]
+   |     ^

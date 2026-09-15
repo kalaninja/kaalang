@@ -1,5 +1,0 @@
-error: a kaalang branch output is captured by at most one block
-  --> tests/wire/compile_fail/branch_output_captured_twice.rs:12:19
-   |
-12 |     let second = |yes| { 2 };
-   |                   ^^^

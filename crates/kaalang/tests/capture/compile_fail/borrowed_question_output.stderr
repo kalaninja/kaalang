@@ -1,5 +1,0 @@
-error: a kaalang branch output is consumed, never borrowed
- --> tests/capture/compile_fail/borrowed_question_output.rs:9:17
-  |
-9 |     let end = |&yes| { 1 };
-  |                 ^^^

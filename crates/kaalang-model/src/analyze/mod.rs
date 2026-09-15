@@ -438,12 +438,12 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     Ok(())
 }
 
-/// Every occurrence of a question or choice output is captured by at most one
-/// block, which consumes it: a borrow or a second consumer would give the
-/// selected branch a second continuation. The rule is occurrence-level, so a
-/// repeated name is consumed by its implicit merge; its later captures use the
-/// merged value. Otherwise, a branch output's consumer must capture it in
-/// every execution selecting the output.
+/// The first consumer of a question or choice output runs whenever that output
+/// is selected, so the branch always enters its continuation. Later consumers
+/// are ordinary downstream work and may be conditional: the first one
+/// participates wherever they do, which is what keeps a single connection
+/// leaving the branch exit. The rule is occurrence-level, so a repeated name is
+/// consumed by its implicit merge and its later captures use the merged value.
 fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
     // A repeated name is consumed by its implicit merge. Downstream captures
     // refer to the merged value, not to a raw question or choice output.
@@ -473,34 +473,9 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
         }
     }
     let input = |capture: CaptureId| &flow.blocks[capture.block].inputs[capture.input];
-    let borrowed = captures
-        .values()
-        .flatten()
-        .filter(|&&capture| input(capture).borrowed)
-        .map(|&capture| {
-            (
-                capture,
-                "a kaalang branch output is consumed, never borrowed",
-            )
-        });
-    let shared = captures
-        .values()
-        .filter_map(|captures| {
-            let first = captures.first()?;
-            captures.iter().find(|capture| capture.block != first.block)
-        })
-        .map(|&capture| {
-            (
-                capture,
-                "a kaalang branch output is captured by at most one block",
-            )
-        });
-    if let Some((capture, message)) = borrowed.chain(shared).min_by_key(|(capture, _)| *capture) {
-        return Err(Error::new(input(capture).ident.span(), message));
-    }
     // No fixture reaches the check below: a branch output left without its
-    // consumer also leaves its execution without a root return, which the walk
-    // reports first. Kept until that is proven rather than observed.
+    // first consumer also leaves its execution without a root return, which the
+    // walk reports first. Kept until that is proven rather than observed.
     let missing = captures.iter().filter_map(|(&producer, captures)| {
         let ProducerId::BlockOutput { block, output } = producer else {
             unreachable!("only branch outputs have been collected")
@@ -521,7 +496,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
     if let Some(capture) = missing.min() {
         return Err(Error::new(
             input(capture).ident.span(),
-            "a kaalang branch output must reach its consumer whenever that output is selected",
+            "a kaalang branch output must reach its first consumer whenever that output is selected",
         ));
     }
     Ok(())

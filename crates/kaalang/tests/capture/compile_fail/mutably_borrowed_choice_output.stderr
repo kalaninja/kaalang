@@ -1,5 +1,0 @@
-error: a kaalang branch output is consumed, never borrowed
-  --> tests/capture/compile_fail/mutably_borrowed_choice_output.rs:16:21
-   |
-16 |     let end = |&mut text| {
-   |                     ^^^^

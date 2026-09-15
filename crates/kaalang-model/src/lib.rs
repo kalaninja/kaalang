@@ -650,13 +650,16 @@ mod tests {
         assert_eq!(count_block(&model, 8), 1);
     }
 
+    /// A branch output is an ordinary wire, but it stays branch-local: reading
+    /// it again below its own merge is rejected like any other branch-local
+    /// value, and not by a rule of its own.
     #[test]
-    fn rejects_a_branch_output_captured_twice() {
+    fn rejects_a_branch_output_read_after_convergence() {
         let source =
-            include_str!("../../kaalang/tests/wire/compile_fail/branch_output_captured_twice.rs");
+            include_str!("../../kaalang/tests/wire/compile_fail/branch_output_after_convergence.rs");
         assert_eq!(
             message(&fixture(source, "invalid")),
-            "a kaalang branch output is captured by at most one block"
+            "this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge"
         );
     }
 
@@ -678,22 +681,6 @@ mod tests {
         };
 
         assert_eq!(message(&function), branch_placement("question", "Left?"));
-    }
-
-    #[test]
-    fn rejects_a_borrowed_branch_output() {
-        let question =
-            include_str!("../../kaalang/tests/capture/compile_fail/borrowed_question_output.rs");
-        assert_eq!(
-            message(&fixture(question, "invalid")),
-            "a kaalang branch output is consumed, never borrowed"
-        );
-        let choice =
-            include_str!("../../kaalang/tests/capture/compile_fail/borrowed_choice_output.rs");
-        assert_eq!(
-            message(&fixture(choice, "invalid")),
-            "a kaalang branch output is consumed, never borrowed"
-        );
     }
 
     #[test]

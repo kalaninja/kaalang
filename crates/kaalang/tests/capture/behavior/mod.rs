@@ -1,6 +1,8 @@
 mod borrow_within_branch;
+mod borrowed_choice_output;
 mod borrowed_common;
 mod borrowed_input_through_nested_joins;
+mod borrowed_question_output;
 mod borrowers_before_a_move;
 mod const_borrowed_input_partial_merge;
 mod const_mutable_captures;
@@ -11,6 +13,8 @@ mod independent_borrowers;
 mod local_mutability_of_outputs;
 mod log_then_transform;
 mod mutable_reference_through_nested_joins;
+mod mutably_borrowed_choice_output;
+mod mutably_borrowed_question_output;
 mod mutate_in_selections;
 mod mutate_merged_branch_outputs;
 mod mutate_through_partial_merges;

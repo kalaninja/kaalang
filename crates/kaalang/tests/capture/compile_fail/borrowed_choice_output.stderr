@@ -1,5 +1,0 @@
-error: a kaalang branch output is consumed, never borrowed
-  --> tests/capture/compile_fail/borrowed_choice_output.rs:16:17
-   |
-16 |     let end = |&value| { *value * 2 };
-   |                 ^^^^^

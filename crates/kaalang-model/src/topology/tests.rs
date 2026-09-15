@@ -518,6 +518,33 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     }
 }
 
+/// A branch output with no alternative producers keeps its exit's single
+/// connection however many blocks capture it. The first consumer is reached
+/// from the exit and the rest through that consumer, so nothing routes around
+/// the branch and RFC 0002 §7's reduction leaves one edge per exit.
+#[test]
+fn an_unmerged_branch_output_leaves_its_exit_once() {
+    let topology = fixture(
+        include_str!("../../../kaalang/tests/wire/behavior/branch_output_captured_twice.rs"),
+        "branch_output_captured_twice",
+    )
+    .topology;
+
+    for exit in &topology.exits {
+        assert!(
+            topology.leaving(exit.id).count() <= 1,
+            "{:?} leaves more than once",
+            exit.id
+        );
+    }
+    // Both captures of `yes` sit in the branch, the second below the first.
+    assert!(reaches(
+        &topology,
+        Vertex::Node(NodeId::Block(1)),
+        Vertex::Node(NodeId::Block(2))
+    ));
+}
+
 /// A branch-local block written above a merge reaches the junction like the
 /// producers do, without becoming one of them.
 #[test]

@@ -4,6 +4,7 @@ mod blocks_without_shared_wires;
 mod branch_guard_drops_at_a_merge;
 mod branch_log_in_each_branch;
 mod branch_log_with_merge;
+mod branch_output_captured_twice;
 mod builds_before_a_second_choice;
 mod captured_in_one_branch;
 mod capturing_closure_after_convergence;
