@@ -1,0 +1,5 @@
+error: a kaalang call body must apply a function path to captured inputs, as in `increment(value)`
+ --> tests/call/compile_fail/call_body_is_a_literal.rs:6:23
+  |
+6 |     let end = |value| 1;
+  |                       ^

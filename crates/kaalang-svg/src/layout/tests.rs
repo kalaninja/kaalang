@@ -1011,8 +1011,10 @@ fn drawn_with(
 /// The fixtures whose shapes exercise the routing rules: branches, nested
 /// branches, wire merges, separate roots and ordinary joins, plus
 /// `question_after_a_partial_merge`, whose partial merge joins inside a wider
-/// one.
-const FIXTURES: [(&str, &str); 17] = [
+/// one. `call_inside_a_branch` is what puts a call node in front of the
+/// spatial contract, with one described caption to wrap and one taken from the
+/// path it calls.
+const FIXTURES: [(&str, &str); 18] = [
     fixture!("wire/behavior", "blocked_terminal_crossing"),
     fixture!("wire/behavior", "closure_before_a_branch"),
     fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
@@ -1030,6 +1032,7 @@ const FIXTURES: [(&str, &str); 17] = [
     fixture!("choice/behavior", "run_choice"),
     fixture!("wire/behavior", "two_convergence_groups"),
     fixture!("wire/behavior", "two_merges_reach_one_consumer"),
+    fixture!("call/behavior", "call_inside_a_branch"),
 ];
 
 const SHARED_INPUTS: &str = r#"

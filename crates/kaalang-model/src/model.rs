@@ -1,7 +1,8 @@
 //! The authored and resolved flow models, the recorded executions and
 //! convergence groups and wire merges, and the compiler's execution plan.
 
-use proc_macro2::{Ident, Span};
+use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
+use quote::ToTokens;
 use syn::ext::IdentExt;
 use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 
@@ -74,6 +75,7 @@ impl SemanticModel {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {
     Action,
+    Call,
     Question,
     Loop,
     Break,
@@ -135,6 +137,88 @@ impl Block {
             unreachable!("validated outputs are identifier bindings")
         };
         binding
+    }
+
+    /// The authored path of the function a call runs, as one line.
+    ///
+    /// Every token of the path in source order, separated only where running
+    /// two together would change what they say. The whitespace and comments an
+    /// author may write inside a path are not tokens and do not survive, so
+    /// `math:: /* note */ twice` reads `math::twice`, and punctuation does not
+    /// get its authored spacing back: `Fn(u32) -> u32` inside a qualified self
+    /// type reads `Fn(u32)->u32`.
+    ///
+    /// # Panics
+    ///
+    /// Panics unless this block is a call, whose body `parse::call` validated.
+    #[must_use]
+    pub fn callee(&self) -> String {
+        let Expr::Call(application) = &self.body else {
+            unreachable!("parse::call validates a call body as one application")
+        };
+        // A `macro_rules!` substitution arrives inside an invisible group.
+        let mut function = application.func.as_ref();
+        while let Expr::Group(group) = function {
+            function = &group.expr;
+        }
+        let Expr::Path(path) = function else {
+            unreachable!("parse::call validates a callee as a path")
+        };
+        let mut text = String::new();
+        write_tokens(&mut text, path.to_token_stream());
+        text
+    }
+}
+
+/// Appends every token in source order, separated only where running two
+/// together would change what they say.
+fn write_tokens(text: &mut String, tokens: TokenStream) {
+    for token in tokens {
+        if needs_space(text, &token) {
+            text.push(' ');
+        }
+        match token {
+            TokenTree::Group(group) => {
+                let (open, close) = delimiters(group.delimiter());
+                text.push_str(open);
+                write_tokens(text, group.stream());
+                // A closing delimiter never needs separating, so a trailing
+                // comma inside a group stays tight against it.
+                text.push_str(close);
+            }
+            TokenTree::Punct(punct) => text.push(punct.as_char()),
+            token => text.push_str(&token.to_string()),
+        }
+    }
+}
+
+/// Whether one token has to be separated from what is written so far.
+///
+/// A comma always separates what follows it. A word runs into another word, or
+/// into the close of a type that word wrapped, as in `Vec<u8> as`. The `as` of
+/// a qualified self type separates on both sides, so the trait path may itself
+/// begin with `::`.
+fn needs_space(text: &str, token: &TokenTree) -> bool {
+    if text.ends_with(',') {
+        return true;
+    }
+    text.ends_with(word_end)
+        && (matches!(token, TokenTree::Ident(_) | TokenTree::Literal(_)) || text.ends_with(" as"))
+}
+
+/// Whether a character can end a word or the type a word wrapped.
+fn word_end(character: char) -> bool {
+    character.is_alphanumeric() || matches!(character, '_' | '>' | ']' | ')')
+}
+
+/// The characters a group is written with. An invisible group delimits a
+/// `macro_rules!` substitution and is written with nothing at all.
+const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
+    match delimiter {
+        Delimiter::Parenthesis => ("(", ")"),
+        Delimiter::Brace => ("{", "}"),
+        Delimiter::Bracket => ("[", "]"),
+        Delimiter::None => ("", ""),
     }
 }
 
@@ -199,7 +283,7 @@ impl Flow {
                             execution.selected(block) == Some(output)
                         }
                         BlockKind::Loop => self.completes_loop(execution, block),
-                        BlockKind::Action => true,
+                        BlockKind::Action | BlockKind::Call => true,
                         BlockKind::Break | BlockKind::Return | BlockKind::End => false,
                     }
             }
@@ -375,6 +459,10 @@ pub enum ExecutionPlan {
         index: usize,
         next: Box<ExecutionPlan>,
     },
+    Call {
+        index: usize,
+        next: Box<ExecutionPlan>,
+    },
     Question {
         index: usize,
         branches: [Branch; 2],
@@ -425,4 +513,121 @@ pub struct Join {
     /// Logical wire names, ordered by their first authored producer.
     pub wires: Vec<Ident>,
     pub next: Box<ExecutionPlan>,
+}
+
+#[cfg(test)]
+mod tests {
+    use syn::{ItemFn, parse_quote};
+
+    /// The callee of the first block of a one-call flow.
+    fn callee(body: &ItemFn) -> String {
+        crate::parse::flow(body).expect("the flow parses").blocks[0].callee()
+    }
+
+    #[test]
+    fn a_callee_reads_as_the_author_spelled_it() {
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(left: i32, right: i32) -> i32 {
+                    #[call("Subtract.")]
+                    let end = |left, right| math::difference(left, right);
+
+                    |end| return end;
+                }
+            }),
+            "math::difference"
+        );
+    }
+
+    #[test]
+    fn a_callee_keeps_its_generic_arguments() {
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(text: &str) -> u32 {
+                    #[call]
+                    let end = |text| str::parse::<u32>(text);
+
+                    |end| return end;
+                }
+            }),
+            "str::parse::<u32>"
+        );
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe() -> Map {
+                    #[call]
+                    let end = || HashMap::<String, u32>::new();
+
+                    |end| return end;
+                }
+            }),
+            "HashMap::<String, u32>::new"
+        );
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(f: F) -> u32 {
+                    #[call]
+                    let end = |f| <F as ::core::ops::Fn<(u32,)>>::call(f);
+
+                    |end| return end;
+                }
+            }),
+            "<F as ::core::ops::Fn<(u32,)>>::call"
+        );
+    }
+
+    #[test]
+    fn a_callee_keeps_the_words_of_a_qualified_self_type_apart() {
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(text: &str) -> u32 {
+                    #[call]
+                    let end = |text| <u32 as FromStr>::from_str(text);
+
+                    |end| return end;
+                }
+            }),
+            "<u32 as FromStr>::from_str"
+        );
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(bytes: Vec<u8>) -> &'static [u8] {
+                    #[call]
+                    let end = |bytes| <Vec<u8> as AsRef<[u8]>>::as_ref(bytes);
+
+                    |end| return end;
+                }
+            }),
+            "<Vec<u8> as AsRef<[u8]>>::as_ref"
+        );
+        assert_eq!(
+            callee(&parse_quote! {
+                fn probe(text: &str) -> u32 {
+                    #[call]
+                    let end = |text| <u32 as ::core::str::FromStr>::from_str(text);
+
+                    |end| return end;
+                }
+            }),
+            "<u32 as ::core::str::FromStr>::from_str"
+        );
+    }
+
+    #[test]
+    fn a_comment_inside_a_callee_stays_out_of_its_name() {
+        assert_eq!(
+            callee(
+                &syn::parse_str(
+                    "fn probe(a: u32) -> u32 {
+                        #[call]
+                        let end = |a| math:: /* sneaky */ twice(a);
+
+                        |end| return end;
+                    }"
+                )
+                .expect("the flow parses")
+            ),
+            "math::twice"
+        );
+    }
 }

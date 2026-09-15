@@ -1,0 +1,5 @@
+error: a kaalang call must name the function it calls with a path
+  --> tests/call/compile_fail/call_callee_is_not_a_path.rs:10:23
+   |
+10 |     let end = |value| (increment)(value);
+   |                       ^^^^^^^^^^^

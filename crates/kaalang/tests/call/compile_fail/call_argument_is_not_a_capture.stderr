@@ -1,0 +1,5 @@
+error: a kaalang call argument must name one of the block's captured inputs
+  --> tests/call/compile_fail/call_argument_is_not_a_capture.rs:10:33
+   |
+10 |     let end = |value| increment(other);
+   |                                 ^^^^^

@@ -1,0 +1,5 @@
+error: a kaalang call cannot take the function it calls from a wire; an action applies a value already on a wire
+  --> tests/call/compile_fail/call_callee_names_a_capture.rs:10:34
+   |
+10 |     let end = |increment, value| increment(value);
+   |                                  ^^^^^^^^^

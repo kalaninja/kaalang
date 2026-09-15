@@ -15,6 +15,7 @@ use crate::model::{
 
 mod action;
 mod break_block;
+mod call;
 mod choice;
 mod convergence;
 mod end;
@@ -269,12 +270,22 @@ impl Walk<'_> {
         state.enter(self.flow, index);
         match block.kind {
             BlockKind::Action => action::visit(self, index, state),
+            BlockKind::Call => call::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
             BlockKind::Loop => loop_block::visit(self, index, state),
             BlockKind::Break => break_block::visit(self, index, state),
             BlockKind::Return => return_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
+        }
+    }
+
+    /// A block that runs in place provides every output it declares, then the
+    /// walk continues to the next block in source order.
+    fn sequence(&mut self, block: usize, mut state: State) {
+        let outputs = self.flow.blocks[block].outputs.len();
+        if (0..outputs).all(|output| self.produce(&mut state, block, output)) {
+            self.visit(block + 1, state);
         }
     }
 
@@ -414,6 +425,7 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
             }
             return Err(match declaration.kind {
                 BlockKind::Action => action::uncaptured(name),
+                BlockKind::Call => call::uncaptured(name),
                 BlockKind::Question => question::uncaptured(name),
                 BlockKind::Choice => choice::uncaptured(name),
                 BlockKind::Loop => loop_block::uncaptured(name),

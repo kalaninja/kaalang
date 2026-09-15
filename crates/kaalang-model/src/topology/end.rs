@@ -9,7 +9,7 @@ use crate::model::{BlockKind, Flow};
 
 /// End has no exits and no description of its own: its caption is the flow's
 /// return type, which a presentation derives from the authored source
-/// (RFC 0002 §4.6).
+/// (RFC 0002 §4.7).
 pub(super) fn project(index: usize, nodes: &mut Vec<Node>) {
     nodes.push(block_node(index, NodeKind::End));
 }

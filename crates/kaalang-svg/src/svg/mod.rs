@@ -23,6 +23,7 @@ macro_rules! emit_inline {
 }
 
 mod action;
+mod call;
 mod choice;
 mod loop_block;
 mod question;
@@ -58,14 +59,15 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .parameter-link {{ fill: none; stroke: currentColor; stroke-width: 1.75; }}
       .node-shape {{ fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }}
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape {{ fill: #f0f9ff; }}
-      .action .node-shape {{ fill: #f8fafc; }}
+      .action .node-shape, .call .node-shape {{ fill: #f8fafc; }}
+      .call-bars {{ fill: none; stroke: currentColor; stroke-width: 1.75; }}
       .loop .node-shape {{ fill: #f0fdf4; stroke-width: 2; }}
       .loop-marker {{ fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }}
       .question .node-shape {{ fill: #fffbeb; }}
       .select .node-shape, .case .node-shape {{ fill: #f5f3ff; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: 600; }}
-      .action .label, .loop .label {{ font-weight: 500; text-anchor: start; }}
+      .action .label, .call .label, .loop .label {{ font-weight: 500; text-anchor: start; }}
       .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }}
@@ -393,6 +395,7 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
     match scene.topology.node(id).kind {
         NodeKind::Start => format!("Start: {label}"),
         NodeKind::Action => action::name(label),
+        NodeKind::Call => call::name(label),
         NodeKind::Loop => format!("Cycle: {label}"),
         NodeKind::Question => question::name(label),
         NodeKind::Select => choice::select_name(label),
@@ -412,7 +415,12 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
     );
     if matches!(
         projected.kind,
-        NodeKind::Action | NodeKind::Loop | NodeKind::Question | NodeKind::Select | NodeKind::Case
+        NodeKind::Action
+            | NodeKind::Call
+            | NodeKind::Loop
+            | NodeKind::Question
+            | NodeKind::Select
+            | NodeKind::Case
     ) {
         write_title(svg, scene.captions.label(node.id));
     }
@@ -423,6 +431,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
             write_label(svg, node, 0, 0);
         }
         NodeKind::Action => action::write(svg, node),
+        NodeKind::Call => call::write(svg, node),
         NodeKind::Loop => loop_block::write_node(svg, node),
         NodeKind::Question => question::write(svg, node),
         NodeKind::Select => choice::write_select(svg, node),
@@ -467,6 +476,7 @@ const fn node_class(kind: NodeKind) -> &'static str {
     match kind {
         NodeKind::Start => "start",
         NodeKind::Action => "action",
+        NodeKind::Call => "call",
         NodeKind::Loop => "loop",
         NodeKind::Question => "question",
         NodeKind::Select => "select",

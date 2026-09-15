@@ -91,10 +91,14 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let label = match node.id {
             NodeId::Start => start.to_owned(),
             NodeId::Block(_) if node.kind == NodeKind::End => return_type.to_owned(),
-            NodeId::Block(block) => model.flow.blocks[block]
-                .description
-                .clone()
-                .unwrap_or_default(),
+            // A call written without a description is labeled with the path
+            // it calls (RFC 0002 section 4.3), so the default belongs here,
+            // where every caption, measurement and label check reads it.
+            NodeId::Block(block) => match &model.flow.blocks[block].description {
+                Some(text) => text.clone(),
+                None if node.kind == NodeKind::Call => model.flow.blocks[block].callee(),
+                None => String::new(),
+            },
             NodeId::Case { choice, branch } => {
                 model.flow.blocks[choice].case_descriptions[branch].clone()
             }
@@ -115,7 +119,11 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let displayed = if capture.is_empty()
             && matches!(
                 node.kind,
-                NodeKind::Action | NodeKind::Loop | NodeKind::Question | NodeKind::Select
+                NodeKind::Action
+                    | NodeKind::Call
+                    | NodeKind::Loop
+                    | NodeKind::Question
+                    | NodeKind::Select
             )
             && topology
                 .incoming(Destination::Node(node.id))

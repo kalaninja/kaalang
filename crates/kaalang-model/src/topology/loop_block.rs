@@ -4,9 +4,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
     Analyzed, Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology,
-    Vertex, block_node, destination, represented,
+    Vertex, block_node, destination, represented, sequential_exit,
 };
-use crate::model::{Block, ProducerId};
+use crate::model::Block;
 
 pub(super) fn project_collapsed(
     index: usize,
@@ -17,15 +17,7 @@ pub(super) fn project_collapsed(
 ) {
     nodes.push(block_node(index, NodeKind::Loop));
     if completes {
-        exits.push(Exit {
-            id: ExitId::of(NodeId::Block(index)),
-            provides: (0..block.outputs.len())
-                .map(|output| ProducerId::BlockOutput {
-                    block: index,
-                    output,
-                })
-                .collect(),
-        });
+        exits.push(sequential_exit(index, block));
     }
 }
 

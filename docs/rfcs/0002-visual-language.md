@@ -25,8 +25,8 @@ following terms:
 - a **label** is text attached to a node or connection;
 - a **parameter panel** is the non-executable rectangle to the right of start
   that lists the flow's authored Rust parameters;
-- an **exit** is an outgoing attachment point of a node; start, action, and a
-  normally completing collapsed cycle each have one non-branching exit, a
+- an **exit** is an outgoing attachment point of a node; start, action, call,
+  and a normally completing collapsed cycle each have one non-branching exit, a
   question has one branch-specific exit per answer, a select has one distributor
   exit, each case has one exit associated with its choice branch, and end has no
   exit;
@@ -68,23 +68,24 @@ data connections.
 
 ## 4. Node kinds
 
-An action and a question each become one node. A choice becomes one select node
-and one case node per authored case. A collapsed cycle becomes one cycle node.
-An implicit wire merge becomes one merge node. A reachable flow-completion
-boundary becomes one end node. Case, merge, and end nodes are visual
-projections, not additional semantic blocks; breaks and returns have no nodes of
-their own.
+An action, a call, and a question each become one node. A choice becomes one
+select node and one case node per authored case. A collapsed cycle becomes one
+cycle node. An implicit wire merge becomes one merge node. A reachable
+flow-completion boundary becomes one end node. Case, merge, and end nodes are
+visual projections, not additional semantic blocks; breaks and returns have no
+nodes of their own.
 
-| Node kind    | Represents              | Label source           | Shape                                 |
-| ------------ | ----------------------- | ---------------------- | ------------------------------------- |
-| **start**    | the beginning of a flow | the flow header        | capsule                               |
-| **action**   | an action block         | the block description  | rectangle                             |
-| **question** | a question block        | the block description  | elongated hexagon                     |
-| **select**   | a choice block          | the choice description | skewed parallelogram                  |
-| **case**     | one case of a choice    | the case description   | a shape with a lower triangular point |
-| **merge**    | an implicit wire merge  | none                   | small filled circle                   |
-| **cycle**    | a collapsed cycle block | the cycle description  | loop-marked rectangle                 |
-| **end**      | flow completion         | the flow's return type | capsule                               |
+| Node kind    | Represents              | Label source                              | Shape                                    |
+| ------------ | ----------------------- | ----------------------------------------- | ---------------------------------------- |
+| **start**    | the beginning of a flow | the flow header                           | capsule                                  |
+| **action**   | an action block         | the block description                     | rectangle                                |
+| **call**     | a call block            | the block description, or the called path | rectangle with an inset bar on each side |
+| **question** | a question block        | the block description                     | elongated hexagon                        |
+| **select**   | a choice block          | the choice description                    | skewed parallelogram                     |
+| **case**     | one case of a choice    | the case description                      | a shape with a lower triangular point    |
+| **merge**    | an implicit wire merge  | none                                      | small filled circle                      |
+| **cycle**    | a collapsed cycle block | the cycle description                     | loop-marked rectangle                    |
+| **end**      | flow completion         | the flow's return type                    | capsule                                  |
 
 ### 4.1 start
 
@@ -103,14 +104,28 @@ in execution.
 
 An action block becomes one action node.
 
-### 4.3 question
+### 4.3 call
+
+A call block becomes one call node. Its bars set it apart from an action at a
+glance: the box runs a function declared elsewhere rather than the work written
+inside it.
+
+A call written without a description is labeled with the path of the function it
+calls, without its arguments. The label carries the tokens of that path, so it
+keeps generic arguments, a qualified self type, and the `r#` of a raw segment.
+Those tokens are separated only where running two together would change what
+they say, so the whitespace and comments an author may write between them do not
+survive and authored spacing is not restored. A described call is labeled with
+its description, and the path it calls is then visible only in the source.
+
+### 4.4 question
 
 A question block becomes one question node. Its answer attributes, outputs, and
 branches preserve their positional order from RFC 0001. Each branch is labeled
 with its authored description when present, otherwise with its output name. An
 ordinary question therefore needs no synthesized answer labels.
 
-### 4.4 select
+### 4.5 select
 
 A choice block becomes one select node. Its branches preserve authored case
 order, and the diagram must not reorder them according to their patterns or
@@ -119,7 +134,7 @@ case nodes. The first connection leaves the select's lower edge; the remaining
 connections leave its right edge and fan out horizontally, like a question's
 later branches.
 
-### 4.5 case
+### 4.6 case
 
 Each authored case becomes one derived case node. All case nodes belonging to
 one select occupy the same row, in authored order. A case may not be lowered
@@ -130,7 +145,7 @@ select above it. The branch's output wire is handed over at the case node's
 exit. A choice output may carry data or serve as a unit-valued control wire; the
 diagram shows its wire name in either case.
 
-### 4.6 end
+### 4.7 end
 
 When at least one execution has a `Return` outcome, the end node represents the
 flow's visual completion boundary. It has no authored description, so its label
@@ -142,7 +157,7 @@ The structural return terminates at the end node. Its arrival is not a
 logical-wire merge. The end node displays the value transferred into the flow
 boundary, which Rust checks against the function signature.
 
-### 4.7 cycle
+### 4.8 cycle
 
 An expanded cycle is enclosed by a visible boundary with a separate loop marker.
 Its description is secondary: the caption wraps into the available space and may
@@ -185,7 +200,7 @@ question exit; the structural dependency adds no duplicate label. A transfer's
 capture junction is likewise unlabeled. A collapsed cycle shows its complete
 capture list on the node; an expanded cycle adds no interface list.
 
-### 4.8 break
+### 4.9 break
 
 A break redirects its branch route to the directly containing cycle's result
 boundary. Break routes from nested cycles stop at their own boundary and never
@@ -200,7 +215,7 @@ its other branch can still repeat. The boundary retains padding below its body
 and return routes and contains their labels. A break has no computational
 figure, description, or output hand-over of its own.
 
-### 4.9 return
+### 4.10 return
 
 The flow's structural return redirects its root-owned branch route to the flow's
 end boundary. Its explicit captures participate in dependency and serial-order
@@ -209,7 +224,7 @@ return has no computational figure, description, or wire hand-over of its own.
 RFC 0001 permits at most one root-owned return and none inside a cycle; a fully
 diverging flow has no return or end node.
 
-### 4.10 merge
+### 4.11 merge
 
 An implicit wire merge becomes a small filled circular node at its convergence
 point. It has no authored description, input, output, or computation and adds no
@@ -227,12 +242,14 @@ capture dependency.
 ## 6. Wires and labels
 
 Description labels carry the exact authored text. A presentation may wrap or
-escape that text but must not paraphrase, normalize, or synthesize it. The
-expanded-cycle caption is the exception in §4.7: it may show only a prefix and
-an ellipsis while retaining the complete description outside the caption. No
-node carries a caption naming its block kind; the cycle's non-textual loop
-marker is independent of its description. The end node's `()` for an absent
-return type states the contract rather than paraphrasing authored text.
+escape that text but must not paraphrase, normalize, or synthesize it. There are
+two exceptions. The expanded-cycle caption of §4.8 may show only a prefix and an
+ellipsis while retaining the complete description outside the caption, and a
+call written without a description has no authored label at all: its synthesized
+path label is normalized as §4.3 defines. No node carries a caption naming its
+block kind; the cycle's non-textual loop marker is independent of its
+description. The end node's `()` for an absent return type states the contract
+rather than paraphrasing authored text.
 
 An authored question-branch description replaces that branch's output hand-over
 label. It appears beside the branch's exit and remains there when the connection
@@ -245,11 +262,12 @@ exception: neither structural interface repeats the cycle's input or output
 list. This includes ordinary labels for wires named `end`, `out`, or `result`
 and an intentionally unused wire whose name begins with `_`. The labels at one
 exit form its hand-over. The start node hands over its named flow inputs in
-signature order, an action and a collapsed cycle hand over all their outputs in
-declaration order, and an undescribed question branch or case hands over its
-branch output. A block declaring no outputs therefore carries no hand-over
-label. A hand-over names newly provided wires only; it neither lists wires that
-remain available nor implies that the next node captures every named wire.
+signature order, an action, a call, and a collapsed cycle hand over all their
+outputs in declaration order, and an undescribed question branch or case hands
+over its branch output. A block declaring no outputs therefore carries no
+hand-over label. A hand-over names newly provided wires only; it neither lists
+wires that remain available nor implies that the next node captures every named
+wire.
 
 A hand-over displays each producer's authored mutability as `name` or
 `mut name`, including named flow inputs. This is permission to mutably borrow
@@ -366,15 +384,15 @@ example, if `P` produces `x`, `A` borrows `x` and produces `a`, and `C` captures
 `x` and `a`, the diagram contains `P → A → C` but no direct `P → C` connection.
 
 Every computational or collapsed-cycle node is reachable from start, including
-zero-input blocks. A start, action, or completed-cycle exit continues to the
-next item in source order; a consumer that captures nothing from it is reached
-transitively through that sequence. A question activates exactly one of its two
-exits; a select activates exactly one outgoing connection from its distributor
-exit and therefore exactly one case. Branch connections retain their selected
-output even when the next step does not capture it directly. A node with several
-incoming connections waits for every one that participates in the current
-execution. At a convergence, incoming connections from alternative branches
-never participate together.
+zero-input blocks. A start, action, call, or completed-cycle exit continues to
+the next item in source order; a consumer that captures nothing from it is
+reached transitively through that sequence. A question activates exactly one of
+its two exits; a select activates exactly one outgoing connection from its
+distributor exit and therefore exactly one case. Branch connections retain their
+selected output even when the next step does not capture it directly. A node
+with several incoming connections waits for every one that participates in the
+current execution. At a convergence, incoming connections from alternative
+branches never participate together.
 
 kaalang has no authored merge block. Equally named alternative outputs meet at
 an implicit merge node before any consumer of the merged wire. The common
@@ -405,11 +423,11 @@ its junction and keeps its visible merge marker and wire label.
 The result route of a break occupies its branch column beside the other body
 routes. Carry precedence from the tails of the bounded region through its result
 boundary and outer continuation to the first wire merge or end. Those boundaries
-stay below the body; preceding actions, questions, choices, and cycle entries
-can start alongside it. A cycle result may share its own iteration tail's row
-when their routes are disjoint; its continuation's first merge or end still
-stays below both. An enclosing iteration tail reached only by a side exit may
-turn upward beside an unfinished inner body if the return clears its whole
+stay below the body; preceding actions, calls, questions, choices, and cycle
+entries can start alongside it. A cycle result may share its own iteration
+tail's row when their routes are disjoint; its continuation's first merge or end
+still stays below both. An enclosing iteration tail reached only by a side exit
+may turn upward beside an unfinished inner body if the return clears its whole
 boundary. A body column occupied on a different row still lies inside that
 boundary. Other arrivals retain the body's precedence so the return cannot turn
 through a nested boundary. Its return contour clears the whole body, including

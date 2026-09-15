@@ -1,0 +1,5 @@
+error: a kaalang call body is one application and takes no braces or attributes of its own; that work belongs in an action
+  --> tests/call/compile_fail/call_body_has_braces.rs:10:23
+   |
+10 |     let end = |value| { increment(value) };
+   |                       ^^^^^^^^^^^^^^^^^^^^

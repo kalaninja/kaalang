@@ -1,0 +1,5 @@
+error: a kaalang call passes its inputs on unchanged, so a `mut` capture has no effect
+  --> tests/call/compile_fail/call_input_is_mutable.rs:10:20
+   |
+10 |     let end = |mut value| increment(value);
+   |                    ^^^^^

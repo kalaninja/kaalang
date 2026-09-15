@@ -160,6 +160,10 @@ impl Replay<'_> {
                 self.enter(*index, BlockKind::Action)?;
                 self.walk(next)
             }
+            ExecutionPlan::Call { index, next } => {
+                self.enter(*index, BlockKind::Call)?;
+                self.walk(next)
+            }
             ExecutionPlan::Question {
                 index,
                 branches,

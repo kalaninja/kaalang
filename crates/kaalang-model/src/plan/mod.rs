@@ -156,13 +156,18 @@ impl Builder<'_> {
         };
         let mut next_done = done.clone();
         next_done.insert(block);
-        if self.flow.blocks[block].kind == BlockKind::Action {
+        // An action and a call each run in place and hand over every output.
+        let kind = self.flow.blocks[block].kind;
+        if matches!(kind, BlockKind::Action | BlockKind::Call) {
             let mut next = self.lower(executions, &next_done, forbidden, scopes)?;
             next.emitted.insert(block);
+            let index = block;
+            let plan = Box::new(next.plan);
             return Ok(Lowered {
-                plan: ExecutionPlan::Action {
-                    index: block,
-                    next: Box::new(next.plan),
+                plan: if kind == BlockKind::Call {
+                    ExecutionPlan::Call { index, next: plan }
+                } else {
+                    ExecutionPlan::Action { index, next: plan }
                 },
                 yielding: next.yielding,
                 emitted: next.emitted,
@@ -326,6 +331,7 @@ impl Builder<'_> {
             BlockKind::Question => question::dispatch(block, branches, joins),
             BlockKind::Choice => choice::dispatch(block, branches, joins),
             BlockKind::Action
+            | BlockKind::Call
             | BlockKind::End
             | BlockKind::Loop
             | BlockKind::Break
@@ -593,7 +599,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
         ExecutionPlan::Break { index, .. } | ExecutionPlan::Return { index } => {
             order.push(*index);
         }
-        ExecutionPlan::Action { index, next } => {
+        ExecutionPlan::Action { index, next } | ExecutionPlan::Call { index, next } => {
             order.push(*index);
             serial_order(next, order);
         }
@@ -641,7 +647,9 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
                 fill_yields(next, wires, target);
             }
         }
-        ExecutionPlan::Action { next, .. } | ExecutionPlan::End { body: next, .. } => {
+        ExecutionPlan::Action { next, .. }
+        | ExecutionPlan::Call { next, .. }
+        | ExecutionPlan::End { body: next, .. } => {
             fill_yields(next, wires, target);
         }
         ExecutionPlan::Question {

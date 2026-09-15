@@ -1,0 +1,5 @@
+error: a kaalang call argument must be one of the block's captured inputs; that work belongs in an action
+  --> tests/call/compile_fail/call_argument_is_a_literal.rs:10:33
+   |
+10 |     let end = |value| increment(1);
+   |                                 ^

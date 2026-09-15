@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="752" height="812" viewBox="0 0 752 812" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for call_inside_a_cycle</title>
+  <desc id="kaalang-description">Cycles: Count to the limit. with inputs mut count, limit and outputs total. Nodes: Start: call_inside_a_cycle with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut count; Question: Is the counter below the limit? capturing &amp;count, &amp;limit handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Call: Increment the counter. capturing iterate_1, &amp;mut count; End: usize capturing total. Connections: Start: call_inside_a_cycle to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the cycle; Question: Is the counter below the limit? branch 1 to Call: Increment the counter.; Question: Is the counter below the limit? branch 2 to End: usize; Call: Increment the counter. to the iteration tail of the cycle; the entry of the cycle to Question: Is the counter below the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Count to the limit.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="393" height="422" rx="12"/>
+    <text class="cycle-caption" x="413" y="277" text-anchor="end" xml:space="preserve"><tspan x="413" dy="0">Count to the limit.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 226 L 220 298
+      M 220 442 L 220 514
+      M 360 406 L 580 406 L 580 722
+      M 220 578 L 220 650
+      M 220 298 L 220 370
+    "/>
+    <path class="connection" d="
+      M 220 650 L 60 650 L 60 298 L 220 298
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">limit</tspan></text>
+    <text class="connection-label" x="233" y="244" xml:space="preserve"><tspan x="233" dy="0">mut count</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="233" y="462" xml:space="preserve"><tspan x="233" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="373" y="394" xml:space="preserve"><tspan x="373" dy="0">NO</tspan></text>
+    <text class="connection-label" x="233" y="151" xml:space="preserve"><tspan x="233" dy="0">()</tspan></text>
+    <text class="connection-label" x="233" y="359" xml:space="preserve"><tspan x="233" dy="0">&amp;count, &amp;limit</tspan></text>
+    <text class="connection-label" x="233" y="503" xml:space="preserve"><tspan x="233" dy="0">iterate_1, &amp;mut count</tspan></text>
+    <text class="connection-label" x="593" y="711" xml:space="preserve"><tspan x="593" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">call_inside_a_cycle</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 194)">
+      <title xml:space="preserve">Initialize the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 406)">
+      <title xml:space="preserve">Is the counter below the limit?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the counter below the </tspan><tspan x="0" dy="18">limit?</tspan></text>
+    </g>
+    <g class="node call" transform="translate(220 546)">
+      <title xml:space="preserve">Increment the counter.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Increment the counter.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 751)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+error: a kaalang call body is one application and takes no braces or attributes of its own; that work belongs in an action
+  --> tests/call/compile_fail/call_bare_application_has_braces.rs:8:5
+   |
+ 8 | /     {
+ 9 | |         record();
+10 | |     };
+   | |_____^

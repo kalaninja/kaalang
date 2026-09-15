@@ -77,7 +77,7 @@ fn renders_an_accessible_standalone_svg() {
     assert!(svg.contains(
         ".start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }"
     ));
-    assert!(svg.contains(".action .node-shape { fill: #f8fafc; }"));
+    assert!(svg.contains(".action .node-shape, .call .node-shape { fill: #f8fafc; }"));
     assert!(svg.contains(".question .node-shape { fill: #fffbeb; }"));
     assert!(svg.contains(".select .node-shape, .case .node-shape { fill: #f5f3ff; }"));
     assert!(svg.contains(".branch-label { fill: currentColor; font-weight: 500; }"));
@@ -109,10 +109,9 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     assert!(collapsed.contains("Cycle: Count to the limit."));
     assert!(collapsed.contains(">mut count, limit</tspan>"));
     assert!(collapsed.contains(">total</tspan>"));
-    assert!(
-        collapsed
-            .contains(".action .label, .loop .label { font-weight: 500; text-anchor: start; }")
-    );
+    assert!(collapsed.contains(
+        ".action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }"
+    ));
 
     let invalid = CYCLE_SOURCE.replace("break count", "return count");
     for collapse_loops in [false, true] {

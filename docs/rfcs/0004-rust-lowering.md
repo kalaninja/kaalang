@@ -27,7 +27,7 @@ their role. Structural returns are shown as native Rust `return` statements.
 Internal names and the generator's own data structures are implementation
 details.
 
-## 2. Bindings, scopes, and actions
+## 2. Bindings, scopes, actions, and calls
 
 The outer function preserves every authored parameter. It forwards named
 parameters to hygienic internal bindings in a nested implementation; wildcard
@@ -71,6 +71,16 @@ none binds the unit pattern, as in `let () = { body };`, so Rust rejects a body
 of any other type. These Rust bindings implement
 [RFC 0001 §4.1](0001-language.md#41-action) and
 [§6](0001-language.md#6-wires-producers-and-captures).
+
+A call lowers exactly as an action does. Its authored body, which RFC 0001 §4.2
+restricts to one application of a path to the block's input aliases, is emitted
+verbatim inside the same `let` initializer, as in
+`let output = { let left = ...; let right = ...; math::difference(left, right) };`.
+Because the application is the author's own tokens at their own spans, Rust
+reports a wrong argument count or type against the function the author named and
+at the argument the author wrote. An alias the application does not pass is
+still bound, which is how a call takes part in a branch or a cycle. These Rust
+bindings implement [RFC 0001 §4.2](0001-language.md#42-call).
 
 For example, the first action borrows a string and produces two outputs. The
 second action consumes the original string together with those outputs:
@@ -239,7 +249,7 @@ Lowering preserves the authored choice `match`, including its scrutinee,
 patterns, guards, arm order, and arm expressions. It evaluates the scrutinee
 once and carries the selected arm's value out of that arm before executing the
 case continuation. This scope boundary implements
-[RFC 0001 §4.3](0001-language.md#43-choice).
+[RFC 0001 §4.4](0001-language.md#44-choice).
 
 Nested labeled blocks let each case pass its value directly into an ordinary
 `let` binding. Each arm breaks out of its input and match-arm scopes before its
@@ -420,7 +430,7 @@ return.
 An authored `todo!()` remains in the lowered body. For a choice placeholder,
 lowering also emits the downstream case continuations so Rust checks every
 branch even though reaching the placeholder panics. This preserves the
-placeholder behavior specified by [RFC 0001 §4.3](0001-language.md#43-choice).
+placeholder behavior specified by [RFC 0001 §4.4](0001-language.md#44-choice).
 
 A placeholder diverges, so Rust reports code lowered after it as unreachable.
 Lowering does not suppress `unreachable_code`; a workspace that denies warnings

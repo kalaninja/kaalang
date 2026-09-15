@@ -1146,4 +1146,75 @@ mod tests {
             "a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name"
         );
     }
+
+    /// Every kaalang program an RFC prints is one a reader copies, so each one
+    /// still has to parse. A rule the RFCs tighten reaches the examples of
+    /// every section, not only the section that states it, and most examples
+    /// are loose block statements rather than whole flows.
+    #[test]
+    fn every_program_an_rfc_prints_still_parses() {
+        const RFCS: [(&str, &str); 4] = [
+            ("0001", include_str!("../../../docs/rfcs/0001-language.md")),
+            (
+                "0002",
+                include_str!("../../../docs/rfcs/0002-visual-language.md"),
+            ),
+            (
+                "0003",
+                include_str!("../../../docs/rfcs/0003-svg-renderer.md"),
+            ),
+            (
+                "0004",
+                include_str!("../../../docs/rfcs/0004-rust-lowering.md"),
+            ),
+        ];
+        let mut checked = 0;
+        for (rfc, text) in RFCS {
+            for (offset, block) in fenced_rust(text) {
+                let Some(program) = flow_program(block) else {
+                    continue;
+                };
+                let line = text[..offset].lines().count();
+                let function: ItemFn = syn::parse_str(&program)
+                    .unwrap_or_else(|error| panic!("RFC {rfc} line {line}: {error}"));
+                if let Err(error) = crate::parse::flow(&function) {
+                    panic!("RFC {rfc} line {line}: {error}");
+                }
+                checked += 1;
+            }
+        }
+        assert!(
+            checked >= 28,
+            "expected the RFCs to print kaalang programs, saw {checked}"
+        );
+    }
+
+    /// One fence as a function the parser can take: a whole flow as written, or
+    /// a loose run of block statements wrapped in one.
+    fn flow_program(block: &str) -> Option<String> {
+        if let Some(flow) = block.split("#[kaalang]").nth(1) {
+            return Some(flow.to_owned());
+        }
+        let first = block.lines().find(|line| !line.trim().is_empty())?.trim();
+        ["action", "call", "question", "choice", "cycle"]
+            .iter()
+            .any(|kind| first.starts_with(&format!("#[{kind}(")) || first == format!("#[{kind}]"))
+            .then(|| format!("fn probe() {{ {block} }}"))
+    }
+
+    /// Each fenced Rust block in one document, with its byte offset.
+    fn fenced_rust(text: &str) -> Vec<(usize, &str)> {
+        const FENCE: &str = "```rust\n";
+        let mut blocks = Vec::new();
+        let mut rest = text;
+        let mut offset = 0;
+        while let Some(start) = rest.find(FENCE) {
+            let body = &rest[start + FENCE.len()..];
+            let Some(end) = body.find("```") else { break };
+            blocks.push((offset + start, &body[..end]));
+            offset += start + FENCE.len() + end;
+            rest = &body[end..];
+        }
+        blocks
+    }
 }

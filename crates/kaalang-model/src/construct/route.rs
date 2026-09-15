@@ -465,7 +465,7 @@ fn order(above: &[Vec<usize>], movable: &dyn Fn(usize) -> bool) -> Result<Vec<us
 }
 
 /// Whether the search may move this connection. A select's distributor fans out
-/// to its cases as one shared horizontal (RFC 0002 §4.4); sending one of those
+/// to its cases as one shared horizontal (RFC 0002 §4.5); sending one of those
 /// runs down a column of its own would take the case row apart.
 fn movable(topology: &Topology, connection: usize) -> bool {
     !matches!(

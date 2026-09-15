@@ -22,6 +22,7 @@ use crate::model::{
 
 mod action;
 mod break_block;
+mod call;
 pub(crate) mod choice;
 mod end;
 mod loop_block;
@@ -67,6 +68,7 @@ impl PartialOrd for NodeId {
 pub enum NodeKind {
     Start,
     Action,
+    Call,
     Loop,
     Question,
     Select,
@@ -333,6 +335,7 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
         }
         match block.kind {
             BlockKind::Action => action::project(index, block, &mut nodes, &mut exits),
+            BlockKind::Call => call::project(index, block, &mut nodes, &mut exits),
             BlockKind::Loop if collapse_loops => {
                 let completes = model
                     .executions
@@ -550,9 +553,28 @@ fn branch_exits(
 /// only on the branch selected and each branch owns its own exit.
 fn branches(kind: BlockKind) -> bool {
     match kind {
-        BlockKind::Action | BlockKind::Loop | BlockKind::Break | BlockKind::Return => false,
+        BlockKind::Action
+        | BlockKind::Call
+        | BlockKind::Loop
+        | BlockKind::Break
+        | BlockKind::Return => false,
         BlockKind::Question | BlockKind::Choice => true,
         BlockKind::End => unreachable!("end declares no output"),
+    }
+}
+
+/// The only exit of a block that hands over every output it declares, in
+/// declaration order. It takes no branch: such a block scopes nothing per
+/// branch, so no output selects among exits here.
+fn sequential_exit(index: usize, block: &Block) -> Exit {
+    Exit {
+        id: ExitId::of(NodeId::Block(index)),
+        provides: (0..block.outputs.len())
+            .map(|output| ProducerId::BlockOutput {
+                block: index,
+                output,
+            })
+            .collect(),
     }
 }
 
@@ -1082,10 +1104,11 @@ fn selected_exit(
 
 fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
     Source::Exit(match model.flow.blocks[block].kind {
-        BlockKind::Action => action::exit(block),
         BlockKind::Question => question::exit(block, output),
         BlockKind::Choice => choice::exit(block, output),
-        BlockKind::Loop => ExitId::of(NodeId::Block(block)),
+        // An action, a call and a completed cycle each hand over every output
+        // at one non-branching exit.
+        BlockKind::Action | BlockKind::Call | BlockKind::Loop => ExitId::of(NodeId::Block(block)),
         BlockKind::End | BlockKind::Break | BlockKind::Return => {
             unreachable!("this kind has no exit")
         }

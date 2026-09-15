@@ -5,7 +5,7 @@ const fn empty_captures() -> usize {
     #[cycle("Leave through an explicit empty capture list.")]
     {
         || break;
-    }
+    };
 
     #[cycle("Leave through a bare break.")]
     || {

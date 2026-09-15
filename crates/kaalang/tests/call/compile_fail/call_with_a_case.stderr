@@ -1,0 +1,5 @@
+error: `#[case]` is not valid on this kind of kaalang block
+  --> tests/call/compile_fail/call_with_a_case.rs:10:5
+   |
+10 |     #[case("A case belongs to a choice.")]
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

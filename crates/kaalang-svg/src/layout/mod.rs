@@ -10,6 +10,7 @@ use syn::{ReturnType, Signature, spanned::Spanned};
 use crate::captions::{self, Captions};
 
 mod action;
+mod call;
 mod choice;
 mod end;
 mod label;
@@ -33,6 +34,8 @@ const PARAMETER_PANEL_GAP: i32 = 96;
 const PARAMETER_PANEL_WIDTH: i32 = 240;
 const PARAMETER_LABEL_WIDTH: i32 = PARAMETER_PANEL_WIDTH - 32;
 const CASE_WIDTH: i32 = 240;
+/// How far inside each side of a call node its bar sits.
+pub(crate) const CALL_BAR_INSET: i32 = 12;
 pub(crate) const CASE_TIP_HEIGHT: i32 = 18;
 pub(crate) const QUESTION_POINT: i32 = 28;
 pub(crate) const SELECT_SKEW: i32 = 24;
@@ -1006,6 +1009,7 @@ fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
     match kind {
         NodeKind::Start | NodeKind::End => capsule_dimensions(label),
         NodeKind::Action => action::dimensions(label),
+        NodeKind::Call => call::dimensions(label),
         NodeKind::Loop => loop_block::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)

@@ -10,7 +10,7 @@ fn entry_effect_without_wires() -> usize {
     #[action("Count the flow entry.")]
     {
         VISITS.fetch_add(1, Ordering::Relaxed);
-    }
+    };
 
     #[action("Report the count.")]
     let end = || VISITS.load(Ordering::Relaxed);

@@ -269,3 +269,18 @@ fn a_question_branch_description_replaces_its_output_label() {
     assert_eq!(captions.handover(yes), ["yes"]);
     assert_eq!(captions.handover(no), ["no"]);
 }
+
+#[test]
+fn a_call_without_a_description_is_labeled_with_the_path_it_calls() {
+    let (_, captions) = read(
+        "fn example(value: u32) -> u32 {
+            #[call]
+            let end = |value| math::
+                // The author may break a path across lines.
+                twice(value);
+
+            |end| return end;
+        }",
+    );
+    assert_eq!(captions.label(NodeId::Block(0)), "math::twice");
+}

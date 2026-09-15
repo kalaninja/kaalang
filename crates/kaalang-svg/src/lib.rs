@@ -242,6 +242,13 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
+/// Checks every authored label for a character XML cannot carry.
+///
+/// A call written without a description has no authored label: its caption is
+/// rebuilt from the tokens of a Rust path, whose characters are identifier
+/// characters, punctuation, and the escaped source form of a literal. None of
+/// those is a character [`invalid_xml_character`] rejects, so that caption is
+/// not checked here.
 fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
     for block in &model.flow.blocks {
         let (line, column) = location(block.span);

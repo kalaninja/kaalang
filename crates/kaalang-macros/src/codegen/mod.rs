@@ -8,7 +8,6 @@ use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, ext::IdentExt, token::Mut};
 
 use kaalang_model::{Block, ExecutionPlan, Flow, Input, SemanticModel};
 
-mod action;
 mod break_block;
 mod choice;
 mod join;
@@ -172,6 +171,26 @@ pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2
 
 /// Emits the Rust that runs one verified plan. The plan already proves every
 /// kaalang invariant, including the destination of every branch exit.
+/// Binds a block's outputs from its own body and continues along the selected
+/// order.
+fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan) -> TokenStream2 {
+    let continuation = self::flow(flow, next, bindings);
+    let block = &flow.blocks[index];
+    let input_bindings = input_bindings(&block.inputs, bindings);
+    let body = block_body(&block.body);
+    let pattern = output_pattern(block, bindings);
+    let gates = block.outputs.iter().map(|output| bindings.gate(output));
+
+    quote_spanned! {block.span=>
+        let #pattern = {
+            #input_bindings
+            #body
+        };
+        #(#gates)*
+        #continuation
+    }
+}
+
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
         ExecutionPlan::Loop { index, body, next } => {
@@ -185,7 +204,11 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             let label = loop_label(*index, flow.blocks[*index].span);
             quote_spanned!(flow.blocks[*index].span=> continue #label;)
         }
-        ExecutionPlan::Action { index, next } => action::emit(flow, bindings, *index, next),
+        // An action and a call both bind their outputs from their own body and
+        // continue; only what the parser accepts as that body differs.
+        ExecutionPlan::Action { index, next } | ExecutionPlan::Call { index, next } => {
+            in_place(flow, bindings, *index, next)
+        }
         ExecutionPlan::Question {
             index,
             branches,

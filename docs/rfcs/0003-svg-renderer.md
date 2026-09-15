@@ -263,7 +263,7 @@ the verifier.
 
 Authored case-node order does not fix the temporary descent order of routes from
 their common distributor: shared-rail exchanges remain legal. However, RFC 0002
-§4.5 requires all cases to end on one common row in authored order. A
+§4.6 requires all cases to end on one common row in authored order. A
 distributor detour cannot lower an enclosed completion case below its siblings
 or their iteration tail. `loop/compile_fail/enclosed_break.rs` and
 `loop/compile_fail/nested_completion_encloses_repeat.rs` record these refusals.
@@ -575,8 +575,9 @@ arrangement.
 ## 3. SVG output
 
 The renderer produces standalone SVG with embedded styles and no JavaScript,
-external fonts, or external rendering programs. It lightly tints nodes by block
-kind while retaining shape and labels as independent type indicators. The
+external fonts, or external rendering programs. It lightly tints nodes, mostly
+by block kind, while retaining shape and labels as independent type indicators.
+An action and a call share one tint; their shapes tell them apart. The
 presentation choices left open by RFC 0002 are internal to the renderer and may
 change without changing the visual language.
 
@@ -588,11 +589,13 @@ paths separate for their arrowhead markers.
 The renderer preserves Unicode text and escapes XML content. For the start label
 and each row of the parameter panel, it takes the source content defined by RFC
 0002 and collapses each run of whitespace to one space before wrapping it to its
-allotted width. Other long labels also wrap to their allotted width. Expanded
-cycle captions may shorten the final visible line with an ellipsis; all other
-labels retain their complete text. Wrapping and shortening break only between
-grapheme clusters; an otherwise unbreakable word is split rather than drawn
-outside its node or panel.
+allotted width. The label of a call written without a description is not source
+content at all: RFC 0002 §4.3 builds it from the tokens of the authored path, so
+it arrives already normalized and the renderer only wraps it. Other long labels
+also wrap to their allotted width. Expanded cycle captions may shorten the final
+visible line with an ellipsis; all other labels retain their complete text.
+Wrapping and shortening break only between grapheme clusters; an otherwise
+unbreakable word is split rather than drawn outside its node or panel.
 
 A question-branch description uses its own branch-label style beside the exit
 and replaces the output label. Its font is larger than a wire label's font, and

@@ -1,0 +1,16 @@
+mod call_a_bare_application;
+mod call_a_borrowed_input;
+mod call_a_callee_from_a_macro;
+mod call_a_described_function;
+mod call_a_path;
+mod call_a_qualified_path;
+mod call_a_statement_from_a_macro;
+mod call_a_turbofish_path;
+mod call_an_application_from_a_macro;
+mod call_destructures_a_tuple;
+mod call_inside_a_branch;
+mod call_inside_a_cycle;
+mod call_reorders_its_arguments;
+mod call_without_a_capture_list;
+mod call_without_a_description;
+mod call_without_inputs;

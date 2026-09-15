@@ -14,6 +14,7 @@ use crate::model::{Block, BlockKind, Flow, Input};
 
 mod action;
 mod break_block;
+mod call;
 mod choice;
 mod end;
 mod loop_block;
@@ -131,13 +132,16 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             }
             _ => parse_block(statement)?,
         };
-        if block.kind == BlockKind::Loop
-            && matches!(statement, Stmt::Expr(_, None))
-            && !matches!(statement, Stmt::Expr(Expr::Block(_), _))
-        {
+        // Every kaalang block statement ends the same way, so no shape has to
+        // be read twice to know where it stops. A `let` gets its semicolon
+        // from Rust; every other spelling is checked here.
+        if matches!(statement, Stmt::Expr(_, None)) {
             return Err(Error::new_spanned(
                 statement,
-                "a kaalang cycle requires a trailing semicolon",
+                format!(
+                    "a kaalang {} requires a trailing semicolon",
+                    noun(block.kind)
+                ),
             ));
         }
         block.parent = parent;
@@ -153,6 +157,29 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         }
     }
     Ok(())
+}
+
+/// What a diagnostic calls one block kind.
+fn noun(kind: BlockKind) -> &'static str {
+    match kind {
+        BlockKind::Action => "action",
+        BlockKind::Call => "call",
+        BlockKind::Question => "question",
+        BlockKind::Choice => "choice",
+        BlockKind::Loop => "cycle",
+        BlockKind::Break => "break",
+        BlockKind::Return => "return",
+        BlockKind::End => unreachable!("the end block is implicit"),
+    }
+}
+
+/// Peels the invisible group a `macro_rules!` substitution arrives in, so a
+/// flow another macro wrote is read the way its author spelled it.
+fn ungrouped(mut expression: &Expr) -> &Expr {
+    while let Expr::Group(group) = expression {
+        expression = &group.expr;
+    }
+    expression
 }
 
 /// Braces around a single structural expression do not change its meaning.
@@ -193,7 +220,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     let (kind, kind_attribute, companions) = block_kind(attributes, statement.span())?;
     let (inputs, body) = match closure {
         Some(closure) => block_closure(closure)?,
-        None => (Vec::new(), bare_block_body(statement)?),
+        None => (Vec::new(), bare_block_body(statement, kind)?),
     };
     let outputs = block_outputs(&output_pattern)?;
     let output_span = output_pattern.span();
@@ -214,6 +241,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
     }
     match kind {
         BlockKind::Action => action::parse(syntax),
+        BlockKind::Call => call::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
         BlockKind::Loop => loop_block::parse(syntax),
@@ -309,7 +337,8 @@ fn unexpected_companion(companion: &Attribute) -> Error {
 }
 
 /// Extracts a block's attributes, interfaces, and body. An expression statement
-/// declares no outputs; a bare block additionally declares no inputs.
+/// declares no outputs; a bare block or bare application additionally declares
+/// no inputs.
 fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprClosure>)> {
     let (attributes, pattern, expression) = match statement {
         Stmt::Local(local) => {
@@ -324,6 +353,11 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprC
                     diverge,
                     "kaalang blocks do not support `let else`",
                 ));
+            }
+            // A call that captures nothing writes its application alone, with
+            // or without outputs; there is no capture list to delimit.
+            if matches!(ungrouped(initializer.expr.as_ref()), Expr::Call(_)) {
+                return Ok((local.attrs.as_slice(), local.pat.clone(), None));
             }
             (
                 local.attrs.as_slice(),
@@ -340,6 +374,20 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprC
         }
         Stmt::Expr(Expr::Block(block), _) => {
             return Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None));
+        }
+        // A call's body is one application, so it needs no braces to delimit
+        // it. The attributes decide: an unattributed application is ordinary
+        // Rust, which a flow body does not accept, and it must keep reporting
+        // that through the arm below.
+        Stmt::Expr(Expr::Call(call), _) if !call.attrs.is_empty() => {
+            return Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None));
+        }
+        // The same statement written by another macro, where the substitution
+        // carries the attributes and the application sits inside it.
+        Stmt::Expr(Expr::Group(group), _)
+            if !group.attrs.is_empty() && matches!(ungrouped(&group.expr), Expr::Call(_)) =>
+        {
+            return Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None));
         }
         _ => {
             return Err(Error::new_spanned(
@@ -363,24 +411,57 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprC
     Ok((attributes, pattern, Some(closure)))
 }
 
-fn bare_block_body(statement: &Stmt) -> Result<Expr> {
-    let Stmt::Expr(Expr::Block(block), _) = statement else {
-        unreachable!("a missing closure denotes a bare block body")
+fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
+    let application = match statement {
+        Stmt::Expr(Expr::Block(block), _) => {
+            if block.label.is_some()
+                || block
+                    .attrs
+                    .iter()
+                    .any(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)))
+            {
+                return Err(Error::new_spanned(
+                    block,
+                    "kaalang block bodies do not support attributes or labels",
+                ));
+            }
+            let mut body = block.clone();
+            body.attrs.clear();
+            if kind == BlockKind::Call {
+                return Err(call::braced(&Expr::Block(body)));
+            }
+            return Ok(Expr::Block(body));
+        }
+        // A statement carries its attributes on its expression, and the kind
+        // attribute was classified before this ran.
+        Stmt::Expr(expression, _) if matches!(ungrouped(expression), Expr::Call(_)) => {
+            let Expr::Call(call) = ungrouped(expression) else {
+                unreachable!("the guard matched an application")
+            };
+            let mut application = call.clone();
+            application.attrs.clear();
+            application
+        }
+        // A `let` carries its own, so whatever sits on the application there
+        // is the body's and stays.
+        Stmt::Local(local) => {
+            let Some(initializer) = &local.init else {
+                unreachable!("a bare application body has an initializer")
+            };
+            let Expr::Call(application) = ungrouped(initializer.expr.as_ref()) else {
+                unreachable!("a missing closure denotes a bare application body")
+            };
+            application.clone()
+        }
+        _ => unreachable!("a missing closure denotes a bare block or bare application body"),
     };
-    if block.label.is_some()
-        || block
-            .attrs
-            .iter()
-            .any(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)))
-    {
+    if kind != BlockKind::Call {
         return Err(Error::new_spanned(
-            block,
-            "kaalang block bodies do not support attributes or labels",
+            &application,
+            "only a kaalang call may be written as a bare application; another kind needs a capture list or braces",
         ));
     }
-    let mut body = block.clone();
-    body.attrs.clear();
-    Ok(Expr::Block(body))
+    Ok(parse_quote_spanned!(application.span()=> { #application }))
 }
 
 /// Determines which kind a block declares, that it declares exactly one, and
@@ -436,6 +517,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
 
     Ok(match name.as_deref() {
         Some("action") => Role::Kind(BlockKind::Action),
+        Some("call") => Role::Kind(BlockKind::Call),
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
         Some("cycle") => Role::Kind(BlockKind::Loop),

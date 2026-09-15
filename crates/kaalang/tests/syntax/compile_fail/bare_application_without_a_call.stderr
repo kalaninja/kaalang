@@ -1,0 +1,5 @@
+error: only a kaalang call may be written as a bare application; another kind needs a capture list or braces
+ --> tests/syntax/compile_fail/bare_application_without_a_call.rs:8:5
+  |
+8 |     log();
+  |     ^^^^^
