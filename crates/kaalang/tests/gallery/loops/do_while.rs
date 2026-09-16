@@ -6,7 +6,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn do_while(number: u64) -> Vec<u8> {
     #[action("📭 Start with no digits.")]
-    let mut digits = || Vec::new();
+    let digits = || Vec::new();
 
     #[cycle("Take one digit off the end.")]
     let collected = |mut number, mut digits| {

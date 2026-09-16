@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     #[action("📏 Initialize the search range.")]
-    let (mut left, mut right) = |values| (0, values.len());
+    let (left, right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
     let result = |values, target, mut left, mut right| {
@@ -48,7 +48,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 #[kaalang]
 fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     #[action("📏 Initialize the search range.")]
-    let (mut left, mut right) = |values| (0, values.len());
+    let (left, right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
     let result = |values, target, mut left, mut right| {

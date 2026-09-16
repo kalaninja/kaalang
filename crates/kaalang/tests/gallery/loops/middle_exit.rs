@@ -12,7 +12,7 @@ fn middle_exit(number: u64) -> u64 {
     let (positive, zero) = |number| number > 0;
 
     #[action("🤔 Guess half the number.")]
-    let mut guess = |positive, number| number / 2 + 1;
+    let guess = |positive, number| number / 2 + 1;
 
     #[cycle("Average the guess with the number divided by it.")]
     let root = |number, mut guess| {

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="662" viewBox="0 0 680 662" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for do_while</title>
-  <desc id="kaalang-description">Nodes: Start: do_while with parameters number: u64 handing over number; Action: 📭 Start with no digits. capturing nothing handing over mut digits; Cycle: Take one digit off the end. capturing mut number, mut digits handing over collected; Action: 🔄 Put the digits back in reading order. capturing mut collected handing over result; End: Vec&lt;u8&gt; capturing result. Connections: Start: do_while to Action: 📭 Start with no digits.; Action: 📭 Start with no digits. to Cycle: Take one digit off the end.; Cycle: Take one digit off the end. to Action: 🔄 Put the digits back in reading order.; Action: 🔄 Put the digits back in reading order. to End: Vec&lt;u8&gt;.</desc>
+  <desc id="kaalang-description">Nodes: Start: do_while with parameters number: u64 handing over number; Action: 📭 Start with no digits. capturing nothing handing over digits; Cycle: Take one digit off the end. capturing mut number, mut digits handing over collected; Action: 🔄 Put the digits back in reading order. capturing mut collected handing over result; End: Vec&lt;u8&gt; capturing result. Connections: Start: do_while to Action: 📭 Start with no digits.; Action: 📭 Start with no digits. to Cycle: Take one digit off the end.; Cycle: Take one digit off the end. to Action: 🔄 Put the digits back in reading order.; Action: 🔄 Put the digits back in reading order. to End: Vec&lt;u8&gt;.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -36,7 +36,7 @@
     "/>
     <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut digits</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">digits</tspan></text>
     <text class="connection-label" x="185" y="380" xml:space="preserve"><tspan x="185" dy="0">collected</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">mut number, mut digits</tspan></text>

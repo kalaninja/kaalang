@@ -7,10 +7,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn for_each(values: &[i32]) -> i32 {
     #[action("🧮 Start the total at zero.")]
-    let mut running = || 0;
+    let running = || 0;
 
     #[action("⏮️ Start at the first value.")]
-    let mut cursor = |values| values.iter();
+    let cursor = |values| values.iter();
 
     #[cycle("Add every value to the total.")]
     let total = |mut cursor, mut running| {
