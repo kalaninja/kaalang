@@ -1,10 +1,5 @@
-//! Derives the displayed text of one topology from the authored flow.
-//!
-//! RFC 0002 §6 gives a hand-over to the exit that provides it and a capture to
-//! the node that receives it, so each is drawn once however many connections
-//! leave or arrive. The model owns the structure; which string stands for a
-//! producer occurrence, and whether the two ends of a connection may share one
-//! label, are presentation choices and live here.
+//! Derives captions and shared-label decisions from the authored flow.
+//! Exits own hand-overs; nodes own captures (RFC 0002 §6).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -91,9 +86,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let label = match node.id {
             NodeId::Start => start.to_owned(),
             NodeId::Block(_) if node.kind == NodeKind::End => return_type.to_owned(),
-            // A call written without a description is labeled with the path
-            // it calls (RFC 0002 section 4.3), so the default belongs here,
-            // where every caption, measurement and label check reads it.
+            // Undescribed calls use the callee path (RFC 0002 §4.3).
             NodeId::Block(block) => match &model.flow.blocks[block].description {
                 Some(text) => text.clone(),
                 None if node.kind == NodeKind::Call => model.flow.blocks[block].callee(),
@@ -232,14 +225,8 @@ fn transferred(value: &Expr) -> Vec<String> {
     }
 }
 
-/// Equal, nonempty displayed lists share a label only at the sole connection
-/// between their ends. Capture modifiers and the empty-input marker never match
-/// a bare wire name, and an exit handing over nothing shares no label with a
-/// node that shows no capture list either.
-///
-/// Both checks are reached by authored flows: the outdegree one at a select
-/// distributor, and the indegree one where two loop exits continue into one
-/// block, as `multiple_exits` and `sequential_exits` do.
+/// Shares equal, nonempty lists only on a connection unique at both ends.
+/// Modifiers and empty-input markers prevent a match with bare wire names.
 fn shares_label(topology: &Topology, captions: &Captions, connection: &Connection) -> bool {
     let (Source::Exit(exit), Destination::Node(node)) = (connection.source, connection.destination)
     else {

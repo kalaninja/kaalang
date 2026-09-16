@@ -352,12 +352,7 @@ fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement
     scene
 }
 
-/// The fixtures whose shapes exercise the routing rules: branches, nested
-/// branches, wire merges, separate roots and ordinary joins, plus
-/// `question_after_a_partial_merge`, whose partial merge joins inside a wider
-/// one. `call_inside_a_branch` is what puts a call node in front of the
-/// spatial contract, with one described caption to wrap and one taken from the
-/// path it calls.
+/// Routing fixtures covering branches, merges, roots, joins, and call captions.
 const FIXTURES: [(&str, &str); 18] = [
     fixture!("wire/behavior", "blocked_terminal_crossing"),
     fixture!("wire/behavior", "closure_before_a_branch"),
@@ -1191,14 +1186,8 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
     drawn((source, "collect_steps"));
 }
 
-/// A back edge driven past the back edge of a cycle nested in its body is caught by
-/// the same gate.
-///
-/// The two spans need not overlap, so no crossing check sees them, and the
-/// bodies they climb beside can be identical — which is why the contour rule
-/// names the nested rails as well as the body's own vertices. Here the outer
-/// outer back edge spans the rows above the inner cycle and the inner back edge the rows
-/// below it, so the two never share one.
+/// Nested rails must preserve their horizontal order even with disjoint row
+/// spans, where crossing checks cannot detect a misplaced contour.
 #[test]
 fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
     let source = r#"
@@ -1271,13 +1260,8 @@ fn rail(scene: &Scene, index: usize) -> i32 {
         .x
 }
 
-/// A label reaching past a nested back edge moves the whole chain of contours
-/// outside it, not just the one it strikes.
-///
-/// The inner rail cannot step alone: one lane out is where the rail enclosing
-/// it climbs, and the contour rule refuses that. Widening the columns moves
-/// the label and both rails together, so it never resolves either. What does
-/// is stepping the enclosing rails with the one that has to move.
+/// Clearing a label moves the struck rail and its enclosing rails together;
+/// moving only one would close the lane between them.
 #[test]
 fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
     let source = r#"
@@ -1411,13 +1395,8 @@ const FAR_CONTOUR: (&str, &str) = (
     "far_contour",
 );
 
-/// A back edge standing further out than its body's boxes suggest is drawn where
-/// the arrangement put it, not where the boxes would have put it.
-///
-/// The column is one of the three decisions a contour records, and the
-/// renderer realizes it through the same column-to-pixel map every node and
-/// route uses. Measuring the body alone would bring this rail two columns in
-/// and quietly draw a diagram the model did not choose.
+/// A far contour retains its recorded column; measuring only body boxes would
+/// incorrectly pull the rail two columns inward.
 #[test]
 fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
     let near = drawn(FAR_CONTOUR);
@@ -1522,17 +1501,8 @@ const FOUR_LANES: (&str, &str) = (
     "deep",
 );
 
-/// A witness whose outermost back edge climbs in lane 3 is drawn with all four
-/// rails on one side, ordered outward with the nesting, and the outermost four
-/// lanes clear of everything the body draws.
-///
-/// The lane bound is the cycle count, so four mutually enclosing cycles is where
-/// it is tight, and no fixture reaches past lane 1. What this pins is the
-/// drawing: four rails, each a lane outside the one it encloses, and the last
-/// of them four lanes past the body. For loops nested this way the lane a
-/// contour records is implied by the nesting, so the renderer would reach the
-/// same rails by counting enclosed rails alone — the point is that it reaches
-/// them at all, over a lane index nothing else in either crate draws.
+/// Four nested rails reach lane 3, beyond ordinary fixture coverage. Each stays
+/// a lane outside the one it encloses, with the outermost four lanes from the body.
 #[test]
 fn four_nested_back_edges_are_drawn_in_four_lanes() {
     let scene = drawn_with(FOUR_LANES, |arrangement| {
@@ -1576,13 +1546,8 @@ fn four_nested_back_edges_are_drawn_in_four_lanes() {
     );
 }
 
-/// Every generated cycle shape the model accepts also renders, save the one
-/// counted below.
-///
-/// The model decides realizability, so an accepted flow this renderer cannot
-/// draw is a renderer defect rather than an authored one — `UnroutableTopology`
-/// says as much. Nothing else looks for one: the fixture corpus is what people
-/// wrote, and these are the shapes nobody writes by hand.
+/// Accepted generated cycles render except for one pinned boundary crossing.
+/// Extends coverage beyond authored fixtures.
 #[test]
 fn every_generated_shape_the_model_accepts_also_renders() {
     let sources = kaalang_testing::shapes::loop_shapes()

@@ -402,13 +402,9 @@ impl Builder<'_> {
         Ok(groups)
     }
 
-    /// Lowers one join per group of branches that share computation, innermost
-    /// first. The executions that wait for a group's blocks yield its wires;
-    /// the shared continuation then runs once. A contained group's continuation
-    /// hands its value to the group containing it, so the later group's blocks
-    /// stay forbidden inside the earlier continuation and reachable from it as
-    /// a further join of this block. Returns the joins and the executions that
-    /// leave their continuations toward an enclosing join.
+    /// Lowers shared groups innermost first. Each continuation runs once and
+    /// may yield to a wider group; later groups' blocks stay excluded until then.
+    /// Returns joins and executions yielding to an enclosing selection.
     #[allow(clippy::too_many_arguments)]
     fn join<'e>(
         &mut self,

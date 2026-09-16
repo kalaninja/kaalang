@@ -1,11 +1,5 @@
-//! Realizes the checked arrangement as geometry, and then checks the result
-//! against RFC 0002 §8.
-//!
-//! The arrangement already fixed which column every connection descends in,
-//! which rank gaps it turns in, and the order of the runs sharing one gap. This
-//! module only turns those into pixels and holds the emitted routes to the
-//! spatial contract, so a disagreement between the two is a compiler bug rather
-//! than another arrangement to try.
+//! Converts the verified arrangement's corridors into pixels and checks
+//! RFC 0002 §8. A failed realization is a renderer defect.
 
 use kaalang_compiler::geometry::{
     bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
@@ -169,20 +163,9 @@ pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
     origin + scene.column_x(scene.arrangement.contours[index].column)
 }
 
-/// Where one back edge climbs: the contour the arrangement recorded, realized in
-/// pixels, and pushed further out by whatever the body's measured boxes need.
-///
-/// All three parts of the recorded contour are realized. The side and the lane
-/// decide whether the back edge can be drawn at all. The column is realized
-/// through `anchor`, and it is a floor rather than the answer: a measured box
-/// may push the rail further out, and may never bring it back in past the
-/// column the arrangement chose or move it to another corridor. That is what
-/// lets a witness whose back edge stands beyond the boxes of its body be drawn
-/// where it says.
-///
-/// `anchor` comes from `contour_anchor` and retains the recorded column even
-/// when the body is narrower. Continuation vertices after leaving the body are
-/// excluded by membership, not by their position below the tail.
+/// Realizes the recorded contour side, column, and lane. Measured body bounds
+/// may push the rail outward, never inward past `anchor` or into another corridor.
+/// Body membership is independent of rank; continuations are excluded.
 pub(super) fn contour_x(
     scene: &Scene,
     model: &SemanticModel,
@@ -215,16 +198,8 @@ pub(super) fn contour_x(
     }
 }
 
-/// How far left and right one loop's whole body reaches.
-///
-/// The body is the model's own: every vertex it counts when it places the
-/// back edge, junctions included. A wire merge or a break inside the body draws
-/// no node and still fills a column, so measuring the boxes alone would leave
-/// the climb a column short of clear. Membership does not depend on ranks:
-/// placing part of the body below the tail does not remove it from the body.
-///
-/// The loop's own entry and tail are folded in by the caller from the route
-/// endpoints, keeping this measurement independent of the column mapping.
+/// Horizontal extent of the model-defined body, including junctions and
+/// vertices below the tail. The caller adds entry and tail route endpoints.
 fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
     let loop_ = scene.topology.loops[index];
     let ends = [Vertex::Junction(loop_.entry), Vertex::Junction(loop_.tail)];
@@ -256,12 +231,8 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     }
 }
 
-/// Each iteration back edge climbs on the side the arrangement chose, clear of every column
-/// its whole body fills, independently of its ranks (RFC 0002 §8).
-///
-/// The arrangement settles that on its abstract grid; this reads the emitted
-/// climb, so it checks the actual geometry and does not take
-/// the side and the lane on trust.
+/// Checks emitted back edges against the recorded side and the whole body's
+/// horizontal extent, independently of rank (RFC 0002 §8).
 fn verify_back_edges(scene: &Scene) -> Option<String> {
     let climbs = (0..scene.topology.loops.len())
         .map(|index| {
@@ -292,10 +263,7 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
             Side::Left => climb.1 < other,
             Side::Right => climb.0 > other,
         };
-        // A back edge nested in this body climbs beside it too, and the two need
-        // not share a single row — so no crossing check compares them, and
-        // this is the only place the enclosing one is held outside the nested
-        // one (RFC 0002 §8).
+        // Nested contours must stay inside this one even when row spans do not overlap.
         if let Some(nested) = (0..climbs.len())
             .filter(|&other| other != index)
             .filter(|&other| {
@@ -412,14 +380,8 @@ fn collapsed(connection: &Connection) -> bool {
         .all(|segment| segment[0] == segment[1])
 }
 
-/// Two routes that end at one vertex may meet where they both reach it, and
-/// nowhere else: sharing any length still counts as an overlap.
-///
-/// The point has to coincide for both, which is what keeps this honest in
-/// pixels. A junction is a single point, so its incoming and outgoing routes do
-/// meet there. Two junctions joined by a collapsed structural hop are that same
-/// drawn point. A node is a box, so two routes reaching it attach to different
-/// parts of its boundary and never touch at all.
+/// Shared endpoint positions, including junctions joined by collapsed hops.
+/// Node ports on different box edges do not coincide; shared runs are checked separately.
 fn common_ends(scene: &Scene, left: &Connection, right: &Connection) -> Vec<Point> {
     let ends = |connection: &Connection| {
         [

@@ -42,26 +42,11 @@ pub(super) fn flow(
         }
         let groups = groups.into_iter().collect::<Vec<_>>();
         if declaration.kind == BlockKind::Choice {
-            // Keep this check: redundancy after merge validation is unproven.
-            // Merge groups of each owner are adjacent and nested or disjoint.
-            // With other branch outcomes fixed, changing a merge owner's
-            // outcome cannot change downstream participation when both
-            // executions produce the wire: that would put the downstream
-            // block in `before` and create a cycle. This suffices for flows
-            // with only one branching block.
-            //
-            // The gap is inheritance across other branchers' outcomes. An
-            // owner needs an `only_difference` pair selecting different
-            // producers; ancestry alone does not imply ownership (see
-            // `question_after_a_partial_merge`). Other branchers can filter
-            // producing contexts, so we cannot simply treat a block's case
-            // set as an intersection of validated merge groups. We still
-            // need to prove that projecting the remaining executions onto
-            // this choice preserves adjacency and nesting, even when brancher
-            // dependencies exist only in some executions. Unions alone do
-            // not suffice: {A, B} union {D} skips C.
-            // Generated-flow searches found no rejection unique to this
-            // check, but do not establish that missing inheritance argument.
+            // Keep until merge validation is proven to imply this check.
+            // Ownership requires an `only_difference` pair, not just ancestry
+            // (`question_after_a_partial_merge`). Other branchers filter contexts;
+            // projection must still preserve adjacency and nesting. Unions alone
+            // do not: {A, B} union {D} skips C. Generated searches are not a proof.
             super::choice::validate_groups(&declaration.outputs, &groups)?;
         }
         for (branches, shared) in groups {

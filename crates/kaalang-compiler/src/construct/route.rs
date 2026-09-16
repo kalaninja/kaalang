@@ -1,20 +1,7 @@
-//! Chooses the corridor every connection runs in, and the order of the
-//! sideways runs that share one rank gap.
-//!
-//! A route descends in its exit's column, except that a question's side exit
-//! may join a merge column immediately and a select's distributor leaves
-//! sideways in each later case's column. It crosses each rank gap it needs
-//! sideways in one lane and enters its destination from above. Two connections
-//! may share a run only when they leave one exit or reach one destination,
-//! which is what draws a fan-out, a select's distributor, and a wire merge as
-//! one bundle rather than as routes hidden behind each other (RFC 0002 §8).
-//!
-//! The lanes of one rank gap are not guessed. A horizontal run that passes over
-//! another route's descent must lie below it, and one that passes over another
-//! route's arrival must lie above it; those requirements form a partial order,
-//! and its topological order is the lane order. A cycle means the gap has no
-//! crossing-free arrangement in this corridor assignment, and the search then
-//! moves the run the cycle blames.
+//! Chooses corridors and orders their horizontal runs within rank gaps.
+//! A run crossing another route's descent must lie below it; crossing its arrival
+//! requires lying above it. Topological sorting assigns lanes. Cyclic constraints
+//! identify a route for the search to move. Bundling follows RFC 0002 §8.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -38,9 +25,7 @@ impl Crossing {
         self.enter != self.exit
     }
 
-    /// Whether a vertical at `column` would meet this run. The ends count: a
-    /// run that stops on another route's descent touches it just as surely as
-    /// one that passes over it.
+    /// Whether a vertical at `column` meets this run, endpoints included.
     const fn spans(&self, column: i32) -> bool {
         let (left, right) = if self.enter < self.exit {
             (self.enter, self.exit)
@@ -183,15 +168,9 @@ pub(super) fn plan(
     Ok(plan)
 }
 
-/// A column of its own for every route that cannot descend in the column it
-/// arrives at or departs from.
-///
-/// They are handed out in order of the column each route departs from, and each
-/// takes the leftmost column that is free over its whole rank span, starting
-/// from the leftmost of its own two ends. An `Aside` route is the exception: it
-/// was sent out of another route's way, so it leaves the diagram on the side it
-/// is already heading — a negative column when it heads left, and one past the
-/// widest column when it heads right.
+/// Assigns detour columns in departure order, taking the leftmost free column
+/// across each route's rank span. `Aside` routes instead go outside the diagram
+/// on the side they are already heading toward.
 fn own_columns(
     topology: &Topology,
     placement: &Placement,
@@ -486,13 +465,10 @@ fn bundled(topology: &Topology, left: usize, right: usize) -> bool {
     pair.0.source == pair.1.source || pair.0.destination == pair.1.destination
 }
 
-/// The column one connection leaves its exit by. A select connection uses its
-/// case's column. A later question branch joins its merge column immediately
-/// when that column lies between its node and its own branch column, so the
-/// side exit reaches the merge rail without a detour. RFC 0002 §8 puts the
-/// merge on the first of the branches that continue, so a later branch turns
-/// towards it; departing by a column to the right of its own is not a shortcut
-/// but a crossing.
+/// Departure column: select connections use their case's column. A later question
+/// branch can use its merge column only when it lies strictly between the node
+/// and the branch's own column; going farther right would cross another branch
+/// (RFC 0002 §8).
 pub(super) fn departure_column(
     placement: &Placement,
     source: Source,

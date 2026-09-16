@@ -26,13 +26,8 @@ mod placement;
 mod question;
 mod return_block;
 
-/// Walks the blocks in source order under every branch selection. Returns the
-/// executions and convergence groups in canonical order, or the earliest
-/// authored violation: a walk error first, then a block placed inside open
-/// branches, then an execution that reaches the root boundary without `return`, then an unreachable block,
-/// then a producer occurrence that no execution captures, then an invalid
-/// branch-output continuation, then a block decided by independent questions
-/// or choices, then an invalid wire merge or shared continuation.
+/// Enumerates executions in source order and derives canonical merges and groups.
+/// Validation order below determines diagnostic priority.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
     let end = flow.blocks.len() - 1;
     debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
@@ -128,8 +123,7 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
     ordered
 }
 
-/// Closes a relation held as one set per index: whatever `middle` relates to,
-/// everything relating to `middle` relates to as well.
+/// Computes the transitive closure of an indexed relation.
 // ponytail: O(n³) in the number of indices; switch to a DAG walk if flows reach
 // hundreds of blocks with many executions.
 pub(crate) fn close(relation: &mut [BTreeSet<usize>]) {
@@ -372,10 +366,7 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     }
 }
 
-/// Every named producer occurrence has a capture dependency in at least one
-/// execution unless its name begins with `_`. Only the action arm is reached in
-/// practice: an uncaptured question or choice output leaves its execution
-/// without a root return, and the walk reports that first.
+/// Requires a capture in some execution for each producer not prefixed with `_`.
 fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let captured = |producer: ProducerId| {
         executions.iter().any(|execution| {
@@ -416,12 +407,8 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     Ok(())
 }
 
-/// The first consumer of a question or choice output runs whenever that output
-/// is selected, so the branch always enters its continuation. Later consumers
-/// are ordinary downstream work and may be conditional: the first one
-/// participates wherever they do, which is what keeps a single connection
-/// leaving the branch exit. The rule is occurrence-level, so a repeated name is
-/// consumed by its implicit merge and its later captures use the merged value.
+/// Requires the first consumer whenever a branch output is selected. Later
+/// consumers may be conditional. Repeated names are consumed by their merge.
 fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
     // A repeated name is consumed by its implicit merge. Downstream captures
     // refer to the merged value, not to a raw question or choice output.

@@ -211,14 +211,8 @@ fn caption(description: &str, width: i32) -> Vec<String> {
     lines
 }
 
-/// How much more room between columns a cycle boundary wants.
-///
-/// A back edge climbs in the gap beside its own body, and the boundary drawn
-/// around a neighbouring body reaches into that same gap. Where the two want it
-/// at once, no rail position clears it: stepping in goes into the body it
-/// leaves, stepping out goes further into the boundary. The room has to come
-/// from the columns, which is the same answer `clear_labels` gives a label and a
-/// rail, and the same retry carries it.
+/// Extra column spacing needed when a boundary collides with a neighbouring
+/// rail or boundary. Uses the same layout retry as label clearance.
 pub(super) fn clearance(scene: &Scene) -> i32 {
     let mut wanted = 0;
     for (boundary, region) in scene

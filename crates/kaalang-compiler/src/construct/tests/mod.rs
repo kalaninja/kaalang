@@ -77,14 +77,8 @@ pub(super) fn parts_from(function: &syn::ItemFn) -> Option<Parts> {
     })
 }
 
-/// Every shape of a three-case cycle body, taken through the public entry
-/// point, settles the way it is recorded here.
-///
-/// The outcome of each shape is written out rather than counted: `build`
-/// checks the arrangement it returns, so re-checking it here would assert
-/// nothing, and counting the accepted ones lets a shape flip from drawn to
-/// refused without a test noticing. The sweep decides realizability, so the
-/// agreement test for that decision lives beside it in `sweep`.
+/// Pins each three-case shape's public result. Counts alone could hide one
+/// acceptance and one refusal swapping places.
 #[test]
 fn every_three_case_cycle_body_settles_the_same_way() {
     // Four shapes violate semantic rules; two enclose an exit between
@@ -190,14 +184,14 @@ fn a_cycle_is_refused_rather_than_ranked() {
 /// One named break of a valid arrangement.
 type Mutation = (&'static str, Box<dyn Fn(&mut Arrangement)>);
 
-/// Every way of breaking a checked arrangement that the plan names.
+/// Mutations covering arrangement structure and geometry.
 fn mutations() -> Vec<Mutation> {
     let mut mutations = coverage_mutations();
     mutations.extend(geometry_mutations());
     mutations
 }
 
-/// Breaks a arrangement states outright, before any route is drawn.
+/// Breaks structural coverage before geometry is checked.
 fn coverage_mutations() -> Vec<Mutation> {
     vec![
         (
@@ -335,16 +329,9 @@ fn geometry_mutations() -> Vec<Mutation> {
     ]
 }
 
-/// Every mutation of a checked arrangement is caught by the verifier, which
-/// is what makes a positive result a witness rather than a coincidence.
-///
-/// What no mutation of this probe reaches is the crossing rule itself: with one
-/// lane per rank gap, every sideways move a mutation can make either keeps the
-/// drawing legal or bends a route diagonally first. Those rules are exercised
-/// from both ends instead — by the impossibility tests here, which pass only
-/// because every candidate arrangement is rejected for crossing, and by the
-/// renderer's own tests over `geometry`, the one implementation both checks
-/// call.
+/// Each mutation must fail verification. This probe cannot isolate crossings:
+/// its single-lane gaps produce diagonal routes first. Impossibility tests and
+/// shared geometry tests cover crossing rejection separately.
 #[test]
 fn the_verifier_rejects_every_mutation() {
     // Both a cycle break and flow completion outside the repeating branches.
@@ -425,13 +412,8 @@ fn nested_break_routes_merge_without_crossing_side_departures() {
     assert!(built.routes[outer_exit].runs.is_empty());
 }
 
-/// The deciding sweep alone draws every fixture the model accepts, and every
-/// arrangement it returns passes the independent check.
-///
-/// `construct` runs the preferred search first, so nothing else exercises the
-/// sweep over real flows. Both halves matter: a refusal here would be a false
-/// negative in the decision, and an arrangement the check rejects would be an
-/// internal error waiting for the first flow the preferred search cannot draw.
+/// Exercises the sweep directly on accepted fixtures, bypassing the preferred
+/// search. Every result must pass independent verification.
 #[test]
 fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
     let mut checked = 0;
@@ -494,13 +476,8 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
     );
 }
 
-/// The deciding sweep alone draws every generated cycle shape the model
-/// accepts, and every arrangement it returns passes the independent check.
-///
-/// The test above answers through `build`, where the preferred search draws
-/// nearly every shape and the sweep never runs. Nested shapes are what the
-/// fixture corpus lacks: a cycle whose back edge has to clear a back edge nested in
-/// its body, over rows the two never share.
+/// Exercises the sweep directly on accepted generated cycles, including nested
+/// back edges with disjoint row spans. Every result must pass verification.
 #[test]
 fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
     let mut checked = 0;
@@ -627,9 +604,8 @@ fn authors_can_reorder_enclosed_cases_to_restore_a_drawing() {
     }
 }
 
-/// The shapes every decision test walks: flat cycle bodies of two, three and
-/// four routes, loops nested inside a loop, drawable and not, and the same
-/// outcomes again on ordered question ports.
+/// Decision-test shapes: flat bodies of two to four routes, nested loops, and
+/// ordered question ports, including both drawable and impossible cases.
 pub(super) fn decision_cases() -> Vec<String> {
     let names = ["repeat", "break", "finish"];
     let mut cases = flat_bodies(2..=4);
@@ -660,19 +636,9 @@ pub(super) fn small_decision_cases() -> Vec<String> {
         .collect()
 }
 
-/// Both directions, against a procedure that assumes none of the walk's
-/// transition rules, none of its reductions, and none of its arithmetic: a
-/// topology the construction draws is one the reference finds a construction
-/// for, and a topology it refuses has none. Positives are compared as well as
-/// refusals; skipping the positives would leave the construction answering for
-/// the flows it happens to draw.
-///
-/// A disagreement either way is a counterexample: a false refusal if the
-/// reference finds a construction, an unsound acceptance if it does not.
-///
-/// Every flat body of two and three routes, nothing skipped. The wider domain,
-/// which takes long enough to keep out of a default run, is the ignored test
-/// below.
+/// Compares acceptances and refusals with an independent procedure for every
+/// flat body of two or three routes. A mismatch is a false refusal or unsound
+/// acceptance. The wider domain runs in the ignored test below.
 #[test]
 fn the_construction_agrees_with_an_independent_procedure() {
     let counted = agree(&flat_bodies(2..=3));
@@ -682,8 +648,7 @@ fn the_construction_agrees_with_an_independent_procedure() {
     );
 }
 
-/// The same comparison over the whole domain the plan declares, which takes
-/// long enough to keep out of the default run.
+/// Exhaustive comparison, excluded from default runs due to its cost.
 ///
 /// Run it with:
 /// `cargo test -p kaalang-compiler --lib the_declared_domain_agrees -- --ignored --nocapture`
@@ -706,12 +671,8 @@ struct Counted {
     rejected_earlier: usize,
 }
 
-/// Compares both procedures over `cases`, in both directions.
-///
-/// Against the deciding sweep, not against `construct`: the preferred search
-/// would answer for the flows it happens to draw and hide whatever the sweep
-/// did with them. A flow another rule rejects has no topology to arrange, and
-/// realizability never had a say in it.
+/// Compares sweep acceptances and refusals with the independent reference.
+/// Bypasses preferred construction and skips flows rejected by semantic rules.
 fn agree(cases: &[String]) -> Counted {
     let mut counted = Counted::default();
     for source in cases {
@@ -842,19 +803,9 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
     );
 }
 
-/// A cycle that never leaves its own body, written between two routes that meet
-/// at the iteration tail and one that leaves the cycle: the first and third
-/// routes converge at the tail, the third and fourth after the loop, and the
-/// second is a sibling of both groups whose lifelines end before either group's
-/// vertex is placed.
-///
-/// The tail continues the first route's column, which is the selection's own
-/// and stands left of the second branch however the rows are chosen. Holding
-/// that earlier sibling left of the tail — the mirror image of the rule RFC
-/// 0002 §8 states for a later sibling — refused this flow, and refused it only
-/// once every interleaving had failed to number, so the answer never arrived
-/// at all. The flow has a diagram: `kaalang-svg` draws it beside
-/// `loop/behavior/diverging_middle_branch.rs`.
+/// Regression for constraining an earlier sibling against a later convergence.
+/// Branch 2 diverges between routes meeting at the tail; requiring it to stay
+/// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
 const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
     let result = |mode, stay| {
@@ -907,14 +858,8 @@ fn a_diverging_branch_between_partial_merges_is_drawn() {
     );
 }
 
-/// Every shape the earlier audit recorded reaches a decision, and none of them
-/// an internal error.
-///
-/// The audit of `plans/diagram-realizability_3.md` section 2 listed eight
-/// nested loop shapes that failed, five of them in the deciding search's
-/// back edges and three through the public build path. They are all inside the
-/// generated domain, and this names them so a regression points at the row it
-/// belongs to rather than at one of several thousand shapes.
+/// Pins eight nested-loop regressions from the generated domain so failures
+/// identify a named shape. Each must reach a decision without an internal error.
 #[test]
 fn every_audit_shape_reaches_a_decision() {
     let cases: [(usize, &[&str], &[&str]); 8] = [
@@ -945,13 +890,8 @@ fn every_audit_shape_reaches_a_decision() {
     }
 }
 
-/// A back edge may stand further out than its body needs, and the check says so.
-///
-/// The contour is a decision, not a suggestion: a renderer realizes the column
-/// the arrangement recorded rather than the nearest position the body's boxes
-/// suggest. This is the witness that pins the difference — the same topology
-/// with its back edge one column beyond everything its body draws, still
-/// conforming — and `kaalang-svg` renders it.
+/// A back edge one column beyond its body still verifies. The renderer uses
+/// this witness to check that the recorded column survives realization.
 #[test]
 fn a_back_edge_may_stand_beyond_the_body_it_clears() {
     let model = model(&looping(&["repeat", "repeat", "break"]));
@@ -1019,13 +959,8 @@ pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
 }
 ";
 
-/// Four mutually enclosing back edges climb four distinct lanes on one side.
-///
-/// `contour_lanes` offers two lanes per cycle, one for a back edge and the next
-/// for the boundary that encloses it, so four cycles stacked against one column
-/// have room for both. This witness packs the back edges into the first four
-/// lanes, which no fixture and no generated shape reaches on its own.
-/// `kaalang-svg` draws this same witness.
+/// Packs four nested back edges into lanes 0–3, beyond generated coverage.
+/// The lane budget also reserves cycle boundaries; `kaalang-svg` draws this witness.
 #[test]
 fn four_nested_back_edges_climb_four_lanes_on_one_side() {
     let model = model(FOUR_LANES);

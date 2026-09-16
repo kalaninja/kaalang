@@ -242,10 +242,8 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     )
 }
 
-/// The domain of the independent comparison: every flat body of two,
-/// three and four routes over `repeat/break/finish`, and every three-route outer
-/// body holding one inner cycle over every two-route inner body of
-/// `repeat/break/propagate/finish`.
+/// Exhaustive comparison domain: flat bodies of 2–4 `repeat/break/finish` routes,
+/// and three-route outer bodies with two-route `repeat/break/propagate/finish` cycles.
 #[must_use]
 pub fn declared_domain() -> Vec<String> {
     let mut cases = flat_bodies(2..=4);

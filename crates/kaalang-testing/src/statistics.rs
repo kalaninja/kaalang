@@ -1,16 +1,16 @@
-//! How many runs a budget samples, and the order statistic it is stated over.
+//! Sampling and summary statistics shared by performance budgets.
 
 use std::time::Duration;
 
 /// How many timed passes a budget samples, past its warm-up.
 pub const SAMPLES: usize = 9;
 
-/// The nearest-rank percentile: the smallest sample at or above `percent` of
-/// the set. `percentile(.., 100)` is the slowest sample.
+/// Nearest-rank percentile for `percent` in `0..=100`; zero selects the minimum.
 ///
 /// # Panics
 ///
-/// Panics when there are no samples.
+/// Panics when there are no samples. Percentages above 100 may overflow or
+/// index past the samples.
 #[must_use]
 pub fn percentile(samples: &[Duration], percent: usize) -> Duration {
     assert!(!samples.is_empty(), "a budget needs at least one sample");
@@ -20,9 +20,7 @@ pub fn percentile(samples: &[Duration], percent: usize) -> Duration {
     samples[rank - 1]
 }
 
-/// The sample every budget is asserted on. A high percentile would report the
-/// contention of running beside the rest of the suite; the median reports the
-/// work, and only a regression large enough to move it is worth a failed build.
+/// Budget statistic: the median reduces sensitivity to concurrent test load.
 ///
 /// # Panics
 ///
@@ -32,8 +30,7 @@ pub fn median(samples: &[Duration]) -> Duration {
     percentile(samples, 50)
 }
 
-/// The distribution behind a budget, to print beside its verdict. A p100
-/// several times the p50 means the machine was busy, not that something slowed.
+/// Formats p50, p75, and p100 to expose outliers alongside the budget verdict.
 ///
 /// # Panics
 ///

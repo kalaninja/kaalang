@@ -1,12 +1,6 @@
-//! Checks a arrangement against RFC 0002, independently of the search that
-//! produced it.
-//!
-//! The check reads only the arrangement and the topology. It rebuilds every
-//! route as an orthogonal polyline on the abstract grid the arrangement
-//! describes — one line per rank, one per lane of each rank gap — and holds the
-//! result to the same rules a renderer's final geometry must meet. A positive
-//! result is a witness that the arrangement conforms; it says nothing about
-//! whether another arrangement exists.
+//! Verifies a candidate independently of its search by rebuilding its routes
+//! on an abstract grid and checking RFC 0002. Rejecting a candidate says nothing
+//! about whether another arrangement exists.
 
 use crate::geometry::{
     Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
@@ -18,13 +12,9 @@ use crate::topology::{Connection, Destination, ExitId, Loop, NodeId, Source, Top
 
 use super::{Arrangement, RunLine, Side};
 
-/// The abstract grid a arrangement describes. Every rank gets a line of its
-/// own and every lane of the gap below it one more; every column gets a
-/// position of its own with room beside it for the back edge contours that climb
-/// between columns.
-///
-/// Gap lanes stay above the following occupied rank. Nodes and junctions use
-/// the same rank line, independently of their incoming routes.
+/// Abstract coordinates with separate lines for ranks and gap lanes, and space
+/// beside columns for contours. Gap lanes stay above the next occupied rank;
+/// nodes and junctions share rank lines regardless of their incoming routes.
 pub(super) struct Grid {
     step: i32,
     /// How many lanes each rank gap uses.
@@ -36,13 +26,8 @@ pub(super) struct Grid {
     scale: i32,
 }
 
-/// How many lanes one side of a column offers.
-///
-/// An iteration back edge climbs in the space beside a column, and the cycle
-/// boundary that encloses it stands one lane further out. Cycles nested to the
-/// same column stack that pair, so a chain of `n` of them reaches `2n`. This is
-/// a fact about the topology, not about any presentation's spacing: a renderer
-/// holds whatever this many lanes require.
+/// Two lanes per cycle on each side of a column: one for its back edge and one
+/// for its boundary. Nested cycles may stack all pairs beside one column.
 pub(super) fn contour_lanes(topology: &Topology) -> usize {
     2 * topology.loops.len()
 }
@@ -96,13 +81,8 @@ impl Grid {
         }
     }
 
-    /// The line one lane of one rank gap occupies, packed against the rank
-    /// below it.
-    ///
-    /// A gap outside the arrangement counts as holding this lane alone. Only
-    /// `coverage` rejects such a gap, and it runs first, so this decides
-    /// nothing for an arrangement the search produces; it keeps the check
-    /// reporting rather than panicking on one it never would.
+    /// Gap-lane position, packed against the next rank. Invalid gaps count as
+    /// one lane to avoid panicking; `coverage` rejects them before geometry checks.
     pub(super) fn lane(&self, gap: usize, lane: usize) -> i32 {
         let capture = i32::from(self.occupied.get(gap + 1).copied().unwrap_or(false));
         let lanes = self.lanes.get(gap).copied().unwrap_or(lane + 1);
@@ -265,7 +245,7 @@ pub(super) fn ends(topology: &Topology, index: usize) -> (Source, Destination) {
     (wire.source, wire.destination)
 }
 
-/// Reports the first rule a arrangement breaks, if any.
+/// Reports the first rule an arrangement breaks, if any.
 ///
 /// # Errors
 ///
@@ -284,12 +264,8 @@ pub(crate) fn arrangement(
     )
 }
 
-/// What the rules read from the flow and its topology alone.
-///
-/// Branch regions, their reachability closure and the cycle bodies do not
-/// depend on the ranks and columns a candidate proposes, and walking them is
-/// the most expensive part of a check. Compaction measures thousands of
-/// candidates against one topology, so it settles these once.
+/// Cached topology facts reused across compaction candidates: branch regions,
+/// reachability, and cycle bodies. None depends on candidate coordinates.
 pub(super) struct Shape {
     bodies: super::loop_block::Bodies,
     branchers: Vec<Brancher>,
@@ -359,17 +335,9 @@ impl Shape {
     }
 }
 
-/// The rules `placement` does not cover, over an arrangement that also draws
-/// every cycle boundary.
-///
-/// The two are a pair: compaction runs `placement` on a candidate before
-/// compressing it and this on the result, so between them every rule holds.
-///
-/// A construction places a cycle's completion below the whole body, which keeps
-/// it out of the boundary without ever measuring the rectangle. Compaction
-/// measures it: `loop_block::boundaries` reads the rectangle directly, so a
-/// completion beside the body may share its rows and rise. The two go together
-/// — the relaxed row rule is only sound because the boundary rule holds.
+/// Completes verification after `placement` and coordinate compression.
+/// Checks boundary rectangles so cycle completions may share body rows only
+/// when they remain outside the body.
 ///
 /// # Errors
 ///
@@ -383,12 +351,8 @@ pub(super) fn compacted(
     check(flow, topology, arrangement, shape, true)
 }
 
-/// The rules that read only ranks and columns, which a candidate satisfies or
-/// not whether or not its coordinates have been compressed.
-///
-/// Compression renumbers columns and lanes onto a dense range; it preserves
-/// every order and equality these two rules read. Compaction asks them first,
-/// so the candidates they refuse never pay for the compression or the geometry.
+/// Checks rank and column relations before compression and geometry.
+/// Compression preserves the order and equality these rules read.
 pub(super) fn placement(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -417,11 +381,7 @@ fn check(
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
-    // The relaxed row rule and the boundary rule go together: the rows a
-    // completion may share are exactly the ones the rectangle leaves it, so
-    // both hold or neither does. Sorting a candidate by ownership is cheaper
-    // than measuring every crossing in it, so this answers first and the
-    // geometry rules see fewer.
+    // Check boundary ownership before the more expensive crossing tests.
     if compacting {
         super::loop_block::boundaries(topology, arrangement, &grid, &lines, &shape.bodies)?;
     }
@@ -644,28 +604,10 @@ fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Resu
     Ok(())
 }
 
-/// A convergence group reserves the columns of everything its branches draw,
-/// and a sibling written after every member of it starts to their right (RFC
-/// 0002 §8).
-///
-/// This is the same comparison the deciding search's numbering records, vertex
-/// by vertex, over the same set: what the group draws and the sibling does not,
-/// which `Regions::reserved` derives from the topology, so this holds an
-/// arrangement to an order it did not choose. Reading a width the same search
-/// recorded would compare a value with itself.
-///
-/// A vertex two branches reach is a convergence and belongs to the area of the
-/// group that meets there; a vertex the sibling reaches too is common ground on
-/// both sides of the comparison, so `Regions::reserved` takes it out as
-/// `Regions::outside` takes it out of the branch. Leaving it in would make the
-/// rule unsatisfiable for the first branch, whose column RFC 0002 §8 fixes as
-/// the brancher's own.
-///
-/// Only a later sibling is held. An earlier sibling and one the group encloses
-/// are held to nothing — RFC 0003 §2.2 records the mirror-image restriction
-/// that was tried and the flow it refused — and neither are branches that never
-/// meet: RFC 0002 §8 reserves columns for a convergence group, not for every
-/// branch, so their subtrees may interleave.
+/// Checks later siblings against group reservations derived from topology,
+/// independently of the search's width arithmetic. Shared vertices are excluded
+/// on both sides. Earlier, enclosed, and nonconverging branches add no such
+/// constraint (RFC 0002 §8; RFC 0003 §2.2).
 fn reserved_columns(arrangement: &Arrangement, brancher: &Brancher) -> Result<(), String> {
     let column = |vertex: &Vertex| arrangement.column[vertex];
     for (group, branch, outside, reserved) in &brancher.reservations {

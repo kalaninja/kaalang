@@ -1,7 +1,6 @@
 use kaalang::kaalang;
 
-/// The corrected order for two selections: the first choice's builds merge into
-/// `value` before the second choice opens its own branches.
+/// The first choice's branches produce `value`, which merges before the second choice.
 #[kaalang]
 fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
     #[choice("Which build?")]

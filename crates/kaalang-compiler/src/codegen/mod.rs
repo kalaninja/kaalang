@@ -181,10 +181,7 @@ pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2
     }
 }
 
-/// Emits the Rust that runs one verified plan. The plan already proves every
-/// kaalang invariant, including the destination of every branch exit.
-/// Binds a block's outputs from its own body and continues along the selected
-/// order.
+/// Binds the block's outputs and emits its continuation.
 fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan) -> TokenStream2 {
     let continuation = self::flow(flow, next, bindings);
     let block = &flow.blocks[index];
@@ -218,6 +215,7 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
     }
 }
 
+/// Emits Rust from a verified plan, including its resolved branch-exit targets.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
         ExecutionPlan::Loop { index, body, next } => {
@@ -283,15 +281,8 @@ fn transfer_value(body: &Expr) -> Option<TokenStream2> {
     (!matches!(body, Expr::Tuple(tuple) if tuple.elems.is_empty())).then(|| block_body(body))
 }
 
-/// Emits block-local aliases for explicitly listed input wires.
-///
-/// Each alias reads the wire at the capture's own span. Rust owns move and
-/// borrow checking, so its diagnostics must name the block that took the value
-/// rather than the one that produced it.
-///
-/// A `persistent` capture is a cycle's: it binds the capture's own wire once,
-/// with the mutability its generated storage needs, and lives across
-/// iterations rather than in one block body.
+/// Binds explicit captures at their own spans for Rust's move/borrow diagnostics.
+/// Persistent cycle captures bind once and retain storage across iterations.
 pub(crate) fn input_bindings(
     inputs: &[Input],
     bindings: &Bindings,
@@ -329,27 +320,21 @@ pub(crate) fn input_bindings(
     quote!(#(#bindings)*)
 }
 
-/// Lowers one kaalang flow function to the Rust that runs it: the whole
-/// compilation `#[kaalang]` performs, above which the macro crate is only the
-/// token boundary. The returned function keeps the signature it was given and
-/// carries the emitted body.
+/// Compiles a kaalang flow to Rust, preserving its signature and replacing its body.
 ///
 /// # Errors
 ///
 /// Returns the same errors as [`crate::build`].
 pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
-    // Realizability is a language rule, so the diagram is decided even though
-    // the arrangement is discarded: a flow no diagram can draw is not a flow.
+    // Diagram realizability is required even when compilation discards the arrangement.
     let topology = crate::project(&analysis, BuildOptions::default());
     crate::construct(&analysis, &topology)?;
 
     let bindings = Bindings::new(&analysis);
     let parameters = parameters::emit(&function, &bindings);
     let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
-    // The flow lowers in place, so it keeps the scope the author wrote it in:
-    // `Self`, the surrounding generics, and the receiver all resolve as they do
-    // in any other body. A nested item would see none of them.
+    // Lower in place to preserve `Self`, enclosing generics, and receiver scope.
     *function.block = syn::parse2(quote!({
         #[allow(clippy::used_underscore_binding)]
         {

@@ -1,8 +1,4 @@
-//! Inspects the authored Rust expressions used as choice bodies.
-//!
-//! The module sits at the crate root rather than in one phase: parse validates
-//! these shapes and codegen in kaalang-macros splices them through the crate's
-//! public re-exports.
+//! Choice-body inspection shared by parsing and code generation.
 
 use syn::{Expr, ExprMatch, Stmt};
 

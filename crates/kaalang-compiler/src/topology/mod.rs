@@ -1,15 +1,6 @@
-//! Projects the analyzed flow into the diagram's visual topology: its nodes,
-//! exits, implicit junctions and connections, before any coordinate exists.
-//!
-//! RFC 0002 §7 defines the drawn connections as the union, over every possible
-//! execution, of the direct precedence between participating nodes. This module
-//! preserves the flow's dependencies and merges, reading its verified execution
-//! plan for the same source order codegen emits.
-//!
-//! Only structure lives here. A node owns its role, an exit owns the producer
-//! occurrences it provides, and a junction owns the merges that meet in it; the
-//! displayed strings are a presentation choice a consumer derives from the
-//! authored flow (RFC 0002 §6).
+//! Projects analyzed flows into nodes, exits, junctions, and connections.
+//! Connections combine each execution's direct precedence (RFC 0002 §7), using
+//! the verified plan's source order. Coordinates and captions belong to rendering.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -39,9 +30,8 @@ pub enum NodeId {
 }
 
 impl NodeId {
-    /// Authored position: start first, then every block followed by its own
-    /// cases. A derived ordering would put every case after every block, so the
-    /// order the layout visits nodes in is written out here instead.
+    /// Orders start first, then each block followed by its cases.
+    /// Derived enum order would put all cases after all blocks.
     const fn key(self) -> (usize, usize, usize) {
         match self {
             Self::Start => (0, 0, 0),
@@ -112,18 +102,14 @@ pub struct Connection {
     pub destination: Destination,
 }
 
-/// One node and the role that decides its shape. RFC 0002 §6 gives the capture
-/// list to the node rather than to an incoming connection, but the displayed
-/// list is derived from the authored block, not stored here.
+/// Node identity and visual role. Captions and captures are derived from the flow.
 #[derive(Clone)]
 pub struct Node {
     pub id: NodeId,
     pub kind: NodeKind,
 }
 
-/// One exit and the hand-over it owns: the producer occurrences newly provided
-/// here, whether or not any connection leaves. A consumer displays them as
-/// RFC 0002 §6 requires.
+/// Exit and newly provided producers, including those with no outgoing connection.
 #[derive(Clone)]
 pub struct Exit {
     pub id: ExitId,
@@ -131,14 +117,9 @@ pub struct Exit {
     pub provides: Vec<ProducerId>,
 }
 
-/// A wire merge, cycle entry, iteration tail, break, or cycle result. Junctions
-/// add no computational node or producer occurrence. A cycle result may share
-/// the wire merge that feeds its break; other structural junctions merge no wire.
-///
-/// Merged wires that the same alternatives provide, ordered behind the same
-/// branch-local work, converge at the same place, so they share one junction:
-/// drawing the meeting twice would repeat one convergence and force the two
-/// copies to cross.
+/// A merge or cycle/transfer boundary, with no computation or new producer.
+/// Merges with identical arrivals share one junction. A cycle result may reuse
+/// the merge feeding its break; other structural junctions merge no wires.
 #[derive(Clone, Default)]
 pub struct Junction {
     /// The `SemanticModel::merges` entries that meet here, in model order.
@@ -285,9 +266,7 @@ impl Topology {
     }
 }
 
-/// The analyzed parts the projection reads. `build` holds them before it can
-/// assemble a `SemanticModel`, so the projection takes them directly rather
-/// than through a model that does not exist yet.
+/// Analysis inputs available before a `SemanticModel` has been assembled.
 pub(crate) struct Analyzed<'a> {
     pub(crate) flow: &'a Flow,
     pub(crate) executions: &'a [Execution],
@@ -428,12 +407,8 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
 /// still label their outputs at their own exits, and no routes meet.
 fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
     let precedes = precedes(model);
-    // Two merges meet in one place when the same work arrives at both. What
-    // arrives is not the producer list: a producer that precedes another block
-    // waiting for the same merge reaches it through that block, so only the
-    // last blocks of `producers` and `before` are entered from. Once those
-    // coincide the two merges are one convergence point, and the wires that
-    // meet there fan out to their own consumers afterwards (RFC 0002 §7).
+    // Merge identity follows final arrivals, not all producers: earlier work
+    // reaches the junction through the last blocks in `producers` and `before`.
     let key = |merge: usize| {
         let merge = &model.merges[merge];
         // A brancher keeps the output it provides, so two merges taking
@@ -483,9 +458,7 @@ fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
     groups.into_iter().map(|(_, group)| group).collect()
 }
 
-/// Which blocks each block precedes, over every execution's capture dependencies
-/// and implicit block order. Used to tell which of a merge's antecedents actually arrive at
-/// it and which reach it through another.
+/// Transitive capture successors across executions, used to find final merge arrivals.
 fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
     let blocks = model.flow.blocks.len();
     let mut later = vec![BTreeSet::new(); blocks];
@@ -520,9 +493,7 @@ fn branch_exits(
     })
 }
 
-/// The only exit of a block that hands over every output it declares, in
-/// declaration order. It takes no branch: such a block scopes nothing per
-/// branch, so no output selects among exits here.
+/// A nonbranching exit handing over every output in declaration order.
 fn sequential_exit(index: usize, block: &Block) -> Exit {
     Exit {
         id: ExitId::of(NodeId::Block(index)),
@@ -713,13 +684,9 @@ fn connections(
     union.into_iter().collect()
 }
 
-/// The selected serial route before capture dependencies and merges are added.
-///
-/// Where the step just taken completes a merged wire's branch-local work, the
-/// route continues from that wire's junction rather than from the block's own
-/// exit: the alternatives rejoin there, and one connection carries on.
-/// Continuing from each producer instead would run the spine past the junction,
-/// leaving the merge a parallel path beside it that no lane order can separate.
+/// Serial route before capture edges are added. Completed branch-local work
+/// continues through its merge junction; bypassing it would create a parallel
+/// route that no lane order can separate.
 #[allow(clippy::too_many_arguments)] // All arguments are borrowed projection context.
 fn serial_connections(
     model: &Analyzed<'_>,
@@ -828,11 +795,9 @@ fn serial_connections(
     direct
 }
 
-/// The junction the route may continue from after `block`: one this execution
-/// reaches, whose last producer or branch-local block has just finished. An
-/// exit feeding several junctions continues from the first, which is enough:
-/// the others keep their own producer connections either way. With no next
-/// block, a completed merge still precedes the iteration tail.
+/// First reachable merge completed by `block`, provided `next` owes it no work.
+/// Other merges retain their producer edges; with no next block, this merge
+/// still precedes the iteration tail.
 #[allow(clippy::too_many_arguments)] // Mirrors the serial projection context plus both blocks.
 fn junction_after(
     model: &Analyzed<'_>,
@@ -917,19 +882,13 @@ fn vertices(nodes: &[Node], junctions: usize) -> Vec<Vertex> {
         .map(|node| Vertex::Node(node.id))
         .chain((0..junctions).map(Vertex::Junction))
         .collect();
-    // `reduce` looks a vertex up by binary search, which is unspecified rather
-    // than loud on an unsorted list, so every projection must push its nodes in
-    // `NodeId::key` order.
+    // `reduce` uses binary search and requires `NodeId::key` order.
     debug_assert!(vertices.is_sorted(), "vertices must stay sorted");
     vertices
 }
 
-/// Drops every connection represented through a chain of other connections.
-///
-/// One connection is redundant exactly when a chain of two or more reaches its
-/// destination from its source, so the successors of each vertex are collected
-/// once, deepest first, as bit rows. Every vertex is visited once and every
-/// union costs one word per sixty-four vertices.
+/// Transitive reduction using successor bitsets built deepest first.
+/// Removes an edge only when a path of two or more edges reaches its destination.
 fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection> {
     let count = vertices.len();
     let index = |vertex: Vertex| {
@@ -997,10 +956,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .collect()
 }
 
-/// The exit at which one producer occurrence appears: the start node for a flow
-/// input, and otherwise the exit that carries that output. A branch output only
-/// ever produces on its own branch, so its position is the selected one and
-/// needs no lookup.
+/// Visual source of a producer: start, a cycle boundary, or a block's output exit.
 fn source(
     model: &Analyzed<'_>,
     producer: ProducerId,
@@ -1031,9 +987,7 @@ fn source(
     }
 }
 
-/// The exit the selected route leaves `block` by. A brancher that takes part
-/// has recorded the branch it took; every other kind has one exit, which carries
-/// every output it provides.
+/// Source of the selected branch output, or the block's sole output exit.
 fn selected_exit(
     model: &Analyzed<'_>,
     execution: &Execution,
@@ -1069,9 +1023,7 @@ fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
     })
 }
 
-/// One cycle that repeats: its header block, the entry junction every arrival
-/// reaches, the iteration tail its repeating routes meet at, and the contour
-/// RFC 0002 §8 prefers for its iteration back edge.
+/// Repeating cycle with entry and tail junctions and a preferred back-edge side.
 #[derive(Clone, Copy)]
 pub struct Loop {
     pub header: usize,

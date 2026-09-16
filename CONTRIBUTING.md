@@ -16,6 +16,9 @@ Rust documentation, diagnostics, test names, and test fixtures use the same
 terminology as the relevant RFC. Do not duplicate the language contract in other
 documentation.
 
+Keep comments and Rust documentation concise: explain contracts and non-obvious
+decisions, avoid restating code, and link to RFCs for detailed rationale.
+
 Always write the language name as `kaalang`, including at the start of a
 sentence and in headings.
 

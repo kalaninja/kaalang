@@ -1,16 +1,5 @@
-//! Assigns a rank and a column to every node and junction.
-//!
-//! RFC 0002 §8 runs execution time from top to bottom or along a side exit into
-//! a merge on the same row, so a rank comes from connection reachability,
-//! including the chosen serial order and the placement-only precedence a break
-//! carries out of the region it leaves.
-//! Branches run left to right in authored order, and a brancher reserves the
-//! whole footprint its branches occupy, so that nested branchers and the
-//! convergence groups they share compose without corrupting each other.
-//!
-//! Exact ranks are a presentation choice (RFC 0002 §8), so a vertex takes the
-//! earliest rank its predecessors allow unless the search asks for it to sink
-//! below everything precedence leaves free.
+//! Assigns ranks from precedence and columns from branch footprints (RFC 0002 §8).
+//! Vertices take their earliest permitted rank unless the search asks to sink them.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -58,17 +47,9 @@ pub(super) fn place(
     })
 }
 
-/// Longest-path ranking: a node sits below every predecessor. A wire merge or a
-/// sole iteration tail may share its side producer's row; other junctions sit
-/// below their producers and every block ordered before them. Start owns row 0; every
-/// computational node is reached from it in the chosen serial order.
-///
-/// Dependency depth is only the earliest row an item may take. Two further
-/// passes lower items from there: the tails the caller asks to sink go below
-/// everything precedence leaves free, and `separate_junctions` gives every
-/// iteration tail a row to itself. Routing never asks for a row: it works with
-/// the rows it is given, and reports a conflict instead when a gap cannot hold
-/// its runs.
+/// Longest-path ranks from start at row 0, allowing eligible side arrivals on
+/// the source row. Then sinks requested tails and gives each tail its own row.
+/// Routing uses these ranks unchanged and reports conflicts to the search.
 pub(super) fn rows(
     topology: &Topology,
     sunk: &BTreeSet<Vertex>,
@@ -136,14 +117,8 @@ pub(super) fn rows(
     Ok(rows)
 }
 
-/// Gives every iteration tail a rank of its own. A back edge leaves its tail
-/// horizontally, across every column between the tail and its contour, so
-/// anything else on that rank stands in the way. Cycle entries keep their ranks,
-/// because RFC 0002 §7 lets a cycle entry start alongside the body beside it and
-/// a back edge arrives at an entry from the column immediately outside that body.
-/// Splitting a rank only adds descent to forward connections and preserves
-/// their order. Renumbering here also closes the ranks the longest path
-/// left unused, so nothing below has to compact them.
+/// Gives each tail its own rank to clear the horizontal back-edge departure.
+/// Entries keep their ranks. Renumbering preserves forward order and removes gaps.
 fn separate_junctions(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
     let alone = topology
         .loops
@@ -233,10 +208,7 @@ fn columns(
         .iter()
         .map(|(vertex, &column)| (rows[vertex], column))
         .collect::<BTreeSet<_>>();
-    // Deepest junction first. Two merges feeding one chain both want its
-    // column, and the deeper one is the one already beside what it feeds;
-    // letting the shallower one move keeps their producers' runs from having to
-    // swap sides, which no lane order and no extra row can undo.
+    // Place deeper junctions first so chained merges do not swap their arrival sides.
     let mut junctions = (0..topology.junctions.len())
         .map(|junction| (rows[&Vertex::Junction(junction)], junction))
         .collect::<Vec<_>>();
@@ -397,13 +369,8 @@ pub(super) fn footprints(topology: &Topology, flow: &Flow) -> Footprints {
     footprints
 }
 
-/// The columns a set of vertices needs: one, plus whatever the branchers it
-/// leads with claim beyond their own single column.
-///
-/// Only a brancher nested inside another brancher of the set is skipped, since
-/// the enclosing footprint already covers it. A brancher merely reached through
-/// ordinary blocks still claims its own columns; overlooking that reserves one
-/// column for a whole nested branch tree.
+/// One column plus the extra widths of branchers not covered by an enclosing
+/// footprint. Branchers reached through ordinary blocks still count.
 fn width_of(
     set: &BTreeSet<Vertex>,
     reachable: &BTreeMap<Vertex, BTreeSet<Vertex>>,

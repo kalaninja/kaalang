@@ -1,5 +1,4 @@
-//! The authored and resolved flow models, the recorded executions and
-//! convergence groups and wire merges, and the compiler's execution plan.
+//! Flow models, execution summaries, convergence, and lowering plans.
 
 use std::collections::BTreeMap;
 
@@ -11,12 +10,7 @@ use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 use crate::construct::Arrangement;
 use crate::topology::Topology;
 
-/// Everything the analysis phases derive from one flow function, before any
-/// diagram exists: the resolved blocks and wires, every finite execution
-/// summary, the convergence groups and wire merges, and the lowering plan.
-///
-/// A caller that only needs diagnostics stops here, without paying for the
-/// arrangement search that [`crate::construct`] runs.
+/// Semantic analysis and lowering plan, before diagram construction.
 pub struct Analysis {
     /// The authored flow function name.
     pub name: Ident,
@@ -28,8 +22,7 @@ pub struct Analysis {
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
-    /// Every structural execution summary, ordered by branch selections, then blocks,
-    /// then capture dependencies and implicit block order.
+    /// Structural summaries in [`Execution`]'s derived order.
     pub executions: Vec<Execution>,
     /// Every continuation group, ordered by branching block, then branch list.
     pub convergence_groups: Vec<ConvergenceGroup>,
@@ -37,8 +30,7 @@ pub struct Analysis {
     pub merges: Vec<WireMerge>,
 }
 
-/// A validated kaalang flow: its blocks, finite structural execution summaries, its
-/// convergence groups and wire merges, and the verified plan that lowers it.
+/// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
 pub struct SemanticModel {
     /// The authored flow function name.
     pub name: Ident,
@@ -50,27 +42,21 @@ pub struct SemanticModel {
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
-    /// Every structural execution summary, ordered by branch selections, then blocks,
-    /// then capture dependencies and implicit block order.
+    /// Structural summaries in [`Execution`]'s derived order.
     pub executions: Vec<Execution>,
     /// Every continuation group, ordered by branching block, then branch list.
     pub convergence_groups: Vec<ConvergenceGroup>,
     /// Implicit junctions of equally named alternative outputs, before captures.
     pub merges: Vec<WireMerge>,
-    /// The diagram's structural topology: its nodes, exits, junctions, and the
-    /// connections RFC 0002 §7 draws between them.
+    /// Structural topology defined by RFC 0002 §7.
     pub topology: Topology,
-    /// The checked arrangement of that topology. Every accepted flow has one:
-    /// `build` decides realizability, so a renderer realizes this rather than
-    /// looking for an arrangement of its own.
+    /// Verified arrangement for the renderer to realize.
     pub arrangement: Arrangement,
 }
 
 impl SemanticModel {
-    /// Removes redundant bends and spacing from cycles and long route detours.
-    /// Every replacement passes the complete arrangement verifier. Failure to
-    /// simplify keeps the existing witness; it never rejects the flow.
-    /// This optional presentation work is not part of macro compilation.
+    /// Simplifies cycle routes and long detours, verifying each replacement.
+    /// Failed candidates leave the arrangement intact. Macro compilation skips this.
     pub fn compact_arrangement(&mut self) {
         if !self.topology.loops.is_empty()
             || self
@@ -87,9 +73,7 @@ impl SemanticModel {
         }
     }
 
-    /// The vertices one loop's body draws, so a presentation measures the same
-    /// body the construction did when it placed the loop's return
-    /// (RFC 0002 §8).
+    /// Body vertices used by construction and rendering for loop bounds (RFC 0002 §8).
     #[must_use]
     pub fn body_vertices(
         &self,
@@ -167,14 +151,8 @@ impl Block {
         binding
     }
 
-    /// The authored path of the function a call runs, as one line.
-    ///
-    /// Every token of the path in source order, separated only where running
-    /// two together would change what they say. The whitespace and comments an
-    /// author may write inside a path are not tokens and do not survive, so
-    /// `math:: /* note */ twice` reads `math::twice`, and punctuation does not
-    /// get its authored spacing back: `Fn(u32) -> u32` inside a qualified self
-    /// type reads `Fn(u32)->u32`.
+    /// The callee path with normalized spacing and no comments, e.g.
+    /// `math:: /* note */ twice` becomes `math::twice`.
     ///
     /// # Panics
     ///
@@ -206,8 +184,6 @@ fn write_tokens(text: &mut String, tokens: TokenStream) {
                 let (open, close) = delimiters(group.delimiter());
                 text.push_str(open);
                 write_tokens(text, group.stream());
-                // A closing delimiter never needs separating, so a trailing
-                // comma inside a group stays tight against it.
                 text.push_str(close);
             }
             TokenTree::Punct(punct) => text.push(punct.as_char()),
@@ -216,12 +192,7 @@ fn write_tokens(text: &mut String, tokens: TokenStream) {
     }
 }
 
-/// Whether one token has to be separated from what is written so far.
-///
-/// A comma always separates what follows it. A word runs into another word, or
-/// into the close of a type that word wrapped, as in `Vec<u8> as`. The `as` of
-/// a qualified self type separates on both sides, so the trait path may itself
-/// begin with `::`.
+/// Separates comma-delimited items and adjacent words, including `Vec<u8> as ::Trait`.
 fn needs_space(text: &str, token: &TokenTree) -> bool {
     if text.ends_with(',') {
         return true;
@@ -235,8 +206,7 @@ fn word_end(character: char) -> bool {
     character.is_alphanumeric() || matches!(character, '_' | '>' | ']' | ')')
 }
 
-/// The characters a group is written with. An invisible group delimits a
-/// `macro_rules!` substitution and is written with nothing at all.
+/// Delimiters; invisible macro substitution groups add no characters.
 const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
     match delimiter {
         Delimiter::Parenthesis => ("(", ")"),
@@ -304,9 +274,7 @@ impl Flow {
         })
     }
 
-    /// Whether one cycle has completed in this finite execution. A cycle's
-    /// header participates on every entered iteration, but its result exists
-    /// only after a matching local break.
+    /// A cycle produces its result only when the execution reaches a matching break.
     #[must_use]
     pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
         execution.blocks.iter().any(|&block| {
@@ -404,20 +372,15 @@ pub struct BranchSelection {
     pub branch: usize,
 }
 
-/// One structural execution summary: the authored blocks that participate,
-/// the branches it selects, its capture dependencies, and its finite outcome.
-/// Start participates implicitly; the end boundary is reachable for a `Return`
-/// outcome. Each cycle is represented by zero or one iteration. Source order is the order the
-/// blocks run in, so a summary records which of them take part rather than a
-/// schedule; every vector is sorted and deduplicated. Field order is the derived
-/// sort order: branch selections first.
+/// A finite execution summary with at most one iteration per cycle.
+/// Start is implicit; `Return` reaches end. Blocks run in source order.
+/// All vectors are sorted and deduplicated; field order defines the derived order.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Cycles whose represented iteration reaches its body boundary. Each execution
-    /// summarizes at most one iteration per cycle.
+    /// Cycles whose represented iteration reaches its body boundary.
     pub repeats: Vec<usize>,
     /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
@@ -437,8 +400,7 @@ impl Execution {
         self.blocks.binary_search(&block).is_ok()
     }
 
-    /// The output a question or choice selected here, or `None` for a block
-    /// that does not branch.
+    /// The selected output, or `None` if the block does not branch or participate.
     #[must_use]
     pub fn selected(&self, block: usize) -> Option<usize> {
         self.branches
@@ -459,11 +421,8 @@ pub struct ConvergenceGroup {
     /// The shared continuation: the authored blocks whose branch set is
     /// exactly `branches`, in authored order. The end block never belongs.
     pub continuation: Vec<usize>,
-    /// The first consumers of the shared continuation, not merge points.
-    /// These are the blocks that no other continuation block precedes in
-    /// any execution, including executions in which the branching block does
-    /// not run. In authored order and never empty: nothing in the continuation
-    /// precedes its first block.
+    /// Consumers with no continuation predecessor in any execution, including
+    /// those without this brancher. In authored order and never empty.
     pub entries: Vec<usize>,
 }
 
@@ -474,20 +433,15 @@ pub struct ConvergenceGroup {
 pub struct WireMerge {
     pub wire: Ident,
     pub producers: Vec<ProducerId>,
-    /// Every block whose execution the producer-selecting question or choice
-    /// decides, the producers included. Each must finish before the merge in
-    /// any execution where it participates, so no branch-local value outlives
-    /// its own branch.
+    /// Branch-local blocks, including producers, that must finish before the merge.
     pub before: Vec<usize>,
     /// Its consumers, in source order. Every block in `before` is declared
     /// above every one of them.
     pub after: Vec<usize>,
 }
 
-/// A verified lowering plan: one permitted serial order of the flow. Every
-/// kaalang invariant already holds, so consumers do not need to walk the
-/// authored flow a second time. Its joins are lowering structure and say
-/// nothing about semantic convergence groups.
+/// Verified serial lowering plan. Its joins are distinct from semantic
+/// [`ConvergenceGroup`] records.
 pub enum ExecutionPlan {
     Loop {
         index: usize,
@@ -546,14 +500,10 @@ pub struct Branch {
     pub plan: Box<ExecutionPlan>,
 }
 
-/// Logical wire bindings and the continuation shared by the branches that
-/// yield into one join. A join is lowering structure; the semantic
-/// `ConvergenceGroup` records are derived from the executions instead.
+/// Wire bindings and continuation shared by branches yielding into a lowering join.
 pub struct Join {
-    /// The output positions with at least one yield into this join, in
-    /// authored order. Another yield of the same position may pass this join
-    /// toward an enclosing one, so codegen routes by each yield's target; the
-    /// renderer and the plan replay read this list.
+    /// Output positions yielding here, in authored order. The same position may
+    /// also yield to an outer join; codegen must use each yield's target.
     pub branches: Vec<usize>,
     /// Logical wire names, ordered by their first authored producer.
     pub wires: Vec<Ident>,

@@ -23,8 +23,7 @@ pub use model::{
     ProducerId, QuestionBranch, SemanticModel, WireMerge,
 };
 
-/// Diagram projection options. Analysis and expanded-topology validation are
-/// identical for both views.
+/// Diagram options; both views validate the expanded topology.
 #[derive(Clone, Copy, Default)]
 pub struct BuildOptions {
     pub collapse_loops: bool,
@@ -34,22 +33,13 @@ pub struct BuildOptions {
 ///
 /// # Errors
 ///
-/// Returns the first violation found while parsing block syntax, resolving
-/// wires to their producers, walking every possible execution, or deriving
-/// convergence groups, spanned at the offending token so callers can report it
-/// against the authored source.
-///
-/// Returns an impossible-topology error, at the block it concerns, when the
-/// flow's required connections have no conforming diagram under RFC 0002, and
-/// an internal construction error when the independent check rejects the
-/// arrangement the search returned.
+/// Returns a source-spanned error from [`analyze()`] or [`construct()`].
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     build_with_options(function, BuildOptions::default())
 }
 
-/// Builds a validated semantic model in the requested loop presentation.
-/// Expanded topology is always constructed first, so collapsing cannot hide an
-/// invalid cycle body or an unrealizable expanded diagram.
+/// Builds a validated model with the requested loop presentation.
+/// Always validates the expanded diagram before collapsing loops.
 ///
 /// # Errors
 ///
@@ -95,13 +85,8 @@ pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<Se
     })
 }
 
-/// Collects the functions carrying a `#[kaalang]` attribute: the free ones and
-/// the associated ones, whose signatures a diagram reads the same way. A trait
-/// method declares a flow through its default body, so one without declares
-/// nothing. Callers that start from source use this to find the flows.
-///
-/// The attribute is named here rather than in `kaalang-macros`, which defines
-/// it: a `proc-macro` crate exports nothing but its macros.
+/// Collects `#[kaalang]` functions and methods from these items.
+/// Includes trait methods with default bodies; does not recurse into modules.
 #[must_use]
 pub fn flows(items: &[syn::Item]) -> Vec<ItemFn> {
     items
@@ -147,16 +132,13 @@ fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
         .any(|attribute| attribute.path().is_ident("kaalang"))
 }
 
-/// Parses one flow function, resolves its wires, walks every execution it can
-/// take, and derives the plan that lowers it. The first stage of [`build`]: it
-/// decides whether the flow is a valid program, not whether it can be drawn.
+/// Parses and validates a flow and builds its lowering plan, without checking
+/// diagram realizability.
 ///
 /// # Errors
 ///
-/// Returns the first violation found while parsing block syntax, resolving
-/// wires to their producers, walking every possible execution, or deriving
-/// convergence groups, spanned at the offending token so callers can report it
-/// against the authored source.
+/// Returns the first syntax, wire, execution, or convergence error at its
+/// source span.
 pub fn analyze(function: &ItemFn) -> Result<Analysis> {
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
@@ -176,11 +158,8 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
     })
 }
 
-/// Projects an analyzed flow onto the structural topology RFC 0002 §7 draws:
-/// its nodes, exits, junctions, and the connections between them.
-///
-/// Projection is total. A topology it returns may still have no conforming
-/// arrangement, which is what [`construct`] decides.
+/// Projects an analyzed flow onto the topology defined by RFC 0002 §7.
+/// Projection is total; [`construct()`] checks whether the topology can be drawn.
 #[must_use]
 pub fn project(analysis: &Analysis, options: BuildOptions) -> topology::Topology {
     topology::project(
@@ -199,10 +178,8 @@ pub fn project(analysis: &Analysis, options: BuildOptions) -> topology::Topology
 ///
 /// # Errors
 ///
-/// Returns an impossible-topology error, at the block it concerns, when the
-/// flow's required connections have no conforming diagram under RFC 0002, and
-/// an internal construction error when the independent check rejects the
-/// arrangement the search returned.
+/// Returns a source-spanned error if no RFC 0002 arrangement exists, or an
+/// internal error for inconsistent projection or failed sweep verification.
 pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<Arrangement> {
     construct::construct(&analysis.flow, &analysis.merges, topology)
 }

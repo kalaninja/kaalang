@@ -1,10 +1,5 @@
-//! Orthogonal segment geometry: the crossing and overlap rules of RFC 0002 §8
-//! as pure predicates over points.
-//!
-//! Both checks of the pipeline read them — the model's, over the abstract grid
-//! a construction describes, and the renderer's, over the final pixels — so one
-//! definition decides what counts as a crossing for both. A point's `y` grows
-//! downward in each of them.
+//! RFC 0002 §8 geometry predicates shared by abstract-grid and pixel verification.
+//! Coordinates use downward-growing `y`.
 
 /// One point of an orthogonal plane.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -151,8 +146,7 @@ pub fn straighten(points: Vec<Point>) -> Vec<Point> {
 /// than horizontally. An incoming side route must not turn down over the
 /// continuation its junction's outgoing connection owns (RFC 0002 §8).
 ///
-/// A route of fewer than two points turns nowhere: the first test finds no
-/// segment, and `&&` stops before the arrival is read.
+/// Returns false for fewer than two points.
 #[must_use]
 pub fn turns_downward(points: &[Point]) -> bool {
     points

@@ -4,11 +4,9 @@ use super::{Arrangement, Run, RunLine, Side, sweep::compress, verify};
 use crate::model::Flow;
 use crate::topology::{Topology, Vertex};
 
-/// Every replacement passes the complete verifier after normalization and keeps
-/// back edges outside nested body envelopes. A failed candidate leaves the
-/// original witness available. Ranks only rise. With ranks fixed, contours only
-/// approach their bodies, and coordinates,
-/// lanes and runs only disappear; these finite measures make the iteration terminate.
+/// Verifies each normalized replacement; failure preserves the existing witness.
+/// Terminates as ranks rise, then contours approach their bodies and coordinates,
+/// lanes, and runs disappear.
 ///
 /// ponytail: local simplifications, not a global minimum of bends or area;
 /// extend the candidates only for a concrete remaining readability defect.
@@ -306,13 +304,7 @@ mod tests {
         );
     }
 
-    /// A cycle's completion stands beside the body, in the rows the body spans.
-    ///
-    /// While a completion was ordered below the whole body, no diagram could
-    /// draw this: the action after an inner cycle waited out its height, and so
-    /// did the wire merge that ends a flow. RFC 0002 §8 asks only that the
-    /// boundary stay clear of what the cycle does not own, so a completion in a
-    /// column the body does not occupy may share its rows.
+    /// A completion outside the cycle boundary may share its body's rows (RFC 0002 §8).
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for (source, name) in [

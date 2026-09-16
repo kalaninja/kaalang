@@ -20,9 +20,7 @@ fn advance(character: char) -> i32 {
     }
 }
 
-/// Estimated rendered width of one grapheme cluster. A cluster draws as a
-/// single glyph however many code points spell it, so its base character
-/// carries the estimate and the marks joined to it add nothing.
+/// Estimates a grapheme cluster from its base character; joined marks add no width.
 fn cluster_advance(cluster: &str) -> i32 {
     advance(
         cluster
@@ -56,12 +54,8 @@ fn fitting_count(clusters: &[&str], budget: i32, font_size: i32) -> usize {
     clusters.len()
 }
 
-/// Breaks a label into lines that fit `budget` pixels at `font_size`, without
-/// changing the authored text. A line breaks at the last space that fits, or
-/// between grapheme clusters when no space does, so a word too long for the
-/// budget is split rather than left to run outside its node. An authored line
-/// break starts a new line and belongs to none of them, so concatenating the
-/// result reproduces only a label that had no line breaks of its own.
+/// Wraps at the last fitting space, or between grapheme clusters for long words.
+/// Preserves text except newline separators; an oversized cluster stays intact.
 pub(super) fn wrap_text(text: &str, budget: i32, font_size: i32) -> Vec<String> {
     let mut lines = Vec::new();
     for paragraph in text.split('\n') {
@@ -98,9 +92,7 @@ mod tests {
     use super::{text_width, wrap_text};
     use crate::layout::{LABEL_FONT, NODE_LABEL_WIDTH};
 
-    /// A word with no break opportunity is split rather than left to run
-    /// outside its node, but never inside a grapheme cluster: a cluster draws
-    /// as one glyph, and splitting it would render different text.
+    /// Long words split only at grapheme boundaries, even below one cluster's width.
     #[test]
     fn wrapping_splits_between_graphemes_and_never_inside_one() {
         let word = "драконоподобный";

@@ -1,8 +1,7 @@
 use kaalang::kaalang;
 
-/// The other correction: each branch transforms the value itself, so the string
-/// moves only on the selected path and the two `end` outputs merge before the
-/// structural return.
+/// Each branch transforms the string on its selected path; the `end` outputs
+/// merge before the structural return.
 #[kaalang]
 fn branch_log_in_each_branch(condition: bool, value: String) -> usize {
     #[question("Log the value?")]

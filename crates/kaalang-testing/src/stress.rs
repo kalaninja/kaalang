@@ -1,24 +1,16 @@
-//! Generated flow shapes the fixture corpus does not reach: deep loop nesting,
-//! a few hundred blocks, and branching that multiplies the finite executions.
-//!
-//! These exist to stress the decision and the geometry above it, so some of
-//! them are refused on purpose. A generator returning a flow no rule rejects
-//! would be the defect.
+//! Stress shapes beyond fixture coverage: deep loops, large flows, and branching.
+//! Includes deliberately impossible topologies to exercise rejection paths.
 
 use std::fmt::Write as _;
 
 use syn::ItemFn;
 
-/// The flow one of these sources declares.
-///
-/// The generators hand back source rather than a parsed function because the
-/// renderer needs the text: it slices node captions out of it by span. Callers
-/// that want the function parse it here.
+/// Parses a generated flow. Generators return source because rendering needs
+/// the original text for span-based captions.
 ///
 /// # Panics
 ///
-/// Panics when the generated source does not parse, which is a defect in the
-/// generator rather than in what it is meant to stress.
+/// Panics when the generated source does not parse or declares no kaalang flow.
 #[must_use]
 pub fn flow(source: &str) -> ItemFn {
     let file = syn::parse_file(source).expect("the generated flow parses");
@@ -27,10 +19,8 @@ pub fn flow(source: &str) -> ItemFn {
         .expect("the generated source declares a flow")
 }
 
-/// A flow with `loops` nested loops, each attached to its own question's
-/// continuing answer and left by that question's other answer, followed by
-/// `actions` pairs of straight-line blocks. An empty deepest tail makes the
-/// enclosing tails return directly from side exits.
+/// Nested question-controlled cycles followed by `actions` pairs of serial blocks.
+/// `empty_tail` omits the deepest action, leaving an empty repeating branch.
 ///
 /// # Panics
 ///

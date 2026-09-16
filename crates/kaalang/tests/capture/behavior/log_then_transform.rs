@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
-/// A borrow above a move. Swapping the two blocks would move the string before
-/// the borrow, which Rust rejects; kaalang itself imposes no order between them.
+/// Source order places the borrow before the move. Swapping them makes Rust
+/// reject the borrow of the moved string.
 #[kaalang]
 fn log_then_transform(value: String) -> usize {
     #[action("Log the value.")]

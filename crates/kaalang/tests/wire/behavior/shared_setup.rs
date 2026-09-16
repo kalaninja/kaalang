@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
-/// The setup precedes the question implicitly because its selected actions
-/// borrow the setup wire. The question itself captures only `condition`.
+/// Shared setup runs before the question; both branches borrow its output.
+/// The question itself captures only `condition`.
 #[kaalang]
 fn shared_setup(condition: bool) -> u32 {
     #[action("Prepare the shared setup.")]

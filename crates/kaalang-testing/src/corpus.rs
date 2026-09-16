@@ -1,16 +1,12 @@
-//! Every `#[kaalang]` function the behavior and gallery fixtures declare, read
-//! from `crates/kaalang/tests`.
-//!
-//! Those fixtures are executable examples with a reviewed diagram each, so the
-//! corpus grows with the language instead of being kept in step by hand.
+//! Loads behavior and gallery flows from `crates/kaalang/tests`, keeping the
+//! performance corpus in sync with executable examples.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use syn::ItemFn;
 
-/// Every fixture source file and its text, ordered by path. The renderer starts
-/// from source, so the text is part of the corpus and not just the flows.
+/// Fixture paths and source text in path order.
 ///
 /// # Panics
 ///

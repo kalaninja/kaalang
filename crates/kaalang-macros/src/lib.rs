@@ -1,8 +1,4 @@
-//! kaalang procedural macro entry point.
-//!
-//! The compilation below the token boundary lives in `kaalang-compiler`: a
-//! `proc-macro` crate exports nothing but its macros, so nothing kept here
-//! could be called or measured from another crate.
+//! kaalang procedural macro entry point; compilation lives in `kaalang-compiler`.
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;

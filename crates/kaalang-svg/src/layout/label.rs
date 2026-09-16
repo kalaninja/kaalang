@@ -1,13 +1,5 @@
-//! Places the wire labels: how much room a pair of them needs, how wide and
-//! tall one is once wrapped, and where each is drawn.
-//!
-//! RFC 0002 §6 gives a hand-over to the exit that provides it and a capture to
-//! the node that receives it, so each is drawn once however many connections
-//! leave or arrive. The two ends of one connection share a single label only
-//! when that connection is alone at both of them and the displayed lists match.
-//! That shared label uses the capture position beside the receiving node.
-//! Identical alternative hand-overs share a label at their merge; an identical
-//! sole consumer may share that label as well.
+//! Measures and places wire labels under RFC 0002 §6. Shared connection labels
+//! use the capture position; identical alternatives share their merge's label.
 
 use std::collections::BTreeSet;
 
@@ -341,17 +333,9 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
     )
 }
 
-/// Reports the first label that leaves the canvas or reaches into a node.
-///
-/// RFC 0002 §8 keeps every standalone label inside the diagram and clear of the
-/// nodes. `route::verify` holds the connections to their half of that rule;
-/// this holds the labels to theirs, on the same emitted geometry.
-///
-/// A transformation is gated on `clearance` instead, which is the half no later
-/// step repairs. The other two are repaired: a back edge crossing a label is what
-/// `clear_labels` steps the rail out of, and a label left of the origin is what
-/// `indent` slides the drawing over for. Rejecting a compaction for either
-/// would refuse geometry that is about to be put right.
+/// Checks final labels against the canvas, nodes, panel, and back edges.
+/// Intermediate transformations use `clearance`: later steps can still move
+/// rails away from labels and translate the scene inside the canvas.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     clearance(scene)
         .or_else(|| {
@@ -364,10 +348,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         .or_else(|| {
             scene.labels.iter().find_map(|label| {
                 let rect = label_rect(label);
-                // A back edge climbs beside a body it was placed clear of, not clear
-                // of the labels that body hangs. Nothing else compares the two:
-                // the climb is not a route with a label of its own, so the
-                // crossing check in `route` never brings them together.
+                // Route verification does not compare back edges with standalone labels.
                 scene
                     .connections
                     .iter()
@@ -383,13 +364,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         })
 }
 
-/// The half of the label contract no later step repairs: a label stays clear of
-/// every node and of the parameter panel.
-///
-/// Nothing moves a label off a node afterwards — `clear_labels` steps rails,
-/// not labels, and `indent` and `fit` move everything together — so this is
-/// what a transformation has to be held to, and the only half of the contract
-/// that means anything before the coordinates are settled.
+/// Checks label clearance from nodes and the parameter panel. Later rail moves
+/// and scene translations cannot repair these collisions.
 pub(super) fn clearance(scene: &Scene) -> Option<String> {
     for label in &scene.labels {
         let rect = label_rect(label);

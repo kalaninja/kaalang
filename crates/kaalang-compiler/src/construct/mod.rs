@@ -1,43 +1,13 @@
-//! Constructs one conforming arrangement of a flow's visual topology, and
-//! checks it independently of the search that found it.
+//! Constructs and independently verifies an arrangement under RFC 0002 §8.
 //!
-//! RFC 0002 §8 leaves exact ranks and routing space to a presentation but fixes
-//! branch order, the column a shared continuation uses, crossing-free
-//! orthogonal routing, and the contour of an iteration back edge. `build` asks
-//! for an arrangement after semantic validation and carries it with the model,
-//! so a flow whose topology has no conforming diagram is rejected there.
+//! `preferred` seeks readable diagrams by varying sunk tails, contour sides,
+//! and corridor shapes. Conflicts guide a finite search with no repeated states
+//! or resource cutoff; all other placement and routing choices are derived.
+//! If it exhausts its candidates or verification fails, `sweep` decides
+//! realizability. Only sweep exhaustion proves the topology impossible.
 //!
-//! # Two searches
-//!
-//! `preferred` looks only among the arrangements shaped the way RFC 0002 §8
-//! asks for. Everything it may choose is finite and named here:
-//!
-//! - which iteration tails sink below every vertex precedence leaves free
-//!   (`2^loops` subsets),
-//! - which contour each iteration back edge takes (`2^loops` assignments),
-//! - which corridor shape each connection uses (`3^connections` assignments).
-//!
-//! Nothing else is a choice: ranks, columns, rails, lanes, and
-//! contour columns are derived from those. It follows the conflicts its own
-//! planner and contour search report: each failure names a connection to give
-//! more room, or a loop to move or flip, and only those assignments are tried
-//! next. No assignment is visited twice, so the walk ends inside a finite
-//! space; there is no attempt, time, or memory budget. Its first candidate is
-//! the one RFC 0002 §8 asks for: no tail sinks, every back edge takes the contour
-//! that section prefers, and every connection turns directly into its
-//! destination's column.
-//!
-//! That family is a shape preference, not the contract, so exhausting it
-//! proves nothing — and neither does one candidate of it failing the check.
-//! Either way [`sweep`] then decides, and its module documents both directions
-//! of why its sequences are the drawings. Only its exhaustion makes a flow
-//! invalid, and only its obstruction says why.
-//!
-//! Running the preferred search first is not an optimization. Its results are
-//! the arrangements worth drawing; the sweep's normal form spends a rank and a
-//! column on every vertex, which is always drawable and rarely pretty. A
-//! renderer can request a checked simplification through
-//! `SemanticModel::compact_arrangement` without adding that work to `build`.
+//! See RFC 0003 §2.1 for the complete search and §2.5 for presentation choices.
+//! Rendering may compact the verified arrangement; macro compilation skips this.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -74,13 +44,8 @@ fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     incoming.next().is_none().then_some(arrival)
 }
 
-/// The vertices one loop's body draws: its own blocks and their cases, its
-/// entry and tail and those of the loops nested in it, and the junctions a
-/// merge or a break inside it draws.
-///
-/// This is what an iteration back edge climbs clear of (RFC 0002 §8), and both the
-/// construction and a presentation measure the same set. The blocks alone
-/// would miss the junctions, which draw no node and still occupy a column.
+/// Body vertices shared by construction and rendering, including nested cycles
+/// and structural junctions that occupy columns without drawing nodes.
 pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
     loop_block::body_vertices(flow, topology, header)
 }
@@ -90,9 +55,7 @@ pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
 /// reorder or re-route anything recorded here.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Arrangement {
-    /// Abstract row of every vertex. A forward connection descends unless a
-    /// side exit meets a wire merge on its row. Every placement-only precedence
-    /// edge descends.
+    /// Abstract row of every vertex, checked against RFC 0002 §8.
     pub rank: BTreeMap<Vertex, usize>,
     /// One past the deepest rank in use.
     pub ranks: usize,
@@ -170,9 +133,7 @@ pub enum Side {
     Right,
 }
 
-/// How a connection reaches its destination's column. The three are
-/// alternatives, not stages: the search replaces one with another rather than
-/// adding to it, so the shape that works is never overridden by a later one.
+/// Alternative corridor shapes, tried in this order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Shape {
     /// Turn sideways in the gap below the source and descend the rest of the
@@ -191,12 +152,8 @@ impl Shape {
     const ALL: [Self; 3] = [Self::Direct, Self::Deferred, Self::Aside];
 }
 
-/// Collapses the shapes that name the same corridor, so the walk does not
-/// visit one assignment under two names.
-///
-/// A connection reaching a junction descends in its own column whichever of
-/// `Direct` and `Deferred` it is given: producer branches keep separate
-/// descents until the merge rail.
+/// Deduplicates equivalent shapes: junction arrivals keep separate descents
+/// until the merge rail, making `Direct` and `Deferred` identical.
 fn normalize(topology: &Topology, shapes: &mut [Shape]) {
     for (index, shape) in shapes.iter_mut().enumerate() {
         if *shape == Shape::Deferred
@@ -231,22 +188,12 @@ enum Preferred {
     Inconsistent(String),
 }
 
-/// Constructs and independently checks one conforming arrangement, or reports
-/// that the topology has no conforming diagram at all.
-///
-/// Two searches run in turn. `preferred` looks only among the arrangements
-/// shaped the way RFC 0003 §2.5 prefers, and its results are the ones worth
-/// drawing. When it finds none — or returns one the check rejects, which is a
-/// defect in that search and not a fact about the topology — `sweep` decides
-/// the question: it accepts exactly the topologies that can be drawn, so only
-/// its exhaustion makes a flow invalid.
+/// Runs the preferred search, falling back to the complete sweep.
 ///
 /// # Errors
 ///
-/// Reports an impossible topology when the sweep exhausts its space, and an
-/// internal construction error when the independent check rejects the
-/// arrangement the sweep returned, or when the projection contradicts itself.
-/// Inconsistent column constraints refuse a search state, not the whole flow.
+/// Reports sweep exhaustion as impossible topology; contradictory projection
+/// or a failed sweep verification as an internal error.
 ///
 /// # Panics
 ///
@@ -264,11 +211,6 @@ pub(crate) fn construct(
         )
     };
     match preferred(flow, merges, topology) {
-        // One bad candidate says nothing about the topology, so the deciding
-        // search still runs. The disagreement is a defect in the preferred
-        // search all the same, and `disagreed` is what stops it being caught
-        // quietly: the suite fails on it, and a release build goes on to the
-        // answer that is not in doubt.
         Ok(arrangement) => match verify::arrangement(flow, topology, &arrangement) {
             Ok(()) => return Ok(arrangement),
             Err(reason) => disagreed(&reason),
@@ -290,14 +232,7 @@ pub(crate) fn construct(
     }
 }
 
-/// Reports that the preferred search returned an arrangement the independent
-/// check rejects.
-///
-/// The decision does not depend on it — the deciding search runs next either
-/// way — so this must not reject the flow. It is still a defect, and this
-/// crate's own test run is where it is visible: the generated shapes fail on
-/// it here, and a fixture the preferred search misdraws changes the diagram
-/// beside it.
+/// Fails unit tests on a preferred-search defect; other builds fall back to the sweep.
 fn disagreed(reason: &str) {
     #[cfg(test)]
     panic!("the preferred search returned an arrangement the check rejects: {reason}");
@@ -305,12 +240,8 @@ fn disagreed(reason: &str) {
     let _ = reason;
 }
 
-/// Searches the arrangements shaped the way RFC 0003 §2.5 prefers, following the
-/// conflicts its own planner and contour search report.
-///
-/// This search is incomplete: `Exhausted` says only that no arrangement of
-/// this shape conforms, and the deciding sweep takes over. `Inconsistent` is a
-/// topology no search can draw.
+/// Conflict-guided search of the preferred shapes (RFC 0003 §2.5).
+/// Exhaustion requires a sweep; inconsistency indicates a projection defect.
 fn preferred(
     flow: &Flow,
     merges: &[WireMerge],
@@ -323,8 +254,7 @@ fn preferred(
         .iter()
         .map(|loop_| Vertex::Junction(loop_.tail))
         .collect::<Vec<_>>();
-    // RFC 0002 §8 prefers one contour per loop. The search starts there and
-    // only flips a back edge the preferred side cannot hold.
+    // Start with the contour preference from RFC 0002 §8.
     let sides = topology
         .loops
         .iter()
@@ -337,10 +267,6 @@ fn preferred(
         })
         .collect::<Vec<_>>();
 
-    // The first state is the arrangement RFC 0002 §8 asks for: no tail sinks
-    // and every back edge on the side it prefers. Each failure names the cycle to
-    // blame, and the walk moves that loop's contour or rank before anything
-    // else. No state is visited twice, so it ends.
     let every_tail = tails.iter().copied().collect::<BTreeSet<_>>();
     let mut pending = vec![(BTreeSet::new(), sides)];
     let mut seen = BTreeSet::new();
@@ -373,9 +299,7 @@ fn preferred(
     Err(Preferred::Exhausted)
 }
 
-/// Queues every corridor shape later than the one this connection has now.
-/// Only a later rung is worth trying: each gives the run more room, and no rung
-/// repeats. Pushed furthest first, so the stack hands back the nearest.
+/// Queues wider shapes in reverse order so the stack tries the nearest first.
 fn widen(pending: &mut Vec<Vec<Shape>>, shapes: &[Shape], connection: usize) {
     for later in Shape::ALL
         .into_iter()
@@ -399,11 +323,8 @@ fn unarrangeable(flow: &Flow) -> Obstruction {
     }
 }
 
-/// Resolves the corridor shapes for one rank and contour assignment, by moving
-/// a participant of every conflict the planner reports. Each assignment is
-/// visited at most once, so the walk ends. An impossible assignment sends the
-/// search to another one; an internal refusal is a projection bug, and no
-/// assignment can draw it.
+/// Resolves corridors for fixed ranks and contour sides, widening a conflicting
+/// route at each step. Each shape assignment is visited at most once.
 fn corridors(
     flow: &Flow,
     merges: &[WireMerge],
@@ -427,9 +348,6 @@ fn corridors(
             Ok(plan) => plan,
             Err(route::Blocked { connection, reason }) => {
                 blocked.get_or_insert(reason);
-                // Only a later rung is worth trying: every rung after the
-                // current one gives the run more room, and no rung repeats.
-                // Pushed furthest first, so the stack hands back the nearest.
                 widen(&mut pending, &shapes, connection);
                 continue;
             }
@@ -462,9 +380,7 @@ fn corridors(
                 return Ok(arrangement);
             }
             Err(reason) => {
-                // A back edge blocked by one connection may fit once that
-                // connection takes a longer corridor, so the same conflict
-                // that moves a contour also moves a shape.
+                // Widening the blocking route may free the contour.
                 if let Some(connection) = reason.connection {
                     widen(&mut pending, &shapes, connection);
                 }

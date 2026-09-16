@@ -22,15 +22,9 @@ pub(super) fn destination(flow: &Flow) -> Destination {
     Destination::Node(NodeId::Block(index))
 }
 
-/// End is the final vertex of a conforming diagram, including after every
-/// iteration tail. Order each other sink before it: in this DAG every vertex
-/// reaches a sink, so these edges order the whole diagram before end without
-/// adding one redundant constraint per vertex. They are never drawn.
-///
-/// A sink's exit is named `ExitId::of`, the unbranched one, whether or not the
-/// node has it: every reader of `Topology::order` takes the source back to its
-/// vertex and none reads the branch, because these edges order placement and
-/// draw nothing.
+/// Orders every other sink before end, thereby covering the whole DAG.
+/// Placement-only edges use `ExitId::of` even for nodes without that exit:
+/// readers inspect only the source vertex, and these edges are never drawn.
 pub(super) fn order(topology: &mut Topology) {
     let Some(end) = topology
         .nodes

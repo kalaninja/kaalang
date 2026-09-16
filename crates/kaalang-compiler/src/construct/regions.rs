@@ -1,15 +1,7 @@
-//! The regions a flow's branches carve out of its topology.
+//! Branch reachability and convergence regions derived from topology.
 //!
-//! These are facts about the topology alone: which vertices one branch of a
-//! question or choice leads to, and which of them its siblings share. The
-//! deciding search's numbering, the check, and the test-only reference all
-//! read `Regions::outside` and `Regions::reserved` — the two halves of one
-//! definition, each leaving out what the other side also reaches — and one
-//! definition is what makes the three agree; the preferred placement reserves
-//! from `branch_sets` and is held to the check like everything else. Sharing a
-//! fact is not self-reference; sharing the column arithmetic would be, so that
-//! stays apart, and the reference builds its own arithmetic for the same
-//! reason.
+//! The sweep, verifier, and test reference share these sets, but compute column
+//! constraints independently. Preferred placement uses `branch_sets` directly.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -49,12 +41,8 @@ fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTree
     walk(topology, start, avoided, false)
 }
 
-/// The same, counting placement precedence as reaching.
-///
-/// A cycle's iteration tail has no outgoing connection — the projection moved
-/// its forward edges into `Topology::order` — so a branch that repeats appears
-/// to stop there. Only this walk shows that it goes on to whatever the flow
-/// draws below the cycle.
+/// Reachability including placement precedence, which connects iteration tails
+/// to the diagram below the cycle after forward edges become back edges.
 fn carried(topology: &Topology, start: Vertex) -> BTreeSet<Vertex> {
     walk(topology, start, None, true)
 }
@@ -117,16 +105,8 @@ fn branch_heads(topology: &Topology, flow: &Flow, block: usize, branch: usize) -
     }
 }
 
-/// The vertices one brancher's own branches draw, and so the area RFC 0002 §8
-/// asks it to reserve columns for.
-///
-/// Two kinds of vertex are reachable from a branch without belonging to the
-/// brancher: one every branch reaches, which is where they have fully converged
-/// and the flow below the brancher resumes; and one a route can also reach
-/// without passing the brancher at all, which belongs to an enclosing
-/// brancher's shared continuation and may well sit to the brancher's left. What
-/// remains — dominated by the brancher, and not shared by all of its branches —
-/// is its own, including the shared continuation of a partial merge.
+/// Vertices dominated by this brancher but not shared by every branch.
+/// Includes partial merges; excludes full convergence and enclosing continuations.
 pub(super) fn footprint_vertices(
     flow: &Flow,
     topology: &Topology,
@@ -137,12 +117,8 @@ pub(super) fn footprint_vertices(
     for set in branches {
         owned.extend(set.iter().copied());
     }
-    // What every branch reaches is where they have fully converged. A branch
-    // that repeats reaches it through the iteration tail's placement
-    // precedence rather than through a connection, so this reads the carrying
-    // walk: otherwise the whole flow below the loop looks like the private
-    // continuation of the branches that leave it. Otherwise it is
-    // `branch_sets` — every head of the branch, and the head itself.
+    // Include tail precedence so flow below a loop is not mistaken for a
+    // private continuation of only the branches that exit it.
     let converged = (0..flow.blocks[block].branch_count())
         .map(|branch| {
             branch_heads(topology, flow, block, branch)
@@ -169,17 +145,8 @@ pub(super) struct Group {
     pub(super) area: BTreeSet<Vertex>,
 }
 
-/// The convergence groups of one brancher, read off the topology.
-///
-/// A vertex two or more branches reach is where they converge; the branches
-/// that reach it are the group, and the area it reserves is everything those
-/// branches draw (RFC 0002 §8). A vertex *every* branch reaches is where the
-/// brancher has fully converged and the flow below it resumes, so it opens no
-/// group, and one a route can reach without passing the brancher belongs to an
-/// enclosing group.
-///
-/// Two meeting points with the same members are one group, so this returns one
-/// entry per distinct set of branches.
+/// Groups branches that share an owned vertex, once per distinct member set.
+/// Full convergence and enclosing groups lie outside `own`.
 fn groups(branches: &[BTreeSet<Vertex>], own: &BTreeSet<Vertex>) -> Vec<Group> {
     let mut meeting = BTreeMap::<Vertex, BTreeSet<usize>>::new();
     for (branch, vertices) in branches.iter().enumerate() {
@@ -213,13 +180,8 @@ pub(super) struct Regions {
 }
 
 impl Regions {
-    /// What one branch draws that no branch of `group` also reaches.
-    ///
-    /// A vertex a member also reaches is part of the group's own area, not of
-    /// this branch, so the group's reserved columns say nothing about it. That
-    /// is the only exception: a continuation this branch shares with its *own*
-    /// co-members is still this branch's side of the diagram, and has to keep
-    /// clear of the group like the rest of it.
+    /// Branch vertices no group member reaches. Continuations shared with this
+    /// branch's other co-members still need to clear the group.
     pub(super) fn outside(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
         self.branches[branch]
             .intersection(&self.own)
@@ -233,18 +195,8 @@ impl Regions {
             .collect()
     }
 
-    /// What one group reserves against a later sibling: its area, less
-    /// whatever that sibling reaches too (RFC 0002 §8).
-    ///
-    /// The exception is `outside`'s, read from the other side. A vertex the
-    /// sibling also reaches is common ground, and a branch cannot be asked to
-    /// keep clear of something it draws itself — which is unsatisfiable for
-    /// the first branch, whose column RFC 0002 §8 fixes as the brancher's own.
-    ///
-    /// Only a sibling written after every member is held to this set. The
-    /// mirror image — an earlier sibling held left of the area, an enclosed
-    /// one held between the members around it — was tried as a normal form and
-    /// refused a flow that has a diagram; RFC 0003 §2.2 records it.
+    /// Group area excluding vertices shared with the later sibling (RFC 0002 §8).
+    /// Does not constrain earlier or enclosed siblings; see RFC 0003 §2.2.
     pub(super) fn reserved(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
         group
             .area

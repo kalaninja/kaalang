@@ -38,14 +38,8 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// The flow has a checked arrangement, but realizing it in pixels — with
-    /// the dimensions its nodes and labels need — broke RFC 0002 §8 or drew
-    /// something other than the arrangement. A topology with no conforming
-    /// diagram is rejected by `kaalang_compiler::build` and arrives as
-    /// `InvalidFlow`, so this is a geometry, label, or correspondence failure,
-    /// and one the uncompacted realization could not avoid either: that
-    /// realization is kept and used whenever a compaction cannot be made to
-    /// hold. Reaching this is a renderer defect rather than an authored one.
+    /// A verified arrangement could not be realized in pixels. This is a renderer
+    /// defect; impossible authored topologies are rejected earlier as [`Self::InvalidFlow`].
     UnroutableTopology {
         name: String,
         /// The spatial rule the realized geometry could not meet, naming the
@@ -229,13 +223,8 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-/// Checks every authored label for a character XML cannot carry.
-///
-/// A call written without a description has no authored label: its caption is
-/// rebuilt from the tokens of a Rust path, whose characters are identifier
-/// characters, punctuation, and the escaped source form of a literal. None of
-/// those is a character [`invalid_xml_character`] rejects, so that caption is
-/// not checked here.
+/// Checks authored descriptions for invalid XML characters. Default call
+/// captions come from Rust path tokens and need no description check.
 fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), RenderError> {
     for block in &model.flow.blocks {
         let (line, column) = location(block.span);
@@ -243,9 +232,6 @@ fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), Render
             .description
             .as_deref()
             .map(|text| (text, "block description".to_owned()));
-        // Only a choice is projected with case nodes, so only a choice reaches
-        // the diagram with case labels; the parser leaves this list empty for
-        // every other kind.
         let cases = block
             .case_descriptions
             .iter()

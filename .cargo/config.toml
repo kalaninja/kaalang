@@ -1,6 +1,3 @@
 [env]
-# Record a new `compile_fail` diagnostic beside its fixture, the way a behavior
-# fixture records its diagram, so both are reviewed in the diff. Without this
-# trybuild writes the diagnostic to a scratch `wip/` directory to be moved by
-# hand.
+# Write diagnostics beside compile-fail fixtures for diff review, like behavior SVGs.
 TRYBUILD = "overwrite"

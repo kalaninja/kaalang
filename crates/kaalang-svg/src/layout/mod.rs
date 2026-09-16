@@ -84,9 +84,7 @@ pub(crate) struct Scene {
     slack: i32,
     /// Routing-only columns need a lane rather than a full node width.
     narrow: bool,
-    /// What each cycle's body draws, as the model counted it when it placed the
-    /// back edge: one entry per `topology.loops`. A presentation measures the
-    /// same body rather than a set of its own.
+    /// Model-defined body vertices, one set per `topology.loops` entry.
     bodies: Vec<BTreeSet<Vertex>>,
     /// The owned vertices of every expanded cycle boundary, including cycles
     /// that have no repeating execution and therefore no back edge.
@@ -191,14 +189,8 @@ impl LabelKind {
     }
 }
 
-/// Steps a back edge further out until its climb clears labels and leaves a
-/// routing lane beside nested cycle frames.
-///
-/// Labels are placed against the routes, so where they end up is not known
-/// when the back edges are drawn, and a label hanging off the body's outermost
-/// route reaches past the rail beside it. Moving out only adds room between
-/// the climb and the body, so RFC 0002 §8 holds either way and `route::verify`
-/// confirms it; a step it refuses is dropped and the climb stays where it was.
+/// Moves back edges outward to clear placed labels and nested frames.
+/// Each move must pass `route::verify`; rejected moves leave the climb intact.
 #[allow(clippy::too_many_lines)] // One cohesive measure-move-verify pass over each back edge.
 fn clear_labels(scene: &mut Scene) -> i32 {
     // The elastic realization already reserves label width on both sides of
@@ -210,9 +202,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
     // Innermost first: an enclosing rail is measured from the one it encloses,
     // so it has to follow it out rather than be stepped into.
     for index in (0..scene.topology.loops.len()).rev() {
-        // The rail and every rail outside it on the same side. Moving one
-        // alone would close the lane between them, which the contour rule
-        // refuses — rightly, so the whole chain moves together.
+        // Move enclosing rails together to preserve the lanes between them.
         let side = scene.arrangement.contours[index].side;
         let Some(back) = scene.back_edge_index(index) else {
             continue;
@@ -357,14 +347,8 @@ fn collapsed_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// How far past its body's edge each back edge rail can reach, on the left and
-/// on the right.
-///
-/// A rail sits `(lane + 1)` lanes past the body it climbs, and a lane past any
-/// rail already drawn beside a body nested in that one — so a reach grows
-/// along the deepest chain of nested cycles rather than with their number.
-/// `route::contour_x` builds the rails that way; this is the same arithmetic
-/// before any pixel is placed, which is what lets `column_width` use it.
+/// Maximum rail reach on each side, including nested contours. Uses
+/// `route::contour_x`'s spacing rules before pixels are placed to size column gaps.
 fn contour_reach(model: &SemanticModel) -> (i32, i32) {
     let loops = &model.topology.loops;
     let mut reach = vec![0; loops.len()];
@@ -414,22 +398,9 @@ fn layout_spaced(
     return_type: &str,
     narrow: bool,
 ) -> Result<Scene, String> {
-    // A label is wrapped to fit the standard gap beside its column, and a
-    // back edge climbs in that same gap. Where the two want it at once — a label
-    // reaching rightward from one column past the rail of the cycle in the
-    // next — no rail position clears it, because stepping out goes further
-    // into the label and stepping in goes into the body. The room has to come
-    // from the columns, and how much is only known once the labels are placed,
-    // so the layout is taken again with the gap the last one asked for.
-    //
-    // That ends, and not by counting attempts. A label is wrapped to a fixed
-    // width and a node measured to a fixed one, neither of which the slack
-    // changes; the slack widens the gap between two columns and nothing else.
-    // Once the gap holds the widest label a connection can hang beside the
-    // deepest a rail reaches past a body, the two cannot want the same pixel,
-    // so a pass asking for more room past that bound is a renderer defect
-    // rather than a topology the columns cannot hold. Every pass adds at least
-    // one lane, so the bound is reached in finitely many.
+    // Labels and opposing rails may need a wider column gap. Node and label
+    // widths stay fixed, so their maximum reach bounds the required slack.
+    // Each retry adds at least one lane; failure at the bound is a renderer defect.
     let (left, right) = contour_reach(model);
     let bound = label::LABEL_WIDTH + left + right + LANE;
     let mut slack = 0;
@@ -459,17 +430,9 @@ enum Blocked {
     Narrow(i32),
 }
 
-/// Whether the pixels still say what the arrangement decided.
-///
-/// The geometry checks hold a scene to RFC 0002 §8; this holds it to the
-/// witness it is supposed to realize, which is a different question. A
-/// transformation can leave crossing-free geometry that draws another
-/// structure — two nodes swapped between columns cross nothing — and only this
-/// sees that.
-///
-/// Every node and junction stays on its measured row and column centre,
-/// and incident routes meet at the recorded ports.
-/// Back edges retain their column boundary after indentation shifts the scene.
+/// Checks that pixels preserve the arrangement's rows, columns, ports, and
+/// contour anchors after translation. Crossing-free geometry alone cannot
+/// detect a swapped column or a disconnected port.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
     let rows = scene.rows();
     let origin =
@@ -630,10 +593,7 @@ fn attempt(
     scene
         .connections
         .extend(route::back_edges(&scene, model, &rows));
-    // The final word on RFC 0002 §8. The arrangement is checked in abstract
-    // ranks and columns; this reads the emitted geometry, so it catches
-    // anything the abstract check does not model. A disagreement means the
-    // realization is wrong, not that another arrangement should be tried.
+    // Check pixel geometry and its correspondence to the verified arrangement.
     if let Some(reason) = route::verify(&scene).or_else(|| correspondence(&scene)) {
         return Err(Blocked::Refused(reason));
     }
@@ -656,9 +616,7 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     }
     scene.indent();
     scene.fit();
-    // The complete result after every transformation, including the
-    // coordinates and canvas that `indent` and `fit` settle, against both the
-    // spatial rules and the arrangement it realizes.
+    // Recheck after all transformations, including canvas sizing and translation.
     if let Some(reason) = route::verify(&scene)
         .or_else(|| label::verify(&scene))
         .or_else(|| loop_block::verify(&scene))
@@ -771,19 +729,14 @@ impl Scene {
         }
     }
 
-    /// The rank and column the arrangement gave one vertex.
+    /// The rank the arrangement gave one vertex.
     pub(super) fn rank(&self, vertex: Vertex) -> usize {
         self.arrangement.rank[&vertex]
     }
 
-    /// The centre of one column.
-    ///
-    /// Node and exit columns retain their measured half-width on either side,
-    /// including the space for a question's branch description. A column used
-    /// only by routing needs one lane instead. This map stays strictly
-    /// increasing; if the smaller gaps fail any check, `layout` retries the
-    /// same witness with uniform spacing. Bent back edges need that uniform map
-    /// to preserve the order of their offsets from both sides of each column.
+    /// Column centre under a strictly increasing map. Content columns reserve
+    /// measured widths; routing-only columns need one lane. Failed checks retry
+    /// with uniform spacing, which bent back edges always need for offset order.
     pub(super) fn column_x(&self, column: i32) -> i32 {
         let width = self.column_width();
         if !self.narrow || !self.arrangement.back_routes.is_empty() {
@@ -812,12 +765,7 @@ impl Scene {
         MARGIN + NODE_WIDTH / 2 + column.signum() * distance
     }
 
-    /// How far apart two columns stand.
-    ///
-    /// Wide enough that the deepest rail reaching into a gap from the left and
-    /// the deepest reaching into it from the right still leave a lane between
-    /// them. `contour_reach` measures both, so a rail pushed out by a chain of
-    /// nested back edges is held as well as one pushed out by its own lane.
+    /// Column spacing that leaves a lane between opposing contour reaches.
     ///
     /// ponytail: one width for the whole diagram, so one deep contour widens
     /// every gap; give each gap its own width if a diagram looks stretched.

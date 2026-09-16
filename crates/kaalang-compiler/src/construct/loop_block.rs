@@ -1,19 +1,6 @@
-//! Decides the contour of every iteration back edge.
-//!
-//! RFC 0002 §8 sends a back edge upward outside its body and horizontally into its
-//! entry junction, and RFC 0002 §7 keeps a break's first wire merge or end below
-//! the body it leaves. Only a sole side exit may reach an enclosing tail
-//! without carrying the nested body's precedence.
-//! A contour therefore needs a column outside the body that no route occupies
-//! over the back edge's whole rank span, and two horizontal runs that meet nothing.
-//!
-//! The preferred search tries the lanes beside the body's edge, nearest first.
-//! Exhausting them leaves the complete constructor available; it does not
-//! establish that the topology is impossible.
-//!
-//! RFC 0002 §8 only *prefers* a side, so a blocked preferred side never decides
-//! realizability: the caller hands this module the side to try and flips it
-//! when no contour holds.
+//! Measures cycle bodies, verifies their boundaries, and chooses back-edge contours.
+//! The preferred search tries lanes beside the body on the caller's chosen side,
+//! nearest first. Failure leaves other sides and the complete sweep available.
 
 use std::collections::BTreeSet;
 
@@ -25,14 +12,8 @@ use crate::geometry::{Point, compatible, enters, inside};
 use super::verify::{Grid, back_edge_polyline, ends, meetings, polyline};
 use super::{Arrangement, Contour, Side};
 
-/// The columns one loop's whole body occupies, independently of its ranks.
-/// Moving a body vertex below the tail does not remove it from the body, and
-/// shortening a back edge does not shrink the extent it has to clear.
-///
-/// A back edge nested inside this body is not one of them. It climbs beside the
-/// body in a lane of its own, and an enclosing back edge takes the next lane out
-/// rather than a whole column. `nested_back_edges` is what holds the two apart:
-/// a crossing check cannot, because the rows they span need not overlap.
+/// Body columns, independent of ranks: vertices below the tail still count.
+/// Nested back edges occupy lanes, checked separately by `nested_back_edges`.
 pub(super) fn body_columns(
     flow: &Flow,
     topology: &Topology,
@@ -45,13 +26,8 @@ pub(super) fn body_columns(
         .collect()
 }
 
-/// What every cycle boundary encloses, in `Topology::loop_boundaries` order.
-///
-/// A boundary's contents depend on the flow and its topology, never on the
-/// candidate ranks and columns, and settling one walks a fixpoint over the
-/// junctions it draws. One check asks for them once and hands them to every
-/// rule that reads them; compaction checks thousands of candidates against the
-/// same contents.
+/// Boundary contents in `Topology::loop_boundaries` order, cached across
+/// compaction candidates because ownership is independent of coordinates.
 pub(super) struct Bodies(Vec<Body>);
 
 /// One boundary's contents, with everything the rules sort by ownership rather
@@ -132,12 +108,8 @@ impl Bodies {
         )
     }
 
-    /// Whether lifting `edge`'s destination past the body could ever hold.
-    ///
-    /// A completion that stands in one of the body's own columns has no row
-    /// beside it: every row the body spans is inside the rectangle. Compaction
-    /// asks this before constructing the candidates, which the boundary rule
-    /// would reject one by one.
+    /// Whether the destination lies outside the body's columns and may be
+    /// lifted beside it. Filters candidates before the full boundary check.
     pub(super) fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
         let landing = arrangement.column[&edge.destination];
         self.0.iter().any(|body| {
@@ -155,14 +127,8 @@ impl Bodies {
         })
     }
 
-    /// Whether `edge` orders a cycle's completion after the body it leaves.
-    ///
-    /// `topology/loop_block.rs::order_boundaries` puts the completion below the
-    /// whole body so a construction has a conforming arrangement to start from.
-    /// That is a starting point, not the rule: RFC 0002 §8 only asks the
-    /// boundary to stay clear of what the cycle does not own, and `boundaries`
-    /// checks that rectangle directly. A completion beside the body may
-    /// therefore share its rows, which is what lets compaction lift it.
+    /// Whether `edge` orders completion below a cycle body. Compaction may
+    /// relax that initial order if `boundaries` keeps the completion outside.
     pub(super) fn completes_a_boundary(&self, edge: &Connection) -> bool {
         self.0.iter().any(|body| {
             body.owned.contains(&Vertex::from(edge.source))
@@ -187,12 +153,8 @@ const fn overlaps(
     left < other_right && other_left < right && top < other_bottom && other_top < bottom
 }
 
-/// A cycle boundary encloses its own body and nothing else (RFC 0002 §8).
-///
-/// This is the rule the blanket precedence used to stand in for. A vertex or a
-/// route the cycle does not own may share the body's rows, as long as it stays
-/// out of the rectangle. Only the cycle's interface reaches it: the route into
-/// its entry and the one leaving its result.
+/// Checks that each cycle encloses only its body (RFC 0002 §8).
+/// External routes may touch only its entry and result interfaces.
 pub(super) fn boundaries(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -304,19 +266,10 @@ pub(super) fn boundaries(
     Ok(())
 }
 
-/// The rectangle each cycle boundary draws, in `Topology::loop_boundaries`
-/// order, as `(left, top, right, bottom)` on the abstract grid.
-///
-/// RFC 0002 §8 makes the boundary enclose every vertex, junction and back edge
-/// the cycle owns, and nothing else. It therefore stands one lane outside all
-/// of them: the body's own cells and internal routes, its back edge, and the
-/// rectangle of every cycle nested in it. A nested header always follows its
-/// enclosing one, so descending header order settles the inner rectangles
-/// first.
-///
-/// The lane budget holds this: `contour_lanes` offers two lanes per cycle, one
-/// for a back edge and the next for the boundary around it, so a chain of
-/// cycles stacked against one column still stops short of the next column.
+/// Boundary rectangles `(left, top, right, bottom)` in topology order.
+/// Each stands one lane outside its vertices, routes, back edge, and nested
+/// boundaries. Descending header order measures inner rectangles first;
+/// `contour_lanes` reserves room for the full nesting depth.
 fn rectangles(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -442,13 +395,8 @@ pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
     vertices
 }
 
-/// Where the back edges nested inside one body already climb.
-///
-/// An enclosing back edge has to stay outside those too, and a crossing check
-/// cannot see one whose rows do not overlap its own: the two back edges may share
-/// no row at all and still leave the enclosing one inside the body it is
-/// supposed to clear. The position carries the nested back edge's lane, so the
-/// enclosing one only needs the next lane out, not a column of its own.
+/// Nested back-edge positions, including their lanes. The enclosing contour
+/// must clear them even when their row spans do not overlap.
 pub(super) fn nested_back_edges(
     flow: &Flow,
     topology: &Topology,
@@ -483,16 +431,8 @@ pub(super) fn outside(
     body.iter().all(|&column| clears(grid.column(column))) && nested.iter().copied().all(clears)
 }
 
-/// The nearest contour one back edge can climb, or why the nearest candidate
-/// failed and the connection to blame, when one is, so the caller can give it
-/// more room and try again.
-///
-/// The candidates are the lanes beside the body's own edge column, nearest
-/// first, and nothing beyond them. A lane is the whole of a contour's
-/// position, which is what a presentation can realize: it measures the
-/// body's boxes and steps that many lanes clear of them, having no column
-/// of its own to put a rail in. A topology never needs more lanes than it
-/// has cycles, because only a back edge climbs there (RFC 0003 §2.4).
+/// Tries lanes beside the body's edge column, nearest first. On failure,
+/// reports the nearest candidate's obstruction and any blocking connection.
 #[allow(clippy::too_many_arguments)]
 fn climb(
     flow: &Flow,
