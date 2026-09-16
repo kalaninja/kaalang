@@ -274,48 +274,52 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
         && topology.single_arrival(node)
 }
 
-/// The named flow parameters, in signature order, as the start node's
-/// hand-over addresses them.
-fn named_parameters(model: &SemanticModel) -> Vec<&PatIdent> {
+/// The named flow parameters, in flow-input order, as the start node's
+/// hand-over addresses them. A receiver is one of them, under the one name
+/// Rust gives it.
+fn named_parameters(model: &SemanticModel) -> Vec<String> {
     model
         .parameters
         .iter()
-        .filter_map(|parameter| {
-            let FnArg::Typed(parameter) = parameter else {
-                return None;
-            };
-            let Pat::Ident(binding) = parameter.pat.as_ref() else {
-                return None;
-            };
-            Some(binding)
+        .filter_map(|parameter| match parameter {
+            FnArg::Receiver(_) => Some("self".to_owned()),
+            FnArg::Typed(parameter) => match parameter.pat.as_ref() {
+                Pat::Ident(binding) => Some(binding_label(binding)),
+                _ => None,
+            },
         })
         .collect()
 }
 
-/// The label one producer occurrence carries at the exit providing it.
-fn provided(model: &SemanticModel, parameters: &[&PatIdent], producer: ProducerId) -> String {
-    let binding = match producer {
-        ProducerId::FlowInput(input) => *parameters
-            .get(input)
-            .expect("a flow input caption names a declared parameter"),
-        ProducerId::CycleInput { block, input } => {
-            let capture = &model.flow.blocks[block].inputs[input];
-            return format!(
-                "{}{}",
-                if capture.mutable { "mut " } else { "" },
-                capture.alias.unraw()
-            );
-        }
-        ProducerId::BlockOutput { block, output } => {
-            model.flow.blocks[block].output_binding(output)
-        }
-    };
+/// One binding as a caption: its authored spelling, with a permitted `mut`.
+fn binding_label(binding: &PatIdent) -> String {
     let mutable = if binding.mutability.is_some() {
         "mut "
     } else {
         ""
     };
     format!("{mutable}{}", binding.ident.unraw())
+}
+
+/// The label one producer occurrence carries at the exit providing it.
+fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) -> String {
+    match producer {
+        ProducerId::FlowInput(input) => parameters
+            .get(input)
+            .expect("a flow input caption names a declared parameter")
+            .clone(),
+        ProducerId::CycleInput { block, input } => {
+            let capture = &model.flow.blocks[block].inputs[input];
+            format!(
+                "{}{}",
+                if capture.mutable { "mut " } else { "" },
+                capture.alias.unraw()
+            )
+        }
+        ProducerId::BlockOutput { block, output } => {
+            binding_label(model.flow.blocks[block].output_binding(output))
+        }
+    }
 }
 
 /// Capture modifiers distinguish the four authored input forms.

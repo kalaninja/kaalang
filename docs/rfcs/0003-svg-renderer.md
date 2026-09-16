@@ -630,13 +630,13 @@ pub struct RenderOptions {
 }
 ```
 
-It finds the named top-level `#[kaalang]` function in the provided UTF-8 Rust
-source text and builds its validated semantic model. `render_source` is
-equivalent to options with `collapse_loops: false`. The options-bearing entry
-point selects the all-expanded or all-collapsed projection only after the full
-expanded flow has passed semantic and topology validation. It then serializes
-the model-supplied arrangement or returns a rendering error. It does not invoke
-`cargo check` or perform full Rust type checking.
+It finds the named `#[kaalang]` function in the provided UTF-8 Rust source text,
+free or declared in an `impl` block, and builds its validated semantic model.
+`render_source` is equivalent to options with `collapse_loops: false`. The
+options-bearing entry point selects the all-expanded or all-collapsed projection
+only after the full expanded flow has passed semantic and topology validation.
+It then serializes the model-supplied arrangement or returns a rendering error.
+It does not invoke `cargo check` or perform full Rust type checking.
 
 `RenderError::InvalidFlow` reports every error from `kaalang_model::build`,
 including an impossible expanded topology and an internal construction error.

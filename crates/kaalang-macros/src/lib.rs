@@ -1,14 +1,12 @@
 //! kaalang procedural macro entry point and compilation pipeline.
 
 use proc_macro::TokenStream;
-use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{ToTokens, quote};
+use proc_macro2::{Span, TokenStream as TokenStream2, TokenTree};
+use quote::{ToTokens, quote, quote_spanned};
 use syn::{
-    Error, FnArg, GenericParam, ItemFn, Pat, Result, Safety, Visibility, ext::IdentExt,
-    parse_macro_input,
+    Error, FnArg, ItemFn, Pat, PatIdent, Result, Type, ext::IdentExt, parse_macro_input,
+    spanned::Spanned,
 };
-
-use kaalang_model::SemanticModel;
 
 mod codegen;
 #[cfg(test)]
@@ -34,80 +32,100 @@ fn expand(function: &mut ItemFn) -> Result<TokenStream2> {
     let model = kaalang_model::build(function)?;
     let bindings = codegen::Bindings::new(&model);
 
-    let implementation = implementation(function, &model, &bindings)?;
-    let call = call(function, &implementation.sig.ident, &bindings);
+    let prologue = prologue(function, &bindings);
+    let body = codegen::flow(&model.flow, &model.execution_plan, &bindings);
+    // The flow lowers in place, so it keeps the scope the author wrote it in:
+    // `Self`, the surrounding generics, and the receiver all resolve as they do
+    // in any other body. A nested item would see none of them.
     *function.block = syn::parse2(quote!({
-        #implementation
         #[allow(clippy::used_underscore_binding)]
-        #call
+        {
+            #prologue
+            #body
+        }
     }))?;
 
     Ok(quote!(#function))
 }
 
-/// Rewrites the authored function into the nested flow implementation.
-fn implementation(
-    function: &ItemFn,
-    model: &SemanticModel,
-    bindings: &codegen::Bindings,
-) -> Result<ItemFn> {
-    let body = codegen::flow(&model.flow, &model.execution_plan, bindings);
-
-    let mut implementation = function.clone();
-    implementation.attrs.clear();
-    implementation.vis = Visibility::Inherited;
-    implementation.sig.ident = syn::Ident::new("__kaalang_flow", Span::mixed_site());
-    implementation.sig.inputs = implementation
+/// Moves every named parameter into its hygienic wire binding and then puts the
+/// authored name out of reach, so a block body reads only the wires it
+/// captured. A wildcard parameter provides no wire, and the receiver is its own
+/// wire: Rust forbids rebinding `self`, and no other spelling can reach it.
+fn prologue(function: &ItemFn, bindings: &codegen::Bindings) -> TokenStream2 {
+    let parameters = function
         .sig
         .inputs
-        .into_iter()
-        .filter(|argument| !matches!(argument, FnArg::Typed(argument) if matches!(argument.pat.as_ref(), Pat::Wild(_))))
-        .collect();
-    codegen::rename_implementation_inputs(&mut implementation, bindings);
-    *implementation.block = syn::parse2(quote!({ #body }))?;
-
-    Ok(implementation)
-}
-
-/// Calls the implementation with the authored parameters and generics.
-fn call(
-    function: &ItemFn,
-    implementation: &syn::Ident,
-    bindings: &codegen::Bindings,
-) -> TokenStream2 {
-    let arguments = function.sig.inputs.iter().filter_map(|argument| {
-        let FnArg::Typed(argument) = argument else {
-            unreachable!("the parser rejects method receivers")
-        };
-        let Pat::Ident(parameter) = argument.pat.as_ref() else {
-            return None;
-        };
-        let ident = &parameter.ident;
-        Some(
-            if parameter.mutability.is_some() && bindings.is_mutably_captured(&ident.unraw()) {
-                quote!({ let _ = &mut #ident; #ident })
-            } else {
-                quote!(#ident)
-            },
-        )
-    });
-    let generic_arguments = function
-        .sig
-        .generics
-        .params
         .iter()
-        .filter_map(|parameter| match parameter {
-            GenericParam::Type(parameter) => Some(parameter.ident.to_token_stream()),
-            GenericParam::Const(parameter) => Some(parameter.ident.to_token_stream()),
-            GenericParam::Lifetime(_) => None,
+        .filter_map(|argument| match argument {
+            FnArg::Typed(argument) => match argument.pat.as_ref() {
+                Pat::Ident(parameter) => Some((parameter, argument.ty.as_ref())),
+                Pat::Wild(_) => None,
+                _ => unreachable!("the parser accepts only simple bindings or wildcards"),
+            },
+            FnArg::Receiver(_) => None,
         })
         .collect::<Vec<_>>();
-    let generic_arguments =
-        (!generic_arguments.is_empty()).then(|| quote!(::<#(#generic_arguments),*>));
-    let call = quote!(#implementation #generic_arguments (#(#arguments),*));
-    matches!(function.sig.safety, Safety::Unsafe(_))
-        .then(|| quote!(unsafe { #call }))
-        .unwrap_or(call)
+    let wires = parameters
+        .iter()
+        .map(|(parameter, _)| wire(parameter, bindings));
+    let withdrawn = parameters
+        .iter()
+        .map(|(parameter, ty)| withdraw(parameter, ty));
+
+    quote!(#(#wires)* #(#withdrawn)*)
+}
+
+/// Redeclares one parameter, as it was authored and without a value. A body
+/// that reaches for a wire it did not capture still type-checks, so Rust
+/// reports the authored name at that body rather than somewhere downstream.
+fn withdraw(parameter: &PatIdent, ty: &Type) -> TokenStream2 {
+    let ident = &parameter.ident;
+    // The authored `mut` comes along, so assigning to an omitted wire reports
+    // only that it was never initialized.
+    let mutable = &parameter.mutability;
+    // `impl Trait` names no type a `let` can repeat. Withdrawing such a
+    // parameter as a unit still keeps it unreachable, only less legibly.
+    let ty = if names_an_opaque_type(ty.to_token_stream()) {
+        quote_spanned!(ty.span()=> ())
+    } else {
+        ty.to_token_stream()
+    };
+
+    quote_spanned!(ident.span()=>
+        #[allow(unused_variables, unused_mut)]
+        let #mutable #ident: #ty;
+    )
+}
+
+/// Whether a type spells `impl Trait` anywhere, including inside a tuple, an
+/// array, or a generic argument.
+fn names_an_opaque_type(tokens: TokenStream2) -> bool {
+    tokens.into_iter().any(|token| match token {
+        TokenTree::Ident(ident) => ident == "impl",
+        TokenTree::Group(group) => names_an_opaque_type(group.stream()),
+        _ => false,
+    })
+}
+
+/// One parameter's hygienic wire binding.
+fn wire(parameter: &PatIdent, bindings: &codegen::Bindings) -> TokenStream2 {
+    let ident = &parameter.ident;
+    let name = ident.unraw();
+    let wire = bindings.wire(&name);
+    let mutable = parameter
+        .mutability
+        .as_ref()
+        .and(bindings.mutability(&name));
+    // An authored `mut` a later block spends on a mutable capture is never
+    // exercised on the parameter itself, so touch it where the author wrote it.
+    let value = if parameter.mutability.is_some() && bindings.is_mutably_captured(&name) {
+        quote!({ let _ = &mut #ident; #ident })
+    } else {
+        quote!(#ident)
+    };
+
+    quote!(let #mutable #wire = #value;)
 }
 
 #[cfg(test)]

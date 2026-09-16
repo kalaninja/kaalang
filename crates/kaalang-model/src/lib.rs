@@ -94,6 +94,7 @@ pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<Se
 mod tests {
     use std::collections::BTreeSet;
 
+    use quote::ToTokens;
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{
@@ -655,8 +656,9 @@ mod tests {
     /// value, and not by a rule of its own.
     #[test]
     fn rejects_a_branch_output_read_after_convergence() {
-        let source =
-            include_str!("../../kaalang/tests/wire/compile_fail/branch_output_after_convergence.rs");
+        let source = include_str!(
+            "../../kaalang/tests/wire/compile_fail/branch_output_after_convergence.rs"
+        );
         assert_eq!(
             message(&fixture(source, "invalid")),
             "this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge"
@@ -1158,16 +1160,15 @@ mod tests {
         let mut checked = 0;
         for (rfc, text) in RFCS {
             for (offset, block) in fenced_rust(text) {
-                let Some(program) = flow_program(block) else {
-                    continue;
-                };
                 let line = text[..offset].lines().count();
-                let function: ItemFn = syn::parse_str(&program)
-                    .unwrap_or_else(|error| panic!("RFC {rfc} line {line}: {error}"));
-                if let Err(error) = crate::parse::flow(&function) {
-                    panic!("RFC {rfc} line {line}: {error}");
+                for program in flow_programs(block) {
+                    let function: ItemFn = syn::parse_str(&program)
+                        .unwrap_or_else(|error| panic!("RFC {rfc} line {line}: {error}"));
+                    if let Err(error) = crate::parse::flow(&function) {
+                        panic!("RFC {rfc} line {line}: {error}");
+                    }
+                    checked += 1;
                 }
-                checked += 1;
             }
         }
         assert!(
@@ -1176,17 +1177,42 @@ mod tests {
         );
     }
 
-    /// One fence as a function the parser can take: a whole flow as written, or
-    /// a loose run of block statements wrapped in one.
-    fn flow_program(block: &str) -> Option<String> {
-        if let Some(flow) = block.split("#[kaalang]").nth(1) {
-            return Some(flow.to_owned());
+    /// One fence as functions the parser can take: every flow it declares, free
+    /// or associated, or a loose run of block statements wrapped in one.
+    fn flow_programs(block: &str) -> Vec<String> {
+        if block.contains("#[kaalang]") {
+            let file = syn::parse_file(block).expect("an RFC prints valid Rust");
+            return file
+                .items
+                .iter()
+                .flat_map(|item| match item {
+                    syn::Item::Fn(function) => vec![function.to_token_stream()],
+                    syn::Item::Impl(block) => block
+                        .items
+                        .iter()
+                        .filter_map(|item| match item {
+                            syn::ImplItem::Fn(method) => Some(method.to_token_stream()),
+                            _ => None,
+                        })
+                        .collect(),
+                    _ => Vec::new(),
+                })
+                .map(|function| function.to_string())
+                .filter(|function| function.contains("kaalang"))
+                .collect();
         }
-        let first = block.lines().find(|line| !line.trim().is_empty())?.trim();
-        ["action", "call", "question", "choice", "cycle"]
+        let Some(first) = block.lines().find(|line| !line.trim().is_empty()) else {
+            return Vec::new();
+        };
+        let first = first.trim();
+        if ["action", "call", "question", "choice", "cycle"]
             .iter()
             .any(|kind| first.starts_with(&format!("#[{kind}(")) || first == format!("#[{kind}]"))
-            .then(|| format!("fn probe() {{ {block} }}"))
+        {
+            vec![format!("fn probe() {{ {block} }}")]
+        } else {
+            Vec::new()
+        }
     }
 
     /// Each fenced Rust block in one document, with its byte offset.

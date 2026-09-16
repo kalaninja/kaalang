@@ -7,26 +7,30 @@ use super::{Bindings, loop_label, output_pattern};
 use kaalang_model::{ExecutionPlan, Flow};
 
 fn input_bindings(flow: &Flow, bindings: &Bindings, index: usize) -> TokenStream {
-    let inputs = flow.blocks[index].inputs.iter().map(|input| {
-        let name = input
-            .binding
-            .as_ref()
-            .expect("a cycle capture declares a local binding");
-        let binding = bindings.wire_at(name);
-        let wire = bindings.wire_at(&input.ident);
-        let borrow = input
-            .borrowed
-            .then(|| quote_spanned!(input.alias.span()=> &));
-        let mutable = input
-            .mutable
-            .then(|| quote_spanned!(input.alias.span()=> mut));
-        let binding_mut = bindings.mutability(name);
-        let borrow_mut = if input.borrowed { mutable } else { None };
-        quote_spanned!(input.alias.span()=>
-            #[allow(unused_mut, unused_variables, clippy::let_unit_value)]
-            let #binding_mut #binding = #borrow #borrow_mut #wire;
-        )
-    });
+    let inputs = flow.blocks[index]
+        .inputs
+        .iter()
+        .filter(|input| input.ident != "self")
+        .map(|input| {
+            let name = input
+                .binding
+                .as_ref()
+                .expect("a cycle capture declares a local binding");
+            let binding = bindings.wire_at(name);
+            let wire = bindings.wire_at(&input.ident);
+            let borrow = input
+                .borrowed
+                .then(|| quote_spanned!(input.alias.span()=> &));
+            let mutable = input
+                .mutable
+                .then(|| quote_spanned!(input.alias.span()=> mut));
+            let binding_mut = bindings.mutability(name);
+            let borrow_mut = if input.borrowed { mutable } else { None };
+            quote_spanned!(input.alias.span()=>
+                #[allow(unused_mut, unused_variables, clippy::let_unit_value)]
+                let #binding_mut #binding = #borrow #borrow_mut #wire;
+            )
+        });
     quote!(#(#inputs)*)
 }
 

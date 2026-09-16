@@ -69,8 +69,8 @@ visualization:
 - a **branch output** is a question or choice output; it selects one branch and
   is an ordinary wire from there on. A name with alternative producers reaches
   its implicit merge; a name without them is captured by its first consumer in
-  source order whenever that output is selected, and by any later consumer
-  under the ordinary rules;
+  source order whenever that output is selected, and by any later consumer under
+  the ordinary rules;
 - an **iteration** is one execution of an entered cycle's body; normal
   completion begins the next iteration, and a `break` completes that cycle;
 - a **case** describes one branch of a choice and is not itself a block;
@@ -579,13 +579,47 @@ native Rust scope retain their ordinary meaning.
 ## 5. Flow inputs and outputs
 
 kaalang v0.1 supports synchronous Rust functions, including `const fn`. An
-`async fn` cannot declare a flow.
+`async fn` cannot declare a flow. A flow may be a free function, an associated
+function, or a method.
 
 Function parameters declare flow inputs. Identifier parameters provide wires;
 `name: T` declares an immutable binding and `mut name: T` explicitly permits
 mutable borrowing of that wire. A wildcard parameter (`_`) accepts and discards
 a flow input and provides no wire. Other parameter patterns, including `ref`
-bindings and destructuring patterns, are invalid, as is a method receiver.
+bindings and destructuring patterns, are invalid.
+
+A receiver declares the flow input named `self`. Rust binds that name only as a
+receiver, so no capture rebinds it: a block that captures the receiver reads it
+exactly as the signature declares it, and spells the capture the same way.
+
+| Receiver                                            | Capture         | Wire              |
+| --------------------------------------------------- | --------------- | ----------------- |
+| a value: `self`, `mut self`, `self: Box<Self>`      | `\|self\|`      | consuming         |
+| a shared reference: `&self`, `self: &Self`          | `\|&self\|`     | borrowing         |
+| a mutable reference: `&mut self`, `self: &mut Self` | `\|&mut self\|` | mutably borrowing |
+
+Any other spelling of a `self` capture is invalid, as is a `self` capture in a
+flow that declares no receiver, and a block output named `self`. Because the
+receiver is a name no binding can take, a body that reads `self` must capture
+it, and a cycle that captures it imports the one wire rather than creating a
+fresh instance per iteration (§4.5).
+
+```rust
+use kaalang::kaalang;
+
+impl Rectangle {
+    #[kaalang]
+    fn scaled_area(&self, scale: u32) -> u32 {
+        #[action("Scale the width.")]
+        let scaled = |&self, scale| { self.width * scale };
+
+        #[action("Multiply by the height.")]
+        let end = |&self, scaled| { scaled * self.height };
+
+        |end| return end;
+    }
+}
+```
 
 A named flow input is a producer occurrence and follows section 6's capture
 requirement. The function return type is the contract checked at the structural
@@ -996,7 +1030,8 @@ The outer syntax is ordinary Rust:
 ```text
 flow := "#[kaalang]" rust_function
 
-flow_parameter := "mut"? identifier ":" rust_type | "_" ":" rust_type
+flow_parameter :=
+    "mut"? identifier ":" rust_type | "_" ":" rust_type | rust_receiver
 
 action_statement :=
     "#[action(" block_description ")]"

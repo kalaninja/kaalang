@@ -1,0 +1,5 @@
+error: `self` names the receiver of a kaalang method, and this flow declares none
+ --> tests/method/compile_fail/receiver_in_a_free_function_body.rs:6:31
+  |
+6 |     let end = |value| value + self.width;
+  |                               ^^^^

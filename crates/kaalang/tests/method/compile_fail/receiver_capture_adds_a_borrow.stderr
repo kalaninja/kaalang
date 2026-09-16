@@ -1,0 +1,5 @@
+error: a kaalang capture of the receiver is spelled `self`, as the signature declares it
+  --> tests/method/compile_fail/receiver_capture_adds_a_borrow.rs:11:21
+   |
+11 |         let end = |&self| self.width;
+   |                     ^^^^

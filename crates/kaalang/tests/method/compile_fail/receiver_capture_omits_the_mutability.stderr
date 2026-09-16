@@ -1,0 +1,5 @@
+error: a kaalang capture of the receiver is spelled `&mut self`, as the signature declares it
+  --> tests/method/compile_fail/receiver_capture_omits_the_mutability.rs:11:21
+   |
+11 |         let end = |&self| self.value;
+   |                     ^^^^

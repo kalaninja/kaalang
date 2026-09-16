@@ -20,18 +20,21 @@ The examples below pair complete kaalang functions with illustrative Rust. They
 show the relevant bindings, scopes, and control flow, not a promised
 token-for-token expansion. Names beginning with `wire_` stand for hygienic
 generated bindings; their plain Rust spellings do not demonstrate macro hygiene.
-The examples omit the signature-preserving outer function that forwards its
-named parameters to the generated implementation. Unit control-wire bindings and
-generated lint attributes are omitted where the branch structure already shows
-their role. Structural returns are shown as native Rust `return` statements.
-Internal names and the generator's own data structures are implementation
-details.
+The examples omit the prologue that moves each named parameter into its wire and
+withdraws the authored name. Unit control-wire bindings and generated lint
+attributes are omitted where the branch structure already shows their role.
+Structural returns are shown as native Rust `return` statements. Internal names
+and the generator's own data structures are implementation details.
 
 ## 2. Bindings, scopes, actions, and calls
 
-The outer function preserves every authored parameter. It forwards named
-parameters to hygienic internal bindings in a nested implementation; wildcard
-parameters remain only in the outer signature because they provide no wire. The
+The signature is emitted exactly as authored and the flow lowers into its body,
+so the flow keeps the scope it was written in: `Self`, the surrounding generics,
+and the receiver resolve there as they do in any other body.
+
+A prologue opens that body. It moves each named parameter into a hygienic
+internal binding and then redeclares the authored name, at its own type and
+without a value; wildcard parameters provide no wire and need neither. The
 internal binding is mutable only when the authored parameter permits and a block
 requests a mutable capture, so a mutable capture of an immutable parameter is
 rejected before lowering. Each authored block body receives local aliases only
@@ -43,16 +46,28 @@ for its listed inputs:
 | `mut name`  | `let mut name = wire_name;`  |
 | `&name`     | `let name = &wire_name;`     |
 | `&mut name` | `let name = &mut wire_name;` |
+| a receiver  | none; `self` is its own wire |
 
 Hygienic internal names keep omitted wires unavailable under their authored
-names. Block-local Rust names cannot change another block's wire resolution. The
-model validates each `&mut` capture of a block output against its authored `mut`
-declaration, and validates matching mutability across alternative producers.
-Permitted mutable captures get mutable internal output bindings and bindings
-after merges. These internal modifiers have expansion spans so unused internal
-mutability does not produce author-facing warnings. An output's authored `mut`
-is a permission and need not be exercised. Authored parameter bindings, mutable
-input aliases, and body locals retain Rust's normal lint behavior.
+names, and the withdrawn parameter reports the authored name at the body that
+reached for a wire it did not capture. It is declared, not initialized, so a
+body that only assigns to an omitted wire writes a value nothing reads, which
+Rust reports as an unused assignment rather than an error. Withdrawing takes the
+authored name outright, so a body that meant an item of the same name is told
+that the parameter shadows it. The receiver is the one name lowering cannot
+touch: Rust binds `self` only as a receiver, so it is neither renamed nor
+withdrawn. [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs) keeps it
+out of an uncapturing body instead, by rejecting a body that reads it; a `self`
+inside a macro's token stream is opaque to that check, as it is to every other
+walk over a body. Block-local Rust names cannot change another block's wire
+resolution. The model validates each `&mut` capture of a block output against
+its authored `mut` declaration, and validates matching mutability across
+alternative producers. Permitted mutable captures get mutable internal output
+bindings and bindings after merges. These internal modifiers have expansion
+spans so unused internal mutability does not produce author-facing warnings. An
+output's authored `mut` is a permission and need not be exercised. Authored
+parameter bindings, mutable input aliases, and body locals retain Rust's normal
+lint behavior.
 
 Input aliases belong to their block's scope. Either kind of borrowed capture can
 produce a reference that outlives the alias when the underlying owner remains
@@ -440,11 +455,11 @@ other attributes, implementing the opt-out described by
 [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs).
 
 Expansion replaces the kaalang body but preserves the authored function
-signature, including parameter names and patterns. Hygienic wire names remain
-confined to a nested implementation. It also preserves the function's name,
-visibility, generics, parameter and return types, supported qualifiers, where
-clause, and other function attributes. kaalang v0.1 supports synchronous flows,
-including `const fn`; an `async fn` is rejected before lowering under
+signature, including parameter names and patterns. Hygienic wire names never
+collide with an authored one. It also preserves the function's name, visibility,
+generics, parameter and return types, supported qualifiers, where clause, and
+other function attributes. kaalang v0.1 supports synchronous flows, including
+`const fn`; an `async fn` is rejected before lowering under
 [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs). The `#[kaalang]`
 attribute and block and case descriptions are consumed during translation; the
 closure-shaped declarations do not become callable Rust closures.
@@ -469,7 +484,9 @@ The input bindings are evaluated once, in authored capture order, before the
 first iteration. Unlike ordinary computational aliases, these bindings remain in
 scope for the complete native loop and are the storage visible to nested kaalang
 blocks. A `mut` value capture therefore carries state between iterations, and a
-borrowed capture remains borrowed until the cycle completes or diverges.
+borrowed capture remains borrowed until the cycle completes or diverges. A
+captured receiver gets no binding of its own: it is one wire for the whole flow,
+which nested blocks reach the same way outside the cycle and inside it.
 
 The output pattern follows the action machinery. One identifier binds the whole
 native loop value, even when that value is a tuple. A tuple pattern destructures

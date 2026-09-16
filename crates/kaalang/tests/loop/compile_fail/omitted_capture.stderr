@@ -1,7 +1,33 @@
-error[E0434]: can't capture dynamic environment in a fn item
+error[E0381]: used binding `count` isn't initialized
+  --> tests/loop/compile_fail/omitted_capture.rs:14:13
+   |
+ 4 | fn invalid(count: usize) {
+   |            ----- binding declared here but left uninitialized
+...
+14 |             count -= 1;
+   |             ^^^^^^^^^^ `count` used here but it isn't initialized
+   |
+help: consider assigning a value
+   |
+ 4 | fn invalid(count: usize = 42) {
+   |                         ++++
+
+error[E0384]: cannot assign twice to immutable variable `count`
   --> tests/loop/compile_fail/omitted_capture.rs:14:13
    |
 14 |             count -= 1;
-   |             ^^^^^
+   |             ^^^^^^^^^^ cannot assign twice to immutable variable
    |
-   = help: use the `|| { ... }` closure form instead
+help: consider making this binding mutable
+   |
+ 4 | fn invalid(mut count: usize) {
+   |            +++
+
+warning: value assigned to `count` is never read
+  --> tests/loop/compile_fail/omitted_capture.rs:14:13
+   |
+14 |             count -= 1;
+   |             ^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+   = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default

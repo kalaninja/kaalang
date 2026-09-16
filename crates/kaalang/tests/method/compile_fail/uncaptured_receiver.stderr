@@ -1,0 +1,5 @@
+error: every kaalang flow input must have a consumer
+ --> tests/method/compile_fail/uncaptured_receiver.rs:9:17
+  |
+9 |     fn invalid(&self, scale: u32) -> u32 {
+  |                 ^^^^

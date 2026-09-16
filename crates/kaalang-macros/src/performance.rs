@@ -29,6 +29,12 @@ fn corpus() -> Vec<(String, ItemFn)> {
     flows
 }
 
+fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
+    attributes
+        .iter()
+        .any(|attribute| attribute.path().is_ident("kaalang"))
+}
+
 fn collect(directory: &Path, flows: &mut Vec<(String, ItemFn)>) {
     let Ok(entries) = fs::read_dir(directory) else {
         return;
@@ -52,13 +58,30 @@ fn collect(directory: &Path, flows: &mut Vec<(String, ItemFn)>) {
             continue;
         };
         for item in file.items {
-            if let syn::Item::Fn(function) = item
-                && function
-                    .attrs
-                    .iter()
-                    .any(|attribute| attribute.path().is_ident("kaalang"))
-            {
-                flows.push((function.sig.ident.to_string(), function));
+            match item {
+                syn::Item::Fn(function) if declares_a_flow(&function.attrs) => {
+                    flows.push((function.sig.ident.to_string(), function));
+                }
+                syn::Item::Impl(block) => {
+                    for item in block.items {
+                        if let syn::ImplItem::Fn(method) = item
+                            && declares_a_flow(&method.attrs)
+                        {
+                            let name = method.sig.ident.to_string();
+                            flows.push((
+                                name,
+                                ItemFn {
+                                    attrs: method.attrs,
+                                    vis: method.vis,
+                                    modifiers: method.modifiers,
+                                    sig: method.sig,
+                                    block: Box::new(method.block),
+                                },
+                            ));
+                        }
+                    }
+                }
+                _ => {}
             }
         }
     }

@@ -573,7 +573,7 @@ fn terminal_cases_start_beyond_the_whole_shared_brancher() {
     let (source, flow) = fixture!("wire/behavior", "blocked_terminal_crossing");
     let file = crate::parse_file(source).unwrap();
     let function = crate::select_flow(&file.items, flow).unwrap();
-    let model = kaalang_model::build(function).unwrap();
+    let model = kaalang_model::build(&function).unwrap();
     let arrangement = &model.arrangement;
     let case = |choice, branch| arrangement.column[&Vertex::Node(NodeId::Case { choice, branch })];
     assert!(
@@ -962,7 +962,7 @@ fn drawn_with(
 ) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares the flow");
-    let mut model = kaalang_model::build(function).expect("the fixture is a valid flow");
+    let mut model = kaalang_model::build(&function).expect("the fixture is a valid flow");
     model.compact_arrangement();
     change(&mut model.arrangement);
     let model = model;
@@ -2965,7 +2965,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     for source in &sources {
         let file = crate::parse_file(source).expect("the probe is valid Rust");
         let function = crate::select_flow(&file.items, "probe").expect("the probe declares it");
-        let mut model = match kaalang_model::build(function) {
+        let mut model = match kaalang_model::build(&function) {
             Ok(model) => model,
             Err(error) => {
                 assert!(

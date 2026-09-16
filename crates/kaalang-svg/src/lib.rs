@@ -3,7 +3,7 @@
 use std::{error::Error, fmt};
 
 use proc_macro2::Span;
-use syn::{File, Item, ItemFn, Meta};
+use syn::{Attribute, File, ImplItem, Item, ItemFn, Meta, TraitItem};
 
 mod captions;
 mod layout;
@@ -26,9 +26,9 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// No exact top-level `#[kaalang]` function has the requested name.
+    /// No exact `#[kaalang]` function has the requested name.
     FlowNotFound(String),
-    /// More than one exact top-level `#[kaalang]` function has the requested name.
+    /// More than one exact `#[kaalang]` function has the requested name.
     AmbiguousFlow(String),
     /// The selected function is not a valid kaalang flow.
     InvalidFlow {
@@ -73,13 +73,12 @@ impl fmt::Display for RenderError {
                 formatter,
                 "could not parse Rust source at {line}:{column}: {message}"
             ),
-            Self::FlowNotFound(name) => write!(
-                formatter,
-                "top-level `#[kaalang]` function `{name}` was not found"
-            ),
+            Self::FlowNotFound(name) => {
+                write!(formatter, "`#[kaalang]` function `{name}` was not found")
+            }
             Self::AmbiguousFlow(name) => write!(
                 formatter,
-                "multiple top-level `#[kaalang]` functions are named `{name}`"
+                "multiple `#[kaalang]` functions are named `{name}`"
             ),
             Self::InvalidFlow {
                 name,
@@ -109,13 +108,13 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders one exact top-level `#[kaalang]` function from a UTF-8 Rust source file.
+/// Renders one exact `#[kaalang]` function from a UTF-8 Rust source file.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust,
 /// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
-/// `flow_name` does not name exactly one top-level `#[kaalang]` function,
+/// `flow_name` does not name exactly one `#[kaalang]` function,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
 /// [`RenderError::InvalidLabelCharacter`] when an authored description
 /// contains a character XML 1.0 cannot represent, and
@@ -139,7 +138,7 @@ pub fn render_source_with_options(
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
     let mut model = kaalang_model::build_with_options(
-        function,
+        &function,
         kaalang_model::BuildOptions {
             collapse_loops: options.collapse_loops,
         },
@@ -160,14 +159,15 @@ pub fn render_source_with_options(
     Ok(svg::serialize(&scene, &model.name.to_string()))
 }
 
-/// Names every top-level `#[kaalang]` function in a UTF-8 Rust source file, in
-/// source order.
+/// Names every `#[kaalang]` function in a UTF-8 Rust source file, free or
+/// associated, in source order.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust.
 pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
     Ok(kaalang_functions(&parse_file(source)?.items)
+        .iter()
         .map(|function| function.sig.ident.to_string())
         .collect())
 }
@@ -183,23 +183,57 @@ fn parse_file(source: &str) -> Result<File, RenderError> {
     })
 }
 
-/// Yields the top-level functions carrying a `#[kaalang]` attribute.
-fn kaalang_functions(items: &[Item]) -> impl Iterator<Item = &ItemFn> {
-    items.iter().filter_map(|item| match item {
-        Item::Fn(function)
-            if function
-                .attrs
+/// Collects the functions carrying a `#[kaalang]` attribute: the free ones and
+/// the associated ones, whose signatures a diagram reads the same way. A trait
+/// method declares a flow through its default body.
+fn kaalang_functions(items: &[Item]) -> Vec<ItemFn> {
+    items
+        .iter()
+        .flat_map(|item| match item {
+            Item::Fn(function) if declares_a_flow(&function.attrs) => vec![function.clone()],
+            Item::Impl(block) => block
+                .items
                 .iter()
-                .any(|attribute| attribute.path().is_ident("kaalang")) =>
-        {
-            Some(function)
-        }
-        _ => None,
-    })
+                .filter_map(|item| match item {
+                    ImplItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
+                        attrs: method.attrs.clone(),
+                        vis: method.vis.clone(),
+                        modifiers: method.modifiers.clone(),
+                        sig: method.sig.clone(),
+                        block: Box::new(method.block.clone()),
+                    }),
+                    _ => None,
+                })
+                .collect(),
+            Item::Trait(declaration) => declaration
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    TraitItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
+                        attrs: method.attrs.clone(),
+                        vis: syn::Visibility::Inherited,
+                        modifiers: method.modifiers.clone(),
+                        sig: method.sig.clone(),
+                        block: Box::new(method.default.clone()?),
+                    }),
+                    _ => None,
+                })
+                .collect(),
+            _ => Vec::new(),
+        })
+        .collect()
 }
 
-fn select_flow<'a>(items: &'a [Item], flow_name: &str) -> Result<&'a ItemFn, RenderError> {
-    let mut matches = kaalang_functions(items).filter(|function| function.sig.ident == flow_name);
+fn declares_a_flow(attributes: &[Attribute]) -> bool {
+    attributes
+        .iter()
+        .any(|attribute| attribute.path().is_ident("kaalang"))
+}
+
+fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
+    let mut matches = kaalang_functions(items)
+        .into_iter()
+        .filter(|function| function.sig.ident == flow_name);
     let Some(function) = matches.next() else {
         return Err(RenderError::FlowNotFound(flow_name.to_owned()));
     };

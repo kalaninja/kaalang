@@ -3,7 +3,7 @@
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprAsync, ExprClosure, ExprReturn, ExprTry, FnArg, Item, ItemFn,
-    LitStr, MacroDelimiter, Meta, Pat, Result, ReturnType, Stmt,
+    LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result, ReturnType, Stmt, Type,
     ext::IdentExt,
     parse_quote_spanned,
     spanned::Spanned,
@@ -29,10 +29,13 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
             "kaalang 0.1 does not support async flows",
         ));
     }
-    Ok(Flow {
+    let flow = Flow {
         flow_inputs: flow_inputs(function)?,
         blocks: blocks(function)?,
-    })
+    };
+    receiver_captures(&flow, receiver(function))?;
+
+    Ok(flow)
 }
 
 /// Extracts identifier flow parameters, preserving mutability in the signature.
@@ -49,12 +52,111 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
                         .map(|input| input.unraw()),
                 ),
             },
-            FnArg::Receiver(receiver) => Some(Err(Error::new(
-                receiver.span(),
-                "#[kaalang] is supported only on free functions",
-            ))),
+            // A receiver is a flow input like any other, under the one name
+            // Rust gives it. Its wire is the receiver itself, so no capture
+            // rebinds it and no spelling other than the authored one is legal.
+            FnArg::Receiver(receiver) => Some(Ok(Ident::new("self", receiver.self_token.span()))),
         })
         .collect()
+}
+
+/// The receiver this flow declares, if it declares one.
+fn receiver(function: &ItemFn) -> Option<&Receiver> {
+    function
+        .sig
+        .inputs
+        .iter()
+        .find_map(|argument| match argument {
+            FnArg::Receiver(receiver) => Some(receiver),
+            FnArg::Typed(_) => None,
+        })
+}
+
+/// How a capture of the receiver is spelled, and the wire it names: the
+/// receiver's own spelling. A receiver taken by reference borrows, however it
+/// is spelled; every other receiver, including `mut self` and `self: Box<Self>`,
+/// is a value like `mut name: T` is.
+fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
+    let borrows = match &receiver.kind {
+        ReceiverKind::Reference(_, _, mutability) => Some(mutability.is_some()),
+        ReceiverKind::Typed(_, ty) => match ty.as_ref() {
+            Type::Reference(reference) => Some(reference.mutability.is_some()),
+            _ => None,
+        },
+        _ => None,
+    };
+    match borrows {
+        Some(true) => ("&mut self", true, true),
+        Some(false) => ("&self", true, false),
+        None => ("self", false, false),
+    }
+}
+
+/// Checks every use of the receiver. A capture names a receiver and is spelled
+/// the way the signature declares it; a body that reads `self` captures it.
+///
+/// The receiver binds itself, so a capture cannot borrow or move it into
+/// anything else and nothing can put the name out of a body's reach. This walk
+/// is what keeps an uncaptured read off the diagram from compiling.
+fn receiver_captures(flow: &Flow, receiver: Option<&Receiver>) -> Result<()> {
+    for block in &flow.blocks {
+        for capture in block.inputs.iter().filter(|input| input.ident == "self") {
+            let Some(receiver) = receiver else {
+                return Err(Error::new(
+                    capture.alias.span(),
+                    "`self` names the receiver of a kaalang method, and this flow declares none",
+                ));
+            };
+            let (spelling, borrowed, mutable) = receiver_capture(receiver);
+            if (capture.borrowed, capture.mutable) != (borrowed, mutable) {
+                return Err(Error::new(
+                    capture.alias.span(),
+                    format!(
+                        "a kaalang capture of the receiver is spelled `{spelling}`, as the signature declares it"
+                    ),
+                ));
+            }
+        }
+        // A cycle's body holds the statements that parse into their own blocks,
+        // and each of those is checked in turn.
+        if block.kind == BlockKind::Loop || block.inputs.iter().any(|input| input.ident == "self") {
+            continue;
+        }
+        if let Some(span) = receiver_use(&block.body) {
+            return Err(Error::new(
+                span,
+                match receiver {
+                    Some(_) => "a kaalang block body that reads `self` must capture the receiver",
+                    None => {
+                        "`self` names the receiver of a kaalang method, and this flow declares none"
+                    }
+                },
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+/// Where a body first names the receiver, if it does. A nested item owns no
+/// receiver and macro tokens are opaque, so the walk reaches neither.
+fn receiver_use(body: &Expr) -> Option<Span> {
+    #[derive(Default)]
+    struct FirstUse(Option<Span>);
+
+    impl<'ast> Visit<'ast> for FirstUse {
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if self.0.is_none() && path.qself.is_none() && path.path.is_ident("self") {
+                self.0 = Some(path.path.span());
+            }
+        }
+
+        fn visit_item(&mut self, _: &'ast Item) {}
+    }
+
+    let mut first = FirstUse::default();
+    first.visit_expr(body);
+    first.0
 }
 
 /// Parses every function-body statement as one kaalang block, then appends the
@@ -763,7 +865,15 @@ fn block_outputs(pattern: &Pat) -> Result<Vec<Ident>> {
 }
 
 fn output_ident(pattern: &Pat) -> Result<Ident> {
-    simple_binding(pattern, "kaalang block outputs", true).map(|ident| ident.unraw())
+    let ident = simple_binding(pattern, "kaalang block outputs", true)?.unraw();
+    if ident == "self" {
+        return Err(Error::new(
+            ident.span(),
+            "`self` names the receiver of a kaalang method and cannot name a block output",
+        ));
+    }
+
+    Ok(ident)
 }
 
 /// Extracts a parenthesized, nonempty description.

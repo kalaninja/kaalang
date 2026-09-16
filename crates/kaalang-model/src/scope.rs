@@ -84,7 +84,14 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
                 .iter_mut()
                 .map(|input| {
                     let name = input.alias.unraw();
-                    let binding = fresh(&name, &mut used, &mut serial);
+                    // The receiver is the one wire a cycle cannot rebind: Rust
+                    // binds `self` only as a receiver, so it stays the same
+                    // wire inside the cycle as outside it.
+                    let binding = if name == "self" {
+                        name.clone()
+                    } else {
+                        fresh(&name, &mut used, &mut serial)
+                    };
                     input.binding = Some(binding.clone());
                     (name, binding)
                 })

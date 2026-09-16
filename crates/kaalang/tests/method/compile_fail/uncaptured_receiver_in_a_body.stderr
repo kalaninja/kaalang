@@ -1,0 +1,5 @@
+error: a kaalang block body that reads `self` must capture the receiver
+  --> tests/method/compile_fail/uncaptured_receiver_in_a_body.rs:17:13
+   |
+17 |             self.value *= 2;
+   |             ^^^^

@@ -1,0 +1,5 @@
+error: `self` names the receiver of a kaalang method and cannot name a block output
+  --> tests/method/compile_fail/self_as_a_block_output.rs:11:13
+   |
+11 |         let self = |&self| self.width;
+   |             ^^^^

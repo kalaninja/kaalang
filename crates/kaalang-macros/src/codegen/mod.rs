@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, ext::IdentExt, token::Mut};
+use syn::{Expr, Lifetime, Pat, token::Mut};
 
 use kaalang_model::{Block, ExecutionPlan, Flow, Input, SemanticModel};
 
@@ -43,10 +43,14 @@ impl Bindings {
             .map(|(index, wire)| {
                 (
                     wire.clone(),
-                    Ident::new(
-                        &format!("__kaalang_wire_{index}"),
-                        Span::mixed_site().located_at(wire.span()),
-                    ),
+                    if wire == "self" {
+                        wire.clone()
+                    } else {
+                        Ident::new(
+                            &format!("__kaalang_wire_{index}"),
+                            Span::mixed_site().located_at(wire.span()),
+                        )
+                    },
                 )
             })
             .collect();
@@ -86,11 +90,17 @@ impl Bindings {
 
     pub(crate) fn wire_at(&self, name: &Ident) -> Ident {
         let mut wire = self.wire(name).clone();
-        wire.set_span(Span::mixed_site().located_at(name.span()));
+        // The receiver is its own wire. Retyping its span in the macro's
+        // hygiene context would stop `self` resolving to the authored one.
+        wire.set_span(if wire == "self" {
+            name.span()
+        } else {
+            Span::mixed_site().located_at(name.span())
+        });
         wire
     }
 
-    fn mutability(&self, name: &Ident) -> Option<Mut> {
+    pub(crate) fn mutability(&self, name: &Ident) -> Option<Mut> {
         // This modifier belongs to generated storage, including producer
         // bindings moved through a merge before any mutable borrow happens.
         self.mutable.contains(name).then(|| Mut {
@@ -257,43 +267,25 @@ pub(crate) fn transfer_value(body: &Expr) -> Option<TokenStream2> {
 /// borrow checking, so its diagnostics must name the block that took the value
 /// rather than the one that produced it.
 pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
-    let bindings = inputs.iter().map(|input| {
-        // The alias keeps the authored spelling, so a wire named `r#type` binds.
-        let alias = &input.alias;
-        let wire = bindings.wire_at(&input.ident);
-        let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
-        let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
-        let (binding_mut, borrow_mut) = if input.borrowed {
-            (None, mutable)
-        } else {
-            (mutable, None)
-        };
-        quote_spanned!(alias.span()=>
-            #[allow(unused_variables, clippy::let_unit_value)]
-            let #binding_mut #alias = #borrow #borrow_mut #wire;
-        )
-    });
+    let bindings = inputs
+        .iter()
+        .filter(|input| input.ident != "self")
+        .map(|input| {
+            // The alias keeps the authored spelling, so a wire named `r#type` binds.
+            let alias = &input.alias;
+            let wire = bindings.wire_at(&input.ident);
+            let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
+            let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
+            let (binding_mut, borrow_mut) = if input.borrowed {
+                (None, mutable)
+            } else {
+                (mutable, None)
+            };
+            quote_spanned!(alias.span()=>
+                #[allow(unused_variables, clippy::let_unit_value)]
+                let #binding_mut #alias = #borrow #borrow_mut #wire;
+            )
+        });
 
     quote!(#(#bindings)*)
-}
-
-/// Rewrites nested implementation parameters to their hygienic wire bindings.
-pub(crate) fn rename_implementation_inputs(function: &mut ItemFn, bindings: &Bindings) {
-    for argument in &mut function.sig.inputs {
-        let FnArg::Typed(argument) = argument else {
-            unreachable!("the parser rejects method receivers")
-        };
-        match argument.pat.as_mut() {
-            Pat::Ident(parameter) => {
-                let name = parameter.ident.unraw();
-                parameter.mutability = parameter
-                    .mutability
-                    .as_ref()
-                    .and(bindings.mutability(&name));
-                parameter.ident = bindings.wire(&name).clone();
-            }
-            Pat::Wild(_) => {}
-            _ => unreachable!("the parser accepts only simple bindings or wildcards"),
-        }
-    }
 }

@@ -1,0 +1,11 @@
+mod build_a_self_value;
+mod call_with_the_receiver;
+mod consume_a_receiver;
+mod doubled;
+mod measure;
+mod mutate_a_receiver;
+mod mutate_an_owned_receiver;
+mod read_a_borrowed_receiver;
+mod read_a_generic_receiver;
+mod receive_inside_a_branch;
+mod receive_inside_a_cycle;

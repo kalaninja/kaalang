@@ -233,10 +233,11 @@ Structural junctions that merge no wire have no node of their own.
 
 ## 5. Flow inputs and outputs
 
-The parameter panel shows every flow input with its Rust type. Every named flow
-input is also shown as an output of the start node, even if no block captures
-it. A wildcard flow input produces no wire label. A zero-computation flow with
-an explicit return connects start to end through that return's route and any
+The parameter panel shows every flow input with its Rust type, a receiver as the
+signature spells it. Every named flow input is also shown as an output of the
+start node, even if no block captures it; a receiver is shown as `self`. A
+wildcard flow input produces no wire label. A zero-computation flow with an
+explicit return connects start to end through that return's route and any
 capture dependency.
 
 ## 6. Wires and labels

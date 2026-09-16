@@ -1,7 +1,13 @@
-error[E0434]: can't capture dynamic environment in a fn item
+error[E0381]: used binding `input` isn't initialized
  --> tests/capture/compile_fail/undeclared_flow_input.rs:6:30
   |
+4 | fn invalid(input: u32, trigger: ()) -> (u32, u32) {
+  |            ----- binding declared here but left uninitialized
+5 |     #[action("Read a flow input omitted from the inputs.")]
 6 |     let output = |trigger| { input };
-  |                              ^^^^^
+  |                              ^^^^^ `input` used here but it isn't initialized
   |
-  = help: use the `|| { ... }` closure form instead
+help: consider assigning a value
+  |
+4 | fn invalid(input: u32 = 42, trigger: ()) -> (u32, u32) {
+  |                       ++++
