@@ -27,7 +27,7 @@ test:
 
 # Redraw the behavior diagrams and show the diff to review.
 svg:
-    cargo test -p kaalang
+    cargo test -p kaalang --test diagrams
     git diff -- '*.svg'
 
 # Measure the performance budgets and print what they found.
