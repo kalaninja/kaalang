@@ -1,10 +1,55 @@
-//! Source generators shared by model and renderer tests. They share inputs,
-//! not decision procedures or expected answers.
+//! Source generators shared by the model and renderer tests. They share
+//! inputs, not decision procedures or expected answers: agreement between two
+//! crates means nothing when both read the same answer from one place.
+
+use std::ops::RangeInclusive;
+
+/// The outcomes a flat cycle body selects between.
+const ROUTES: [&str; 3] = ["repeat", "break", "finish"];
+
+/// The same for a cycle nested in another, where `propagate` hands its result
+/// to the enclosing cycle instead of completing only its own.
+const NESTED_ROUTES: [&str; 4] = ["repeat", "break", "propagate", "finish"];
+
+/// Every body of `count` routes drawn from `names`, counted like an odometer
+/// so the order is stable across the crates that pin their totals.
+fn combinations(names: &[&'static str], count: u32) -> Vec<Vec<&'static str>> {
+    (0..names.len().pow(count))
+        .map(|mut code| {
+            (0..count)
+                .map(|_| {
+                    let name = names[code % names.len()];
+                    code /= names.len();
+                    name
+                })
+                .collect()
+        })
+        .collect()
+}
+
+/// Every flat cycle body of `lengths` routes.
+#[must_use]
+pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
+    lengths
+        .flat_map(|count| combinations(&ROUTES, count))
+        .map(|routes| looping(&routes))
+        .collect()
+}
 
 /// A cycle whose body selects one route per named outcome, in that order.
 /// `repeat` falls through to the end of the body, `break` returns the mode, and
 /// `finish` computes seven before completing the cycle.
-pub(crate) fn looping(routes: &[&str]) -> String {
+///
+/// # Panics
+///
+/// Panics on a route it does not generate. The arms below fall through to
+/// `repeat`, so a misspelled name would quietly drop its case instead.
+#[must_use]
+pub fn looping(routes: &[&str]) -> String {
+    assert!(
+        routes.iter().all(|route| ROUTES.contains(route)),
+        "unknown route in {routes:?}"
+    );
     let cases = routes
         .iter()
         .enumerate()
@@ -68,35 +113,54 @@ pub(crate) fn looping(routes: &[&str]) -> String {
     )
 }
 
+/// The choice that opens a cycle body, naming its outcomes `<prefix><index>`.
+fn selection(routes: &[&str], prefix: &str) -> String {
+    let cases = routes
+        .iter()
+        .enumerate()
+        .map(|(index, route)| format!("        #[case(\"Case {prefix}{index} {route}.\")]"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let outputs = (0..routes.len())
+        .map(|index| format!("{prefix}{index}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let arms = (0..routes.len())
+        .map(|index| {
+            if index + 1 == routes.len() {
+                "            _ => (),".to_owned()
+            } else {
+                format!("            {index} => (),")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "        #[choice(\"Which {prefix} route?\")]\n{cases}\n        let ({outputs}) = |mode| match mode {{\n{arms}\n        }};"
+    )
+}
+
 /// One cycle whose body selects `routes`, wrapped in an outer cycle whose other
 /// branches take `propagate`. It uses the same names as `looping`, plus
 /// `propagate` for an inner result that the enclosing cycle explicitly handles.
-pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
-    let selection = |routes: &[&str], prefix: &str| {
-        let cases = routes
+///
+/// # Panics
+///
+/// Panics on a route it does not generate, for the reason [`looping`] does.
+/// An unrecognized outer route also costs the nested cycle itself, which is
+/// the whole point of the shape.
+#[must_use]
+pub fn nested(outer: &[&str], inner: &[&str]) -> String {
+    assert!(
+        outer
             .iter()
-            .enumerate()
-            .map(|(index, route)| format!("        #[case(\"Case {prefix}{index} {route}.\")]"))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let outputs = (0..routes.len())
-            .map(|index| format!("{prefix}{index}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let arms = (0..routes.len())
-            .map(|index| {
-                if index + 1 == routes.len() {
-                    "            _ => (),".to_owned()
-                } else {
-                    format!("            {index} => (),")
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        format!(
-            "        #[choice(\"Which {prefix} route?\")]\n{cases}\n        let ({outputs}) = |mode| match mode {{\n{arms}\n        }};"
-        )
-    };
+            .all(|route| ROUTES.contains(route) || *route == "inner"),
+        "unknown outer route in {outer:?}"
+    );
+    assert!(
+        inner.iter().all(|route| NESTED_ROUTES.contains(route)),
+        "unknown inner route in {inner:?}"
+    );
     let inner_selection = selection(inner, "i");
     let propagates = inner
         .iter()
@@ -174,31 +238,20 @@ pub(crate) fn nested(outer: &[&str], inner: &[&str]) -> String {
     )
 }
 
-/// The domain the plan declares for the comparison: every flat body of two,
+/// The domain of the independent comparison: every flat body of two,
 /// three and four routes over `repeat/break/finish`, and every three-route outer
 /// body holding one inner cycle over every two-route inner body of
 /// `repeat/break/propagate/finish`.
-pub(crate) fn declared_domain() -> Vec<String> {
-    let names = ["repeat", "break", "finish"];
-    let nested_names = ["repeat", "break", "propagate", "finish"];
-    let mut cases = Vec::new();
-    for count in 2..=4 {
-        for mut code in 0..names.len().pow(count) {
-            let mut routes = Vec::new();
-            for _ in 0..count {
-                routes.push(names[code % names.len()]);
-                code /= names.len();
-            }
-            cases.push(looping(&routes));
-        }
-    }
+#[must_use]
+pub fn declared_domain() -> Vec<String> {
+    let mut cases = flat_bodies(2..=4);
     for position in 0..3 {
-        for first in names {
-            for second in names {
+        for first in ROUTES {
+            for second in ROUTES {
                 let mut outer = vec![first, second];
                 outer.insert(position, "inner");
-                for left in nested_names {
-                    for right in nested_names {
+                for left in NESTED_ROUTES {
+                    for right in NESTED_ROUTES {
                         cases.push(nested(&outer, &[left, right]));
                     }
                 }
@@ -208,28 +261,16 @@ pub(crate) fn declared_domain() -> Vec<String> {
     cases
 }
 
-/// The complete generated corpus used by both model and SVG tests.
-pub(crate) fn loop_shapes() -> Vec<String> {
-    let names = ["repeat", "break", "finish"];
+/// Every generated cycle shape, flat and nested. Both the model and the SVG
+/// tests chain [`question_shapes`] onto this for the corpus they count.
+#[must_use]
+pub fn loop_shapes() -> Vec<String> {
     let mut shapes = declared_domain();
-    for mut code in 0..names.len().pow(5) {
-        let mut routes = Vec::new();
-        for _ in 0..5 {
-            routes.push(names[code % names.len()]);
-            code /= names.len();
-        }
-        shapes.push(looping(&routes));
-    }
-    let nested_names = ["repeat", "break", "propagate", "finish"];
+    shapes.extend(flat_bodies(5..=5));
     for count in 2..=4 {
-        for mut code in 0..nested_names.len().pow(count) {
-            let mut inner = Vec::new();
-            for _ in 0..count {
-                inner.push(nested_names[code % nested_names.len()]);
-                code /= nested_names.len();
-            }
+        for inner in combinations(&NESTED_ROUTES, count) {
             for position in 0..2 {
-                for other in names {
+                for other in ROUTES {
                     let mut outer = vec![other; 2];
                     outer[position] = "inner";
                     shapes.push(nested(&outer, &inner));
@@ -243,24 +284,33 @@ pub(crate) fn loop_shapes() -> Vec<String> {
 /// The same outcomes carried by ordered question ports, rather than a shared
 /// distributor exit. Both forms must respect authored branch order, while
 /// their different ports and endpoints exercise different constructions.
-pub(crate) fn question_shapes() -> Vec<String> {
-    let mut cases = Vec::new();
-    for a in ["repeat", "break", "finish"] {
-        for b in ["repeat", "break", "finish"] {
-            for c in ["repeat", "break", "finish"] {
-                let mut source = looping(&[a, b, c]);
-                let start = source.find("        #[choice").unwrap();
-                let end = start + source[start..].find("        };").unwrap() + "        };".len();
-                source.replace_range(
-                    start..end,
-                    r#"        #[question("Take the first route?")]
+///
+/// # Panics
+///
+/// Panics when `looping` stops emitting the choice this rewrites, which is a
+/// defect in the generator rather than in what it is meant to exercise.
+#[must_use]
+pub fn question_shapes() -> Vec<String> {
+    combinations(&ROUTES, 3)
+        .iter()
+        .map(|routes| {
+            let mut source = looping(routes);
+            let start = source
+                .find("        #[choice")
+                .expect("the generated cycle opens with a choice");
+            let end = start
+                + source[start..]
+                    .find("        };")
+                    .expect("the choice is closed")
+                + "        };".len();
+            source.replace_range(
+                start..end,
+                r#"        #[question("Take the first route?")]
         let (case_0, other) = |mode| mode == 0;
         #[question("Take the second route?")]
         let (case_1, case_2) = |other, mode| mode == 1;"#,
-                );
-                cases.push(source);
-            }
-        }
-    }
-    cases
+            );
+            source
+        })
+        .collect()
 }

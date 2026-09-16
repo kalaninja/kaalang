@@ -1,9 +1,7 @@
 use std::collections::BTreeSet;
 
-#[path = "../../../../kaalang/tests/support/diagram_shapes.rs"]
-mod diagram_shapes;
-pub(super) use diagram_shapes::looping;
-use diagram_shapes::{declared_domain, loop_shapes, nested};
+pub(super) use kaalang_testing::shapes::looping;
+use kaalang_testing::shapes::{declared_domain, flat_bodies, loop_shapes, nested, question_shapes};
 
 use super::{Arrangement, Contour, Side, place, verify};
 use crate::model::{Flow, SemanticModel, WireMerge};
@@ -608,30 +606,12 @@ fn authors_can_reorder_enclosed_cases_to_restore_a_drawing() {
     }
 }
 
-/// Both directions, against a procedure that assumes none of the walk's
-/// transition rules, none of its reductions, and none of its arithmetic: a
-/// topology the construction draws is one the reference finds a construction
-/// for, and a topology it refuses has none. Positives are compared as well as
-/// refusals; skipping the positives would leave the construction answering for
-/// the flows it happens to draw.
-///
-/// A disagreement either way is a counterexample: a false refusal if the
-/// reference finds a construction, an unsound acceptance if it does not.
 /// The shapes every decision test walks: flat cycle bodies of two, three and
-/// four routes, and loops nested inside a loop, drawable and not.
+/// four routes, loops nested inside a loop, drawable and not, and the same
+/// outcomes again on ordered question ports.
 pub(super) fn decision_cases() -> Vec<String> {
     let names = ["repeat", "break", "finish"];
-    let mut cases = Vec::new();
-    for count in 2..=4 {
-        for mut code in 0..names.len().pow(count) {
-            let mut routes = Vec::new();
-            for _ in 0..count {
-                routes.push(names[code % names.len()]);
-                code /= names.len();
-            }
-            cases.push(looping(&routes));
-        }
-    }
+    let mut cases = flat_bodies(2..=4);
     for inner in [
         ["repeat", "break"].as_slice(),
         ["break", "repeat"].as_slice(),
@@ -645,36 +625,36 @@ pub(super) fn decision_cases() -> Vec<String> {
             cases.push(nested(&[other, "inner"], inner));
         }
     }
-    cases.extend(diagram_shapes::question_shapes());
+    cases.extend(question_shapes());
     cases
 }
 
+/// The flat two- and three-route bodies of [`decision_cases`], with the
+/// ordered question ports. Named rather than counted off the front of
+/// `decision_cases`, which would silently follow it when its domain widens.
 pub(super) fn small_decision_cases() -> Vec<String> {
-    decision_cases()
+    flat_bodies(2..=3)
         .into_iter()
-        .take(36)
-        .chain(diagram_shapes::question_shapes())
+        .chain(question_shapes())
         .collect()
 }
 
+/// Both directions, against a procedure that assumes none of the walk's
+/// transition rules, none of its reductions, and none of its arithmetic: a
+/// topology the construction draws is one the reference finds a construction
+/// for, and a topology it refuses has none. Positives are compared as well as
+/// refusals; skipping the positives would leave the construction answering for
+/// the flows it happens to draw.
+///
+/// A disagreement either way is a counterexample: a false refusal if the
+/// reference finds a construction, an unsound acceptance if it does not.
+///
+/// Every flat body of two and three routes, nothing skipped. The wider domain,
+/// which takes long enough to keep out of a default run, is the ignored test
+/// below.
 #[test]
 fn the_construction_agrees_with_an_independent_procedure() {
-    // Every flat body of two and three routes, positives as well as refusals
-    // and nothing skipped. The wider domain, which takes long enough to keep
-    // out of a default run, is the ignored test below.
-    let names = ["repeat", "break", "finish"];
-    let mut cases = Vec::new();
-    for count in 2..=3 {
-        for mut code in 0..names.len().pow(count) {
-            let mut routes = Vec::new();
-            for _ in 0..count {
-                routes.push(names[code % names.len()]);
-                code /= names.len();
-            }
-            cases.push(looping(&routes));
-        }
-    }
-    let counted = agree(&cases);
+    let counted = agree(&flat_bodies(2..=3));
     assert!(
         counted.drawn == 30 && counted.refused == 2 && counted.rejected_earlier == 4,
         "the flat domain should preserve every known outcome: {counted:?}"
@@ -1052,8 +1032,7 @@ pub(super) const fn deep_lane(index: usize) -> usize {
 
 #[test]
 fn ordered_question_ports_cover_genuine_refusals_in_both_procedures() {
-    let counted = agree(&diagram_shapes::question_shapes());
-    println!("ordered questions: {counted:?}");
+    let counted = agree(&question_shapes());
     assert_eq!(
         (counted.drawn, counted.refused, counted.rejected_earlier),
         (21, 2, 4)

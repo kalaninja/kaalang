@@ -1576,9 +1576,6 @@ fn four_nested_back_edges_are_drawn_in_four_lanes() {
     );
 }
 
-#[path = "../../../kaalang/tests/support/diagram_shapes.rs"]
-mod diagram_shapes;
-
 /// Every generated cycle shape the model accepts also renders.
 ///
 /// The model decides realizability, so an accepted flow this renderer cannot
@@ -1587,9 +1584,9 @@ mod diagram_shapes;
 /// wrote, and these are the shapes nobody writes by hand.
 #[test]
 fn every_generated_shape_the_model_accepts_also_renders() {
-    let sources = diagram_shapes::loop_shapes()
+    let sources = kaalang_testing::shapes::loop_shapes()
         .into_iter()
-        .chain(diagram_shapes::question_shapes())
+        .chain(kaalang_testing::shapes::question_shapes())
         .map(|source| format!("#[kaalang]\n{source}"))
         .collect::<Vec<_>>();
     assert_eq!(sources.len(), 2835);

@@ -19,8 +19,8 @@ tests, commit messages, and pull request content.
   could not be called, tested, or measured from another crate.
 - `crates/kaalang-svg/` lays out validated models and renders standalone SVG.
 - `crates/kaalang-testing/` owns the shared test material: the fixture corpus,
-  the generated stress shapes, and the statistic the budgets are stated over.
-  Nothing outside a test depends on it.
+  the generated stress and cycle shapes, and the statistic the budgets are
+  stated over. Nothing outside a test depends on it.
 - `crates/kaalang-cli/` owns the `cargo kaalang` subcommand, shipped as the
   `cargo-kaalang` binary.
 - `crates/kaalang/` exports the public macro and owns its test suite. Behavior
