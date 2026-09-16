@@ -13,14 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npx --yes prettier@3.6.2 --check '**/*.md'
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all -- --check
-      - run: cargo check --workspace
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - uses: extractions/setup-just@v3
+      - run: just fmt-check
+      - run: just rust clippy
+      - run: just rust test
       # The behavior diagrams redraw themselves during the tests above.
       - run: git add -A && git diff --cached --exit-code

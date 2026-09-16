@@ -74,31 +74,32 @@ For syntax or semantic changes:
 
 ## Validation
 
-Markdown is formatted with [Prettier](https://prettier.io/docs/cli). With
-Node.js and npm installed, format it from the repository root:
+Recipes live in `justfile` and the `just/` modules and run from the repository
+root with [just](https://just.systems). Format sources:
 
 ```sh
-npx --yes prettier@3.6.2 --write '**/*.md'
+just fmt
 ```
 
-The version is pinned to match CI. Prettier respects `.gitignore`.
+That formats Markdown with [Prettier](https://prettier.io/docs/cli), which needs
+Node.js and npm and respects `.gitignore`, then Rust with `cargo fmt`. The
+pinned Prettier version lives in `just/docs.just`; CI uses the same one.
 
-Run from the repository root:
+Run the full baseline before committing:
 
 ```sh
-npx --yes prettier@3.6.2 --check '**/*.md'
-cargo fmt --all -- --check
-cargo check --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-git diff --check
+just ci run
 ```
+
+It checks Markdown and Rust formatting, then runs `cargo clippy` with warnings
+denied, `cargo test`, and `git diff --check`. `just rust` and `just docs` list
+the per-step recipes for running one of them alone.
 
 Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
 flow it declares, with that flow's diagram beside it. The diagrams redraw
 themselves during `cargo test`, so a renderer or model change arrives as a diff
-over them. Read that diff before committing: nothing else checks that the new
-diagrams still make sense.
+over them. `just rust svg` redraws them and shows that diff. Read it before
+committing: nothing else checks that the new diagrams still make sense.
 
 Gallery examples may group related flows in one `mod.rs` and share a test. Each
 flow still gets its own `<flow>.svg` beside that module.
