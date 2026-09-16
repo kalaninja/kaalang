@@ -1535,7 +1535,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "exhaustive; run explicitly with --release --ignored"]
     fn the_memoized_walk_agrees_with_the_whole_state_space() {
         compare_reductions(super::super::tests::decision_cases());
     }

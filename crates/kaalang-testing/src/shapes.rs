@@ -192,14 +192,18 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     } else {
         ""
     };
-    let inner_cycle = if propagates {
-        format!(
-            "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
-        )
-    } else {
-        format!(
-            "        #[cycle(\"Exercise the generated inner routes.\")]\n        |mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
-        )
+    // The inner cycle takes the outer route that selected it: a block sitting
+    // where the outer branches are still separate has to belong to one of them.
+    let inner_cycle = |index: usize| {
+        if propagates {
+            format!(
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}, mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
+            )
+        } else {
+            format!(
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}, mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+            )
+        }
     };
     let outer_selection = selection(outer, "o");
     let outer_bodies = outer
@@ -212,7 +216,7 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
             "finish" => format!(
                 "        #[action(\"Finish from o{index}.\")]\n        let completed = |o{index}| 7;"
             ),
-            "inner" => inner_cycle.clone(),
+            "inner" => inner_cycle(index),
             _ => format!(
                 "        #[action(\"Advance in o{index}.\")]\n        |o{index}| ();"
             ),

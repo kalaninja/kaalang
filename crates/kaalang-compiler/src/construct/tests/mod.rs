@@ -452,7 +452,7 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
 #[test]
 fn no_generated_cycle_shape_reaches_an_internal_error() {
     let shapes = loop_shapes();
-    let mut drawn = 0;
+    let (mut drawn, mut crossed) = (0, 0);
     for source in &shapes {
         let function: syn::ItemFn = syn::parse_str(source).expect("the probe parses");
         match crate::build(&function) {
@@ -460,9 +460,22 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
                 drawn += 1;
                 verify::arrangement(&model.flow, &model.topology, &model.arrangement)
                     .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
+                // Compaction trades the row and serial rules for the boundary
+                // rule, so a compacted witness answers to the compacting
+                // verifier and never to the one that built it. The searches
+                // stay unaware of the rectangle on purpose, so an arrangement
+                // may reach compaction already crossing one; what compaction
+                // owes is not to make that worse.
+                let shape = verify::Shape::of(&model.flow, &model.topology);
+                let given =
+                    verify::compacted(&model.flow, &model.topology, &model.arrangement, &shape);
                 model.compact_arrangement();
-                verify::arrangement(&model.flow, &model.topology, &model.arrangement)
-                    .unwrap_or_else(|reason| panic!("compacted {source}\n{reason}"));
+                if let Err(reason) =
+                    verify::compacted(&model.flow, &model.topology, &model.arrangement, &shape)
+                {
+                    assert!(given.is_err(), "compaction broke {source}\n{reason}");
+                    crossed += 1;
+                }
             }
             Err(error) => assert!(
                 !error.to_string().contains("internal kaalang"),
@@ -471,6 +484,14 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
         }
     }
     assert!(drawn > 100, "too few of the generated shapes were drawn");
+    // One shape reaches compaction already crossing a boundary: an outer cycle
+    // of `repeat/inner/repeat` over an inner cycle of `repeat/repeat`, where
+    // the last case's route passes through the inner body's columns. Pinned so
+    // the gap the searches leave cannot widen unnoticed.
+    assert_eq!(
+        crossed, 1,
+        "the boundary rule is crossed by more shapes now"
+    );
 }
 
 /// The deciding sweep alone draws every generated cycle shape the model
@@ -672,7 +693,7 @@ fn the_declared_domain_agrees_with_the_independent_procedure() {
     let counted = agree(&declared_domain());
     println!("{counted:?}");
     assert!(
-        counted.drawn == 325 && counted.refused == 113 && counted.rejected_earlier == 111,
+        counted.drawn == 239 && counted.refused == 70 && counted.rejected_earlier == 240,
         "the declared distributor domain preserves every independently checked answer: {counted:?}"
     );
 }

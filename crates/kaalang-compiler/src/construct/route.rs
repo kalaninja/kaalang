@@ -487,9 +487,12 @@ fn bundled(topology: &Topology, left: usize, right: usize) -> bool {
 }
 
 /// The column one connection leaves its exit by. A select connection uses its
-/// case's column. A later question branch whose merge lies to its right joins
-/// that column immediately, so the side exit reaches the merge rail without a
-/// detour.
+/// case's column. A later question branch joins its merge column immediately
+/// when that column lies between its node and its own branch column, so the
+/// side exit reaches the merge rail without a detour. RFC 0002 §8 puts the
+/// merge on the first of the branches that continue, so a later branch turns
+/// towards it; departing by a column to the right of its own is not a shortcut
+/// but a crossing.
 pub(super) fn departure_column(
     placement: &Placement,
     source: Source,
@@ -502,6 +505,7 @@ pub(super) fn departure_column(
         let merge = placement.column(Vertex::Junction(junction));
         if exit.branch.is_some_and(|branch| branch > 0)
             && placement.column(Vertex::Node(exit.node)) < merge
+            && merge < placement.exit_column(exit)
         {
             return merge;
         }
