@@ -1,6 +1,6 @@
 # RFC 0004: kaalang Rust Lowering
 
-- Status: accepted design draft
+- Status: accepted
 - Language: [RFC 0001: kaalang Language](0001-language.md)
 
 ## 1. Overview
@@ -33,12 +33,13 @@ so the flow keeps the scope it was written in: `Self`, the surrounding generics,
 and the receiver resolve there as they do in any other body.
 
 A prologue opens that body. It moves each named parameter into a hygienic
-internal binding and then redeclares the authored name, at its own type and
-without a value; wildcard parameters provide no wire and need neither. The
-internal binding is mutable only when the authored parameter permits and a block
-requests a mutable capture, so a mutable capture of an immutable parameter is
-rejected before lowering. Each authored block body receives local aliases only
-for its listed inputs:
+internal binding and then redeclares the authored name without a value. The
+declaration uses the parameter's type, or `()` when that type contains
+`impl Trait`, which Rust cannot repeat in a local declaration. Wildcard
+parameters provide no wire and need neither binding. The internal binding is
+mutable only when the authored parameter permits and a block requests a mutable
+capture. Rust rejects a mutable capture when that internal binding is immutable.
+Each authored block body receives local aliases only for its listed inputs:
 
 | Capture     | Rust alias                   |
 | ----------- | ---------------------------- |
@@ -48,14 +49,12 @@ for its listed inputs:
 | `&mut name` | `let name = &mut wire_name;` |
 | a receiver  | none; `self` is its own wire |
 
-Hygienic internal names keep omitted wires unavailable under their authored
-names, and the withdrawn parameter reports the authored name at the body that
-reached for a wire it did not capture. It is declared, not initialized, so a
-body that only assigns to an omitted wire writes a value nothing reads, which
-Rust reports as an unused assignment rather than an error. Withdrawing takes the
-authored name outright, so a body that meant an item of the same name is told
-that the parameter shadows it. The receiver is the one name lowering cannot
-touch: Rust binds `self` only as a receiver, so it is neither renamed nor
+Hygienic wire bindings and uninitialized parameter declarations prevent an
+uncaptured read from reaching a wire. Rust reports the authored parameter name
+at that read. Assigning to the uninitialized declaration affects only that
+local, not the wire, and retains ordinary Rust checks and lints. The declaration
+also shadows any item with the same name. The receiver is the one name lowering
+cannot touch: Rust binds `self` only as a receiver, so it is neither renamed nor
 withdrawn. [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs) keeps it
 out of an uncapturing body instead, by rejecting a body that reads it; a `self`
 inside a macro's token stream is opaque to that check, as it is to every other
@@ -65,9 +64,10 @@ its authored `mut` declaration, and validates matching mutability across
 alternative producers. Permitted mutable captures get mutable internal output
 bindings and bindings after merges. These internal modifiers have expansion
 spans so unused internal mutability does not produce author-facing warnings. An
-output's authored `mut` is a permission and need not be exercised. Authored
-parameter bindings, mutable input aliases, and body locals retain Rust's normal
-lint behavior.
+output's authored `mut` is a permission and need not be exercised. Function
+parameters and authored body locals retain their normal Rust lints. Capture
+aliases suppress unused-variable lints; transfer and persistent cycle bindings
+also suppress unused mutability.
 
 Input aliases belong to their block's scope. Either kind of borrowed capture can
 produce a reference that outlives the alias when the underlying owner remains
@@ -93,9 +93,9 @@ verbatim inside the same `let` initializer, as in
 `let output = { let left = ...; let right = ...; math::difference(left, right) };`.
 Because the application is the author's own tokens at their own spans, Rust
 reports a wrong argument count or type against the function the author named and
-at the argument the author wrote. An alias the application does not pass is
-still bound, which is how a call takes part in a branch or a cycle. These Rust
-bindings implement [RFC 0001 §4.2](0001-language.md#42-call).
+at the argument the author wrote. An alias omitted from the application is still
+bound, preserving its move or borrow and its participation in the flow. These
+Rust bindings implement [RFC 0001 §4.2](0001-language.md#42-call).
 
 For example, the first action borrows a string and produces two outputs. The
 second action consumes the original string together with those outputs:
@@ -221,15 +221,12 @@ block of its wider merge. Lowering can break to the inner label to run the
 partial merge's continuation, or directly to an enclosing join label to skip
 continuations the branch does not enter. These are hygienic implementation
 labels, not authored cycle targets. The partial continuation can then pass its
-outputs to the wider join. No generated `Option` or `Result` carries a routing
-tag or stores a wire. Authored `Option` and `Result` values remain ordinary
-data.
+outputs to the wider join.
 
 Joins transfer the values of same-named alternative outputs into their shared
 lexical scope, including names with no later captures. A leading underscore
 waives only the capture requirement. Values already bound in the enclosing scope
-are not transferred again. Producer records remain available for structural
-checks after a Rust move; they do not require another transfer of the value.
+are not transferred again.
 
 Each branch has an ordinary Rust lexical scope. A value bound there remains
 local unless the current join transfers it. Remaining owned values drop when
@@ -254,9 +251,8 @@ move if a live output still borrows the owner.
 Every validated flow lowers to nested expressions like these. The branch rule of
 [RFC 0001 §7](0001-language.md#7-execution-and-implicit-convergence) keeps each
 block inside one branch until a merge joins it, so ordinary Rust bindings
-express every accepted flow and each authored block body is emitted once.
-Lowering never gives a wire an optional slot or decides at run time whether a
-block executes.
+express every accepted flow and each authored block body is emitted once. The
+generated `if`, `match`, and `loop` expressions determine which blocks run.
 
 ## 4. Choices and case values
 
@@ -340,15 +336,14 @@ function only when it executes a structural return.
 
 The structural return, when present, emits its input aliases and native Rust
 `return` in one scope. A value transfer moves the selected alias or tuple of
-aliases after all captures have been bound. A value-less return emits
-`return ()`. The aliases remain alive through evaluation of the transferred
-value and end as the function returns.
+aliases after all captures have been bound. An omitted operand or the literal
+`()` emits `return;`. The aliases remain alive through evaluation of the
+transferred value and end as the function returns.
 
 When one branch provides an alternative root result while its siblings yield a
-value to a narrower merge, a generated break to the enclosing result merge
-avoids the continuation it does not enter. The single authored return follows
-that ordinary named-wire merge. This structural lowering does not permit a Rust
-`return` in a computational body; that remains a validation error.
+value to a narrower merge, a generated break to the enclosing result merge skips
+the narrower continuation. The single authored return follows the wider wire
+merge.
 
 ```rust
 use kaalang::kaalang;
@@ -418,27 +413,26 @@ binding and a return:
 use kaalang::kaalang;
 
 #[kaalang]
-fn identity<T>(end: T) -> T {
-    |end| return end;
+fn identity<T>(value: T) -> T {
+    |value| return value;
 }
 ```
 
 Illustrative Rust:
 
 ```rust
-fn identity<T>(wire_end: T) -> T {
+fn identity<T>(wire_value: T) -> T {
     {
-        let end = wire_end;
-        return end;
+        let value = wire_value;
+        return value;
     }
 }
 ```
 
-The name `end` in this example is an ordinary input and local alias. Rust checks
-the return value against the authored function return type, including `()` when
-the return type is omitted. Validation rejects a second structural return and a
-reachable end of the root plan with no return; a fully diverging plan emits no
-return.
+Rust checks the return value against the authored function return type,
+including `()` when the return type is omitted. Validation rejects a second
+structural return and a reachable end of the root plan with no return; a fully
+diverging plan emits no return.
 
 ## 6. Placeholders and function attributes
 
@@ -491,9 +485,8 @@ which nested blocks reach the same way outside the cycle and inside it.
 The output pattern follows the action machinery. One identifier binds the whole
 native loop value, even when that value is a tuple. A tuple pattern destructures
 only when the source declares it, including a singleton tuple. An omitted output
-or `let ()` binds unit. Outer alternative cycle producers use the ordinary
-type-gate and merge lowering after each cycle has completed; the private break
-site never becomes an outer producer occurrence.
+or `let ()` binds unit. Alternative cycle outputs use the same type checks and
+merge bindings as other outputs. Their producer is the cycle block.
 
 For example:
 
@@ -544,18 +537,18 @@ fn count_to(wire_count: usize, wire_limit: usize) -> usize {
 }
 ```
 
-Normal body completion is `Repeat { cycle_index }`, emitted as a `continue` to
-the active cycle's generated label. An empty body contains only that generated
-continue. A cycle with no reachable completion has type `!`, provides no runtime
-result, and has no normal continuation in its enclosing sequence.
+Normal body completion emits `continue` to the active cycle's generated label.
+An empty body contains only that generated continue. A cycle with no reachable
+completion has type `!`, provides no runtime result, and has no normal
+continuation in its enclosing sequence.
 
 ### 7.2 Break values and nested cycles
 
 A break emits its input aliases and `break 'generated value` inside the same
-Rust scope. A value-less break emits `break 'generated ()`. Binding and moving
-the result before leaving the scope preserves the authored capture semantics and
-lets an owned iteration local move out. Rust rejects a result borrowing an owner
-that the completed iteration drops.
+Rust scope. An omitted operand or the literal `()` emits `break 'generated;`.
+Binding and moving the result before leaving the scope preserves the authored
+capture semantics and lets an owned iteration local move out. Rust rejects a
+result borrowing an owner that the completed iteration drops.
 
 The target is always the directly containing cycle's generated label. There is
 no authored label resolution or propagation through intervening cycles. A nested
@@ -571,14 +564,12 @@ move performed only by a completing break.
 
 Analysis and plan verification record at most one representative iteration per
 cycle. They replay each authored block once, verify captures and source order,
-check that a break belongs to the active cycle, and record public outcomes as
-`Return { block_index }` or `Repeat { cycle_index }`. Break completion is an
-internal result-boundary transfer, not a public outcome. At most one structural
-return appears in the root plan and emits the native return described in §5; a
-fully diverging root plan has none. No cycle plan may contain one.
+check that a break belongs to the active cycle, and record outcomes as
+`ExecutionOutcome::Return { block_index }` or
+`ExecutionOutcome::Repeat { loop_index }`. Break completion is an internal
+result-boundary transfer, not a public outcome. At most one structural return
+appears in the root plan and emits the native return described in §5; a fully
+diverging root plan has none. No cycle plan may contain one.
 
-Rust checks result types, output destructuring, moves, borrows, and drop order.
-Lowering adds no clone, heap allocation, optional result slot, generated state
-machine, or runtime scope bookkeeping. Native Rust control transfers wholly
-inside a computational body remain valid; transfers from that body into a
-kaalang cycle remain rejected.
+Rust checks result types, output destructuring, moves, borrows, and drop order
+on these native bindings and control transfers.
