@@ -11,7 +11,7 @@ use quote::quote;
 use syn::Lifetime;
 
 use super::{Bindings, block_body, input_bindings, join};
-use kaalang_model::{Block, Branch, Flow, Join, choice_match, is_todo_body};
+use crate::{Block, Branch, Flow, Join, choice_match, is_todo_body};
 
 /// The hygienic binding that carries the selected case value out of its arm.
 fn case_value() -> Ident {

@@ -7,11 +7,11 @@
 //! spatial contract, so a disagreement between the two is a compiler bug rather
 //! than another arrangement to try.
 
-use kaalang_model::geometry::{
+use kaalang_compiler::geometry::{
     bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
 };
-use kaalang_model::topology::{Destination, ExitId, NodeId, Source, Vertex};
-use kaalang_model::{SemanticModel, Side};
+use kaalang_compiler::topology::{Destination, ExitId, NodeId, Source, Vertex};
+use kaalang_compiler::{SemanticModel, Side};
 
 use super::{Connection, Point, Rows, Scene};
 
@@ -252,7 +252,7 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     let row = scene.rank(Vertex::Junction(junction));
     Point {
         x: scene.column_x(scene.column(Vertex::Junction(junction))),
-        y: rows.line_y(kaalang_model::RunLine::Rank(row)),
+        y: rows.line_y(kaalang_compiler::RunLine::Rank(row)),
     }
 }
 
@@ -479,7 +479,7 @@ fn name(scene: &Scene, connection: &Connection) -> String {
         }
     };
     let branch = match connection.source {
-        Source::Exit(kaalang_model::topology::ExitId {
+        Source::Exit(ExitId {
             branch: Some(branch),
             ..
         }) => format!(" branch {}", branch + 1),
@@ -506,12 +506,12 @@ pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
 
 /// Whether a segment passes through a rectangle rather than merely touching it.
 /// The model checks its own boundaries with this same definition.
-pub(super) use kaalang_model::geometry::enters;
+pub(super) use kaalang_compiler::geometry::enters;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use kaalang_model::topology::{ExitId, Topology};
+    use kaalang_compiler::topology::{ExitId, Topology};
 
     fn routes(paths: &[&[(i32, i32)]]) -> Scene {
         let connections = paths
@@ -532,7 +532,7 @@ mod tests {
             width: 10,
             height: 10,
             topology: Topology::default(),
-            arrangement: kaalang_model::Arrangement::default(),
+            arrangement: kaalang_compiler::Arrangement::default(),
             captions: crate::captions::Captions::default(),
             nodes: vec![],
             parameters: None,

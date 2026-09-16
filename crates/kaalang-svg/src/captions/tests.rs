@@ -1,11 +1,11 @@
-use kaalang_model::SemanticModel;
-use kaalang_model::topology::{Connection, Destination, ExitId, NodeId, Source, Vertex};
+use kaalang_compiler::SemanticModel;
+use kaalang_compiler::topology::{Connection, Destination, ExitId, NodeId, Source, Vertex};
 
 use super::{Captions, derive};
 
 fn read(source: &str) -> (SemanticModel, Captions) {
     let function = syn::parse_str(source).expect("the flow parses");
-    let model = kaalang_model::build(&function).expect("the flow is valid");
+    let model = kaalang_compiler::build(&function).expect("the flow is valid");
     let captions = derive(&model, "example", "u8");
     (model, captions)
 }
@@ -15,7 +15,7 @@ fn read(source: &str) -> (SemanticModel, Captions) {
 fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
     let file = crate::parse_file(source).expect("the fixture parses");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares its flow");
-    let model = kaalang_model::build(&function).expect("the fixture is valid");
+    let model = kaalang_compiler::build(&function).expect("the fixture is valid");
     let captions = derive(&model, "example", "u8");
     (model, captions)
 }
@@ -133,7 +133,7 @@ fn end_names_the_transferred_value_instead_of_all_return_captures() {
             .topology
             .nodes
             .iter()
-            .find(|node| node.kind == kaalang_model::topology::NodeKind::End)
+            .find(|node| node.kind == kaalang_compiler::topology::NodeKind::End)
             .expect("the flow returns")
             .id;
         assert_eq!(captions.capture(end), expected);

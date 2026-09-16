@@ -4,7 +4,7 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote_spanned;
 
 use super::{Bindings, block_body, input_bindings, join};
-use kaalang_model::{Branch, Flow, Join};
+use crate::{Branch, Flow, Join};
 
 pub(crate) fn emit(
     flow: &Flow,

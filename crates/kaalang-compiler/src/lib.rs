@@ -4,23 +4,23 @@ use syn::{ItemFn, Result};
 
 mod analyze;
 mod choice;
+mod codegen;
 mod construct;
 pub mod geometry;
 mod model;
 mod parse;
-#[cfg(test)]
-mod performance;
 mod plan;
 mod resolve;
 mod scope;
 pub mod topology;
 
-pub use choice::{choice_match, is_todo_body};
+pub(crate) use choice::{choice_match, is_todo_body};
+pub use codegen::expand;
 pub use construct::{Arrangement, Contour, Route, Run, RunLine, Side};
 pub use model::{
-    Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup,
-    Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget, ProducerId,
-    QuestionBranch, SemanticModel, WireMerge,
+    Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
+    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget,
+    ProducerId, QuestionBranch, SemanticModel, WireMerge,
 };
 
 /// Diagram projection options. Analysis and expanded-topology validation are
@@ -55,31 +55,36 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
 ///
 /// Returns the same parsing, validation, and topology errors as [`build`].
 pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<SemanticModel> {
-    let mut flow = parse::flow(function)?;
-    scope::resolve(&mut flow)?;
-    resolve::flow(&flow)?;
-    let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
-    let execution_plan = plan::flow(&flow, &executions, &merges);
-    let analyzed = topology::Analyzed {
-        flow: &flow,
-        executions: &executions,
-        merges: &merges,
-        execution_plan: &execution_plan,
-    };
-    let expanded = topology::project(&analyzed, false);
-    let expanded_arrangement = construct::construct(&flow, &merges, &expanded)?;
+    let analysis = analyze(function)?;
+    let expanded = project(
+        &analysis,
+        BuildOptions {
+            collapse_loops: false,
+        },
+    );
+    let expanded_arrangement = construct(&analysis, &expanded)?;
     let (topology, arrangement) = if options.collapse_loops {
-        let topology = topology::project(&analyzed, true);
-        let arrangement = construct::construct(&flow, &merges, &topology)?;
+        let topology = project(&analysis, options);
+        let arrangement = construct(&analysis, &topology)?;
         (topology, arrangement)
     } else {
         (expanded, expanded_arrangement)
     };
 
+    let Analysis {
+        name,
+        parameters,
+        return_type,
+        flow,
+        execution_plan,
+        executions,
+        convergence_groups,
+        merges,
+    } = analysis;
     Ok(SemanticModel {
-        name: function.sig.ident.clone(),
-        parameters: function.sig.inputs.iter().cloned().collect(),
-        return_type: function.sig.output.clone(),
+        name,
+        parameters,
+        return_type,
         flow,
         execution_plan,
         executions,
@@ -88,6 +93,118 @@ pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<Se
         topology,
         arrangement,
     })
+}
+
+/// Collects the functions carrying a `#[kaalang]` attribute: the free ones and
+/// the associated ones, whose signatures a diagram reads the same way. A trait
+/// method declares a flow through its default body, so one without declares
+/// nothing. Callers that start from source use this to find the flows.
+///
+/// The attribute is named here rather than in `kaalang-macros`, which defines
+/// it: a `proc-macro` crate exports nothing but its macros.
+#[must_use]
+pub fn flows(items: &[syn::Item]) -> Vec<ItemFn> {
+    items
+        .iter()
+        .flat_map(|item| match item {
+            syn::Item::Fn(function) if declares_a_flow(&function.attrs) => vec![function.clone()],
+            syn::Item::Impl(block) => block
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    syn::ImplItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
+                        attrs: method.attrs.clone(),
+                        vis: method.vis.clone(),
+                        modifiers: method.modifiers.clone(),
+                        sig: method.sig.clone(),
+                        block: Box::new(method.block.clone()),
+                    }),
+                    _ => None,
+                })
+                .collect(),
+            syn::Item::Trait(declaration) => declaration
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    syn::TraitItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
+                        attrs: method.attrs.clone(),
+                        vis: syn::Visibility::Inherited,
+                        modifiers: method.modifiers.clone(),
+                        sig: method.sig.clone(),
+                        block: Box::new(method.default.clone()?),
+                    }),
+                    _ => None,
+                })
+                .collect(),
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
+    attributes
+        .iter()
+        .any(|attribute| attribute.path().is_ident("kaalang"))
+}
+
+/// Parses one flow function, resolves its wires, walks every execution it can
+/// take, and derives the plan that lowers it. The first stage of [`build`]: it
+/// decides whether the flow is a valid program, not whether it can be drawn.
+///
+/// # Errors
+///
+/// Returns the first violation found while parsing block syntax, resolving
+/// wires to their producers, walking every possible execution, or deriving
+/// convergence groups, spanned at the offending token so callers can report it
+/// against the authored source.
+pub fn analyze(function: &ItemFn) -> Result<Analysis> {
+    let mut flow = parse::flow(function)?;
+    scope::resolve(&mut flow)?;
+    resolve::flow(&flow)?;
+    let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
+    let execution_plan = plan::flow(&flow, &executions, &merges);
+
+    Ok(Analysis {
+        name: function.sig.ident.clone(),
+        parameters: function.sig.inputs.iter().cloned().collect(),
+        return_type: function.sig.output.clone(),
+        flow,
+        execution_plan,
+        executions,
+        convergence_groups,
+        merges,
+    })
+}
+
+/// Projects an analyzed flow onto the structural topology RFC 0002 §7 draws:
+/// its nodes, exits, junctions, and the connections between them.
+///
+/// Projection is total. A topology it returns may still have no conforming
+/// arrangement, which is what [`construct`] decides.
+#[must_use]
+pub fn project(analysis: &Analysis, options: BuildOptions) -> topology::Topology {
+    topology::project(
+        &topology::Analyzed {
+            flow: &analysis.flow,
+            executions: &analysis.executions,
+            merges: &analysis.merges,
+            execution_plan: &analysis.execution_plan,
+        },
+        options.collapse_loops,
+    )
+}
+
+/// Searches for a conforming arrangement of a projected topology and checks the
+/// one it finds against an independent verifier.
+///
+/// # Errors
+///
+/// Returns an impossible-topology error, at the block it concerns, when the
+/// flow's required connections have no conforming diagram under RFC 0002, and
+/// an internal construction error when the independent check rejects the
+/// arrangement the search returned.
+pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<Arrangement> {
+    construct::construct(&analysis.flow, &analysis.merges, topology)
 }
 
 #[cfg(test)]

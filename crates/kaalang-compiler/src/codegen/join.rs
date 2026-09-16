@@ -5,7 +5,7 @@ use quote::{quote, quote_spanned};
 use syn::Lifetime;
 
 use super::Bindings;
-use kaalang_model::{Flow, Join, JoinTarget};
+use crate::{Flow, Join, JoinTarget};
 
 /// A verified yield names its destination directly, including enclosing joins.
 fn label(target: JoinTarget) -> Lifetime {

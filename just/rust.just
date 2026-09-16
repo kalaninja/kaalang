@@ -29,3 +29,25 @@ test:
 svg:
     cargo test -p kaalang
     git diff -- '*.svg'
+
+# Measure the performance budgets and print what they found.
+perf:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    for crate in kaalang-compiler kaalang-svg; do
+        printf '\n%s\n' "$crate"
+        if ! measured=$(cargo test -q -p "$crate" --test performance -- --nocapture --test-threads=1 2>&1); then
+            printf '%s\n' "$measured"
+            exit 1
+        fi
+        printf '%s\n' "$measured" \
+            | sed 's/^\.*//' \
+            | grep -E '^[a-z].*: ' \
+            | grep -vE '^(test|running|warning|error|note|help)' \
+            | awk -F': ' '{
+                value = $NF
+                label = substr($0, 1, length($0) - length(value) - 2)
+                printf "  %s\t%s\n", label, value
+            }' \
+            | column -t -s $'\t' || true
+    done

@@ -1,6 +1,6 @@
 //! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
-use kaalang_model::topology::{NodeId, Source, Vertex};
+use kaalang_compiler::topology::{NodeId, Source, Vertex};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{

@@ -13,7 +13,7 @@ not independently reinterpret the authored source.
 ## 2. Layout
 
 The validated model supplies both the topology and its arrangement.
-`kaalang_model::build` validates the complete expanded topology and
+`kaalang_compiler::build` validates the complete expanded topology and
 independently checks its arrangement against RFC 0002 before it returns. For a
 collapsed view, the model layer projects each validated cycle boundary to one
 node and checks a second arrangement for that projection. The renderer chooses

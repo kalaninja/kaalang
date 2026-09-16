@@ -437,7 +437,9 @@ fn nested_break_routes_merge_without_crossing_side_departures() {
 #[test]
 fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
     let mut checked = 0;
-    for (name, function) in crate::performance::corpus() {
+    let corpus = kaalang_testing::corpus::corpus();
+    kaalang_testing::corpus::assert_whole_tree(&corpus);
+    for (name, function) in corpus {
         let Ok(model) = crate::build(&function) else {
             continue;
         };
@@ -446,7 +448,7 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
             panic!("{name}: the sweep refuses a drawable flow: {blocked}")
         });
     }
-    assert!(checked > 100, "the corpus should be the whole tree");
+    assert!(checked > 100, "the sweep should reach most of the corpus");
 }
 
 #[test]
@@ -683,7 +685,7 @@ fn the_construction_agrees_with_an_independent_procedure() {
 /// long enough to keep out of the default run.
 ///
 /// Run it with:
-/// `cargo test -p kaalang-model --lib the_declared_domain_agrees -- --ignored --nocapture`
+/// `cargo test -p kaalang-compiler --lib the_declared_domain_agrees -- --ignored --nocapture`
 #[test]
 #[ignore = "exhaustive; run it with --ignored"]
 fn the_declared_domain_agrees_with_the_independent_procedure() {

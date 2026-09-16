@@ -8,10 +8,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::topology::{
+use kaalang_compiler::topology::{
     Connection, Destination, ExitId, NodeId, NodeKind, Source, Topology,
 };
-use kaalang_model::{BlockKind, Input, ProducerId, SemanticModel};
+use kaalang_compiler::{BlockKind, Input, ProducerId, SemanticModel};
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
 /// Every string the diagram shows, keyed by the structural item that owns it.

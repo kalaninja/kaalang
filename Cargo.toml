@@ -2,9 +2,10 @@
 members = [
     "crates/kaalang",
     "crates/kaalang-cli",
+    "crates/kaalang-compiler",
     "crates/kaalang-macros",
-    "crates/kaalang-model",
     "crates/kaalang-svg",
+    "crates/kaalang-testing",
 ]
 resolver = "3"
 
@@ -14,9 +15,10 @@ license = "MIT OR Apache-2.0"
 version = "0.1.0"
 
 [workspace.dependencies]
+kaalang-compiler = { path = "crates/kaalang-compiler" }
 kaalang-macros = { path = "crates/kaalang-macros" }
-kaalang-model = { path = "crates/kaalang-model" }
 kaalang-svg = { path = "crates/kaalang-svg" }
+kaalang-testing = { path = "crates/kaalang-testing" }
 
 proc-macro2 = "1"
 quote = "1"

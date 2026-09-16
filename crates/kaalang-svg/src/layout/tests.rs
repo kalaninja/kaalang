@@ -291,7 +291,7 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
                 |end| return end;
             }
         };
-        let model = kaalang_model::build(&function).unwrap();
+        let model = kaalang_compiler::build(&function).unwrap();
         let scene = layout(&model, "example", &[], "usize").unwrap();
         let labels = scene
             .labels
@@ -313,13 +313,10 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
 /// The same, over an arrangement a test has changed first. Only a change the
 /// model's own check still accepts is a witness, so a test using this says
 /// which one it made and why it conforms.
-fn drawn_with(
-    (source, flow): (&str, &str),
-    change: impl FnOnce(&mut kaalang_model::Arrangement),
-) -> Scene {
+fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement)) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares the flow");
-    let mut model = kaalang_model::build(&function).expect("the fixture is a valid flow");
+    let mut model = kaalang_compiler::build(&function).expect("the fixture is a valid flow");
     model.compact_arrangement();
     change(&mut model.arrangement);
     let model = model;
@@ -475,14 +472,14 @@ fn a_branch_effect_reaches_the_merge_before_common_work() {
     assert!(captions.handover(effect).is_empty());
     assert_eq!(
         topology.leaving(effect).copied().collect::<Vec<_>>(),
-        [kaalang_model::topology::Connection {
+        [kaalang_compiler::topology::Connection {
             source: Source::Exit(effect),
             destination: Destination::Junction(0),
         }]
     );
     assert_eq!(
         topology.incoming(stamp).copied().collect::<Vec<_>>(),
-        [kaalang_model::topology::Connection {
+        [kaalang_compiler::topology::Connection {
             source: Source::Junction(0),
             destination: stamp,
         }]
@@ -658,7 +655,7 @@ fn separate_roots_and_their_consumer_share_the_main_column() {
         scene
             .topology
             .connections
-            .contains(&kaalang_model::topology::Connection {
+            .contains(&kaalang_compiler::topology::Connection {
                 source: Source::Exit(ExitId::of(NodeId::Block(1))),
                 destination: Destination::Node(end.id),
             })
@@ -1019,7 +1016,7 @@ fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
         for point in &mut pulled.connections[back].points[1..3] {
             point.x = inside;
         }
-        let reason = super::route::verify(&pulled)
+        let reason = route::verify(&pulled)
             .expect("a back edge pulled over its body or a nested back edge is rejected");
         assert!(
             reason.contains(&format!(
@@ -1077,12 +1074,12 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
         }
     }
     assert!(
-        super::end::verify(&raised).is_some(),
+        end::verify(&raised).is_some(),
         "a node below end should be caught"
     );
     // Final geometry verification also checks end placement.
     assert_eq!(
-        super::route::verify(&raised).as_deref(),
+        route::verify(&raised).as_deref(),
         Some("end must be below every other node and iteration back edge"),
         "the geometry gate should run the end rule"
     );
@@ -1101,7 +1098,7 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
             for point in &mut trailing.connections[back].points {
                 point.y = top;
             }
-            super::end::verify(&trailing).is_none()
+            end::verify(&trailing).is_none()
         },
         "a back edge level with end's top edge is allowed"
     );
@@ -1109,7 +1106,7 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
         point.y = top + 1;
     }
     assert!(
-        super::end::verify(&trailing).is_some(),
+        end::verify(&trailing).is_some(),
         "a back edge below end should be caught"
     );
 }
@@ -1251,7 +1248,7 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
         point.x = beyond;
     }
     assert_eq!(
-        super::route::verify(&passed).as_deref(),
+        route::verify(&passed).as_deref(),
         Some(
             format!(
                 "the iteration back edge of the cycle at block {} climbs inside the back edge nested in its body at {beyond}",
@@ -1601,7 +1598,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     for source in &sources {
         let file = crate::parse_file(source).expect("the probe is valid Rust");
         let function = crate::select_flow(&file.items, "probe").expect("the probe declares it");
-        let mut model = match kaalang_model::build(&function) {
+        let mut model = match kaalang_compiler::build(&function) {
             Ok(model) => model,
             Err(error) => {
                 assert!(

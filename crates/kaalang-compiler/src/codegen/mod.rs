@@ -4,9 +4,13 @@ use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, Lifetime, Pat, token::Mut};
+use syn::{Expr, ItemFn, Lifetime, Pat, Result, token::Mut};
 
-use kaalang_model::{Block, ExecutionPlan, Flow, Input, SemanticModel};
+use crate::{Analysis, Block, BuildOptions, ExecutionPlan, Flow, Input};
+
+mod parameters;
+#[cfg(test)]
+mod tests;
 
 mod choice;
 mod join;
@@ -24,14 +28,14 @@ pub(crate) struct Bindings {
 }
 
 impl Bindings {
-    pub(crate) fn new(model: &SemanticModel) -> Self {
+    pub(crate) fn new(analysis: &Analysis) -> Self {
         // Flow-input spellings remain available for block-local input aliases.
-        let wires = model
+        let wires = analysis
             .flow
             .flow_inputs
             .iter()
-            .chain(model.flow.blocks.iter().flat_map(|block| &block.outputs))
-            .chain(model.flow.blocks.iter().flat_map(|block| {
+            .chain(analysis.flow.blocks.iter().flat_map(|block| &block.outputs))
+            .chain(analysis.flow.blocks.iter().flat_map(|block| {
                 block
                     .inputs
                     .iter()
@@ -52,7 +56,7 @@ impl Bindings {
                 )
             })
             .collect();
-        let ExecutionPlan::End { gates, .. } = &model.execution_plan else {
+        let ExecutionPlan::End { gates, .. } = &analysis.execution_plan else {
             unreachable!("the verified plan is rooted at end")
         };
         let gates = gates
@@ -65,7 +69,7 @@ impl Bindings {
                 )
             })
             .collect();
-        let mutable = model
+        let mutable = analysis
             .flow
             .blocks
             .iter()
@@ -323,4 +327,36 @@ pub(crate) fn input_bindings(
         });
 
     quote!(#(#bindings)*)
+}
+
+/// Lowers one kaalang flow function to the Rust that runs it: the whole
+/// compilation `#[kaalang]` performs, above which the macro crate is only the
+/// token boundary. The returned function keeps the signature it was given and
+/// carries the emitted body.
+///
+/// # Errors
+///
+/// Returns the same errors as [`crate::build`].
+pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
+    let analysis = crate::analyze(&function)?;
+    // Realizability is a language rule, so the diagram is decided even though
+    // the arrangement is discarded: a flow no diagram can draw is not a flow.
+    let topology = crate::project(&analysis, BuildOptions::default());
+    crate::construct(&analysis, &topology)?;
+
+    let bindings = Bindings::new(&analysis);
+    let parameters = parameters::emit(&function, &bindings);
+    let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
+    // The flow lowers in place, so it keeps the scope the author wrote it in:
+    // `Self`, the surrounding generics, and the receiver all resolve as they do
+    // in any other body. A nested item would see none of them.
+    *function.block = syn::parse2(quote!({
+        #[allow(clippy::used_underscore_binding)]
+        {
+            #parameters
+            #body
+        }
+    }))?;
+
+    Ok(function)
 }

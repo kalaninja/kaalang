@@ -53,19 +53,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "kaalang-macros"
+name = "kaalang-compiler"
 version = "0.1.0"
 dependencies = [
- "kaalang-model",
+ "kaalang-testing",
  "proc-macro2",
  "quote",
  "syn",
 ]
 
 [[package]]
-name = "kaalang-model"
+name = "kaalang-macros"
 version = "0.1.0"
 dependencies = [
+ "kaalang-compiler",
  "proc-macro2",
  "quote",
  "syn",
@@ -75,10 +76,19 @@ dependencies = [
 name = "kaalang-svg"
 version = "0.1.0"
 dependencies = [
- "kaalang-model",
+ "kaalang-compiler",
+ "kaalang-testing",
  "proc-macro2",
  "syn",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "kaalang-testing"
+version = "0.1.0"
+dependencies = [
+ "kaalang-compiler",
+ "syn",
 ]
 
 [[package]]

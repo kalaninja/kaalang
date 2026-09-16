@@ -956,7 +956,7 @@ mod tests {
         let junction = Vertex::Junction(0);
         let mut topology = Topology::default();
         topology.vertices = vec![junction];
-        topology.connections = vec![crate::topology::Connection {
+        topology.connections = vec![Connection {
             source: Source::Junction(1),
             destination: junction,
         }];

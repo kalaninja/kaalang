@@ -4,7 +4,7 @@ use crate::layout::{
     CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
     LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, Node, ParameterPanel, Point, Scene,
 };
-use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source};
+use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {

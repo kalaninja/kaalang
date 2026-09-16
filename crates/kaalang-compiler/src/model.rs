@@ -11,6 +11,32 @@ use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 use crate::construct::Arrangement;
 use crate::topology::Topology;
 
+/// Everything the analysis phases derive from one flow function, before any
+/// diagram exists: the resolved blocks and wires, every finite execution
+/// summary, the convergence groups and wire merges, and the lowering plan.
+///
+/// A caller that only needs diagnostics stops here, without paying for the
+/// arrangement search that [`crate::construct`] runs.
+pub struct Analysis {
+    /// The authored flow function name.
+    pub name: Ident,
+    /// The authored flow parameters.
+    pub parameters: Vec<FnArg>,
+    /// The authored flow return type.
+    pub return_type: ReturnType,
+    /// The resolved blocks and wires, ending with the implicit completion boundary.
+    pub flow: Flow,
+    /// The verified lowering plan.
+    pub execution_plan: ExecutionPlan,
+    /// Every structural execution summary, ordered by branch selections, then blocks,
+    /// then capture dependencies and implicit block order.
+    pub executions: Vec<Execution>,
+    /// Every continuation group, ordered by branching block, then branch list.
+    pub convergence_groups: Vec<ConvergenceGroup>,
+    /// Implicit junctions of equally named alternative outputs, before captures.
+    pub merges: Vec<WireMerge>,
+}
+
 /// A validated kaalang flow: its blocks, finite structural execution summaries, its
 /// convergence groups and wire merges, and the verified plan that lowers it.
 pub struct SemanticModel {

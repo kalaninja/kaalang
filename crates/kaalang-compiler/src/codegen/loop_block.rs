@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote_spanned;
 
 use super::{Bindings, input_bindings, loop_label, output_pattern};
-use kaalang_model::{ExecutionPlan, Flow};
+use crate::{ExecutionPlan, Flow};
 
 pub(super) fn emit(
     flow: &Flow,

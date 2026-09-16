@@ -104,6 +104,31 @@ committing: nothing else checks that the new diagrams still make sense.
 Gallery examples may group related flows in one `mod.rs` and share a test. Each
 flow still gets its own `<flow>.svg` beside that module.
 
+## Performance budgets
+
+Each crate bounds the stages it owns: `kaalang-compiler` for analysis, topology
+construction and lowering to Rust, `kaalang-svg` for rendering. They share one
+corpus, one set of generated stress shapes, and one statistic through
+`kaalang-testing`. Keep them sharing it: a budget stated over its own corpus or
+its own statistic stops comparing with the others.
+
+The corpus is the flows the fixtures above already declare, read as text, so it
+grows with the language instead of being kept in step by hand.
+
+The bounds are wall-clock in the unoptimized dev profile, which is the profile a
+macro expansion runs in. They are stated over a recorded median with enough
+headroom to survive a loaded machine, because they exist to catch a large
+regression rather than drift. Record the measured median beside any constant you
+change, and run the suite twice: a budget that only passes once is not a gate.
+
+`just rust perf` runs them one crate at a time, serially, and prints what they
+measured as a table. Prefer its numbers to the ones `cargo test` prints: that
+runs the budgets beside each other, so it measures contention as well as work.
+
+Each run prints the distribution behind its verdict, not just the number it
+asserts on. A p100 several times the p50 means the machine was busy, not that
+something got slower.
+
 ## Commits
 
 Use Conventional Commits:

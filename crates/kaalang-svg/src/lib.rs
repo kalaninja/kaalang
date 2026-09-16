@@ -3,7 +3,7 @@
 use std::{error::Error, fmt};
 
 use proc_macro2::Span;
-use syn::{Attribute, File, ImplItem, Item, ItemFn, Meta, TraitItem};
+use syn::{File, Item, ItemFn, Meta};
 
 mod captions;
 mod layout;
@@ -41,7 +41,7 @@ pub enum RenderError {
     /// The flow has a checked arrangement, but realizing it in pixels — with
     /// the dimensions its nodes and labels need — broke RFC 0002 §8 or drew
     /// something other than the arrangement. A topology with no conforming
-    /// diagram is rejected by `kaalang_model::build` and arrives as
+    /// diagram is rejected by `kaalang_compiler::build` and arrives as
     /// `InvalidFlow`, so this is a geometry, label, or correspondence failure,
     /// and one the uncompacted realization could not avoid either: that
     /// realization is kept and used whenever a compaction cannot be made to
@@ -137,9 +137,9 @@ pub fn render_source_with_options(
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
-    let mut model = kaalang_model::build_with_options(
+    let mut model = kaalang_compiler::build_with_options(
         &function,
-        kaalang_model::BuildOptions {
+        kaalang_compiler::BuildOptions {
             collapse_loops: options.collapse_loops,
         },
     )
@@ -166,7 +166,7 @@ pub fn render_source_with_options(
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust.
 pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
-    Ok(kaalang_functions(&parse_file(source)?.items)
+    Ok(kaalang_compiler::flows(&parse_file(source)?.items)
         .iter()
         .map(|function| function.sig.ident.to_string())
         .collect())
@@ -183,55 +183,8 @@ fn parse_file(source: &str) -> Result<File, RenderError> {
     })
 }
 
-/// Collects the functions carrying a `#[kaalang]` attribute: the free ones and
-/// the associated ones, whose signatures a diagram reads the same way. A trait
-/// method declares a flow through its default body.
-fn kaalang_functions(items: &[Item]) -> Vec<ItemFn> {
-    items
-        .iter()
-        .flat_map(|item| match item {
-            Item::Fn(function) if declares_a_flow(&function.attrs) => vec![function.clone()],
-            Item::Impl(block) => block
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    ImplItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: method.vis.clone(),
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.block.clone()),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            Item::Trait(declaration) => declaration
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    TraitItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: syn::Visibility::Inherited,
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.default.clone()?),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            _ => Vec::new(),
-        })
-        .collect()
-}
-
-fn declares_a_flow(attributes: &[Attribute]) -> bool {
-    attributes
-        .iter()
-        .any(|attribute| attribute.path().is_ident("kaalang"))
-}
-
 fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
-    let mut matches = kaalang_functions(items)
+    let mut matches = kaalang_compiler::flows(items)
         .into_iter()
         .filter(|function| function.sig.ident == flow_name);
     let Some(function) = matches.next() else {
@@ -283,7 +236,7 @@ fn location(span: Span) -> (usize, usize) {
 /// characters, punctuation, and the escaped source form of a literal. None of
 /// those is a character [`invalid_xml_character`] rejects, so that caption is
 /// not checked here.
-fn validate_labels(model: &kaalang_model::SemanticModel) -> Result<(), RenderError> {
+fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), RenderError> {
     for block in &model.flow.blocks {
         let (line, column) = location(block.span);
         let description = block

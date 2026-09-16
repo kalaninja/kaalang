@@ -3,8 +3,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_model::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
-use kaalang_model::{Arrangement, RunLine, SemanticModel, Side};
+use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
+use kaalang_compiler::{Arrangement, RunLine, SemanticModel, Side};
 use syn::{ReturnType, Signature, spanned::Spanned};
 
 use crate::captions::{self, Captions};
@@ -146,7 +146,7 @@ pub(crate) struct Node {
 /// One point of the diagram, in pixels. The model's own check reads the same
 /// type over its abstract grid, so the crossing rules of `geometry` decide for
 /// both.
-pub(crate) use kaalang_model::geometry::Point;
+pub(crate) use kaalang_compiler::geometry::Point;
 
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
 /// leaves and a capture to the node it reaches.
@@ -241,11 +241,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             .expect("a repeating cycle has a boundary");
         let (boundary_header, boundary_end) = (boundary.header, boundary.end);
         let obstructions = |scene: &Scene| {
-            let mut bounds = scene
-                .labels
-                .iter()
-                .map(label::label_rect)
-                .collect::<Vec<_>>();
+            let mut bounds = scene.labels.iter().map(label_rect).collect::<Vec<_>>();
             bounds.extend(
                 scene
                     .topology

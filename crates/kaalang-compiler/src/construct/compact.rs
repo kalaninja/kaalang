@@ -290,8 +290,8 @@ mod tests {
         let column = model.arrangement.column[&tail];
         let mut candidate = model.arrangement.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
-        let shape = super::super::verify::Shape::of(&model.flow, &model.topology);
-        let refused = super::verify::compacted(&model.flow, &model.topology, &candidate, &shape)
+        let shape = verify::Shape::of(&model.flow, &model.topology);
+        let refused = verify::compacted(&model.flow, &model.topology, &candidate, &shape)
             .expect_err("the outer return would cross the nested frame");
         assert!(refused.contains("cycle"), "{refused}");
         assert!(
@@ -367,10 +367,8 @@ mod tests {
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
         }
-        super::super::verify::arrangement(&model.flow, &model.topology, &model.arrangement)
-            .unwrap();
+        verify::arrangement(&model.flow, &model.topology, &model.arrangement).unwrap();
         arrangement(&model.flow, &model.topology, &mut model.arrangement);
-        super::super::verify::arrangement(&model.flow, &model.topology, &model.arrangement)
-            .unwrap();
+        verify::arrangement(&model.flow, &model.topology, &model.arrangement).unwrap();
     }
 }

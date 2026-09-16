@@ -11,7 +11,7 @@
 
 use std::collections::BTreeSet;
 
-use kaalang_model::topology::{Destination, ExitId, NodeId, Source, Vertex};
+use kaalang_compiler::topology::{Destination, ExitId, NodeId, Source, Vertex};
 
 use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
@@ -129,7 +129,7 @@ fn place_merge_label(
     scene: &Scene,
     junction: usize,
     merged_exits: &mut BTreeSet<ExitId>,
-    merged_captures: &mut BTreeSet<kaalang_model::topology::NodeId>,
+    merged_captures: &mut BTreeSet<NodeId>,
 ) {
     let topology = &scene.topology;
     let captions = &scene.captions;
@@ -209,7 +209,7 @@ fn place_exit_labels(
     }
 }
 
-fn node_of(destination: Destination) -> kaalang_model::topology::NodeId {
+fn node_of(destination: Destination) -> NodeId {
     match destination {
         Destination::Node(node) => node,
         Destination::Junction(_) => unreachable!("a shared label needs a node at both ends"),
@@ -435,7 +435,7 @@ fn label_width(lines: &[String], font_size: i32) -> i32 {
 mod tests {
     use super::*;
     use crate::captions::Captions;
-    use kaalang_model::topology::{NodeId, Topology};
+    use kaalang_compiler::topology::{NodeId, Topology};
 
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
@@ -448,7 +448,7 @@ mod tests {
             width: 200,
             height: 200,
             topology: Topology::default(),
-            arrangement: kaalang_model::Arrangement::default(),
+            arrangement: kaalang_compiler::Arrangement::default(),
             captions: Captions::default(),
             nodes: node
                 .into_iter()
