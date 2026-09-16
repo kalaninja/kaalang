@@ -12,7 +12,7 @@ use crate::geometry::{
     Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
 };
 use crate::model::Flow;
-use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
+use crate::topology::{Destination, Loop, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, RunLine, Side};
 
@@ -149,25 +149,21 @@ pub(super) fn polyline(
     straighten(points)
 }
 
-/// One iteration back edge as an orthogonal polyline: out of the tail, up the contour,
-/// and horizontally into the entry (RFC 0002 §8).
+/// The iteration back edge of the cycle at `index` as an orthogonal polyline:
+/// out of the tail, up the contour, and horizontally into the entry (RFC 0002
+/// §8).
 pub(super) fn back_edge_polyline(
     topology: &Topology,
     arrangement: &Arrangement,
     grid: &Grid,
-    tail: usize,
-    entry: usize,
+    index: usize,
     contour: super::Contour,
 ) -> Vec<Point> {
+    let Loop { tail, entry, .. } = topology.loops[index];
     let tail_line = grid.rank(arrangement.rank[&Vertex::Junction(tail)]);
     let entry_line = grid.rank(arrangement.rank[&Vertex::Junction(entry)]);
-    let loop_index = topology
-        .loops
-        .iter()
-        .position(|loop_| loop_.tail == tail)
-        .expect("a projected cycle tail");
     let position = |column| grid.contour(super::Contour { column, ..contour });
-    let Some(route) = arrangement.back_routes.get(&loop_index) else {
+    let Some(route) = arrangement.back_routes.get(&index) else {
         return straighten(vec![
             Point {
                 x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
@@ -316,12 +312,7 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
     if arrangement.gap_lanes.len() != arrangement.ranks {
         return Err("the arrangement counts lanes for a different number of rank gaps".to_owned());
     }
-    for (index, route) in arrangement
-        .routes
-        .iter()
-        .chain(arrangement.back_routes.values())
-        .enumerate()
-    {
+    for (index, route) in arrangement.all_routes().enumerate() {
         for run in &route.runs {
             match run.line {
                 RunLine::Rank(rank) if rank >= arrangement.ranks => {
@@ -429,21 +420,9 @@ fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
 /// distributor detour; a tail may finish at either end of its arrival rail.
 fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
     for &vertex in &topology.vertices {
-        if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
-            || topology
-                .loops
-                .iter()
-                .any(|loop_| vertex == Vertex::Junction(loop_.tail))
-        {
-            continue;
-        }
-        let mut incoming = topology.incoming(vertex);
-        let Some(wire) = incoming.next() else {
+        let Some(wire) = super::serial_arrival(topology, vertex) else {
             continue;
         };
-        if incoming.next().is_some() {
-            continue;
-        }
         let column = match wire.source {
             Source::Exit(exit) => {
                 arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit]
@@ -497,31 +476,19 @@ fn branch_columns(
             ));
         }
         for (entry, first) in super::regions::continuations(topology, block, &regions.branches) {
-            // Read the first branch's actual approach, which may have moved
-            // through a nested selection since leaving this brancher.
-            let mut frontier = vec![entry];
-            let mut approaches = Vec::new();
-            while let Some(vertex) = frontier.pop() {
-                for connection in topology.incoming(vertex) {
-                    match connection.source {
-                        Source::Junction(junction) => frontier.push(Vertex::Junction(junction)),
-                        Source::Exit(exit)
-                            if regions.branches[first].contains(&Vertex::Node(exit.node))
-                                || (exit.node == NodeId::Block(block)
-                                    && exit.branch == Some(first)) =>
-                        {
-                            approaches.push(
-                                arrangement.column[&Vertex::Node(exit.node)]
-                                    + arrangement.exit_offset[&exit],
-                            );
-                        }
-                        Source::Exit(_) => {}
-                    }
-                }
-            }
-            let column = approaches.into_iter().min().ok_or_else(|| {
-                format!("continuation entry {entry:?} has no first-branch approach")
-            })?;
+            let column = super::regions::first_branch_approaches(
+                topology,
+                &regions.branches,
+                block,
+                first,
+                entry,
+            )
+            .into_iter()
+            .map(|exit| {
+                arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit]
+            })
+            .min()
+            .ok_or_else(|| format!("continuation entry {entry:?} has no first-branch approach"))?;
             if arrangement.column[&entry] != column {
                 return Err(format!(
                     "block {} draws continuation entry {entry:?} away from its first branch's approach column {column}",
@@ -668,21 +635,41 @@ fn routes(
         }
     }
 
-    for left in 0..lines.len() {
-        for right in left + 1..lines.len() {
-            let (shared, meetings) = meetings(
-                ends(topology, left),
-                &lines[left],
-                ends(topology, right),
-                &lines[right],
-            );
-            if !compatible(&lines[left], &lines[right], shared, &meetings) {
-                return Err(format!("connections {} and {} cross", left + 1, right + 1));
-            }
-        }
+    if let Some((left, right)) = crossing(topology, lines) {
+        return Err(format!("connections {} and {} cross", left + 1, right + 1));
     }
 
     Ok(())
+}
+
+/// The first pair of connections whose polylines cross, including a descent
+/// through another question's side departure. Bundles may share segments, but
+/// the complete polylines must still meet the ordinary crossing rules.
+pub(super) fn crossing(topology: &Topology, lines: &[Vec<Point>]) -> Option<(usize, usize)> {
+    // Most pairs in a long flow occupy disjoint vertical intervals. Reject
+    // those pairs before computing bundle meetings and comparing segments.
+    let spans = lines
+        .iter()
+        .map(|line| {
+            line.iter()
+                .fold((i32::MAX, i32::MIN), |(low, high), point| {
+                    (low.min(point.y), high.max(point.y))
+                })
+        })
+        .collect::<Vec<_>>();
+    for (left, line) in lines.iter().enumerate() {
+        for (right, other) in lines.iter().enumerate().skip(left + 1) {
+            if spans[left].1 < spans[right].0 || spans[right].1 < spans[left].0 {
+                continue;
+            }
+            let (shared, allowed) =
+                meetings(ends(topology, left), line, ends(topology, right), other);
+            if !compatible(line, other, shared, &allowed) {
+                return Some((left, right));
+            }
+        }
+    }
+    None
 }
 
 /// Each iteration back edge climbs outside its body, on the side its contour names, and
@@ -695,20 +682,8 @@ fn back_edges(
     lines: &[Vec<Point>],
 ) -> Result<(), String> {
     let vertices = vertex_points(topology, arrangement, grid);
-    let back_edges = topology
-        .loops
-        .iter()
-        .enumerate()
-        .map(|(i, loop_)| {
-            back_edge_polyline(
-                topology,
-                arrangement,
-                grid,
-                loop_.tail,
-                loop_.entry,
-                arrangement.contours[i],
-            )
-        })
+    let back_edges = (0..topology.loops.len())
+        .map(|i| back_edge_polyline(topology, arrangement, grid, i, arrangement.contours[i]))
         .collect::<Vec<_>>();
     let mut drawn: Vec<&Vec<Point>> = Vec::new();
     for (index, loop_) in topology.loops.iter().enumerate() {
@@ -829,24 +804,6 @@ mod tests {
             reason.contains("its convergence group"),
             "the reserved columns should be the rule that objects: {reason}"
         );
-    }
-
-    /// How deep a back edge may climb beside a column is a fact about the
-    /// topology, not about any renderer's spacing. A presentation holds
-    /// whatever this allows; it does not decide it.
-    #[test]
-    fn the_lane_bound_counts_cycles_rather_than_pixels() {
-        let mut topology = Topology::default();
-        assert_eq!(contour_lanes(&topology), 0);
-        for loops in 1..=8 {
-            topology.loops.push(crate::topology::Loop {
-                header: loops,
-                entry: loops * 2,
-                tail: loops * 2 + 1,
-                prefer_left: true,
-            });
-            assert_eq!(contour_lanes(&topology), loops);
-        }
     }
 
     #[test]

@@ -4,13 +4,8 @@
 //! `kaalang_model::build` now decides realizability, so the diagram
 //! construction is part of every expansion even though the macro discards the
 //! arrangement after lowering. The model's own measurements split that cost
-//! from semantic analysis; this one shows what it amounts to end to end,
+//! from semantic analysis; this one bounds what it amounts to end to end,
 //! beside the bindings and the emitted tokens that only this crate pays.
-//!
-//! `measure_the_expansion_cost` prints the numbers and is ignored by default,
-//! because a wall-clock reading is not a stable assertion. The budget test
-//! beside it asserts a bound this crate records rather than one the plan
-//! published, since the plan asks for the measurement and sets no target.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -87,46 +82,14 @@ fn collect(directory: &Path, flows: &mut Vec<(String, ItemFn)>) {
     }
 }
 
-/// One pass of `expand` over every fixture flow, and one of `build` alone for
-/// comparison.
-fn pass(corpus: &[(String, ItemFn)]) -> (Duration, Duration) {
+/// One pass of `expand` over every fixture flow.
+fn pass(corpus: &[(String, ItemFn)]) -> Duration {
     let started = Instant::now();
     for (name, function) in corpus {
         let mut function = function.clone();
         super::expand(&mut function).unwrap_or_else(|error| panic!("{name}: {error}"));
     }
-    let expansion = started.elapsed();
-    let started = Instant::now();
-    for (name, function) in corpus {
-        kaalang_model::build(function).unwrap_or_else(|error| panic!("{name}: {error}"));
-    }
-    (expansion, started.elapsed())
-}
-
-fn median(mut samples: Vec<Duration>) -> Duration {
-    samples.sort_unstable();
-    samples[samples.len() / 2]
-}
-
-/// One warm-up pass and twenty timed passes, reporting the corpus totals and
-/// the share the model's own work takes of them.
-#[test]
-#[ignore = "a wall-clock measurement, not an assertion; run it with --ignored"]
-fn measure_the_expansion_cost() {
-    let corpus = corpus();
-    let _ = pass(&corpus);
-    let mut expansion = Vec::new();
-    let mut model = Vec::new();
-    for _ in 0..20 {
-        let (whole, built) = pass(&corpus);
-        expansion.push(whole);
-        model.push(built);
-    }
-    println!("corpus flows: {}", corpus.len());
-    println!("expansion, corpus totals: samples {expansion:?}");
-    println!("build alone, corpus totals: samples {model:?}");
-    println!("expansion, corpus total median: {:?}", median(expansion));
-    println!("build alone, corpus total median: {:?}", median(model));
+    started.elapsed()
 }
 
 /// What one pass of the whole macro path over the corpus is allowed to cost.
@@ -145,7 +108,7 @@ fn expansion_stays_inside_its_budget() {
     assert!(corpus.len() > 100, "the corpus should be the whole tree");
     // One warm-up pass, so the first run's page faults are not measured.
     let _ = pass(&corpus);
-    let (expansion, _) = pass(&corpus);
+    let expansion = pass(&corpus);
     assert!(
         expansion < EXPANSION_BUDGET,
         "expanding {} flows took {expansion:?}, past the {EXPANSION_BUDGET:?} budget",

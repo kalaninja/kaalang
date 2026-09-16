@@ -85,71 +85,49 @@ fn writes_default_and_explicit_outputs_only_after_success() {
         kaalang_svg::render_source(SOURCE, "route").unwrap()
     );
 
-    let missing_path = directory.join("missing.svg");
-    let missing = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
-        .current_dir(&directory)
-        .args(["diagram", "flow.rs", "--flow", "missing"])
-        .output()
-        .unwrap();
-    assert!(!missing.status.success());
-    assert!(!missing_path.exists());
-
-    let invalid_source = directory.join("invalid.rs");
-    let invalid_output = directory.join("invalid.svg");
-    fs::write(&invalid_source, "#[kaalang] fn invalid(input: u8) -> u8 {}").unwrap();
-    let invalid = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
-        .current_dir(&directory)
-        .arg("diagram")
-        .arg(&invalid_source)
-        .args(["--flow", "invalid", "-o"])
-        .arg(&invalid_output)
-        .output()
-        .unwrap();
-    assert!(!invalid.status.success());
-    assert!(!invalid_output.exists());
-
-    // A topology with no conforming diagram is an authored-flow error, so it
-    // reaches the command line the way every other one does: no output, and the
-    // model's own wording rather than a rendering failure.
-    let impossible_source = directory.join("impossible.rs");
-    let impossible_output = directory.join("impossible.svg");
-    fs::write(&impossible_source, IMPOSSIBLE).unwrap();
-    let impossible = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
-        .current_dir(&directory)
-        .arg("diagram")
-        .arg(&impossible_source)
-        .args(["--flow", "invalid", "-o"])
-        .arg(&impossible_output)
-        .output()
-        .unwrap();
-    assert!(!impossible.status.success());
-    assert!(!impossible_output.exists());
-    let reported = String::from_utf8_lossy(&impossible.stderr);
-    assert!(
-        reported.contains("could not construct a diagram under RFC 0002"),
-        "the command line should report the model's decision: {reported}"
-    );
+    // A failed flow never touches its output, so a stale diagram survives. A
+    // topology with no conforming diagram is an authored-flow error, and reaches
+    // the command line the way every other one does: in the model's own wording
+    // rather than as a rendering failure.
+    for (file, contents, flow, reported) in [
+        ("flow.rs", SOURCE, "missing", "`missing` was not found"),
+        (
+            "invalid.rs",
+            "#[kaalang] fn invalid(input: u8) -> u8 {}",
+            "invalid",
+            "invalid kaalang flow `invalid`",
+        ),
+        (
+            "impossible.rs",
+            IMPOSSIBLE,
+            "invalid",
+            "could not construct a diagram under RFC 0002",
+        ),
+    ] {
+        fs::write(directory.join(file), contents).unwrap();
+        let preserved = directory.join(format!("{file}.svg"));
+        fs::write(&preserved, "keep this diagram").unwrap();
+        let failed = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
+            .current_dir(&directory)
+            .args(["diagram", file, "--flow", flow, "-o"])
+            .arg(&preserved)
+            .output()
+            .unwrap();
+        assert!(!failed.status.success(), "{file}");
+        let stderr = String::from_utf8_lossy(&failed.stderr);
+        assert!(stderr.contains(reported), "{file}: {stderr}");
+        assert_eq!(
+            fs::read_to_string(&preserved).unwrap(),
+            "keep this diagram",
+            "{file}"
+        );
+    }
     assert!(
         matches!(
             kaalang_svg::render_source(IMPOSSIBLE, "invalid"),
             Err(kaalang_svg::RenderError::InvalidFlow { .. })
         ),
         "the library should reject it as an invalid flow, not an unroutable one"
-    );
-
-    let preserved_output = directory.join("preserved.svg");
-    fs::write(&preserved_output, "keep this diagram").unwrap();
-    let preserved = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
-        .arg("diagram")
-        .arg(&invalid_source)
-        .args(["--flow", "invalid", "-o"])
-        .arg(&preserved_output)
-        .output()
-        .unwrap();
-    assert!(!preserved.status.success());
-    assert_eq!(
-        fs::read_to_string(preserved_output).unwrap(),
-        "keep this diagram"
     );
 }
 

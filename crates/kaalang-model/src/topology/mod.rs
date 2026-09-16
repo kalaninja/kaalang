@@ -283,26 +283,6 @@ impl Topology {
                             && self.incoming(connection.destination).count() == 1)
         )
     }
-
-    /// Whether one exit hands over exactly the wires that meet at one junction,
-    /// in the same order: position for position, the occurrences it provides are
-    /// alternatives of the merges that converge there.
-    #[must_use]
-    pub fn provides_merged_wires(
-        &self,
-        merges: &[WireMerge],
-        exit: ExitId,
-        junction: usize,
-    ) -> bool {
-        let group = &self.junctions[junction].merges;
-        let provides = &self.exit(exit).provides;
-        !group.is_empty()
-            && provides.len() == group.len()
-            && provides
-                .iter()
-                .zip(group)
-                .all(|(producer, &merge)| merges[merge].producers.contains(producer))
-    }
 }
 
 /// The analyzed parts the projection reads. `build` holds them before it can
@@ -466,7 +446,7 @@ fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
         for &producer in &merge.producers {
             match producer {
                 ProducerId::BlockOutput { block, output } => {
-                    let branch = branches(model.flow.blocks[block].kind);
+                    let branch = model.flow.blocks[block].branch_count() > 0;
                     entries.insert(block, branch.then_some(output));
                 }
                 ProducerId::CycleInput { block, .. } => {
@@ -487,9 +467,10 @@ fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
     };
     let mut groups: Vec<(_, Vec<usize>)> = Vec::new();
     for merge in 0..model.merges.len() {
-        if consumers(model, &model.merges[merge].wire)
-            .find(|&block| represented_block(model, block, collapse_loops))
-            .is_none()
+        if !model.merges[merge]
+            .after
+            .iter()
+            .any(|&block| represented_block(model, block, collapse_loops))
         {
             continue;
         }
@@ -522,16 +503,6 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
     later
 }
 
-fn consumers<'a>(model: &'a Analyzed<'a>, wire: &'a Ident) -> impl Iterator<Item = usize> + 'a {
-    model
-        .flow
-        .blocks
-        .iter()
-        .enumerate()
-        .filter(move |(_, block)| block.inputs.iter().any(|input| input.ident == *wire))
-        .map(|(index, _)| index)
-}
-
 /// One exit per branch output, each handing over the single output it carries.
 /// `exit` names the id the kind gives one branch, which is the only part that
 /// differs between a question and a choice.
@@ -547,20 +518,6 @@ fn branch_exits(
             output: branch,
         }],
     })
-}
-
-/// Whether this kind scopes its outputs per branch, so an output is provided
-/// only on the branch selected and each branch owns its own exit.
-fn branches(kind: BlockKind) -> bool {
-    match kind {
-        BlockKind::Action
-        | BlockKind::Call
-        | BlockKind::Loop
-        | BlockKind::Break
-        | BlockKind::Return => false,
-        BlockKind::Question | BlockKind::Choice => true,
-        BlockKind::End => unreachable!("end declares no output"),
-    }
 }
 
 /// The only exit of a block that hands over every output it declares, in
@@ -684,15 +641,18 @@ fn connections(
                 if !merge
                     .producers
                     .iter()
-                    .any(|&producer| produced(model, execution, producer))
+                    .any(|&producer| model.flow.produces(execution, producer))
                 {
                     continue;
                 }
                 direct.extend(merge.producers.iter().filter_map(|&producer| {
-                    produced(model, execution, producer).then_some(Connection {
-                        source: source(model, producer, boundaries, collapse_loops),
-                        destination: Destination::Junction(junction),
-                    })
+                    model
+                        .flow
+                        .produces(execution, producer)
+                        .then_some(Connection {
+                            source: source(model, producer, boundaries, collapse_loops),
+                            destination: Destination::Junction(junction),
+                        })
                 }));
                 // Serial routes carry the merge through omitted structural
                 // consumers to the next visible block or iteration tail.
@@ -901,7 +861,7 @@ fn junction_after(
                     && merge
                         .producers
                         .iter()
-                        .any(|&producer| produced(model, execution, producer))
+                        .any(|&producer| model.flow.produces(execution, producer))
                     && (merge.before.contains(&block)
                         || merge.producers.iter().any(|&producer| {
                             source(model, producer, boundaries, collapse_loops) == exit
@@ -1037,12 +997,6 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .collect()
 }
 
-/// Reports whether one producer occurrence provides its wire in this execution.
-/// A branch output does so only when its own branch was selected.
-fn produced(model: &Analyzed<'_>, execution: &Execution, producer: ProducerId) -> bool {
-    model.flow.produces(execution, producer)
-}
-
 /// The exit at which one producer occurrence appears: the start node for a flow
 /// input, and otherwise the exit that carries that output. A branch output only
 /// ever produces on its own branch, so its position is the selected one and
@@ -1087,7 +1041,7 @@ fn selected_exit(
     block: usize,
     collapse_loops: bool,
 ) -> Source {
-    let output = if branches(model.flow.blocks[block].kind) {
+    let output = if model.flow.blocks[block].branch_count() > 0 {
         execution
             .selected(block)
             .expect("a participating brancher selects a branch")

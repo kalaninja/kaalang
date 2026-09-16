@@ -14,7 +14,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{BlockKind, Flow};
-use crate::topology::{ExitId, NodeId, Topology, Vertex};
+use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
 /// Every question and choice of a flow, in authored order.
 pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
@@ -306,6 +306,36 @@ pub(super) fn continuations(
             .then(|| (vertex, group[0]))
         })
         .collect()
+}
+
+/// The exits of `block`'s branch `first` that reach the shared continuation
+/// `entry`, read back through the junctions before it. A continuation follows
+/// the first branch's actual approach, which may have moved through a nested
+/// selection since leaving the brancher.
+pub(super) fn first_branch_approaches(
+    topology: &Topology,
+    branches: &[BTreeSet<Vertex>],
+    block: usize,
+    first: usize,
+    entry: Vertex,
+) -> BTreeSet<ExitId> {
+    let mut pending = vec![entry];
+    let mut approaches = BTreeSet::new();
+    while let Some(vertex) = pending.pop() {
+        for wire in topology.incoming(vertex) {
+            match wire.source {
+                Source::Junction(junction) => pending.push(Vertex::Junction(junction)),
+                Source::Exit(exit)
+                    if branches[first].contains(&Vertex::Node(exit.node))
+                        || (exit.node == NodeId::Block(block) && exit.branch == Some(first)) =>
+                {
+                    approaches.insert(exit);
+                }
+                Source::Exit(_) => {}
+            }
+        }
+    }
+    approaches
 }
 
 /// Every vertex a route reaches from the start node without passing `avoided`.

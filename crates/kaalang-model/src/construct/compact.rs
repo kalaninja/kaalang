@@ -36,11 +36,7 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
             }
             let mut candidate = built.clone();
             candidate.gap_lanes[gap] -= 1;
-            for route in candidate
-                .routes
-                .iter_mut()
-                .chain(candidate.back_routes.values_mut())
-            {
+            for route in candidate.all_routes_mut() {
                 for run in &mut route.runs {
                     if let RunLine::Lane {
                         gap: at,
@@ -199,11 +195,7 @@ fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement) -> bool {
             *row -= usize::from(*row >= rank);
         }
         let lanes = candidate.gap_lanes[rank - 2];
-        for route in candidate
-            .routes
-            .iter_mut()
-            .chain(candidate.back_routes.values_mut())
-        {
+        for route in candidate.all_routes_mut() {
             for run in &mut route.runs {
                 match &mut run.line {
                     RunLine::Rank(row) => *row -= usize::from(*row >= rank),
@@ -252,11 +244,7 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
     for contour in &mut built.contours {
         contour.column = map(contour.column);
     }
-    for route in built
-        .routes
-        .iter_mut()
-        .chain(built.back_routes.values_mut())
-    {
+    for route in built.all_routes_mut() {
         route.departure = map(route.departure);
         route.arrival = map(route.arrival);
         for run in &mut route.runs {

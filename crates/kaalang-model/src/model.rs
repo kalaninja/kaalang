@@ -1,6 +1,8 @@
 //! The authored and resolved flow models, the recorded executions and
 //! convergence groups and wire merges, and the compiler's execution plan.
 
+use std::collections::BTreeMap;
+
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
 use syn::ext::IdentExt;
@@ -157,11 +159,7 @@ impl Block {
             unreachable!("parse::call validates a call body as one application")
         };
         // A `macro_rules!` substitution arrives inside an invisible group.
-        let mut function = application.func.as_ref();
-        while let Expr::Group(group) = function {
-            function = &group.expr;
-        }
-        let Expr::Path(path) = function else {
+        let Expr::Path(path) = crate::parse::ungrouped(&application.func) else {
             unreachable!("parse::call validates a callee as a path")
         };
         let mut text = String::new();
@@ -252,6 +250,27 @@ pub struct Flow {
 }
 
 impl Flow {
+    /// The persistent local wire of every capture of one cycle, keyed by its binding.
+    pub(crate) fn cycle_bindings(&self, header: usize) -> BTreeMap<Ident, ProducerId> {
+        self.blocks[header]
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(input, declaration)| {
+                (
+                    declaration
+                        .binding
+                        .clone()
+                        .expect("a cycle capture declares a local binding"),
+                    ProducerId::CycleInput {
+                        block: header,
+                        input,
+                    },
+                )
+            })
+            .collect()
+    }
+
     /// The loops enclosing one block, innermost first.
     pub(crate) fn enclosing(&self, block: usize) -> impl Iterator<Item = usize> + '_ {
         std::iter::successors(self.blocks[block].parent, |&header| {
@@ -465,7 +484,7 @@ pub enum ExecutionPlan {
     },
     Question {
         index: usize,
-        branches: [Branch; 2],
+        branches: Vec<Branch>,
         /// Successive joins from the narrowest execution context outward.
         joins: Vec<Join>,
     },

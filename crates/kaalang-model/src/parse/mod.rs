@@ -184,7 +184,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
     for statement in statements {
         let mut inputs = Vec::new();
         let mut normalized = None;
-        let expression = if let Stmt::Expr(expression, semicolon) = statement {
+        let expression = if let Stmt::Expr(expression, _) = statement {
             if let Expr::Closure(closure) = expression
                 && closure.attrs.is_empty()
             {
@@ -198,19 +198,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
                     normalized = Some(body.clone());
                 }
             }
-            let expression = normalized.as_ref().unwrap_or(expression);
-            if matches!(expression, Expr::Break(_) | Expr::Return(_)) && semicolon.is_none() {
-                let kind = if matches!(expression, Expr::Break(_)) {
-                    "break"
-                } else {
-                    "return"
-                };
-                return Err(Error::new_spanned(
-                    statement,
-                    format!("a kaalang {kind} requires a trailing semicolon"),
-                ));
-            }
-            Some(expression)
+            Some(normalized.as_ref().unwrap_or(expression))
         } else {
             None
         };
@@ -277,7 +265,7 @@ fn noun(kind: BlockKind) -> &'static str {
 
 /// Peels the invisible group a `macro_rules!` substitution arrives in, so a
 /// flow another macro wrote is read the way its author spelled it.
-fn ungrouped(mut expression: &Expr) -> &Expr {
+pub(crate) fn ungrouped(mut expression: &Expr) -> &Expr {
     while let Expr::Group(group) = expression {
         expression = &group.expr;
     }
@@ -741,23 +729,11 @@ fn validate_transfer_value(value: &Expr, inputs: &[Input], kind: &str) -> Result
 }
 
 fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
-    let Expr::Path(path) = value else {
-        return Err(Error::new_spanned(
-            value,
-            format!(
-                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
-            ),
-        ));
+    let ident = match value {
+        Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() => path.path.get_ident(),
+        _ => None,
     };
-    if !path.attrs.is_empty() {
-        return Err(Error::new_spanned(
-            value,
-            format!(
-                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
-            ),
-        ));
-    }
-    let Some(ident) = path.path.get_ident().filter(|_| path.qself.is_none()) else {
+    let Some(ident) = ident else {
         return Err(Error::new_spanned(
             value,
             format!(

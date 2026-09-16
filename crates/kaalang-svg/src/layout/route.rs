@@ -239,17 +239,7 @@ fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
             }
             Vertex::Junction(junction) => {
                 let at = scene
-                    .connections
-                    .iter()
-                    .find_map(|edge| {
-                        if edge.source == Source::Junction(junction) {
-                            edge.points.first()
-                        } else if edge.destination == vertex {
-                            edge.points.last()
-                        } else {
-                            None
-                        }
-                    })
+                    .junction_at(junction)
                     .expect("a body junction has an incident route")
                     .x;
                 (at, at)
@@ -273,15 +263,9 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
 /// climb, so it checks the actual geometry and does not take
 /// the side and the lane on trust.
 fn verify_back_edges(scene: &Scene) -> Option<String> {
-    let climbs = scene
-        .topology
-        .loops
-        .iter()
-        .map(|loop_| {
-            let edge = scene
-                .connections
-                .iter()
-                .find(|edge| edge.source == Source::Junction(loop_.tail))?;
+    let climbs = (0..scene.topology.loops.len())
+        .map(|index| {
+            let edge = scene.back_edge(index)?;
             if !edge.points.windows(2).any(|pair| pair[1].y < pair[0].y)
                 || edge.points.windows(2).any(|pair| pair[1].y > pair[0].y)
                 || edge.points.len() < 4
@@ -331,11 +315,7 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
             ));
         }
         // Its own entry and tail are part of the body too; use their drawn ends.
-        let edge = scene
-            .connections
-            .iter()
-            .find(|edge| edge.source == Source::Junction(loop_.tail))
-            .expect("the climb above has an edge");
+        let edge = scene.back_edge(index).expect("the climb above has an edge");
         let endpoints = [edge.points[0].x, edge.points[edge.points.len() - 1].x];
         let (left, right) = body_extent(scene, index).unwrap_or((endpoints[0], endpoints[0]));
         let left = left.min(endpoints[0]).min(endpoints[1]);
@@ -515,6 +495,13 @@ fn name(scene: &Scene, connection: &Connection) -> String {
 fn touches(connection: &Connection, node: NodeId) -> bool {
     matches!(connection.source, Source::Exit(exit) if exit.node == node)
         || connection.destination == Destination::Node(node)
+}
+
+/// Whether any segment of a route passes through a rectangle.
+pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
+    points
+        .windows(2)
+        .any(|segment| enters(segment[0], segment[1], bounds))
 }
 
 /// Whether a segment passes through a rectangle rather than merely touching it.

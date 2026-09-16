@@ -9,8 +9,6 @@ use syn::{Error, Result};
 
 use crate::model::{BlockKind, BranchSelection, Execution, Flow, ProducerId, WireMerge};
 
-use super::produced;
-
 /// The selections one producer occurrence sits inside: what its block inherited
 /// by capture, plus the branch it selects when the block is a question or choice.
 fn occurrence(
@@ -20,7 +18,7 @@ fn occurrence(
     output: usize,
 ) -> BTreeSet<BranchSelection> {
     let mut selections = inherited.clone();
-    if branches(flow.blocks[block].kind) {
+    if flow.blocks[block].branch_count() > 0 {
         selections.insert(BranchSelection {
             block,
             branch: output,
@@ -60,10 +58,6 @@ fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
         blocks.push(inherited);
     }
     blocks
-}
-
-fn branches(kind: BlockKind) -> bool {
-    matches!(kind, BlockKind::Question | BlockKind::Choice)
 }
 
 /// One implicit junction seen from source order: its last alternative, the
@@ -130,7 +124,7 @@ impl<'a> Junction<'a> {
         let Some((_, reached)) = self
             .producers
             .iter()
-            .find(|&&(producer, _)| produced(self.flow, execution, producer))
+            .find(|&&(producer, _)| self.flow.produces(execution, producer))
         else {
             return false;
         };
@@ -152,7 +146,7 @@ impl<'a> Junction<'a> {
                 .all(|other| {
                     self.producers
                         .iter()
-                        .any(|&(producer, _)| produced(self.flow, other, producer))
+                        .any(|&(producer, _)| self.flow.produces(other, producer))
                 })
     }
 }

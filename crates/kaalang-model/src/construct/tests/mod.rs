@@ -19,6 +19,27 @@ fn arrangement(model: &SemanticModel) -> Arrangement {
         .expect("the flow has a conforming arrangement")
 }
 
+/// The deciding sweep's checked arrangement for one flow, or the message of
+/// the topology it refuses. An internal refusal, or an arrangement its own
+/// check rejects, is a defect either way, and panics with `label`.
+fn swept(
+    label: &str,
+    flow: &Flow,
+    merges: &[WireMerge],
+    topology: &Topology,
+) -> Result<Arrangement, String> {
+    match super::sweep::search(flow, merges, topology) {
+        Ok(built) => {
+            verify::arrangement(flow, topology, &built).unwrap_or_else(|reason| {
+                panic!("{label}\nthe sweep drew an invalid arrangement: {reason}")
+            });
+            Ok(built)
+        }
+        Err(super::sweep::Refusal::Impossible(blocked)) => Err(blocked.message),
+        Err(super::sweep::Refusal::Internal(reason)) => panic!("{label}\n{reason}"),
+    }
+}
+
 /// The parts the arrangement reads, so a test can rebuild a candidate.
 pub(super) struct Parts {
     pub(super) flow: Flow,
@@ -371,27 +392,8 @@ fn descriptions_do_not_change_the_arrangement() {
         ),
     ] {
         assert_ne!(plain, wordy, "each variation should change the source");
-        let second = model(&wordy).arrangement;
-        assert_eq!(first.rank, second.rank);
-        assert_eq!(first.ranks, second.ranks);
-        assert_eq!(first.column, second.column);
-        assert_eq!(first.exit_offset, second.exit_offset);
-        assert_eq!(first.routes, second.routes);
-        assert_eq!(first.gap_lanes, second.gap_lanes);
-        assert_eq!(first.contours, second.contours);
-        assert_eq!(first.back_routes, second.back_routes);
+        assert_eq!(first, model(&wordy).arrangement);
     }
-    // Nothing else is recorded, so nothing else can differ.
-    let Arrangement {
-        rank: _,
-        ranks: _,
-        column: _,
-        exit_offset: _,
-        routes: _,
-        gap_lanes: _,
-        contours: _,
-        back_routes: _,
-    } = first;
 }
 
 /// The same topology keeps the same arrangement however often it is built.
@@ -399,26 +401,7 @@ fn descriptions_do_not_change_the_arrangement() {
 fn the_construction_is_deterministic() {
     let source = looping(&["repeat", "repeat", "break"]);
     let first = arrangement(&model(&source));
-    let second = arrangement(&model(&source));
-    assert_eq!(first.rank, second.rank);
-    assert_eq!(first.ranks, second.ranks);
-    assert_eq!(first.column, second.column);
-    assert_eq!(first.exit_offset, second.exit_offset);
-    assert_eq!(first.routes, second.routes);
-    assert_eq!(first.gap_lanes, second.gap_lanes);
-    assert_eq!(first.contours, second.contours);
-    assert_eq!(first.back_routes, second.back_routes);
-    // Nothing else is recorded, so nothing else can differ.
-    let Arrangement {
-        rank: _,
-        ranks: _,
-        column: _,
-        exit_offset: _,
-        routes: _,
-        gap_lanes: _,
-        contours: _,
-        back_routes: _,
-    } = first;
+    assert_eq!(first, arrangement(&model(&source)));
 }
 
 #[test]
@@ -458,18 +441,9 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
             continue;
         };
         checked += 1;
-        match super::sweep::search(&model.flow, &model.merges, &model.topology) {
-            Err(super::sweep::Refusal::Impossible(blocked)) => panic!(
-                "{name}: the sweep refuses a drawable flow: {}",
-                blocked.message
-            ),
-            Err(super::sweep::Refusal::Internal(reason)) => panic!("{name}: {reason}"),
-            Ok(built) => {
-                verify::arrangement(&model.flow, &model.topology, &built).unwrap_or_else(
-                    |reason| panic!("{name}: the sweep drew an invalid arrangement: {reason}"),
-                );
-            }
-        }
+        swept(&name, &model.flow, &model.merges, &model.topology).unwrap_or_else(|blocked| {
+            panic!("{name}: the sweep refuses a drawable flow: {blocked}")
+        });
     }
     assert!(checked > 100, "the corpus should be the whole tree");
 }
@@ -514,18 +488,9 @@ fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
             continue;
         };
         checked += 1;
-        match super::sweep::search(&model.flow, &model.merges, &model.topology) {
-            Err(super::sweep::Refusal::Impossible(blocked)) => panic!(
-                "{source}\nthe sweep refuses a drawable flow: {}",
-                blocked.message
-            ),
-            Err(super::sweep::Refusal::Internal(reason)) => panic!("{source}\n{reason}"),
-            Ok(built) => {
-                verify::arrangement(&model.flow, &model.topology, &built).unwrap_or_else(
-                    |reason| panic!("{source}\nthe sweep drew an invalid arrangement: {reason}"),
-                );
-            }
-        }
+        swept(source, &model.flow, &model.merges, &model.topology).unwrap_or_else(|blocked| {
+            panic!("{source}\nthe sweep refuses a drawable flow: {blocked}")
+        });
     }
     assert!(checked > 100, "too few of the generated shapes were drawn");
 }
@@ -754,16 +719,7 @@ fn agree(cases: &[String]) -> Counted {
         // rejects is an internal error, and counting it as a refusal is what
         // would hide it: a topology that has no diagram either way makes the
         // reference agree and the comparison pass.
-        let drawn = match super::sweep::search(&parts.flow, &parts.merges, &parts.topology) {
-            Ok(built) => {
-                verify::arrangement(&parts.flow, &parts.topology, &built).unwrap_or_else(
-                    |reason| panic!("{source}\nthe sweep drew an invalid arrangement: {reason}"),
-                );
-                true
-            }
-            Err(super::sweep::Refusal::Impossible(_)) => false,
-            Err(super::sweep::Refusal::Internal(reason)) => panic!("{source}\n{reason}"),
-        };
+        let drawn = swept(source, &parts.flow, &parts.merges, &parts.topology).is_ok();
         let flexible =
             match super::sweep::search_shape(&parts.flow, &parts.merges, &parts.topology, true) {
                 Ok(_) => true,
@@ -933,45 +889,17 @@ const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay
 #[test]
 fn a_diverging_branch_between_partial_merges_is_drawn() {
     let parts = parts_of(DIVERGING_MIDDLE_BRANCH).expect("the flow passes the earlier rules");
-    let built = match super::sweep::search(&parts.flow, &parts.merges, &parts.topology) {
-        Ok(built) => built,
-        Err(super::sweep::Refusal::Impossible(blocked)) => {
-            panic!("the sweep refuses a drawable flow: {}", blocked.message)
-        }
-        Err(super::sweep::Refusal::Internal(reason)) => panic!("{reason}"),
-    };
-    verify::arrangement(&parts.flow, &parts.topology, &built)
-        .expect("the sweep's arrangement conforms");
+    swept(
+        DIVERGING_MIDDLE_BRANCH,
+        &parts.flow,
+        &parts.merges,
+        &parts.topology,
+    )
+    .unwrap_or_else(|blocked| panic!("the sweep refuses a drawable flow: {blocked}"));
     model(DIVERGING_MIDDLE_BRANCH);
     assert!(
         reference::admissible(&parts.flow, &parts.topology),
         "the independent procedure should find a construction too"
-    );
-}
-
-/// How the enumerated domain settles, which is the record section 6 of
-/// `plans/diagram-realizability_3.md` asks for.
-#[test]
-#[ignore = "a measurement, not an assertion; run it with --ignored"]
-fn record_every_generated_decision() {
-    let (mut drawn, mut refused, mut semantic, mut internal) = (0, 0, 0, 0);
-    for source in loop_shapes() {
-        let function: syn::ItemFn = syn::parse_str(&source).expect("the probe parses");
-        match crate::build(&function) {
-            Ok(_) => drawn += 1,
-            Err(error) if error.to_string().contains("internal kaalang") => internal += 1,
-            Err(_) if parts_of(&source).is_none() => semantic += 1,
-            Err(_) => {
-                if refused == 0 {
-                    println!("first refused topology:\n{source}");
-                }
-                refused += 1;
-            }
-        }
-    }
-    println!(
-        "{} shapes: drawn {drawn}, refused {refused}, rejected earlier {semantic}, internal {internal}",
-        drawn + refused + semantic + internal
     );
 }
 
@@ -1098,11 +1026,6 @@ pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
 fn four_nested_back_edges_climb_four_lanes_on_one_side() {
     let model = model(FOUR_LANES);
     assert_eq!(model.topology.loops.len(), 4, "four nested loops");
-    assert_eq!(
-        verify::contour_lanes(&model.topology),
-        4,
-        "four loops offer four lanes"
-    );
 
     let side = model.arrangement.contours[0].side;
     let mut deep = model.arrangement.clone();

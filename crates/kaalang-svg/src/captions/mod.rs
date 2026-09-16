@@ -117,14 +117,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
             NodeId::Start | NodeId::Case { .. } => Vec::new(),
         };
         let displayed = if capture.is_empty()
-            && matches!(
-                node.kind,
-                NodeKind::Action
-                    | NodeKind::Call
-                    | NodeKind::Loop
-                    | NodeKind::Question
-                    | NodeKind::Select
-            )
+            && !matches!(node.kind, NodeKind::Start | NodeKind::End | NodeKind::Case)
             && topology
                 .incoming(Destination::Node(node.id))
                 .next()
@@ -163,18 +156,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 "()".to_owned()
             } else {
                 (0..block.outputs.len())
-                    .map(|output| {
-                        let binding = block.output_binding(output);
-                        format!(
-                            "{}{}",
-                            if binding.mutability.is_some() {
-                                "mut "
-                            } else {
-                                ""
-                            },
-                            binding.ident.unraw()
-                        )
-                    })
+                    .map(|output| binding_label(block.output_binding(output)))
                     .collect::<Vec<_>>()
                     .join(", ")
             },

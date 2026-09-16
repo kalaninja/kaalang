@@ -7,15 +7,6 @@ use proc_macro2::Span;
 use crate::model::{BlockKind, Flow, WireMerge};
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
-/// The span to report one connection at: the block it leaves.
-pub(super) fn span(flow: &Flow, topology: &Topology, connection: usize) -> Span {
-    vertex_span(
-        flow,
-        topology,
-        Vertex::from(topology.connections[connection].source),
-    )
-}
-
 /// The span to report one vertex at: the block it draws, or the cycle whose
 /// entry or tail it is.
 pub(super) fn vertex_span(flow: &Flow, topology: &Topology, vertex: Vertex) -> Span {

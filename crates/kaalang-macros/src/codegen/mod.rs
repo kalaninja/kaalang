@@ -8,12 +8,10 @@ use syn::{Expr, Lifetime, Pat, token::Mut};
 
 use kaalang_model::{Block, ExecutionPlan, Flow, Input, SemanticModel};
 
-mod break_block;
 mod choice;
 mod join;
 mod loop_block;
 mod question;
-mod return_block;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -186,7 +184,7 @@ pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2
 fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan) -> TokenStream2 {
     let continuation = self::flow(flow, next, bindings);
     let block = &flow.blocks[index];
-    let input_bindings = input_bindings(&block.inputs, bindings);
+    let input_bindings = input_bindings(&block.inputs, bindings, false);
     let body = block_body(&block.body);
     let pattern = output_pattern(block, bindings);
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
@@ -201,15 +199,35 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
     }
 }
 
+/// Captures a transfer's inputs and leaves through `exit`: `break` to the
+/// target native loop, or `return` from the root flow.
+fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
+    let block = &flow.blocks[index];
+    let captures = input_bindings(&block.inputs, bindings, false);
+    let value = transfer_value(&block.body);
+    quote_spanned! {block.span=>
+        #[allow(unused_mut)]
+        {
+            #captures
+            #exit #value;
+        }
+    }
+}
+
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
         ExecutionPlan::Loop { index, body, next } => {
             loop_block::emit(flow, bindings, *index, body, next.as_deref())
         }
         ExecutionPlan::Break { index, target } => {
-            break_block::emit(flow, bindings, *index, *target)
+            let span = flow.blocks[*index].span;
+            let label = loop_label(*target, span);
+            transfer(flow, bindings, *index, &quote_spanned!(span=> break #label))
         }
-        ExecutionPlan::Return { index } => return_block::emit(flow, bindings, *index),
+        ExecutionPlan::Return { index } => {
+            let span = flow.blocks[*index].span;
+            transfer(flow, bindings, *index, &quote_spanned!(span=> return))
+        }
         ExecutionPlan::Repeat { index } => {
             let label = loop_label(*index, flow.blocks[*index].span);
             quote_spanned!(flow.blocks[*index].span=> continue #label;)
@@ -257,7 +275,7 @@ pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
 }
 
 /// Emits no operand for a unit transfer, matching native `break;` and `return;`.
-pub(crate) fn transfer_value(body: &Expr) -> Option<TokenStream2> {
+fn transfer_value(body: &Expr) -> Option<TokenStream2> {
     (!matches!(body, Expr::Tuple(tuple) if tuple.elems.is_empty())).then(|| block_body(body))
 }
 
@@ -266,7 +284,15 @@ pub(crate) fn transfer_value(body: &Expr) -> Option<TokenStream2> {
 /// Each alias reads the wire at the capture's own span. Rust owns move and
 /// borrow checking, so its diagnostics must name the block that took the value
 /// rather than the one that produced it.
-pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
+///
+/// A `persistent` capture is a cycle's: it binds the capture's own wire once,
+/// with the mutability its generated storage needs, and lives across
+/// iterations rather than in one block body.
+pub(crate) fn input_bindings(
+    inputs: &[Input],
+    bindings: &Bindings,
+    persistent: bool,
+) -> TokenStream2 {
     let bindings = inputs
         .iter()
         .filter(|input| input.ident != "self")
@@ -276,14 +302,23 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
             let wire = bindings.wire_at(&input.ident);
             let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
             let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
-            let (binding_mut, borrow_mut) = if input.borrowed {
-                (None, mutable)
+            let (target, binding_mut, borrow_mut) = if persistent {
+                let name = input
+                    .binding
+                    .as_ref()
+                    .expect("a cycle capture declares a local binding");
+                let binding_mut = bindings.mutability(name).map(|mutable| quote!(#mutable));
+                let borrow_mut = if input.borrowed { mutable } else { None };
+                (bindings.wire_at(name), binding_mut, borrow_mut)
+            } else if input.borrowed {
+                (alias.clone(), None, mutable)
             } else {
-                (mutable, None)
+                (alias.clone(), mutable, None)
             };
+            let unused_mut = persistent.then(|| quote!(unused_mut,));
             quote_spanned!(alias.span()=>
-                #[allow(unused_variables, clippy::let_unit_value)]
-                let #binding_mut #alias = #borrow #borrow_mut #wire;
+                #[allow(#unused_mut unused_variables, clippy::let_unit_value)]
+                let #binding_mut #target = #borrow #borrow_mut #wire;
             )
         });
 

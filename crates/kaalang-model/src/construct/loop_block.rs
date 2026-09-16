@@ -177,17 +177,13 @@ pub(super) fn clears_nested_boundaries(
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
-    let backs = topology
-        .loops
-        .iter()
-        .enumerate()
-        .map(|(index, loop_)| {
+    let backs = (0..topology.loops.len())
+        .map(|index| {
             back_edge_polyline(
                 topology,
                 arrangement,
                 &grid,
-                loop_.tail,
-                loop_.entry,
+                index,
                 arrangement.contours[index],
             )
         })
@@ -255,104 +251,77 @@ pub(super) fn clears_nested_boundaries(
     true
 }
 
-/// Where one back edge ended up, or what stopped the nearest candidate.
-struct Climb {
-    placed: Option<(Contour, Vec<Point>)>,
-    blocked: String,
-    /// The connection to blame, when one is, so the caller can give it more
-    /// room and try again.
-    culprit: Option<usize>,
-}
-
-/// What one back edge has to clear, and where it may climb.
-struct Search<'a> {
-    grid: &'a Grid,
-    lines: &'a [Vec<Point>],
-    drawn: &'a [Vec<Point>],
-    body: &'a BTreeSet<i32>,
-    nested: &'a [i32],
-    back: (Source, Destination),
+/// The nearest contour one back edge can climb, or why the nearest candidate
+/// failed and the connection to blame, when one is, so the caller can give it
+/// more room and try again.
+///
+/// The candidates are the lanes beside the body's own edge column, nearest
+/// first, and nothing beyond them. A lane is the whole of a contour's
+/// position, which is what a presentation can realize: it measures the
+/// body's boxes and steps that many lanes clear of them, having no column
+/// of its own to put a rail in. A topology never needs more lanes than it
+/// has cycles, because only a back edge climbs there (RFC 0003 §2.4).
+#[allow(clippy::too_many_arguments)]
+fn climb(
+    flow: &Flow,
+    merges: &[WireMerge],
+    topology: &Topology,
+    arrangement: &Arrangement,
+    grid: &Grid,
+    lines: &[Vec<Point>],
+    drawn: &[Vec<Point>],
+    body: &BTreeSet<i32>,
+    nested: &[i32],
+    index: usize,
     side: Side,
-    edge: i32,
-}
-
-impl Search<'_> {
-    /// The nearest contour this back edge can climb, or why the nearest candidate
-    /// failed.
-    ///
-    /// The candidates are the lanes beside the body's own edge column, nearest
-    /// first, and nothing beyond them. A lane is the whole of a contour's
-    /// position, which is what a presentation can realize: it measures the
-    /// body's boxes and steps that many lanes clear of them, having no column
-    /// of its own to put a rail in. A topology never needs more lanes than it
-    /// has cycles, because only a back edge climbs there (RFC 0003 §2.4).
-    fn climb(
-        &self,
-        flow: &Flow,
-        merges: &[WireMerge],
-        topology: &Topology,
-        arrangement: &Arrangement,
-        loop_: crate::topology::Loop,
-    ) -> Climb {
-        let mut blocked = String::new();
-        let mut culprit = None;
-        for lane in 0..super::verify::contour_lanes(topology) {
-            let contour = Contour {
-                side: self.side,
-                column: self.edge,
-                lane,
-            };
-            if !outside(
-                self.grid,
-                self.side,
-                self.grid.contour(contour),
-                self.body,
-                self.nested,
-            ) {
-                "it would climb inside the body it leaves".clone_into(&mut blocked);
-                culprit = None;
-                continue;
-            }
-            let line = back_edge_polyline(
-                topology,
-                arrangement,
-                self.grid,
-                loop_.tail,
-                loop_.entry,
-                contour,
-            );
-            if let Some(other) = self.lines.iter().enumerate().position(|(other, points)| {
-                let (shared, meet) = meetings(self.back, &line, ends(topology, other), points);
-                !compatible(&line, points, shared, &meet)
-            }) {
-                blocked = format!(
-                    "it would cross {}",
-                    super::describe::connection(flow, merges, topology, other)
-                );
-                culprit = Some(other);
-                continue;
-            }
-            if !self
-                .drawn
-                .iter()
-                .all(|earlier| compatible(&line, earlier, false, &[]))
-            {
-                "it would cross the iteration back edge of a nested cycle".clone_into(&mut blocked);
-                culprit = None;
-                continue;
-            }
-            return Climb {
-                placed: Some((contour, line)),
-                blocked,
-                culprit,
-            };
-        }
-        Climb {
-            placed: None,
-            blocked,
-            culprit,
-        }
+) -> Result<(Contour, Vec<Point>), (String, Option<usize>)> {
+    let loop_ = topology.loops[index];
+    let edge = match side {
+        Side::Left => body.iter().min(),
+        Side::Right => body.iter().max(),
     }
+    .copied()
+    .expect("a repeating cycle owns an entry and a tail");
+    let back = (
+        Source::Junction(loop_.tail),
+        Destination::Junction(loop_.entry),
+    );
+    let mut blocked = String::new();
+    let mut culprit = None;
+    for lane in 0..super::verify::contour_lanes(topology) {
+        let contour = Contour {
+            side,
+            column: edge,
+            lane,
+        };
+        if !outside(grid, side, grid.contour(contour), body, nested) {
+            "it would climb inside the body it leaves".clone_into(&mut blocked);
+            culprit = None;
+            continue;
+        }
+        let line = back_edge_polyline(topology, arrangement, grid, index, contour);
+        if let Some(other) = lines.iter().enumerate().position(|(other, points)| {
+            let (shared, meet) = meetings(back, &line, ends(topology, other), points);
+            !compatible(&line, points, shared, &meet)
+        }) {
+            blocked = format!(
+                "it would cross {}",
+                super::describe::connection(flow, merges, topology, other)
+            );
+            culprit = Some(other);
+            continue;
+        }
+        if !drawn
+            .iter()
+            .all(|earlier| compatible(&line, earlier, false, &[]))
+        {
+            "it would cross the iteration back edge of a nested cycle".clone_into(&mut blocked);
+            culprit = None;
+            continue;
+        }
+        return Ok((contour, line));
+    }
+    Err((blocked, culprit))
 }
 
 /// Chooses a contour for every loop, innermost first, or reports that one of
@@ -377,50 +346,38 @@ pub(super) fn contours(
     // Innermost first: a nested back edge becomes part of what the enclosing one
     // has to clear, and `topology.loops` runs outermost first.
     for index in (0..topology.loops.len()).rev() {
-        let loop_ = topology.loops[index];
+        let header = topology.loops[index].header;
         let side = sides[index];
-        let body = body_columns(flow, topology, arrangement, loop_.header);
-        let nested = nested_back_edges(flow, topology, &grid, loop_.header, &chosen);
-        let edge = match side {
-            Side::Left => body.iter().min(),
-            Side::Right => body.iter().max(),
-        }
-        .copied()
-        .expect("a repeating cycle owns an entry and a tail");
-        let back = (
-            Source::Junction(loop_.tail),
-            Destination::Junction(loop_.entry),
-        );
-        let search = Search {
-            grid: &grid,
-            lines: &lines,
-            drawn: &drawn,
-            body: &body,
-            nested: &nested,
-            back,
+        let body = body_columns(flow, topology, arrangement, header);
+        let nested = nested_back_edges(flow, topology, &grid, header, &chosen);
+        let (contour, line) = climb(
+            flow,
+            merges,
+            topology,
+            arrangement,
+            &grid,
+            &lines,
+            &drawn,
+            &body,
+            &nested,
+            index,
             side,
-            edge,
-        };
-        let Climb {
-            placed,
-            blocked,
-            culprit,
-        } = search.climb(flow, merges, topology, arrangement, loop_);
-        let Some((contour, line)) = placed else {
+        )
+        .map_err(|(blocked, culprit)| {
             let side = match side {
                 Side::Left => "left",
                 Side::Right => "right",
             };
-            return Err(super::Obstruction {
+            super::Obstruction {
                 loop_index: Some(index),
                 connection: culprit,
-                span: flow.blocks[loop_.header].span,
+                span: flow.blocks[header].span,
                 message: format!(
                     "the iteration back edge of {} cannot climb the {side} of its body: {blocked}. Reorder the branches so the routes that repeat the body sit at one edge",
-                    super::describe::loop_name(flow, loop_.header)
+                    super::describe::loop_name(flow, header)
                 ),
-            });
-        };
+            }
+        })?;
         chosen[index] = Some(contour);
         drawn.push(line);
     }

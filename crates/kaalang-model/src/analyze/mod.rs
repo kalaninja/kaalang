@@ -88,12 +88,6 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     Ok((executions, convergence_groups, merges))
 }
 
-/// Reports whether one producer occurrence provides its wire in this execution.
-/// A branch output does so only when its own branch was selected.
-fn produced(flow: &Flow, execution: &Execution, producer: ProducerId) -> bool {
-    flow.produces(execution, producer)
-}
-
 /// The one question or choice that both executions run with different
 /// outcomes, when every other one they both run agrees.
 fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
@@ -334,23 +328,7 @@ impl Walk<'_> {
             return false;
         };
         state.loops.remove(&header).expect("the iteration is open");
-        let bindings = self.flow.blocks[header]
-            .inputs
-            .iter()
-            .enumerate()
-            .map(|(input, declaration)| {
-                (
-                    declaration
-                        .binding
-                        .clone()
-                        .expect("a cycle capture declares a local binding"),
-                    ProducerId::CycleInput {
-                        block: header,
-                        input,
-                    },
-                )
-            })
-            .collect::<BTreeMap<_, _>>();
+        let bindings = self.flow.cycle_bindings(header);
         state.produced = bindings.keys().cloned().collect();
         state.available = bindings;
         state.repeats.insert(header);

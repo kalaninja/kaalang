@@ -3,7 +3,7 @@
 
 use syn::{Error, Expr, ExprCall, Meta, Result, Stmt, ext::IdentExt};
 
-use super::{BlockSyntax, description};
+use super::{BlockSyntax, description, ungrouped};
 use crate::model::{Block, Input};
 
 /// A call describes itself with the function it runs when no description is
@@ -93,18 +93,6 @@ fn application(body: &Expr, inputs: &[Input]) -> Result<ExprCall> {
     }
 
     Ok(call.clone())
-}
-
-/// Peels the invisible group a `macro_rules!` substitution arrives in.
-///
-/// Authored parentheses are left alone: unlike a transfer value, a call's path
-/// is read back as the node's name, and `(math::difference)(left, right)` would
-/// be a second spelling of one name.
-fn ungrouped(mut expression: &Expr) -> &Expr {
-    while let Expr::Group(group) = expression {
-        expression = &group.expr;
-    }
-    expression
 }
 
 fn captured(inputs: &[Input], name: &proc_macro2::Ident) -> bool {

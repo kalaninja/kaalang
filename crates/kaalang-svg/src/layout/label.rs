@@ -220,10 +220,7 @@ fn node_of(destination: Destination) -> kaalang_model::topology::NodeId {
 /// vertical below it.
 fn merge_anchor(scene: &Scene, junction: usize) -> Point {
     scene
-        .connections
-        .iter()
-        .find(|wire| wire.destination == Destination::Junction(junction))
-        .and_then(|wire| wire.points.last().copied())
+        .junction_at(junction)
         .expect("a merge has incoming routes")
 }
 
@@ -375,8 +372,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                     .connections
                     .iter()
                     .filter(|edge| scene.is_back_edge(edge))
-                    .flat_map(|edge| edge.points.windows(2))
-                    .any(|segment| super::route::enters(segment[0], segment[1], rect))
+                    .any(|edge| super::route::crosses(&edge.points, rect))
                     .then(|| {
                         format!(
                             "an iteration back edge crosses the label `{}`",
@@ -418,8 +414,13 @@ pub(super) fn clearance(scene: &Scene) -> Option<String> {
 }
 
 /// Whether two rectangles share any area, each as left, top, right, bottom.
-const fn overlaps(rect: (i32, i32, i32, i32), other: (i32, i32, i32, i32)) -> bool {
+pub(super) const fn overlaps(rect: (i32, i32, i32, i32), other: (i32, i32, i32, i32)) -> bool {
     rect.2 > other.0 && rect.0 < other.2 && rect.3 > other.1 && rect.1 < other.3
+}
+
+/// Whether `outer` holds all of `inner`, edges included.
+pub(super) const fn contains(outer: (i32, i32, i32, i32), inner: (i32, i32, i32, i32)) -> bool {
+    inner.0 >= outer.0 && inner.1 >= outer.1 && inner.2 <= outer.2 && inner.3 <= outer.3
 }
 
 fn label_width(lines: &[String], font_size: i32) -> i32 {

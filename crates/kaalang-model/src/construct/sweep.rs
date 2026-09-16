@@ -201,23 +201,16 @@ fn branch_rules(
         unite(parent, index(Vertex::Node(NodeId::Block(block))), starts[0]);
         inequalities.extend(starts.windows(2).map(|pair| (pair[0], pair[1])));
         for (entry, first) in super::regions::continuations(topology, block, &regions.branches) {
-            let mut pending = vec![entry];
-            let mut approaches = BTreeSet::new();
-            while let Some(vertex) = pending.pop() {
-                for wire in topology.incoming(vertex) {
-                    match wire.source {
-                        Source::Junction(j) => pending.push(Vertex::Junction(j)),
-                        Source::Exit(exit)
-                            if regions.branches[first].contains(&Vertex::Node(exit.node))
-                                || (exit.node == NodeId::Block(block)
-                                    && exit.branch == Some(first)) =>
-                        {
-                            approaches.insert(raw_exits[&exit]);
-                        }
-                        Source::Exit(_) => {}
-                    }
-                }
-            }
+            let approaches = super::regions::first_branch_approaches(
+                topology,
+                &regions.branches,
+                block,
+                first,
+                entry,
+            )
+            .into_iter()
+            .map(|exit| raw_exits[&exit])
+            .collect::<BTreeSet<_>>();
             if approaches.len() == 1 {
                 unite(
                     parent,
@@ -480,12 +473,7 @@ impl Anchor {
 impl<'a> Sweep<'a> {
     fn of(flow: &'a Flow, topology: &'a Topology, flexible: bool) -> Option<Self> {
         let n = topology.vertices.len();
-        let index = |v| {
-            topology
-                .vertices
-                .binary_search(&v)
-                .expect("projected topology contains the required vertex or loop endpoint")
-        };
+        let index = |v| index_of(topology, v);
         let mut arrivals = vec![Vec::new(); n];
         let mut predecessors = vec![BTreeSet::new(); n];
         let mut exits = vec![BTreeMap::<Source, Vec<usize>>::new(); n];
@@ -765,12 +753,7 @@ impl<'a> Sweep<'a> {
         let ends = state
             .frontier
             .iter()
-            .map(|&a| {
-                self.topology
-                    .vertices
-                    .binary_search(&destination(a))
-                    .expect("a projected endpoint")
-            })
+            .map(|&a| index_of(self.topology, destination(a)))
             .collect::<Vec<_>>();
         for (v, placed) in state.placed.iter().enumerate() {
             if *placed {
@@ -912,44 +895,42 @@ impl<'a> Sweep<'a> {
                 vec![None]
             };
             for side in sides {
-                {
-                    let mut emitted = self.emissions(vertex);
-                    if let Some(i) = self.entry_of[vertex] {
-                        match side.expect(
-                            "projected topology contains the required vertex or loop endpoint",
-                        ) {
-                            Side::Left => emitted.insert(0, Lifeline::BackEdge(i)),
-                            Side::Right => emitted.push(Lifeline::BackEdge(i)),
-                        }
+                let mut emitted = self.emissions(vertex);
+                if let Some(i) = self.entry_of[vertex] {
+                    match side
+                        .expect("projected topology contains the required vertex or loop endpoint")
+                    {
+                        Side::Left => emitted.insert(0, Lifeline::BackEdge(i)),
+                        Side::Right => emitted.push(Lifeline::BackEdge(i)),
                     }
-                    let step = Step {
-                        vertex: Some(vertex),
-                        position,
-                        consumed: consumed.clone(),
-                        emitted,
-                        side,
-                    };
-                    let Some(order) = self.constrain(state, &step) else {
-                        continue;
-                    };
-                    let kept = state.clone();
-                    state.order = order;
-                    for &v in &self.events[vertex] {
-                        state.placed[v] = true;
-                    }
-                    if let Some(i) = self.entry_of[vertex] {
-                        state.sides[i] = side;
-                    }
-                    state
-                        .frontier
-                        .splice(position..position + count, step.emitted.iter().copied());
-                    steps.push(step);
-                    let found = self.walk(state, steps, failed, deepest, memo);
-                    steps.pop();
-                    *state = kept;
-                    if !matches!(&found, Ok(None)) {
-                        return found;
-                    }
+                }
+                let step = Step {
+                    vertex: Some(vertex),
+                    position,
+                    consumed: consumed.clone(),
+                    emitted,
+                    side,
+                };
+                let Some(order) = self.constrain(state, &step) else {
+                    continue;
+                };
+                let kept = state.clone();
+                state.order = order;
+                for &v in &self.events[vertex] {
+                    state.placed[v] = true;
+                }
+                if let Some(i) = self.entry_of[vertex] {
+                    state.sides[i] = side;
+                }
+                state
+                    .frontier
+                    .splice(position..position + count, step.emitted.iter().copied());
+                steps.push(step);
+                let found = self.walk(state, steps, failed, deepest, memo);
+                steps.pop();
+                *state = kept;
+                if !matches!(&found, Ok(None)) {
+                    return found;
                 }
             }
         }
@@ -1056,11 +1037,7 @@ impl<'a> Sweep<'a> {
                 .exits
                 .iter()
                 .map(|(&e, &i)| {
-                    let own = self
-                        .topology
-                        .vertices
-                        .binary_search(&Vertex::Node(e.node))
-                        .expect("projected topology contains the required vertex or loop endpoint");
+                    let own = index_of(self.topology, Vertex::Node(e.node));
                     (e, values[i] - values[self.columns.vertex[own]])
                 })
                 .collect(),
@@ -1069,32 +1046,21 @@ impl<'a> Sweep<'a> {
                 .connections
                 .iter()
                 .map(|wire| {
-                    let arrival = values[self.columns.vertex[self
-                        .topology
-                        .vertices
-                        .binary_search(&wire.destination)
-                        .expect(
-                            "projected topology contains the required vertex or loop endpoint",
-                        )]];
-                    let departure = if super::choice::case_destination(
-                        wire.source,
-                        wire.destination,
-                    )
-                    .is_some()
-                    {
-                        arrival
-                    } else {
-                        match wire.source {
-                            Source::Exit(exit) => values[self.columns.exits[&exit]],
-                            Source::Junction(j) => values[self.columns.vertex[self
-                                .topology
-                                .vertices
-                                .binary_search(&Vertex::Junction(j))
-                                .expect(
-                                    "projected topology contains the required vertex or loop endpoint",
-                                )]],
-                        }
-                    };
+                    let arrival =
+                        values[self.columns.vertex[index_of(self.topology, wire.destination)]];
+                    let departure =
+                        if super::choice::case_destination(wire.source, wire.destination).is_some()
+                        {
+                            arrival
+                        } else {
+                            match wire.source {
+                                Source::Exit(exit) => values[self.columns.exits[&exit]],
+                                Source::Junction(j) => {
+                                    values[self.columns.vertex
+                                        [index_of(self.topology, Vertex::Junction(j))]]
+                                }
+                            }
+                        };
                     Route {
                         departure,
                         arrival,
@@ -1450,20 +1416,11 @@ pub(super) fn compress(built: &mut Arrangement) {
                 .iter()
                 .map(|(exit, offset)| built.column[&Vertex::Node(exit.node)] + offset),
         )
-        .chain(
-            built
-                .routes
-                .iter()
-                .chain(built.back_routes.values())
-                .flat_map(|r| [r.departure, r.arrival]),
-        )
-        .chain(
-            built
-                .routes
-                .iter()
-                .chain(built.back_routes.values())
-                .flat_map(|r| r.runs.iter().flat_map(|s| [s.enter, s.exit])),
-        )
+        .chain(built.all_routes().flat_map(|r| {
+            [r.departure, r.arrival]
+                .into_iter()
+                .chain(r.runs.iter().flat_map(|s| [s.enter, s.exit]))
+        }))
         .chain(built.contours.iter().map(|c| c.column))
         .collect::<BTreeSet<_>>();
     let numbered = coordinates
@@ -1482,9 +1439,7 @@ pub(super) fn compress(built: &mut Arrangement) {
         contour.column = numbered[&contour.column];
     }
     let used = built
-        .routes
-        .iter()
-        .chain(built.back_routes.values())
+        .all_routes()
         .flat_map(|route| &route.runs)
         .filter_map(|run| match run.line {
             RunLine::Lane { gap, lane } => Some((gap, lane)),
@@ -1497,11 +1452,7 @@ pub(super) fn compress(built: &mut Arrangement) {
         lanes.insert((gap, lane), built.gap_lanes[gap]);
         built.gap_lanes[gap] += 1;
     }
-    for route in built
-        .routes
-        .iter_mut()
-        .chain(built.back_routes.values_mut())
-    {
+    for route in built.all_routes_mut() {
         route.departure = numbered[&route.departure];
         route.arrival = numbered[&route.arrival];
         for run in &mut route.runs {

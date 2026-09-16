@@ -311,27 +311,16 @@ impl<'a> Reference<'a> {
             for (entry, first) in
                 crate::construct::regions::continuations(topology, block, &regions.branches)
             {
-                let mut queue = vec![entry];
-                let mut seen = BTreeSet::new();
-                let mut approaches = BTreeSet::new();
-                while let Some(v) = queue.pop() {
-                    if !seen.insert(v) {
-                        continue;
-                    }
-                    for wire in topology.connections.iter().filter(|w| w.destination == v) {
-                        match wire.source {
-                            Source::Junction(j) => queue.push(Vertex::Junction(j)),
-                            Source::Exit(exit) => {
-                                if regions.branches[first].contains(&Vertex::Node(exit.node))
-                                    || (exit.node == NodeId::Block(block)
-                                        && exit.branch == Some(first))
-                                {
-                                    approaches.insert(ports[&exit]);
-                                }
-                            }
-                        }
-                    }
-                }
+                let approaches = crate::construct::regions::first_branch_approaches(
+                    topology,
+                    &regions.branches,
+                    block,
+                    first,
+                    entry,
+                )
+                .into_iter()
+                .map(|exit| ports[&exit])
+                .collect::<BTreeSet<_>>();
                 let entry = vertices[&entry];
                 for &approach in &approaches {
                     initial.edges.push((entry, approach, 0));

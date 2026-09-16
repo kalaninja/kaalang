@@ -148,17 +148,7 @@ fn write_connection_label(svg: &mut String, label: &Label) {
 
 fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
     let point = scene
-        .connections
-        .iter()
-        .find_map(|connection| {
-            if connection.source == Source::Junction(junction) {
-                connection.points.first()
-            } else if connection.destination == Destination::Junction(junction) {
-                connection.points.last()
-            } else {
-                None
-            }
-        })
+        .junction_at(junction)
         .expect("a merge has an incident route");
     emit!(
         svg,
@@ -413,15 +403,7 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         node.x,
         node.y
     );
-    if matches!(
-        projected.kind,
-        NodeKind::Action
-            | NodeKind::Call
-            | NodeKind::Loop
-            | NodeKind::Question
-            | NodeKind::Select
-            | NodeKind::Case
-    ) {
+    if !matches!(projected.kind, NodeKind::Start | NodeKind::End) {
         write_title(svg, scene.captions.label(node.id));
     }
     match projected.kind {

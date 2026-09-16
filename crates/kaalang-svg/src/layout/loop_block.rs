@@ -1,11 +1,13 @@
 //! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
-use kaalang_model::topology::{Destination, NodeId, Source, Vertex};
+use kaalang_model::topology::{NodeId, Source, Vertex};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     CYCLE_CAPTION_FONT, LoopRegion, MARGIN, NODE_LABEL_WIDTH, NODE_WIDTH, Point, Scene,
-    block_dimensions, label::label_rect, text,
+    block_dimensions,
+    label::{contains, label_rect, overlaps},
+    text,
 };
 
 const VERTICAL_PADDING: i32 = 35;
@@ -48,20 +50,9 @@ pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
 
 #[allow(clippy::too_many_lines)]
 pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
-    let point = |vertex| {
-        let junction = match vertex {
-            Vertex::Node(node) => return Some(scene.top_anchor(node)),
-            Vertex::Junction(junction) => junction,
-        };
-        scene.connections.iter().find_map(|edge| {
-            if edge.source == Source::Junction(junction) {
-                edge.points.first().copied()
-            } else if edge.destination == Destination::Junction(junction) {
-                edge.points.last().copied()
-            } else {
-                None
-            }
-        })
+    let point = |vertex| match vertex {
+        Vertex::Node(node) => Some(scene.top_anchor(node)),
+        Vertex::Junction(junction) => scene.junction_at(junction),
     };
     let exit_point = |source| match source {
         Source::Exit(exit) => Some(scene.exit_anchor(exit)),
@@ -86,7 +77,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
             regions
                 .iter()
                 .filter(|(header, _)| (boundary.header + 1..boundary.end).contains(header))
-                .map(|(_, region)| (region.left, region.top, region.right, region.bottom)),
+                .map(|(_, region)| region.bounds()),
         );
         let body_bottom = boxes.iter().map(|bounds| bounds.3).max();
         boxes.extend(
@@ -109,15 +100,12 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 })
                 .flat_map(|edge| edge.points.iter().copied()),
         );
-        if let Some(loop_) = scene
+        if let Some(back) = scene
             .topology
             .loops
             .iter()
-            .find(|loop_| loop_.header == boundary.header)
-            && let Some(back) = scene
-                .connections
-                .iter()
-                .find(|edge| edge.source == Source::Junction(loop_.tail))
+            .position(|loop_| loop_.header == boundary.header)
+            .and_then(|index| scene.back_edge(index))
         {
             points.extend(back.points.iter().copied());
         }
@@ -252,48 +240,31 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                 || Some(vertex) == boundary.result.map(Vertex::from)
         };
         for node in &scene.nodes {
-            let (left, top, right, bottom) = Scene::bounds(node);
-            let inside = left >= region.left
-                && top >= region.top
-                && right <= region.right
-                && bottom <= region.bottom;
-            let overlaps = left < region.right
-                && right > region.left
-                && top < region.bottom
-                && bottom > region.top;
-            if owns(node.id) && !inside {
+            let bounds = Scene::bounds(node);
+            if owns(node.id) && !contains(region.bounds(), bounds) {
                 return Some(format!(
                     "cycle {} does not contain owned node {:?}",
                     boundary.header, node.id
                 ));
             }
-            if !owns(node.id) && overlaps {
+            if !owns(node.id) && overlaps(bounds, region.bounds()) {
                 return Some(format!(
-                    "cycle {} {:?} overlaps external node {:?} {:?}",
+                    "cycle {} {:?} overlaps external node {:?} {bounds:?}",
                     boundary.header,
-                    (region.left, region.top, region.right, region.bottom),
+                    region.bounds(),
                     node.id,
-                    (left, top, right, bottom)
                 ));
             }
         }
         for label in &scene.labels {
-            let (left, top, right, bottom) = label_rect(label);
-            let inside = left >= region.left
-                && top >= region.top
-                && right <= region.right
-                && bottom <= region.bottom;
-            let overlaps = left < region.right
-                && right > region.left
-                && top < region.bottom
-                && bottom > region.top;
-            if owns_vertex(label.owner) && !inside {
+            let bounds = label_rect(label);
+            if owns_vertex(label.owner) && !contains(region.bounds(), bounds) {
                 return Some(format!(
                     "cycle {} does not contain a label owned by {:?}",
                     boundary.header, label.owner
                 ));
             }
-            if !owns_vertex(label.owner) && overlaps {
+            if !owns_vertex(label.owner) && overlaps(bounds, region.bounds()) {
                 return Some(format!(
                     "cycle {} overlaps a label owned by {:?}",
                     boundary.header, label.owner
@@ -327,20 +298,14 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                 return Some(format!(
                     "cycle {} {:?} does not contain internal route {:?} -> {:?}: {:?}",
                     boundary.header,
-                    (region.left, region.top, region.right, region.bottom),
+                    region.bounds(),
                     edge.source,
                     edge.destination,
                     edge.points
                 ));
             }
             if !(crosses_interface || source_owned && destination_owned)
-                && edge.points.windows(2).any(|segment| {
-                    super::route::enters(
-                        segment[0],
-                        segment[1],
-                        (region.left, region.top, region.right, region.bottom),
-                    )
-                })
+                && super::route::crosses(&edge.points, region.bounds())
             {
                 return Some(format!(
                     "cycle {} is crossed by external route {:?} -> {:?}",
@@ -357,46 +322,34 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if nested.header == boundary.header {
                 continue;
             }
-            let inside = nested_region.left >= region.left
-                && nested_region.top >= region.top
-                && nested_region.right <= region.right
-                && nested_region.bottom <= region.bottom;
-            let overlaps = nested_region.left < region.right
-                && nested_region.right > region.left
-                && nested_region.top < region.bottom
-                && nested_region.bottom > region.top;
             let nested_owned = (boundary.header + 1..boundary.end).contains(&nested.header);
             let enclosing = (nested.header + 1..nested.end).contains(&boundary.header);
-            if (nested_owned && !inside) || (!nested_owned && !enclosing && overlaps) {
+            if (nested_owned && !contains(region.bounds(), nested_region.bounds()))
+                || (!nested_owned
+                    && !enclosing
+                    && overlaps(nested_region.bounds(), region.bounds()))
+            {
                 return Some(format!(
                     "cycle {} {:?} and cycle {} {:?} overlap or interleave (owned: {nested_owned})",
                     boundary.header,
-                    (region.left, region.top, region.right, region.bottom),
+                    region.bounds(),
                     nested.header,
-                    (
-                        nested_region.left,
-                        nested_region.top,
-                        nested_region.right,
-                        nested_region.bottom
-                    )
+                    nested_region.bounds()
                 ));
             }
             if nested_owned
                 && scene.connections.iter().any(|edge| {
                     edge.destination == boundary.entry
                         && scene.is_back_edge(edge)
-                        && edge.points.windows(2).any(|segment| {
-                            super::route::enters(
-                                segment[0],
-                                segment[1],
-                                (
-                                    nested_region.left - super::LANE,
-                                    nested_region.top - super::LANE,
-                                    nested_region.right + super::LANE,
-                                    nested_region.bottom + super::LANE,
-                                ),
-                            )
-                        })
+                        && super::route::crosses(
+                            &edge.points,
+                            (
+                                nested_region.left - super::LANE,
+                                nested_region.top - super::LANE,
+                                nested_region.right + super::LANE,
+                                nested_region.bottom + super::LANE,
+                            ),
+                        )
                 })
             {
                 return Some(format!(

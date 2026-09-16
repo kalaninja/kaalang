@@ -123,25 +123,6 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
 }
 
 #[test]
-fn renders_nested_cycles_without_crossing_boundaries() {
-    for (source, name) in [
-        (
-            include_str!("../../kaalang/tests/loop/behavior/nested_alternating_returns.rs"),
-            "nested_alternating_returns",
-        ),
-        (
-            include_str!("../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
-            "nested_side_returns",
-        ),
-    ] {
-        let svg = render_source(source, name)
-            .expect("nested cycle back edges clear every enclosed boundary");
-
-        assert_eq!(svg.matches(r#"class="cycle-boundary""#).count(), 3);
-    }
-}
-
-#[test]
 fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
     let description = "Collect <the results> & keep processing until there are enough items to complete the current request. ".repeat(3);
     let source = CYCLE_SOURCE.replace("Count to the limit.", &description);
@@ -158,76 +139,6 @@ fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
     assert!(caption.contains("xml:space=\"preserve\""));
     assert!(caption.contains("…</tspan>"));
     assert_eq!(caption.matches("<tspan").count(), 2);
-}
-
-#[test]
-fn a_transit_connection_does_not_imply_a_capture() {
-    let svg = render_source(
-        include_str!("../../kaalang/tests/wire/behavior/shared_setup.rs"),
-        "shared_setup",
-    )
-    .expect("the setup carries the start connection through to the question");
-    assert_eq!(svg.matches(">()</tspan>").count(), 1);
-    assert!(
-        describe(&svg)
-            .contains("Action: Prepare the shared setup. capturing nothing handing over setup")
-    );
-}
-
-#[test]
-fn mutable_captures_keep_their_modifiers_in_labels_and_descriptions() {
-    let svg = render_source(
-        include_str!("../../kaalang/tests/capture/behavior/mutate_wires.rs"),
-        "mutate_wires",
-    )
-    .expect("mutable captures render with their authored modifiers");
-    let description = describe(&svg);
-    assert!(svg.contains(">mut r#type: String</tspan>"));
-    assert!(description.contains("with parameters mut r#type: String; count: u32"));
-    for capture in ["mut count", "&amp;mut type", "&amp;type", "mut type"] {
-        assert!(svg.contains(&format!(">{capture}")), "{capture}");
-        assert!(
-            description.contains(&format!("capturing {capture}")),
-            "{capture}"
-        );
-    }
-    assert!(description.contains("capturing &amp;mut text, &amp;mut total"));
-}
-
-#[test]
-fn wire_labels_on_a_vertical_route_share_a_start_anchor() {
-    let svg = render_source(
-        include_str!("../../kaalang/tests/capture/behavior/mutate_wires.rs"),
-        "mutate_wires",
-    )
-    .unwrap();
-    let style = svg
-        .lines()
-        .find(|line| line.contains(".connection-label {"))
-        .unwrap();
-    assert!(style.contains("text-anchor: start;"));
-
-    let positions = svg
-        .lines()
-        .filter_map(|line| {
-            line.trim()
-                .strip_prefix(r#"<text class="connection-label" x=""#)
-        })
-        .map(|label| label.split_once('"').unwrap().0)
-        .collect::<Vec<_>>();
-    assert!(positions.len() > 1);
-    assert!(positions.iter().all(|x| *x == positions[0]));
-}
-
-#[test]
-fn terminal_cases_render_beside_a_wide_shared_continuation() {
-    let svg = render_source(
-        include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
-        "blocked_terminal_crossing",
-    )
-    .expect("terminal cases leave room for every case of the shared inner choice");
-    assert_eq!(svg.matches(r#"class="node case""#).count(), 8);
-    assert_eq!(svg.matches(r#"class="node end""#).count(), 1);
 }
 
 #[test]

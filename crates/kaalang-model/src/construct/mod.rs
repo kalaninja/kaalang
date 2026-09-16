@@ -88,7 +88,7 @@ pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
 /// A checked arrangement of one topology. Ranks and columns are abstract
 /// integers: a presentation assigns dimensions and spacing to them, and may not
 /// reorder or re-route anything recorded here.
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Arrangement {
     /// Abstract row of every vertex. A forward connection descends unless a
     /// side exit meets a wire merge on its row. Every placement-only precedence
@@ -111,6 +111,17 @@ pub struct Arrangement {
     /// downward order from entry to tail; a renderer reverses it. An absent
     /// route is the straight climb recorded by `Contour`.
     pub back_routes: BTreeMap<usize, Route>,
+}
+
+impl Arrangement {
+    /// Every corridor: each connection's route, then each recorded back edge's.
+    pub(crate) fn all_routes(&self) -> impl Iterator<Item = &Route> {
+        self.routes.iter().chain(self.back_routes.values())
+    }
+
+    pub(crate) fn all_routes_mut(&mut self) -> impl Iterator<Item = &mut Route> {
+        self.routes.iter_mut().chain(self.back_routes.values_mut())
+    }
 }
 
 /// One connection's corridor: it leaves its exit in `departure`, reaches its
@@ -218,16 +229,6 @@ enum Preferred {
     Exhausted,
     /// The topology contradicts itself, so no shape can draw it.
     Inconsistent(String),
-}
-
-/// Why one rank and contour assignment yielded no arrangement.
-enum Rejection {
-    /// The arrangement cannot be drawn. The search moves to another one.
-    Obstructed(Obstruction),
-    /// The topology itself is inconsistent, so no assignment of it can be
-    /// drawn and trying another is pointless. A projection bug, not an authored
-    /// flow error.
-    Internal(String),
 }
 
 /// Constructs and independently checks one conforming arrangement, or reports
@@ -349,8 +350,8 @@ fn preferred(
         }
         match corridors(flow, merges, topology, &footprints, &sunk, &sides) {
             Ok(arrangement) => return Ok(arrangement),
-            Err(Rejection::Internal(reason)) => return Err(Preferred::Inconsistent(reason)),
-            Err(Rejection::Obstructed(reason)) => {
+            Err(sweep::Refusal::Internal(reason)) => return Err(Preferred::Inconsistent(reason)),
+            Err(sweep::Refusal::Impossible(reason)) => {
                 if let Some(index) = reason.loop_index {
                     // Pushed in reverse order of preference: flipping one
                     // contour is tried before lowering one tail, and lowering
@@ -400,7 +401,9 @@ fn unarrangeable(flow: &Flow) -> Obstruction {
 
 /// Resolves the corridor shapes for one rank and contour assignment, by moving
 /// a participant of every conflict the planner reports. Each assignment is
-/// visited at most once, so the walk ends.
+/// visited at most once, so the walk ends. An impossible assignment sends the
+/// search to another one; an internal refusal is a projection bug, and no
+/// assignment can draw it.
 fn corridors(
     flow: &Flow,
     merges: &[WireMerge],
@@ -408,8 +411,9 @@ fn corridors(
     footprints: &place::Footprints,
     sunk: &BTreeSet<Vertex>,
     sides: &[Side],
-) -> Result<Arrangement, Rejection> {
-    let placement = place::place(topology, footprints, sunk, sides).map_err(Rejection::Internal)?;
+) -> Result<Arrangement, sweep::Refusal> {
+    let placement =
+        place::place(topology, footprints, sunk, sides).map_err(sweep::Refusal::Internal)?;
     let count = topology.connections.len();
     let mut pending = vec![vec![Shape::default(); count]];
     let mut seen = BTreeSet::new();
@@ -469,7 +473,7 @@ fn corridors(
         }
     }
 
-    Err(Rejection::Obstructed(
+    Err(sweep::Refusal::Impossible(
         blocked.unwrap_or_else(|| unarrangeable(flow)),
     ))
 }

@@ -1,28 +1,15 @@
 //! Enters one cycle iteration; reaching its end records a repeat.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use proc_macro2::Ident;
 use syn::Error;
 
 use super::{LoopState, State, Walk};
-use crate::model::{Flow, ProducerId};
+use crate::model::Flow;
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
-    let bindings = walk.flow.blocks[block]
-        .inputs
-        .iter()
-        .enumerate()
-        .map(|(input, declaration)| {
-            (
-                declaration
-                    .binding
-                    .clone()
-                    .expect("a cycle capture declares a local binding"),
-                ProducerId::CycleInput { block, input },
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
+    let bindings = walk.flow.cycle_bindings(block);
     let outside = LoopState {
         available: std::mem::replace(&mut state.available, bindings.clone()),
         produced: std::mem::replace(

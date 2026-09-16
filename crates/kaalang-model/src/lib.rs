@@ -591,11 +591,14 @@ mod tests {
         assert_eq!(model.executions.len(), 4);
         let ExecutionPlan::Question {
             index,
-            branches: [yes, no],
+            branches,
             joins,
         } = end_body(&model.execution_plan)
         else {
             panic!("the root question must join its results")
+        };
+        let [yes, no] = branches.as_slice() else {
+            panic!("a question declares two branches")
         };
         let [root_join] = joins.as_slice() else {
             panic!("the root question must record one join")

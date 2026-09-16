@@ -8,7 +8,7 @@ use syn::{Error, Result};
 
 use crate::model::{BlockKind, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
 
-use super::{only_difference, produced};
+use super::only_difference;
 
 // ponytail: comparing every pair of producing executions per merge costs
 // O(merges * executions² * blocks); reuse the participation pass or index the
@@ -64,7 +64,7 @@ pub(super) fn flow(
                     .producers
                     .iter()
                     .copied()
-                    .find(|&producer| produced(flow, execution, producer))
+                    .find(|&producer| flow.produces(execution, producer))
             })
             .collect::<Vec<_>>();
         validate_adjacency(flow, executions, merge, &producers)?;
@@ -215,7 +215,8 @@ fn ordering(
         .iter()
         .filter_map(|execution| {
             merge.producers.iter().find_map(|&producer| {
-                produced(flow, execution, producer).then_some((execution, producer))
+                flow.produces(execution, producer)
+                    .then_some((execution, producer))
             })
         })
         .collect::<Vec<_>>();

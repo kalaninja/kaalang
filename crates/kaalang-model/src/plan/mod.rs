@@ -390,20 +390,12 @@ impl Builder<'_> {
             .flat_map(|(branches, groups)| {
                 groups
                     .into_iter()
-                    .enumerate()
-                    .map(move |(order, (_, blocks))| (branches.clone(), order, blocks))
+                    .map(move |(_, blocks)| (branches.clone(), blocks))
             })
             .collect::<Vec<_>>();
-        groups.sort_by(|(left, left_order, _), (right, right_order, _)| {
-            left.len()
-                .cmp(&right.len())
-                .then_with(|| left.cmp(right))
-                .then_with(|| left_order.cmp(right_order))
-        });
-        let groups = groups
-            .into_iter()
-            .map(|(branches, _, blocks)| (branches, blocks))
-            .collect::<Vec<_>>();
+        // The map already orders by branches, then by insertion; the stable
+        // sort only moves narrower groups first.
+        groups.sort_by_key(|(branches, _)| branches.len());
         if self.flow.blocks[block].kind == BlockKind::Choice && !choice::joinable(&groups) {
             return Err(Unstructured);
         }
@@ -564,22 +556,17 @@ impl Builder<'_> {
     /// Logical names produced more than once that no single binding unifies.
     /// Rust would otherwise never compare the types of such alternatives.
     fn gates(&self) -> Vec<Ident> {
-        let classes = &self.classes;
-        let mut occurrences = BTreeMap::<&Ident, BTreeSet<ProducerId>>::new();
-        for (block, declaration) in self.flow.blocks.iter().enumerate() {
-            for (output, name) in declaration.outputs.iter().enumerate() {
-                occurrences
-                    .entry(name)
-                    .or_default()
-                    .insert(ProducerId::BlockOutput { block, output });
-            }
-        }
-        occurrences
-            .into_iter()
-            .filter(|(_, producers)| {
-                producers.len() >= 2 && !classes.iter().any(|class| producers.is_subset(class))
+        self.merges
+            .iter()
+            .filter(|merge| {
+                !self.classes.iter().any(|class| {
+                    merge
+                        .producers
+                        .iter()
+                        .all(|producer| class.contains(producer))
+                })
             })
-            .map(|(name, _)| name.clone())
+            .map(|merge| merge.wire.clone())
             .collect()
     }
 }
@@ -607,16 +594,8 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
             index,
             branches,
             joins,
-        } => {
-            order.push(*index);
-            for branch in branches {
-                serial_order(&branch.plan, order);
-            }
-            for join in joins {
-                serial_order(&join.next, order);
-            }
         }
-        ExecutionPlan::Choice {
+        | ExecutionPlan::Choice {
             index,
             branches,
             joins,
@@ -654,15 +633,8 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
         }
         ExecutionPlan::Question {
             branches, joins, ..
-        } => {
-            for branch in branches {
-                fill_yields(&mut branch.plan, wires, target);
-            }
-            for join in joins {
-                fill_yields(&mut join.next, wires, target);
-            }
         }
-        ExecutionPlan::Choice {
+        | ExecutionPlan::Choice {
             branches, joins, ..
         } => {
             for branch in branches {

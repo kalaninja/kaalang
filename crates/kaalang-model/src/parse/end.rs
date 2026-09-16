@@ -1,7 +1,7 @@
 //! The implicit visual and planning boundary for explicit flow returns.
 
 use proc_macro2::Span;
-use syn::{Error, ItemFn, ReturnType, parse_quote, spanned::Spanned};
+use syn::{Error, ItemFn, ReturnType, spanned::Spanned};
 
 use crate::model::{Block, BlockKind};
 
@@ -12,21 +12,7 @@ pub(super) fn block(function: &ItemFn) -> Block {
         ReturnType::Default => function.sig.ident.span(),
         output @ ReturnType::Type(..) => output.span(),
     };
-    Block {
-        kind: BlockKind::End,
-        description: None,
-        question_branches: Vec::new(),
-        case_descriptions: Vec::new(),
-        outputs: Vec::new(),
-        output_pattern: parse_quote!(()),
-        output_span: span,
-        inputs: Vec::new(),
-        body: parse_quote!({}),
-        span,
-        parent: None,
-        loop_end: None,
-        break_target: None,
-    }
+    super::structural_block(BlockKind::End, span, Vec::new())
 }
 
 /// Reports the authored `#[end]` statement kaalang no longer has.

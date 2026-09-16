@@ -18,7 +18,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::geometry::compatible;
 use crate::model::{Flow, WireMerge};
 use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
 
@@ -292,49 +291,27 @@ fn requirements(
     sideways: &[&Crossing],
     groups: &[usize],
 ) -> Result<Vec<Vec<usize>>, Blocked> {
-    {
-        // Constraints belong to the group's first run. Other group members
-        // occupy that same lane rather than drawing a second merge rail.
-        let mut above: Vec<Vec<usize>> = vec![Vec::new(); sideways.len()];
-        for (a, run) in sideways.iter().enumerate() {
-            let a = groups[a];
-            for other in crossings {
-                if other.connection == run.connection
-                    || bundled(topology, run.connection, other.connection)
-                {
-                    continue;
-                }
-                let over_descent = run.spans(other.enter);
-                let over_arrival = run.spans(other.exit);
-                let Some(b) = sideways
-                    .iter()
-                    .position(|candidate| candidate.connection == other.connection)
-                else {
-                    // The other route passes straight through this gap, so no
-                    // lane order can move it out of the way; send it down a
-                    // column of its own instead.
-                    if over_descent || over_arrival {
-                        return Err(Blocked {
-                            connection: mover(topology, other.connection, run.connection),
-                            reason: obstruction(
-                                flow,
-                                topology,
-                                run.connection,
-                                format!(
-                                    "{} runs across {}, which passes through the same row",
-                                    name(flow, merges, topology, run.connection),
-                                    name(flow, merges, topology, other.connection)
-                                ),
-                            ),
-                        });
-                    }
-                    continue;
-                };
-                let b = groups[b];
-                // Passing over another run's descent means lying below it;
-                // passing over its arrival means lying above it. If both ends
-                // lie inside this run's span, the other route must leave it.
-                if over_descent && over_arrival {
+    // Constraints belong to the group's first run. Other group members
+    // occupy that same lane rather than drawing a second merge rail.
+    let mut above: Vec<Vec<usize>> = vec![Vec::new(); sideways.len()];
+    for (a, run) in sideways.iter().enumerate() {
+        let a = groups[a];
+        for other in crossings {
+            if other.connection == run.connection
+                || bundled(topology, run.connection, other.connection)
+            {
+                continue;
+            }
+            let over_descent = run.spans(other.enter);
+            let over_arrival = run.spans(other.exit);
+            let Some(b) = sideways
+                .iter()
+                .position(|candidate| candidate.connection == other.connection)
+            else {
+                // The other route passes straight through this gap, so no
+                // lane order can move it out of the way; send it down a
+                // column of its own instead.
+                if over_descent || over_arrival {
                     return Err(Blocked {
                         connection: mover(topology, other.connection, run.connection),
                         reason: obstruction(
@@ -342,23 +319,43 @@ fn requirements(
                             topology,
                             run.connection,
                             format!(
-                                "{} runs across both ends of {} in one row",
-                                name(flow, merges, topology, run.connection),
-                                name(flow, merges, topology, other.connection)
+                                "{} runs across {}, which passes through the same row",
+                                describe::connection(flow, merges, topology, run.connection),
+                                describe::connection(flow, merges, topology, other.connection)
                             ),
                         ),
                     });
                 }
-                if over_descent {
-                    above[a].push(b);
-                }
-                if over_arrival {
-                    above[b].push(a);
-                }
+                continue;
+            };
+            let b = groups[b];
+            // Passing over another run's descent means lying below it;
+            // passing over its arrival means lying above it. If both ends
+            // lie inside this run's span, the other route must leave it.
+            if over_descent && over_arrival {
+                return Err(Blocked {
+                    connection: mover(topology, other.connection, run.connection),
+                    reason: obstruction(
+                        flow,
+                        topology,
+                        run.connection,
+                        format!(
+                            "{} runs across both ends of {} in one row",
+                            describe::connection(flow, merges, topology, run.connection),
+                            describe::connection(flow, merges, topology, other.connection)
+                        ),
+                    ),
+                });
+            }
+            if over_descent {
+                above[a].push(b);
+            }
+            if over_arrival {
+                above[b].push(a);
             }
         }
-        Ok(above)
     }
+    Ok(above)
 }
 
 /// Places the runs of one rank gap on lanes, lowest first.
@@ -373,42 +370,40 @@ fn assign_gap(
     groups: &[usize],
     above: &[Vec<usize>],
 ) -> Result<(), Blocked> {
-    {
-        let ordered =
-            order(above, &|run| movable(topology, sideways[run].connection)).map_err(|run| {
-                Blocked {
-                    connection: sideways[run].connection,
-                    reason: obstruction(
-                        flow,
-                        topology,
-                        sideways[run].connection,
-                        format!(
-                            "{} cannot share a row with the routes it meets there",
-                            name(flow, merges, topology, sideways[run].connection)
-                        ),
+    let ordered =
+        order(above, &|run| movable(topology, sideways[run].connection)).map_err(|run| {
+            Blocked {
+                connection: sideways[run].connection,
+                reason: obstruction(
+                    flow,
+                    topology,
+                    sideways[run].connection,
+                    format!(
+                        "{} cannot share a row with the routes it meets there",
+                        describe::connection(flow, merges, topology, sideways[run].connection)
                     ),
-                }
-            })?;
-        let mut lanes = BTreeMap::new();
-        for run in ordered {
-            if groups[run] == run {
-                // Only an ordering constraint requires another level. Runs
-                // that can share a horizontal should not form a staircase.
-                let lane = above[run]
-                    .iter()
-                    .map(|earlier| lanes[earlier] + 1)
-                    .max()
-                    .unwrap_or(0);
-                lanes.insert(run, lane);
+                ),
             }
+        })?;
+    let mut lanes = BTreeMap::new();
+    for run in ordered {
+        if groups[run] == run {
+            // Only an ordering constraint requires another level. Runs
+            // that can share a horizontal should not form a staircase.
+            let lane = above[run]
+                .iter()
+                .map(|earlier| lanes[earlier] + 1)
+                .max()
+                .unwrap_or(0);
+            lanes.insert(run, lane);
         }
-        for (run, group) in sideways.iter().zip(groups.iter().copied()) {
-            plan.lanes.insert((run.connection, gap), lanes[&group]);
-        }
-        // The gap needs room for the levels actually occupied, not for one per
-        // group: runs no ordering separates all share the topmost level.
-        plan.gap_lanes[gap] = lanes.values().max().map_or(0, |deepest| deepest + 1);
     }
+    for (run, group) in sideways.iter().zip(groups.iter().copied()) {
+        plan.lanes.insert((run.connection, gap), lanes[&group]);
+    }
+    // The gap needs room for the levels actually occupied, not for one per
+    // group: runs no ordering separates all share the topmost level.
+    plan.gap_lanes[gap] = lanes.values().max().map_or(0, |deepest| deepest + 1);
 
     Ok(())
 }
@@ -518,11 +513,6 @@ pub(super) fn departure_column(
     }
 }
 
-/// Names one connection the way the author wrote its ends.
-fn name(flow: &Flow, merges: &[WireMerge], topology: &Topology, connection: usize) -> String {
-    describe::connection(flow, merges, topology, connection)
-}
-
 /// One obstruction, reported at the block the blamed route leaves.
 pub(super) fn obstruction(
     flow: &Flow,
@@ -531,47 +521,27 @@ pub(super) fn obstruction(
     message: String,
 ) -> super::Obstruction {
     super::Obstruction {
-        span: describe::span(flow, topology, connection),
+        span: describe::vertex_span(
+            flow,
+            topology,
+            Vertex::from(topology.connections[connection].source),
+        ),
         message,
         loop_index: None,
         connection: Some(connection),
     }
 }
 
-/// Finds crossings that gap ordering alone cannot see, including a descent
-/// through another question's side departure. Bundles may share segments, but
-/// the complete polylines must still meet the ordinary crossing rules.
+/// Finds crossings that gap ordering alone cannot see, over the complete
+/// polylines of an assembled arrangement.
 pub(super) fn crossing(
     topology: &Topology,
     arrangement: &super::Arrangement,
 ) -> Option<(usize, usize)> {
-    use super::verify::{Grid, ends, meetings, polyline};
+    use super::verify::{Grid, polyline};
     let grid = Grid::of(topology, arrangement);
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
-    // Most pairs in a long flow occupy disjoint vertical intervals. Reject
-    // those pairs before computing bundle meetings and comparing segments.
-    let spans = lines
-        .iter()
-        .map(|line| {
-            line.iter()
-                .fold((i32::MAX, i32::MIN), |(low, high), point| {
-                    (low.min(point.y), high.max(point.y))
-                })
-        })
-        .collect::<Vec<_>>();
-    for (left, line) in lines.iter().enumerate() {
-        for (right, other) in lines.iter().enumerate().skip(left + 1) {
-            if spans[left].1 < spans[right].0 || spans[right].1 < spans[left].0 {
-                continue;
-            }
-            let (shared, allowed) =
-                meetings(ends(topology, left), line, ends(topology, right), other);
-            if !compatible(line, other, shared, &allowed) {
-                return Some((left, right));
-            }
-        }
-    }
-    None
+    super::verify::crossing(topology, &lines)
 }

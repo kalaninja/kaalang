@@ -113,6 +113,13 @@ pub(crate) struct LoopRegion {
     pub(crate) outputs: String,
 }
 
+impl LoopRegion {
+    /// Left, top, right, bottom, like `Scene::bounds`.
+    pub(super) const fn bounds(&self) -> (i32, i32, i32, i32) {
+        (self.left, self.top, self.right, self.bottom)
+    }
+}
+
 /// The flow parameters shown beside start, outside the control-flow topology.
 #[derive(Clone)]
 pub(crate) struct ParameterPanel {
@@ -207,14 +214,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         // alone would close the lane between them, which the contour rule
         // refuses — rightly, so the whole chain moves together.
         let side = scene.arrangement.contours[index].side;
-        let rail = |scene: &Scene, other: usize| {
-            let tail = scene.topology.loops[other].tail;
-            scene
-                .connections
-                .iter()
-                .position(|edge| edge.source == Source::Junction(tail))
-        };
-        let Some(back) = rail(scene, index) else {
+        let Some(back) = scene.back_edge_index(index) else {
             continue;
         };
         let chain = std::iter::once(back)
@@ -226,7 +226,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
                             && scene.bodies[other]
                                 .contains(&Vertex::Junction(scene.topology.loops[index].entry))
                     })
-                    .filter_map(|other| rail(scene, other)),
+                    .filter_map(|other| scene.back_edge_index(other)),
             )
             .collect::<Vec<_>>();
         let step = match side {
@@ -269,12 +269,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         let struck = |scene: &Scene| {
             obstructions(scene)
                 .into_iter()
-                .filter(|rect| {
-                    scene.connections[back]
-                        .points
-                        .windows(2)
-                        .any(|segment| route::enters(segment[0], segment[1], *rect))
-                })
+                .filter(|rect| route::crosses(&scene.connections[back].points, *rect))
                 .map(|rect| match side {
                     Side::Left => rect.0,
                     Side::Right => rect.2,
@@ -543,11 +538,7 @@ fn back_edge_correspondence(scene: &Scene) -> Option<String> {
         scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
     for (index, contour) in scene.arrangement.contours.iter().enumerate() {
         let tail = scene.topology.loops[index].tail;
-        let Some(edge) = scene
-            .connections
-            .iter()
-            .find(|edge| edge.source == Source::Junction(tail))
-        else {
+        let Some(edge) = scene.back_edge(index) else {
             return Some(format!(
                 "the iteration back edge of junction {tail} is missing"
             ));
@@ -861,6 +852,31 @@ impl Scene {
     pub(crate) fn is_back_edge(&self, connection: &Connection) -> bool {
         self.topology.back_edges.iter().any(|edge| {
             edge.source == connection.source && edge.destination == connection.destination
+        })
+    }
+
+    /// Where one loop's iteration back edge sits in `connections`, once drawn.
+    pub(super) fn back_edge_index(&self, index: usize) -> Option<usize> {
+        let tail = self.topology.loops[index].tail;
+        self.connections
+            .iter()
+            .position(|edge| edge.source == Source::Junction(tail))
+    }
+
+    pub(super) fn back_edge(&self, index: usize) -> Option<&Connection> {
+        self.back_edge_index(index).map(|at| &self.connections[at])
+    }
+
+    /// Where one junction is drawn: the end every incident route shares.
+    pub(crate) fn junction_at(&self, junction: usize) -> Option<Point> {
+        self.connections.iter().find_map(|edge| {
+            if edge.source == Source::Junction(junction) {
+                edge.points.first().copied()
+            } else if edge.destination == Destination::Junction(junction) {
+                edge.points.last().copied()
+            } else {
+                None
+            }
         })
     }
 
