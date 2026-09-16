@@ -18,9 +18,9 @@
 use std::collections::BTreeSet;
 
 use crate::model::{Flow, WireMerge};
-use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
+use crate::topology::{Connection, Destination, NodeId, Source, Topology, Vertex};
 
-use crate::geometry::{Point, compatible};
+use crate::geometry::{Point, compatible, enters, inside};
 
 use super::verify::{Grid, back_edge_polyline, ends, meetings, polyline};
 use super::{Arrangement, Contour, Side};
@@ -43,6 +43,327 @@ pub(super) fn body_columns(
         .into_iter()
         .map(|vertex| arrangement.column[&vertex])
         .collect()
+}
+
+/// What every cycle boundary encloses, in `Topology::loop_boundaries` order.
+///
+/// A boundary's contents depend on the flow and its topology, never on the
+/// candidate ranks and columns, and settling one walks a fixpoint over the
+/// junctions it draws. One check asks for them once and hands them to every
+/// rule that reads them; compaction checks thousands of candidates against the
+/// same contents.
+pub(super) struct Bodies(Vec<Body>);
+
+/// One boundary's contents, with everything the rules sort by ownership rather
+/// than by position: which vertices stand outside it, which routes stay inside,
+/// which reach its interface, and which back edges it draws.
+struct Body {
+    owned: BTreeSet<Vertex>,
+    foreign: Vec<Vertex>,
+    internal: Vec<usize>,
+    foreign_routes: Vec<usize>,
+    /// The cycle's own iteration back edge, which its boundary encloses.
+    own_back_edge: Option<usize>,
+    foreign_loops: Vec<usize>,
+    /// The other boundaries this one holds, and the ones that hold it.
+    nests: Vec<usize>,
+    beside: Vec<usize>,
+}
+
+impl Bodies {
+    pub(super) fn of(flow: &Flow, topology: &Topology) -> Self {
+        Self(
+            topology
+                .loop_boundaries
+                .iter()
+                .map(|boundary| {
+                    let owned = owned(flow, topology, boundary.header);
+                    let inside = |vertex: Vertex| owned.contains(&vertex);
+                    let interface = |edge: &Connection| {
+                        edge.destination == boundary.entry || boundary.result == Some(edge.source)
+                    };
+                    let (mut internal, mut foreign_routes) = (Vec::new(), Vec::new());
+                    for (index, edge) in topology.connections.iter().enumerate() {
+                        let both = inside(Vertex::from(edge.source)) && inside(edge.destination);
+                        if both {
+                            internal.push(index);
+                        } else if !interface(edge) {
+                            foreign_routes.push(index);
+                        }
+                    }
+                    let mut foreign_loops = Vec::new();
+                    for (index, loop_) in topology.loops.iter().enumerate() {
+                        if !(boundary.header..boundary.end).contains(&loop_.header) {
+                            foreign_loops.push(index);
+                        }
+                    }
+                    let own_back_edge = topology
+                        .loops
+                        .iter()
+                        .position(|loop_| loop_.header == boundary.header);
+                    let (mut nests, mut beside) = (Vec::new(), Vec::new());
+                    for (index, other) in topology.loop_boundaries.iter().enumerate() {
+                        if other.header == boundary.header {
+                            continue;
+                        }
+                        if (boundary.header + 1..boundary.end).contains(&other.header) {
+                            nests.push(index);
+                        } else if !(other.header + 1..other.end).contains(&boundary.header) {
+                            beside.push(index);
+                        }
+                    }
+                    Body {
+                        foreign: topology
+                            .vertices
+                            .iter()
+                            .copied()
+                            .filter(|vertex| !owned.contains(vertex))
+                            .collect(),
+                        owned,
+                        internal,
+                        foreign_routes,
+                        own_back_edge,
+                        foreign_loops,
+                        nests,
+                        beside,
+                    }
+                })
+                .collect(),
+        )
+    }
+
+    /// Whether lifting `edge`'s destination past the body could ever hold.
+    ///
+    /// A completion that stands in one of the body's own columns has no row
+    /// beside it: every row the body spans is inside the rectangle. Compaction
+    /// asks this before constructing the candidates, which the boundary rule
+    /// would reject one by one.
+    pub(super) fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
+        let landing = arrangement.column[&edge.destination];
+        self.0.iter().any(|body| {
+            if !body.owned.contains(&Vertex::from(edge.source))
+                || body.owned.contains(&edge.destination)
+            {
+                return false;
+            }
+            let mut columns = body.owned.iter().map(|vertex| arrangement.column[vertex]);
+            let first = columns.next().unwrap_or(landing);
+            let (left, right) = columns.fold((first, first), |(left, right), column| {
+                (left.min(column), right.max(column))
+            });
+            landing < left || landing > right
+        })
+    }
+
+    /// Whether `edge` orders a cycle's completion after the body it leaves.
+    ///
+    /// `topology/loop_block.rs::order_boundaries` puts the completion below the
+    /// whole body so a construction has a conforming arrangement to start from.
+    /// That is a starting point, not the rule: RFC 0002 §8 only asks the
+    /// boundary to stay clear of what the cycle does not own, and `boundaries`
+    /// checks that rectangle directly. A completion beside the body may
+    /// therefore share its rows, which is what lets compaction lift it.
+    pub(super) fn completes_a_boundary(&self, edge: &Connection) -> bool {
+        self.0.iter().any(|body| {
+            body.owned.contains(&Vertex::from(edge.source))
+                && !body.owned.contains(&edge.destination)
+        })
+    }
+}
+
+/// Whether one rectangle holds another whole.
+const fn contains(
+    (left, top, right, bottom): (i32, i32, i32, i32),
+    (other_left, other_top, other_right, other_bottom): (i32, i32, i32, i32),
+) -> bool {
+    left <= other_left && top <= other_top && right >= other_right && bottom >= other_bottom
+}
+
+/// Whether two rectangles share any area.
+const fn overlaps(
+    (left, top, right, bottom): (i32, i32, i32, i32),
+    (other_left, other_top, other_right, other_bottom): (i32, i32, i32, i32),
+) -> bool {
+    left < other_right && other_left < right && top < other_bottom && other_top < bottom
+}
+
+/// A cycle boundary encloses its own body and nothing else (RFC 0002 §8).
+///
+/// This is the rule the blanket precedence used to stand in for. A vertex or a
+/// route the cycle does not own may share the body's rows, as long as it stays
+/// out of the rectangle. Only the cycle's interface reaches it: the route into
+/// its entry and the one leaving its result.
+pub(super) fn boundaries(
+    topology: &Topology,
+    arrangement: &Arrangement,
+    grid: &Grid,
+    lines: &[Vec<Point>],
+    bodies: &Bodies,
+) -> Result<(), String> {
+    if topology.loop_boundaries.is_empty() {
+        return Ok(());
+    }
+    let backs = (0..topology.loops.len())
+        .map(|index| {
+            back_edge_polyline(
+                topology,
+                arrangement,
+                grid,
+                index,
+                arrangement.contours[index],
+            )
+        })
+        .collect::<Vec<_>>();
+    // Every rule below reads the same corridors and cells; measuring each of
+    // them once and folding the extents is what keeps a boundary check cheap
+    // enough for compaction to run one per candidate.
+    let extents = |points: &[Point]| {
+        let first = points.first().copied().unwrap_or(Point { x: 0, y: 0 });
+        points.iter().fold(
+            (first.x, first.y, first.x, first.y),
+            |(left, top, right, bottom), point| {
+                (
+                    left.min(point.x),
+                    top.min(point.y),
+                    right.max(point.x),
+                    bottom.max(point.y),
+                )
+            },
+        )
+    };
+    let route_extents = lines.iter().map(|line| extents(line)).collect::<Vec<_>>();
+    let back_extents = backs.iter().map(|line| extents(line)).collect::<Vec<_>>();
+    let drawn = rectangles(
+        topology,
+        arrangement,
+        grid,
+        bodies,
+        &route_extents,
+        &back_extents,
+    );
+    let named = |index: usize| topology.loop_boundaries[index].header + 1;
+    for (index, body) in bodies.0.iter().enumerate() {
+        let bounds = drawn[index];
+        for &other in &body.nests {
+            if !contains(bounds, drawn[other]) {
+                return Err(format!(
+                    "the boundary of the cycle at block {} does not hold the one at block {}",
+                    named(index),
+                    named(other)
+                ));
+            }
+        }
+        for &other in &body.beside {
+            if overlaps(bounds, drawn[other]) {
+                return Err(format!(
+                    "the boundaries of the cycles at blocks {} and {} overlap",
+                    named(index),
+                    named(other)
+                ));
+            }
+        }
+        for &vertex in &body.foreign {
+            let point = Point {
+                x: grid.column(arrangement.column[&vertex]),
+                y: grid.rank(arrangement.rank[&vertex]),
+            };
+            if inside(point, bounds) {
+                return Err(format!(
+                    "the cycle at block {} encloses {vertex:?}",
+                    named(index)
+                ));
+            }
+        }
+        for &route in &body.foreign_routes {
+            if lines[route]
+                .windows(2)
+                .any(|segment| enters(segment[0], segment[1], bounds))
+            {
+                let edge = topology.connections[route];
+                return Err(format!(
+                    "the cycle at block {} is crossed by {:?} -> {:?}, a route it does not own",
+                    named(index),
+                    edge.source,
+                    edge.destination
+                ));
+            }
+        }
+        for &loop_ in &body.foreign_loops {
+            if backs[loop_]
+                .windows(2)
+                .any(|segment| enters(segment[0], segment[1], bounds))
+            {
+                return Err(format!(
+                    "the iteration back edge of the cycle at block {} enters the boundary of the one at block {}",
+                    topology.loops[loop_].header + 1,
+                    named(index)
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The rectangle each cycle boundary draws, in `Topology::loop_boundaries`
+/// order, as `(left, top, right, bottom)` on the abstract grid.
+///
+/// RFC 0002 §8 makes the boundary enclose every vertex, junction and back edge
+/// the cycle owns, and nothing else. It therefore stands one lane outside all
+/// of them: the body's own cells and internal routes, its back edge, and the
+/// rectangle of every cycle nested in it. A nested header always follows its
+/// enclosing one, so descending header order settles the inner rectangles
+/// first.
+///
+/// The lane budget holds this: `contour_lanes` offers two lanes per cycle, one
+/// for a back edge and the next for the boundary around it, so a chain of
+/// cycles stacked against one column still stops short of the next column.
+fn rectangles(
+    topology: &Topology,
+    arrangement: &Arrangement,
+    grid: &Grid,
+    bodies: &Bodies,
+    route_extents: &[(i32, i32, i32, i32)],
+    back_extents: &[(i32, i32, i32, i32)],
+) -> Vec<(i32, i32, i32, i32)> {
+    let mut settled = vec![None; topology.loop_boundaries.len()];
+    let mut inward = (0..topology.loop_boundaries.len()).collect::<Vec<_>>();
+    inward.sort_by_key(|&index| std::cmp::Reverse(topology.loop_boundaries[index].header));
+    for index in inward {
+        let body = &bodies.0[index];
+        let cells = body.owned.iter().map(|vertex| {
+            let at = Point {
+                x: grid.column(arrangement.column[vertex]),
+                y: grid.rank(arrangement.rank[vertex]),
+            };
+            (at.x, at.y, at.x, at.y)
+        });
+        let held = cells
+            .chain(body.internal.iter().map(|&route| route_extents[route]))
+            .chain(body.own_back_edge.iter().map(|&loop_| back_extents[loop_]))
+            .chain(body.nests.iter().filter_map(|&nested| settled[nested]));
+        let (left, top, right, bottom) = held
+            .reduce(|a, b| (a.0.min(b.0), a.1.min(b.1), a.2.max(b.2), a.3.max(b.3)))
+            .unwrap_or((0, 0, 0, 0));
+        settled[index] = Some((left - 1, top - 1, right + 1, bottom + 1));
+    }
+    settled
+        .into_iter()
+        .map(|rectangle| rectangle.expect("every boundary settles once"))
+        .collect()
+}
+
+/// The vertices one cycle's boundary encloses: its body and the result it
+/// hands over.
+pub(super) fn owned(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
+    let mut body = body_vertices(flow, topology, header);
+    body.extend(
+        topology
+            .loop_boundaries
+            .iter()
+            .filter(|boundary| boundary.header == header)
+            .filter_map(|boundary| boundary.result.map(Vertex::from)),
+    );
+    body
 }
 
 /// The vertices one loop's body draws: its own blocks and their cases,
@@ -160,95 +481,6 @@ pub(super) fn outside(
         Side::Right => position > other,
     };
     body.iter().all(|&column| clears(grid.column(column))) && nested.iter().copied().all(clears)
-}
-
-/// Compaction must leave room for each nested frame, not just its individual
-/// vertices and routes. A tail may enter that envelope after either its row
-/// rises or its column joins one occupied farther down in the nested body.
-pub(super) fn clears_nested_boundaries(
-    flow: &Flow,
-    topology: &Topology,
-    arrangement: &Arrangement,
-) -> bool {
-    if topology.loop_boundaries.len() < 2 {
-        return true;
-    }
-    let grid = Grid::of(topology, arrangement);
-    let lines = (0..topology.connections.len())
-        .map(|index| polyline(topology, arrangement, &grid, index))
-        .collect::<Vec<_>>();
-    let backs = (0..topology.loops.len())
-        .map(|index| {
-            back_edge_polyline(
-                topology,
-                arrangement,
-                &grid,
-                index,
-                arrangement.contours[index],
-            )
-        })
-        .collect::<Vec<_>>();
-    for boundary in &topology.loop_boundaries {
-        let outers = topology.loops.iter().enumerate().filter(|(_, loop_)| {
-            let end = flow.blocks[loop_.header]
-                .loop_end
-                .expect("a loop owns a body");
-            (loop_.header + 1..end).contains(&boundary.header)
-        });
-        if outers.clone().next().is_none() {
-            continue;
-        }
-        let mut body = body_vertices(flow, topology, boundary.header);
-        body.extend(boundary.result.map(Vertex::from));
-        let mut points = body
-            .iter()
-            .map(|vertex| Point {
-                x: grid.column(arrangement.column[vertex]),
-                y: grid.rank(arrangement.rank[vertex]),
-            })
-            .collect::<Vec<_>>();
-        points.extend(
-            topology
-                .connections
-                .iter()
-                .zip(&lines)
-                .filter(|(edge, _)| {
-                    body.contains(&Vertex::from(edge.source)) && body.contains(&edge.destination)
-                })
-                .flat_map(|(_, line)| line.iter().copied()),
-        );
-        points.extend(
-            topology
-                .loops
-                .iter()
-                .zip(&backs)
-                .filter(|(loop_, _)| (boundary.header..boundary.end).contains(&loop_.header))
-                .flat_map(|(_, line)| line.iter().copied()),
-        );
-        let first = points.first().expect("a cycle body includes its entry");
-        let (left, top, right, bottom) = points.iter().fold(
-            (first.x, first.y, first.x, first.y),
-            |(left, top, right, bottom), point| {
-                (
-                    left.min(point.x),
-                    top.min(point.y),
-                    right.max(point.x),
-                    bottom.max(point.y),
-                )
-            },
-        );
-        if outers.into_iter().any(|(index, _)| {
-            backs[index].windows(2).any(|segment| {
-                segment[0].x.min(segment[1].x) <= right
-                    && segment[0].x.max(segment[1].x) >= left
-                    && segment[0].y.min(segment[1].y) <= bottom
-                    && segment[0].y.max(segment[1].y) >= top
-            })
-        }) {
-            return false;
-        }
-    }
-    true
 }
 
 /// The nearest contour one back edge can climb, or why the nearest candidate

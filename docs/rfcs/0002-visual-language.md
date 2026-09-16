@@ -444,8 +444,9 @@ Along each forward connection, execution time runs from top to bottom or from a
 side exit into an implicit merge or its sole iteration tail on the same row.
 Every other destination node occupies a lower row than its source node, and a
 route never moves upward. Nodes on alternative branches may share a row. This
-also applies beside a cycle with no completing route: source order alone does
-not place its independent siblings above or below its boundary.
+also applies beside a cycle: source order alone does not place its independent
+siblings, or the continuation its completion reaches, above or below its
+boundary. What holds them apart is the boundary itself, not their rows.
 
 The visual language uses columns and rows. Every node and junction, including
 cycle entries and iteration tails, occupies its cell centre. Horizontal arrivals
@@ -462,8 +463,11 @@ Consecutive blocks continue down the current column. After a convergence, the
 entry blocks of its shared continuation form a sequence in the column reached by
 the group's first branch. An expanded cycle boundary encloses every vertex,
 junction, label, and back edge owned by the cycle and leaves its external
-interface on the boundary. Nested boundaries do not overlap or interleave. Exact
-lower rows, boundary padding, and routing space remain presentation choices.
+interface on the boundary. It is drawn in the space between cells, never in one:
+a vertex the cycle does not own may share the rows its body spans, as long as it
+stands outside the columns its body occupies. Nested boundaries do not overlap
+or interleave, and two that do not nest stand apart. Exact lower rows, boundary
+padding, and routing space remain presentation choices.
 
 A convergence group reserves enough columns for its shared continuation,
 including any nested question or choice. Later sibling branches start to the

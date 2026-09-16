@@ -654,6 +654,10 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
         return Err(Blocked::Narrow(wanted));
     }
     scene.loop_regions = loop_block::regions(&scene);
+    let wanted = loop_block::clearance(&scene);
+    if wanted > 0 {
+        return Err(Blocked::Narrow(wanted));
+    }
     scene.indent();
     scene.fit();
     // The complete result after every transformation, including the

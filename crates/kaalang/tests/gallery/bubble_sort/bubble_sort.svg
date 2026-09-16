@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1532" height="1596" viewBox="0 0 1532 1596" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for bubble_sort</title>
+  <desc id="kaalang-description">Cycles: 🫧 Float the largest unsorted value to its place. with inputs mut values, mut unsorted and outputs sorted; Compare every adjacent pair in the pass. with inputs &amp;mut values, unsorted, mut index and outputs compared. Nodes: Start: bubble_sort with parameters values: &amp;mut [i32] handing over values; Action: 📏 Every value is still unplaced. capturing &amp;values handing over unsorted; Question: Is more than one value still unplaced? capturing unsorted handing over pass / done described as branch 1: YES / branch 2: NO; Action: ⏮️ Start at the second value. capturing pass handing over index; Question: Is there another pair in this pass? capturing index, unsorted handing over compare / complete described as branch 1: YES / branch 2: NO; Question: Does the earlier value exceed the later one? capturing compare, &amp;values, index handing over greater / stepped described as branch 1: YES / branch 2: NO; Action: 🔀 Swap the pair. capturing greater, &amp;mut values, index handing over stepped; Action: ⏭️ Move on to the next pair. capturing stepped, &amp;mut index; Action: 🔻 One more value is in its place. capturing compared, &amp;mut unsorted; End: () capturing sorted; Merge: stepped. Connections: Start: bubble_sort to Action: 📏 Every value is still unplaced.; Action: 📏 Every value is still unplaced. to the entry of the cycle; Question: Is more than one value still unplaced? branch 1 to Action: ⏮️ Start at the second value.; Question: Is more than one value still unplaced? branch 2 to End: (); Action: ⏮️ Start at the second value. to the entry of the cycle; Question: Is there another pair in this pass? branch 1 to Question: Does the earlier value exceed the later one?; Question: Is there another pair in this pass? branch 2 to Action: 🔻 One more value is in its place.; Question: Does the earlier value exceed the later one? branch 1 to Action: 🔀 Swap the pair.; Question: Does the earlier value exceed the later one? branch 2 to the stepped merge; Action: 🔀 Swap the pair. to the stepped merge; Action: ⏭️ Move on to the next pair. to the iteration tail of the cycle; Action: 🔻 One more value is in its place. to the iteration tail of the cycle; the stepped merge to Action: ⏭️ Move on to the next pair.; the entry of the cycle to Question: Is more than one value still unplaced?; the entry of the cycle to Question: Is there another pair in this pass?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">🫧 Float the largest unsorted value to its place.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="1168" height="1206" rx="12"/>
+    <text class="cycle-caption" x="1188" y="277" text-anchor="end" xml:space="preserve"><tspan x="1188" dy="0">🫧 Float the largest unsorted value to its place.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Compare every adjacent pair in the pass.</title>
+    <rect class="cycle-boundary" x="92" y="615" width="576" height="782" rx="12"/>
+    <text class="cycle-caption" x="656" y="629" text-anchor="end" xml:space="preserve"><tspan x="656" dy="0">Compare every adjacent pair in the pass.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 280 90 L 280 162
+      M 280 226 L 280 298
+      M 280 442 L 280 514
+      M 420 406 L 1360 406 L 1360 1506
+      M 280 578 L 280 650
+      M 280 794 L 280 866
+      M 420 758 L 1000 758 L 1000 870
+      M 280 938 L 280 1010
+      M 420 902 L 640 902 L 640 1150 L 280 1150
+      M 280 1074 L 280 1150
+      M 280 1290 L 280 1362
+      M 1000 934 L 1000 1434
+      M 280 1150 L 280 1226
+      M 280 298 L 280 370
+      M 280 650 L 280 722
+    "/>
+    <path class="connection" d="
+      M 280 1362 L 120 1362 L 120 650 L 280 650
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1000 1434 L 60 1434 L 60 298 L 280 298
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="293" y="1168" xml:space="preserve"><tspan x="293" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="293" y="108" xml:space="preserve"><tspan x="293" dy="0">values</tspan></text>
+    <text class="connection-label" x="293" y="244" xml:space="preserve"><tspan x="293" dy="0">unsorted</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="462" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="394" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label" x="293" y="596" xml:space="preserve"><tspan x="293" dy="0">index</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="814" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="746" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="958" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="890" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label" x="293" y="151" xml:space="preserve"><tspan x="293" dy="0">&amp;values</tspan></text>
+    <text class="connection-label" x="293" y="359" xml:space="preserve"><tspan x="293" dy="0">unsorted</tspan></text>
+    <text class="connection-label" x="293" y="711" xml:space="preserve"><tspan x="293" dy="0">index, unsorted</tspan></text>
+    <text class="connection-label" x="293" y="855" xml:space="preserve"><tspan x="293" dy="0">compare, &amp;values, index</tspan></text>
+    <text class="connection-label" x="293" y="999" xml:space="preserve"><tspan x="293" dy="0">greater, &amp;mut values, index</tspan></text>
+    <text class="connection-label" x="293" y="1215" xml:space="preserve"><tspan x="293" dy="0">stepped, &amp;mut index</tspan></text>
+    <text class="connection-label" x="1013" y="859" xml:space="preserve"><tspan x="1013" dy="0">compared, &amp;mut unsorted</tspan></text>
+    <text class="connection-label" x="1373" y="1495" xml:space="preserve"><tspan x="1373" dy="0">sorted</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 420 61 L 516 61"/>
+    <g class="parameter-panel" transform="translate(636 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;mut [i32]</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(280 1150)">
+      <title xml:space="preserve">the stepped merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(280 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bubble_sort</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 194)">
+      <title xml:space="preserve">📏 Every value is still unplaced.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">📏 Every value is still unplaced.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 406)">
+      <title xml:space="preserve">Is more than one value still unplaced?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is more than one value still </tspan><tspan x="0" dy="18">unplaced?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 546)">
+      <title xml:space="preserve">⏮️ Start at the second value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⏮️ Start at the second value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 758)">
+      <title xml:space="preserve">Is there another pair in this pass?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is there another pair in </tspan><tspan x="0" dy="18">this pass?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 902)">
+      <title xml:space="preserve">Does the earlier value exceed the later one?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the earlier value </tspan><tspan x="0" dy="18">exceed the later one?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 1042)">
+      <title xml:space="preserve">🔀 Swap the pair.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔀 Swap the pair.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 1258)">
+      <title xml:space="preserve">⏭️ Move on to the next pair.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⏭️ Move on to the next pair.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1000 902)">
+      <title xml:space="preserve">🔻 One more value is in its place.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔻 One more value is in its place.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(1360 1535)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

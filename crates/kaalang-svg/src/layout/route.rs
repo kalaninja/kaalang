@@ -505,14 +505,8 @@ pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
 }
 
 /// Whether a segment passes through a rectangle rather than merely touching it.
-pub(super) fn enters(a: Point, b: Point, bounds: (i32, i32, i32, i32)) -> bool {
-    let (left, top, right, bottom) = bounds;
-    if a.x == b.x {
-        a.x > left && a.x < right && a.y.min(b.y) < bottom && a.y.max(b.y) > top
-    } else {
-        a.y > top && a.y < bottom && a.x.min(b.x) < right && a.x.max(b.x) > left
-    }
-}
+/// The model checks its own boundaries with this same definition.
+pub(super) use kaalang_model::geometry::enters;
 
 #[cfg(test)]
 mod tests {

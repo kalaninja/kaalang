@@ -211,6 +211,63 @@ fn caption(description: &str, width: i32) -> Vec<String> {
     lines
 }
 
+/// How much more room between columns a cycle boundary wants.
+///
+/// A back edge climbs in the gap beside its own body, and the boundary drawn
+/// around a neighbouring body reaches into that same gap. Where the two want it
+/// at once, no rail position clears it: stepping in goes into the body it
+/// leaves, stepping out goes further into the boundary. The room has to come
+/// from the columns, which is the same answer `clear_labels` gives a label and a
+/// rail, and the same retry carries it.
+pub(super) fn clearance(scene: &Scene) -> i32 {
+    let mut wanted = 0;
+    for (boundary, region) in scene
+        .topology
+        .loop_boundaries
+        .iter()
+        .zip(&scene.loop_regions)
+    {
+        let (left, _, right, _) = region.bounds();
+        for edge in &scene.connections {
+            let climbing = scene.topology.loops.iter().any(|loop_| {
+                edge.source == Source::Junction(loop_.tail)
+                    && edge.destination == Vertex::Junction(loop_.entry)
+                    && !(boundary.header..boundary.end).contains(&loop_.header)
+            });
+            if !climbing {
+                continue;
+            }
+            for segment in edge.points.windows(2) {
+                if !super::route::enters(segment[0], segment[1], region.bounds()) {
+                    continue;
+                }
+                let rail = segment[0].x.min(segment[1].x);
+                wanted = wanted.max((right - rail).min(rail - left).max(0) + super::LANE);
+            }
+        }
+        // Two boundaries that neither nest nor stand apart want the same gap
+        // for the same reason: one reaches into it with a label, the other with
+        // the rail its own boundary encloses.
+        for (other, theirs) in scene
+            .topology
+            .loop_boundaries
+            .iter()
+            .zip(&scene.loop_regions)
+        {
+            if other.header == boundary.header
+                || (boundary.header + 1..boundary.end).contains(&other.header)
+                || (other.header + 1..other.end).contains(&boundary.header)
+                || !overlaps(region.bounds(), theirs.bounds())
+            {
+                continue;
+            }
+            let (their_left, _, their_right, _) = theirs.bounds();
+            wanted = wanted.max((right - their_left).min(their_right - left) + super::LANE);
+        }
+    }
+    wanted
+}
+
 #[allow(clippy::too_many_lines)]
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     if scene.topology.loop_boundaries.len() != scene.loop_regions.len() {

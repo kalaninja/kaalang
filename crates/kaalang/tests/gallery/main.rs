@@ -2,6 +2,7 @@
 //! names and carries the diagram it draws to beside it.
 
 mod binary_search;
+mod bubble_sort;
 mod fizzbuzz;
 mod logical_formulas;
 mod loops;

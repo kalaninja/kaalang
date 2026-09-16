@@ -288,10 +288,15 @@ const FLOW_BUDGET: Duration = Duration::from_millis(10);
 /// a plan change; measurements record the hardware and default debug profile.
 const STRESS_BUDGET: Duration = Duration::from_secs(1);
 
+/// Compaction settles, and it settles inside the budget.
+///
+/// A serial flow leaves it almost nothing to do, so the check is that a second
+/// pass finds nothing the first one left. Compaction that kept moving rows
+/// would be the defect; one that tightens the first arrangement by a row is the
+/// point of it.
 #[test]
 fn a_serial_flow_with_a_cycle_compacts_inside_its_budget() {
     let mut model = crate::build(&stress(1, 40, false)).unwrap();
-    let ranks = model.arrangement.rank.clone();
     let started = Instant::now();
     model.compact_arrangement();
     let elapsed = started.elapsed();
@@ -299,7 +304,12 @@ fn a_serial_flow_with_a_cycle_compacts_inside_its_budget() {
         elapsed < STRESS_BUDGET,
         "compacting a serial flow took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
     );
-    assert_eq!(model.arrangement.rank, ranks);
+    let ranks = model.arrangement.rank.clone();
+    model.compact_arrangement();
+    assert_eq!(
+        model.arrangement.rank, ranks,
+        "compaction reached a fixed point"
+    );
 }
 
 #[test]

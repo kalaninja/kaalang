@@ -37,6 +37,24 @@ pub fn crosses(a: Point, b: Point, c: Point, d: Point) -> bool {
     }
 }
 
+/// Whether an orthogonal segment reaches the inside of a rectangle. Running
+/// along an edge is not entering it: a cycle boundary is drawn on its own
+/// bounds, and its interface meets it there.
+#[must_use]
+pub fn enters(a: Point, b: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
+    if a.x == b.x {
+        a.x > left && a.x < right && a.y.min(b.y) < bottom && a.y.max(b.y) > top
+    } else {
+        a.y > top && a.y < bottom && a.x.min(b.x) < right && a.x.max(b.x) > left
+    }
+}
+
+/// Whether a point lies strictly inside a rectangle.
+#[must_use]
+pub const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
+    point.x > left && point.x < right && point.y > top && point.y < bottom
+}
+
 #[must_use]
 pub fn on_segment(point: Point, segment: &[Point]) -> bool {
     point.x >= segment[0].x.min(segment[1].x)

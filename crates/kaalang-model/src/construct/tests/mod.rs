@@ -325,11 +325,12 @@ fn geometry_mutations() -> Vec<Mutation> {
         (
             "a contour one lane past the last a topology offers",
             Box::new(|arrangement: &mut Arrangement| {
-                // One back edge per cycle can climb beside one column, so the
-                // last lane a topology offers is its cycle count minus one.
-                // This probe has one cycle, so lane 1 is already one too many.
+                // Each cycle takes a lane for its back edge and the next one
+                // out for the boundary around it, so a topology offers twice
+                // its cycle count. This probe has one cycle, so lane 2 is
+                // already one too many.
                 if let Some(contour) = arrangement.contours.first_mut() {
-                    contour.lane += 1;
+                    contour.lane += 2;
                 }
             }),
         ),
@@ -1015,13 +1016,13 @@ pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
 }
 ";
 
-/// A topology offers one contour lane per cycle, and a witness can use the last
-/// of them.
+/// Four mutually enclosing back edges climb four distinct lanes on one side.
 ///
-/// `contour_lanes` bounds the lanes at the cycle count because only a back edge
-/// climbs beside a column. Four mutually enclosing cycles on one side is what
-/// makes the bound tight, and lane 3 is the one no fixture and no generated
-/// shape reaches. `kaalang-svg` draws this same witness.
+/// `contour_lanes` offers two lanes per cycle, one for a back edge and the next
+/// for the boundary that encloses it, so four cycles stacked against one column
+/// have room for both. This witness packs the back edges into the first four
+/// lanes, which no fixture and no generated shape reaches on its own.
+/// `kaalang-svg` draws this same witness.
 #[test]
 fn four_nested_back_edges_climb_four_lanes_on_one_side() {
     let model = model(FOUR_LANES);

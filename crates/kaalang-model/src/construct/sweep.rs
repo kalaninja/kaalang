@@ -1406,7 +1406,10 @@ fn add_run(route: &mut Route, line: RunLine, enter: i32, exit: i32) {
 }
 
 pub(super) fn compress(built: &mut Arrangement) {
-    let coordinates = built
+    // Compaction compresses every candidate it measures, so the numbering runs
+    // over a sorted slice rather than an ordered map: the coordinates are plain
+    // integers and there are thousands of passes over them.
+    let mut coordinates = built
         .column
         .values()
         .copied()
@@ -1422,45 +1425,55 @@ pub(super) fn compress(built: &mut Arrangement) {
                 .chain(r.runs.iter().flat_map(|s| [s.enter, s.exit]))
         }))
         .chain(built.contours.iter().map(|c| c.column))
-        .collect::<BTreeSet<_>>();
-    let numbered = coordinates
-        .into_iter()
-        .enumerate()
-        .map(|(i, x)| (x, i as i32))
-        .collect::<BTreeMap<_, _>>();
+        .collect::<Vec<_>>();
+    coordinates.sort_unstable();
+    coordinates.dedup();
+    let numbered = |coordinate: i32| {
+        i32::try_from(
+            coordinates
+                .binary_search(&coordinate)
+                .expect("every coordinate was collected"),
+        )
+        .expect("a compressed column fits its own index")
+    };
     for (exit, offset) in &mut built.exit_offset {
         let column = built.column[&Vertex::Node(exit.node)];
-        *offset = numbered[&(column + *offset)] - numbered[&column];
+        *offset = numbered(column + *offset) - numbered(column);
     }
     for column in built.column.values_mut() {
-        *column = numbered[column];
+        *column = numbered(*column);
     }
     for contour in &mut built.contours {
-        contour.column = numbered[&contour.column];
+        contour.column = numbered(contour.column);
     }
-    let used = built
+    let mut used = built
         .all_routes()
         .flat_map(|route| &route.runs)
         .filter_map(|run| match run.line {
             RunLine::Lane { gap, lane } => Some((gap, lane)),
             RunLine::Rank(_) => None,
         })
-        .collect::<BTreeSet<_>>();
-    let mut lanes = BTreeMap::new();
+        .collect::<Vec<_>>();
+    used.sort_unstable();
+    used.dedup();
+    let mut lanes = Vec::with_capacity(used.len());
     built.gap_lanes.fill(0);
     for (gap, lane) in used {
-        lanes.insert((gap, lane), built.gap_lanes[gap]);
+        lanes.push(((gap, lane), built.gap_lanes[gap]));
         built.gap_lanes[gap] += 1;
     }
     for route in built.all_routes_mut() {
-        route.departure = numbered[&route.departure];
-        route.arrival = numbered[&route.arrival];
+        route.departure = numbered(route.departure);
+        route.arrival = numbered(route.arrival);
         for run in &mut route.runs {
             if let RunLine::Lane { gap, lane } = &mut run.line {
-                *lane = lanes[&(*gap, *lane)];
+                let at = lanes
+                    .binary_search_by_key(&(*gap, *lane), |&(key, _)| key)
+                    .expect("every drawn lane was collected");
+                *lane = lanes[at].1;
             }
-            run.enter = numbered[&run.enter];
-            run.exit = numbered[&run.exit];
+            run.enter = numbered(run.enter);
+            run.exit = numbered(run.exit);
         }
     }
 }

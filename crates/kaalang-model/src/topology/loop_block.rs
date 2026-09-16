@@ -56,9 +56,15 @@ pub(super) fn order_exits(
     }
 }
 
-/// Orders each expanded cycle's completion after its whole body.
-/// A diverging cycle has no result to order; its independent siblings may
-/// occupy the same rows, as they do beside any other branch.
+/// Orders each expanded cycle's completion after its whole body, so a
+/// construction starts from an arrangement that cannot reach into the boundary.
+///
+/// This is a starting point, not the rule. RFC 0002 §8 only asks the boundary to
+/// stay clear of what the cycle does not own, which `construct::loop_block`
+/// checks against the rectangle itself; compaction lifts a completion that
+/// stands beside the body into the rows the body spans. A diverging cycle has no
+/// result to order; its independent siblings may occupy the same rows, as they
+/// do beside any other branch.
 pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();
     for boundary in &topology.loop_boundaries {

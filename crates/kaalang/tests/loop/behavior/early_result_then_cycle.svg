@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1332" viewBox="0 0 1140 1332" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1252" viewBox="0 0 1140 1252" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for early_result_then_cycle</title>
   <desc id="kaalang-description">Cycles: Select an early result or continue. with inputs first and outputs early_result; Count to three. with inputs count_more, mut count and outputs end. Nodes: Start: early_result_then_cycle with parameters first: bool; count: usize handing over first, count; Question: Check for an early result? capturing first handing over produce_early / continue_counting described as branch 1: YES / branch 2: NO; Action: Continue to the counter. capturing continue_counting handing over selected; Action: Produce the early result. capturing produce_early handing over selected; Question: Was an early result selected? capturing &amp;early_result handing over finish_early / count_more; Action: Extract the early result. capturing finish_early, early_result handing over end; Question: Has the count reached three? capturing &amp;count handing over leave / iterate described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate, &amp;mut count; End: usize capturing end; Merge: selected; Merge: end. Connections: Start: early_result_then_cycle to Question: Check for an early result?; Question: Check for an early result? branch 1 to Action: Produce the early result.; Question: Check for an early result? branch 2 to Action: Continue to the counter.; Action: Continue to the counter. to the selected merge at the cycle result; Action: Produce the early result. to the selected merge at the cycle result; Question: Was an early result selected? branch 1 to Action: Extract the early result.; Question: Was an early result selected? branch 2 to the entry of the cycle; Action: Extract the early result. to the end merge; Question: Has the count reached three? branch 1 to the end merge; Question: Has the count reached three? branch 2 to Action: Increment the count.; Action: Increment the count. to the iteration tail of the cycle; the selected merge at the cycle result to Question: Was an early result selected?; the end merge to End: usize; the entry of the cycle to Question: Has the count reached three?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -47,12 +47,12 @@
       M 200 378 L 200 454
       M 200 602 L 200 674
       M 340 566 L 560 566 L 560 706
-      M 200 738 L 200 1166
-      M 560 882 L 560 1166 L 200 1166
+      M 200 738 L 200 986
+      M 560 882 L 560 986 L 200 986
       M 700 846 L 920 846 L 920 954
       M 920 1018 L 920 1090
       M 200 454 L 200 530
-      M 200 1166 L 200 1242
+      M 200 986 L 200 1162
       M 560 706 L 560 810
     "/>
     <path class="connection" d="
@@ -72,7 +72,7 @@
     <text class="connection-label" x="213" y="663" xml:space="preserve"><tspan x="213" dy="0">finish_early, early_result</tspan></text>
     <text class="connection-label" x="573" y="799" xml:space="preserve"><tspan x="573" dy="0">&amp;count</tspan></text>
     <text class="connection-label" x="933" y="943" xml:space="preserve"><tspan x="933" dy="0">iterate, &amp;mut count</tspan></text>
-    <text class="connection-label" x="213" y="1231" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
+    <text class="connection-label" x="213" y="1151" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -84,7 +84,7 @@
       <title xml:space="preserve">the selected merge at the cycle result</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(200 1166)">
+    <g class="node merge" transform="translate(200 986)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -127,7 +127,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the count.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 1271)">
+    <g class="node end" transform="translate(200 1191)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

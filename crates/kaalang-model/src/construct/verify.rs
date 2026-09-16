@@ -11,8 +11,10 @@
 use crate::geometry::{
     Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
 };
+use std::collections::BTreeSet;
+
 use crate::model::Flow;
-use crate::topology::{Destination, Loop, NodeId, Source, Topology, Vertex};
+use crate::topology::{Connection, Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, RunLine, Side};
 
@@ -34,14 +36,15 @@ pub(super) struct Grid {
     scale: i32,
 }
 
-/// How many contour lanes one side of a column offers.
+/// How many lanes one side of a column offers.
 ///
-/// Only an iteration back edge climbs in the space beside a column, and every
-/// cycle has one, so a topology never needs more lanes there than it has cycles.
-/// This is a fact about the topology, not about any presentation's spacing: a
-/// renderer holds whatever this many lanes require.
+/// An iteration back edge climbs in the space beside a column, and the cycle
+/// boundary that encloses it stands one lane further out. Cycles nested to the
+/// same column stack that pair, so a chain of `n` of them reaches `2n`. This is
+/// a fact about the topology, not about any presentation's spacing: a renderer
+/// holds whatever this many lanes require.
 pub(super) fn contour_lanes(topology: &Topology) -> usize {
-    topology.loops.len()
+    2 * topology.loops.len()
 }
 
 impl Grid {
@@ -272,19 +275,159 @@ pub(crate) fn arrangement(
     topology: &Topology,
     arrangement: &Arrangement,
 ) -> Result<(), String> {
+    check(
+        flow,
+        topology,
+        arrangement,
+        &Shape::of(flow, topology),
+        false,
+    )
+}
+
+/// What the rules read from the flow and its topology alone.
+///
+/// Branch regions, their reachability closure and the cycle bodies do not
+/// depend on the ranks and columns a candidate proposes, and walking them is
+/// the most expensive part of a check. Compaction measures thousands of
+/// candidates against one topology, so it settles these once.
+pub(super) struct Shape {
+    bodies: super::loop_block::Bodies,
+    branchers: Vec<Brancher>,
+}
+
+/// One selection's regions, with the continuation entries it owns and the
+/// first-branch exits each of them is approached from.
+struct Brancher {
+    block: usize,
+    regions: super::regions::Regions,
+    continuations: Vec<(Vertex, BTreeSet<ExitId>)>,
+    /// Per convergence group and later sibling branch, what the group reserves
+    /// and what that branch draws outside it. Only the columns these land in
+    /// depend on a candidate.
+    reservations: Vec<(usize, usize, Vec<Vertex>, Vec<Vertex>)>,
+}
+
+impl Shape {
+    /// Whether compaction should construct the candidates that lift `edge`'s
+    /// destination into the rows of the body it leaves.
+    pub(super) fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
+        self.bodies.may_rise_beside(arrangement, edge)
+    }
+
+    pub(super) fn of(flow: &Flow, topology: &Topology) -> Self {
+        let reachable = super::regions::reachable(topology);
+        Self {
+            bodies: super::loop_block::Bodies::of(flow, topology),
+            branchers: super::regions::branchers(flow, topology)
+                .into_iter()
+                .map(|block| {
+                    let regions = super::regions::regions(flow, topology, &reachable, block);
+                    let continuations =
+                        super::regions::continuations(topology, block, &regions.branches)
+                            .into_iter()
+                            .map(|(entry, first)| {
+                                let approaches = super::regions::first_branch_approaches(
+                                    topology,
+                                    &regions.branches,
+                                    block,
+                                    first,
+                                    entry,
+                                );
+                                (entry, approaches)
+                            })
+                            .collect();
+                    let mut reservations = Vec::new();
+                    for (index, group) in regions.groups.iter().enumerate() {
+                        for branch in regions.later_siblings(group) {
+                            reservations.push((
+                                index,
+                                branch,
+                                regions.outside(group, branch).into_iter().collect(),
+                                regions.reserved(group, branch).into_iter().collect(),
+                            ));
+                        }
+                    }
+                    Brancher {
+                        block,
+                        regions,
+                        continuations,
+                        reservations,
+                    }
+                })
+                .collect(),
+        }
+    }
+}
+
+/// The rules `placement` does not cover, over an arrangement that also draws
+/// every cycle boundary.
+///
+/// The two are a pair: compaction runs `placement` on a candidate before
+/// compressing it and this on the result, so between them every rule holds.
+///
+/// A construction places a cycle's completion below the whole body, which keeps
+/// it out of the boundary without ever measuring the rectangle. Compaction
+/// measures it: `loop_block::boundaries` reads the rectangle directly, so a
+/// completion beside the body may share its rows and rise. The two go together
+/// — the relaxed row rule is only sound because the boundary rule holds.
+///
+/// # Errors
+///
+/// Returns the rule and the items that break it.
+pub(super) fn compacted(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+    shape: &Shape,
+) -> Result<(), String> {
+    check(flow, topology, arrangement, shape, true)
+}
+
+/// The rules that read only ranks and columns, which a candidate satisfies or
+/// not whether or not its coordinates have been compressed.
+///
+/// Compression renumbers columns and lanes onto a dense range; it preserves
+/// every order and equality these two rules read. Compaction asks them first,
+/// so the candidates they refuse never pay for the compression or the geometry.
+pub(super) fn placement(
+    topology: &Topology,
+    arrangement: &Arrangement,
+    shape: &Shape,
+) -> Result<(), String> {
+    super::end::verify(topology, arrangement)?;
+    order(topology, arrangement, Some(&shape.bodies))?;
+    serial_columns(topology, arrangement)
+}
+
+fn check(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+    shape: &Shape,
+    compacting: bool,
+) -> Result<(), String> {
     coverage(topology, arrangement)?;
     super::choice::verify(topology, arrangement)?;
-    super::end::verify(topology, arrangement)?;
-    order(topology, arrangement)?;
-    serial_columns(topology, arrangement)?;
+    if !compacting {
+        super::end::verify(topology, arrangement)?;
+        order(topology, arrangement, None)?;
+        serial_columns(topology, arrangement)?;
+    }
     let grid = Grid::of(topology, arrangement);
     let lines = (0..topology.connections.len())
         .map(|index| polyline(topology, arrangement, &grid, index))
         .collect::<Vec<_>>();
+    // The relaxed row rule and the boundary rule go together: the rows a
+    // completion may share are exactly the ones the rectangle leaves it, so
+    // both hold or neither does. Sorting a candidate by ownership is cheaper
+    // than measuring every crossing in it, so this answers first and the
+    // geometry rules see fewer.
+    if compacting {
+        super::loop_block::boundaries(topology, arrangement, &grid, &lines, &shape.bodies)?;
+    }
     routes(topology, arrangement, &grid, &lines)?;
     back_edges(flow, topology, arrangement, &grid, &lines)?;
-    // Reject crossings before recomputing reachability and branch regions.
-    branch_columns(flow, topology, arrangement)
+    branch_columns(flow, arrangement, shape)
 }
 
 /// Every vertex has a rank and a column, every connection a corridor, and
@@ -388,8 +531,14 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
 
 /// Forward connections descend, except for a side exit that ends at a wire merge
 /// or its sole iteration tail on its row. A cycle's own tail and result may share
-/// a row when their routes are disjoint; other placement-only relations descend.
-fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+/// a row when their routes are disjoint; a cycle's completion is held out of the
+/// body by `boundaries` rather than by its row; other placement-only relations
+/// descend.
+fn order(
+    topology: &Topology,
+    arrangement: &Arrangement,
+    drawn: Option<&super::loop_block::Bodies>,
+) -> Result<(), String> {
     for (relation, edges, same_row) in [
         ("a connection", &topology.connections, true),
         ("placement precedence", &topology.order, false),
@@ -408,7 +557,9 @@ fn order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
                         })
                 })
             };
-            if from > to || (from == to && !aligned) {
+            if (from > to || (from == to && !aligned))
+                && (same_row || !drawn.is_some_and(|bodies| bodies.completes_a_boundary(edge)))
+            {
                 return Err(format!("{relation} does not descend: {from} to {to}"));
             }
         }
@@ -439,14 +590,9 @@ fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), 
 /// A selection's branches leave it left to right in authored order, its shared
 /// continuations sit in the column their group's first branch reached, and
 /// each convergence group keeps the columns it reserves (RFC 0002 §8).
-fn branch_columns(
-    flow: &Flow,
-    topology: &Topology,
-    arrangement: &Arrangement,
-) -> Result<(), String> {
-    let reachable = super::regions::reachable(topology);
-    for block in super::regions::branchers(flow, topology) {
-        let regions = super::regions::regions(flow, topology, &reachable, block);
+fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Result<(), String> {
+    for brancher in &shape.branchers {
+        let block = brancher.block;
         let count = flow.blocks[block].branch_count();
         let starts = (0..count)
             .map(|branch| {
@@ -475,20 +621,17 @@ fn branch_columns(
                 block + 1
             ));
         }
-        for (entry, first) in super::regions::continuations(topology, block, &regions.branches) {
-            let column = super::regions::first_branch_approaches(
-                topology,
-                &regions.branches,
-                block,
-                first,
-                entry,
-            )
-            .into_iter()
-            .map(|exit| {
-                arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit]
-            })
-            .min()
-            .ok_or_else(|| format!("continuation entry {entry:?} has no first-branch approach"))?;
+        for (entry, approaches) in &brancher.continuations {
+            let entry = *entry;
+            let column = approaches
+                .iter()
+                .map(|exit| {
+                    arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[exit]
+                })
+                .min()
+                .ok_or_else(|| {
+                    format!("continuation entry {entry:?} has no first-branch approach")
+                })?;
             if arrangement.column[&entry] != column {
                 return Err(format!(
                     "block {} draws continuation entry {entry:?} away from its first branch's approach column {column}",
@@ -496,7 +639,7 @@ fn branch_columns(
                 ));
             }
         }
-        reserved_columns(arrangement, block, &regions)?;
+        reserved_columns(arrangement, brancher)?;
     }
     Ok(())
 }
@@ -523,28 +666,21 @@ fn branch_columns(
 /// that was tried and the flow it refused — and neither are branches that never
 /// meet: RFC 0002 §8 reserves columns for a convergence group, not for every
 /// branch, so their subtrees may interleave.
-fn reserved_columns(
-    arrangement: &Arrangement,
-    block: usize,
-    regions: &super::regions::Regions,
-) -> Result<(), String> {
+fn reserved_columns(arrangement: &Arrangement, brancher: &Brancher) -> Result<(), String> {
     let column = |vertex: &Vertex| arrangement.column[vertex];
-    for group in &regions.groups {
-        for branch in regions.later_siblings(group) {
-            let outside = regions.outside(group, branch);
-            for inside in &regions.reserved(group, branch) {
-                let at = column(inside);
-                let Some(wrong) = outside.iter().find(|vertex| column(vertex) <= at) else {
-                    continue;
-                };
-                return Err(format!(
-                    "block {} draws {wrong:?} of branch {} in column {}, not right of {inside:?} in column {at}, which its convergence group {:?} reserves",
-                    block + 1,
-                    branch + 1,
-                    column(wrong),
-                    group.members
-                ));
-            }
+    for (group, branch, outside, reserved) in &brancher.reservations {
+        for inside in reserved {
+            let at = column(inside);
+            let Some(wrong) = outside.iter().find(|vertex| column(vertex) <= at) else {
+                continue;
+            };
+            return Err(format!(
+                "block {} draws {wrong:?} of branch {} in column {}, not right of {inside:?} in column {at}, which its convergence group {:?} reserves",
+                brancher.block + 1,
+                branch + 1,
+                column(wrong),
+                brancher.regions.groups[*group].members
+            ));
         }
     }
     Ok(())
@@ -793,13 +929,22 @@ mod tests {
             .max()
             .expect("the group draws something");
 
-        branch_columns(&model.flow, &model.topology, &model.arrangement).unwrap();
+        branch_columns(
+            &model.flow,
+            &model.arrangement,
+            &Shape::of(&model.flow, &model.topology),
+        )
+        .unwrap();
         let mut broken = model.arrangement.clone();
         for vertex in outside {
             broken.column.insert(vertex, inside);
         }
-        let reason = branch_columns(&model.flow, &model.topology, &broken)
-            .expect_err("a sibling inside the reserved columns does not conform");
+        let reason = branch_columns(
+            &model.flow,
+            &broken,
+            &Shape::of(&model.flow, &model.topology),
+        )
+        .expect_err("a sibling inside the reserved columns does not conform");
         assert!(
             reason.contains("its convergence group"),
             "the reserved columns should be the rule that objects: {reason}"
@@ -880,14 +1025,24 @@ mod tests {
         ] {
             let model = crate::build(&crate::tests::fixture(source, name)).unwrap();
             let valid = model.arrangement.clone();
-            branch_columns(&model.flow, &model.topology, &valid).unwrap();
+            branch_columns(
+                &model.flow,
+                &valid,
+                &Shape::of(&model.flow, &model.topology),
+            )
+            .unwrap();
             for entry in entries {
                 let mut moved = valid.clone();
                 *moved
                     .column
                     .get_mut(&Vertex::Node(NodeId::Block(entry)))
                     .unwrap() += 1;
-                let error = branch_columns(&model.flow, &model.topology, &moved).unwrap_err();
+                let error = branch_columns(
+                    &model.flow,
+                    &moved,
+                    &Shape::of(&model.flow, &model.topology),
+                )
+                .unwrap_err();
                 assert!(
                     error.contains("first branch's approach column"),
                     "{name}, entry {entry}: {error}"
