@@ -23,9 +23,9 @@ struct Cost {
 }
 
 impl Cost {
-    /// The diagram decision alone. The generated-probe bounds are stated over this:
-    /// enumeration grows about quadratically in the branching stages and would
-    /// otherwise dominate a shape built to stress the decision.
+    /// The diagram decision alone. The generated-probe bounds are stated over
+    /// this: each branching stage doubles the executions analysis enumerates,
+    /// which would otherwise dominate a shape built to stress the decision.
     fn diagram(&self) -> Duration {
         self.projection + self.construction
     }
@@ -77,6 +77,9 @@ const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(25);
 const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
 
 // Generated probes sit outside the fixture corpus and exercise selected stages.
+/// The bound on analysis alone for a generated probe, against a measured median
+/// of about 700 ms for nine branching stages.
+const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
 /// The bound on the diagram decision for a generated probe, accepted or
 /// refused, against a worst measured figure of about 290 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
@@ -193,7 +196,7 @@ fn a_generated_nested_side_tail_probe_builds_and_compacts_inside_its_budget() {
 ///
 /// The loop shapes reach 259 blocks but stay in the tens of summaries;
 /// `branching` is what reaches the summary counts, and eight stages is as far as
-/// it goes here because enumeration grows about quadratically in them.
+/// it goes here because `branching(n)` enumerates 2ⁿ executions.
 #[test]
 fn generated_accepted_probes_stay_inside_their_budget() {
     let shapes = [(8, 8), (8, 64), (4, 120)]
@@ -225,6 +228,28 @@ fn generated_accepted_probes_stay_inside_their_budget() {
             "the generated accepted probe with {what} took {elapsed:?}, past the {GENERATED_DIAGRAM_DECISION_BUDGET:?} budget"
         );
     }
+}
+
+/// Analysis on its own, below the diagram decision. `branching` is what reaches
+/// the execution counts: one more stage doubles them, and the placement check
+/// weighs every execution against every other.
+#[test]
+fn a_generated_branching_probe_analyzes_inside_its_budget() {
+    let probes = [("nine branching stages", flow(&branching(9)))];
+    assert_pass_budget(
+        "analysis",
+        "probes",
+        &probes,
+        GENERATED_ANALYSIS_BUDGET,
+        |(name, _)| ItemBudget {
+            name: (*name).to_owned(),
+            limit: GENERATED_ANALYSIS_BUDGET,
+            report: false,
+        },
+        |(name, function)| {
+            kaalang_compiler::analyze(function).unwrap_or_else(|error| panic!("{name}: {error}"));
+        },
+    );
 }
 
 /// The worst case of the whole decision: both searches run, and the deciding

@@ -68,6 +68,11 @@ struct Junction<'a> {
     position: usize,
     owners: &'a [(usize, Vec<usize>)],
     producers: Vec<(ProducerId, BTreeSet<BranchSelection>)>,
+    /// Whether this junction covers every execution shared by a block and a
+    /// selection, by `(block, selection.block)`. The answer reads the whole
+    /// execution list, and neither the asking execution nor the selected
+    /// branch takes part in it, so one pass over a flow answers each pair once.
+    shared: BTreeMap<(usize, usize), bool>,
 }
 
 impl<'a> Junction<'a> {
@@ -98,13 +103,14 @@ impl<'a> Junction<'a> {
             position,
             owners,
             producers,
+            shared: BTreeMap::new(),
         }
     }
 
     /// A completed merge admits a block only within the branches it joins.
     /// Producer selection also carries ancestry through earlier partial merges.
     fn closes(
-        &self,
+        &mut self,
         execution: &Execution,
         block: usize,
         selection: BranchSelection,
@@ -137,17 +143,24 @@ impl<'a> Junction<'a> {
                     .producers
                     .iter()
                     .any(|(_, other)| !other.contains(&selection)));
+        if !closes {
+            return false;
+        }
         // A partial merge admits only its own continuation. A block
         // shared with another still-separate group needs a larger merge.
-        closes
-            && executions
-                .iter()
-                .filter(|other| other.participates(block) && other.participates(selection.block))
-                .all(|other| {
-                    self.producers
-                        .iter()
-                        .any(|&(producer, _)| self.flow.produces(other, producer))
-                })
+        if let Some(&shared) = self.shared.get(&(block, selection.block)) {
+            return shared;
+        }
+        let shared = executions
+            .iter()
+            .filter(|other| other.participates(block) && other.participates(selection.block))
+            .all(|other| {
+                self.producers
+                    .iter()
+                    .any(|&(producer, _)| self.flow.produces(other, producer))
+            });
+        self.shared.insert((block, selection.block), shared);
+        shared
     }
 }
 
@@ -160,7 +173,7 @@ pub(super) fn flow(
     owners: &[Vec<(usize, Vec<usize>)>],
 ) -> Result<()> {
     let ancestry = ancestry(flow);
-    let junctions = merges
+    let mut junctions = merges
         .iter()
         .zip(owners)
         .map(|(merge, owners)| Junction::of(flow, &ancestry, merge, owners))
@@ -173,7 +186,7 @@ pub(super) fn flow(
                 if super::loop_block::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
                     || junctions
-                        .iter()
+                        .iter_mut()
                         .any(|junction| junction.closes(execution, block, *selection, executions))
                 {
                     continue;

@@ -10,9 +10,6 @@ use crate::model::{BlockKind, Execution, ExecutionOutcome, Flow, ProducerId, Wir
 
 use super::only_difference;
 
-// ponytail: comparing every pair of producing executions per merge costs
-// O(merges * executions² * blocks); reuse the participation pass or index the
-// executions by selection if flows grow large enough to notice.
 pub(super) fn flow(
     flow: &Flow,
     executions: &[Execution],
@@ -209,6 +206,9 @@ fn local_capture<'a>(flow: &'a Flow, merge: &WireMerge) -> Option<&'a Ident> {
 /// selections that choose between its producers. Production defines the context
 /// even when an execution never captures the wire: an unused `_` output merges
 /// like any other repeated name.
+///
+/// ponytail: quadratic execution-pair comparisons per merge; index executions
+/// by selection or share comparisons across passes if profiling warrants it.
 fn ordering(
     flow: &Flow,
     executions: &[Execution],
