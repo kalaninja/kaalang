@@ -30,6 +30,10 @@ svg:
     cargo test -p kaalang --test diagrams
     git diff -- '*.svg'
 
+# Run the exhaustive comparisons the baseline leaves out.
+test-exhaustive:
+    cargo test --release -p kaalang-compiler --lib -- --ignored --nocapture
+
 # Measure the performance budgets and print what they found.
 perf:
     #!/usr/bin/env bash

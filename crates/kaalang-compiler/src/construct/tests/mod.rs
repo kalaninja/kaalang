@@ -650,10 +650,10 @@ fn the_construction_agrees_with_an_independent_procedure() {
 
 /// Exhaustive comparison, excluded from default runs due to its cost.
 ///
-/// Run it with:
-/// `cargo test -p kaalang-compiler --lib the_declared_domain_agrees -- --ignored --nocapture`
+/// Run it with `just rust test-exhaustive`, which CONTRIBUTING.md asks for
+/// before a commit that touches this decision.
 #[test]
-#[ignore = "exhaustive; run it with --ignored"]
+#[ignore = "exhaustive; run it with `just rust test-exhaustive`"]
 fn the_declared_domain_agrees_with_the_independent_procedure() {
     let counted = agree(&declared_domain());
     println!("{counted:?}");
