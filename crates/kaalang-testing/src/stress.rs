@@ -28,22 +28,18 @@ pub fn flow(source: &str) -> ItemFn {
 #[must_use]
 pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
     assert!(loops > 0, "a stress shape needs at least one loop");
-    let quote = '"';
     let mut body = String::new();
     let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
         let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}#[cycle({quote}Level {depth}.{quote})]");
+        let _ = writeln!(body, "{pad}#[cycle(\"Level {depth}.\")]");
         let opening = if depth == 0 {
             "|step| {".to_owned()
         } else {
             format!("|stay_{}, step| {{", depth - 1)
         };
         let _ = writeln!(body, "{pad}{opening}");
-        let _ = writeln!(
-            body,
-            "{pad}    #[question({quote}Leave level {depth}?{quote})]"
-        );
+        let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
         let ignored = if empty_tail && depth + 1 == loops {
             "_"
         } else {
@@ -58,10 +54,7 @@ pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
     let deepest = loops - 1;
     let pad = indent(deepest * 2);
     if !empty_tail {
-        let _ = writeln!(
-            body,
-            "{pad}    #[action({quote}Work at the deepest level.{quote})]"
-        );
+        let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
         let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
     }
     for depth in (0..loops).rev() {
@@ -69,9 +62,9 @@ pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
         let _ = writeln!(body, "{pad}}};");
     }
     for index in 0..actions {
-        let _ = writeln!(body, "    #[action({quote}Step {index}.{quote})]");
+        let _ = writeln!(body, "    #[action(\"Step {index}.\")]");
         let _ = writeln!(body, "    let step_{index} = || {index}usize;");
-        let _ = writeln!(body, "    #[action({quote}Use step {index}.{quote})]");
+        let _ = writeln!(body, "    #[action(\"Use step {index}.\")]");
         let _ = writeln!(body, "    |step_{index}| ();");
     }
     let _ = writeln!(body, "    |step| return step;");
@@ -88,12 +81,11 @@ pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
 #[must_use]
 pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> String {
     assert!(loops > 0, "a refused shape needs at least one loop");
-    let quote = '"';
     let mut body = String::new();
     let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
         let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}#[cycle({quote}Level {depth}.{quote})]");
+        let _ = writeln!(body, "{pad}#[cycle(\"Level {depth}.\")]");
         let opening = if depth == 0 {
             "|step| {".to_owned()
         } else {
@@ -103,13 +95,10 @@ pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> Strin
         if distributor {
             let _ = writeln!(
                 body,
-                "{pad}    #[choice({quote}Which route at level {depth}?{quote})]"
+                "{pad}    #[choice(\"Which route at level {depth}?\")]"
             );
             for case in 0..3 {
-                let _ = writeln!(
-                    body,
-                    "{pad}    #[case({quote}Case {case} at level {depth}.{quote})]"
-                );
+                let _ = writeln!(body, "{pad}    #[case(\"Case {case} at level {depth}.\")]");
             }
             let _ = writeln!(
                 body,
@@ -118,25 +107,22 @@ pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> Strin
         } else {
             let _ = writeln!(
                 body,
-                "{pad}    #[question({quote}Repeat at level {depth}?{quote})]\n{pad}    let (again_{depth}, other_{depth}) = |step| step == 0;"
+                "{pad}    #[question(\"Repeat at level {depth}?\")]\n{pad}    let (again_{depth}, other_{depth}) = |step| step == 0;"
             );
             let _ = writeln!(
                 body,
-                "{pad}    #[question({quote}Leave level {depth}?{quote})]\n{pad}    let (leave_{depth}, stay_{depth}) = |other_{depth}, step| step == 1;"
+                "{pad}    #[question(\"Leave level {depth}?\")]\n{pad}    let (leave_{depth}, stay_{depth}) = |other_{depth}, step| step == 1;"
             );
         }
         let _ = writeln!(body, "{pad}    |leave_{depth}| break;");
         let _ = writeln!(
             body,
-            "{pad}    #[action({quote}Repeat level {depth}.{quote})]\n{pad}    |again_{depth}| ();"
+            "{pad}    #[action(\"Repeat level {depth}.\")]\n{pad}    |again_{depth}| ();"
         );
     }
     let deepest = loops - 1;
     let pad = indent(deepest * 2);
-    let _ = writeln!(
-        body,
-        "{pad}    #[action({quote}Work at the deepest level.{quote})]"
-    );
+    let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
     let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
     for depth in (0..loops).rev() {
         let pad = indent(depth * 2);
@@ -145,11 +131,11 @@ pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> Strin
     for action in 0..actions {
         let _ = writeln!(
             body,
-            "    #[action({quote}Read step {action}.{quote})]\n    let read_{action} = |&step| *step;"
+            "    #[action(\"Read step {action}.\")]\n    let read_{action} = |&step| *step;"
         );
         let _ = writeln!(
             body,
-            "    #[action({quote}Use step {action}.{quote})]\n    |read_{action}| ();"
+            "    #[action(\"Use step {action}.\")]\n    |read_{action}| ();"
         );
     }
     let _ = writeln!(body, "    |step| return step;");
@@ -164,23 +150,22 @@ pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> Strin
 /// tens however many blocks they hold.
 #[must_use]
 pub fn branching(stages: usize) -> String {
-    let quote = '"';
     let mut body = String::new();
     let mut wire = "seed".to_owned();
     for stage in 0..stages {
-        let _ = writeln!(body, "    #[question({quote}Take branch {stage}?{quote})]");
+        let _ = writeln!(body, "    #[question(\"Take branch {stage}?\")]");
         let _ = writeln!(
             body,
             "    let (yes_{stage}, no_{stage}) = |{wire}| {wire} > {stage};"
         );
         let _ = writeln!(
             body,
-            "    #[action({quote}Build the yes value of {stage}.{quote})]
+            "    #[action(\"Build the yes value of {stage}.\")]
     let step_{stage} = |yes_{stage}| {stage}usize;"
         );
         let _ = writeln!(
             body,
-            "    #[action({quote}Build the no value of {stage}.{quote})]
+            "    #[action(\"Build the no value of {stage}.\")]
     let step_{stage} = |no_{stage}| {stage}usize + 1;"
         );
         wire = format!("step_{stage}");

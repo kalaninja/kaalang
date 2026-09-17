@@ -12,7 +12,7 @@ pub const SAMPLES: usize = 9;
 /// Panics when there are no samples. Percentages above 100 may overflow or
 /// index past the samples.
 #[must_use]
-pub fn percentile(samples: &[Duration], percent: usize) -> Duration {
+fn percentile(samples: &[Duration], percent: usize) -> Duration {
     assert!(!samples.is_empty(), "a budget needs at least one sample");
     let mut samples = samples.to_vec();
     samples.sort_unstable();

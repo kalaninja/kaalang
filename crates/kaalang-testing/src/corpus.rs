@@ -19,7 +19,7 @@ pub fn files() -> Vec<(PathBuf, String)> {
         .expect("the fixture tree exists");
     let mut files = Vec::new();
     collect(&tests, &mut files);
-    files.sort_by(|a, b| a.0.cmp(&b.0));
+    files.sort_unstable();
     files
 }
 

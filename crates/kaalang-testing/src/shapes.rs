@@ -50,26 +50,7 @@ pub fn looping(routes: &[&str]) -> String {
         routes.iter().all(|route| ROUTES.contains(route)),
         "unknown route in {routes:?}"
     );
-    let cases = routes
-        .iter()
-        .enumerate()
-        .map(|(index, route)| format!("            #[case(\"Case {index} {route}.\")]"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let outputs = (0..routes.len())
-        .map(|index| format!("case_{index}"))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let arms = (0..routes.len())
-        .map(|index| {
-            if index + 1 == routes.len() {
-                "            _ => (),".to_owned()
-            } else {
-                format!("            {index} => (),")
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+    let choice = selection(routes, "case_");
     let bodies = routes
         .iter()
         .enumerate()
@@ -101,11 +82,7 @@ pub fn looping(routes: &[&str]) -> String {
         "fn probe(mode: u8) -> u8 {{
     #[cycle(\"Exercise the generated routes.\")]
     {output}|mode| {{
-        #[choice(\"Which route?\")]
-{cases}
-        let ({outputs}) = |mode| match mode {{
-{arms}
-        }};
+{choice}
 {bodies}{transfer}
     }};{after}
 }}
