@@ -144,6 +144,32 @@ Each run prints the distribution behind its verdict, not just the number it
 asserts on. A p100 several times the p50 means the machine was busy, not that
 something got slower.
 
+### Refactoring against the budgets
+
+A refactoring changes how the code reads, not what it costs. Do not land one
+that measures slower, however few lines it saves.
+
+The budgets do not answer this on their own. They carry deliberate headroom and
+exist to catch a large regression, so a change can halve the margin and still
+pass every one of them. Passing is not evidence of no regression; only a
+before-and-after comparison is.
+
+So when a refactoring touches a hot path, measure both sides:
+
+1. Record `just rust perf` on the unchanged tree first. Two runs, as above.
+2. Apply the change and record it again, the same way.
+3. Compare the same named lines, and prefer the heaviest shapes: the refusal
+   budgets exhaust the search and separate two implementations long before the
+   corpus medians do.
+
+`cargo test --test performance` is not a substitute at this step. It runs the
+budgets beside each other, so its numbers move with contention and hide
+differences this size.
+
+Two figures that overlap between runs are not a result. Either take enough runs
+to separate them or leave the code alone, and say which of the two happened
+rather than reporting a percentage the samples do not support.
+
 ## Commits
 
 Use Conventional Commits:
