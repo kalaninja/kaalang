@@ -275,9 +275,13 @@ fn requirements(
     let mut above: Vec<Vec<usize>> = vec![Vec::new(); sideways.len()];
     for (a, run) in sideways.iter().enumerate() {
         let a = groups[a];
+        let wire = topology.connections[run.connection];
         for other in crossings {
+            // A bundle shares an endpoint, so its members may share a lane.
+            let theirs = topology.connections[other.connection];
             if other.connection == run.connection
-                || bundled(topology, run.connection, other.connection)
+                || wire.source == theirs.source
+                || wire.destination == theirs.destination
             {
                 continue;
             }
@@ -458,13 +462,6 @@ fn mover(topology: &Topology, blocked: usize, other: usize) -> usize {
     }
 }
 
-/// Two connections are drawn as one bundle when they leave one exit or reach
-/// one destination, and may then share runs and meet where they join.
-fn bundled(topology: &Topology, left: usize, right: usize) -> bool {
-    let pair = (topology.connections[left], topology.connections[right]);
-    pair.0.source == pair.1.source || pair.0.destination == pair.1.destination
-}
-
 /// Departure column: select connections use their case's column. A later question
 /// branch can use its merge column only when it lies strictly between the node
 /// and the branch's own column; going farther right would cross another branch
@@ -510,18 +507,4 @@ pub(super) fn obstruction(
         loop_index: None,
         connection: Some(connection),
     }
-}
-
-/// Finds crossings that gap ordering alone cannot see, over the complete
-/// polylines of an assembled arrangement.
-pub(super) fn crossing(
-    topology: &Topology,
-    arrangement: &super::Arrangement,
-) -> Option<(usize, usize)> {
-    use super::verify::{Grid, polyline};
-    let grid = Grid::of(topology, arrangement);
-    let lines = (0..topology.connections.len())
-        .map(|index| polyline(topology, arrangement, &grid, index))
-        .collect::<Vec<_>>();
-    super::verify::crossing(topology, &lines)
 }

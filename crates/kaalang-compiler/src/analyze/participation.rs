@@ -86,7 +86,7 @@ mod tests {
     /// authored order.
     fn fixture(source: &str, flow: &str) -> Vec<Vec<usize>> {
         let model = build(&crate::tests::fixture(source, flow)).expect("the fixture is valid");
-        deciders(&model.flow, &model.executions)
+        deciders(&model.analysis.flow, &model.analysis.executions)
             .into_iter()
             .map(|deciders| deciders.into_iter().collect())
             .collect()

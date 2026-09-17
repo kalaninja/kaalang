@@ -1,4 +1,4 @@
-//! Explores a choice's outputs and validates their capture coverage.
+//! Explores a choice's branches and validates its convergence groups.
 
 use std::collections::BTreeSet;
 
@@ -9,18 +9,6 @@ use super::{State, Walk};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &State) {
     walk.branch(block, state);
-}
-
-/// Every ordinary choice output needs a consumer in some execution.
-///
-/// No fixture reaches this arm: an uncaptured choice output also leaves its
-/// execution without a root return, which the walk reports first. It is kept
-/// because that unreachability is not proven.
-pub(super) fn uncaptured(output: &Ident) -> Error {
-    Error::new(
-        output.span(),
-        "every kaalang choice output must have a consumer",
-    )
 }
 
 /// Choice groups occupy adjacent cases and may nest, but may not cross.

@@ -3,7 +3,6 @@
 use std::collections::BTreeSet;
 
 use proc_macro2::Ident;
-use syn::Error;
 
 use super::{LoopState, State, Walk};
 use crate::model::Flow;
@@ -19,14 +18,6 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
     };
     state.loops.insert(block, outside);
     walk.visit(block + 1, state);
-}
-
-/// Every completing cycle output needs a consumer in some execution.
-pub(super) fn uncaptured(output: &Ident) -> Error {
-    Error::new(
-        output.span(),
-        "every kaalang cycle output must have a consumer",
-    )
 }
 
 /// A selection stops governing its iteration's branches when that cycle completes.

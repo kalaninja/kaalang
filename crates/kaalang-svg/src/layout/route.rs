@@ -185,7 +185,7 @@ pub(super) fn contour_x(
     // one lane past it is enough: the arrangement put this contour outside
     // that one, so the lane step above is measured from the body and this only
     // holds the two apart.
-    let body = model.flow.blocks[loop_.header]
+    let body = model.analysis.flow.blocks[loop_.header]
         .loop_end
         .expect("a loop owns a body");
     let nested = drawn

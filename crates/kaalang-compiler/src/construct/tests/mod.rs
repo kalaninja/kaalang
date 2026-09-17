@@ -13,8 +13,12 @@ fn model(source: &str) -> SemanticModel {
 }
 
 fn arrangement(model: &SemanticModel) -> Arrangement {
-    super::construct(&model.flow, &model.merges, &model.topology)
-        .expect("the flow has a conforming arrangement")
+    super::construct(
+        &model.analysis.flow,
+        &model.analysis.merges,
+        &model.topology,
+    )
+    .expect("the flow has a conforming arrangement")
 }
 
 /// The deciding sweep's checked arrangement for one flow, or the message of
@@ -61,15 +65,13 @@ pub(super) fn parts_from(function: &syn::ItemFn) -> Option<Parts> {
     crate::resolve::flow(&flow).ok()?;
     let (executions, _, merges) = crate::analyze::flow(&flow).ok()?;
     let execution_plan = crate::plan::flow(&flow, &executions, &merges);
-    let topology = crate::topology::project(
-        &crate::topology::Analyzed {
-            flow: &flow,
-            executions: &executions,
-            merges: &merges,
-            execution_plan: &execution_plan,
-        },
-        false,
-    );
+    let topology = crate::topology::project(&crate::topology::Analyzed {
+        flow: &flow,
+        executions: &executions,
+        merges: &merges,
+        execution_plan: &execution_plan,
+        collapse_loops: false,
+    });
     Some(Parts {
         flow,
         merges,
@@ -182,33 +184,30 @@ fn a_cycle_is_refused_rather_than_ranked() {
 }
 
 /// One named break of a valid arrangement.
-type Mutation = (&'static str, Box<dyn Fn(&mut Arrangement)>);
+type Mutation = (&'static str, fn(&mut Arrangement));
 
-/// Mutations covering arrangement structure and geometry.
+/// Mutations covering arrangement structure and geometry. The first group
+/// breaks structural coverage before geometry is checked; the second holds
+/// breaks that only the drawn geometry rejects, so each has to reach the
+/// crossing and overlap checks.
+#[allow(clippy::too_many_lines)] // One data table; each entry names its break.
 fn mutations() -> Vec<Mutation> {
-    let mut mutations = coverage_mutations();
-    mutations.extend(geometry_mutations());
-    mutations
-}
-
-/// Breaks structural coverage before geometry is checked.
-fn coverage_mutations() -> Vec<Mutation> {
     vec![
         (
             "a dropped corridor",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 arrangement.routes.pop();
             }),
         ),
         (
             "a dropped contour",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 arrangement.contours.pop();
             }),
         ),
         (
             "a route that does not descend",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 let deepest = arrangement
                     .rank
                     .iter()
@@ -220,7 +219,7 @@ fn coverage_mutations() -> Vec<Mutation> {
         ),
         (
             "a corridor that arrives away from its destination",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     route.arrival += 1;
                 }
@@ -228,22 +227,15 @@ fn coverage_mutations() -> Vec<Mutation> {
         ),
         (
             "a corridor that leaves a column its exit does not own",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     route.departure += 1;
                 }
             }),
         ),
-    ]
-}
-
-/// Breaks that only the drawn geometry rejects: the coverage rules above hold
-/// of every one of them, so each has to reach the crossing and overlap checks.
-fn geometry_mutations() -> Vec<Mutation> {
-    vec![
         (
             "reversed branch order",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 // The columns the branches are drawn in, not the reserved
                 // widths: the check reads the placement, so the mutation has
                 // to move the placement.
@@ -262,7 +254,7 @@ fn geometry_mutations() -> Vec<Mutation> {
         ),
         (
             "a corridor moved across another",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     for run in &mut route.runs {
                         run.enter += 1;
@@ -272,7 +264,7 @@ fn geometry_mutations() -> Vec<Mutation> {
         ),
         (
             "unrelated routes sharing one run",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     for run in &mut route.runs {
                         run.enter = 0;
@@ -283,7 +275,7 @@ fn geometry_mutations() -> Vec<Mutation> {
         ),
         (
             "a contour on the other side",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 if let Some(contour) = arrangement.contours.first_mut() {
                     contour.side = match contour.side {
                         Side::Left => Side::Right,
@@ -294,7 +286,7 @@ fn geometry_mutations() -> Vec<Mutation> {
         ),
         (
             "a contour climbing between the columns of its body",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 // The far edge of the cases, so the climb lands inside the
                 // body's column range however much room the arrangement left
                 // beside it.
@@ -316,7 +308,7 @@ fn geometry_mutations() -> Vec<Mutation> {
         ),
         (
             "a contour one lane past the last a topology offers",
-            Box::new(|arrangement: &mut Arrangement| {
+            (|arrangement: &mut Arrangement| {
                 // Each cycle takes a lane for its back edge and the next one
                 // out for the boundary around it, so a topology offers twice
                 // its cycle count. This probe has one cycle, so lane 2 is
@@ -340,7 +332,7 @@ fn the_verifier_rejects_every_mutation() {
         ["repeat", "repeat", "finish", "finish"].as_slice(),
     ] {
         let model = model(&looping(routes));
-        let flow = &model.flow;
+        let flow = &model.analysis.flow;
         let topology = &model.topology;
         let valid = &model.arrangement;
         verify::arrangement(flow, topology, valid).expect("the arrangement conforms");
@@ -395,7 +387,7 @@ fn nested_break_routes_merge_without_crossing_side_departures() {
     let source = include_str!("../../../../kaalang/tests/loop/behavior/nested_break_routes.rs");
     let model = crate::build(&crate::tests::fixture(source, "nested_break_routes")).unwrap();
     let built = arrangement(&model);
-    verify::arrangement(&model.flow, &model.topology, &built).unwrap();
+    verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
     // The first exit reaches the shared wire merge in its own branch column.
     let outer_exit = model
         .topology
@@ -424,9 +416,13 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
             continue;
         };
         checked += 1;
-        swept(&name, &model.flow, &model.merges, &model.topology).unwrap_or_else(|blocked| {
-            panic!("{name}: the sweep refuses a drawable flow: {blocked}")
-        });
+        swept(
+            &name,
+            &model.analysis.flow,
+            &model.analysis.merges,
+            &model.topology,
+        )
+        .unwrap_or_else(|blocked| panic!("{name}: the sweep refuses a drawable flow: {blocked}"));
     }
     assert!(checked > 100, "the sweep should reach most of the corpus");
 }
@@ -440,7 +436,7 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
         match crate::build(&function) {
             Ok(mut model) => {
                 drawn += 1;
-                verify::arrangement(&model.flow, &model.topology, &model.arrangement)
+                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
                     .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
                 // Compaction trades the row and serial rules for the boundary
                 // rule, so a compacted witness answers to the compacting
@@ -448,13 +444,20 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
                 // stay unaware of the rectangle on purpose, so an arrangement
                 // may reach compaction already crossing one; what compaction
                 // owes is not to make that worse.
-                let shape = verify::Shape::of(&model.flow, &model.topology);
-                let given =
-                    verify::compacted(&model.flow, &model.topology, &model.arrangement, &shape);
+                let shape = verify::Shape::of(&model.analysis.flow, &model.topology);
+                let given = verify::compacted(
+                    &model.analysis.flow,
+                    &model.topology,
+                    &model.arrangement,
+                    &shape,
+                );
                 model.compact_arrangement();
-                if let Err(reason) =
-                    verify::compacted(&model.flow, &model.topology, &model.arrangement, &shape)
-                {
+                if let Err(reason) = verify::compacted(
+                    &model.analysis.flow,
+                    &model.topology,
+                    &model.arrangement,
+                    &shape,
+                ) {
                     assert!(given.is_err(), "compaction broke {source}\n{reason}");
                     crossed += 1;
                 }
@@ -487,9 +490,13 @@ fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
             continue;
         };
         checked += 1;
-        swept(source, &model.flow, &model.merges, &model.topology).unwrap_or_else(|blocked| {
-            panic!("{source}\nthe sweep refuses a drawable flow: {blocked}")
-        });
+        swept(
+            source,
+            &model.analysis.flow,
+            &model.analysis.merges,
+            &model.topology,
+        )
+        .unwrap_or_else(|blocked| panic!("{source}\nthe sweep refuses a drawable flow: {blocked}"));
     }
     assert!(checked > 100, "too few of the generated shapes were drawn");
 }
@@ -523,7 +530,8 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
 ";
     let model = model(source);
     let topology = &model.topology;
-    verify::arrangement(&model.flow, topology, &model.arrangement).expect("the probe conforms");
+    verify::arrangement(&model.analysis.flow, topology, &model.arrangement)
+        .expect("the probe conforms");
     let outer = &model.arrangement.contours[0];
     let inner = &model.arrangement.contours[1];
     assert_eq!(
@@ -548,7 +556,7 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
         column: outer.column,
         lane: outer.lane + 1,
     };
-    let error = verify::arrangement(&model.flow, topology, &broken)
+    let error = verify::arrangement(&model.analysis.flow, topology, &broken)
         .expect_err("the outer back edge no longer clears the nested one");
     assert!(error.contains("climbs inside its body"), "{error}");
 }
@@ -720,7 +728,7 @@ fn the_verifier_rejects_a_case_on_a_different_row() {
         branch: 2,
     });
     *broken.rank.get_mut(&case).unwrap() += 1;
-    let error = verify::arrangement(&model.flow, &model.topology, &broken).unwrap_err();
+    let error = verify::arrangement(&model.analysis.flow, &model.topology, &broken).unwrap_err();
     assert_eq!(error, "choice 2 draws its cases on different rows");
 }
 
@@ -739,8 +747,13 @@ fn body_columns_do_not_shrink_when_a_body_vertex_moves_below_the_tail() {
         .rank
         .insert(vertex, placed.rank[&Vertex::Junction(loop_.tail)] + 1);
     assert!(
-        super::loop_block::body_columns(&model.flow, &model.topology, &placed, loop_.header)
-            .contains(&column)
+        super::loop_block::body_columns(
+            &model.analysis.flow,
+            &model.topology,
+            &placed,
+            loop_.header
+        )
+        .contains(&column)
     );
 }
 
@@ -876,8 +889,10 @@ fn every_audit_shape_reaches_a_decision() {
         let source = nested(outer, inner);
         let function: syn::ItemFn = syn::parse_str(&source).expect("the probe parses");
         match crate::build(&function) {
-            Ok(model) => verify::arrangement(&model.flow, &model.topology, &model.arrangement)
-                .unwrap_or_else(|reason| panic!("audit case {case}: {reason}")),
+            Ok(model) => {
+                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
+                    .unwrap_or_else(|reason| panic!("audit case {case}: {reason}"));
+            }
             Err(error) => assert!(
                 !error.to_string().contains("internal kaalang"),
                 "audit case {case}: {error}"
@@ -907,7 +922,7 @@ fn a_back_edge_may_stand_beyond_the_body_it_clears() {
         column: beyond,
         ..contour
     };
-    verify::arrangement(&model.flow, &model.topology, &far)
+    verify::arrangement(&model.analysis.flow, &model.topology, &far)
         .expect("a back edge standing further out than its body still conforms");
 }
 
@@ -922,7 +937,7 @@ fn a_back_edge_with_one_arrival_may_stand_beyond_its_body() {
     let mut model = crate::build(&function).expect("the fixture is valid");
     assert_eq!(model.arrangement.contours[0].side, Side::Right);
     model.arrangement.contours[0].column = model.arrangement.column.values().max().unwrap() + 2;
-    verify::arrangement(&model.flow, &model.topology, &model.arrangement)
+    verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
         .expect("the farther contour is a valid witness for SVG");
 }
 
@@ -972,7 +987,7 @@ fn four_nested_back_edges_climb_four_lanes_on_one_side() {
         contour.side = side;
         contour.lane = deep_lane(index);
     }
-    verify::arrangement(&model.flow, &model.topology, &deep)
+    verify::arrangement(&model.analysis.flow, &model.topology, &deep)
         .expect("four back edges in four lanes on one side conform");
     assert_eq!(
         deep.contours[0].lane, 3,
@@ -1015,15 +1030,19 @@ fn junction_arrivals_record_their_rank_through_compaction() {
         ),
     ] {
         let model = crate::build(&function).unwrap();
-        let swept = super::sweep::search(&model.flow, &model.merges, &model.topology)
-            .ok()
-            .expect("the sweep can draw the junction arrivals");
+        let swept = super::sweep::search(
+            &model.analysis.flow,
+            &model.analysis.merges,
+            &model.topology,
+        )
+        .ok()
+        .expect("the sweep can draw the junction arrivals");
         for mut built in [model.arrangement.clone(), swept] {
             for compact in [false, true] {
                 if compact {
-                    super::compact::arrangement(&model.flow, &model.topology, &mut built);
+                    super::compact::arrangement(&model.analysis.flow, &model.topology, &mut built);
                 }
-                verify::arrangement(&model.flow, &model.topology, &built).unwrap();
+                verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
                 let mut arrivals = 0;
                 for (index, wire) in model.topology.connections.iter().enumerate() {
                     if !matches!(wire.destination, Vertex::Junction(_)) {
@@ -1041,7 +1060,8 @@ fn junction_arrivals_record_their_rank_through_compaction() {
                             broken.routes[index].runs.last_mut().unwrap().line =
                                 super::RunLine::Rank(rank);
                             assert!(
-                                verify::arrangement(&model.flow, &model.topology, &broken).is_err()
+                                verify::arrangement(&model.analysis.flow, &model.topology, &broken)
+                                    .is_err()
                             );
                         }
                         arrivals += 1;
@@ -1083,11 +1103,11 @@ fn a_back_edge_can_bend_outside_its_body() {
             }],
         },
     );
-    verify::arrangement(&model.flow, &model.topology, &bent).unwrap();
+    verify::arrangement(&model.analysis.flow, &model.topology, &bent).unwrap();
     let mut wrong_entry = bent.clone();
     wrong_entry.contours[0].column += 1;
     assert!(
-        verify::arrangement(&model.flow, &model.topology, &wrong_entry)
+        verify::arrangement(&model.analysis.flow, &model.topology, &wrong_entry)
             .unwrap_err()
             .contains("recorded entry column")
     );
@@ -1096,7 +1116,7 @@ fn a_back_edge_can_bend_outside_its_body() {
         lane: lane + 1,
     };
     assert!(
-        verify::arrangement(&model.flow, &model.topology, &bent)
+        verify::arrangement(&model.analysis.flow, &model.topology, &bent)
             .unwrap_err()
             .contains("takes lane")
     );

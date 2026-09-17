@@ -31,22 +31,14 @@ pub(super) fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex
     topology
         .vertices
         .iter()
-        .map(|&start| (start, reached(topology, start, None)))
+        .map(|&start| (start, walk(topology, start, None, false)))
         .collect()
 }
 
 /// Every vertex a route reaches from `start` without entering `avoided`. The
-/// start itself appears only when a back edge reaches it.
-fn reached(topology: &Topology, start: Vertex, avoided: Option<Vertex>) -> BTreeSet<Vertex> {
-    walk(topology, start, avoided, false)
-}
-
-/// Reachability including placement precedence, which connects iteration tails
-/// to the diagram below the cycle after forward edges become back edges.
-fn carried(topology: &Topology, start: Vertex) -> BTreeSet<Vertex> {
-    walk(topology, start, None, true)
-}
-
+/// start itself appears only when a back edge reaches it. With `precedence`,
+/// also follows placement precedence, which connects iteration tails to the
+/// diagram below the cycle after forward edges become back edges.
 fn walk(
     topology: &Topology,
     start: Vertex,
@@ -123,7 +115,7 @@ pub(super) fn footprint_vertices(
         .map(|branch| {
             branch_heads(topology, flow, block, branch)
                 .into_iter()
-                .flat_map(|head| std::iter::once(head).chain(carried(topology, head)))
+                .flat_map(|head| std::iter::once(head).chain(walk(topology, head, None, true)))
                 .collect::<BTreeSet<_>>()
         })
         .reduce(|common, set| common.intersection(&set).copied().collect())
@@ -293,7 +285,7 @@ pub(super) fn first_branch_approaches(
 /// Every vertex a route reaches from the start node without passing `avoided`.
 fn bypassing(topology: &Topology, avoided: Vertex) -> BTreeSet<Vertex> {
     let start = Vertex::Node(NodeId::Start);
-    let mut seen = reached(topology, start, Some(avoided));
+    let mut seen = walk(topology, start, Some(avoided), false);
     seen.insert(start);
     seen
 }

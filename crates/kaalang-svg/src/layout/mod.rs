@@ -354,7 +354,7 @@ fn contour_reach(model: &SemanticModel) -> (i32, i32) {
     let mut reach = vec![0; loops.len()];
     // Innermost first: `topology.loops` runs outermost first.
     for index in (0..loops.len()).rev() {
-        let end = model.flow.blocks[loops[index].header]
+        let end = model.analysis.flow.blocks[loops[index].header]
             .loop_end
             .expect("a loop owns a body");
         let body = loops[index].header + 1..end;

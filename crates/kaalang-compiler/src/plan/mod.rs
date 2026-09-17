@@ -92,15 +92,6 @@ struct Scope {
     from: usize,
 }
 
-/// The producers one block captures in one execution.
-fn producers(execution: &Execution, block: usize) -> impl Iterator<Item = ProducerId> + '_ {
-    execution
-        .dependencies
-        .iter()
-        .filter(move |dependency| dependency.capture.block == block)
-        .map(|dependency| dependency.producer)
-}
-
 /// A block is settled once its producers and the participating branch-local
 /// work before every merge it captures have run.
 fn settled(
@@ -109,24 +100,29 @@ fn settled(
     block: usize,
     done: &BTreeSet<usize>,
 ) -> bool {
-    producers(execution, block).all(|producer| match producer {
-        ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
-        ProducerId::BlockOutput { block, .. } => done.contains(&block),
-    }) && merges
+    execution
+        .dependencies
         .iter()
-        .filter(|merge| merge.after.contains(&block))
-        .all(|merge| {
-            merge
-                .before
-                .iter()
-                .all(|before| !execution.participates(*before) || done.contains(before))
-                && merge.producers.iter().all(|producer| match producer {
-                    ProducerId::BlockOutput { block, .. } => {
-                        !execution.participates(*block) || done.contains(block)
-                    }
-                    ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
-                })
+        .filter(|dependency| dependency.capture.block == block)
+        .all(|dependency| match dependency.producer {
+            ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
+            ProducerId::BlockOutput { block, .. } => done.contains(&block),
         })
+        && merges
+            .iter()
+            .filter(|merge| merge.after.contains(&block))
+            .all(|merge| {
+                merge
+                    .before
+                    .iter()
+                    .all(|before| !execution.participates(*before) || done.contains(before))
+                    && merge.producers.iter().all(|producer| match producer {
+                        ProducerId::BlockOutput { block, .. } => {
+                            !execution.participates(*block) || done.contains(block)
+                        }
+                        ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
+                    })
+            })
 }
 
 impl Builder<'_> {
@@ -141,17 +137,16 @@ impl Builder<'_> {
             !executions.is_empty(),
             "every branch selection has an execution"
         );
-        let candidates = (0..self.end)
+        // Source order is the execution order, so the next block to emit is the
+        // first one every execution here still has to run.
+        let Some(block) = (0..self.end)
             .filter(|block| !done.contains(block) && !forbidden.contains(block))
-            .filter(|&block| {
+            .find(|&block| {
                 executions.iter().all(|execution| {
                     execution.participates(block) && settled(self.merges, execution, block, done)
                 })
             })
-            .collect::<Vec<_>>();
-        // Source order is the execution order, so the next block to emit is the
-        // first one every execution here still has to run.
-        let Some(&block) = candidates.first() else {
+        else {
             return self.leaf(executions, done, forbidden, scopes);
         };
         let mut next_done = done.clone();

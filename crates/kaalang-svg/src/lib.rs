@@ -131,13 +131,8 @@ pub fn render_source_with_options(
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let function = select_flow(&file.items, flow_name)?;
-    let mut model = kaalang_compiler::build_with_options(
-        &function,
-        kaalang_compiler::BuildOptions {
-            collapse_loops: options.collapse_loops,
-        },
-    )
-    .map_err(|error| invalid_flow(flow_name, &error))?;
+    let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
+        .map_err(|error| invalid_flow(flow_name, &error))?;
     model.compact_arrangement();
     validate_labels(&model)?;
     let start = layout::start_text(source, &function.sig);
@@ -150,7 +145,7 @@ pub fn render_source_with_options(
         }
     })?;
 
-    Ok(svg::serialize(&scene, &model.name.to_string()))
+    Ok(svg::serialize(&scene, &model.analysis.name.to_string()))
 }
 
 /// Names every `#[kaalang]` function in a UTF-8 Rust source file, free or
@@ -226,7 +221,7 @@ fn location(span: Span) -> (usize, usize) {
 /// Checks authored descriptions for invalid XML characters. Default call
 /// captions come from Rust path tokens and need no description check.
 fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), RenderError> {
-    for block in &model.flow.blocks {
+    for block in &model.analysis.flow.blocks {
         let (line, column) = location(block.span);
         let description = block
             .description

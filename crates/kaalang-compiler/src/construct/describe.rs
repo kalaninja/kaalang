@@ -81,18 +81,12 @@ pub(super) fn loop_name(flow: &Flow, header: usize) -> String {
     )
 }
 
-/// One call, named by the function it runs, so two undescribed calls in one
-/// flow are told apart and the name matches the diagram's own label.
-fn call_name(flow: &Flow, block: usize) -> String {
-    format!("the call `{}`", flow.blocks[block].callee())
-}
-
 fn block_name(flow: &Flow, block: usize) -> String {
     let declaration = &flow.blocks[block];
     match (&declaration.description, declaration.kind) {
         (Some(text), _) => format!("`{text}`"),
         (None, BlockKind::Loop) => loop_name(flow, block),
-        (None, BlockKind::Call) => call_name(flow, block),
+        (None, BlockKind::Call) => format!("the call `{}`", flow.blocks[block].callee()),
         (None, BlockKind::Break) => "a break".to_owned(),
         (None, BlockKind::End) => "the end of the flow".to_owned(),
         (None, _) => format!("the block at position {}", block + 1),
@@ -154,7 +148,12 @@ mod tests {
         let model = crate::build(&crate::tests::fixture(source, "example")).unwrap();
         let name = |predicate: fn(&crate::topology::Junction) -> bool| {
             let index = model.topology.junctions.iter().position(predicate).unwrap();
-            junction_name(&model.flow, &model.merges, &model.topology, index)
+            junction_name(
+                &model.analysis.flow,
+                &model.analysis.merges,
+                &model.topology,
+                index,
+            )
         };
         assert_eq!(name(|junction| junction.is_break), "a cycle result");
         assert_eq!(name(|junction| junction.is_loop_result), "a cycle result");
@@ -165,8 +164,8 @@ mod tests {
             .push(crate::topology::Junction::default());
         assert_eq!(
             junction_name(
-                &model.flow,
-                &model.merges,
+                &model.analysis.flow,
+                &model.analysis.merges,
                 &topology,
                 topology.junctions.len() - 1,
             ),
@@ -188,7 +187,13 @@ mod tests {
             }
         ";
         let model = crate::build(&crate::tests::fixture(source, "example")).unwrap();
-        assert_eq!(block_name(&model.flow, 0), "the call `math::halve`");
-        assert_eq!(block_name(&model.flow, 1), "the call `math::square`");
+        assert_eq!(
+            block_name(&model.analysis.flow, 0),
+            "the call `math::halve`"
+        );
+        assert_eq!(
+            block_name(&model.analysis.flow, 1),
+            "the call `math::square`"
+        );
     }
 }

@@ -272,11 +272,13 @@ pub(crate) struct Analyzed<'a> {
     pub(crate) executions: &'a [Execution],
     pub(crate) merges: &'a [WireMerge],
     pub(crate) execution_plan: &'a ExecutionPlan,
+    /// Whether each cycle draws as one collapsed node instead of its body.
+    pub(crate) collapse_loops: bool,
 }
 
 /// Builds the visual topology of one validated flow.
 #[allow(clippy::too_many_lines)] // Coordinates each projection phase in dependency order.
-pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
+pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     let mut nodes = vec![Node {
         id: NodeId::Start,
         kind: NodeKind::Start,
@@ -289,13 +291,13 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
             .collect(),
     }];
     for (index, block) in model.flow.blocks.iter().enumerate() {
-        if collapse_loops && block.parent.is_some() {
+        if model.collapse_loops && block.parent.is_some() {
             continue;
         }
         match block.kind {
             BlockKind::Action => action::project(index, block, &mut nodes, &mut exits),
             BlockKind::Call => call::project(index, block, &mut nodes, &mut exits),
-            BlockKind::Loop if collapse_loops => {
+            BlockKind::Loop if model.collapse_loops => {
                 let completes = model
                     .executions
                     .iter()
@@ -315,14 +317,14 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
         }
     }
 
-    let merges = merges(model, collapse_loops);
+    let merges = merges(model);
     let mut count = merges.len();
-    let loop_boundaries = if collapse_loops {
+    let loop_boundaries = if model.collapse_loops {
         Vec::new()
     } else {
         boundaries(model, &mut count)
     };
-    let loops = if collapse_loops {
+    let loops = if model.collapse_loops {
         Vec::new()
     } else {
         loops(model, &loop_boundaries, &mut count)
@@ -332,20 +334,19 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
         .blocks
         .iter()
         .enumerate()
-        .filter(|(_, block)| {
-            matches!(block.kind, BlockKind::Loop | BlockKind::Break)
-                && (!collapse_loops || block.parent.is_none())
-        })
         .filter_map(|(block, statement)| {
+            if model.collapse_loops && statement.parent.is_some() {
+                return None;
+            }
             let junction = match statement.kind {
-                BlockKind::Loop if collapse_loops => return None,
+                BlockKind::Loop if model.collapse_loops => return None,
                 BlockKind::Loop => loop_boundaries
                     .iter()
                     .find(|boundary| boundary.header == block)
                     .map(LoopBoundary::entry_junction)?,
                 BlockKind::Break if statement.inputs.is_empty() => return None,
                 BlockKind::Break => break_block::result(model.flow, &loop_boundaries, block),
-                _ => unreachable!("only structural statements have junctions"),
+                _ => return None,
             };
             Some((block, junction))
         })
@@ -358,7 +359,6 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
         &loop_boundaries,
         &structural,
         &vertices,
-        collapse_loops,
     );
     let mut topology = Topology {
         order: Vec::new(),
@@ -390,11 +390,11 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
             topology.junctions[result].is_loop_result = true;
         }
     }
-    if !collapse_loops {
+    if !model.collapse_loops {
         loop_block::order_exits(model, &structural, &mut topology);
     }
     close_loops(&mut topology);
-    if !collapse_loops {
+    if !model.collapse_loops {
         loop_block::order_boundaries(&mut topology);
         loop_block::coalesce_boundaries(&mut topology);
     }
@@ -405,7 +405,7 @@ pub(crate) fn project(model: &Analyzed<'_>, collapse_loops: bool) -> Topology {
 /// The junctions to draw, each the merges that meet in one place, in model
 /// order. A merged wire nobody captures has nothing to draw: its producers
 /// still label their outputs at their own exits, and no routes meet.
-fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
+fn merges(model: &Analyzed<'_>) -> Vec<Vec<usize>> {
     let precedes = precedes(model);
     // Merge identity follows final arrivals, not all producers: earlier work
     // reaches the junction through the last blocks in `producers` and `before`.
@@ -445,7 +445,7 @@ fn merges(model: &Analyzed<'_>, collapse_loops: bool) -> Vec<Vec<usize>> {
         if !model.merges[merge]
             .after
             .iter()
-            .any(|&block| represented_block(model, block, collapse_loops))
+            .any(|&block| represented_block(model, block))
         {
             continue;
         }
@@ -543,7 +543,6 @@ fn connections(
     boundaries: &[LoopBoundary],
     structural: &BTreeMap<usize, usize>,
     vertices: &[Vertex],
-    collapse_loops: bool,
 ) -> Vec<Connection> {
     let junction_of = |wire: &Ident| {
         merges
@@ -554,30 +553,23 @@ fn connections(
     let mut order = Vec::new();
     crate::plan::serial_order(model.execution_plan, &mut order);
     order.retain(|&block| {
-        represented(model, structural, block, collapse_loops)
-            || (!collapse_loops
+        represented(model, structural, block)
+            || (!model.collapse_loops
                 && model.flow.blocks[block].kind == BlockKind::Break
                 && !structural.contains_key(&block))
     });
     let mut union = BTreeSet::new();
     for execution in model.executions {
         let mut direct = serial_connections(
-            model,
-            execution,
-            merges,
-            loops,
-            boundaries,
-            structural,
-            &order,
-            collapse_loops,
+            model, execution, merges, loops, boundaries, structural, &order,
         );
         for dependency in &execution.dependencies {
             let capture = dependency.capture;
             let returns = model.flow.blocks[capture.block].kind == BlockKind::Return;
-            if !returns && !represented(model, structural, capture.block, collapse_loops) {
+            if !returns && !represented(model, structural, capture.block) {
                 continue;
             }
-            let source = source(model, dependency.producer, boundaries, collapse_loops);
+            let source = source(model, dependency.producer, boundaries);
             let consumer = if returns {
                 end::destination(model.flow)
             } else {
@@ -621,7 +613,7 @@ fn connections(
                         .flow
                         .produces(execution, producer)
                         .then_some(Connection {
-                            source: source(model, producer, boundaries, collapse_loops),
+                            source: source(model, producer, boundaries),
                             destination: Destination::Junction(junction),
                         })
                 }));
@@ -631,7 +623,7 @@ fn connections(
                     merge
                         .after
                         .iter()
-                        .filter(|&&block| represented(model, structural, block, collapse_loops))
+                        .filter(|&&block| represented(model, structural, block))
                         .filter_map(|&block| {
                             (execution.participates(block)
                                 || (model.flow.blocks[block].kind == BlockKind::End
@@ -650,18 +642,10 @@ fn connections(
                         .before
                         .iter()
                         .filter(|&&block| {
-                            execution.participates(block)
-                                && represented(model, structural, block, collapse_loops)
+                            execution.participates(block) && represented(model, structural, block)
                         })
                         .map(|&block| Connection {
-                            source: departure(
-                                model,
-                                execution,
-                                boundaries,
-                                structural,
-                                block,
-                                collapse_loops,
-                            ),
+                            source: departure(model, execution, boundaries, structural, block),
                             destination: Destination::Junction(junction),
                         }),
                 );
@@ -674,7 +658,7 @@ fn connections(
                 .iter()
                 .filter(|&&block| {
                     model.flow.blocks[block].kind == BlockKind::Choice
-                        && represented_block(model, block, collapse_loops)
+                        && represented_block(model, block)
                 })
                 .map(|&block| choice::connection(block, execution)),
         );
@@ -696,7 +680,6 @@ fn serial_connections(
     boundaries: &[LoopBoundary],
     structural: &BTreeMap<usize, usize>,
     order: &[usize],
-    collapse_loops: bool,
 ) -> BTreeSet<Connection> {
     let mut direct = BTreeSet::new();
     let mut previous = Source::Exit(ExitId::of(NodeId::Start));
@@ -711,25 +694,19 @@ fn serial_connections(
         })
         .peekable();
     while let Some(block) = steps.next() {
-        for &header in execution.repeats.iter().rev().filter(|_| !collapse_loops) {
-            if model.flow.blocks[header]
-                .loop_end
-                .is_some_and(|end| end <= block)
-                && closed.insert(header)
-            {
-                let tail = loops
-                    .iter()
-                    .find(|loop_| loop_.header == header)
-                    .expect("a repeating cycle has topology")
-                    .tail;
-                direct.insert(Connection {
-                    source: previous,
-                    destination: Destination::Junction(tail),
-                });
-                previous = Source::Junction(tail);
+        if !model.collapse_loops {
+            for &header in execution.repeats.iter().rev() {
+                if model.flow.blocks[header]
+                    .loop_end
+                    .is_some_and(|end| end <= block)
+                    && closed.insert(header)
+                {
+                    reach_tail(loops, header, &mut direct, &mut previous);
+                }
             }
         }
-        let break_result = (model.flow.blocks[block].kind == BlockKind::Break && !collapse_loops)
+        let break_result = (model.flow.blocks[block].kind == BlockKind::Break
+            && !model.collapse_loops)
             .then(|| break_block::result(model.flow, boundaries, block));
         if let Some(result) = break_result
             && !structural.contains_key(&block)
@@ -748,14 +725,7 @@ fn serial_connections(
         if model.flow.blocks[block].kind == BlockKind::End {
             continue;
         }
-        let exit = departure(
-            model,
-            execution,
-            boundaries,
-            structural,
-            block,
-            collapse_loops,
-        );
+        let exit = departure(model, execution, boundaries, structural, block);
         if let Some(result) = break_result {
             previous = Source::Junction(result);
             continue;
@@ -770,29 +740,38 @@ fn serial_connections(
             structural,
             block,
             steps.peek().copied(),
-            collapse_loops,
         )
         .map_or(exit, Source::Junction);
     }
-    if !collapse_loops && matches!(execution.outcome, ExecutionOutcome::Repeat { .. }) {
+    if !model.collapse_loops && matches!(execution.outcome, ExecutionOutcome::Repeat { .. }) {
         // No following block connects the repeating route to its cycle tail.
         for &header in execution.repeats.iter().rev() {
-            if !closed.insert(header) {
-                continue;
+            if closed.insert(header) {
+                reach_tail(loops, header, &mut direct, &mut previous);
             }
-            let tail = loops
-                .iter()
-                .find(|loop_| loop_.header == header)
-                .expect("a repeating cycle has topology")
-                .tail;
-            direct.insert(Connection {
-                source: previous,
-                destination: Destination::Junction(tail),
-            });
-            previous = Source::Junction(tail);
         }
     }
     direct
+}
+
+/// Routes the running connection through one repeating cycle's iteration tail,
+/// which then becomes what the next connection leaves from.
+fn reach_tail(
+    loops: &[Loop],
+    header: usize,
+    direct: &mut BTreeSet<Connection>,
+    previous: &mut Source,
+) {
+    let tail = loops
+        .iter()
+        .find(|loop_| loop_.header == header)
+        .expect("a repeating cycle has topology")
+        .tail;
+    direct.insert(Connection {
+        source: *previous,
+        destination: Destination::Junction(tail),
+    });
+    *previous = Source::Junction(tail);
 }
 
 /// First reachable merge completed by `block`, provided `next` owes it no work.
@@ -807,16 +786,8 @@ fn junction_after(
     structural: &BTreeMap<usize, usize>,
     block: usize,
     next: Option<usize>,
-    collapse_loops: bool,
 ) -> Option<usize> {
-    let exit = departure(
-        model,
-        execution,
-        boundaries,
-        structural,
-        block,
-        collapse_loops,
-    );
+    let exit = departure(model, execution, boundaries, structural, block);
     merges.iter().position(|group| {
         group
             .iter()
@@ -828,30 +799,26 @@ fn junction_after(
                         .iter()
                         .any(|&producer| model.flow.produces(execution, producer))
                     && (merge.before.contains(&block)
-                        || merge.producers.iter().any(|&producer| {
-                            source(model, producer, boundaries, collapse_loops) == exit
-                        }))
+                        || merge
+                            .producers
+                            .iter()
+                            .any(|&producer| source(model, producer, boundaries) == exit))
             })
     })
 }
 
 /// Captured transfers use junctions instead of computational nodes. A
 /// capture-free transfer is redirected directly to its boundary.
-fn represented(
-    model: &Analyzed<'_>,
-    structural: &BTreeMap<usize, usize>,
-    block: usize,
-    collapse_loops: bool,
-) -> bool {
-    represented_block(model, block, collapse_loops)
+fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
+    represented_block(model, block)
         && (!matches!(
             model.flow.blocks[block].kind,
             BlockKind::Break | BlockKind::Return
         ) || structural.contains_key(&block))
 }
 
-fn represented_block(model: &Analyzed<'_>, block: usize, collapse_loops: bool) -> bool {
-    !collapse_loops || model.flow.blocks[block].parent.is_none()
+fn represented_block(model: &Analyzed<'_>, block: usize) -> bool {
+    !model.collapse_loops || model.flow.blocks[block].parent.is_none()
 }
 
 fn destination(structural: &BTreeMap<usize, usize>, block: usize) -> Destination {
@@ -868,10 +835,9 @@ fn departure(
     boundaries: &[LoopBoundary],
     structural: &BTreeMap<usize, usize>,
     block: usize,
-    collapse_loops: bool,
 ) -> Source {
     structural.get(&block).map_or_else(
-        || selected_exit(model, execution, boundaries, block, collapse_loops),
+        || selected_exit(model, execution, boundaries, block),
         |&junction| Source::Junction(junction),
     )
 }
@@ -957,12 +923,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
 }
 
 /// Visual source of a producer: start, a cycle boundary, or a block's output exit.
-fn source(
-    model: &Analyzed<'_>,
-    producer: ProducerId,
-    boundaries: &[LoopBoundary],
-    collapse_loops: bool,
-) -> Source {
+fn source(model: &Analyzed<'_>, producer: ProducerId, boundaries: &[LoopBoundary]) -> Source {
     match producer {
         ProducerId::FlowInput(_) => Source::Exit(ExitId::of(NodeId::Start)),
         ProducerId::CycleInput { block, .. } => Source::Junction(
@@ -973,7 +934,7 @@ fn source(
                 .entry_junction(),
         ),
         ProducerId::BlockOutput { block, output: _ }
-            if model.flow.blocks[block].kind == BlockKind::Loop && !collapse_loops =>
+            if model.flow.blocks[block].kind == BlockKind::Loop && !model.collapse_loops =>
         {
             Source::Junction(
                 boundaries
@@ -993,7 +954,6 @@ fn selected_exit(
     execution: &Execution,
     boundaries: &[LoopBoundary],
     block: usize,
-    collapse_loops: bool,
 ) -> Source {
     let output = if model.flow.blocks[block].branch_count() > 0 {
         execution
@@ -1002,12 +962,7 @@ fn selected_exit(
     } else {
         0
     };
-    source(
-        model,
-        ProducerId::BlockOutput { block, output },
-        boundaries,
-        collapse_loops,
-    )
+    source(model, ProducerId::BlockOutput { block, output }, boundaries)
 }
 
 fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
@@ -1098,7 +1053,11 @@ fn boundaries(model: &Analyzed<'_>, count: &mut usize) -> Vec<LoopBoundary> {
 }
 
 fn loops(model: &Analyzed<'_>, boundaries: &[LoopBoundary], count: &mut usize) -> Vec<Loop> {
-    loop_headers(model)
+    model
+        .executions
+        .iter()
+        .flat_map(|execution| execution.repeats.iter().copied())
+        .collect::<BTreeSet<_>>()
         .into_iter()
         .map(|header| {
             let tail = *count;
@@ -1122,15 +1081,14 @@ fn loops(model: &Analyzed<'_>, boundaries: &[LoopBoundary], count: &mut usize) -
 fn close_loops(topology: &mut Topology) {
     for loop_ in topology.loops.clone() {
         let source = Source::Junction(loop_.tail);
-        let mut forward = Vec::new();
-        for connection in std::mem::take(&mut topology.connections) {
-            if connection.source == source {
-                topology.order.push(connection);
-            } else {
-                forward.push(connection);
-            }
-        }
-        topology.connections = forward;
+        topology.order.extend(
+            topology
+                .connections
+                .iter()
+                .filter(|connection| connection.source == source)
+                .copied(),
+        );
+        topology.connections.retain(|it| it.source != source);
         topology.index();
         topology.back_edges.push(Connection {
             source,
@@ -1168,17 +1126,6 @@ fn defer_continuations(topology: &mut Topology) {
             }
         }
     }
-}
-
-/// Completing-only bodies never reach a tail and need no iteration back edge.
-fn loop_headers(model: &Analyzed<'_>) -> Vec<usize> {
-    model
-        .executions
-        .iter()
-        .flat_map(|execution| execution.repeats.iter().copied())
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect()
 }
 
 #[cfg(test)]

@@ -250,7 +250,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
 }
 
 /// What a diagnostic calls one block kind.
-fn noun(kind: BlockKind) -> &'static str {
+pub(crate) fn noun(kind: BlockKind) -> &'static str {
     match kind {
         BlockKind::Action => "action",
         BlockKind::Call => "call",

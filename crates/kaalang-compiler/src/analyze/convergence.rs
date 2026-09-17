@@ -50,29 +50,12 @@ pub(super) fn flow(
             super::choice::validate_groups(&declaration.outputs, &groups)?;
         }
         for (branches, shared) in groups {
-            let entries = entries(&shared, precedence);
             recorded.push(ConvergenceGroup {
                 branching_block: brancher,
                 branches,
                 continuation: shared.into_iter().collect(),
-                entries,
             });
         }
     }
     Ok(recorded)
-}
-
-/// The continuation blocks that no other continuation block precedes in any
-/// execution. `preceding` is transitive, so a chain through any intermediate
-/// block counts.
-fn entries(shared: &BTreeSet<usize>, precedence: &[Vec<BTreeSet<usize>>]) -> Vec<usize> {
-    shared
-        .iter()
-        .copied()
-        .filter(|&entry| {
-            precedence
-                .iter()
-                .all(|preceding| preceding[entry].is_disjoint(shared))
-        })
-        .collect()
 }

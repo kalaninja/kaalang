@@ -5,18 +5,7 @@ use quote::{ToTokens, format_ident};
 use syn::{Expr, ItemFn, Stmt, parse_quote, visit::Visit};
 
 use crate::expand;
-
-fn fixture(source: &str, name: &str) -> ItemFn {
-    syn::parse_file(source)
-        .expect("the behavior fixture is valid Rust")
-        .items
-        .into_iter()
-        .find_map(|item| match item {
-            syn::Item::Fn(function) if function.sig.ident == name => Some(function),
-            _ => None,
-        })
-        .expect("the fixture declares its flow")
-}
+use crate::tests::fixture;
 
 fn branching_matches(function: &ItemFn) -> usize {
     struct Count(usize);

@@ -9,7 +9,7 @@ use crate::topology::{Connection, Destination, NodeId, Source, Topology, Vertex}
 
 use crate::geometry::{Point, compatible, enters, inside};
 
-use super::verify::{Grid, back_edge_polyline, ends, meetings, polyline};
+use super::verify::{Grid, back_edge_polyline, ends, meetings};
 use super::{Arrangement, Contour, Side};
 
 /// Body columns, independent of ranks: vertices below the tail still count.
@@ -321,7 +321,7 @@ pub(super) fn owned(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet
 
 /// The vertices one loop's body draws: its own blocks and their cases,
 /// together with its entry and tail and those of the loops nested in it.
-pub(super) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
+pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
     let end = flow.blocks[header].loop_end.expect("a loop owns a body");
     let body = header + 1..end;
     let result = topology
@@ -509,10 +509,7 @@ pub(super) fn contours(
     arrangement: &Arrangement,
     sides: &[Side],
 ) -> Result<Vec<Contour>, super::Obstruction> {
-    let grid = Grid::of(topology, arrangement);
-    let lines = (0..topology.connections.len())
-        .map(|index| polyline(topology, arrangement, &grid, index))
-        .collect::<Vec<_>>();
+    let (grid, lines) = super::verify::drawing(topology, arrangement);
     let mut chosen: Vec<Option<Contour>> = vec![None; topology.loops.len()];
     let mut drawn: Vec<Vec<Point>> = Vec::new();
     // Innermost first: a nested back edge becomes part of what the enclosing one

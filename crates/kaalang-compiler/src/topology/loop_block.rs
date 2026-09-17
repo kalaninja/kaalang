@@ -35,7 +35,7 @@ pub(super) fn order_exits(
             };
             let Some(&next) = execution.blocks[position + 1..]
                 .iter()
-                .find(|&&next| represented(model, structural, next, false))
+                .find(|&&next| represented(model, structural, next))
             else {
                 continue;
             };

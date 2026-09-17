@@ -45,7 +45,7 @@ fn cost(function: &ItemFn) -> Option<Cost> {
     let analysis = started.elapsed();
 
     let started = Instant::now();
-    let topology = kaalang_compiler::project(&analyzed, kaalang_compiler::BuildOptions::default());
+    let topology = kaalang_compiler::project(&analyzed, false);
     let projection = started.elapsed();
 
     let started = Instant::now();
@@ -85,8 +85,15 @@ const STRESS_BUDGET: Duration = Duration::from_secs(3);
 /// includes the analysis above the decision. Against about 740 ms.
 const BUILD_AND_COMPACT_BUDGET: Duration = Duration::from_secs(3);
 
-#[test]
-fn the_model_stays_inside_its_budget() {
+/// Times every corpus flow `SAMPLES` times over, then checks the median whole
+/// pass against `corpus_budget` and each flow's own median against
+/// `flow_budget`. The aggregate cannot see a single flow whose cost explodes.
+fn corpus_budget(
+    label: &str,
+    corpus_budget: Duration,
+    flow_budget: Duration,
+    measure: impl Fn(&str, &ItemFn) -> Duration,
+) {
     let flows = corpus::corpus();
     corpus::assert_whole_tree(&flows);
 
@@ -95,56 +102,7 @@ fn the_model_stays_inside_its_budget() {
     for run in 0..=SAMPLES {
         let mut total = Duration::ZERO;
         for (index, (name, function)) in flows.iter().enumerate() {
-            let Some(cost) = cost(function) else {
-                panic!("{name}: the fixture should parse")
-            };
-            assert!(
-                cost.accepted,
-                "{name}: the fixture should have an arrangement"
-            );
-            total += cost.whole();
-            if run > 0 {
-                per_flow[index].push(cost.whole());
-            }
-        }
-        if run > 0 {
-            totals.push(total);
-        }
-    }
-
-    let whole = median(&totals);
-    println!("model, {} flows: {}", flows.len(), spread(&totals));
-    assert!(
-        whole < CORPUS_BUDGET,
-        "the median pass over {} flows took {whole:?}, past the {CORPUS_BUDGET:?} budget",
-        flows.len()
-    );
-    for ((name, _), samples) in flows.iter().zip(per_flow) {
-        let typical = median(&samples);
-        assert!(
-            typical < FLOW_BUDGET,
-            "{name}: the median took {typical:?}, past the {FLOW_BUDGET:?} budget"
-        );
-    }
-}
-
-/// What `#[kaalang]` pays at every call site, and the only stage a user waits
-/// on while compiling.
-#[test]
-fn the_lowering_stays_inside_its_budget() {
-    let flows = corpus::corpus();
-    corpus::assert_whole_tree(&flows);
-
-    let mut totals = Vec::new();
-    let mut per_flow = vec![Vec::new(); flows.len()];
-    for run in 0..=SAMPLES {
-        let mut total = Duration::ZERO;
-        for (index, (name, function)) in flows.iter().enumerate() {
-            let function = function.clone();
-            let started = Instant::now();
-            let lowered = kaalang_compiler::expand(function);
-            let elapsed = started.elapsed();
-            lowered.unwrap_or_else(|error| panic!("{name}: {error}"));
+            let elapsed = measure(name, function);
             total += elapsed;
             if run > 0 {
                 per_flow[index].push(elapsed);
@@ -156,19 +114,52 @@ fn the_lowering_stays_inside_its_budget() {
     }
 
     let whole = median(&totals);
-    println!("lowering, {} flows: {}", flows.len(), spread(&totals));
+    println!("{label}, {} flows: {}", flows.len(), spread(&totals));
     assert!(
-        whole < LOWERING_CORPUS_BUDGET,
-        "the median lowering of {} flows took {whole:?}, past the {LOWERING_CORPUS_BUDGET:?} budget",
+        whole < corpus_budget,
+        "the median {label} pass over {} flows took {whole:?}, past the {corpus_budget:?} budget",
         flows.len()
     );
     for ((name, _), samples) in flows.iter().zip(per_flow) {
         let typical = median(&samples);
         assert!(
-            typical < LOWERING_FLOW_BUDGET,
-            "{name}: the median took {typical:?}, past the {LOWERING_FLOW_BUDGET:?} budget"
+            typical < flow_budget,
+            "{name}: the median took {typical:?}, past the {flow_budget:?} budget"
         );
     }
+}
+
+#[test]
+fn the_model_stays_inside_its_budget() {
+    corpus_budget("model", CORPUS_BUDGET, FLOW_BUDGET, |name, function| {
+        let Some(cost) = cost(function) else {
+            panic!("{name}: the fixture should parse")
+        };
+        assert!(
+            cost.accepted,
+            "{name}: the fixture should have an arrangement"
+        );
+        cost.whole()
+    });
+}
+
+/// What `#[kaalang]` pays at every call site, and the only stage a user waits
+/// on while compiling.
+#[test]
+fn the_lowering_stays_inside_its_budget() {
+    corpus_budget(
+        "lowering",
+        LOWERING_CORPUS_BUDGET,
+        LOWERING_FLOW_BUDGET,
+        |name, function| {
+            let function = function.clone();
+            let started = Instant::now();
+            let lowered = kaalang_compiler::expand(function);
+            let elapsed = started.elapsed();
+            lowered.unwrap_or_else(|error| panic!("{name}: {error}"));
+            elapsed
+        },
+    );
 }
 
 /// A serial flow leaves compaction almost nothing to do, so the check is that a

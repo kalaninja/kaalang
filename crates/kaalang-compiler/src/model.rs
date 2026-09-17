@@ -32,22 +32,8 @@ pub struct Analysis {
 
 /// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
 pub struct SemanticModel {
-    /// The authored flow function name.
-    pub name: Ident,
-    /// The authored flow parameters.
-    pub parameters: Vec<FnArg>,
-    /// The authored flow return type.
-    pub return_type: ReturnType,
-    /// The resolved blocks and wires, ending with the implicit completion boundary.
-    pub flow: Flow,
-    /// The verified lowering plan.
-    pub execution_plan: ExecutionPlan,
-    /// Structural summaries in [`Execution`]'s derived order.
-    pub executions: Vec<Execution>,
-    /// Every continuation group, ordered by branching block, then branch list.
-    pub convergence_groups: Vec<ConvergenceGroup>,
-    /// Implicit junctions of equally named alternative outputs, before captures.
-    pub merges: Vec<WireMerge>,
+    /// Everything the analysis established, before any diagram.
+    pub analysis: Analysis,
     /// Structural topology defined by RFC 0002 §7.
     pub topology: Topology,
     /// Verified arrangement for the renderer to realize.
@@ -66,7 +52,7 @@ impl SemanticModel {
                 .any(|route| route.runs.len() > 2)
         {
             crate::construct::compact::arrangement(
-                &self.flow,
+                &self.analysis.flow,
                 &self.topology,
                 &mut self.arrangement,
             );
@@ -79,7 +65,7 @@ impl SemanticModel {
         &self,
         header: usize,
     ) -> std::collections::BTreeSet<crate::topology::Vertex> {
-        crate::construct::body_vertices(&self.flow, &self.topology, header)
+        crate::construct::loop_block::body_vertices(&self.analysis.flow, &self.topology, header)
     }
 }
 
@@ -411,7 +397,6 @@ impl Execution {
 }
 
 /// A dependency-derived shared continuation of one question or choice.
-/// Its entries are authored blocks after implicit `WireMerge` junctions.
 /// This projection does not prescribe the scopes or joins used by lowering.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConvergenceGroup {
@@ -421,9 +406,6 @@ pub struct ConvergenceGroup {
     /// The shared continuation: the authored blocks whose branch set is
     /// exactly `branches`, in authored order. The end block never belongs.
     pub continuation: Vec<usize>,
-    /// Consumers with no continuation predecessor in any execution, including
-    /// those without this brancher. In authored order and never empty.
-    pub entries: Vec<usize>,
 }
 
 /// One implicit convergence point for a logical wire. Repeated output names

@@ -10,8 +10,7 @@ pub struct Point {
 
 /// Whether two orthogonal segments meet: parallel ones only where they overlap,
 /// perpendicular ones wherever they touch.
-#[must_use]
-pub fn crosses(a: Point, b: Point, c: Point, d: Point) -> bool {
+fn crosses(a: Point, b: Point, c: Point, d: Point) -> bool {
     let horizontal = a.y == b.y;
     if horizontal == (c.y == d.y) {
         if horizontal {
@@ -46,12 +45,12 @@ pub fn enters(a: Point, b: Point, (left, top, right, bottom): (i32, i32, i32, i3
 
 /// Whether a point lies strictly inside a rectangle.
 #[must_use]
-pub const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
+pub(crate) const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
     point.x > left && point.x < right && point.y > top && point.y < bottom
 }
 
 #[must_use]
-pub fn on_segment(point: Point, segment: &[Point]) -> bool {
+pub(crate) fn on_segment(point: Point, segment: &[Point]) -> bool {
     point.x >= segment[0].x.min(segment[1].x)
         && point.x <= segment[0].x.max(segment[1].x)
         && point.y >= segment[0].y.min(segment[1].y)

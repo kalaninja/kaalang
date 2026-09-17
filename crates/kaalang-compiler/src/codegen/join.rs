@@ -15,18 +15,14 @@ fn label(target: JoinTarget) -> Lifetime {
     )
 }
 
-fn value(bindings: &Bindings, wires: &[Ident]) -> TokenStream2 {
+/// Leaves the branch scope and hands its wires straight to the target binding.
+pub(super) fn yield_to(bindings: &Bindings, wires: &[Ident], target: JoinTarget) -> TokenStream2 {
+    let label = label(target);
     let wires = wires
         .iter()
         .map(|wire| bindings.wire_at(wire))
         .collect::<Vec<_>>();
-    super::tuple(Span::call_site(), &wires)
-}
-
-/// Leaves the branch scope and hands its wires straight to the target binding.
-pub(super) fn yield_to(bindings: &Bindings, wires: &[Ident], target: JoinTarget) -> TokenStream2 {
-    let label = label(target);
-    let value = value(bindings, wires);
+    let value = super::tuple(Span::call_site(), &wires);
     quote!(break #label #value)
 }
 

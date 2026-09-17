@@ -87,13 +87,13 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
             NodeId::Start => start.to_owned(),
             NodeId::Block(_) if node.kind == NodeKind::End => return_type.to_owned(),
             // Undescribed calls use the callee path (RFC 0002 §4.3).
-            NodeId::Block(block) => match &model.flow.blocks[block].description {
+            NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => text.clone(),
-                None if node.kind == NodeKind::Call => model.flow.blocks[block].callee(),
+                None if node.kind == NodeKind::Call => model.analysis.flow.blocks[block].callee(),
                 None => String::new(),
             },
             NodeId::Case { choice, branch } => {
-                model.flow.blocks[choice].case_descriptions[branch].clone()
+                model.analysis.flow.blocks[choice].case_descriptions[branch].clone()
             }
         };
         captions.label.insert(node.id, label);
@@ -102,7 +102,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         // return captures for ordering.
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
-            NodeId::Block(block) => model.flow.blocks[block]
+            NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
                 .iter()
                 .map(captured)
@@ -125,7 +125,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
     }
 
     for boundary in &topology.loop_boundaries {
-        let block = &model.flow.blocks[boundary.header];
+        let block = &model.analysis.flow.blocks[boundary.header];
         captions.label.insert(
             NodeId::Block(boundary.header),
             block.description.clone().unwrap_or_default(),
@@ -165,7 +165,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .collect(),
         );
         if let (NodeId::Block(block), Some(branch)) = (exit.id.node, exit.id.branch)
-            && let Some(description) = model.flow.blocks[block]
+            && let Some(description) = model.analysis.flow.blocks[block]
                 .question_branches
                 .get(branch)
                 .and_then(|answer| answer.description.clone())
@@ -181,7 +181,13 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
             junction
                 .merges
                 .iter()
-                .map(|&merge| provided(model, &parameters, model.merges[merge].producers[0]))
+                .map(|&merge| {
+                    provided(
+                        model,
+                        &parameters,
+                        model.analysis.merges[merge].producers[0],
+                    )
+                })
                 .collect()
         })
         .collect();
@@ -199,6 +205,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
 /// The value transferred into end.
 fn end_input(model: &SemanticModel) -> Vec<String> {
     model
+        .analysis
         .flow
         .blocks
         .iter()
@@ -248,6 +255,7 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
 /// Rust gives it.
 fn named_parameters(model: &SemanticModel) -> Vec<String> {
     model
+        .analysis
         .parameters
         .iter()
         .filter_map(|parameter| match parameter {
@@ -278,7 +286,7 @@ fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) 
             .expect("a flow input caption names a declared parameter")
             .clone(),
         ProducerId::CycleInput { block, input } => {
-            let capture = &model.flow.blocks[block].inputs[input];
+            let capture = &model.analysis.flow.blocks[block].inputs[input];
             format!(
                 "{}{}",
                 if capture.mutable { "mut " } else { "" },
@@ -286,7 +294,7 @@ fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) 
             )
         }
         ProducerId::BlockOutput { block, output } => {
-            binding_label(model.flow.blocks[block].output_binding(output))
+            binding_label(model.analysis.flow.blocks[block].output_binding(output))
         }
     }
 }

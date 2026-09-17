@@ -23,19 +23,13 @@ pub use model::{
     ProducerId, QuestionBranch, SemanticModel, WireMerge,
 };
 
-/// Diagram options; both views validate the expanded topology.
-#[derive(Clone, Copy, Default)]
-pub struct BuildOptions {
-    pub collapse_loops: bool,
-}
-
 /// Builds the validated semantic model for one kaalang flow function.
 ///
 /// # Errors
 ///
 /// Returns a source-spanned error from [`analyze()`] or [`construct()`].
 pub fn build(function: &ItemFn) -> Result<SemanticModel> {
-    build_with_options(function, BuildOptions::default())
+    build_with_options(function, false)
 }
 
 /// Builds a validated model with the requested loop presentation.
@@ -44,42 +38,20 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
 /// # Errors
 ///
 /// Returns the same parsing, validation, and topology errors as [`build`].
-pub fn build_with_options(function: &ItemFn, options: BuildOptions) -> Result<SemanticModel> {
+pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<SemanticModel> {
     let analysis = analyze(function)?;
-    let expanded = project(
-        &analysis,
-        BuildOptions {
-            collapse_loops: false,
-        },
-    );
+    let expanded = project(&analysis, false);
     let expanded_arrangement = construct(&analysis, &expanded)?;
-    let (topology, arrangement) = if options.collapse_loops {
-        let topology = project(&analysis, options);
+    let (topology, arrangement) = if collapse_loops {
+        let topology = project(&analysis, true);
         let arrangement = construct(&analysis, &topology)?;
         (topology, arrangement)
     } else {
         (expanded, expanded_arrangement)
     };
 
-    let Analysis {
-        name,
-        parameters,
-        return_type,
-        flow,
-        execution_plan,
-        executions,
-        convergence_groups,
-        merges,
-    } = analysis;
     Ok(SemanticModel {
-        name,
-        parameters,
-        return_type,
-        flow,
-        execution_plan,
-        executions,
-        convergence_groups,
-        merges,
+        analysis,
         topology,
         arrangement,
     })
@@ -161,16 +133,14 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
 /// Projects an analyzed flow onto the topology defined by RFC 0002 §7.
 /// Projection is total; [`construct()`] checks whether the topology can be drawn.
 #[must_use]
-pub fn project(analysis: &Analysis, options: BuildOptions) -> topology::Topology {
-    topology::project(
-        &topology::Analyzed {
-            flow: &analysis.flow,
-            executions: &analysis.executions,
-            merges: &analysis.merges,
-            execution_plan: &analysis.execution_plan,
-        },
-        options.collapse_loops,
-    )
+pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology {
+    topology::project(&topology::Analyzed {
+        flow: &analysis.flow,
+        executions: &analysis.executions,
+        merges: &analysis.merges,
+        execution_plan: &analysis.execution_plan,
+        collapse_loops,
+    })
 }
 
 /// Searches for a conforming arrangement of a projected topology and checks the
@@ -209,7 +179,7 @@ mod tests {
     /// How many times the plan emits one block. The end block is emitted once
     /// when the plan is rooted at it.
     fn count_block(model: &SemanticModel, target: usize) -> usize {
-        crate::plan::verify::emitted(&model.execution_plan)
+        crate::plan::verify::emitted(&model.analysis.execution_plan)
             .iter()
             .filter(|&&block| block == target)
             .count()
@@ -253,13 +223,11 @@ mod tests {
         branching_block: usize,
         branches: &[usize],
         continuation: &[usize],
-        entries: &[usize],
     ) -> ConvergenceGroup {
         ConvergenceGroup {
             branching_block,
             branches: branches.to_vec(),
             continuation: continuation.to_vec(),
-            entries: entries.to_vec(),
         }
     }
 
@@ -267,9 +235,9 @@ mod tests {
     /// is never a continuation member, so no group may mention the last block.
     fn assert_groups(function: &ItemFn, expected: &[ConvergenceGroup]) {
         let model = build(function).expect("the flow is valid");
-        let end = model.flow.blocks.len() - 1;
-        assert_eq!(model.convergence_groups, expected);
-        for recorded in &model.convergence_groups {
+        let end = model.analysis.flow.blocks.len() - 1;
+        assert_eq!(model.analysis.convergence_groups, expected);
+        for recorded in &model.analysis.convergence_groups {
             assert!(
                 !recorded.continuation.contains(&end),
                 "the end block is not a computational continuation member"
@@ -311,7 +279,7 @@ mod tests {
         ] {
             let model =
                 build(&fixture(source, name)).unwrap_or_else(|error| panic!("{name}: {error}"));
-            for block in 0..model.flow.blocks.len() {
+            for block in 0..model.analysis.flow.blocks.len() {
                 assert_eq!(count_block(&model, block), 1, "{name}: block {block}");
             }
         }
@@ -326,13 +294,13 @@ mod tests {
         };
 
         let model = build(&function).expect("the zero-computation flow is valid");
-        assert_eq!(model.flow.flow_inputs, ["end"]);
-        assert_eq!(model.flow.blocks.len(), 2);
-        assert_eq!(model.executions.len(), 1);
-        assert_eq!(model.executions[0].blocks, [0]);
-        assert_eq!(model.executions[0].dependencies.len(), 1);
+        assert_eq!(model.analysis.flow.flow_inputs, ["end"]);
+        assert_eq!(model.analysis.flow.blocks.len(), 2);
+        assert_eq!(model.analysis.executions.len(), 1);
+        assert_eq!(model.analysis.executions[0].blocks, [0]);
+        assert_eq!(model.analysis.executions[0].dependencies.len(), 1);
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Return { index: 0 }
         ));
     }
@@ -357,13 +325,13 @@ mod tests {
         };
 
         let model = build(&function).expect("the diverging flow is valid");
-        assert_eq!(model.flow.blocks[0].kind, BlockKind::Loop);
+        assert_eq!(model.analysis.flow.blocks[0].kind, BlockKind::Loop);
         assert_eq!(
-            model.executions[0].outcome,
+            model.analysis.executions[0].outcome,
             ExecutionOutcome::Repeat { loop_index: 0 }
         );
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Loop { index: 0, body, .. }
                 if matches!(body.as_ref(), ExecutionPlan::Repeat { index: 0 })
         ));
@@ -375,6 +343,7 @@ mod tests {
         .expect("the cycle may either repeat or finish");
         assert_eq!(
             model
+                .analysis
                 .executions
                 .iter()
                 .map(|execution| execution.outcome)
@@ -395,10 +364,10 @@ mod tests {
         };
 
         let model = build(&function).expect("both ignored parameter forms are valid");
-        assert_eq!(model.flow.flow_inputs.len(), 1);
-        assert_eq!(model.flow.flow_inputs[0], "_value");
+        assert_eq!(model.analysis.flow.flow_inputs.len(), 1);
+        assert_eq!(model.analysis.flow.flow_inputs[0], "_value");
         assert!(matches!(
-            model.parameters.as_slice(),
+            model.analysis.parameters.as_slice(),
             [FnArg::Typed(wildcard), FnArg::Typed(named)]
                 if matches!(wildcard.pat.as_ref(), Pat::Wild(_))
                     && matches!(named.pat.as_ref(), Pat::Ident(binding) if binding.ident == "_value")
@@ -430,18 +399,18 @@ mod tests {
         };
 
         let model = build(&function).expect("the flow is valid");
-        let choice = &model.flow.blocks[0];
+        let choice = &model.analysis.flow.blocks[0];
 
-        assert_eq!(model.name, "choose");
-        assert_eq!(model.parameters.len(), 1);
-        let FnArg::Typed(parameter) = &model.parameters[0] else {
+        assert_eq!(model.analysis.name, "choose");
+        assert_eq!(model.analysis.parameters.len(), 1);
+        let FnArg::Typed(parameter) = &model.analysis.parameters[0] else {
             panic!("the parameter must be typed")
         };
         let Pat::Ident(parameter) = parameter.pat.as_ref() else {
             panic!("the parameter must retain its authored name")
         };
         assert_eq!(parameter.ident, "input");
-        let ReturnType::Type(_, return_type) = &model.return_type else {
+        let ReturnType::Type(_, return_type) = &model.analysis.return_type else {
             panic!("the return type must be preserved")
         };
         let Type::Path(return_type) = return_type.as_ref() else {
@@ -452,7 +421,7 @@ mod tests {
         assert_eq!(choice.description.as_deref(), Some("  Choose a path  "));
         assert_eq!(choice.case_descriptions, ["Первый", "Second & final"]);
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Choice {
                 branches,
                 joins,
@@ -479,11 +448,11 @@ mod tests {
         };
 
         let model = build(&function).expect("the alternative producers are valid");
-        assert_eq!(model.flow.blocks[1].outputs[0], "selected");
-        assert_eq!(model.flow.blocks[2].outputs[0], "selected");
-        assert_eq!(model.flow.blocks[3].inputs[0].ident, "selected");
+        assert_eq!(model.analysis.flow.blocks[1].outputs[0], "selected");
+        assert_eq!(model.analysis.flow.blocks[2].outputs[0], "selected");
+        assert_eq!(model.analysis.flow.blocks[3].inputs[0].ident, "selected");
 
-        let [yes, no] = model.executions.as_slice() else {
+        let [yes, no] = model.analysis.executions.as_slice() else {
             panic!("a question has two executions")
         };
         assert_eq!(
@@ -537,7 +506,7 @@ mod tests {
         };
 
         let model = build(&function).expect("the alternative producers are valid");
-        let ExecutionPlan::Question { joins, .. } = end_body(&model.execution_plan) else {
+        let ExecutionPlan::Question { joins, .. } = end_body(&model.analysis.execution_plan) else {
             panic!("the question must record its join")
         };
         let [join] = joins.as_slice() else {
@@ -571,10 +540,10 @@ mod tests {
         };
 
         let model = build(&function).expect("independent borrowers are valid");
-        assert_eq!(model.executions.len(), 1);
-        assert_eq!(model.executions[0].blocks, [0, 1, 2]);
+        assert_eq!(model.analysis.executions.len(), 1);
+        assert_eq!(model.analysis.executions[0].blocks, [0, 1, 2]);
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Action { index: 0, next }
                 if matches!(next.as_ref(), ExecutionPlan::Action { index: 1, next }
                     if matches!(next.as_ref(), ExecutionPlan::Return { index: 2 }))
@@ -604,12 +573,12 @@ mod tests {
         };
 
         let model = build(&function).expect("the merged value precedes the second question");
-        assert_eq!(model.executions.len(), 4);
+        assert_eq!(model.analysis.executions.len(), 4);
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Question { index: 0, .. }
         ));
-        for block in 0..model.flow.blocks.len() {
+        for block in 0..model.analysis.flow.blocks.len() {
             assert_eq!(count_block(&model, block), 1);
         }
     }
@@ -635,9 +604,9 @@ mod tests {
         };
 
         let model = build(&function).expect("the flow is valid");
-        assert_eq!(model.executions.len(), 2);
+        assert_eq!(model.analysis.executions.len(), 2);
         assert!(matches!(
-            end_body(&model.execution_plan),
+            end_body(&model.analysis.execution_plan),
             ExecutionPlan::Action { index: 0, next }
                 if matches!(next.as_ref(), ExecutionPlan::Question { index: 1, joins, .. } if !joins.is_empty())
         ));
@@ -682,12 +651,12 @@ mod tests {
         };
 
         let model = build(&function).expect("the flow is valid");
-        assert_eq!(model.executions.len(), 4);
+        assert_eq!(model.analysis.executions.len(), 4);
         let ExecutionPlan::Question {
             index,
             branches,
             joins,
-        } = end_body(&model.execution_plan)
+        } = end_body(&model.analysis.execution_plan)
         else {
             panic!("the root question must join its results")
         };
@@ -863,10 +832,10 @@ mod tests {
         };
 
         let model = build(&function).expect("two disjoint joins are valid");
-        assert_eq!(model.executions.len(), 5);
+        assert_eq!(model.analysis.executions.len(), 5);
         let ExecutionPlan::Choice {
             branches, joins, ..
-        } = end_body(&model.execution_plan)
+        } = end_body(&model.analysis.execution_plan)
         else {
             panic!("the root must be the choice")
         };
@@ -899,6 +868,7 @@ mod tests {
         }
         assert!(
             model
+                .analysis
                 .executions
                 .iter()
                 .all(|execution| execution.blocks.contains(&0))
@@ -958,7 +928,7 @@ mod tests {
     fn a_shared_continuation_may_have_two_independent_entries() {
         assert_groups(
             &fixture!("wire/behavior", "independent_entry_blocks"),
-            &[group(0, &[0, 1], &[3, 4, 5], &[3, 4])],
+            &[group(0, &[0, 1], &[3, 4, 5])],
         );
     }
 
@@ -1015,9 +985,9 @@ mod tests {
         assert_groups(
             &function,
             &[
-                group(0, &[0, 1, 2, 3, 4, 5], &[9], &[9]),
-                group(0, &[1, 2], &[7], &[7]),
-                group(0, &[4, 5], &[8], &[8]),
+                group(0, &[0, 1, 2, 3, 4, 5], &[9]),
+                group(0, &[1, 2], &[7]),
+                group(0, &[4, 5], &[8]),
             ],
         );
     }
@@ -1026,10 +996,7 @@ mod tests {
     fn nested_questions_each_own_a_group_over_the_shared_consumer() {
         assert_groups(
             &fixture!("wire/behavior", "nested_convergence"),
-            &[
-                group(0, &[0, 1], &[5, 6], &[5]),
-                group(1, &[0, 1], &[5, 6], &[5]),
-            ],
+            &[group(0, &[0, 1], &[5, 6]), group(1, &[0, 1], &[5, 6])],
         );
     }
 
@@ -1037,7 +1004,7 @@ mod tests {
     fn branches_of_unequal_depth_have_one_shared_entry() {
         assert_groups(
             &fixture!("wire/behavior", "uneven_depth"),
-            &[group(0, &[0, 1], &[4, 5], &[4])],
+            &[group(0, &[0, 1], &[4, 5])],
         );
     }
 
@@ -1047,10 +1014,7 @@ mod tests {
     fn nested_questions_may_share_one_result_merge() {
         assert_groups(
             &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
-            &[
-                group(1, &[0, 1], &[6, 7], &[6]),
-                group(2, &[0, 1], &[7], &[7]),
-            ],
+            &[group(1, &[0, 1], &[6, 7]), group(2, &[0, 1], &[7])],
         );
     }
 
@@ -1078,14 +1042,14 @@ mod tests {
             }
         };
 
-        assert_groups(&function, &[group(1, &[0, 1], &[4, 5], &[4])]);
+        assert_groups(&function, &[group(1, &[0, 1], &[4, 5])]);
     }
 
     #[test]
     fn a_shared_block_preceded_by_another_is_not_an_entry() {
         assert_groups(
             &fixture!("wire/behavior", "staged_convergence"),
-            &[group(0, &[0, 1], &[3, 4], &[3])],
+            &[group(0, &[0, 1], &[3, 4])],
         );
     }
 
@@ -1093,7 +1057,7 @@ mod tests {
     fn alternative_producers_captured_by_return_form_a_group() {
         assert_groups(
             &fixture!("question/behavior", "run_question"),
-            &[group(0, &[0, 1], &[3], &[3])],
+            &[group(0, &[0, 1], &[3])],
         );
     }
 
@@ -1101,10 +1065,7 @@ mod tests {
     fn a_terminal_case_stays_outside_the_group_it_follows() {
         assert_groups(
             &fixture!("wire/behavior", "convergence_before_a_terminal_case"),
-            &[
-                group(0, &[0, 1], &[4], &[4]),
-                group(0, &[0, 1, 2], &[5], &[5]),
-            ],
+            &[group(0, &[0, 1], &[4]), group(0, &[0, 1, 2], &[5])],
         );
     }
 
@@ -1124,8 +1085,10 @@ mod tests {
                 |selected| return selected;
             }
         };
-        let ExecutionPlan::End { gates, .. } =
-            build(&unified).expect("the flow is valid").execution_plan
+        let ExecutionPlan::End { gates, .. } = build(&unified)
+            .expect("the flow is valid")
+            .analysis
+            .execution_plan
         else {
             panic!("the plan is rooted at end")
         };
@@ -1148,8 +1111,10 @@ mod tests {
                 |repeat| {};
             }
         };
-        let ExecutionPlan::End { gates, .. } =
-            build(&terminal).expect("the flow is valid").execution_plan
+        let ExecutionPlan::End { gates, .. } = build(&terminal)
+            .expect("the flow is valid")
+            .analysis
+            .execution_plan
         else {
             panic!("the plan is rooted at end")
         };
@@ -1185,9 +1150,9 @@ mod tests {
         assert_groups(
             &fixture!("wire/behavior", "question_after_a_partial_merge"),
             &[
-                group(0, &[0, 1], &[3], &[3]),
-                group(0, &[0, 1, 2], &[5, 6, 7, 8], &[5]),
-                group(5, &[0, 1], &[8], &[8]),
+                group(0, &[0, 1], &[3]),
+                group(0, &[0, 1, 2], &[5, 6, 7, 8]),
+                group(5, &[0, 1], &[8]),
             ],
         );
     }
@@ -1199,8 +1164,8 @@ mod tests {
         assert_groups(
             &fixture!("wire/behavior", "question_after_one_entry_block"),
             &[
-                group(0, &[0, 1], &[3, 4, 5, 6, 7, 8], &[3, 4]),
-                group(5, &[0, 1], &[8], &[8]),
+                group(0, &[0, 1], &[3, 4, 5, 6, 7, 8]),
+                group(5, &[0, 1], &[8]),
             ],
         );
     }
@@ -1212,10 +1177,7 @@ mod tests {
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         assert_groups(
             &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
-            &[
-                group(0, &[0, 1], &[4, 5, 6], &[4, 5]),
-                group(3, &[0, 1], &[6], &[6]),
-            ],
+            &[group(0, &[0, 1], &[4, 5, 6]), group(3, &[0, 1], &[6])],
         );
     }
 

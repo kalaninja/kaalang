@@ -64,7 +64,7 @@ fn contours(
     let mut changed = false;
     if built.back_routes.is_empty() {
         for (index, loop_) in topology.loops.iter().enumerate().rev() {
-            let body = super::body_vertices(flow, topology, loop_.header);
+            let body = super::loop_block::body_vertices(flow, topology, loop_.header);
             let columns = body.iter().map(|vertex| built.column[vertex]);
             let column = match built.contours[index].side {
                 Side::Left => columns.min(),
@@ -149,16 +149,15 @@ fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
         // except the one that only orders a cycle's completion after its body.
         // The boundary rule decides where that may stand, and `keep` checks it,
         // so the candidates above the body are worth constructing.
-        let first =
-            topology
-                .incoming(vertex)
-                .chain(topology.order.iter().filter(|edge| {
-                    edge.destination == vertex && !shape.may_rise_beside(built, edge)
-                }))
-                .map(|edge| built.rank[&Vertex::from(edge.source)])
-                .max()
-                .unwrap_or(1)
-                .max(1);
+        let first = topology
+            .incoming(vertex)
+            .chain(topology.order.iter().filter(|edge| {
+                edge.destination == vertex && !shape.bodies.may_rise_beside(built, edge)
+            }))
+            .map(|edge| built.rank[&Vertex::from(edge.source)])
+            .max()
+            .unwrap_or(1)
+            .max(1);
         'earlier: for rank in first..built.rank[&vertex] {
             let gap = rank - 1;
             for lane in 0..=built.gap_lanes[gap] {
@@ -288,13 +287,13 @@ mod tests {
         let column = model.arrangement.column[&tail];
         let mut candidate = model.arrangement.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
-        let shape = verify::Shape::of(&model.flow, &model.topology);
-        let refused = verify::compacted(&model.flow, &model.topology, &candidate, &shape)
+        let shape = verify::Shape::of(&model.analysis.flow, &model.topology);
+        let refused = verify::compacted(&model.analysis.flow, &model.topology, &candidate, &shape)
             .expect_err("the outer return would cross the nested frame");
         assert!(refused.contains("cycle"), "{refused}");
         assert!(
             !keep(
-                &model.flow,
+                &model.analysis.flow,
                 &model.topology,
                 &mut model.arrangement,
                 candidate,
@@ -322,7 +321,7 @@ mod tests {
             let built = &model.arrangement;
             let beside = model.topology.loop_boundaries.iter().any(|boundary| {
                 let body = super::super::loop_block::body_vertices(
-                    &model.flow,
+                    &model.analysis.flow,
                     &model.topology,
                     boundary.header,
                 );
@@ -359,8 +358,12 @@ mod tests {
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
         }
-        verify::arrangement(&model.flow, &model.topology, &model.arrangement).unwrap();
-        arrangement(&model.flow, &model.topology, &mut model.arrangement);
-        verify::arrangement(&model.flow, &model.topology, &model.arrangement).unwrap();
+        verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement).unwrap();
+        arrangement(
+            &model.analysis.flow,
+            &model.topology,
+            &mut model.arrangement,
+        );
+        verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement).unwrap();
     }
 }

@@ -14,14 +14,9 @@ fn drawn(source: &str) -> Topology {
 
 fn collapsed(source: &str) -> Topology {
     let function = syn::parse_str(source).expect("the flow parses");
-    crate::build_with_options(
-        &function,
-        crate::BuildOptions {
-            collapse_loops: true,
-        },
-    )
-    .expect("the flow is valid")
-    .topology
+    crate::build_with_options(&function, true)
+        .expect("the flow is valid")
+        .topology
 }
 
 /// One flow of an authored fixture file.
@@ -52,7 +47,12 @@ fn merged(model: &SemanticModel, junction: usize) -> Vec<String> {
     model.topology.junctions[junction]
         .merges
         .iter()
-        .map(|&merge| model.flow.wire_name(&model.merges[merge].wire))
+        .map(|&merge| {
+            model
+                .analysis
+                .flow
+                .wire_name(&model.analysis.merges[merge].wire)
+        })
         .collect()
 }
 
@@ -114,14 +114,9 @@ fn a_collapsed_cycle_omits_its_internal_choice_connections() {
         include_str!("../../../kaalang/tests/loop/behavior/diverging_middle_branch.rs"),
         "diverging_middle_branch",
     );
-    let topology = crate::build_with_options(
-        &function,
-        crate::BuildOptions {
-            collapse_loops: true,
-        },
-    )
-    .expect("the collapsed cycle hides its internal choice")
-    .topology;
+    let topology = crate::build_with_options(&function, true)
+        .expect("the collapsed cycle hides its internal choice")
+        .topology;
 
     assert!(
         topology

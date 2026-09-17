@@ -159,7 +159,11 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
         ));
     }
     for (index, merge) in merges.iter().enumerate() {
-        if let Some(block) = cycle_block(successors, flow.blocks.len() + index) {
+        let merge_node = flow.blocks.len() + index;
+        if let Some(block) = reachable(successors, merge_node)
+            .into_iter()
+            .find(|&node| successors[node].contains(&merge_node))
+        {
             let wire = flow.wire_name(&merge.wire);
             return Err(Error::new(
                 flow.blocks[block].span,
@@ -295,17 +299,6 @@ pub(super) fn collect(flow: &Flow) -> Vec<WireMerge> {
     merges
 }
 
-/// The earliest block that both waits for `merge` and must run before it.
-/// Original capture dependencies are acyclic, so every cycle contains a merge,
-/// and it closes at a block: only blocks have an edge into a merge node.
-/// Reporting that block names the offending statement rather than the merged
-/// wire's first producer.
-fn cycle_block(successors: &[BTreeSet<usize>], merge: usize) -> Option<usize> {
-    reachable(successors, merge)
-        .into_iter()
-        .find(|&node| successors[node].contains(&merge))
-}
-
 fn reachable(successors: &[BTreeSet<usize>], start: usize) -> BTreeSet<usize> {
     let mut reached = BTreeSet::new();
     let mut pending = successors[start].iter().copied().collect::<Vec<_>>();
@@ -328,6 +321,7 @@ mod tests {
     fn merge(function: &ItemFn, wire: &str) -> WireMerge {
         let model = build(function).expect("the flow is valid");
         model
+            .analysis
             .merges
             .into_iter()
             .find(|merge| merge.wire == wire)
@@ -434,11 +428,13 @@ mod tests {
 
         let model = build(&function).expect("a partial continuation may feed a wider merge");
         let false_result = model
+            .analysis
             .merges
             .iter()
             .find(|merge| merge.wire == "false_result")
             .expect("the false routes merge");
         let combined = model
+            .analysis
             .merges
             .iter()
             .find(|merge| merge.wire == "combined")

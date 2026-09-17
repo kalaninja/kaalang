@@ -8,7 +8,7 @@ use crate::geometry::{
 use std::collections::BTreeSet;
 
 use crate::model::Flow;
-use crate::topology::{Connection, Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
+use crate::topology::{Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, RunLine, Side};
 
@@ -91,6 +91,16 @@ impl Grid {
 }
 
 /// One connection's route as an orthogonal polyline, in drawing order.
+/// The abstract grid of an arrangement and the complete polyline of every
+/// connection on it.
+pub(super) fn drawing(topology: &Topology, arrangement: &Arrangement) -> (Grid, Vec<Vec<Point>>) {
+    let grid = Grid::of(topology, arrangement);
+    let lines = (0..topology.connections.len())
+        .map(|index| polyline(topology, arrangement, &grid, index))
+        .collect();
+    (grid, lines)
+}
+
 pub(super) fn polyline(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -267,7 +277,7 @@ pub(crate) fn arrangement(
 /// Cached topology facts reused across compaction candidates: branch regions,
 /// reachability, and cycle bodies. None depends on candidate coordinates.
 pub(super) struct Shape {
-    bodies: super::loop_block::Bodies,
+    pub(super) bodies: super::loop_block::Bodies,
     branchers: Vec<Brancher>,
 }
 
@@ -284,12 +294,6 @@ struct Brancher {
 }
 
 impl Shape {
-    /// Whether compaction should construct the candidates that lift `edge`'s
-    /// destination into the rows of the body it leaves.
-    pub(super) fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
-        self.bodies.may_rise_beside(arrangement, edge)
-    }
-
     pub(super) fn of(flow: &Flow, topology: &Topology) -> Self {
         let reachable = super::regions::reachable(topology);
         Self {
@@ -377,10 +381,7 @@ fn check(
         order(topology, arrangement, None)?;
         serial_columns(topology, arrangement)?;
     }
-    let grid = Grid::of(topology, arrangement);
-    let lines = (0..topology.connections.len())
-        .map(|index| polyline(topology, arrangement, &grid, index))
-        .collect::<Vec<_>>();
+    let (grid, lines) = drawing(topology, arrangement);
     // Check boundary ownership before the more expensive crossing tests.
     if compacting {
         super::loop_block::boundaries(topology, arrangement, &grid, &lines, &shape.bodies)?;
@@ -834,6 +835,7 @@ fn back_edges(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::topology::Connection;
 
     /// Check reserved columns directly: moving the sibling also breaks its
     /// serial column, which the complete verifier may reject first.
@@ -842,9 +844,13 @@ mod tests {
         let source = super::super::tests::looping(&["repeat", "repeat", "break", "break"]);
         let model = crate::build(&syn::parse_str(&source).unwrap()).unwrap();
         let reachable = super::super::regions::reachable(&model.topology);
-        let block = super::super::regions::branchers(&model.flow, &model.topology)[0];
-        let regions =
-            super::super::regions::regions(&model.flow, &model.topology, &reachable, block);
+        let block = super::super::regions::branchers(&model.analysis.flow, &model.topology)[0];
+        let regions = super::super::regions::regions(
+            &model.analysis.flow,
+            &model.topology,
+            &reachable,
+            block,
+        );
         let group = regions
             .groups
             .iter()
@@ -872,9 +878,9 @@ mod tests {
             .expect("the group draws something");
 
         branch_columns(
-            &model.flow,
+            &model.analysis.flow,
             &model.arrangement,
-            &Shape::of(&model.flow, &model.topology),
+            &Shape::of(&model.analysis.flow, &model.topology),
         )
         .unwrap();
         let mut broken = model.arrangement.clone();
@@ -882,9 +888,9 @@ mod tests {
             broken.column.insert(vertex, inside);
         }
         let reason = branch_columns(
-            &model.flow,
+            &model.analysis.flow,
             &broken,
-            &Shape::of(&model.flow, &model.topology),
+            &Shape::of(&model.analysis.flow, &model.topology),
         )
         .expect_err("a sibling inside the reserved columns does not conform");
         assert!(
@@ -968,9 +974,9 @@ mod tests {
             let model = crate::build(&crate::tests::fixture(source, name)).unwrap();
             let valid = model.arrangement.clone();
             branch_columns(
-                &model.flow,
+                &model.analysis.flow,
                 &valid,
-                &Shape::of(&model.flow, &model.topology),
+                &Shape::of(&model.analysis.flow, &model.topology),
             )
             .unwrap();
             for entry in entries {
@@ -980,9 +986,9 @@ mod tests {
                     .get_mut(&Vertex::Node(NodeId::Block(entry)))
                     .unwrap() += 1;
                 let error = branch_columns(
-                    &model.flow,
+                    &model.analysis.flow,
                     &moved,
-                    &Shape::of(&model.flow, &model.topology),
+                    &Shape::of(&model.analysis.flow, &model.topology),
                 )
                 .unwrap_err();
                 assert!(

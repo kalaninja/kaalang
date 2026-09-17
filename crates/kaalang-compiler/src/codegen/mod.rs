@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, ItemFn, Lifetime, Pat, Result, token::Mut};
 
-use crate::{Analysis, Block, BuildOptions, ExecutionPlan, Flow, Input};
+use crate::{Analysis, Block, ExecutionPlan, Flow, Input};
 
 mod parameters;
 #[cfg(test)]
@@ -110,10 +110,6 @@ impl Bindings {
         })
     }
 
-    pub(crate) fn is_mutably_captured(&self, name: &Ident) -> bool {
-        self.mutable.contains(name)
-    }
-
     pub(crate) fn pattern(&self, span: Span, names: &[Ident]) -> TokenStream2 {
         let bindings = names
             .iter()
@@ -131,10 +127,7 @@ impl Bindings {
     /// Rust type. Empty for a wire without a gate.
     pub(crate) fn gate(&self, name: &Ident) -> TokenStream2 {
         let wire = self.wire_at(name);
-        self.gate_value(name, &quote!(#wire))
-    }
-
-    pub(crate) fn gate_value(&self, name: &Ident, value: &TokenStream2) -> TokenStream2 {
+        let value = &quote!(#wire);
         let Some(gate) = self.gates.get(name) else {
             return TokenStream2::new();
         };
@@ -328,7 +321,7 @@ pub(crate) fn input_bindings(
 pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
     // Diagram realizability is required even when compilation discards the arrangement.
-    let topology = crate::project(&analysis, BuildOptions::default());
+    let topology = crate::project(&analysis, false);
     crate::construct(&analysis, &topology)?;
 
     let bindings = Bindings::new(&analysis);

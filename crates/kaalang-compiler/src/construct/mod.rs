@@ -20,7 +20,7 @@ mod choice;
 pub(crate) mod compact;
 mod describe;
 mod end;
-mod loop_block;
+pub(crate) mod loop_block;
 mod place;
 mod regions;
 mod route;
@@ -42,12 +42,6 @@ fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     let mut incoming = topology.incoming(vertex);
     let arrival = incoming.next()?;
     incoming.next().is_none().then_some(arrival)
-}
-
-/// Body vertices shared by construction and rendering, including nested cycles
-/// and structural junctions that occupy columns without drawing nodes.
-pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
-    loop_block::body_vertices(flow, topology, header)
 }
 
 /// A checked arrangement of one topology. Ranks and columns are abstract
@@ -353,7 +347,10 @@ fn corridors(
             }
         };
         let mut arrangement = assemble(topology, placement.clone(), &plan);
-        if let Some((left, right)) = route::crossing(topology, &arrangement) {
+        // Crossings that gap ordering alone cannot see, over the complete
+        // polylines of the assembled arrangement.
+        let (_, lines) = verify::drawing(topology, &arrangement);
+        if let Some((left, right)) = verify::crossing(topology, &lines) {
             blocked.get_or_insert_with(|| {
                 route::obstruction(
                     flow,

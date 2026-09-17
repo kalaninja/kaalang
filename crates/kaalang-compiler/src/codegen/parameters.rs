@@ -79,7 +79,7 @@ fn wire(parameter: &PatIdent, bindings: &Bindings) -> TokenStream2 {
         .and(bindings.mutability(&name));
     // An authored `mut` a later block spends on a mutable capture is never
     // exercised on the parameter itself, so touch it where the author wrote it.
-    let value = if parameter.mutability.is_some() && bindings.is_mutably_captured(&name) {
+    let value = if parameter.mutability.is_some() && bindings.mutability(&name).is_some() {
         quote!({ let _ = &mut #ident; #ident })
     } else {
         quote!(#ident)

@@ -68,7 +68,7 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     }
     reachable(flow, &executions)?;
     captured(flow, &executions)?;
-    branch_outputs(flow, &executions)?;
+    branch_outputs(flow, &executions, &merges)?;
     let captures = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &[]))
@@ -125,7 +125,9 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
 
 /// Computes the transitive closure of an indexed relation.
 // ponytail: O(n³) in the number of indices; switch to a DAG walk if flows reach
-// hundreds of blocks with many executions.
+// hundreds of blocks with many executions. `topology::reduce` already keeps one
+// for its own closure, and measured faster than reusing this on the heaviest
+// refusal shapes, so the two stay separate.
 pub(crate) fn close(relation: &mut [BTreeSet<usize>]) {
     for middle in 0..relation.len() {
         let inherited = relation[middle].clone();
@@ -243,7 +245,8 @@ impl Walk<'_> {
             return;
         }
         if index == self.end {
-            self.finish(state);
+            self.incomplete
+                .get_or_insert_with(|| end::missing_return(self.flow));
             return;
         }
         let block = &self.flow.blocks[index];
@@ -333,12 +336,6 @@ impl Walk<'_> {
         true
     }
 
-    /// Reaching the root boundary without an explicit return is invalid.
-    fn finish(&mut self, _state: State) {
-        self.incomplete
-            .get_or_insert_with(|| end::missing_return(self.flow));
-    }
-
     fn record(&mut self, state: State, outcome: ExecutionOutcome) {
         self.executions.insert(Execution {
             blocks: state.executed.into_iter().collect(),
@@ -392,16 +389,16 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
             {
                 continue;
             }
-            return Err(match declaration.kind {
-                BlockKind::Action => action::uncaptured(name),
-                BlockKind::Call => call::uncaptured(name),
-                BlockKind::Question => question::uncaptured(name),
-                BlockKind::Choice => choice::uncaptured(name),
-                BlockKind::Loop => loop_block::uncaptured(name),
-                BlockKind::End | BlockKind::Break | BlockKind::Return => {
-                    unreachable!("this kind declares no outputs")
-                }
-            });
+            // No fixture reaches the question or choice arm: an uncaptured
+            // branch output also leaves its execution without a root return,
+            // which the walk reports first. Kept because that is not proven.
+            return Err(Error::new(
+                name.span(),
+                format!(
+                    "every kaalang {} output must have a consumer",
+                    crate::parse::noun(declaration.kind)
+                ),
+            ));
         }
     }
     Ok(())
@@ -409,15 +406,12 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
 
 /// Requires the first consumer whenever a branch output is selected. Later
 /// consumers may be conditional. Repeated names are consumed by their merge.
-fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
+fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Result<()> {
     // A repeated name is consumed by its implicit merge. Downstream captures
     // refer to the merged value, not to a raw question or choice output.
-    let mut names = BTreeSet::new();
-    let merged = flow
-        .blocks
+    let merged_wires = merges
         .iter()
-        .flat_map(|block| &block.outputs)
-        .filter(|name| !names.insert(*name))
+        .map(|merge| &merge.wire)
         .collect::<BTreeSet<_>>();
     let mut captures = BTreeMap::<ProducerId, BTreeSet<CaptureId>>::new();
     for dependency in executions
@@ -425,7 +419,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
         .flat_map(|execution| &execution.dependencies)
     {
         if let ProducerId::BlockOutput { block, output } = dependency.producer
-            && !merged.contains(&flow.blocks[block].outputs[output])
+            && !merged_wires.contains(&flow.blocks[block].outputs[output])
             && matches!(
                 flow.blocks[block].kind,
                 BlockKind::Question | BlockKind::Choice
@@ -437,7 +431,6 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
                 .insert(dependency.capture);
         }
     }
-    let input = |capture: CaptureId| &flow.blocks[capture.block].inputs[capture.input];
     // No fixture reaches the check below: a branch output left without its
     // first consumer also leaves its execution without a root return, which the
     // walk reports first. Kept until that is proven rather than observed.
@@ -460,7 +453,9 @@ fn branch_outputs(flow: &Flow, executions: &[Execution]) -> Result<()> {
     });
     if let Some(capture) = missing.min() {
         return Err(Error::new(
-            input(capture).ident.span(),
+            flow.blocks[capture.block].inputs[capture.input]
+                .ident
+                .span(),
             "a kaalang branch output must reach its first consumer whenever that output is selected",
         ));
     }

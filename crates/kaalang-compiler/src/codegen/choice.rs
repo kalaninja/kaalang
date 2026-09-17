@@ -13,11 +13,6 @@ use syn::Lifetime;
 use super::{Bindings, block_body, input_bindings, join};
 use crate::{Block, Branch, Flow, Join, choice_match, is_todo_body};
 
-/// The hygienic binding that carries the selected case value out of its arm.
-fn case_value() -> Ident {
-    Ident::new("__kaalang_case_value", Span::mixed_site())
-}
-
 /// Rebuilds the authored match, letting the caller decide what each arm
 /// evaluates to.
 fn authored_match(
@@ -81,7 +76,8 @@ pub(crate) fn emit(
 ) -> TokenStream2 {
     let block = &flow.blocks[index];
     let cases = block.outputs.len();
-    let value = case_value();
+    // The hygienic binding that carries the selected case value out of its arm.
+    let value = Ident::new("__kaalang_case_value", Span::mixed_site());
     let labels = (0..cases)
         .map(|case| {
             Lifetime::new(

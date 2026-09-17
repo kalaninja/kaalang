@@ -224,6 +224,17 @@ mod tests {
     use syn::parse_quote;
 
     use super::*;
+    use crate::model::SemanticModel;
+
+    /// Replays a lowered plan against a built model's own executions.
+    fn replays(model: &SemanticModel, lowered: &ExecutionPlan) -> bool {
+        plan(
+            &model.analysis.flow,
+            lowered,
+            &model.analysis.executions,
+            &model.analysis.merges,
+        )
+    }
 
     #[test]
     fn rejects_a_break_target_that_is_not_active() {
@@ -240,7 +251,7 @@ mod tests {
             }
         })
         .expect("both loops exit");
-        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+        let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
         let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
@@ -252,13 +263,8 @@ mod tests {
         *target = 2;
         // Even agreement with a corrupted resolved target cannot authorize a
         // jump into a sibling loop that has not been entered.
-        model.flow.blocks[1].break_target = Some(2);
-        assert!(!plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        model.analysis.flow.blocks[1].break_target = Some(2);
+        assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -273,16 +279,11 @@ mod tests {
         })
         .expect("the flow returns its result");
         assert_eq!(
-            model.executions[0].outcome,
+            model.analysis.executions[0].outcome,
             ExecutionOutcome::Return { block_index: 1 }
         );
-        model.executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
-        assert!(!plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        model.analysis.executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -302,7 +303,7 @@ mod tests {
             }
         })
         .expect("the body work belongs to the repeating branch");
-        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+        let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
         let ExecutionPlan::Loop { body, next, .. } = body.as_mut() else {
@@ -322,20 +323,15 @@ mod tests {
         *next = Some(misplaced);
         // Every block is still represented exactly once, but the exiting
         // execution would now run work it should have skipped.
-        let emitted = emitted(&model.execution_plan);
+        let emitted = emitted(&model.analysis.execution_plan);
         assert!(
-            (0..model.flow.blocks.len() - 1).all(|block| emitted
+            (0..model.analysis.flow.blocks.len() - 1).all(|block| emitted
                 .iter()
                 .filter(|&&each| each == block)
                 .count()
                 == 1)
         );
-        assert!(!plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -354,7 +350,7 @@ mod tests {
             }
         })
         .expect("a trailing inner loop can exit and repeat its parent");
-        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+        let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
         let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
@@ -375,12 +371,7 @@ mod tests {
             Some(ExecutionPlan::Repeat { index: 0 })
         ));
         *branches[0].plan = ExecutionPlan::Repeat { index: 0 };
-        assert!(!plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -404,6 +395,7 @@ mod tests {
         .expect("the inner loop may diverge instead of reaching end");
         assert_eq!(
             model
+                .analysis
                 .executions
                 .iter()
                 .map(|execution| execution.outcome)
@@ -413,12 +405,7 @@ mod tests {
                 ExecutionOutcome::Repeat { loop_index: 3 }
             ])
         );
-        assert!(plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -436,22 +423,12 @@ mod tests {
             }
         })
         .expect("the independent effects are valid");
-        assert!(plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(replays(&model, &model.analysis.execution_plan));
         let incomplete = ExecutionPlan::Action {
             index: 0,
             next: Box::new(ExecutionPlan::Return { index: 3 }),
         };
-        assert!(!plan(
-            &model.flow,
-            &incomplete,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(!replays(&model, &incomplete));
     }
 
     #[test]
@@ -468,7 +445,7 @@ mod tests {
             }
         })
         .expect("the alternative producers are valid");
-        let ExecutionPlan::End { body, .. } = &mut model.execution_plan else {
+        let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
         let ExecutionPlan::Question { joins, .. } = body.as_mut() else {
@@ -478,12 +455,7 @@ mod tests {
             unreachable!()
         };
         join.wires.clear();
-        assert!(!plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
     #[test]
@@ -511,12 +483,7 @@ mod tests {
                 }),
             }),
         };
-        assert!(!plan(
-            &model.flow,
-            &reordered,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(!replays(&model, &reordered));
     }
 
     #[test]
@@ -539,12 +506,7 @@ mod tests {
             }
         };
         let model = crate::build(&function).expect("branch-local work finishes above the capture");
-        assert!(plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(replays(&model, &model.analysis.execution_plan));
 
         // Capturing the merged value above the branch-local work it waits for
         // leaves that work with nowhere to run.
@@ -591,8 +553,8 @@ mod tests {
             };
             function.block.stmts[1] = selection;
             let model = crate::build(&function).expect("the setup is prepared above the selection");
-            assert_eq!(model.flow.blocks[1].inputs.len(), 1);
-            for execution in &model.executions {
+            assert_eq!(model.analysis.flow.blocks[1].inputs.len(), 1);
+            for execution in &model.analysis.executions {
                 assert_eq!(
                     execution.blocks,
                     [
@@ -607,12 +569,7 @@ mod tests {
                     ]
                 );
             }
-            assert!(plan(
-                &model.flow,
-                &model.execution_plan,
-                &model.executions,
-                &model.merges
-            ));
+            assert!(replays(&model, &model.analysis.execution_plan));
 
             // The selection opens its branches before the shared setup runs.
             function.block.stmts.swap(0, 1);
@@ -645,23 +602,20 @@ mod tests {
         };
         let model = crate::build(&function).expect("the merge completes above the selection");
         let merge = model
+            .analysis
             .merges
             .iter()
             .find(|merge| merge.wire == "value")
             .expect("the `value` wire merges");
         assert_eq!(merge.after, [4, 5]);
         let group = model
+            .analysis
             .convergence_groups
             .iter()
             .find(|group| group.branching_block == 0)
             .expect("the first question owns a group");
         assert_eq!(group.continuation, [4, 5, 6]);
-        assert!(plan(
-            &model.flow,
-            &model.execution_plan,
-            &model.executions,
-            &model.merges
-        ));
+        assert!(replays(&model, &model.analysis.execution_plan));
 
         // Asking first leaves the second question inside the open branches.
         function.block.stmts.swap(0, 3);
