@@ -472,7 +472,7 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
             }
         }
     }
-    crate::analyze::close(&mut later);
+    crate::analyze::close(&mut later, (0..blocks).rev());
     later
 }
 

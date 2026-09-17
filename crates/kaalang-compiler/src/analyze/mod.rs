@@ -26,6 +26,9 @@ mod placement;
 mod question;
 mod return_block;
 
+#[cfg(test)]
+mod tests;
+
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
@@ -123,19 +126,32 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
     ordered
 }
 
-/// Computes the transitive closure of an indexed relation.
-// ponytail: O(n³) in the number of indices; switch to a DAG walk if flows reach
-// hundreds of blocks with many executions. `topology::reduce` already keeps one
-// for its own closure, and measured faster than reusing this on the heaviest
-// refusal shapes, so the two stay separate.
-pub(crate) fn close(relation: &mut [BTreeSet<usize>]) {
-    for middle in 0..relation.len() {
-        let inherited = relation[middle].clone();
-        for related in relation.iter_mut() {
-            if related.contains(&middle) {
-                related.extend(&inherited);
+/// Closes a DAG relation, visiting related indices before their dependents.
+/// Source order supplies this order for predecessors, its reverse for successors.
+pub(crate) fn close(relation: &mut [BTreeSet<usize>], order: impl Iterator<Item = usize>) {
+    let count = relation.len();
+    let words = count.div_ceil(64);
+    let mut reach: Vec<Option<Vec<u64>>> = vec![None; count];
+    for index in order {
+        let mut row = vec![0; words];
+        for &related in &relation[index] {
+            let inherited = reach[related]
+                .as_ref()
+                .expect("related indices must be closed first");
+            row[related / 64] |= 1 << (related % 64);
+            for (word, bits) in row.iter_mut().zip(inherited) {
+                *word |= *bits;
             }
         }
+        let mut related = Vec::new();
+        for (word, mut bits) in row.iter().copied().enumerate() {
+            while bits != 0 {
+                related.push(word * 64 + bits.trailing_zeros() as usize);
+                bits &= bits - 1;
+            }
+        }
+        relation[index] = related.into_iter().collect();
+        reach[index] = Some(row);
     }
 }
 
@@ -172,7 +188,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
             }
         }
     }
-    close(&mut preceding);
+    close(&mut preceding, 0..blocks);
     preceding
 }
 
