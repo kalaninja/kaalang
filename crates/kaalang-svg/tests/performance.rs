@@ -7,28 +7,36 @@ use std::time::{Duration, Instant};
 
 use kaalang_svg::RenderOptions;
 use kaalang_testing::corpus;
-use kaalang_testing::statistics::{SAMPLES, median, spread};
-use kaalang_testing::stress::{branching, stress};
+use kaalang_testing::performance::{ItemBudget, assert_pass_budget};
+use kaalang_testing::probes::{branching, nested_cycles};
 
-/// One whole pass over the corpus, against a measured median of about 710 ms.
-/// Rendering repeats the model build internally, so it is bounded on its own
-/// rather than by subtracting the model's budget.
-const CORPUS_BUDGET: Duration = Duration::from_secs(4);
-/// One rendered diagram, against a median of about 4.5 ms.
-const DIAGRAM_BUDGET: Duration = Duration::from_millis(60);
+// The corpus budget includes ordinary and stress fixtures, with both expanded
+// and collapsed diagrams for every cycle fixture. Each diagram is also checked
+// against its fixture tier's diagram budget.
+/// One render pass over the fixture corpus, against a measured median of about
+/// 1.37 s over 245 diagrams. Rendering rebuilds the model internally, so this is
+/// bounded on its own rather than by subtracting the compiler's budget.
+const RENDER_CORPUS_BUDGET: Duration = Duration::from_secs(4);
+/// One ordinary fixture diagram, against a median of about 4.5 ms.
+const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(60);
+/// One stress-fixture diagram. Five times the current worst median of about
+/// 245 ms, rounded up.
+const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 
-/// One rendered stress shape, against a worst measured figure of about 4.4 s:
+// Generated probes sit outside the fixture corpus.
+/// One rendered generated probe, against a worst measured figure of about 4.4 s:
 /// `4 loops and 120 steps` expanded, some 250 blocks. The geometry costs eight
 /// to thirty-five times the decision below it at that size. Only `cargo kaalang`
 /// pays this; a macro expansion never renders.
-const STRESS_BUDGET: Duration = Duration::from_secs(12);
+const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
 
 /// In both presentations a cycle fixture is drawn in.
 #[test]
-fn the_renderer_stays_inside_its_budget() {
-    let diagrams: Vec<(String, String, RenderOptions)> = corpus::files()
+fn the_fixture_corpus_renderer_stays_inside_its_budgets() {
+    let diagrams: Vec<(String, String, RenderOptions, bool)> = corpus::files()
         .into_iter()
-        .flat_map(|(_, source)| {
+        .flat_map(|(path, source)| {
+            let stress = corpus::is_stress(&path);
             let names = kaalang_svg::flow_names(&source).expect("the fixture parses");
             // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
             let views = std::iter::once(false)
@@ -38,10 +46,10 @@ fn the_renderer_stays_inside_its_budget() {
                 .into_iter()
                 .flat_map(|name| {
                     views.iter().map(move |&collapse_loops| {
-                        (name.clone(), RenderOptions { collapse_loops })
+                        (name.clone(), RenderOptions { collapse_loops }, stress)
                     })
                 })
-                .map(|(name, options)| (name, source.clone(), options))
+                .map(|(name, options, stress)| (name, source.clone(), options, stress))
                 .collect::<Vec<_>>()
         })
         .collect();
@@ -51,53 +59,37 @@ fn the_renderer_stays_inside_its_budget() {
         diagrams.len()
     );
 
-    let mut totals = Vec::new();
-    let mut per_diagram = vec![Vec::new(); diagrams.len()];
-    for run in 0..=SAMPLES {
-        let mut total = Duration::ZERO;
-        for (index, (name, source, options)) in diagrams.iter().enumerate() {
-            let started = Instant::now();
+    assert_pass_budget(
+        "renderer",
+        "diagrams",
+        &diagrams,
+        RENDER_CORPUS_BUDGET,
+        |(name, _, options, stress)| ItemBudget {
+            name: format!("{name} (collapsed={})", options.collapse_loops),
+            limit: if *stress {
+                RENDER_STRESS_DIAGRAM_BUDGET
+            } else {
+                RENDER_DIAGRAM_BUDGET
+            },
+            report: *stress,
+        },
+        |(name, source, options, _)| {
             let drawn = kaalang_svg::render_source_with_options(source, name, *options);
-            let elapsed = started.elapsed();
             drawn.unwrap_or_else(|error| panic!("{name}: {error}"));
-            total += elapsed;
-            if run > 0 {
-                per_diagram[index].push(elapsed);
-            }
-        }
-        if run > 0 {
-            totals.push(total);
-        }
-    }
-
-    let whole = median(&totals);
-    println!("renderer, {} diagrams: {}", diagrams.len(), spread(&totals));
-    assert!(
-        whole < CORPUS_BUDGET,
-        "the median render of {} diagrams took {whole:?}, past the {CORPUS_BUDGET:?} budget",
-        diagrams.len()
+        },
     );
-    for ((name, _, options), samples) in diagrams.iter().zip(per_diagram) {
-        let typical = median(&samples);
-        assert!(
-            typical < DIAGRAM_BUDGET,
-            "{name} (collapsed={}): the median took {typical:?}, past the {DIAGRAM_BUDGET:?} budget",
-            options.collapse_loops
-        );
-    }
 }
 
-/// The fixtures are small hand-written examples, so the corpus above never
-/// hands the geometry a large arrangement. These do, and a regression quadratic
-/// in routes or labels shows up here and nowhere else.
+/// Generated probes push depth and size beyond the fixture corpus to
+/// expose growth in routing and label costs.
 #[test]
-fn the_stress_shapes_render_inside_their_budget() {
+fn generated_probes_render_inside_their_budget() {
     let shapes = [(8, 8), (8, 64), (4, 120)]
         .map(|(loops, actions)| {
             (
                 format!("{loops} loops and {actions} steps"),
-                stress(loops, actions, false),
-                "stress",
+                nested_cycles(loops, actions, false),
+                "nested_cycles",
             )
         })
         .into_iter()
@@ -114,10 +106,10 @@ fn the_stress_shapes_render_inside_their_budget() {
             let drawn = kaalang_svg::render_source_with_options(&source, name, options);
             let elapsed = started.elapsed();
             drawn.unwrap_or_else(|error| panic!("{what} (collapsed={collapse_loops}): {error}"));
-            println!("stress render: {what}, collapsed={collapse_loops}: {elapsed:?}");
+            println!("generated render probe: {what}, collapsed={collapse_loops}: {elapsed:?}");
             assert!(
-                elapsed < STRESS_BUDGET,
-                "rendering {what} (collapsed={collapse_loops}) took {elapsed:?}, past the {STRESS_BUDGET:?} budget"
+                elapsed < GENERATED_RENDER_BUDGET,
+                "rendering {what} (collapsed={collapse_loops}) took {elapsed:?}, past the {GENERATED_RENDER_BUDGET:?} budget"
             );
         }
     }

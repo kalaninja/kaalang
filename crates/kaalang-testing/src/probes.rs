@@ -1,11 +1,11 @@
-//! Stress shapes beyond fixture coverage: deep loops, large flows, and branching.
-//! Includes deliberately impossible topologies to exercise rejection paths.
+//! Generated performance probes beyond fixture coverage: deep cycles, large
+//! flows, branching, and deliberately impossible topologies.
 
 use std::fmt::Write as _;
 
 use syn::ItemFn;
 
-/// Parses a generated flow. Generators return source because rendering needs
+/// Parses a generated probe. Generators return source because rendering needs
 /// the original text for span-based captions.
 ///
 /// # Panics
@@ -26,8 +26,8 @@ pub fn flow(source: &str) -> ItemFn {
 ///
 /// Panics when `loops` is zero: every shape here nests at least one.
 #[must_use]
-pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
-    assert!(loops > 0, "a stress shape needs at least one loop");
+pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
+    assert!(loops > 0, "a nested-cycle probe needs at least one loop");
     let mut body = String::new();
     let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
@@ -68,7 +68,7 @@ pub fn stress(loops: usize, actions: usize, empty_tail: bool) -> String {
         let _ = writeln!(body, "    |step_{index}| ();");
     }
     let _ = writeln!(body, "    |step| return step;");
-    format!("#[kaalang]\nfn stress(step: usize) -> usize {{\n{body}}}\n")
+    format!("#[kaalang]\nfn nested_cycles(step: usize) -> usize {{\n{body}}}\n")
 }
 
 /// With a distributor, a middle exit cannot pass the surrounding repeats on a

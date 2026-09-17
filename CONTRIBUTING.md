@@ -119,16 +119,28 @@ committing: nothing else checks that the new diagrams still make sense.
 Gallery examples may group related flows in one `mod.rs` and share a test. Each
 flow still gets its own `<flow>.svg` beside that module.
 
+Hand-written stress fixtures live in
+`crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
+diagrams. They exercise heavy combinations of language features and receive the
+stress-fixture tier of the corpus budgets.
+
 ## Performance budgets
 
 Each crate bounds the stages it owns: `kaalang-compiler` for analysis, topology
-construction and lowering to Rust, `kaalang-svg` for rendering. They share one
-corpus, one set of generated stress shapes, and one statistic through
-`kaalang-testing`. Keep them sharing it: a budget stated over its own corpus or
-its own statistic stops comparing with the others.
+construction and lowering to Rust, `kaalang-svg` for rendering. They share
+fixture sources and generated probes through `kaalang-testing`. Their fixture
+corpus budgets also use one performance harness, which owns warm-up,
+measurement, summary statistics, and aggregate and per-item budget checks. Keep
+them sharing these inputs: a budget stated over its own corpus, probes, or
+statistic stops comparing with the others.
 
-The corpus is the flows the fixtures above already declare, read as text, so it
-grows with the language instead of being kept in step by hand.
+The fixture corpus is read from the checked-in executable examples, so it grows
+with the language instead of being kept in step by hand. Ordinary fixtures and
+stress fixtures share the aggregate corpus budgets but have separate per-item
+budgets. Compiler passes include every fixture flow once; renderer passes
+include expanded and collapsed diagrams for cycle fixtures. Each flow or diagram
+also has a per-item budget selected by its fixture tier. Generated probes sit
+outside those aggregate passes and isolate large accepted and refused shapes.
 
 The bounds are wall-clock in the unoptimized dev profile, which is the profile a
 macro expansion runs in. They are stated over a recorded median with enough

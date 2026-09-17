@@ -411,7 +411,7 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
     let mut checked = 0;
     let corpus = kaalang_testing::corpus::corpus();
     kaalang_testing::corpus::assert_whole_tree(&corpus);
-    for (name, function) in corpus {
+    for (name, function, _) in corpus {
         let Ok(model) = crate::build(&function) else {
             continue;
         };

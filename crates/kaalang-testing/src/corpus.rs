@@ -1,5 +1,5 @@
-//! Loads behavior and gallery flows from `crates/kaalang/tests`, keeping the
-//! performance corpus in sync with executable examples.
+//! Loads executable fixture flows from `crates/kaalang/tests`, keeping the
+//! performance corpus in sync with behavior tests, gallery examples, and stress fixtures.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -23,22 +23,25 @@ pub fn files() -> Vec<(PathBuf, String)> {
     files
 }
 
-/// Every flow of every fixture, ordered by name. The `method` fixtures declare
-/// theirs in `impl` and `trait` blocks, which [`kaalang_compiler::flows`] collects.
+/// Every flow of every fixture, ordered by name, with whether it belongs to the
+/// `stress` suite. The `method` fixtures declare theirs in `impl` and `trait`
+/// blocks, which [`kaalang_compiler::flows`] collects.
 ///
 /// # Panics
 ///
 /// Panics when a fixture stops parsing, as the renderer's corpus does.
 #[must_use]
-pub fn corpus() -> Vec<(String, ItemFn)> {
-    let mut flows: Vec<(String, ItemFn)> = files()
+pub fn corpus() -> Vec<(String, ItemFn, bool)> {
+    let mut flows: Vec<(String, ItemFn, bool)> = files()
         .iter()
         .flat_map(|(path, source)| {
             let file = syn::parse_file(source)
                 .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             kaalang_compiler::flows(&file.items)
+                .into_iter()
+                .map(|function| (function, is_stress(path)))
         })
-        .map(|function| (function.sig.ident.to_string(), function))
+        .map(|(function, stress)| (function.sig.ident.to_string(), function, stress))
         .collect();
     flows.sort_by(|a, b| a.0.cmp(&b.0));
     flows
@@ -73,7 +76,7 @@ fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
 /// # Panics
 ///
 /// Panics when the corpus is short or has lost a kind of flow.
-pub fn assert_whole_tree(flows: &[(String, ItemFn)]) {
+pub fn assert_whole_tree(flows: &[(String, ItemFn, bool)]) {
     assert!(
         flows.len() > 100,
         "the corpus should be the whole tree, found {}",
@@ -85,8 +88,23 @@ pub fn assert_whole_tree(flows: &[(String, ItemFn)]) {
         "doubled",
     ] {
         assert!(
-            flows.iter().any(|(name, _)| name == expected),
+            flows.iter().any(|(name, _, _)| name == expected),
             "the corpus lost {expected}"
         );
     }
+    assert!(
+        flows.iter().any(|(_, _, stress)| *stress),
+        "the fixture corpus lost its stress tier"
+    );
+}
+
+/// Whether a fixture belongs to the stress tier of the corpus.
+#[must_use]
+pub fn is_stress(path: &Path) -> bool {
+    path.ancestors().any(|directory| {
+        directory.file_name().is_some_and(|name| name == "stress")
+            && directory
+                .parent()
+                .is_some_and(|parent| parent.file_name().is_some_and(|name| name == "tests"))
+    })
 }

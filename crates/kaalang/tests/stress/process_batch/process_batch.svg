@@ -1,0 +1,574 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4740" height="7449" viewBox="0 0 4740 7449" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for process_batch</title>
+  <desc id="kaalang-description">Cycles: Process tasks until the queue ends or cancellation is requested. with inputs started, &amp;mut pending, &amp;mut report, policy, &amp;mut self and outputs stop; Retry transient failures; complete on a response, a fatal error, or exhaustion. with inputs mut responses, mut attempt_number, index, &amp;mut self and outputs processed, attempts; Parse each response part; discard the subtotal if any part is malformed. with inputs mut parts, mut subtotal, mut part_index, index, &amp;mut self and outputs checked; Audit every recorded task before returning the report. with inputs mut audit_queue, &amp;mut self and outputs (). Nodes: Start: process_batch with parameters &amp;mut self; jobs: Vec&lt;Job&gt;; policy: Policy handing over self, jobs, policy; Action: Open the batch. capturing &amp;mut self handing over started; Action: Prepare the queue and an empty report. capturing jobs handing over mut pending, mut report; Question: Has the cancellation boundary been reached? capturing policy, &amp;report handing over poll / cancelled described as branch 1: Take another task. / branch 2: Cancel the batch.; Action: Keep the cancellation reason. capturing cancelled handing over reason; Call: Iterator::next capturing poll, &amp;mut pending handing over next; Select: Is another task available? capturing next; Case: Process the task. handing over job; Case: The queue is empty. handing over finished; Action: Keep the normal completion reason. capturing finished handing over reason; Action: Record entry into this task. capturing &amp;job, &amp;report, &amp;mut self handing over index; Select: Where does the task&apos;s result come from? capturing job; Case: Use the cached value. handing over cached; Case: Sum local values. handing over local; Case: Try the scripted remote responses. handing over remote; Case: Skip this task. handing over skipped; Case: Reject this task. handing over rejected; Action: Prepare a cached value and its source. capturing cached handing over prepared, origin; Call: Sum the local values without narrowing them. capturing local handing over local_total; Action: Prepare a local value and its source. capturing local_total handing over prepared, origin; Action: Join both prepared wires before accepting the value. capturing prepared, origin, index, &amp;mut self handing over processed, attempts; Action: Prepare the remote attempt queue. capturing remote handing over responses, attempt_number; Question: Is there another scripted response? capturing &amp;responses handing over try_next / exhausted; Action: No attempt can provide a result. capturing exhausted handing over final_result; Action: Acquire a resource for this attempt. capturing try_next, &amp;mut attempt_number, index, &amp;mut self handing over _lease; Call: Read the next response. capturing try_next, &amp;mut responses handing over response; Select: Can this attempt finish the task? capturing response, &amp;responses; Case: A transient failure can be retried. handing over retry; Case: Validate the response parts. handing over payload; Case: A fatal error ends the task. handing over fatal; Case: The final attempt failed. handing over last_failure; Action: Record the retry before releasing its resource. capturing retry, index, &amp;mut self; Action: Prepare the response parts and their running total. capturing payload handing over parts, subtotal, part_index; Call: Iterator::next capturing &amp;mut parts handing over part; Select: Is another response part available? capturing part; Case: Parse this part. handing over text; Case: Every part was valid. handing over complete; Action: Accept the complete response total. capturing complete, subtotal handing over checked_result; Action: Borrow the part for parsing. capturing &amp;text handing over source; Call: str::parse::&lt;i64&gt; capturing source handing over parsed; Select: Did the part contain an integer? capturing parsed; Case: Add the parsed number. handing over number; Case: Reject the entire response. handing over invalid; Action: Accumulate the value and record its position. capturing number, &amp;mut subtotal, &amp;mut part_index, index, &amp;mut self; Action: Keep the malformed part and its position. capturing invalid, text, part_index handing over checked_result; Action: Finish validation while the attempt resource is still alive. capturing checked, index, &amp;mut self handing over final_result; Action: Keep the fatal error without retrying. capturing fatal handing over final_result; Action: The final transient error exhausted the attempts. capturing last_failure handing over final_result; Action: Join local and remote processing before recording the task. capturing processed, attempts, index, &amp;mut self handing over outcome, count; Action: Prepare a skipped outcome. capturing skipped handing over bypassed, bypass_origin; Action: Prepare a rejected outcome. capturing rejected handing over bypassed, bypass_origin; Action: Join both bypass routes before recording the task. capturing bypassed, bypass_origin, index, &amp;mut self handing over outcome, count; Call: Record exactly one outcome and schedule its audit. capturing outcome, count, &amp;mut report, &amp;mut self; Action: Attach the batch&apos;s completion reason. capturing stop, mut report handing over result; Action: Take the pending audit records. capturing &amp;mut self handing over audit_queue; Call: Iterator::next capturing &amp;mut audit_queue handing over entry; Select: Is another audit record waiting? capturing entry; Case: Audit the record. handing over record; Case: The audit queue is empty. handing over flushed; Call: Commit the audit record. capturing record, &amp;mut self; Action: Close the batch after all audits. capturing &amp;mut self; End: Report capturing result; Merge: reason; Merge: prepared, origin; Merge: processed, attempts; Merge: final_result; Merge: checked_result; Merge: outcome, count; Merge: bypassed, bypass_origin. Connections: Start: process_batch to Action: Open the batch.; Action: Open the batch. to Action: Prepare the queue and an empty report.; Action: Prepare the queue and an empty report. to the entry of the cycle; Question: Has the cancellation boundary been reached? branch 1 to Call: Iterator::next; Question: Has the cancellation boundary been reached? branch 2 to Action: Keep the cancellation reason.; Action: Keep the cancellation reason. to the reason merge at the cycle result; Call: Iterator::next to Select: Is another task available?; Select: Is another task available? to Case: Process the task.; Select: Is another task available? to Case: The queue is empty.; Case: Process the task. to Action: Record entry into this task.; Case: The queue is empty. to Action: Keep the normal completion reason.; Action: Keep the normal completion reason. to the reason merge at the cycle result; Action: Record entry into this task. to Select: Where does the task&apos;s result come from?; Select: Where does the task&apos;s result come from? to Case: Use the cached value.; Select: Where does the task&apos;s result come from? to Case: Sum local values.; Select: Where does the task&apos;s result come from? to Case: Try the scripted remote responses.; Select: Where does the task&apos;s result come from? to Case: Skip this task.; Select: Where does the task&apos;s result come from? to Case: Reject this task.; Case: Use the cached value. to Action: Prepare a cached value and its source.; Case: Sum local values. to Call: Sum the local values without narrowing them.; Case: Try the scripted remote responses. to Action: Prepare the remote attempt queue.; Case: Skip this task. to Action: Prepare a skipped outcome.; Case: Reject this task. to Action: Prepare a rejected outcome.; Action: Prepare a cached value and its source. to the prepared and origin merge; Call: Sum the local values without narrowing them. to Action: Prepare a local value and its source.; Action: Prepare a local value and its source. to the prepared and origin merge; Action: Join both prepared wires before accepting the value. to the processed and attempts merge; Action: Prepare the remote attempt queue. to the entry of the cycle; Question: Is there another scripted response? branch 1 to Action: Acquire a resource for this attempt.; Question: Is there another scripted response? branch 2 to Action: No attempt can provide a result.; Action: No attempt can provide a result. to the final_result merge at the cycle result; Action: Acquire a resource for this attempt. to Call: Read the next response.; Call: Read the next response. to Select: Can this attempt finish the task?; Select: Can this attempt finish the task? to Case: A transient failure can be retried.; Select: Can this attempt finish the task? to Case: Validate the response parts.; Select: Can this attempt finish the task? to Case: A fatal error ends the task.; Select: Can this attempt finish the task? to Case: The final attempt failed.; Case: A transient failure can be retried. to Action: Record the retry before releasing its resource.; Case: Validate the response parts. to Action: Prepare the response parts and their running total.; Case: A fatal error ends the task. to Action: Keep the fatal error without retrying.; Case: The final attempt failed. to Action: The final transient error exhausted the attempts.; Action: Record the retry before releasing its resource. to the iteration tail of the cycle; Action: Prepare the response parts and their running total. to the entry of the cycle; Call: Iterator::next to Select: Is another response part available?; Select: Is another response part available? to Case: Parse this part.; Select: Is another response part available? to Case: Every part was valid.; Case: Parse this part. to Action: Borrow the part for parsing.; Case: Every part was valid. to Action: Accept the complete response total.; Action: Accept the complete response total. to the checked_result merge at the cycle result; Action: Borrow the part for parsing. to Call: str::parse::&lt;i64&gt;; Call: str::parse::&lt;i64&gt; to Select: Did the part contain an integer?; Select: Did the part contain an integer? to Case: Add the parsed number.; Select: Did the part contain an integer? to Case: Reject the entire response.; Case: Add the parsed number. to Action: Accumulate the value and record its position.; Case: Reject the entire response. to Action: Keep the malformed part and its position.; Action: Accumulate the value and record its position. to the iteration tail of the cycle; Action: Keep the malformed part and its position. to the checked_result merge at the cycle result; Action: Finish validation while the attempt resource is still alive. to the final_result merge at the cycle result; Action: Keep the fatal error without retrying. to the final_result merge at the cycle result; Action: The final transient error exhausted the attempts. to the final_result merge at the cycle result; Action: Join local and remote processing before recording the task. to the outcome and count merge; Action: Prepare a skipped outcome. to the bypassed and bypass_origin merge; Action: Prepare a rejected outcome. to the bypassed and bypass_origin merge; Action: Join both bypass routes before recording the task. to the outcome and count merge; Call: Record exactly one outcome and schedule its audit. to the iteration tail of the cycle; Action: Attach the batch&apos;s completion reason. to Action: Take the pending audit records.; Action: Take the pending audit records. to the entry of the cycle; Call: Iterator::next to Select: Is another audit record waiting?; Select: Is another audit record waiting? to Case: Audit the record.; Select: Is another audit record waiting? to Case: The audit queue is empty.; Case: Audit the record. to Call: Commit the audit record.; Case: The audit queue is empty. to Action: Close the batch after all audits.; Call: Commit the audit record. to the iteration tail of the cycle; Action: Close the batch after all audits. to End: Report; the reason merge at the cycle result to Action: Attach the batch&apos;s completion reason.; the prepared and origin merge to Action: Join both prepared wires before accepting the value.; the processed and attempts merge to Action: Join local and remote processing before recording the task.; the final_result merge at the cycle result to the processed and attempts merge; the checked_result merge at the cycle result to Action: Finish validation while the attempt resource is still alive.; the outcome and count merge to Call: Record exactly one outcome and schedule its audit.; the bypassed and bypass_origin merge to Action: Join both bypass routes before recording the task.; the entry of the cycle to Question: Has the cancellation boundary been reached?; the entry of the cycle to Question: Is there another scripted response?; the entry of the cycle to Call: Iterator::next; the entry of the cycle to Call: Iterator::next; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Process tasks until the queue ends or cancellation is requested.</title>
+    <rect class="cycle-boundary" x="32" y="532" width="4676" height="5324" rx="12"/>
+    <text class="cycle-caption" x="4696" y="546" text-anchor="end" xml:space="preserve"><tspan x="4696" dy="0">Process tasks until the queue ends or cancellation is requested.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Retry transient failures; complete on a response, a fatal error, or exhaustion.</title>
+    <rect class="cycle-boundary" x="752" y="2092" width="2516" height="3073" rx="12"/>
+    <text class="cycle-caption" x="3256" y="2106" text-anchor="end" xml:space="preserve"><tspan x="3256" dy="0">Retry transient failures; complete on a response, a fatal error, or exhaustion.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Parse each response part; discard the subtotal if any part is malformed.</title>
+    <rect class="cycle-boundary" x="1112" y="3296" width="1076" height="1581" rx="12"/>
+    <text class="cycle-caption" x="2176" y="3310" text-anchor="end" xml:space="preserve"><tspan x="2176" dy="0">Parse each response part; discard the subtotal if any part is malformed.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Audit every recorded task before returning the report.</title>
+    <rect class="cycle-boundary" x="3992" y="6241" width="696" height="875" rx="12"/>
+    <text class="cycle-caption" x="4676" y="6255" text-anchor="end" xml:space="preserve"><tspan x="4676" dy="0">Audit every recorded task before returning the report.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 103 L 220 223
+      M 220 287 L 220 394
+      M 220 460 L 220 567
+      M 220 746 L 220 853
+      M 360 710 L 4540 710 L 4540 853
+      M 4540 917 L 4540 5821 L 4180 5821
+      M 220 917 L 220 1024
+      M 220 1096 L 220 1203
+      M 348 1060 L 4180 1060 L 4180 1203
+      M 220 1273 L 220 1381
+      M 4180 1273 L 4180 1380
+      M 4180 1446 L 4180 5821
+      M 220 1445 L 220 1553
+      M 220 1625 L 220 1738
+      M 348 1589 L 580 1589 L 580 1738
+      M 348 1589 L 940 1589 L 940 1732
+      M 348 1589 L 3460 1589 L 3460 1738
+      M 348 1589 L 3820 1589 L 3820 1738
+      M 220 1808 L 220 1921
+      M 580 1808 L 580 1921
+      M 940 1814 L 940 1921
+      M 3460 1808 L 3460 1922
+      M 3820 1808 L 3820 1922
+      M 220 1987 L 220 2303
+      M 580 1987 L 580 2094
+      M 580 2160 L 580 2303 L 220 2303
+      M 220 2512 L 220 5245
+      M 940 1987 L 940 2127
+      M 940 2339 L 940 2446
+      M 1080 2303 L 3100 2303 L 3100 2447
+      M 3100 2511 L 3100 5130 L 1660 5130
+      M 940 2512 L 940 2619
+      M 940 2683 L 940 2790
+      M 940 2862 L 940 2969
+      M 1068 2826 L 1300 2826 L 1300 2975
+      M 1068 2826 L 2380 2826 L 2380 2975
+      M 1068 2826 L 2740 2826 L 2740 2975
+      M 940 3051 L 940 3158
+      M 1300 3045 L 1300 3158
+      M 2380 3045 L 2380 3158
+      M 2740 3045 L 2740 3158
+      M 940 3224 L 940 3331
+      M 1300 3224 L 1300 3331
+      M 1300 3502 L 1300 3609
+      M 1300 3681 L 1300 3788
+      M 1428 3645 L 2020 3645 L 2020 3788
+      M 1300 3858 L 1300 3966
+      M 2020 3858 L 2020 3965
+      M 2020 4031 L 2020 4842 L 1660 4842
+      M 1300 4030 L 1300 4138
+      M 1300 4202 L 1300 4309
+      M 1300 4381 L 1300 4488
+      M 1428 4345 L 1660 4345 L 1660 4488
+      M 1300 4558 L 1300 4665
+      M 1660 4558 L 1660 4665
+      M 1300 4731 L 1300 4842
+      M 1660 4731 L 1660 4842
+      M 1660 5019 L 1660 5130
+      M 2380 3224 L 2380 5130 L 1660 5130
+      M 2740 3224 L 2740 5130 L 1660 5130
+      M 220 5422 L 220 5533
+      M 3460 1986 L 3460 2127
+      M 3820 1986 L 3820 2127 L 3460 2127
+      M 3460 2336 L 3460 5533 L 220 5533
+      M 220 5710 L 220 5821
+      M 4180 5998 L 4180 6105
+      M 4180 6169 L 4180 6276
+      M 4180 6447 L 4180 6554
+      M 4180 6626 L 4180 6733
+      M 4308 6590 L 4540 6590 L 4540 6733
+      M 4180 6803 L 4180 6910
+      M 4540 6803 L 4540 7188
+      M 4180 6974 L 4180 7081
+      M 4540 7252 L 4540 7359
+      M 4180 5821 L 4180 5932
+      M 220 2303 L 220 2446
+      M 220 5245 L 220 5356
+      M 1660 5130 L 1660 5245 L 220 5245
+      M 1660 4842 L 1660 4953
+      M 220 5533 L 220 5644
+      M 3460 2127 L 3460 2270
+      M 220 567 L 220 674
+      M 940 2127 L 940 2267
+      M 1300 3331 L 1300 3438
+      M 4180 6276 L 4180 6383
+    "/>
+    <path class="connection" d="
+      M 4180 7081 L 4020 7081 L 4020 6276 L 4180 6276
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1300 4842 L 1140 4842 L 1140 3331 L 1300 3331
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 940 3331 L 780 3331 L 780 2127 L 940 2127
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 220 5821 L 60 5821 L 60 567 L 220 567
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="4193" y="5839" xml:space="preserve"><tspan x="4193" dy="0">reason</tspan></text>
+    <text class="connection-label" x="233" y="2321" xml:space="preserve"><tspan x="233" dy="0">prepared, origin</tspan></text>
+    <text class="connection-label" x="1673" y="5148" xml:space="preserve"><tspan x="1673" dy="0">final_result</tspan></text>
+    <text class="connection-label" x="1673" y="4860" xml:space="preserve"><tspan x="1673" dy="0">checked_result</tspan></text>
+    <text class="connection-label" x="233" y="5551" xml:space="preserve"><tspan x="233" dy="0">outcome, count</tspan></text>
+    <text class="connection-label" x="3473" y="2145" xml:space="preserve"><tspan x="3473" dy="0">bypassed, bypass_origin</tspan></text>
+    <text class="connection-label" x="233" y="1013" xml:space="preserve"><tspan x="233" dy="0">next</tspan></text>
+    <text class="connection-label" x="4193" y="1369" xml:space="preserve"><tspan x="4193" dy="0">finished</tspan></text>
+    <text class="connection-label" x="233" y="1910" xml:space="preserve"><tspan x="233" dy="0">cached</tspan></text>
+    <text class="connection-label" x="593" y="1910" xml:space="preserve"><tspan x="593" dy="0">local</tspan></text>
+    <text class="connection-label" x="953" y="1910" xml:space="preserve"><tspan x="953" dy="0">remote</tspan></text>
+    <text class="connection-label" x="3473" y="1911" xml:space="preserve"><tspan x="3473" dy="0">skipped</tspan></text>
+    <text class="connection-label" x="3833" y="1911" xml:space="preserve"><tspan x="3833" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="593" y="2083" xml:space="preserve"><tspan x="593" dy="0">local_total</tspan></text>
+    <text class="connection-label" x="3113" y="2436" xml:space="preserve"><tspan x="3113" dy="0">exhausted</tspan></text>
+    <text class="connection-label" x="1313" y="3147" xml:space="preserve"><tspan x="1313" dy="0">payload</tspan></text>
+    <text class="connection-label" x="2393" y="3147" xml:space="preserve"><tspan x="2393" dy="0">fatal</tspan></text>
+    <text class="connection-label" x="2753" y="3147" xml:space="preserve"><tspan x="2753" dy="0">last_failure</tspan></text>
+    <text class="connection-label" x="1313" y="3598" xml:space="preserve"><tspan x="1313" dy="0">part</tspan></text>
+    <text class="connection-label" x="1313" y="4127" xml:space="preserve"><tspan x="1313" dy="0">source</tspan></text>
+    <text class="connection-label" x="1313" y="4298" xml:space="preserve"><tspan x="1313" dy="0">parsed</tspan></text>
+    <text class="connection-label" x="4193" y="6543" xml:space="preserve"><tspan x="4193" dy="0">entry</tspan></text>
+    <text class="connection-label" x="233" y="121" xml:space="preserve"><tspan x="233" dy="0">self, jobs, policy</tspan></text>
+    <text class="connection-label" x="233" y="305" xml:space="preserve"><tspan x="233" dy="0">started</tspan></text>
+    <text class="connection-label" x="233" y="478" xml:space="preserve"><tspan x="233" dy="0">mut pending, mut report</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="233" y="766" xml:space="preserve"><tspan x="233" dy="0">Take another task.</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="373" y="698" xml:space="preserve"><tspan x="373" dy="0">Cancel the batch.</tspan></text>
+    <text class="connection-label" x="233" y="1291" xml:space="preserve"><tspan x="233" dy="0">job</tspan></text>
+    <text class="connection-label" x="233" y="1463" xml:space="preserve"><tspan x="233" dy="0">index</tspan></text>
+    <text class="connection-label" x="233" y="2530" xml:space="preserve"><tspan x="233" dy="0">processed, attempts</tspan></text>
+    <text class="connection-label" x="953" y="2005" xml:space="preserve"><tspan x="953" dy="0">responses, attempt_number</tspan></text>
+    <text class="connection-label" x="953" y="2357" xml:space="preserve"><tspan x="953" dy="0">try_next</tspan></text>
+    <text class="connection-label" x="953" y="2530" xml:space="preserve"><tspan x="953" dy="0">_lease</tspan></text>
+    <text class="connection-label" x="953" y="2701" xml:space="preserve"><tspan x="953" dy="0">response</tspan></text>
+    <text class="connection-label" x="953" y="3069" xml:space="preserve"><tspan x="953" dy="0">retry</tspan></text>
+    <text class="connection-label" x="1313" y="3242" xml:space="preserve"><tspan x="1313" dy="0">parts, subtotal, part_index</tspan></text>
+    <text class="connection-label" x="1313" y="3876" xml:space="preserve"><tspan x="1313" dy="0">text</tspan></text>
+    <text class="connection-label" x="2033" y="3876" xml:space="preserve"><tspan x="2033" dy="0">complete</tspan></text>
+    <text class="connection-label" x="1313" y="4576" xml:space="preserve"><tspan x="1313" dy="0">number</tspan></text>
+    <text class="connection-label" x="1673" y="4576" xml:space="preserve"><tspan x="1673" dy="0">invalid</tspan></text>
+    <text class="connection-label" x="4193" y="6016" xml:space="preserve"><tspan x="4193" dy="0">result</tspan></text>
+    <text class="connection-label" x="4193" y="6187" xml:space="preserve"><tspan x="4193" dy="0">audit_queue</tspan></text>
+    <text class="connection-label" x="4193" y="6821" xml:space="preserve"><tspan x="4193" dy="0">record</tspan></text>
+    <text class="connection-label" x="4553" y="6821" xml:space="preserve"><tspan x="4553" dy="0">flushed</tspan></text>
+    <text class="connection-label" x="233" y="212" xml:space="preserve"><tspan x="233" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="233" y="383" xml:space="preserve"><tspan x="233" dy="0">jobs</tspan></text>
+    <text class="connection-label" x="233" y="663" xml:space="preserve"><tspan x="233" dy="0">policy, &amp;report</tspan></text>
+    <text class="connection-label" x="233" y="842" xml:space="preserve"><tspan x="233" dy="0">poll, &amp;mut pending</tspan></text>
+    <text class="connection-label" x="233" y="1370" xml:space="preserve"><tspan x="233" dy="0">&amp;job, &amp;report, &amp;mut self</tspan></text>
+    <text class="connection-label" x="233" y="1542" xml:space="preserve"><tspan x="233" dy="0">job</tspan></text>
+    <text class="connection-label" x="233" y="2421" xml:space="preserve"><tspan x="233" dy="0">prepared, origin, index, &amp;mut </tspan><tspan x="233" dy="14">self</tspan></text>
+    <text class="connection-label" x="953" y="2256" xml:space="preserve"><tspan x="953" dy="0">&amp;responses</tspan></text>
+    <text class="connection-label" x="953" y="2407" xml:space="preserve"><tspan x="953" dy="0">try_next, &amp;mut </tspan><tspan x="953" dy="14">attempt_number, index, &amp;mut </tspan><tspan x="953" dy="14">self</tspan></text>
+    <text class="connection-label" x="953" y="2608" xml:space="preserve"><tspan x="953" dy="0">try_next, &amp;mut responses</tspan></text>
+    <text class="connection-label" x="953" y="2779" xml:space="preserve"><tspan x="953" dy="0">response, &amp;responses</tspan></text>
+    <text class="connection-label" x="953" y="3147" xml:space="preserve"><tspan x="953" dy="0">retry, index, &amp;mut self</tspan></text>
+    <text class="connection-label" x="1313" y="3427" xml:space="preserve"><tspan x="1313" dy="0">&amp;mut parts</tspan></text>
+    <text class="connection-label" x="2033" y="3954" xml:space="preserve"><tspan x="2033" dy="0">complete, subtotal</tspan></text>
+    <text class="connection-label" x="1313" y="3955" xml:space="preserve"><tspan x="1313" dy="0">&amp;text</tspan></text>
+    <text class="connection-label" x="1313" y="4640" xml:space="preserve"><tspan x="1313" dy="0">number, &amp;mut subtotal, &amp;mut </tspan><tspan x="1313" dy="14">part_index, index, &amp;mut self</tspan></text>
+    <text class="connection-label" x="1673" y="4654" xml:space="preserve"><tspan x="1673" dy="0">invalid, text, part_index</tspan></text>
+    <text class="connection-label" x="1673" y="4942" xml:space="preserve"><tspan x="1673" dy="0">checked, index, &amp;mut self</tspan></text>
+    <text class="connection-label" x="233" y="5331" xml:space="preserve"><tspan x="233" dy="0">processed, attempts, index, </tspan><tspan x="233" dy="14">&amp;mut self</tspan></text>
+    <text class="connection-label" x="3473" y="2245" xml:space="preserve"><tspan x="3473" dy="0">bypassed, bypass_origin, index, </tspan><tspan x="3473" dy="14">&amp;mut self</tspan></text>
+    <text class="connection-label" x="233" y="5619" xml:space="preserve"><tspan x="233" dy="0">outcome, count, &amp;mut report, </tspan><tspan x="233" dy="14">&amp;mut self</tspan></text>
+    <text class="connection-label" x="4193" y="5921" xml:space="preserve"><tspan x="4193" dy="0">stop, mut report</tspan></text>
+    <text class="connection-label" x="4193" y="6094" xml:space="preserve"><tspan x="4193" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="4193" y="6372" xml:space="preserve"><tspan x="4193" dy="0">&amp;mut audit_queue</tspan></text>
+    <text class="connection-label" x="4193" y="6899" xml:space="preserve"><tspan x="4193" dy="0">record, &amp;mut self</tspan></text>
+    <text class="connection-label" x="4553" y="7177" xml:space="preserve"><tspan x="4553" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="4553" y="7348" xml:space="preserve"><tspan x="4553" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 74 L 456 74"/>
+    <g class="parameter-panel" transform="translate(576 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">&amp;mut self</tspan><tspan x="-104" dy="18">jobs: Vec&lt;Job&gt;</tspan><tspan x="-104" dy="18">policy: Policy</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(4180 5821)">
+      <title xml:space="preserve">the reason merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(220 2303)">
+      <title xml:space="preserve">the prepared and origin merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(220 5245)">
+      <title xml:space="preserve">the processed and attempts merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(1660 5130)">
+      <title xml:space="preserve">the final_result merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(1660 4842)">
+      <title xml:space="preserve">the checked_result merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(220 5533)">
+      <title xml:space="preserve">the outcome and count merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(3460 2127)">
+      <title xml:space="preserve">the bypassed and bypass_origin merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">process_batch</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 255)">
+      <title xml:space="preserve">Open the batch.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the batch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 427)">
+      <title xml:space="preserve">Prepare the queue and an empty report.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare the queue and an empty </tspan><tspan x="-124" dy="18">report.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 710)">
+      <title xml:space="preserve">Has the cancellation boundary been reached?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the cancellation </tspan><tspan x="0" dy="18">boundary been reached?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(4540 885)">
+      <title xml:space="preserve">Keep the cancellation reason.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the cancellation reason.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(220 885)">
+      <title xml:space="preserve">Iterator::next</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Iterator::next</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 1060)">
+      <title xml:space="preserve">Is another task available?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is another task available?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 1238)">
+      <title xml:space="preserve">Process the task.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Process the task.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(4180 1238)">
+      <title xml:space="preserve">The queue is empty.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The queue is empty.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(4180 1413)">
+      <title xml:space="preserve">Keep the normal completion reason.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Keep the normal completion </tspan><tspan x="-124" dy="18">reason.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 1413)">
+      <title xml:space="preserve">Record entry into this task.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record entry into this task.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 1589)">
+      <title xml:space="preserve">Where does the task&apos;s result come from?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Where does the task&apos;s </tspan><tspan x="0" dy="18">result come from?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 1773)">
+      <title xml:space="preserve">Use the cached value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the cached value.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 1773)">
+      <title xml:space="preserve">Sum local values.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Sum local values.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 1773)">
+      <title xml:space="preserve">Try the scripted remote responses.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Try the scripted remote </tspan><tspan x="0" dy="18">responses.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(3460 1773)">
+      <title xml:space="preserve">Skip this task.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Skip this task.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(3820 1773)">
+      <title xml:space="preserve">Reject this task.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Reject this task.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 1954)">
+      <title xml:space="preserve">Prepare a cached value and its source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare a cached value and its </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(580 1954)">
+      <title xml:space="preserve">Sum the local values without narrowing them.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-112" dy="0">Sum the local values without </tspan><tspan x="-112" dy="18">narrowing them.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 2127)">
+      <title xml:space="preserve">Prepare a local value and its source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare a local value and its </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 2479)">
+      <title xml:space="preserve">Join both prepared wires before accepting the value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Join both prepared wires before </tspan><tspan x="-124" dy="18">accepting the value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 1954)">
+      <title xml:space="preserve">Prepare the remote attempt queue.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare the remote attempt </tspan><tspan x="-124" dy="18">queue.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(940 2303)">
+      <title xml:space="preserve">Is there another scripted response?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is there another scripted </tspan><tspan x="0" dy="18">response?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(3100 2479)">
+      <title xml:space="preserve">No attempt can provide a result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">No attempt can provide a result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 2479)">
+      <title xml:space="preserve">Acquire a resource for this attempt.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Acquire a resource for this </tspan><tspan x="-124" dy="18">attempt.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 2651)">
+      <title xml:space="preserve">Read the next response.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Read the next response.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(940 2826)">
+      <title xml:space="preserve">Can this attempt finish the task?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Can this attempt finish the </tspan><tspan x="0" dy="18">task?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 3010)">
+      <title xml:space="preserve">A transient failure can be retried.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">A transient failure can be </tspan><tspan x="0" dy="18">retried.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 3010)">
+      <title xml:space="preserve">Validate the response parts.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Validate the response parts.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(2380 3010)">
+      <title xml:space="preserve">A fatal error ends the task.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A fatal error ends the task.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(2740 3010)">
+      <title xml:space="preserve">The final attempt failed.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The final attempt failed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 3191)">
+      <title xml:space="preserve">Record the retry before releasing its resource.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record the retry before releasing </tspan><tspan x="-124" dy="18">its resource.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 3191)">
+      <title xml:space="preserve">Prepare the response parts and their running total.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare the response parts and </tspan><tspan x="-124" dy="18">their running total.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 3470)">
+      <title xml:space="preserve">Iterator::next</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Iterator::next</tspan></text>
+    </g>
+    <g class="node select" transform="translate(1300 3645)">
+      <title xml:space="preserve">Is another response part available?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is another response part </tspan><tspan x="0" dy="18">available?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 3823)">
+      <title xml:space="preserve">Parse this part.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Parse this part.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(2020 3823)">
+      <title xml:space="preserve">Every part was valid.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Every part was valid.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(2020 3998)">
+      <title xml:space="preserve">Accept the complete response total.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Accept the complete response </tspan><tspan x="-124" dy="18">total.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 3998)">
+      <title xml:space="preserve">Borrow the part for parsing.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the part for parsing.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 4170)">
+      <title xml:space="preserve">str::parse::&lt;i64&gt;</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">str::parse::&lt;i64&gt;</tspan></text>
+    </g>
+    <g class="node select" transform="translate(1300 4345)">
+      <title xml:space="preserve">Did the part contain an integer?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Did the part contain an </tspan><tspan x="0" dy="18">integer?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 4523)">
+      <title xml:space="preserve">Add the parsed number.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Add the parsed number.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1660 4523)">
+      <title xml:space="preserve">Reject the entire response.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Reject the entire response.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 4698)">
+      <title xml:space="preserve">Accumulate the value and record its position.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Accumulate the value and record </tspan><tspan x="-124" dy="18">its position.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1660 4698)">
+      <title xml:space="preserve">Keep the malformed part and its position.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Keep the malformed part and its </tspan><tspan x="-124" dy="18">position.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1660 4986)">
+      <title xml:space="preserve">Finish validation while the attempt resource is still alive.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish validation while the </tspan><tspan x="-124" dy="18">attempt resource is still alive.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(2380 3191)">
+      <title xml:space="preserve">Keep the fatal error without retrying.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Keep the fatal error without </tspan><tspan x="-124" dy="18">retrying.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(2740 3191)">
+      <title xml:space="preserve">The final transient error exhausted the attempts.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">The final transient error </tspan><tspan x="-124" dy="18">exhausted the attempts.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 5389)">
+      <title xml:space="preserve">Join local and remote processing before recording the task.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Join local and remote processing </tspan><tspan x="-124" dy="18">before recording the task.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(3460 1954)">
+      <title xml:space="preserve">Prepare a skipped outcome.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare a skipped outcome.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(3820 1954)">
+      <title xml:space="preserve">Prepare a rejected outcome.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare a rejected outcome.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(3460 2303)">
+      <title xml:space="preserve">Join both bypass routes before recording the task.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Join both bypass routes before </tspan><tspan x="-124" dy="18">recording the task.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(220 5677)">
+      <title xml:space="preserve">Record exactly one outcome and schedule its audit.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-112" dy="0">Record exactly one outcome </tspan><tspan x="-112" dy="18">and schedule its audit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(4180 5965)">
+      <title xml:space="preserve">Attach the batch&apos;s completion reason.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Attach the batch&apos;s completion </tspan><tspan x="-124" dy="18">reason.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(4180 6137)">
+      <title xml:space="preserve">Take the pending audit records.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the pending audit records.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(4180 6415)">
+      <title xml:space="preserve">Iterator::next</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Iterator::next</tspan></text>
+    </g>
+    <g class="node select" transform="translate(4180 6590)">
+      <title xml:space="preserve">Is another audit record waiting?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is another audit record </tspan><tspan x="0" dy="18">waiting?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(4180 6768)">
+      <title xml:space="preserve">Audit the record.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Audit the record.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(4540 6768)">
+      <title xml:space="preserve">The audit queue is empty.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The audit queue is empty.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(4180 6942)">
+      <title xml:space="preserve">Commit the audit record.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Commit the audit record.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(4540 7220)">
+      <title xml:space="preserve">Close the batch after all audits.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the batch after all audits.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(4540 7388)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Report</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -1,7 +1,7 @@
-//! Draws every behavior fixture beside its source, so a change to the model or
+//! Draws every executable fixture beside its source, so a change to the model or
 //! the renderer shows up as a diagram diff instead of staying invisible.
 //!
-//! Geometry is reviewed in `git diff`. Every behavior fixture must render;
+//! Geometry is reviewed in `git diff`. Every executable fixture must render;
 //! a routing failure cannot silently delete a working diagram.
 
 use std::{
@@ -10,7 +10,7 @@ use std::{
 };
 
 #[test]
-fn draws_a_diagram_beside_every_behavior_fixture() {
+fn draws_a_diagram_beside_every_executable_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
@@ -80,7 +80,7 @@ fn draws_a_diagram_beside_every_behavior_fixture() {
         }
     }
 
-    assert!(drawn > 0, "no behavior fixture was found under {tests:?}");
+    assert!(drawn > 0, "no executable fixture was found under {tests:?}");
 }
 
 /// Every module directory inside a test suite. `compile_fail` fixtures are
@@ -106,7 +106,7 @@ fn extension_is(path: &Path, extension: &str) -> bool {
     path.extension().is_some_and(|found| found == extension)
 }
 
-/// Every behavior fixture is declared by the `mod.rs` beside it, and every one
+/// Every executable fixture is declared by the `mod.rs` beside it, and every one
 /// that can finish carries a test of its own.
 ///
 /// `render_source` reads the file rather than the module tree, so a fixture
@@ -115,7 +115,7 @@ fn extension_is(path: &Path, extension: &str) -> bool {
 /// would not return — so those are exempt from the second half and from
 /// nothing else.
 #[test]
-fn every_behavior_fixture_is_declared_and_executed() {
+fn every_executable_fixture_is_declared_and_executed() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut checked = 0;
     for directory in fixture_directories(&tests) {

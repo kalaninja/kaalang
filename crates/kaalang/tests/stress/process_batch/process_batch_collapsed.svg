@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1312" viewBox="0 0 680 1312" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for process_batch</title>
+  <desc id="kaalang-description">Nodes: Start: process_batch with parameters &amp;mut self; jobs: Vec&lt;Job&gt;; policy: Policy handing over self, jobs, policy; Action: Open the batch. capturing &amp;mut self handing over started; Action: Prepare the queue and an empty report. capturing jobs handing over mut pending, mut report; Cycle: Process tasks until the queue ends or cancellation is requested. capturing started, &amp;mut pending, &amp;mut report, policy, &amp;mut self handing over stop; Action: Attach the batch&apos;s completion reason. capturing stop, mut report handing over result; Action: Take the pending audit records. capturing &amp;mut self handing over audit_queue; Cycle: Audit every recorded task before returning the report. capturing mut audit_queue, &amp;mut self; Action: Close the batch after all audits. capturing &amp;mut self; End: Report capturing result. Connections: Start: process_batch to Action: Open the batch.; Action: Open the batch. to Action: Prepare the queue and an empty report.; Action: Prepare the queue and an empty report. to Cycle: Process tasks until the queue ends or cancellation is requested.; Cycle: Process tasks until the queue ends or cancellation is requested. to Action: Attach the batch&apos;s completion reason.; Action: Attach the batch&apos;s completion reason. to Action: Take the pending audit records.; Action: Take the pending audit records. to Cycle: Audit every recorded task before returning the report.; Cycle: Audit every recorded task before returning the report. to Action: Close the batch after all audits.; Action: Close the batch after all audits. to End: Report.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 103 L 172 195
+      M 172 259 L 172 338
+      M 172 404 L 172 483
+      M 172 567 L 172 646
+      M 172 712 L 172 791
+      M 172 855 L 172 934
+      M 172 1000 L 172 1079
+      M 172 1143 L 172 1222
+    "/>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">self, jobs, policy</tspan></text>
+    <text class="connection-label" x="185" y="277" xml:space="preserve"><tspan x="185" dy="0">started</tspan></text>
+    <text class="connection-label" x="185" y="422" xml:space="preserve"><tspan x="185" dy="0">mut pending, mut report</tspan></text>
+    <text class="connection-label" x="185" y="585" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
+    <text class="connection-label" x="185" y="730" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="873" xml:space="preserve"><tspan x="185" dy="0">audit_queue</tspan></text>
+    <text class="connection-label" x="185" y="184" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="327" xml:space="preserve"><tspan x="185" dy="0">jobs</tspan></text>
+    <text class="connection-label" x="185" y="458" xml:space="preserve"><tspan x="185" dy="0">started, &amp;mut pending, &amp;mut </tspan><tspan x="185" dy="14">report, policy, &amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="635" xml:space="preserve"><tspan x="185" dy="0">stop, mut report</tspan></text>
+    <text class="connection-label" x="185" y="780" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="923" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue, &amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="1068" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="1211" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">&amp;mut self</tspan><tspan x="-104" dy="18">jobs: Vec&lt;Job&gt;</tspan><tspan x="-104" dy="18">policy: Policy</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">process_batch</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 227)">
+      <title xml:space="preserve">Open the batch.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the batch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 371)">
+      <title xml:space="preserve">Prepare the queue and an empty report.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare the queue and an empty </tspan><tspan x="-124" dy="18">report.</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 525)">
+      <title xml:space="preserve">Process tasks until the queue ends or cancellation is requested.</title>
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="8"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">Process tasks until the queue </tspan><tspan x="-124" dy="18">ends or cancellation is </tspan><tspan x="-124" dy="18">requested.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 679)">
+      <title xml:space="preserve">Attach the batch&apos;s completion reason.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Attach the batch&apos;s completion </tspan><tspan x="-124" dy="18">reason.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 823)">
+      <title xml:space="preserve">Take the pending audit records.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the pending audit records.</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 967)">
+      <title xml:space="preserve">Audit every recorded task before returning the report.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Audit every recorded task </tspan><tspan x="-124" dy="18">before returning the report.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 1111)">
+      <title xml:space="preserve">Close the batch after all audits.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the batch after all audits.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1251)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Report</tspan></text>
+    </g>
+  </g>
+</svg>
