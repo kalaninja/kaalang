@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="840" height="999" viewBox="0 0 840 999" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="957" viewBox="0 0 840 957" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for middle_exit</title>
   <desc id="kaalang-description">Cycles: Record iterations through the requested limit. with inputs limit, mut initial_count, mut initial_log and outputs result_log. Nodes: Start: middle_exit with parameters limit: usize handing over limit; Action: Initialize the counter and log. capturing nothing handing over initial_count, initial_log; Action: Record the start of the iteration. capturing &amp;initial_count, &amp;mut initial_log; Question: Stop before advancing? capturing &amp;initial_count, limit handing over done / again; Action: Advance and record the rest of the iteration. capturing again, &amp;mut initial_count, &amp;mut initial_log; End: Vec&lt;usize&gt; capturing result_log. Connections: Start: middle_exit to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the cycle; Action: Record the start of the iteration. to Question: Stop before advancing?; Question: Stop before advancing? branch 1 to End: Vec&lt;usize&gt;; Question: Stop before advancing? branch 2 to Action: Advance and record the rest of the iteration.; Action: Advance and record the rest of the iteration. to the iteration tail of the cycle; the entry of the cycle to Action: Record the start of the iteration.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -28,33 +28,33 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Record iterations through the requested limit.</title>
-    <rect class="cycle-boundary" x="32" y="277" width="776" height="588" rx="12"/>
-    <text class="cycle-caption" x="796" y="291" text-anchor="end" xml:space="preserve"><tspan x="796" dy="0">Record iterations through the requested limit.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="263" width="776" height="567" rx="12"/>
+    <text class="cycle-caption" x="796" y="277" text-anchor="end" xml:space="preserve"><tspan x="796" dy="0">Record iterations through the requested limit.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 200 90 L 200 169
-      M 200 233 L 200 312
-      M 200 455 L 200 534
-      M 200 606 L 200 909
-      M 340 570 L 560 570 L 560 685
-      M 560 751 L 560 830
-      M 200 312 L 200 391
+      M 200 90 L 200 162
+      M 200 226 L 200 298
+      M 200 434 L 200 506
+      M 200 578 L 200 867
+      M 340 542 L 560 542 L 560 657
+      M 560 723 L 560 795
+      M 200 298 L 200 370
     "/>
     <path class="connection" d="
-      M 560 830 L 780 830 L 780 312 L 200 312
+      M 560 795 L 780 795 L 780 298 L 200 298
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">limit</tspan></text>
-    <text class="connection-label" x="213" y="251" xml:space="preserve"><tspan x="213" dy="0">initial_count, initial_log</tspan></text>
-    <text class="connection-label" x="213" y="624" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
-    <text class="connection-label" x="353" y="588" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="213" y="158" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
-    <text class="connection-label" x="213" y="380" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, &amp;mut initial_log</tspan></text>
-    <text class="connection-label" x="213" y="523" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, limit</tspan></text>
-    <text class="connection-label" x="573" y="660" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut initial_count, &amp;mut </tspan><tspan x="573" dy="14">initial_log</tspan></text>
-    <text class="connection-label" x="213" y="898" xml:space="preserve"><tspan x="213" dy="0">result_log</tspan></text>
+    <text class="connection-label" x="213" y="244" xml:space="preserve"><tspan x="213" dy="0">initial_count, initial_log</tspan></text>
+    <text class="connection-label" x="213" y="596" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
+    <text class="connection-label" x="353" y="560" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="359" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, &amp;mut initial_log</tspan></text>
+    <text class="connection-label" x="213" y="495" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, limit</tspan></text>
+    <text class="connection-label" x="573" y="632" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut initial_count, &amp;mut </tspan><tspan x="573" dy="14">initial_log</tspan></text>
+    <text class="connection-label" x="213" y="856" xml:space="preserve"><tspan x="213" dy="0">result_log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -66,27 +66,27 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">middle_exit</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 201)">
+    <g class="node action" transform="translate(200 194)">
       <title xml:space="preserve">Initialize the counter and log.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter and log.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 423)">
+    <g class="node action" transform="translate(200 402)">
       <title xml:space="preserve">Record the start of the iteration.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record the start of the iteration.</tspan></text>
     </g>
-    <g class="node question" transform="translate(200 570)">
+    <g class="node question" transform="translate(200 542)">
       <title xml:space="preserve">Stop before advancing?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stop before advancing?</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 718)">
+    <g class="node action" transform="translate(560 690)">
       <title xml:space="preserve">Advance and record the rest of the iteration.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Advance and record the rest of </tspan><tspan x="-124" dy="18">the iteration.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 938)">
+    <g class="node end" transform="translate(200 896)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
     </g>

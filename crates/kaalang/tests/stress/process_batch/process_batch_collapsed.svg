@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1312" viewBox="0 0 680 1312" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1263" viewBox="0 0 680 1263" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for process_batch</title>
   <desc id="kaalang-description">Nodes: Start: process_batch with parameters &amp;mut self; jobs: Vec&lt;Job&gt;; policy: Policy handing over self, jobs, policy; Action: Open the batch. capturing &amp;mut self handing over started; Action: Prepare the queue and an empty report. capturing jobs handing over mut pending, mut report; Cycle: Process tasks until the queue ends or cancellation is requested. capturing started, &amp;mut pending, &amp;mut report, policy, &amp;mut self handing over stop; Action: Attach the batch&apos;s completion reason. capturing stop, mut report handing over result; Action: Take the pending audit records. capturing &amp;mut self handing over audit_queue; Cycle: Audit every recorded task before returning the report. capturing mut audit_queue, &amp;mut self; Action: Close the batch after all audits. capturing &amp;mut self; End: Report capturing result. Connections: Start: process_batch to Action: Open the batch.; Action: Open the batch. to Action: Prepare the queue and an empty report.; Action: Prepare the queue and an empty report. to Cycle: Process tasks until the queue ends or cancellation is requested.; Cycle: Process tasks until the queue ends or cancellation is requested. to Action: Attach the batch&apos;s completion reason.; Action: Attach the batch&apos;s completion reason. to Action: Take the pending audit records.; Action: Take the pending audit records. to Cycle: Audit every recorded task before returning the report.; Cycle: Audit every recorded task before returning the report. to Action: Close the batch after all audits.; Action: Close the batch after all audits. to End: Report.</desc>
   <defs>
@@ -29,29 +29,29 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 103 L 172 195
-      M 172 259 L 172 338
-      M 172 404 L 172 483
-      M 172 567 L 172 646
-      M 172 712 L 172 791
-      M 172 855 L 172 934
-      M 172 1000 L 172 1079
-      M 172 1143 L 172 1222
+      M 172 103 L 172 188
+      M 172 252 L 172 324
+      M 172 390 L 172 469
+      M 172 553 L 172 625
+      M 172 691 L 172 763
+      M 172 827 L 172 899
+      M 172 965 L 172 1037
+      M 172 1101 L 172 1173
     "/>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">self, jobs, policy</tspan></text>
-    <text class="connection-label" x="185" y="277" xml:space="preserve"><tspan x="185" dy="0">started</tspan></text>
-    <text class="connection-label" x="185" y="422" xml:space="preserve"><tspan x="185" dy="0">mut pending, mut report</tspan></text>
-    <text class="connection-label" x="185" y="585" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
-    <text class="connection-label" x="185" y="730" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="873" xml:space="preserve"><tspan x="185" dy="0">audit_queue</tspan></text>
-    <text class="connection-label" x="185" y="184" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="327" xml:space="preserve"><tspan x="185" dy="0">jobs</tspan></text>
-    <text class="connection-label" x="185" y="458" xml:space="preserve"><tspan x="185" dy="0">started, &amp;mut pending, &amp;mut </tspan><tspan x="185" dy="14">report, policy, &amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="635" xml:space="preserve"><tspan x="185" dy="0">stop, mut report</tspan></text>
-    <text class="connection-label" x="185" y="780" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="923" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue, &amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="1068" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="1211" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">started</tspan></text>
+    <text class="connection-label" x="185" y="408" xml:space="preserve"><tspan x="185" dy="0">mut pending, mut report</tspan></text>
+    <text class="connection-label" x="185" y="571" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
+    <text class="connection-label" x="185" y="709" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="845" xml:space="preserve"><tspan x="185" dy="0">audit_queue</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">jobs</tspan></text>
+    <text class="connection-label" x="185" y="444" xml:space="preserve"><tspan x="185" dy="0">started, &amp;mut pending, &amp;mut </tspan><tspan x="185" dy="14">report, policy, &amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">stop, mut report</tspan></text>
+    <text class="connection-label" x="185" y="752" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="888" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue, &amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="1026" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label" x="185" y="1162" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
@@ -63,44 +63,44 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">process_batch</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 227)">
+    <g class="node action" transform="translate(172 220)">
       <title xml:space="preserve">Open the batch.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Open the batch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 371)">
+    <g class="node action" transform="translate(172 357)">
       <title xml:space="preserve">Prepare the queue and an empty report.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Prepare the queue and an empty </tspan><tspan x="-124" dy="18">report.</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 525)">
+    <g class="node loop" transform="translate(172 511)">
       <title xml:space="preserve">Process tasks until the queue ends or cancellation is requested.</title>
       <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="8"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">Process tasks until the queue </tspan><tspan x="-124" dy="18">ends or cancellation is </tspan><tspan x="-124" dy="18">requested.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node action" transform="translate(172 679)">
+    <g class="node action" transform="translate(172 658)">
       <title xml:space="preserve">Attach the batch&apos;s completion reason.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Attach the batch&apos;s completion </tspan><tspan x="-124" dy="18">reason.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 823)">
+    <g class="node action" transform="translate(172 795)">
       <title xml:space="preserve">Take the pending audit records.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the pending audit records.</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 967)">
+    <g class="node loop" transform="translate(172 932)">
       <title xml:space="preserve">Audit every recorded task before returning the report.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Audit every recorded task </tspan><tspan x="-124" dy="18">before returning the report.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node action" transform="translate(172 1111)">
+    <g class="node action" transform="translate(172 1069)">
       <title xml:space="preserve">Close the batch after all audits.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Close the batch after all audits.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1251)">
+    <g class="node end" transform="translate(172 1202)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Report</tspan></text>
     </g>

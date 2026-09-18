@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="547" viewBox="0 0 680 547" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="533" viewBox="0 0 680 533" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for middle_exit</title>
   <desc id="kaalang-description">Nodes: Start: middle_exit with parameters limit: usize handing over limit; Action: Initialize the counter and log. capturing nothing handing over initial_count, initial_log; Cycle: Record iterations through the requested limit. capturing limit, mut initial_count, mut initial_log handing over result_log; End: Vec&lt;usize&gt; capturing result_log. Connections: Start: middle_exit to Action: Initialize the counter and log.; Action: Initialize the counter and log. to Cycle: Record iterations through the requested limit.; Cycle: Record iterations through the requested limit. to End: Vec&lt;usize&gt;.</desc>
   <defs>
@@ -29,15 +29,15 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 169
-      M 172 233 L 172 312
-      M 172 378 L 172 457
+      M 172 90 L 172 162
+      M 172 226 L 172 305
+      M 172 371 L 172 443
     "/>
-    <text class="connection-label" x="185" y="446" xml:space="preserve"><tspan x="185" dy="0">result_log</tspan></text>
+    <text class="connection-label" x="185" y="432" xml:space="preserve"><tspan x="185" dy="0">result_log</tspan></text>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">limit</tspan></text>
-    <text class="connection-label" x="185" y="251" xml:space="preserve"><tspan x="185" dy="0">initial_count, initial_log</tspan></text>
-    <text class="connection-label" x="185" y="158" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">limit, mut initial_count, mut </tspan><tspan x="185" dy="14">initial_log</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">initial_count, initial_log</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">limit, mut initial_count, mut </tspan><tspan x="185" dy="14">initial_log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -49,18 +49,18 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">middle_exit</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 201)">
+    <g class="node action" transform="translate(172 194)">
       <title xml:space="preserve">Initialize the counter and log.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter and log.</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 345)">
+    <g class="node loop" transform="translate(172 338)">
       <title xml:space="preserve">Record iterations through the requested limit.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record iterations through the </tspan><tspan x="-124" dy="18">requested limit.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node end" transform="translate(172 486)">
+    <g class="node end" transform="translate(172 472)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
     </g>

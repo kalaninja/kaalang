@@ -14,8 +14,9 @@ macro_rules! fixture {
 fn a_shifted_cycle_entry_is_rejected_even_when_its_routes_still_meet() {
     let mut scene = drawn(fixture!("loop/behavior", "merged_break"));
     let entry = scene.topology.loops[0].entry;
+    let gaps = vertical_gaps(&scene);
     let y = scene
-        .rows()
+        .rows(&gaps)
         .line_y(RunLine::Rank(scene.rank(Vertex::Junction(entry))));
     for point in scene
         .connections
@@ -575,6 +576,38 @@ fn long_wire_labels_clear_a_tall_neighbor() {
     );
     let scene = drawn((&source, "example"));
     assert!(scene.labels.iter().any(|label| label.lines.len() > 1));
+}
+
+#[test]
+fn long_labels_enlarge_only_their_adjacent_row_gaps() {
+    let scene = drawn((
+        r#"
+        #[kaalang]
+        fn example(condition: bool) -> u8 {
+            #[question("Choose a branch.")]
+            #[no("Take the deliberately long fallback description that wraps onto several lines.")]
+            #[yes("Take the deliberately long continuation description that wraps onto several lines.")]
+            let (fallback, proceed) = |condition| { condition };
+            #[action("Use the fallback.")]
+            let end = |fallback| { 0 };
+            #[action("Proceed.")]
+            let end = |proceed| { 1 };
+
+            |end| return end;
+        }
+    "#,
+        "example",
+    ));
+    let question = scene.rank(Vertex::Node(NodeId::Block(0)));
+    let gaps = vertical_gaps(&scene);
+
+    assert!(gaps[question - 1] > MIN_VERTICAL_GAP);
+    assert!(gaps[question] > MIN_VERTICAL_GAP);
+    for (row, gap) in gaps.into_iter().enumerate() {
+        if ![question - 1, question].contains(&row) {
+            assert_eq!(gap, MIN_VERTICAL_GAP);
+        }
+    }
 }
 
 #[test]

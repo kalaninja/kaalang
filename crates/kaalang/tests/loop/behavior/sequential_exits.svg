@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1309" viewBox="0 0 1140 1309" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1267" viewBox="0 0 1140 1267" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for sequential_exits</title>
   <desc id="kaalang-description">Cycles: Run work between two stopping checks. with inputs before_limit, after_limit, mut initial_count, mut initial_log and outputs log. Nodes: Start: sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over initial_count, initial_log; Question: Stop before the work? capturing &amp;initial_count, before_limit, &amp;mut initial_log handing over done / work; Action: Perform the work and advance the counter. capturing work, &amp;mut initial_count, &amp;mut initial_log handing over worked; Question: Stop after the work? capturing worked, &amp;initial_count, after_limit, &amp;mut initial_log handing over done / again; Action: Finish the iteration. capturing again, &amp;mut initial_log; Action: Continue after the loop. capturing mut log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result; Merge: done. Connections: Start: sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the cycle; Question: Stop before the work? branch 1 to the done merge at the cycle result; Question: Stop before the work? branch 2 to Action: Perform the work and advance the counter.; Action: Perform the work and advance the counter. to Question: Stop after the work?; Question: Stop after the work? branch 1 to the done merge at the cycle result; Question: Stop after the work? branch 2 to Action: Finish the iteration.; Action: Finish the iteration. to the iteration tail of the cycle; Action: Continue after the loop. to End: Vec&lt;&amp;&apos;static str&gt;; the done merge at the cycle result to Action: Continue after the loop.; the entry of the cycle to Question: Stop before the work?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -28,41 +28,41 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Run work between two stopping checks.</title>
-    <rect class="cycle-boundary" x="32" y="285" width="1076" height="743" rx="12"/>
-    <text class="cycle-caption" x="1096" y="299" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Run work between two stopping checks.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="271" width="1076" height="729" rx="12"/>
+    <text class="cycle-caption" x="1096" y="285" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Run work between two stopping checks.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 200 94 L 200 177
-      M 200 241 L 200 320
-      M 200 471 L 200 993
-      M 340 435 L 560 435 L 560 550
-      M 560 616 L 560 695
-      M 560 767 L 560 993 L 200 993
-      M 700 731 L 920 731 L 920 846
-      M 920 910 L 920 993
-      M 200 1140 L 200 1219
-      M 200 993 L 200 1076
-      M 200 320 L 200 399
+      M 200 94 L 200 170
+      M 200 234 L 200 306
+      M 200 457 L 200 965
+      M 340 421 L 560 421 L 560 536
+      M 560 602 L 560 681
+      M 560 753 L 560 965 L 200 965
+      M 700 717 L 920 717 L 920 825
+      M 920 889 L 920 965
+      M 200 1105 L 200 1177
+      M 200 965 L 200 1041
+      M 200 306 L 200 385
     "/>
     <path class="connection" d="
-      M 920 993 L 1080 993 L 1080 320 L 200 320
+      M 920 965 L 1080 965 L 1080 306 L 200 306
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="213" y="1011" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
-    <text class="connection-label" x="213" y="1208" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="983" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
+    <text class="connection-label" x="213" y="1166" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">before_limit, after_limit</tspan></text>
-    <text class="connection-label" x="213" y="259" xml:space="preserve"><tspan x="213" dy="0">initial_count, initial_log</tspan></text>
-    <text class="connection-label" x="353" y="453" xml:space="preserve"><tspan x="353" dy="0">work</tspan></text>
-    <text class="connection-label" x="573" y="634" xml:space="preserve"><tspan x="573" dy="0">worked</tspan></text>
-    <text class="connection-label" x="713" y="749" xml:space="preserve"><tspan x="713" dy="0">again</tspan></text>
-    <text class="connection-label" x="213" y="166" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
-    <text class="connection-label" x="213" y="374" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, before_limit, </tspan><tspan x="213" dy="14">&amp;mut initial_log</tspan></text>
-    <text class="connection-label" x="573" y="525" xml:space="preserve"><tspan x="573" dy="0">work, &amp;mut initial_count, &amp;mut </tspan><tspan x="573" dy="14">initial_log</tspan></text>
-    <text class="connection-label" x="573" y="670" xml:space="preserve"><tspan x="573" dy="0">worked, &amp;initial_count, </tspan><tspan x="573" dy="14">after_limit, &amp;mut initial_log</tspan></text>
-    <text class="connection-label" x="933" y="835" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut initial_log</tspan></text>
-    <text class="connection-label" x="213" y="1065" xml:space="preserve"><tspan x="213" dy="0">mut log</tspan></text>
+    <text class="connection-label" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">initial_count, initial_log</tspan></text>
+    <text class="connection-label" x="353" y="439" xml:space="preserve"><tspan x="353" dy="0">work</tspan></text>
+    <text class="connection-label" x="573" y="620" xml:space="preserve"><tspan x="573" dy="0">worked</tspan></text>
+    <text class="connection-label" x="713" y="735" xml:space="preserve"><tspan x="713" dy="0">again</tspan></text>
+    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="360" xml:space="preserve"><tspan x="213" dy="0">&amp;initial_count, before_limit, </tspan><tspan x="213" dy="14">&amp;mut initial_log</tspan></text>
+    <text class="connection-label" x="573" y="511" xml:space="preserve"><tspan x="573" dy="0">work, &amp;mut initial_count, &amp;mut </tspan><tspan x="573" dy="14">initial_log</tspan></text>
+    <text class="connection-label" x="573" y="656" xml:space="preserve"><tspan x="573" dy="0">worked, &amp;initial_count, </tspan><tspan x="573" dy="14">after_limit, &amp;mut initial_log</tspan></text>
+    <text class="connection-label" x="933" y="814" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut initial_log</tspan></text>
+    <text class="connection-label" x="213" y="1030" xml:space="preserve"><tspan x="213" dy="0">mut log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -70,7 +70,7 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">before_limit: usize</tspan><tspan x="-104" dy="18">after_limit: usize</tspan></text>
     </g>
-    <g class="node merge" transform="translate(200 993)">
+    <g class="node merge" transform="translate(200 965)">
       <title xml:space="preserve">the done merge at the cycle result</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -78,37 +78,37 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">sequential_exits</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 209)">
+    <g class="node action" transform="translate(200 202)">
       <title xml:space="preserve">Initialize the counter and log.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter and log.</tspan></text>
     </g>
-    <g class="node question" transform="translate(200 435)">
+    <g class="node question" transform="translate(200 421)">
       <title xml:space="preserve">Stop before the work?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stop before the work?</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 583)">
+    <g class="node action" transform="translate(560 569)">
       <title xml:space="preserve">Perform the work and advance the counter.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Perform the work and advance </tspan><tspan x="-124" dy="18">the counter.</tspan></text>
     </g>
-    <g class="node question" transform="translate(560 731)">
+    <g class="node question" transform="translate(560 717)">
       <title xml:space="preserve">Stop after the work?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Stop after the work?</tspan></text>
     </g>
-    <g class="node action" transform="translate(920 878)">
+    <g class="node action" transform="translate(920 857)">
       <title xml:space="preserve">Finish the iteration.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the iteration.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 1108)">
+    <g class="node action" transform="translate(200 1073)">
       <title xml:space="preserve">Continue after the loop.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after the loop.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 1248)">
+    <g class="node end" transform="translate(200 1206)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;&amp;&apos;static str&gt;</tspan></text>
     </g>

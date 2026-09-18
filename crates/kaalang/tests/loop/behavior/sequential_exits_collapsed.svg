@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="698" viewBox="0 0 680 698" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="677" viewBox="0 0 680 677" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for sequential_exits</title>
   <desc id="kaalang-description">Nodes: Start: sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over initial_count, initial_log; Cycle: Run work between two stopping checks. capturing before_limit, after_limit, mut initial_count, mut initial_log handing over log; Action: Continue after the loop. capturing mut log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result. Connections: Start: sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to Cycle: Run work between two stopping checks.; Cycle: Run work between two stopping checks. to Action: Continue after the loop.; Action: Continue after the loop. to End: Vec&lt;&amp;&apos;static str&gt;.</desc>
   <defs>
@@ -29,18 +29,18 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 94 L 172 177
-      M 172 241 L 172 320
-      M 172 386 L 172 465
-      M 172 529 L 172 608
+      M 172 94 L 172 170
+      M 172 234 L 172 313
+      M 172 379 L 172 451
+      M 172 515 L 172 587
     "/>
-    <text class="connection-label" x="185" y="597" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="576" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">before_limit, after_limit</tspan></text>
-    <text class="connection-label" x="185" y="259" xml:space="preserve"><tspan x="185" dy="0">initial_count, initial_log</tspan></text>
-    <text class="connection-label" x="185" y="404" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>
-    <text class="connection-label" x="185" y="166" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">before_limit, after_limit, mut </tspan><tspan x="185" dy="14">initial_count, mut initial_log</tspan></text>
-    <text class="connection-label" x="185" y="454" xml:space="preserve"><tspan x="185" dy="0">mut log</tspan></text>
+    <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">initial_count, initial_log</tspan></text>
+    <text class="connection-label" x="185" y="397" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="288" xml:space="preserve"><tspan x="185" dy="0">before_limit, after_limit, mut </tspan><tspan x="185" dy="14">initial_count, mut initial_log</tspan></text>
+    <text class="connection-label" x="185" y="440" xml:space="preserve"><tspan x="185" dy="0">mut log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
@@ -52,23 +52,23 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">sequential_exits</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 209)">
+    <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Initialize the counter and log.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Initialize the counter and log.</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 353)">
+    <g class="node loop" transform="translate(172 346)">
       <title xml:space="preserve">Run work between two stopping checks.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Run work between two </tspan><tspan x="-124" dy="18">stopping checks.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node action" transform="translate(172 497)">
+    <g class="node action" transform="translate(172 483)">
       <title xml:space="preserve">Continue after the loop.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after the loop.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 637)">
+    <g class="node end" transform="translate(172 616)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;&amp;&apos;static str&gt;</tspan></text>
     </g>

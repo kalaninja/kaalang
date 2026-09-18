@@ -3,11 +3,14 @@
 
 use std::collections::BTreeSet;
 
-use kaalang_compiler::topology::{Destination, ExitId, NodeId, Source, Vertex};
+use kaalang_compiler::{
+    RunLine,
+    topology::{Destination, ExitId, NodeId, Source, Vertex},
+};
 
 use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
-    LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Scene,
+    LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Rows, Scene,
     text::{text_width, wrap_text},
 };
 
@@ -37,7 +40,7 @@ enum Stack {
     Below,
 }
 
-pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
+pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
     let topology = &scene.topology;
     let captions = &scene.captions;
     let shared = topology
@@ -53,6 +56,7 @@ pub(super) fn place_labels(scene: &Scene) -> Vec<Label> {
         place_merge_label(
             &mut labels,
             scene,
+            rows,
             junction,
             &mut merged_exits,
             &mut merged_captures,
@@ -119,6 +123,7 @@ fn capture_label(scene: &Scene, node: NodeId) -> Option<Label> {
 fn place_merge_label(
     labels: &mut Vec<Label>,
     scene: &Scene,
+    rows: &Rows,
     junction: usize,
     merged_exits: &mut BTreeSet<ExitId>,
     merged_captures: &mut BTreeSet<NodeId>,
@@ -154,7 +159,7 @@ fn place_merge_label(
         merged_captures.insert(node);
     }
 
-    let anchor = merge_anchor(scene, junction);
+    let anchor = merge_anchor(scene, rows, junction);
     labels.extend(wire_label(
         Vertex::Junction(junction),
         wires,
@@ -210,10 +215,12 @@ fn node_of(destination: Destination) -> NodeId {
 
 /// Incoming routes end at the visible merge; its outgoing segment owns the
 /// vertical below it.
-fn merge_anchor(scene: &Scene, junction: usize) -> Point {
-    scene
-        .junction_at(junction)
-        .expect("a merge has incoming routes")
+fn merge_anchor(scene: &Scene, rows: &Rows, junction: usize) -> Point {
+    let vertex = Vertex::Junction(junction);
+    Point {
+        x: scene.column_x(scene.column(vertex)),
+        y: rows.line_y(RunLine::Rank(scene.rank(vertex))),
+    }
 }
 
 /// Wraps the wire names one label draws, or nothing when it names none.
@@ -268,35 +275,21 @@ fn place_label(
     }
 }
 
-/// Leaves enough room in every row gap for a hand-over below one node and a
-/// capture above the next.
-pub(super) fn vertical_gap(scene: &Scene) -> i32 {
-    // ponytail: one global gap keeps routing simple; reserve per-row gaps if
-    // tall diagrams become a practical problem.
-    let captions = &scene.captions;
-    let gap = scene
-        .topology
-        .exits
-        .iter()
-        .map(|exit| match captions.branch_description(exit.id) {
-            Some(description) => {
-                let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
-                vertical_label_gap(lines.len(), LabelKind::Branch)
-            }
-            None => vertical_label_gap(
-                label_line_count(captions.handover(exit.id)),
-                LabelKind::Wire,
-            ),
-        })
-        .chain(scene.topology.nodes.iter().map(|node| {
-            vertical_label_gap(
-                label_line_count(captions.capture_label(node.id)),
-                LabelKind::Wire,
-            )
-        }))
-        .max()
-        .unwrap_or(0);
-    MIN_VERTICAL_GAP.max(gap)
+/// Leaves enough room in each row gap for the labels actually drawn there.
+pub(super) fn vertical_gaps(scene: &Scene) -> Vec<i32> {
+    let mut gaps = vec![MIN_VERTICAL_GAP; scene.arrangement.ranks];
+    for label in &scene.labels {
+        let row = scene.rank(label.owner);
+        let below = match label.owner {
+            Vertex::Node(node) => label.at.y >= scene.node(node).y,
+            Vertex::Junction(_) => true,
+        };
+        let Some(gap) = (if below { Some(row) } else { row.checked_sub(1) }) else {
+            continue;
+        };
+        gaps[gap] = gaps[gap].max(vertical_label_gap(label.lines.len(), label.kind));
+    }
+    gaps
 }
 
 fn vertical_label_gap(lines: usize, kind: LabelKind) -> i32 {
@@ -311,10 +304,6 @@ fn vertical_label_gap(lines: usize, kind: LabelKind) -> i32 {
         + kind.font_size()
         + 2 * CONNECTION_LABEL_HALO
         + 2 * (lines as i32 - 1) * kind.line_height()
-}
-
-fn label_line_count(names: &[String]) -> usize {
-    wrap_wires(names).map_or(0, |lines| lines.len())
 }
 
 /// The rectangle a label's ink and halo occupy, matching how the serializer

@@ -414,11 +414,12 @@ only by a side exit needs no extra precedence from alternative inner outcomes;
 other tails retain it to clear nested boundaries. These are placement
 constraints, not drawn execution connections.
 
-Use one vertical gap throughout the diagram, at least 72 pixels and enlarged for
-labels. Measure it from the edges of occupied rows, including merge markers.
-Horizontal routes in a row gap leave that clearance above and below; additional
-lanes are 20 pixels apart. Structural junctions have no box height or duplicate
-capture labels. End labels its transferred value under RFC 0002 §6.
+Each vertical row gap is at least 72 pixels and is enlarged only for labels
+drawn in that gap. Measure it from the edges of occupied rows, including merge
+markers. Horizontal routes in a row gap leave that gap's clearance above and
+below; additional lanes are 20 pixels apart. Structural junctions have no box
+height or duplicate capture labels. End labels its transferred value under RFC
+0002 §6.
 
 Route back edges innermost first. The tail meets its arrivals at the end of its
 rail nearest the chosen contour. The climb stays outside the complete body,

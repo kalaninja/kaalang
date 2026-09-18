@@ -21,7 +21,7 @@ mod route;
 mod tests;
 mod text;
 
-use label::{label_rect, vertical_gap};
+use label::{label_rect, vertical_gaps};
 use text::wrap_text;
 
 const MARGIN: i32 = 32;
@@ -451,7 +451,8 @@ enum Blocked {
 /// contour anchors after translation. Crossing-free geometry alone cannot
 /// detect a swapped column or a disconnected port.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
-    let rows = scene.rows();
+    let gaps = vertical_gaps(scene);
+    let rows = scene.rows(&gaps);
     let origin =
         scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
     let column_x = |vertex| origin + scene.column_x(scene.column(vertex));
@@ -604,7 +605,16 @@ fn attempt(
     };
 
     scene.nodes = nodes(&scene);
-    let rows = scene.rows();
+    let minimum_gaps = vec![MIN_VERTICAL_GAP; scene.arrangement.ranks];
+    let preliminary = scene.rows(&minimum_gaps);
+    scene.lift(&preliminary);
+    scene.labels = label::place_labels(&scene, &preliminary);
+    let gaps = vertical_gaps(&scene);
+    let rows = scene.rows(&gaps);
+    for label in &mut scene.labels {
+        let row = scene.arrangement.rank[&label.owner];
+        label.at.y += rows.line_y(RunLine::Rank(row)) - preliminary.line_y(RunLine::Rank(row));
+    }
     scene.lift(&rows);
     scene.connections = route::emit(&scene, &rows);
     scene
@@ -618,10 +628,8 @@ fn attempt(
     finish(scene)
 }
 
-/// Places the labels, settles the coordinates and the canvas, and checks the
-/// complete scene.
+/// Settles the coordinates and the canvas, then checks the complete scene.
 fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
-    scene.labels = label::place_labels(&scene);
     let wanted = clear_labels(&mut scene);
     if wanted > 0 {
         return Err(Blocked::Narrow(wanted));
@@ -701,19 +709,18 @@ impl Rows {
 }
 
 impl Scene {
-    fn rows(&self) -> Rows {
+    fn rows(&self, gaps: &[i32]) -> Rows {
         let ranks = self.arrangement.ranks;
-        let gap = vertical_gap(self);
         let mut height = vec![0; ranks];
         let mut capture_space = vec![0; ranks + 1];
         for node in &self.nodes {
             let row = self.rank(Vertex::Node(node.id));
             height[row] = height[row].max(node.height);
-            capture_space[row] = gap;
+            capture_space[row] = row.checked_sub(1).map_or(0, |gap| gaps[gap]);
         }
         for (junction, node) in self.topology.junctions.iter().enumerate() {
             let row = self.rank(Vertex::Junction(junction));
-            capture_space[row] = gap;
+            capture_space[row] = row.checked_sub(1).map_or(0, |gap| gaps[gap]);
             if !node.merges.is_empty() {
                 height[row] = height[row].max(2 * MERGE_RADIUS);
             }
@@ -728,6 +735,7 @@ impl Scene {
         let mut next = MARGIN;
         for (row, own) in height.iter().enumerate() {
             top.push(next);
+            let gap = gaps[row];
             let count = lanes.get(row).copied().unwrap_or(0) as i32;
             let routing = if count == 0 {
                 0
