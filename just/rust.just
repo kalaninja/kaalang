@@ -38,7 +38,7 @@ test-exhaustive:
 perf:
     #!/usr/bin/env bash
     set -uo pipefail
-    for crate in kaalang-compiler kaalang-svg; do
+    for crate in kaalang-compiler kaalang-render kaalang-svg; do
         printf '\n%s\n' "$crate"
         if ! measured=$(cargo test -q -p "$crate" --test performance -- --nocapture --test-threads=1 2>&1); then
             printf '%s\n' "$measured"

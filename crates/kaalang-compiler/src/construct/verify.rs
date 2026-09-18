@@ -8,7 +8,7 @@ use crate::geometry::{
 use std::collections::BTreeSet;
 
 use crate::model::Flow;
-use crate::topology::{Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
+use crate::topology::{Connection, Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, RunLine, Side};
 
@@ -24,6 +24,49 @@ pub(super) struct Grid {
     /// How far apart two columns sit, so that every contour lane a topology can
     /// need fits between them.
     scale: i32,
+}
+
+/// Read-only abstract geometry of one arrangement.
+///
+/// Connection polylines follow [`Topology::connections`] order and iteration
+/// back edges follow [`Topology::loops`] order.
+pub struct ArrangementGeometry {
+    vertices: Vec<(Vertex, Point)>,
+    connections: Vec<Vec<Point>>,
+    back_edges: Vec<Vec<Point>>,
+}
+
+impl ArrangementGeometry {
+    /// Abstract point occupied by `vertex`, when the topology contains it.
+    #[must_use]
+    pub fn vertex(&self, vertex: Vertex) -> Option<Point> {
+        self.vertices
+            .binary_search_by_key(&vertex, |&(vertex, _)| vertex)
+            .ok()
+            .map(|index| self.vertices[index].1)
+    }
+
+    /// Connection polyline at its topology index.
+    #[must_use]
+    pub fn connection(&self, index: usize) -> Option<&[Point]> {
+        self.connections.get(index).map(Vec::as_slice)
+    }
+
+    /// Iteration back-edge polyline at its topology index.
+    #[must_use]
+    pub fn back_edge(&self, index: usize) -> Option<&[Point]> {
+        self.back_edges.get(index).map(Vec::as_slice)
+    }
+
+    /// Every connection polyline in topology order.
+    pub fn connections(&self) -> impl ExactSizeIterator<Item = &[Point]> {
+        self.connections.iter().map(Vec::as_slice)
+    }
+
+    /// Every iteration back-edge polyline in topology order.
+    pub fn back_edges(&self) -> impl ExactSizeIterator<Item = &[Point]> {
+        self.back_edges.iter().map(Vec::as_slice)
+    }
 }
 
 /// Two lanes per cycle on each side of a column: one for its back edge and one
@@ -260,24 +303,29 @@ pub(super) fn ends(topology: &Topology, index: usize) -> (Source, Destination) {
 /// # Errors
 ///
 /// Returns the rule and the items that break it.
+#[cfg(test)]
 pub(crate) fn arrangement(
     flow: &Flow,
     topology: &Topology,
     arrangement: &Arrangement,
 ) -> Result<(), String> {
-    check(
-        flow,
-        topology,
-        arrangement,
-        &Shape::of(flow, topology),
-        false,
-    )
+    arrangement_with_shape(flow, topology, arrangement, &Shape::of(flow, topology))
 }
 
-/// Cached topology facts reused across compaction candidates: branch regions,
-/// reachability, and cycle bodies. None depends on candidate coordinates.
+pub(super) fn arrangement_with_shape(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+    shape: &Shape,
+) -> Result<(), String> {
+    coverage(topology, arrangement)?;
+    super::choice::verify(topology, arrangement)?;
+    placement(topology, arrangement, |_| false)?;
+    geometry_after_choice(flow, topology, arrangement, shape, |_| Ok(()))
+}
+
+/// Cached branch regions and reachability reused across arrangement checks.
 pub(super) struct Shape {
-    pub(super) bodies: super::loop_block::Bodies,
     branchers: Vec<Brancher>,
 }
 
@@ -297,7 +345,6 @@ impl Shape {
     pub(super) fn of(flow: &Flow, topology: &Topology) -> Self {
         let reachable = super::regions::reachable(topology);
         Self {
-            bodies: super::loop_block::Bodies::of(flow, topology),
             branchers: super::regions::branchers(flow, topology)
                 .into_iter()
                 .map(|block| {
@@ -339,20 +386,26 @@ impl Shape {
     }
 }
 
-/// Completes verification after `placement` and coordinate compression.
-/// Checks boundary rectangles so cycle completions may share body rows only
-/// when they remain outside the body.
-///
-/// # Errors
-///
-/// Returns the rule and the items that break it.
-pub(super) fn compacted(
+pub(super) fn geometry(
     flow: &Flow,
     topology: &Topology,
     arrangement: &Arrangement,
     shape: &Shape,
+    additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
 ) -> Result<(), String> {
-    check(flow, topology, arrangement, shape, true)
+    coverage(topology, arrangement)?;
+    geometry_after_coverage(flow, topology, arrangement, shape, additional)
+}
+
+pub(super) fn geometry_after_coverage(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+    shape: &Shape,
+    additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
+) -> Result<(), String> {
+    super::choice::verify(topology, arrangement)?;
+    geometry_after_choice(flow, topology, arrangement, shape, additional)
 }
 
 /// Checks rank and column relations before compression and geometry.
@@ -360,47 +413,64 @@ pub(super) fn compacted(
 pub(super) fn placement(
     topology: &Topology,
     arrangement: &Arrangement,
-    shape: &Shape,
+    allow_order_exception: impl FnMut(&Connection) -> bool,
 ) -> Result<(), String> {
     super::end::verify(topology, arrangement)?;
-    order(topology, arrangement, Some(&shape.bodies))?;
+    order(topology, arrangement, allow_order_exception)?;
     serial_columns(topology, arrangement)
 }
 
-fn check(
+fn geometry_after_choice(
     flow: &Flow,
     topology: &Topology,
     arrangement: &Arrangement,
     shape: &Shape,
-    compacting: bool,
+    additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
 ) -> Result<(), String> {
-    coverage(topology, arrangement)?;
-    super::choice::verify(topology, arrangement)?;
-    if !compacting {
-        super::end::verify(topology, arrangement)?;
-        order(topology, arrangement, None)?;
-        serial_columns(topology, arrangement)?;
-    }
     let (grid, lines) = drawing(topology, arrangement);
-    // Check boundary ownership before the more expensive crossing tests.
-    if compacting {
-        super::loop_block::boundaries(topology, arrangement, &grid, &lines, &shape.bodies)?;
-    }
-    routes(topology, arrangement, &grid, &lines)?;
-    back_edges(flow, topology, arrangement, &grid, &lines)?;
+    let geometry = ArrangementGeometry {
+        vertices: vertex_points(topology, arrangement, &grid),
+        back_edges: (0..topology.loops.len())
+            .map(|index| {
+                back_edge_polyline(
+                    topology,
+                    arrangement,
+                    &grid,
+                    index,
+                    arrangement.contours[index],
+                )
+            })
+            .collect(),
+        connections: lines,
+    };
+    additional(&geometry)?;
+    routes(topology, &geometry)?;
+    back_edges(flow, topology, arrangement, &grid, &geometry)?;
     branch_columns(flow, arrangement, shape)
 }
 
 /// Every vertex has a rank and a column, every connection a corridor, and
 /// every loop a contour.
-fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+    if arrangement.rank.len() != topology.vertices.len() {
+        return Err("the arrangement ranks a different set of vertices".to_owned());
+    }
+    if arrangement.column.len() != topology.vertices.len() {
+        return Err("the arrangement places a different set of vertices".to_owned());
+    }
     for &vertex in &topology.vertices {
-        if !arrangement.rank.contains_key(&vertex) {
+        let Some(&rank) = arrangement.rank.get(&vertex) else {
             return Err(format!("{vertex:?} has no rank"));
+        };
+        if rank >= arrangement.ranks {
+            return Err(format!("{vertex:?} occupies absent rank {rank}"));
         }
         if !arrangement.column.contains_key(&vertex) {
             return Err(format!("{vertex:?} has no column"));
         }
+    }
+    if arrangement.exit_offset.len() != topology.exits.len() {
+        return Err("the arrangement places a different set of exits".to_owned());
     }
     for exit in &topology.exits {
         if !arrangement.exit_offset.contains_key(&exit.id) {
@@ -492,37 +562,47 @@ fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String
 
 /// Forward connections descend, except for a side exit that ends at a wire merge
 /// or its sole iteration tail on its row. A cycle's own tail and result may share
-/// a row when their routes are disjoint; a cycle's completion is held out of the
-/// body by `boundaries` rather than by its row; other placement-only relations
-/// descend.
+/// a row when their routes are disjoint. A renderer may replace the row rule for
+/// a cycle completion with its own boundary check; other placement-only
+/// relations descend.
 fn order(
     topology: &Topology,
     arrangement: &Arrangement,
-    drawn: Option<&super::loop_block::Bodies>,
+    mut allow_order_exception: impl FnMut(&Connection) -> bool,
 ) -> Result<(), String> {
-    for (relation, edges, same_row) in [
-        ("a connection", &topology.connections, true),
-        ("placement precedence", &topology.order, false),
-    ] {
-        for edge in edges {
-            let from = arrangement.rank[&Vertex::from(edge.source)];
-            let to = arrangement.rank[&edge.destination];
-            let aligned = if same_row {
-                topology.same_row_junction(edge)
-            } else {
-                topology.loops.iter().any(|loop_| {
-                    edge.source == Source::Junction(loop_.tail)
-                        && topology.loop_boundaries.iter().any(|boundary| {
-                            boundary.header == loop_.header
-                                && boundary.result.map(Vertex::from) == Some(edge.destination)
-                        })
+    let ranks = |edge: &Connection| {
+        let source = Vertex::from(edge.source);
+        let from = arrangement
+            .rank
+            .get(&source)
+            .copied()
+            .ok_or_else(|| format!("{source:?} has no rank"))?;
+        let to = arrangement
+            .rank
+            .get(&edge.destination)
+            .copied()
+            .ok_or_else(|| format!("{:?} has no rank", edge.destination))?;
+        Ok::<_, String>((from, to))
+    };
+    for edge in &topology.connections {
+        let (from, to) = ranks(edge)?;
+        if from > to || (from == to && !topology.same_row_junction(edge)) {
+            return Err(format!("a connection does not descend: {from} to {to}"));
+        }
+    }
+    for edge in &topology.order {
+        let (from, to) = ranks(edge)?;
+        let aligned = topology.loops.iter().any(|loop_| {
+            edge.source == Source::Junction(loop_.tail)
+                && topology.loop_boundaries.iter().any(|boundary| {
+                    boundary.header == loop_.header
+                        && boundary.result.map(Vertex::from) == Some(edge.destination)
                 })
-            };
-            if (from > to || (from == to && !aligned))
-                && (same_row || !drawn.is_some_and(|bodies| bodies.completes_a_boundary(edge)))
-            {
-                return Err(format!("{relation} does not descend: {from} to {to}"));
-            }
+        });
+        if (from > to || (from == to && !aligned)) && !allow_order_exception(edge) {
+            return Err(format!(
+                "placement precedence does not descend: {from} to {to}"
+            ));
         }
     }
     Ok(())
@@ -537,11 +617,27 @@ fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), 
         };
         let column = match wire.source {
             Source::Exit(exit) => {
-                arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit]
+                let source = Vertex::Node(exit.node);
+                let Some(&column) = arrangement.column.get(&source) else {
+                    return Err(format!("{source:?} has no column"));
+                };
+                let Some(&offset) = arrangement.exit_offset.get(&exit) else {
+                    return Err(format!("{exit:?} has no branch column"));
+                };
+                column + offset
             }
-            Source::Junction(junction) => arrangement.column[&Vertex::Junction(junction)],
+            Source::Junction(junction) => {
+                let source = Vertex::Junction(junction);
+                let Some(&column) = arrangement.column.get(&source) else {
+                    return Err(format!("{source:?} has no column"));
+                };
+                column
+            }
         };
-        if arrangement.column[&vertex] != column {
+        let Some(&placed) = arrangement.column.get(&vertex) else {
+            return Err(format!("{vertex:?} has no column"));
+        };
+        if placed != column {
             return Err(format!("{vertex:?} leaves its serial column {column}"));
         }
     }
@@ -634,20 +730,22 @@ fn vertex_points(
     topology: &Topology,
     arrangement: &Arrangement,
     grid: &Grid,
-) -> Vec<(Point, Vertex)> {
-    topology
+) -> Vec<(Vertex, Point)> {
+    let mut points = topology
         .vertices
         .iter()
         .map(|&vertex| {
             (
+                vertex,
                 Point {
                     x: grid.column(arrangement.column[&vertex]),
                     y: grid.rank(arrangement.rank[&vertex]),
                 },
-                vertex,
             )
         })
-        .collect()
+        .collect::<Vec<_>>();
+    points.sort_unstable_by_key(|&(vertex, _)| vertex);
+    points
 }
 
 /// One polyline is simple: right-angled, through no vertex it does not join,
@@ -655,7 +753,7 @@ fn vertex_points(
 /// an iteration back edge is the one route that climbs.
 fn simple(
     points: &[Point],
-    vertices: &[(Point, Vertex)],
+    vertices: &[(Vertex, Point)],
     joins: &[Vertex],
     what: &str,
 ) -> Result<(), String> {
@@ -666,7 +764,7 @@ fn simple(
         if segment[0].x != segment[1].x && segment[0].y != segment[1].y {
             return Err(format!("{what} bends diagonally"));
         }
-        for &(point, vertex) in vertices {
+        for &(vertex, point) in vertices {
             if joins.contains(&vertex) {
                 continue;
             }
@@ -682,20 +780,15 @@ fn simple(
 }
 
 /// Routes are simple, never meet a vertex they do not touch, and cross nothing.
-fn routes(
-    topology: &Topology,
-    arrangement: &Arrangement,
-    grid: &Grid,
-    lines: &[Vec<Point>],
-) -> Result<(), String> {
-    let vertices = vertex_points(topology, arrangement, grid);
+fn routes(topology: &Topology, geometry: &ArrangementGeometry) -> Result<(), String> {
+    let lines = &geometry.connections;
 
     for (index, points) in lines.iter().enumerate() {
         let wire = topology.connections[index];
         let joins = [Vertex::from(wire.source), wire.destination];
         simple(
             points,
-            &vertices,
+            &geometry.vertices,
             &joins,
             &format!("connection {}", index + 1),
         )?;
@@ -758,12 +851,10 @@ fn back_edges(
     topology: &Topology,
     arrangement: &Arrangement,
     grid: &Grid,
-    lines: &[Vec<Point>],
+    geometry: &ArrangementGeometry,
 ) -> Result<(), String> {
-    let vertices = vertex_points(topology, arrangement, grid);
-    let back_edges = (0..topology.loops.len())
-        .map(|i| back_edge_polyline(topology, arrangement, grid, i, arrangement.contours[i]))
-        .collect::<Vec<_>>();
+    let lines = &geometry.connections;
+    let back_edges = &geometry.back_edges;
     let mut drawn: Vec<&Vec<Point>> = Vec::new();
     for (index, loop_) in topology.loops.iter().enumerate() {
         let contour = arrangement.contours[index];
@@ -802,7 +893,7 @@ fn back_edges(
         );
         simple(
             line,
-            &vertices,
+            &geometry.vertices,
             &[Vertex::Junction(loop_.tail), Vertex::Junction(loop_.entry)],
             &format!(
                 "the iteration back edge of the cycle at block {}",

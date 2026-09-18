@@ -16,7 +16,9 @@ pub mod topology;
 
 pub(crate) use choice::{choice_match, is_todo_body};
 pub use codegen::expand;
-pub use construct::{Arrangement, Contour, Route, Run, RunLine, Side};
+pub use construct::{
+    Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
+};
 pub use model::{
     Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
     ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget,

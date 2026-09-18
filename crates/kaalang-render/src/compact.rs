@@ -1,8 +1,9 @@
-//! Optional simplification of an already checked diagram witness.
+//! Arrangement compaction shared by kaalang renderers.
 
-use super::{Arrangement, Run, RunLine, Side, sweep::compress, verify};
-use crate::model::Flow;
-use crate::topology::{Topology, Vertex};
+use kaalang_compiler::topology::{Topology, Vertex};
+use kaalang_compiler::{Arrangement, Run, RunLine, SemanticModel, Side};
+
+use crate::ArrangementVerifier;
 
 /// Verifies each normalized replacement; failure preserves the existing witness.
 /// Terminates as ranks rise, then contours approach their bodies and coordinates,
@@ -10,15 +11,28 @@ use crate::topology::{Topology, Vertex};
 ///
 /// ponytail: local simplifications, not a global minimum of bends or area;
 /// extend the candidates only for a concrete remaining readability defect.
-pub(crate) fn arrangement(flow: &Flow, topology: &Topology, built: &mut Arrangement) {
-    let shape = verify::Shape::of(flow, topology);
+pub fn compact_arrangement(model: &mut SemanticModel) {
+    if model.topology.loops.is_empty()
+        && !model
+            .arrangement
+            .routes
+            .iter()
+            .any(|route| route.runs.len() > 2)
+    {
+        return;
+    }
+    let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+    arrangement(&verifier, &model.topology, &mut model.arrangement);
+}
+
+fn arrangement(verifier: &ArrangementVerifier<'_>, topology: &Topology, built: &mut Arrangement) {
     loop {
-        let mut changed = contours(flow, topology, built, &shape);
-        changed |= shortcuts(flow, topology, built, &shape);
-        changed |= lanes(flow, topology, built, &shape);
-        changed |= columns(flow, topology, built, &shape);
-        changed |= lift(flow, topology, built, &shape);
-        changed |= rows(flow, topology, built, &shape);
+        let mut changed = contours(verifier, topology, built);
+        changed |= shortcuts(verifier, built);
+        changed |= lanes(verifier, built);
+        changed |= columns(verifier, built);
+        changed |= lift(verifier, topology, built);
+        changed |= rows(verifier, built);
         if !changed {
             break;
         }
@@ -26,7 +40,7 @@ pub(crate) fn arrangement(flow: &Flow, topology: &Topology, built: &mut Arrangem
 }
 
 /// Join adjacent horizontal lanes when their routes can share one rail.
-fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verify::Shape) -> bool {
+fn lanes(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
     let mut changed = false;
     for gap in 0..built.gap_lanes.len() {
         for lane in (1..built.gap_lanes[gap]).rev() {
@@ -46,7 +60,7 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &veri
                     }
                 }
             }
-            if keep(flow, topology, built, candidate, shape) {
+            if keep(verifier, built, candidate) {
                 changed = true;
             }
         }
@@ -56,15 +70,14 @@ fn lanes(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &veri
 
 /// Bring a straight back edge to the edge of its whole body when the gap is free.
 fn contours(
-    flow: &Flow,
+    verifier: &ArrangementVerifier<'_>,
     topology: &Topology,
     built: &mut Arrangement,
-    shape: &verify::Shape,
 ) -> bool {
     let mut changed = false;
     if built.back_routes.is_empty() {
         for (index, loop_) in topology.loops.iter().enumerate().rev() {
-            let body = super::loop_block::body_vertices(flow, topology, loop_.header);
+            let body = verifier.body_vertices(loop_.header);
             let columns = body.iter().map(|vertex| built.column[vertex]);
             let column = match built.contours[index].side {
                 Side::Left => columns.min(),
@@ -78,7 +91,7 @@ fn contours(
                 let mut candidate = built.clone();
                 candidate.contours[index].column = column;
                 candidate.contours[index].lane = lane;
-                if keep(flow, topology, built, candidate, shape) {
+                if keep(verifier, built, candidate) {
                     changed = true;
                     break;
                 }
@@ -89,12 +102,7 @@ fn contours(
 }
 
 /// Replace successive sideways runs with one of their direct shortcuts.
-fn shortcuts(
-    flow: &Flow,
-    topology: &Topology,
-    built: &mut Arrangement,
-    shape: &verify::Shape,
-) -> bool {
+fn shortcuts(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
     let mut changed = false;
     for wire in 0..built.routes.len() {
         'shortcut: for first in 0..built.routes[wire].runs.len() {
@@ -108,7 +116,7 @@ fn shortcuts(
                     candidate.routes[wire]
                         .runs
                         .splice(first..=last, (run.enter != run.exit).then_some(run));
-                    if keep(flow, topology, built, candidate, shape) {
+                    if keep(verifier, built, candidate) {
                         changed = true;
                         break 'shortcut;
                     }
@@ -120,12 +128,7 @@ fn shortcuts(
 }
 
 /// Merge adjacent coordinates only when the full column and crossing rules permit it.
-fn columns(
-    flow: &Flow,
-    topology: &Topology,
-    built: &mut Arrangement,
-    shape: &verify::Shape,
-) -> bool {
+fn columns(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
     let mut changed = false;
     let widest = built.column.values().copied().max().unwrap_or(0);
     for column in (1..=widest).rev() {
@@ -134,7 +137,7 @@ fn columns(
         }
         let mut candidate = built.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
-        if keep(flow, topology, built, candidate, shape) {
+        if keep(verifier, built, candidate) {
             changed = true;
         }
     }
@@ -142,7 +145,7 @@ fn columns(
 }
 
 /// Lift one vertex and its arrivals; a shared fan-out may reuse an existing lane.
-fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verify::Shape) -> bool {
+fn lift(verifier: &ArrangementVerifier<'_>, topology: &Topology, built: &mut Arrangement) -> bool {
     let mut changed = false;
     for &vertex in &topology.vertices {
         // No forward relation may rise, and no placement relation either —
@@ -152,7 +155,7 @@ fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
         let first = topology
             .incoming(vertex)
             .chain(topology.order.iter().filter(|edge| {
-                edge.destination == vertex && !shape.bodies.may_rise_beside(built, edge)
+                edge.destination == vertex && !verifier.may_rise_beside(built, edge)
             }))
             .map(|edge| built.rank[&Vertex::from(edge.source)])
             .max()
@@ -189,7 +192,7 @@ fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
                         });
                     }
                 }
-                if keep(flow, topology, built, candidate, shape) {
+                if keep(verifier, built, candidate) {
                     changed = true;
                     break 'earlier;
                 }
@@ -200,7 +203,7 @@ fn lift(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
 }
 
 /// Fold consecutive ranks, preserving the order of their routing lanes.
-fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verify::Shape) -> bool {
+fn rows(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
     let mut changed = false;
     for rank in (2..built.ranks).rev() {
         let mut candidate = built.clone();
@@ -223,7 +226,7 @@ fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
         }
         candidate.gap_lanes[rank - 2] += candidate.gap_lanes.remove(rank - 1);
         candidate.ranks -= 1;
-        if keep(flow, topology, built, candidate, shape) {
+        if keep(verifier, built, candidate) {
             changed = true;
         }
     }
@@ -231,19 +234,13 @@ fn rows(flow: &Flow, topology: &Topology, built: &mut Arrangement, shape: &verif
 }
 
 fn keep(
-    flow: &Flow,
-    topology: &Topology,
+    verifier: &ArrangementVerifier<'_>,
     built: &mut Arrangement,
-    mut candidate: Arrangement,
-    shape: &verify::Shape,
+    candidate: Arrangement,
 ) -> bool {
-    if verify::placement(topology, &candidate, shape).is_err() {
+    let Ok(candidate) = verifier.normalize(candidate) else {
         return false;
-    }
-    compress(&mut candidate);
-    if verify::compacted(flow, topology, &candidate, shape).is_err() {
-        return false;
-    }
+    };
     *built = candidate;
     true
 }
@@ -273,34 +270,41 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
 mod tests {
     use super::*;
 
+    fn fixture(source: &str, flow: &str) -> syn::ItemFn {
+        let file = syn::parse_file(source).expect("the fixture parses");
+        file.items
+            .into_iter()
+            .find_map(|item| match item {
+                syn::Item::Fn(function) if function.sig.ident == flow => Some(function),
+                _ => None,
+            })
+            .expect("the fixture declares its flow")
+    }
     /// The verifier decides this on its own: the boundary rule reads the
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]
     fn an_outer_tail_cannot_join_a_column_inside_a_nested_frame() {
-        let function = crate::tests::fixture(
-            include_str!("../../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
+        let function = fixture(
+            include_str!("../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
             "nested_side_returns",
         );
-        let mut model = crate::build(&function).unwrap();
-        model.compact_arrangement();
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        compact_arrangement(&mut model);
         let tail = Vertex::Junction(model.topology.loops[0].tail);
         let column = model.arrangement.column[&tail];
         let mut candidate = model.arrangement.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
-        let shape = verify::Shape::of(&model.analysis.flow, &model.topology);
-        let refused = verify::compacted(&model.analysis.flow, &model.topology, &candidate, &shape)
+        let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+        let original = model.arrangement.clone();
+        let refused = verifier
+            .verify(&candidate)
             .expect_err("the outer return would cross the nested frame");
         assert!(refused.contains("cycle"), "{refused}");
         assert!(
-            !keep(
-                &model.analysis.flow,
-                &model.topology,
-                &mut model.arrangement,
-                candidate,
-                &shape,
-            ),
+            !keep(&verifier, &mut model.arrangement, candidate),
             "compaction refuses what the verifier refuses"
         );
+        assert_eq!(model.arrangement, original);
     }
 
     /// A completion outside the cycle boundary may share its body's rows (RFC 0002 §8).
@@ -308,23 +312,20 @@ mod tests {
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for (source, name) in [
             (
-                include_str!("../../../kaalang/tests/gallery/bubble_sort/mod.rs"),
+                include_str!("../../kaalang/tests/gallery/bubble_sort/mod.rs"),
                 "bubble_sort",
             ),
             (
-                include_str!("../../../kaalang/tests/loop/behavior/collect_steps.rs"),
+                include_str!("../../kaalang/tests/loop/behavior/collect_steps.rs"),
                 "collect_steps",
             ),
         ] {
-            let mut model = crate::build(&crate::tests::fixture(source, name)).unwrap();
-            model.compact_arrangement();
+            let mut model = kaalang_compiler::build(&fixture(source, name)).unwrap();
+            compact_arrangement(&mut model);
+            let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
             let built = &model.arrangement;
             let beside = model.topology.loop_boundaries.iter().any(|boundary| {
-                let body = super::super::loop_block::body_vertices(
-                    &model.analysis.flow,
-                    &model.topology,
-                    boundary.header,
-                );
+                let body = verifier.body_vertices(boundary.header);
                 let rows = body.iter().map(|vertex| built.rank[vertex]);
                 let columns = body.iter().map(|vertex| built.column[vertex]);
                 let (top, bottom) = (rows.clone().min(), rows.max());
@@ -353,17 +354,61 @@ mod tests {
 
     #[test]
     fn unused_lanes_can_disappear_together_during_compaction() {
-        let source = super::super::tests::looping(&["repeat", "repeat", "break"]);
-        let mut model = crate::build(&syn::parse_str(&source).unwrap()).unwrap();
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let mut model = kaalang_compiler::build(&syn::parse_str(&source).unwrap()).unwrap();
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
         }
-        verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement).unwrap();
-        arrangement(
-            &model.analysis.flow,
-            &model.topology,
-            &mut model.arrangement,
+        let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+        verifier.verify(&model.arrangement).unwrap();
+        compact_arrangement(&mut model);
+        ArrangementVerifier::new(&model.analysis.flow, &model.topology)
+            .verify(&model.arrangement)
+            .unwrap();
+    }
+
+    #[test]
+    fn compaction_is_deterministic_and_idempotent() {
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let function: syn::ItemFn = syn::parse_str(&source).unwrap();
+        let mut first = kaalang_compiler::build(&function).unwrap();
+        let mut second = kaalang_compiler::build(&function).unwrap();
+        compact_arrangement(&mut first);
+        compact_arrangement(&mut second);
+        assert_eq!(first.arrangement, second.arrangement);
+
+        let compacted = first.arrangement.clone();
+        compact_arrangement(&mut first);
+        assert_eq!(first.arrangement, compacted);
+    }
+
+    #[test]
+    fn junction_arrivals_keep_their_rank_through_compaction() {
+        let function = fixture(
+            include_str!("../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
+            "two_merges_reach_one_consumer",
         );
-        verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement).unwrap();
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        compact_arrangement(&mut model);
+        ArrangementVerifier::new(&model.analysis.flow, &model.topology)
+            .verify(&model.arrangement)
+            .unwrap();
+
+        let arrivals = model
+            .topology
+            .connections
+            .iter()
+            .enumerate()
+            .filter(|(_, wire)| matches!(wire.destination, Vertex::Junction(_)))
+            .filter(|(index, wire)| {
+                model.arrangement.routes[*index]
+                    .runs
+                    .last()
+                    .is_some_and(|run| {
+                        run.line == RunLine::Rank(model.arrangement.rank[&wire.destination])
+                    })
+            })
+            .count();
+        assert!(arrivals >= 2, "the fixture exercises sideways arrivals");
     }
 }

@@ -73,10 +73,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaalang-render"
+version = "0.1.0"
+dependencies = [
+ "kaalang-compiler",
+ "kaalang-testing",
+ "syn",
+]
+
+[[package]]
 name = "kaalang-svg"
 version = "0.1.0"
 dependencies = [
  "kaalang-compiler",
+ "kaalang-render",
  "kaalang-testing",
  "proc-macro2",
  "syn",

@@ -317,7 +317,7 @@ fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
     let function = crate::select_flow(&file.items, flow).expect("the fixture declares the flow");
     let mut model = kaalang_compiler::build(&function).expect("the fixture is a valid flow");
-    model.compact_arrangement();
+    kaalang_render::compact_arrangement(&mut model);
     change(&mut model.arrangement);
     let model = model;
     let start = start_text(source, &function.sig);
@@ -1573,7 +1573,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
             }
         };
         drawn += 1;
-        model.compact_arrangement();
+        kaalang_render::compact_arrangement(&mut model);
         let start = start_text(source, &function.sig);
         let parameters = parameter_text(source, &function.sig);
         if let Err(reason) = layout(

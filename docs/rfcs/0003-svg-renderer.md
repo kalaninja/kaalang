@@ -16,11 +16,12 @@ The validated model supplies both the topology and its arrangement.
 `kaalang_compiler::build` validates the complete expanded topology and
 independently checks its arrangement against RFC 0002 before it returns. For a
 collapsed view, the model layer projects each validated cycle boundary to one
-node and checks a second arrangement for that projection. The renderer chooses
-no structure of its own. It assigns dimensions and spacing to the selected
-arrangement's ranks, columns, regions, corridors, lanes, and contours. Sections
-2.1–2.4 describe construction and verification of RFC 0002's rules; §2.5 defines
-presentation preferences.
+node and checks a second arrangement for that projection. Before any concrete
+renderer measures it, `kaalang-render` may compact that witness into the common
+rows, columns, corridors, lanes, and contours. A concrete renderer chooses no
+structure of its own; it assigns dimensions and spacing to the shared
+arrangement. Sections 2.1–2.4 describe construction and verification of RFC
+0002's rules; §2.5 defines presentation preferences.
 
 ### 2.1 The decision procedure
 
@@ -262,17 +263,21 @@ the flow impossible to draw, validation rejects it.
 
 ### 2.3 Independent checks
 
-Before rendering, `SemanticModel::compact_arrangement` simplifies repeating
+Before rendering, `kaalang_render::compact_arrangement` simplifies repeating
 cycles and witnesses with long routing detours. This is optional presentation
-work, outside macro compilation. It shortens successive runs, joins compatible
-horizontal lanes, closes unused column space, brings straight contours toward
-their bodies and lifts vertices into earlier ranks. It may not split a choice's
-common case row. Each candidate is normalized and checked by the complete
-arrangement verifier before replacing the current witness. The SVG renderer
-realizes that checked replacement. An unsuccessful simplification keeps the
-current witness and never rejects a flow; it is not a second decision procedure
-or an additional language restriction. The normal form remains the fallback, not
-the required appearance.
+work, outside macro compilation and shared by concrete renderers. It shortens
+successive runs, joins compatible horizontal lanes, closes unused column space,
+brings straight contours toward their bodies and lifts vertices into earlier
+ranks. It may not split a choice's common case row. Each candidate is normalized
+and checked through `kaalang_render::ArrangementVerifier` before replacing the
+current witness. The verifier composes `kaalang_compiler::ArrangementChecks`
+with cached cycle boundaries and the renderer-only exception that lets a
+completion rise beside the cycle it leaves. A concrete renderer realizes that
+checked replacement. An unsuccessful simplification keeps the current witness
+and never rejects a flow; it is not a second decision procedure or an additional
+language restriction. The normal form remains the fallback, not the required
+appearance. Compaction reaches a deterministic local fixed point; it does not
+promise a global minimum of bends or area.
 
 Normalization keeps all junctions on their rank lines and removes unused gap
 lanes. Rank runs do not reserve gap lanes. Lifting a junction moves its arrival
@@ -489,9 +494,9 @@ inline modules. The selected function alone undergoes kaalang validation.
 flows; duplicate names remain in the list. `render_source` is equivalent to
 options with `collapse_loops: false`. The options-bearing entry point selects
 the all-expanded or all-collapsed projection only after the full expanded flow
-has passed semantic and topology validation. It then serializes the
-model-supplied arrangement or returns a rendering error. It does not invoke
-`cargo check` or perform full Rust type checking.
+has passed semantic and topology validation. It then serializes the shared
+arrangement or returns a rendering error. It does not invoke `cargo check` or
+perform full Rust type checking.
 
 `RenderError::Parse` reports invalid Rust syntax; `FlowNotFound` and
 `AmbiguousFlow` report missing and duplicate flow names. `InvalidFlow` reports

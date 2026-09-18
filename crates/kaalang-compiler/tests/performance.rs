@@ -1,5 +1,5 @@
 //! What this crate costs: analysis, topology projection, arrangement
-//! construction, compaction, and lowering to Rust.
+//! construction and lowering to Rust.
 //!
 //! Wall-clock, in the unoptimized dev profile a macro expansion runs in.
 
@@ -83,11 +83,6 @@ const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
 /// The bound on the diagram decision for a generated probe, accepted or
 /// refused, against a worst measured figure of about 290 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
-/// The bound on building and compacting one, which unlike
-/// [`GENERATED_DIAGRAM_DECISION_BUDGET`]
-/// includes the analysis above the decision. Against about 740 ms.
-const GENERATED_BUILD_AND_COMPACT_BUDGET: Duration = Duration::from_secs(3);
-
 fn check_compiler_corpus_budgets(
     label: &str,
     corpus_budget: Duration,
@@ -149,46 +144,6 @@ fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
             let lowered = kaalang_compiler::expand(function);
             lowered.unwrap_or_else(|error| panic!("{name}: {error}"));
         },
-    );
-}
-
-/// A serial flow leaves compaction almost nothing to do, so the check is that a
-/// second pass finds nothing the first one left.
-#[test]
-fn a_generated_serial_probe_compacts_inside_its_budget() {
-    let mut model =
-        kaalang_compiler::build(&flow(&nested_cycles(1, 40, false))).expect("the probe builds");
-    let started = Instant::now();
-    model.compact_arrangement();
-    let elapsed = started.elapsed();
-    assert!(
-        elapsed < GENERATED_BUILD_AND_COMPACT_BUDGET,
-        "compacting a generated serial probe took {elapsed:?}, past the {GENERATED_BUILD_AND_COMPACT_BUDGET:?} budget"
-    );
-    let ranks = model.arrangement.rank.clone();
-    model.compact_arrangement();
-    assert_eq!(
-        model.arrangement.rank, ranks,
-        "compaction reached a fixed point"
-    );
-}
-
-/// Too slow to sample the way the corpus budgets do, so it takes the fastest of
-/// three runs: the one least disturbed by whatever else the machine was doing.
-#[test]
-fn a_generated_nested_side_tail_probe_builds_and_compacts_inside_its_budget() {
-    let function = flow(&nested_cycles(8, 40, true));
-    let measure = || {
-        let started = Instant::now();
-        let mut model = kaalang_compiler::build(&function).expect("the probe builds");
-        model.compact_arrangement();
-        started.elapsed()
-    };
-    let elapsed = (0..3).map(|_| measure()).min().expect("three runs");
-    println!("generated nested side tail probe: {elapsed:?}");
-    assert!(
-        elapsed < GENERATED_BUILD_AND_COMPACT_BUDGET,
-        "building and compacting a generated nested side tail probe took {elapsed:?}, past the {GENERATED_BUILD_AND_COMPACT_BUDGET:?} budget"
     );
 }
 

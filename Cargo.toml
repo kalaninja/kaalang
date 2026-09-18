@@ -4,6 +4,7 @@ members = [
     "crates/kaalang-cli",
     "crates/kaalang-compiler",
     "crates/kaalang-macros",
+    "crates/kaalang-render",
     "crates/kaalang-svg",
     "crates/kaalang-testing",
 ]
@@ -17,6 +18,7 @@ version = "0.1.0"
 [workspace.dependencies]
 kaalang-compiler = { path = "crates/kaalang-compiler" }
 kaalang-macros = { path = "crates/kaalang-macros" }
+kaalang-render = { path = "crates/kaalang-render" }
 kaalang-svg = { path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 

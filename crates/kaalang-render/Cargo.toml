@@ -1,5 +1,5 @@
 [package]
-name = "kaalang-svg"
+name = "kaalang-render"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,13 +7,10 @@ publish = false
 
 [dependencies]
 kaalang-compiler = { workspace = true }
-kaalang-render = { workspace = true }
-proc-macro2 = { workspace = true, features = ["span-locations"] }
-syn = { workspace = true }
-unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
 kaalang-testing = { workspace = true }
+syn = { workspace = true }
 
 [lints]
 workspace = true

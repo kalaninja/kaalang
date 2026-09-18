@@ -41,31 +41,13 @@ pub struct SemanticModel {
 }
 
 impl SemanticModel {
-    /// Simplifies cycle routes and long detours, verifying each replacement.
-    /// Failed candidates leave the arrangement intact. Macro compilation skips this.
-    pub fn compact_arrangement(&mut self) {
-        if !self.topology.loops.is_empty()
-            || self
-                .arrangement
-                .routes
-                .iter()
-                .any(|route| route.runs.len() > 2)
-        {
-            crate::construct::compact::arrangement(
-                &self.analysis.flow,
-                &self.topology,
-                &mut self.arrangement,
-            );
-        }
-    }
-
-    /// Body vertices used by construction and rendering for loop bounds (RFC 0002 §8).
+    /// Body vertices used by shared and concrete renderers for loop bounds (RFC 0002 §8).
     #[must_use]
     pub fn body_vertices(
         &self,
         header: usize,
     ) -> std::collections::BTreeSet<crate::topology::Vertex> {
-        crate::construct::loop_block::body_vertices(&self.analysis.flow, &self.topology, header)
+        self.topology.body_vertices(&self.analysis.flow, header)
     }
 }
 

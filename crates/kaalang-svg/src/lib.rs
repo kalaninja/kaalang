@@ -133,7 +133,7 @@ pub fn render_source_with_options(
     let function = select_flow(&file.items, flow_name)?;
     let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
         .map_err(|error| invalid_flow(flow_name, &error))?;
-    model.compact_arrangement();
+    kaalang_render::compact_arrangement(&mut model);
     validate_labels(&model)?;
     let start = layout::start_text(source, &function.sig);
     let parameters = layout::parameter_text(source, &function.sig);

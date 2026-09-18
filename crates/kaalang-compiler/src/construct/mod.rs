@@ -7,7 +7,7 @@
 //! realizability. Only sweep exhaustion proves the topology impossible.
 //!
 //! See RFC 0003 §2.1 for the complete search and §2.5 for presentation choices.
-//! Rendering may compact the verified arrangement; macro compilation skips this.
+//! `kaalang-render` may compact the verified arrangement; macro compilation skips it.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -17,15 +17,17 @@ use crate::model::{Flow, WireMerge};
 use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
 
 mod choice;
-pub(crate) mod compact;
 mod describe;
 mod end;
 pub(crate) mod loop_block;
+mod normalize;
 mod place;
 mod regions;
 mod route;
 mod sweep;
 mod verify;
+
+pub use verify::ArrangementGeometry;
 
 /// The sole arrival that keeps an ordinary vertex in its predecessor's
 /// column. A case may be reached by a distributor detour, and an iteration
@@ -72,12 +74,115 @@ pub struct Arrangement {
 
 impl Arrangement {
     /// Every corridor: each connection's route, then each recorded back edge's.
-    pub(crate) fn all_routes(&self) -> impl Iterator<Item = &Route> {
+    pub fn all_routes(&self) -> impl Iterator<Item = &Route> {
         self.routes.iter().chain(self.back_routes.values())
     }
 
-    pub(crate) fn all_routes_mut(&mut self) -> impl Iterator<Item = &mut Route> {
+    /// Every mutable corridor: each connection's route, then each recorded back edge's.
+    pub fn all_routes_mut(&mut self) -> impl Iterator<Item = &mut Route> {
         self.routes.iter_mut().chain(self.back_routes.values_mut())
+    }
+}
+
+/// Reusable checks for arrangements of one analyzed and projected flow.
+///
+/// The flow and topology must come from the same [`crate::Analysis`] and
+/// projection. Construction caches the topology facts shared by every check.
+pub struct ArrangementChecks<'a> {
+    flow: &'a Flow,
+    topology: &'a Topology,
+    shape: verify::Shape,
+}
+
+impl<'a> ArrangementChecks<'a> {
+    /// Prepares the common arrangement checks for one flow and topology.
+    #[must_use]
+    pub fn new(flow: &'a Flow, topology: &'a Topology) -> Self {
+        Self {
+            flow,
+            topology,
+            shape: verify::Shape::of(flow, topology),
+        }
+    }
+
+    /// Checks a complete construction result against RFC 0002.
+    ///
+    /// Missing or inconsistent arrangement references produce an error rather
+    /// than being indexed. The flow and topology supplied to [`Self::new`] must
+    /// still be corresponding compiler outputs.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first RFC 0002 spatial rule the arrangement breaks.
+    pub fn verify(&self, arrangement: &Arrangement) -> Result<(), String> {
+        verify::arrangement_with_shape(self.flow, self.topology, arrangement, &self.shape)
+    }
+
+    /// Checks end placement, precedence and serial columns before normalization.
+    ///
+    /// `allow_order_exception` is consulted only for placement-only edges in
+    /// [`Topology::order`], never for drawn connections. This is a partial
+    /// check; call [`Self::verify_geometry`] for the remaining rules.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first placement rule the arrangement breaks.
+    pub fn verify_placement(
+        &self,
+        arrangement: &Arrangement,
+        allow_order_exception: impl FnMut(&Connection) -> bool,
+    ) -> Result<(), String> {
+        verify::placement(self.topology, arrangement, allow_order_exception)
+    }
+
+    /// Checks coverage, choices and abstract geometry.
+    ///
+    /// `additional` may impose renderer-specific rules on the same read-only
+    /// geometry before the common crossing checks run. This is a partial check;
+    /// call [`Self::verify_placement`] as well for a transformed arrangement.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first common or additional rule the arrangement breaks.
+    pub fn verify_geometry(
+        &self,
+        arrangement: &Arrangement,
+        additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
+    ) -> Result<(), String> {
+        verify::geometry(
+            self.flow,
+            self.topology,
+            arrangement,
+            &self.shape,
+            additional,
+        )
+    }
+
+    /// Normalizes coordinates, then checks choices and abstract geometry.
+    ///
+    /// Taking ownership lets a caller retain its current arrangement until this
+    /// returns `Ok`. This is a partial check; call [`Self::verify_placement`]
+    /// before normalization.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first coverage, common geometry or additional rule the
+    /// arrangement breaks.
+    pub fn normalize_geometry(
+        &self,
+        mut arrangement: Arrangement,
+        additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
+    ) -> Result<Arrangement, String> {
+        verify::coverage(self.topology, &arrangement)?;
+        normalize::arrangement(&mut arrangement);
+        verify::geometry_after_coverage(
+            self.flow,
+            self.topology,
+            &arrangement,
+            &self.shape,
+            additional,
+        )?;
+        Ok(arrangement)
     }
 }
 
@@ -205,7 +310,7 @@ pub(crate) fn construct(
         )
     };
     match preferred(flow, merges, topology) {
-        Ok(arrangement) => match verify::arrangement(flow, topology, &arrangement) {
+        Ok(arrangement) => match ArrangementChecks::new(flow, topology).verify(&arrangement) {
             Ok(()) => return Ok(arrangement),
             Err(reason) => disagreed(&reason),
         },

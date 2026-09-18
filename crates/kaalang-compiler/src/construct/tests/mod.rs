@@ -430,37 +430,14 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
 #[test]
 fn no_generated_cycle_shape_reaches_an_internal_error() {
     let shapes = loop_shapes();
-    let (mut drawn, mut crossed) = (0, 0);
+    let mut drawn = 0;
     for source in &shapes {
         let function: syn::ItemFn = syn::parse_str(source).expect("the probe parses");
         match crate::build(&function) {
-            Ok(mut model) => {
+            Ok(model) => {
                 drawn += 1;
                 verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
                     .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
-                // Compaction trades the row and serial rules for the boundary
-                // rule, so a compacted witness answers to the compacting
-                // verifier and never to the one that built it. The searches
-                // stay unaware of the rectangle on purpose, so an arrangement
-                // may reach compaction already crossing one; what compaction
-                // owes is not to make that worse.
-                let shape = verify::Shape::of(&model.analysis.flow, &model.topology);
-                let given = verify::compacted(
-                    &model.analysis.flow,
-                    &model.topology,
-                    &model.arrangement,
-                    &shape,
-                );
-                model.compact_arrangement();
-                if let Err(reason) = verify::compacted(
-                    &model.analysis.flow,
-                    &model.topology,
-                    &model.arrangement,
-                    &shape,
-                ) {
-                    assert!(given.is_err(), "compaction broke {source}\n{reason}");
-                    crossed += 1;
-                }
             }
             Err(error) => assert!(
                 !error.to_string().contains("internal kaalang"),
@@ -469,14 +446,6 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
         }
     }
     assert!(drawn > 100, "too few of the generated shapes were drawn");
-    // One shape reaches compaction already crossing a boundary: an outer cycle
-    // of `repeat/inner/repeat` over an inner cycle of `repeat/repeat`, where
-    // the last case's route passes through the inner body's columns. Pinned so
-    // the gap the searches leave cannot widen unnoticed.
-    assert_eq!(
-        crossed, 1,
-        "the boundary rule is crossed by more shapes now"
-    );
 }
 
 /// Exercises the sweep directly on accepted generated cycles, including nested
@@ -777,7 +746,9 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
     let [outer, inner] = model.topology.loops[..] else {
         panic!("the flow has two repeating cycles");
     };
-    let body = model.body_vertices(inner.header);
+    let body = model
+        .topology
+        .body_vertices(&model.analysis.flow, inner.header);
     assert!(body.contains(&Vertex::Junction(inner.tail)));
     assert!(!body.contains(&Vertex::Junction(outer.tail)));
 }
@@ -806,7 +777,9 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
         .result
         .map(Vertex::from)
         .expect("the inner cycle completes");
-    let body = model.body_vertices(outer.header);
+    let body = model
+        .topology
+        .body_vertices(&model.analysis.flow, outer.header);
     assert!(body.contains(&result));
     assert!(
         model
@@ -1017,7 +990,7 @@ fn value_producing_exit_routes_share_the_merge_before_break() {
 }
 
 #[test]
-fn junction_arrivals_record_their_rank_through_compaction() {
+fn junction_arrivals_record_their_rank() {
     let merge = crate::tests::fixture(
         include_str!("../../../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
         "two_merges_reach_one_consumer",
@@ -1037,41 +1010,36 @@ fn junction_arrivals_record_their_rank_through_compaction() {
         )
         .ok()
         .expect("the sweep can draw the junction arrivals");
-        for mut built in [model.arrangement.clone(), swept] {
-            for compact in [false, true] {
-                if compact {
-                    super::compact::arrangement(&model.analysis.flow, &model.topology, &mut built);
+        for built in [model.arrangement.clone(), swept] {
+            verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
+            let mut arrivals = 0;
+            for (index, wire) in model.topology.connections.iter().enumerate() {
+                if !matches!(wire.destination, Vertex::Junction(_)) {
+                    continue;
                 }
-                verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
-                let mut arrivals = 0;
-                for (index, wire) in model.topology.connections.iter().enumerate() {
-                    if !matches!(wire.destination, Vertex::Junction(_)) {
-                        continue;
-                    }
-                    if let Some(run) = built.routes[index].runs.last() {
-                        assert_eq!(
-                            run.line,
-                            super::RunLine::Rank(built.rank[&wire.destination])
+                if let Some(run) = built.routes[index].runs.last() {
+                    assert_eq!(
+                        run.line,
+                        super::RunLine::Rank(built.rank[&wire.destination])
+                    );
+                    // Reject both an absent row and a real row below the junction;
+                    // verification must not snap the recorded run back to its endpoint.
+                    for rank in [built.ranks, built.rank[&wire.destination] + 1] {
+                        let mut broken = built.clone();
+                        broken.routes[index].runs.last_mut().unwrap().line =
+                            super::RunLine::Rank(rank);
+                        assert!(
+                            verify::arrangement(&model.analysis.flow, &model.topology, &broken)
+                                .is_err()
                         );
-                        // Reject both an absent row and a real row below the junction;
-                        // verification must not snap the recorded run back to its endpoint.
-                        for rank in [built.ranks, built.rank[&wire.destination] + 1] {
-                            let mut broken = built.clone();
-                            broken.routes[index].runs.last_mut().unwrap().line =
-                                super::RunLine::Rank(rank);
-                            assert!(
-                                verify::arrangement(&model.analysis.flow, &model.topology, &broken)
-                                    .is_err()
-                            );
-                        }
-                        arrivals += 1;
                     }
+                    arrivals += 1;
                 }
-                assert!(
-                    arrivals >= minimum,
-                    "the fixture exercises sideways junction arrivals"
-                );
             }
+            assert!(
+                arrivals >= minimum,
+                "the fixture exercises sideways junction arrivals"
+            );
         }
     }
 }

@@ -45,7 +45,7 @@ pub fn enters(a: Point, b: Point, (left, top, right, bottom): (i32, i32, i32, i3
 
 /// Whether a point lies strictly inside a rectangle.
 #[must_use]
-pub(crate) const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
+pub const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i32)) -> bool {
     point.x > left && point.x < right && point.y > top && point.y < bottom
 }
 

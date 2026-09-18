@@ -179,6 +179,16 @@ pub(crate) fn linked(pairs: &[(usize, usize)]) -> Topology {
 }
 
 impl Topology {
+    /// Vertices drawn inside the cycle body beginning at `header`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `header` is not a cycle header in the corresponding flow.
+    #[must_use]
+    pub fn body_vertices(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
+        crate::construct::loop_block::body_vertices(flow, self, header)
+    }
+
     /// The node one id addresses.
     ///
     /// # Panics

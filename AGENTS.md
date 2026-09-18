@@ -13,11 +13,16 @@ tests, commit messages, and pull request content.
 - `docs/rfcs/` is the source of truth for kaalang syntax, semantics, scope, and
   design decisions. Read the relevant RFCs before conceptual or syntax changes.
 - `crates/kaalang-compiler/` parses and resolves flows into the shared validated
-  semantic model, decides the diagram, and lowers the verified plan to Rust.
+  semantic model, decides the diagram, exposes its common arrangement checks,
+  and lowers the verified plan to Rust.
 - `crates/kaalang-macros/` owns the procedural macro entry point and nothing
   else. A `proc-macro` crate may export only its macros, so anything kept here
   could not be called, tested, or measured from another crate.
-- `crates/kaalang-svg/` lays out validated models and renders standalone SVG.
+- `crates/kaalang-render/` owns cycle-boundary checks and compacts a verified
+  arrangement into the shared rows, columns, and routes every renderer starts
+  from.
+- `crates/kaalang-svg/` measures the shared arrangement and renders standalone
+  SVG without changing its structural layout.
 - `crates/kaalang-testing/` owns the shared test material: the fixture corpus,
   generated performance probes and cycle shapes, and the harness the budgets
   use. Nothing outside a test depends on it.

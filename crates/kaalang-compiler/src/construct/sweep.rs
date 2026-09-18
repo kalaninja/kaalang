@@ -366,6 +366,7 @@ struct Sweep<'a> {
     events: Vec<Vec<usize>>,
     flow: &'a Flow,
     topology: &'a Topology,
+    checks: super::ArrangementChecks<'a>,
     columns: Columns,
     arrivals: Vec<Vec<usize>>,
     departures: Vec<Vec<Vec<usize>>>,
@@ -537,6 +538,7 @@ impl<'a> Sweep<'a> {
             events: super::choice::events(topology),
             flow,
             topology,
+            checks: super::ArrangementChecks::new(flow, topology),
             columns: Columns::of(flow, topology, flexible)?,
             arrivals,
             predecessors: predecessors
@@ -787,8 +789,7 @@ impl<'a> Sweep<'a> {
                 return Ok(None);
             };
             let built = self.expand(steps, &order);
-            super::verify::arrangement(self.flow, self.topology, &built)
-                .map_err(Refusal::Internal)?;
+            self.checks.verify(&built).map_err(Refusal::Internal)?;
             return Ok(Some(built));
         }
         if memo && self.sealed(state) {
@@ -1007,7 +1008,7 @@ impl<'a> Sweep<'a> {
             previous = after;
         }
         built.back_routes.retain(|_, route| !route.runs.is_empty());
-        compress(&mut built);
+        super::normalize::arrangement(&mut built);
         built
     }
 
@@ -1405,119 +1406,9 @@ fn add_run(route: &mut Route, line: RunLine, enter: i32, exit: i32) {
     }
 }
 
-pub(super) fn compress(built: &mut Arrangement) {
-    // Compaction compresses every candidate it measures, so the numbering runs
-    // over a sorted slice rather than an ordered map: the coordinates are plain
-    // integers and there are thousands of passes over them.
-    let mut coordinates = built
-        .column
-        .values()
-        .copied()
-        .chain(
-            built
-                .exit_offset
-                .iter()
-                .map(|(exit, offset)| built.column[&Vertex::Node(exit.node)] + offset),
-        )
-        .chain(built.all_routes().flat_map(|r| {
-            [r.departure, r.arrival]
-                .into_iter()
-                .chain(r.runs.iter().flat_map(|s| [s.enter, s.exit]))
-        }))
-        .chain(built.contours.iter().map(|c| c.column))
-        .collect::<Vec<_>>();
-    coordinates.sort_unstable();
-    coordinates.dedup();
-    let numbered = |coordinate: i32| {
-        i32::try_from(
-            coordinates
-                .binary_search(&coordinate)
-                .expect("every coordinate was collected"),
-        )
-        .expect("a compressed column fits its own index")
-    };
-    for (exit, offset) in &mut built.exit_offset {
-        let column = built.column[&Vertex::Node(exit.node)];
-        *offset = numbered(column + *offset) - numbered(column);
-    }
-    for column in built.column.values_mut() {
-        *column = numbered(*column);
-    }
-    for contour in &mut built.contours {
-        contour.column = numbered(contour.column);
-    }
-    let mut used = built
-        .all_routes()
-        .flat_map(|route| &route.runs)
-        .filter_map(|run| match run.line {
-            RunLine::Lane { gap, lane } => Some((gap, lane)),
-            RunLine::Rank(_) => None,
-        })
-        .collect::<Vec<_>>();
-    used.sort_unstable();
-    used.dedup();
-    let mut lanes = Vec::with_capacity(used.len());
-    built.gap_lanes.fill(0);
-    for (gap, lane) in used {
-        lanes.push(((gap, lane), built.gap_lanes[gap]));
-        built.gap_lanes[gap] += 1;
-    }
-    for route in built.all_routes_mut() {
-        route.departure = numbered(route.departure);
-        route.arrival = numbered(route.arrival);
-        for run in &mut route.runs {
-            if let RunLine::Lane { gap, lane } = &mut run.line {
-                let at = lanes
-                    .binary_search_by_key(&(*gap, *lane), |&(key, _)| key)
-                    .expect("every drawn lane was collected");
-                *lane = lanes[at].1;
-            }
-            run.enter = numbered(run.enter);
-            run.exit = numbered(run.exit);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn normalization_keeps_a_bend_above_a_junction_with_a_straight_arrival() {
-        let parts =
-            super::super::tests::parts_of(&super::super::tests::looping(&["repeat", "break"]))
-                .unwrap();
-        let junction = Vertex::Junction(parts.topology.loops[0].entry);
-        let mut built = Arrangement {
-            rank: BTreeMap::from([(junction, 1)]),
-            ranks: 2,
-            routes: vec![Route {
-                departure: 0,
-                arrival: 1,
-                runs: vec![Run {
-                    line: RunLine::Lane { gap: 0, lane: 0 },
-                    enter: 0,
-                    exit: 1,
-                }],
-            }],
-            gap_lanes: vec![2, 0],
-            ..Arrangement::default()
-        };
-        let separated = |built: &Arrangement| {
-            let grid = super::super::verify::Grid::of(&parts.topology, built);
-            grid.line(built.routes[0].runs[0].line) < grid.rank(built.rank[&junction])
-        };
-        assert!(separated(&built));
-        compress(&mut built);
-        assert_eq!(
-            built.gap_lanes[0], 1,
-            "unused lanes no longer hold a junction"
-        );
-        assert!(
-            separated(&built),
-            "normalization moved a bend onto the junction line"
-        );
-    }
 
     #[test]
     fn strict_cycles_are_refused_and_weak_cycles_are_equalities() {
