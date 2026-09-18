@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use syn::ItemFn;
 
 use kaalang_testing::corpus;
-use kaalang_testing::performance::{ItemBudget, assert_pass_budget};
+use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
 use kaalang_testing::probes::{branching, branching_loops, flow, nested_cycles};
 
 /// The diagram-decision costs for one flow, and whether construction succeeded.
@@ -176,11 +176,10 @@ fn generated_accepted_probes_stay_inside_their_budget() {
             measured.accepted,
             "the generated probe with {what} should have an arrangement"
         );
-        let elapsed = measured.diagram();
-        println!("generated accepted probe: {what}: {elapsed:?}");
-        assert!(
-            elapsed < GENERATED_DIAGRAM_DECISION_BUDGET,
-            "the generated accepted probe with {what} took {elapsed:?}, past the {GENERATED_DIAGRAM_DECISION_BUDGET:?} budget"
+        assert_within(
+            &format!("generated accepted probe: {what}"),
+            GENERATED_DIAGRAM_DECISION_BUDGET,
+            measured.diagram(),
         );
     }
 }
@@ -224,13 +223,12 @@ fn generated_refused_probes_stay_inside_their_budget() {
             !measured.accepted,
             "the generated refused probe with {loops} loops should have no diagram"
         );
-        let elapsed = measured.diagram();
-        println!(
-            "generated refused probe: {loops} loops, {actions} actions, choice={distributor}: {elapsed:?}"
-        );
-        assert!(
-            elapsed < GENERATED_DIAGRAM_DECISION_BUDGET,
-            "the generated refused probe with {loops} loops and {actions} steps took {elapsed:?}, past the {GENERATED_DIAGRAM_DECISION_BUDGET:?} budget"
+        assert_within(
+            &format!(
+                "generated refused probe: {loops} loops, {actions} actions, choice={distributor}"
+            ),
+            GENERATED_DIAGRAM_DECISION_BUDGET,
+            measured.diagram(),
         );
     }
 }

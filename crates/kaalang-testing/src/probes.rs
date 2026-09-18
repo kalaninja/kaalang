@@ -19,6 +19,30 @@ pub fn flow(source: &str) -> ItemFn {
         .expect("the generated source declares a flow")
 }
 
+/// The indentation of one nesting level's cycle attribute.
+fn indent(depth: usize) -> String {
+    "    ".repeat(depth * 2 + 1)
+}
+
+/// One nesting level's cycle attribute and the closure that takes the enclosing
+/// level's repeat wire. Every level is closed again by [`close_levels`].
+fn open_level(depth: usize) -> String {
+    let pad = indent(depth);
+    let opening = if depth == 0 {
+        "|step| {".to_owned()
+    } else {
+        format!("|stay_{}, step| {{", depth - 1)
+    };
+    format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
+}
+
+/// Closes every level [`open_level`] opened, innermost first.
+fn close_levels(body: &mut String, loops: usize) {
+    for depth in (0..loops).rev() {
+        let _ = writeln!(body, "{}}};", indent(depth));
+    }
+}
+
 /// Nested question-controlled cycles followed by `actions` pairs of serial blocks.
 /// `empty_tail` omits the deepest action, leaving an empty repeating branch.
 ///
@@ -29,16 +53,9 @@ pub fn flow(source: &str) -> ItemFn {
 pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
     assert!(loops > 0, "a nested-cycle probe needs at least one loop");
     let mut body = String::new();
-    let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
-        let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}#[cycle(\"Level {depth}.\")]");
-        let opening = if depth == 0 {
-            "|step| {".to_owned()
-        } else {
-            format!("|stay_{}, step| {{", depth - 1)
-        };
-        let _ = writeln!(body, "{pad}{opening}");
+        let pad = indent(depth);
+        body.push_str(&open_level(depth));
         let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
         let ignored = if empty_tail && depth + 1 == loops {
             "_"
@@ -52,15 +69,12 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
         let _ = writeln!(body, "{pad}    |leave_{depth}| break;");
     }
     let deepest = loops - 1;
-    let pad = indent(deepest * 2);
+    let pad = indent(deepest);
     if !empty_tail {
         let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
         let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
     }
-    for depth in (0..loops).rev() {
-        let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}}};");
-    }
+    close_levels(&mut body, loops);
     for index in 0..actions {
         let _ = writeln!(body, "    #[action(\"Step {index}.\")]");
         let _ = writeln!(body, "    let step_{index} = || {index}usize;");
@@ -82,16 +96,9 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
 pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> String {
     assert!(loops > 0, "a refused shape needs at least one loop");
     let mut body = String::new();
-    let indent = |depth: usize| "    ".repeat(depth + 1);
     for depth in 0..loops {
-        let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}#[cycle(\"Level {depth}.\")]");
-        let opening = if depth == 0 {
-            "|step| {".to_owned()
-        } else {
-            format!("|stay_{}, step| {{", depth - 1)
-        };
-        let _ = writeln!(body, "{pad}{opening}");
+        let pad = indent(depth);
+        body.push_str(&open_level(depth));
         if distributor {
             let _ = writeln!(
                 body,
@@ -121,13 +128,10 @@ pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> Strin
         );
     }
     let deepest = loops - 1;
-    let pad = indent(deepest * 2);
+    let pad = indent(deepest);
     let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
     let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
-    for depth in (0..loops).rev() {
-        let pad = indent(depth * 2);
-        let _ = writeln!(body, "{pad}}};");
-    }
+    close_levels(&mut body, loops);
     for action in 0..actions {
         let _ = writeln!(
             body,

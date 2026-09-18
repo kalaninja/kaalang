@@ -4,6 +4,7 @@
 
 use std::time::{Duration, Instant};
 
+use kaalang_testing::performance::assert_within;
 use kaalang_testing::probes::{flow, nested_cycles};
 
 /// The bound on building and compacting one generated probe, against a measured
@@ -18,10 +19,10 @@ fn a_generated_serial_probe_compacts_inside_its_budget() {
         kaalang_compiler::build(&flow(&nested_cycles(1, 40, false))).expect("the probe builds");
     let started = Instant::now();
     kaalang_render::compact_arrangement(&mut model);
-    let elapsed = started.elapsed();
-    assert!(
-        elapsed < GENERATED_BUILD_AND_COMPACT_BUDGET,
-        "compacting a generated serial probe took {elapsed:?}, past the {GENERATED_BUILD_AND_COMPACT_BUDGET:?} budget"
+    assert_within(
+        "generated serial probe",
+        GENERATED_BUILD_AND_COMPACT_BUDGET,
+        started.elapsed(),
     );
     let compacted = model.arrangement.clone();
     kaalang_render::compact_arrangement(&mut model);
@@ -42,10 +43,9 @@ fn a_generated_nested_side_tail_probe_builds_and_compacts_inside_its_budget() {
         kaalang_render::compact_arrangement(&mut model);
         started.elapsed()
     };
-    let elapsed = (0..3).map(|_| measure()).min().expect("three runs");
-    println!("generated nested side tail probe: {elapsed:?}");
-    assert!(
-        elapsed < GENERATED_BUILD_AND_COMPACT_BUDGET,
-        "building and compacting a generated nested side tail probe took {elapsed:?}, past the {GENERATED_BUILD_AND_COMPACT_BUDGET:?} budget"
+    assert_within(
+        "generated nested side tail probe",
+        GENERATED_BUILD_AND_COMPACT_BUDGET,
+        (0..3).map(|_| measure()).min().expect("three runs"),
     );
 }

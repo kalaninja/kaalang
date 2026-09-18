@@ -75,6 +75,21 @@ pub fn assert_pass_budget<T>(
     }
 }
 
+/// Reports one measured duration and checks it against its budget. Probes too
+/// slow to sample the way [`assert_pass_budget`] does measure themselves and
+/// report through this.
+///
+/// # Panics
+///
+/// Panics when `elapsed` reaches `budget`.
+pub fn assert_within(what: &str, budget: Duration, elapsed: Duration) {
+    println!("{what}: {elapsed:?}");
+    assert!(
+        elapsed < budget,
+        "{what} took {elapsed:?}, past the {budget:?} budget"
+    );
+}
+
 /// Nearest-rank percentile for `percent` in `0..=100`; zero selects the minimum.
 ///
 /// # Panics

@@ -68,6 +68,17 @@ pub fn looping(routes: &[&str]) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     let completes = routes.iter().any(|route| *route != "repeat");
+    cycle_flow(
+        "Exercise the generated routes.",
+        &choice,
+        &bodies,
+        completes,
+    )
+}
+
+/// The flow around one generated cycle body: the cycle's caption, the selection
+/// that opens it, and the transfer and return a completing body needs.
+fn cycle_flow(caption: &str, selection: &str, bodies: &str, completes: bool) -> String {
     let transfer = if completes {
         "\n        |completed| break completed;"
     } else {
@@ -79,14 +90,7 @@ pub fn looping(routes: &[&str]) -> String {
         ("", "")
     };
     format!(
-        "fn probe(mode: u8) -> u8 {{
-    #[cycle(\"Exercise the generated routes.\")]
-    {output}|mode| {{
-{choice}
-{bodies}{transfer}
-    }};{after}
-}}
-"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
     )
 }
 
@@ -204,18 +208,11 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .any(|route| matches!(*route, "break" | "finish"))
         || outer.contains(&"inner") && propagates;
-    let transfer = if completes {
-        "\n        |completed| break completed;"
-    } else {
-        ""
-    };
-    let (output, after) = if completes {
-        ("let result = ", "\n    |result| return result;")
-    } else {
-        ("", "")
-    };
-    format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outer routes.\")]\n    {output}|mode| {{\n{outer_selection}\n{outer_bodies}{transfer}\n    }};{after}\n}}\n"
+    cycle_flow(
+        "Exercise the generated outer routes.",
+        &outer_selection,
+        &outer_bodies,
+        completes,
     )
 }
 

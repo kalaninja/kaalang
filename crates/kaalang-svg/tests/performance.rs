@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use kaalang_svg::RenderOptions;
 use kaalang_testing::corpus;
-use kaalang_testing::performance::{ItemBudget, assert_pass_budget};
+use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
 use kaalang_testing::probes::{branching, nested_cycles};
 
 // The corpus budget includes ordinary and stress fixtures, with both expanded
@@ -106,10 +106,10 @@ fn generated_probes_render_inside_their_budget() {
             let drawn = kaalang_svg::render_source_with_options(&source, name, options);
             let elapsed = started.elapsed();
             drawn.unwrap_or_else(|error| panic!("{what} (collapsed={collapse_loops}): {error}"));
-            println!("generated render probe: {what}, collapsed={collapse_loops}: {elapsed:?}");
-            assert!(
-                elapsed < GENERATED_RENDER_BUDGET,
-                "rendering {what} (collapsed={collapse_loops}) took {elapsed:?}, past the {GENERATED_RENDER_BUDGET:?} budget"
+            assert_within(
+                &format!("generated render probe: {what}, collapsed={collapse_loops}"),
+                GENERATED_RENDER_BUDGET,
+                elapsed,
             );
         }
     }

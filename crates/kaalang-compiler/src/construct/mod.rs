@@ -122,7 +122,7 @@ impl<'a> ArrangementChecks<'a> {
     ///
     /// `allow_order_exception` is consulted only for placement-only edges in
     /// [`Topology::order`], never for drawn connections. This is a partial
-    /// check; call [`Self::verify_geometry`] for the remaining rules.
+    /// check; call [`Self::normalize_geometry`] for the remaining rules.
     ///
     /// # Errors
     ///
@@ -133,29 +133,6 @@ impl<'a> ArrangementChecks<'a> {
         allow_order_exception: impl FnMut(&Connection) -> bool,
     ) -> Result<(), String> {
         verify::placement(self.topology, arrangement, allow_order_exception)
-    }
-
-    /// Checks coverage, choices and abstract geometry.
-    ///
-    /// `additional` may impose renderer-specific rules on the same read-only
-    /// geometry before the common crossing checks run. This is a partial check;
-    /// call [`Self::verify_placement`] as well for a transformed arrangement.
-    ///
-    /// # Errors
-    ///
-    /// Returns the first common or additional rule the arrangement breaks.
-    pub fn verify_geometry(
-        &self,
-        arrangement: &Arrangement,
-        additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
-    ) -> Result<(), String> {
-        verify::geometry(
-            self.flow,
-            self.topology,
-            arrangement,
-            &self.shape,
-            additional,
-        )
     }
 
     /// Normalizes coordinates, then checks choices and abstract geometry.

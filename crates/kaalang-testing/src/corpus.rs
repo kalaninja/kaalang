@@ -47,6 +47,20 @@ pub fn corpus() -> Vec<(String, ItemFn, bool)> {
     flows
 }
 
+/// The flow named `name` in one fixture file's source.
+///
+/// # Panics
+///
+/// Panics when the source does not parse or declares no such flow.
+#[must_use]
+pub fn flow_named(source: &str, name: &str) -> ItemFn {
+    let file = syn::parse_file(source).expect("the fixture parses");
+    kaalang_compiler::flows(&file.items)
+        .into_iter()
+        .find(|function| function.sig.ident == name)
+        .expect("the fixture declares the flow")
+}
+
 fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
     let Ok(entries) = fs::read_dir(directory) else {
         return;

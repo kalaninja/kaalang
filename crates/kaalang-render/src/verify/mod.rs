@@ -44,23 +44,6 @@ impl<'a> ArrangementVerifier<'a> {
         }
     }
 
-    /// Checks a complete arrangement proposed for rendering.
-    ///
-    /// Missing or inconsistent arrangement references produce an error rather
-    /// than being indexed.
-    ///
-    /// # Errors
-    ///
-    /// Returns the first placement, boundary or common geometry rule the
-    /// arrangement breaks.
-    pub fn verify(&self, arrangement: &Arrangement) -> Result<(), String> {
-        self.checks
-            .verify_placement(arrangement, |edge| self.bodies.completes_a_boundary(edge))?;
-        self.checks.verify_geometry(arrangement, |geometry| {
-            self.bodies.verify(self.topology, geometry)
-        })
-    }
-
     /// Normalizes and verifies one renderer candidate.
     ///
     /// Taking ownership lets a caller retain its current arrangement until this

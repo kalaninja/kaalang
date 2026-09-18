@@ -386,17 +386,6 @@ impl Shape {
     }
 }
 
-pub(super) fn geometry(
-    flow: &Flow,
-    topology: &Topology,
-    arrangement: &Arrangement,
-    shape: &Shape,
-    additional: impl FnOnce(&ArrangementGeometry) -> Result<(), String>,
-) -> Result<(), String> {
-    coverage(topology, arrangement)?;
-    geometry_after_coverage(flow, topology, arrangement, shape, additional)
-}
-
 pub(super) fn geometry_after_coverage(
     flow: &Flow,
     topology: &Topology,

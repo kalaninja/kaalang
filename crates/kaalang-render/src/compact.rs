@@ -270,16 +270,8 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
 mod tests {
     use super::*;
 
-    fn fixture(source: &str, flow: &str) -> syn::ItemFn {
-        let file = syn::parse_file(source).expect("the fixture parses");
-        file.items
-            .into_iter()
-            .find_map(|item| match item {
-                syn::Item::Fn(function) if function.sig.ident == flow => Some(function),
-                _ => None,
-            })
-            .expect("the fixture declares its flow")
-    }
+    use kaalang_testing::corpus::flow_named as fixture;
+
     /// The verifier decides this on its own: the boundary rule reads the
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]
@@ -297,7 +289,7 @@ mod tests {
         let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
         let original = model.arrangement.clone();
         let refused = verifier
-            .verify(&candidate)
+            .normalize(candidate.clone())
             .expect_err("the outer return would cross the nested frame");
         assert!(refused.contains("cycle"), "{refused}");
         assert!(
@@ -360,10 +352,10 @@ mod tests {
             *lanes += 4;
         }
         let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
-        verifier.verify(&model.arrangement).unwrap();
+        verifier.normalize(model.arrangement.clone()).unwrap();
         compact_arrangement(&mut model);
         ArrangementVerifier::new(&model.analysis.flow, &model.topology)
-            .verify(&model.arrangement)
+            .normalize(model.arrangement.clone())
             .unwrap();
     }
 
@@ -391,7 +383,7 @@ mod tests {
         let mut model = kaalang_compiler::build(&function).unwrap();
         compact_arrangement(&mut model);
         ArrangementVerifier::new(&model.analysis.flow, &model.topology)
-            .verify(&model.arrangement)
+            .normalize(model.arrangement.clone())
             .unwrap();
 
         let arrivals = model

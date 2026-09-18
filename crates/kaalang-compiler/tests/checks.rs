@@ -7,12 +7,8 @@ fn model(source: &str) -> SemanticModel {
 }
 
 fn fixture(source: &str, name: &str) -> SemanticModel {
-    let file = syn::parse_file(source).expect("the fixture parses");
-    let function = kaalang_compiler::flows(&file.items)
-        .into_iter()
-        .find(|function| function.sig.ident == name)
-        .expect("the fixture declares the flow");
-    kaalang_compiler::build(&function).expect("the fixture has an arrangement")
+    kaalang_compiler::build(&kaalang_testing::corpus::flow_named(source, name))
+        .expect("the fixture has an arrangement")
 }
 
 #[test]
@@ -57,7 +53,7 @@ fn the_public_geometry_check_rejects_a_crossed_corridor() {
     );
     let checks = ArrangementChecks::new(&model.analysis.flow, &model.topology);
     checks
-        .verify_geometry(&model.arrangement, |geometry| {
+        .normalize_geometry(model.arrangement.clone(), |geometry| {
             assert_eq!(
                 geometry.connections().len(),
                 model.topology.connections.len()
@@ -70,6 +66,6 @@ fn the_public_geometry_check_rejects_a_crossed_corridor() {
     crossed.routes[10].runs[0].line = RunLine::Rank(0);
     crossed.routes[10].runs[0].enter = 1;
     crossed.routes[10].runs[0].exit = -1;
-    let reason = checks.verify_geometry(&crossed, |_| Ok(())).unwrap_err();
+    let reason = checks.normalize_geometry(crossed, |_| Ok(())).unwrap_err();
     assert!(reason.contains("passes through"), "{reason}");
 }
