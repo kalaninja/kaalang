@@ -1,6 +1,7 @@
 //! Records the implicit merge of every repeated output name and checks that
 //! source order closes each merge's branch-local work before its consumers.
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
@@ -234,9 +235,7 @@ fn ordering(
             if first_producer != second_producer {
                 owners.insert(question);
             }
-            decided.entry(question).or_default().extend(
-                (0..end).filter(|&block| first.participates(block) != second.participates(block)),
-            );
+            record_difference(decided.entry(question).or_default(), first, second, end);
         }
     }
     let before = owners
@@ -261,6 +260,37 @@ fn ordering(
         })
         .collect();
     (before, groups)
+}
+
+/// Records the blocks below `end` that exactly one of two executions runs.
+/// Both block lists are sorted, so one walk over the pair replaces a search
+/// per block of the flow.
+fn record_difference(
+    decided: &mut BTreeSet<usize>,
+    first: &Execution,
+    second: &Execution,
+    end: usize,
+) {
+    let mut decide = |block: usize| {
+        if block < end {
+            decided.insert(block);
+        }
+    };
+    let (mut first, mut second) = (first.blocks.as_slice(), second.blocks.as_slice());
+    while let ([left, rest @ ..], [right, others @ ..]) = (first, second) {
+        match left.cmp(right) {
+            Ordering::Less => {
+                decide(*left);
+                first = rest;
+            }
+            Ordering::Greater => {
+                decide(*right);
+                second = others;
+            }
+            Ordering::Equal => (first, second) = (rest, others),
+        }
+    }
+    first.iter().chain(second).copied().for_each(decide);
 }
 
 /// Every repeated output name defines one merge, in first-producer order.

@@ -2,6 +2,7 @@
 //! execution invariants of RFC 0001 and recording the executions, capture
 //! dependencies, and convergence groups that the rest of the compiler relies on.
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
@@ -88,15 +89,30 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
 
 /// The one question or choice that both executions run with different
 /// outcomes, when every other one they both run agrees.
+///
+/// Walks the two selection lists together: each is sorted by block, and an
+/// execution summary runs every block at most once, so a block appears in one
+/// list at most once. A block only one of them selects belongs to a path the
+/// other cut short and takes no part in the comparison.
 fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
-    let mut differing = left.branches.iter().filter(|selection| {
-        right
-            .branches
-            .iter()
-            .any(|other| other.block == selection.block && other.branch != selection.branch)
-    });
-    let first = differing.next()?.block;
-    differing.next().is_none().then_some(first)
+    let (mut left, mut right) = (left.branches.as_slice(), right.branches.as_slice());
+    let mut difference = None;
+    while let ([first, rest @ ..], [second, others @ ..]) = (left, right) {
+        match first.block.cmp(&second.block) {
+            Ordering::Less => left = rest,
+            Ordering::Greater => right = others,
+            Ordering::Equal => {
+                if first.branch != second.branch {
+                    if difference.is_some() {
+                        return None;
+                    }
+                    difference = Some(first.block);
+                }
+                (left, right) = (rest, others);
+            }
+        }
+    }
+    difference
 }
 
 /// Unfold only selections that change the observed outcome. Earlier converged
