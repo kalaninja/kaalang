@@ -24,14 +24,28 @@ pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
         .collect()
 }
 
-/// Transitive successors of every vertex.
+/// Transitive successors of every vertex, from one shared closure. The start
+/// itself appears only when a back edge reaches it, as in [`walk`].
 pub(super) fn reachable(topology: &Topology) -> BTreeMap<Vertex, BTreeSet<Vertex>> {
-    // ponytail: one walk per vertex, each an indexed neighbour lookup; one
-    // shared closure if a flow ever passes a few hundred blocks.
+    let mut paths = vec![vec![false; topology.vertices.len()]; topology.vertices.len()];
+    for wire in &topology.connections {
+        paths[super::index_of(topology, Vertex::from(wire.source))]
+            [super::index_of(topology, wire.destination)] = true;
+    }
+    super::close_paths(&mut paths);
     topology
         .vertices
         .iter()
-        .map(|&start| (start, walk(topology, start, None, false)))
+        .zip(paths)
+        .map(|(&start, row)| {
+            let reached = topology
+                .vertices
+                .iter()
+                .zip(row)
+                .filter_map(|(&vertex, reached)| reached.then_some(vertex))
+                .collect();
+            (start, reached)
+        })
         .collect()
 }
 

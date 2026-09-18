@@ -46,6 +46,54 @@ fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     incoming.next().is_none().then_some(arrival)
 }
 
+/// The index of one vertex in `Topology::vertices`.
+///
+/// # Panics
+///
+/// Panics if the vertex is not projected.
+fn index_of(topology: &Topology, vertex: Vertex) -> usize {
+    topology
+        .vertices
+        .binary_search(&vertex)
+        .expect("a projected vertex")
+}
+
+/// Transitive closure of an adjacency matrix over `Topology::vertices`.
+/// Reachability has no distances: one machine word propagates 64 vertices.
+///
+/// A vertex reaches itself only through a cycle; a caller wanting a reflexive
+/// relation sets the diagonal itself.
+fn close_paths(paths: &mut [Vec<bool>]) {
+    let words = paths.len().div_ceil(64);
+    let mut packed = paths
+        .iter()
+        .map(|row| {
+            let mut bits = vec![0_u64; words];
+            for (v, &reachable) in row.iter().enumerate() {
+                if reachable {
+                    bits[v / 64] |= 1 << (v % 64);
+                }
+            }
+            bits
+        })
+        .collect::<Vec<_>>();
+    for k in 0..paths.len() {
+        let through = packed[k].clone();
+        for row in &mut packed {
+            if row[k / 64] & (1 << (k % 64)) != 0 {
+                for (word, next) in row.iter_mut().zip(&through) {
+                    *word |= next;
+                }
+            }
+        }
+    }
+    for (row, bits) in paths.iter_mut().zip(packed) {
+        for (v, reachable) in row.iter_mut().enumerate() {
+            *reachable = bits[v / 64] & (1 << (v % 64)) != 0;
+        }
+    }
+}
+
 /// A checked arrangement of one topology. Ranks and columns are abstract
 /// integers: a presentation assigns dimensions and spacing to them, and may not
 /// reorder or re-route anything recorded here.

@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::model::{Flow, WireMerge};
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
-use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side};
+use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side, close_paths, index_of};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Lifeline {
@@ -133,13 +133,6 @@ fn unite(parent: &mut [usize], a: usize, b: usize) {
     let a = root(parent, a);
     let b = root(parent, b);
     parent[b] = a;
-}
-
-fn index_of(topology: &Topology, vertex: Vertex) -> usize {
-    topology
-        .vertices
-        .binary_search(&vertex)
-        .expect("a projected vertex")
 }
 
 fn serial_identities(
@@ -512,8 +505,10 @@ impl<'a> Sweep<'a> {
         }
         close_paths(&mut paths);
         close_paths(&mut precedence);
-        for (v, row) in precedence.iter_mut().enumerate() {
-            row[v] = false;
+        for v in 0..n {
+            // A vertex stands on its own path, never before itself.
+            paths[v][v] = true;
+            precedence[v][v] = false;
         }
         let barriers = (0..n)
             .map(|b| {
@@ -1365,38 +1360,6 @@ fn pack(
             .clamp(left, last);
         placed.insert(wire, x);
         left = x + 1;
-    }
-}
-
-/// Reachability has no distances: one machine word propagates 64 vertices.
-fn close_paths(paths: &mut [Vec<bool>]) {
-    let words = paths.len().div_ceil(64);
-    let mut packed = paths
-        .iter()
-        .map(|row| {
-            let mut bits = vec![0_u64; words];
-            for (v, &reachable) in row.iter().enumerate() {
-                if reachable {
-                    bits[v / 64] |= 1 << (v % 64);
-                }
-            }
-            bits
-        })
-        .collect::<Vec<_>>();
-    for k in 0..paths.len() {
-        let through = packed[k].clone();
-        for row in &mut packed {
-            if row[k / 64] & (1 << (k % 64)) != 0 {
-                for (word, next) in row.iter_mut().zip(&through) {
-                    *word |= next;
-                }
-            }
-        }
-    }
-    for (i, (row, bits)) in paths.iter_mut().zip(packed).enumerate() {
-        for (v, reachable) in row.iter_mut().enumerate() {
-            *reachable = i == v || bits[v / 64] & (1 << (v % 64)) != 0;
-        }
     }
 }
 
