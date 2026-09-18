@@ -1544,6 +1544,32 @@ fn four_nested_back_edges_are_drawn_in_four_lanes() {
         "the outermost rail should climb four lanes past the body: {} past {edge}",
         rails[0]
     );
+
+    let crowded = match side {
+        Side::Left => scene.arrangement.contours[0].column - 1,
+        Side::Right => scene.arrangement.contours[0].column,
+    };
+    let mut without_contours = scene.clone();
+    without_contours.reach.clear();
+    let ordinary = scene
+        .arrangement
+        .column
+        .values()
+        .copied()
+        .find(|&left| {
+            without_contours.column_gap(left) == COLUMN_WIDTH + scene.slack
+                && scene.column_gap(left) == without_contours.column_gap(left)
+        })
+        .expect("the probe has an ordinary gap between content columns");
+    assert!(
+        scene.column_gap(crowded) > without_contours.column_gap(crowded),
+        "the deep contour should widen its own gap"
+    );
+    assert_eq!(
+        scene.column_gap(ordinary),
+        without_contours.column_gap(ordinary),
+        "the deep contour should not widen another gap"
+    );
 }
 
 /// Accepted generated cycles render except for one pinned boundary crossing.

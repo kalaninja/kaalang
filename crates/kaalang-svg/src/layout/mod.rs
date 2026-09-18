@@ -76,9 +76,9 @@ pub(crate) struct Scene {
     /// The checked arrangement it realizes. Ranks, columns, corridors, and
     /// contours are decisions, not suggestions.
     pub(crate) arrangement: Arrangement,
-    /// How far past a body's edge a back edge rail reaches, on the left and on
-    /// the right. `column_width` holds a gap wide enough for both at once.
-    reach: (i32, i32),
+    /// How far back edge rails reach left and right of each abstract column.
+    /// Each gap reserves only the reaches that enter it.
+    reach: BTreeMap<i32, (i32, i32)>,
     /// Extra room between columns, asked for by a previous pass whose back edges
     /// and labels wanted the same gap. Zero for almost every diagram.
     slack: i32,
@@ -347,9 +347,8 @@ fn collapsed_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Maximum rail reach on each side, including nested contours. Uses
-/// `route::contour_x`'s spacing rules before pixels are placed to size column gaps.
-fn contour_reach(model: &SemanticModel) -> (i32, i32) {
+/// Maximum rail reach on each side of every column used by a back edge.
+fn contour_reaches(model: &SemanticModel) -> BTreeMap<i32, (i32, i32)> {
     let loops = &model.topology.loops;
     let mut reach = vec![0; loops.len()];
     // Innermost first: `topology.loops` runs outermost first.
@@ -369,14 +368,27 @@ fn contour_reach(model: &SemanticModel) -> (i32, i32) {
             i32::try_from(model.arrangement.contours[index].lane).unwrap_or(i32::MAX / LANE) + 1;
         reach[index] = nested.max(lane * LANE);
     }
-    let widest = |want| {
-        (0..loops.len())
-            .filter(|&index| model.arrangement.contours[index].side == want)
-            .map(|index| reach[index])
-            .max()
-            .unwrap_or(0)
-    };
-    (widest(Side::Left), widest(Side::Right))
+    let mut columns = BTreeMap::<i32, (i32, i32)>::new();
+    for (index, contour) in model.arrangement.contours.iter().enumerate() {
+        let mut record = |column| {
+            let sides = columns.entry(column).or_default();
+            let side = match contour.side {
+                Side::Left => &mut sides.0,
+                Side::Right => &mut sides.1,
+            };
+            *side = (*side).max(reach[index]);
+        };
+        record(contour.column);
+        if let Some(route) = model.arrangement.back_routes.get(&index) {
+            record(route.arrival);
+            record(route.departure);
+            for run in &route.runs {
+                record(run.enter);
+                record(run.exit);
+            }
+        }
+    }
+    columns
 }
 
 /// Lays out one validated flow, or reports that this layout could not route its
@@ -401,7 +413,12 @@ fn layout_spaced(
     // Labels and opposing rails may need a wider column gap. Node and label
     // widths stay fixed, so their maximum reach bounds the required slack.
     // Each retry adds at least one lane; failure at the bound is a renderer defect.
-    let (left, right) = contour_reach(model);
+    let reach = contour_reaches(model);
+    let (left, right) = reach
+        .values()
+        .fold((0, 0), |(left, right), &(here_left, here_right)| {
+            (left.max(here_left), right.max(here_right))
+        });
     let bound = label::LABEL_WIDTH + left + right + LANE;
     let mut slack = 0;
     loop {
@@ -569,7 +586,7 @@ fn attempt(
         labels: Vec::new(),
         loop_regions: Vec::new(),
         captions: captions::derive(model, start, return_type),
-        reach: contour_reach(model),
+        reach: contour_reaches(model),
         bodies: model
             .topology
             .loops
@@ -735,16 +752,19 @@ impl Scene {
     }
 
     /// Column centre under a strictly increasing map. Content columns reserve
-    /// measured widths; routing-only columns need one lane. Failed checks retry
-    /// with uniform spacing, which bent back edges always need for offset order.
+    /// measured widths; routing-only columns need one lane. Each gap grows only
+    /// for the back edge reaches that enter it.
     pub(super) fn column_x(&self, column: i32) -> i32 {
-        let width = self.column_width();
-        if !self.narrow || !self.arrangement.back_routes.is_empty() {
-            return MARGIN + NODE_WIDTH / 2 + column * width;
-        }
-        let half = |at| {
-            if self
-                .topology
+        let distance: i32 = (0.min(column)..0.max(column))
+            .map(|at| self.column_gap(at))
+            .sum();
+        MARGIN + NODE_WIDTH / 2 + column.signum() * distance
+    }
+
+    /// Width of the gap after `left`, including contours entering from both sides.
+    fn column_gap(&self, left: i32) -> i32 {
+        let content = |at| {
+            self.topology
                 .nodes
                 .iter()
                 .any(|node| self.column(Vertex::Node(node.id)) == at)
@@ -753,30 +773,33 @@ impl Scene {
                     .exit_offset
                     .iter()
                     .any(|(exit, offset)| self.column(Vertex::Node(exit.node)) + offset == at)
-            {
-                width / 2
+        };
+        let half = |at| if content(at) { NODE_WIDTH / 2 } else { 0 };
+        let base = if !self.narrow || !self.arrangement.back_routes.is_empty() {
+            COLUMN_WIDTH
+        } else {
+            let narrow_half = |at| {
+                if content(at) {
+                    COLUMN_WIDTH / 2
+                } else {
+                    LANE / 2
+                }
+            };
+            narrow_half(left) + narrow_half(left + 1)
+        };
+        let right = self.reach.get(&left).map_or(0, |reach| reach.1);
+        let left_reach = self.reach.get(&(left + 1)).map_or(0, |reach| reach.0);
+        let bent = !self.arrangement.back_routes.is_empty();
+        let span = |at, reach| {
+            if reach == 0 {
+                half(at)
+            } else if bent {
+                NODE_WIDTH / 2 + label::LABEL_WIDTH + reach
             } else {
-                LANE.midpoint(self.slack)
+                half(at) + reach
             }
         };
-        let distance: i32 = (0.min(column)..0.max(column))
-            .map(|at| half(at) + half(at + 1))
-            .sum();
-        MARGIN + NODE_WIDTH / 2 + column.signum() * distance
-    }
-
-    /// Column spacing that leaves a lane between opposing contour reaches.
-    ///
-    /// ponytail: one width for the whole diagram, so one deep contour widens
-    /// every gap; give each gap its own width if a diagram looks stretched.
-    fn column_width(&self) -> i32 {
-        let (left, right) = self.reach;
-        let labels = if self.arrangement.back_routes.is_empty() {
-            0
-        } else {
-            2 * label::LABEL_WIDTH
-        };
-        COLUMN_WIDTH.max(NODE_WIDTH + left + right + LANE + labels) + self.slack
+        base.max(span(left, right) + LANE + span(left + 1, left_reach)) + self.slack
     }
 
     pub(super) fn column(&self, vertex: Vertex) -> i32 {

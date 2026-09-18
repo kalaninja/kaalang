@@ -341,17 +341,19 @@ structure. One strictly increasing `column_x` map positions every node,
 junction, route, and back edge. Nodes sharing a column share an x coordinate;
 branch order and reserved areas retain their horizontal order.
 
-Uniform column spacing is at least the standard column width and large enough
-for a node box, the deepest contour on each side, a separating lane, and any
-label-clearance slack. A rank's height fits its tallest node or merge marker.
-Its gap holds the recorded routing lanes and measured connection labels. All
-junctions retain their recorded row centres, including those without markers.
+Each column gap is large enough for its content, the contours that enter that
+gap from either side, a separating lane, and any label-clearance slack. A deep
+contour widens only the gap that contains it. A rank's height fits its tallest
+node or merge marker. Its gap holds the recorded routing lanes and measured
+connection labels. All junctions retain their recorded row centres, including
+those without markers.
 
 For straight back edges, the renderer first tries narrower gaps around columns
 containing only routes or junctions. Node and exit columns retain their measured
 widths, including branch descriptions. If that attempt fails geometry, label, or
-correspondence checks, uniform spacing realizes the same arrangement. Drawings
-with bent back edges use uniform spacing throughout.
+correspondence checks, standard spacing realizes the same arrangement. Drawings
+with bent back edges use standard spacing except where their recorded contours
+need a wider gap.
 
 A label and a straight back edge can compete for the same column gap. The
 renderer widens that gap in finite steps. Wrapped label widths and node sizes
