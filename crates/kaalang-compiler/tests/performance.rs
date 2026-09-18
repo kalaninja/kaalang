@@ -78,7 +78,7 @@ const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
 
 // Generated probes sit outside the fixture corpus and exercise selected stages.
 /// The bound on analysis alone for a generated probe, against a measured median
-/// of about 700 ms for nine branching stages.
+/// of about 380 ms for nine branching stages.
 const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
 /// The bound on the diagram decision for a generated probe, accepted or
 /// refused, against a worst measured figure of about 290 ms.

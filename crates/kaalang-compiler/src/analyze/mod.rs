@@ -33,32 +33,7 @@ mod tests;
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
-    let end = flow.blocks.len() - 1;
-    debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
-    let mut walk = Walk {
-        flow,
-        end,
-        executions: BTreeSet::new(),
-        error: None,
-        incomplete: None,
-    };
-    walk.visit(
-        0,
-        State {
-            available: flow
-                .flow_inputs
-                .iter()
-                .enumerate()
-                .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
-                .collect(),
-            produced: flow.flow_inputs.iter().cloned().collect(),
-            executed: BTreeSet::new(),
-            branches: BTreeSet::new(),
-            dependencies: BTreeSet::new(),
-            repeats: BTreeSet::new(),
-            loops: BTreeMap::new(),
-        },
-    );
+    let walk = walk(flow);
     if let Some((_, error)) = walk.error {
         return Err(error);
     }
@@ -85,6 +60,50 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
     Ok((executions, convergence_groups, merges))
+}
+
+/// Enumerates every finite execution summary of a flow in source order,
+/// recording the first error the walk itself found.
+fn walk(flow: &Flow) -> Walk<'_> {
+    let end = flow.blocks.len() - 1;
+    debug_assert_eq!(flow.blocks[end].kind, BlockKind::End);
+    let mut walk = Walk {
+        flow,
+        end,
+        executions: BTreeSet::new(),
+        error: None,
+        incomplete: None,
+    };
+    walk.visit(
+        0,
+        State {
+            available: flow
+                .flow_inputs
+                .iter()
+                .enumerate()
+                .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
+                .collect(),
+            produced: flow.flow_inputs.iter().cloned().collect(),
+            executed: BTreeSet::new(),
+            branches: BTreeSet::new(),
+            dependencies: BTreeSet::new(),
+            repeats: BTreeSet::new(),
+            loops: BTreeMap::new(),
+        },
+    );
+    walk
+}
+
+/// The parsed flow and its executions, before the passes that reject either.
+/// Reference comparisons need the input those passes are given, including the
+/// flows one of them goes on to refuse.
+#[cfg(test)]
+pub(crate) fn walked(function: &syn::ItemFn) -> Option<(Flow, Vec<Execution>)> {
+    let mut flow = crate::parse::flow(function).ok()?;
+    crate::scope::resolve(&mut flow).ok()?;
+    crate::resolve::flow(&flow).ok()?;
+    let executions = walk(&flow).executions.into_iter().collect();
+    Some((flow, executions))
 }
 
 /// The one question or choice that both executions run with different
