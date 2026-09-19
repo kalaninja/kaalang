@@ -1,0 +1,7 @@
+# Pinned: the compile-fail snapshots record rustc's own diagnostics, which drift
+# between releases. `rust-src` is part of the pin because a diagnostic that
+# quotes the standard library only shows the snippet when the source is present.
+# Bump deliberately and re-record with `just rust test`.
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt", "rust-src"]

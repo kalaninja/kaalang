@@ -11,10 +11,6 @@ note: `String::into_bytes` takes ownership of the receiver `self`, which moves `
   |
   |     pub const fn into_bytes(self) -> Vec<u8> {
   |                             ^^^^
-help: you can `clone` the value and consume it, but this might not be your desired behavior
-  |
-6 |     let end = |&input| { <String as Clone>::clone(&input).into_bytes().len() };
-  |                          ++++++++++++++++++++++++++     +
 help: consider cloning the value if the performance cost is acceptable
   |
 6 |     let end = |&input| { input.clone().into_bytes().len() };
