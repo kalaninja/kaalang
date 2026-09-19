@@ -505,12 +505,13 @@ perform full Rust type checking.
 `AmbiguousFlow` report missing and duplicate flow names. `InvalidFlow` reports
 invalid kaalang attributes and errors from model construction, including an
 impossible expanded topology. `InvalidLabelCharacter` reports authored
-descriptions and source-derived signature labels containing characters that XML
-1.0 cannot represent. `RenderError::UnroutableTopology` reports a renderer
-defect in geometry, labels or witness correspondence for the selected projection
-after assigning dimensions and spacing. Optional arrangement compaction retains
-the original witness when a candidate fails verification. Final route, label and
-correspondence checks remain necessary after measurement.
+descriptions, source-derived signature labels, and default call captions
+containing characters that XML 1.0 cannot represent.
+`RenderError::UnroutableTopology` reports a renderer defect in geometry, labels
+or witness correspondence for the selected projection after assigning dimensions
+and spacing. Optional arrangement compaction retains the original witness when a
+candidate fails verification. Final route, label and correspondence checks
+remain necessary after measurement.
 
 ## 5. Command-line interface
 

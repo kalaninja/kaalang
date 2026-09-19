@@ -228,9 +228,7 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-/// Checks authored descriptions and source-derived signature labels for invalid
-/// XML characters. Default call captions contain normalized Rust path tokens,
-/// so source comments do not reach them.
+/// Checks authored descriptions and source-derived labels for invalid XML characters.
 fn validate_labels(
     model: &kaalang_compiler::SemanticModel,
     signature: &Signature,
@@ -239,6 +237,9 @@ fn validate_labels(
     return_type: &str,
 ) -> Result<(), RenderError> {
     for block in &model.analysis.flow.blocks {
+        if block.kind == kaalang_compiler::BlockKind::Call && block.description.is_none() {
+            validate_label(&block.callee(), block.span, "call label")?;
+        }
         let description = block
             .description
             .as_deref()
@@ -458,6 +459,23 @@ fn invalid(condition: bool) -> u32 {
                 })
             );
         }
+    }
+
+    #[test]
+    fn validates_xml_characters_in_default_call_labels() {
+        let source = "#[kaalang]\nfn invalid() -> usize {\n    #[call]\n    let output = count::<{r\"a\0b\".len()}>();\n    |output| return output;\n}\nfn count<const N: usize>() -> usize { N }\n";
+
+        assert_eq!(
+            render_source(source, "invalid"),
+            Err(RenderError::InvalidLabelCharacter {
+                character: '\0',
+                line: 3,
+                column: 5,
+                context: "call label".into(),
+            })
+        );
+        let described = source.replace("#[call]", "#[call(\"Count bytes.\")]");
+        assert!(render_source(&described, "invalid").is_ok());
     }
 
     #[test]
