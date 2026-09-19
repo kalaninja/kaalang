@@ -103,6 +103,12 @@ fn writes_default_and_explicit_outputs_only_after_success() {
             "invalid",
             "could not construct a diagram under RFC 0002",
         ),
+        (
+            "invalid-label.rs",
+            "#[kaalang]\nfn invalid(input: /*\0*/ u8) -> u8 {\n    |input| return input;\n}\n",
+            "invalid",
+            "contains XML-incompatible character U+0000",
+        ),
     ] {
         fs::write(directory.join(file), contents).unwrap();
         let preserved = directory.join(format!("{file}.svg"));

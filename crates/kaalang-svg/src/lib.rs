@@ -3,7 +3,7 @@
 use std::{error::Error, fmt};
 
 use proc_macro2::Span;
-use syn::{File, Item, ItemFn, Meta};
+use syn::{File, Item, ItemFn, Meta, ReturnType, Signature, spanned::Spanned};
 
 mod captions;
 mod layout;
@@ -46,10 +46,10 @@ pub enum RenderError {
         /// connections, or the label and node, that break it.
         reason: String,
     },
-    /// An authored label contains a character that XML 1.0 cannot represent.
+    /// A rendered label contains a character that XML 1.0 cannot represent.
     InvalidLabelCharacter {
         character: char,
-        /// The 1-based source line and column of the block that carries it.
+        /// The 1-based source line and column of the construct that carries it.
         line: usize,
         column: usize,
         context: String,
@@ -110,8 +110,8 @@ impl Error for RenderError {}
 /// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
 /// `flow_name` does not name exactly one `#[kaalang]` function,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
-/// [`RenderError::InvalidLabelCharacter`] when an authored description
-/// contains a character XML 1.0 cannot represent, and
+/// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
+/// character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
 /// arrangement as geometry cannot route every connection and place every label
 /// under RFC 0002 §8.
@@ -135,10 +135,10 @@ pub fn render_source_with_options(
     let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
         .map_err(|error| invalid_flow(flow_name, &error))?;
     kaalang_render::compact_arrangement(&mut model);
-    validate_labels(&model)?;
     let start = layout::start_text(parser_source, &function.sig);
     let parameters = layout::parameter_text(parser_source, &function.sig);
     let return_type = layout::return_text(parser_source, &function.sig.output);
+    validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
     let scene = layout::layout(&model, &start, &parameters, &return_type).map_err(|reason| {
         RenderError::UnroutableTopology {
             name: flow_name.to_owned(),
@@ -228,11 +228,17 @@ fn location(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-/// Checks authored descriptions for invalid XML characters. Default call
-/// captions come from Rust path tokens and need no description check.
-fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), RenderError> {
+/// Checks authored descriptions and source-derived signature labels for invalid
+/// XML characters. Default call captions contain normalized Rust path tokens,
+/// so source comments do not reach them.
+fn validate_labels(
+    model: &kaalang_compiler::SemanticModel,
+    signature: &Signature,
+    start: &str,
+    parameters: &[String],
+    return_type: &str,
+) -> Result<(), RenderError> {
     for block in &model.analysis.flow.blocks {
-        let (line, column) = location(block.span);
         let description = block
             .description
             .as_deref()
@@ -253,18 +259,31 @@ fn validate_labels(model: &kaalang_compiler::SemanticModel) -> Result<(), Render
                     .map(|text| (text, format!("question branch {} description", branch + 1)))
             });
         for (text, context) in description.into_iter().chain(cases).chain(branches) {
-            if let Some(character) = invalid_xml_character(text) {
-                return Err(RenderError::InvalidLabelCharacter {
-                    character,
-                    line,
-                    column,
-                    context,
-                });
-            }
+            validate_label(text, block.span, context)?;
         }
+    }
+    validate_label(start, signature.span(), "flow header")?;
+    for (index, (parameter, text)) in signature.inputs.iter().zip(parameters).enumerate() {
+        validate_label(text, parameter.span(), format!("parameter {}", index + 1))?;
+    }
+    if let ReturnType::Type(_, ty) = &signature.output {
+        validate_label(return_type, ty.span(), "return type")?;
     }
 
     Ok(())
+}
+
+fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result<(), RenderError> {
+    let Some(character) = invalid_xml_character(label) else {
+        return Ok(());
+    };
+    let (line, column) = location(span);
+    Err(RenderError::InvalidLabelCharacter {
+        character,
+        line,
+        column,
+        context: context.into(),
+    })
 }
 
 /// Finds the first character XML 1.0 cannot represent.
@@ -403,6 +422,42 @@ fn invalid(condition: bool) -> u32 {
                 context: "block description".into(),
             })
         );
+    }
+
+    #[test]
+    fn rejects_xml_incompatible_signature_labels() {
+        assert_eq!(invalid_xml_character("λ\t\n\r<&>"), None);
+
+        for (source, line, column, context) in [
+            (
+                "#[kaalang]\nfn /*\0*/ invalid(input: u8) -> u8 {\n    |input| return input;\n}\n",
+                2,
+                1,
+                "flow header",
+            ),
+            (
+                "\u{feff}#!/usr/bin/env rustx\r\n#[kaalang]\nfn invalid(input: /*\0*/ u8) -> u8 {\n    |input| return input;\n}\n",
+                3,
+                12,
+                "parameter 1",
+            ),
+            (
+                "#[kaalang]\nfn invalid(input: u8) -> (u8, /*\0*/ u8) {\n    |input| return input;\n}\n",
+                2,
+                26,
+                "return type",
+            ),
+        ] {
+            assert_eq!(
+                render_source(source, "invalid"),
+                Err(RenderError::InvalidLabelCharacter {
+                    character: '\0',
+                    line,
+                    column,
+                    context: context.into(),
+                })
+            );
+        }
     }
 
     #[test]
