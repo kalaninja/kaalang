@@ -132,6 +132,30 @@ fn writes_default_and_explicit_outputs_only_after_success() {
 }
 
 #[test]
+fn renders_source_with_parser_prefixes() {
+    let directory = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-prefixes");
+    let _ = fs::remove_dir_all(&directory);
+    fs::create_dir_all(&directory).unwrap();
+    let source = directory.join("flow.rs");
+    let output = directory.join("flow.svg");
+    fs::write(&source, format!("\u{feff}#!/usr/bin/env rustx\r\n{SOURCE}")).unwrap();
+
+    let rendered = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
+        .args(["diagram"])
+        .arg(&source)
+        .args(["--flow", "route", "-o"])
+        .arg(&output)
+        .output()
+        .unwrap();
+
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert_eq!(
+        fs::read_to_string(output).unwrap(),
+        kaalang_svg::render_source(SOURCE, "route").unwrap()
+    );
+}
+
+#[test]
 fn writes_collapsed_default_and_honors_an_explicit_output() {
     let directory = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-collapsed");
     let _ = fs::remove_dir_all(&directory);

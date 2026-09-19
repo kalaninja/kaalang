@@ -130,14 +130,15 @@ pub fn render_source_with_options(
     options: RenderOptions,
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
+    let parser_source = parser_source(source, &file);
     let function = select_flow(&file.items, flow_name)?;
     let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
         .map_err(|error| invalid_flow(flow_name, &error))?;
     kaalang_render::compact_arrangement(&mut model);
     validate_labels(&model)?;
-    let start = layout::start_text(source, &function.sig);
-    let parameters = layout::parameter_text(source, &function.sig);
-    let return_type = layout::return_text(source, &function.sig.output);
+    let start = layout::start_text(parser_source, &function.sig);
+    let parameters = layout::parameter_text(parser_source, &function.sig);
+    let return_type = layout::return_text(parser_source, &function.sig.output);
     let scene = layout::layout(&model, &start, &parameters, &return_type).map_err(|reason| {
         RenderError::UnroutableTopology {
             name: flow_name.to_owned(),
@@ -170,6 +171,15 @@ fn parse_file(source: &str) -> Result<File, RenderError> {
             message: error.to_string(),
         }
     })
+}
+
+/// The exact source suffix `syn::parse_file` tokenized. Its retained newline
+/// after a shebang keeps span line numbers aligned with the original file.
+fn parser_source<'a>(source: &'a str, file: &File) -> &'a str {
+    let source = source.strip_prefix('\u{feff}').unwrap_or(source);
+    file.shebang
+        .as_ref()
+        .map_or(source, |shebang| &source[shebang.len()..])
 }
 
 fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
@@ -423,5 +433,63 @@ fn invalid(condition: bool) -> u32 {
                 context: "question branch 1 description".into(),
             })
         );
+    }
+
+    #[test]
+    fn source_prefixes_preserve_labels_and_error_locations() {
+        const SOURCE: &str =
+            "#[kaalang]\nfn idéntity(value: u32) -> u32 {\n    |value| return value;\n}\n";
+        const PREFIXES: [(&str, usize); 4] = [
+            ("", 0),
+            ("\u{feff}", 0),
+            ("#!/usr/bin/env rustx\n", 1),
+            ("\u{feff}#!/usr/bin/env rustx\r\n", 1),
+        ];
+
+        let reference = render_source(SOURCE, "idéntity").expect("the plain source renders");
+        assert!(reference.contains("idéntity"));
+        assert!(reference.contains("value: u32"));
+        assert!(reference.contains(">u32</tspan>"));
+        for (prefix, _) in PREFIXES {
+            assert_eq!(
+                render_source(&format!("{prefix}{SOURCE}"), "idéntity"),
+                Ok(reference.clone())
+            );
+        }
+        assert_eq!(
+            render_source(&format!("#![allow(dead_code)]\n{SOURCE}"), "idéntity"),
+            Ok(reference)
+        );
+
+        let invalid = [
+            ("fn invalid(", "invalid"),
+            (
+                "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy\")]\n    let input = |input| input;\n    |input| return input;\n}\n",
+                "invalid",
+            ),
+            (
+                "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let output = |input| input;\n    |output| return output;\n}\n",
+                "invalid",
+            ),
+        ];
+        let location = |error: &RenderError| match error {
+            RenderError::Parse { line, column, .. }
+            | RenderError::InvalidFlow { line, column, .. }
+            | RenderError::InvalidLabelCharacter { line, column, .. } => (*line, *column),
+            other => panic!("expected a source-spanned error, got {other:?}"),
+        };
+        for (source, flow) in invalid {
+            let expected = render_source(source, flow).expect_err("the plain source is invalid");
+            let (line, column) = location(&expected);
+            for (prefix, added_lines) in PREFIXES {
+                let error = render_source(&format!("{prefix}{source}"), flow)
+                    .expect_err("the prefixed source stays invalid");
+                assert_eq!(location(&error), (line + added_lines, column));
+                assert_eq!(
+                    std::mem::discriminant(&error),
+                    std::mem::discriminant(&expected)
+                );
+            }
+        }
     }
 }
