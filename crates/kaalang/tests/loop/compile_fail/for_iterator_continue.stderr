@@ -1,0 +1,5 @@
+error: a kaalang block body must not use `break` or `continue` outside its own Rust loops
+  --> tests/loop/compile_fail/for_iterator_continue.rs:11:21
+   |
+11 |                     continue;
+   |                     ^^^^^^^^

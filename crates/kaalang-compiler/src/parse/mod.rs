@@ -2,8 +2,9 @@
 
 use proc_macro2::{Ident, Span};
 use syn::{
-    Attribute, Error, Expr, ExprAsync, ExprClosure, ExprReturn, ExprTry, FnArg, Item, ItemFn,
-    LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result, ReturnType, Stmt, Type,
+    Attribute, Error, Expr, ExprAsync, ExprClosure, ExprForLoop, ExprReturn, ExprTry, FnArg, Item,
+    ItemFn, LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result, ReturnType, Stmt,
+    Type,
     ext::IdentExt,
     parse_quote_spanned,
     spanned::Spanned,
@@ -770,7 +771,6 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
             let scope = match expression {
                 Expr::Loop(loop_) => Some((loop_.label.as_ref(), true)),
                 Expr::While(loop_) => Some((loop_.label.as_ref(), true)),
-                Expr::ForLoop(loop_) => Some((loop_.label.as_ref(), true)),
                 Expr::Block(block) if block.label.is_some() => Some((block.label.as_ref(), false)),
                 _ => None,
             };
@@ -797,6 +797,27 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
             if scope.is_some() {
                 self.scopes.pop();
             }
+        }
+
+        fn visit_expr_for_loop(&mut self, expression: &'ast ExprForLoop) {
+            for attribute in &expression.attrs {
+                self.visit_attribute(attribute);
+            }
+            if let Some(label) = &expression.label {
+                self.visit_label(label);
+            }
+            self.visit_pat(&expression.pat);
+            // Rust evaluates the iterator before entering the `for` loop.
+            self.visit_expr(&expression.expr);
+            self.scopes.push((
+                expression
+                    .label
+                    .as_ref()
+                    .map(|label| label.name.ident.clone()),
+                true,
+            ));
+            self.visit_block(&expression.body);
+            self.scopes.pop();
         }
 
         fn visit_expr_return(&mut self, expression: &'ast ExprReturn) {
@@ -904,7 +925,7 @@ fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident
 mod tests {
     use syn::{ItemFn, parse_quote};
 
-    use super::{block_input, block_outputs, flow};
+    use super::{block_input, block_outputs, flow, reject_control_transfers};
     use crate::model::BlockKind;
 
     #[test]
@@ -1082,6 +1103,47 @@ mod tests {
             };
             assert_eq!(error(&function), diagnostic);
         }
+    }
+
+    #[test]
+    fn a_for_iterator_does_not_open_the_for_loop_scope() {
+        for body in [
+            parse_quote!(for _ in {
+                break;
+                0..1
+            } {}),
+            parse_quote!(for _ in {
+                continue;
+                0..1
+            } {}),
+        ] {
+            assert_eq!(
+                reject_control_transfers(&body)
+                    .expect_err("the transfer escapes the body")
+                    .to_string(),
+                "a kaalang block body must not use `break` or `continue` outside its own Rust loops"
+            );
+        }
+    }
+
+    #[test]
+    fn a_for_iterator_keeps_enclosing_loop_scopes() {
+        let body = parse_quote! {
+            'local: loop {
+                for _ in { break 'local; 0..1 } {}
+            }
+        };
+
+        reject_control_transfers(&body).expect("the iterator transfer targets the local loop");
+    }
+
+    #[test]
+    fn a_while_condition_keeps_its_labeled_loop_scope() {
+        let body = parse_quote! {
+            'local: while { break 'local; true } {}
+        };
+
+        reject_control_transfers(&body).expect("the condition transfer targets the while loop");
     }
 
     #[test]
