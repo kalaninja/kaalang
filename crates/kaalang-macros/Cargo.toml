@@ -1,9 +1,10 @@
 [package]
 name = "kaalang-macros"
+description = "Procedural macros for kaalang"
+documentation = "https://docs.rs/kaalang-macros"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-publish = false
 
 [lib]
 proc-macro = true

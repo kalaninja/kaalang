@@ -1,9 +1,10 @@
 [package]
 name = "kaalang-svg"
+description = "Standalone SVG rendering for kaalang diagrams"
+documentation = "https://docs.rs/kaalang-svg"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-publish = false
 
 [dependencies]
 kaalang-compiler = { workspace = true }

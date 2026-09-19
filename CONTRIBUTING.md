@@ -116,6 +116,19 @@ themselves during `cargo test`, so a renderer or model change arrives as a diff
 over them. `just rust svg` redraws them and shows that diff. Read it before
 committing: nothing else checks that the new diagrams still make sense.
 
+### Packaging a release
+
+Verify the publishable workspace packages together:
+
+```sh
+just release package
+```
+
+Publish one crate at a time with `just release publish <crate>`, in dependency
+order: `kaalang-compiler`, `kaalang-macros`, `kaalang-render`, `kaalang-svg`,
+`kaalang`, then `kaalang-cli`. `kaalang-testing` is a repository-only fixture
+harness and remains unpublished.
+
 Gallery examples may group related flows in one `mod.rs` and share a test. Each
 flow still gets its own `<flow>.svg` beside that module.
 

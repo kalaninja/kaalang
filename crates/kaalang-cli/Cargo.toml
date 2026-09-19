@@ -1,9 +1,10 @@
 [package]
 name = "kaalang-cli"
+description = "Command-line SVG rendering for kaalang flows"
+documentation = "https://docs.rs/kaalang-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-publish = false
 
 [dependencies]
 kaalang-svg = { workspace = true }

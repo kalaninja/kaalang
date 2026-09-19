@@ -1,9 +1,10 @@
 [package]
 name = "kaalang-render"
+description = "Structural layout for kaalang diagrams"
+documentation = "https://docs.rs/kaalang-render"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-publish = false
 
 [dependencies]
 kaalang-compiler = { workspace = true }

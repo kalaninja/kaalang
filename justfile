@@ -4,6 +4,9 @@ mod ci 'just/ci.just'
 # Documentation commands
 mod docs 'just/docs.just'
 
+# Release commands
+mod release 'just/release.just'
+
 # Rust commands
 mod rust 'just/rust.just'
 
