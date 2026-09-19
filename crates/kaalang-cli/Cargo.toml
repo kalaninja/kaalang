@@ -4,6 +4,7 @@ description = "Command-line SVG rendering for kaalang flows"
 documentation = "https://docs.rs/kaalang-cli"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]

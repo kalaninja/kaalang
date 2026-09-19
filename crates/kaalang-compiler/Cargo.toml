@@ -4,6 +4,7 @@ description = "Parsing, analysis, and Rust lowering for kaalang flows"
 documentation = "https://docs.rs/kaalang-compiler"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]

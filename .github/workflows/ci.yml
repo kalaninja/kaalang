@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # The toolchain comes from rust-toolchain.toml.
       - run: rustup show
       - uses: Swatinem/rust-cache@v2
       - uses: extractions/setup-just@v3
@@ -21,3 +22,16 @@ jobs:
       - run: just rust test
       # The behavior diagrams redraw themselves during the tests above.
       - run: git add -A && git diff --cached --exit-code
+
+  msrv:
+    runs-on: ubuntu-latest
+    env:
+      # Overrides rust-toolchain.toml: nothing here should pull the pinned toolchain.
+      RUSTUP_TOOLCHAIN: '1.88'
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install 1.88 --profile minimal
+      - uses: Swatinem/rust-cache@v2
+      # The compile-fail snapshots record the pinned toolchain's own diagnostics,
+      # so the floor is type-checked rather than tested.
+      - run: cargo check --workspace --all-targets --locked

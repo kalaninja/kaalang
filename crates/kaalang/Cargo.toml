@@ -4,6 +4,7 @@ description = "A visual flow dialect of Rust"
 documentation = "https://docs.rs/kaalang"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
