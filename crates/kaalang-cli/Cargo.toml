@@ -2,6 +2,8 @@
 name = "kaalang-cli"
 description = "Command-line SVG rendering for kaalang flows"
 documentation = "https://docs.rs/kaalang-cli"
+keywords = ["code-visualization", "flowchart", "drakon", "cargo", "cli"]
+categories = ["command-line-utilities", "development-tools::cargo-plugins", "visualization"]
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
