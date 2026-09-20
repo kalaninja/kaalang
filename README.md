@@ -1,5 +1,8 @@
 # kaalang
 
+[![crates.io][crates-io-badge]][crates-io] [![docs.rs][docs-rs-badge]][docs-rs]
+[![CI][ci-badge]][ci]
+
 > We be of one blood, thou and I - man and snake together.
 >
 > Kaa - from Rudyard Kipling's [“The Spring Running”][spring-running], _The
@@ -265,3 +268,10 @@ The RFCs are the source of truth for syntax, semantics, and diagrams.
 - [Contributing](CONTRIBUTING.md)
 
 [spring-running]: https://www.gutenberg.org/cache/epub/37364/pg37364-images.html
+[ci]: https://github.com/kalaninja/kaalang/actions/workflows/ci.yml
+[ci-badge]:
+  https://github.com/kalaninja/kaalang/actions/workflows/ci.yml/badge.svg
+[crates-io]: https://crates.io/crates/kaalang
+[crates-io-badge]: https://img.shields.io/crates/v/kaalang.svg
+[docs-rs]: https://docs.rs/kaalang
+[docs-rs-badge]: https://docs.rs/kaalang/badge.svg
