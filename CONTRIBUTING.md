@@ -124,10 +124,23 @@ Verify the publishable workspace packages together:
 just release package
 ```
 
-Publish one crate at a time with `just release publish <crate>`, in dependency
-order: `kaalang-compiler`, `kaalang-macros`, `kaalang-render`, `kaalang-svg`,
-`kaalang`, then `kaalang-cli`. `kaalang-testing` is a repository-only fixture
-harness and remains unpublished.
+Preview the complete publication without uploading:
+
+```sh
+just release publish-dry-run
+```
+
+Publish the workspace in dependency order:
+
+```sh
+just release publish
+```
+
+To resume a partial release, publish one crate at a time with
+`just release publish-crate <crate>`, in dependency order: `kaalang-compiler`,
+`kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
+`kaalang-cli`. `kaalang-testing` is a repository-only fixture harness and
+remains unpublished.
 
 Gallery examples may group related flows in one `mod.rs` and share a test. Each
 flow still gets its own `<flow>.svg` beside that module.
