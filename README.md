@@ -246,10 +246,21 @@ cycles.
 
 ## Try it
 
-From the repository root, install the CLI and draw the FizzBuzz example:
+Install the released CLI from crates.io:
+
+```sh
+cargo install kaalang-cli
+```
+
+Or install the version from the current repository checkout:
 
 ```sh
 cargo install --path crates/kaalang-cli
+```
+
+From a repository checkout, draw the FizzBuzz example:
+
+```sh
 cargo kaalang diagram crates/kaalang/tests/gallery/fizzbuzz/mod.rs --flow fizzbuzz -o fizzbuzz.svg
 ```
 
