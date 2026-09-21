@@ -84,6 +84,140 @@ fn renders_an_accessible_standalone_svg() {
 }
 
 #[test]
+fn renders_markdown_as_styled_svg_text_and_math_paths() {
+    let source = r#"
+        #[kaalang]
+        fn styled(value: u8) -> u8 {
+            #[action("**Bold** *italic* ~~old~~ `code` x^2^ H~2~O")]
+            let decorated = |value| value;
+
+            #[action("> Quote: $\\frac{1}{2}$.")]
+            let result = |decorated| decorated;
+            |result| return result;
+        }
+    "#;
+    let svg = render_source(source, "styled").expect("the styled description renders");
+
+    for (class, text) in [
+        ("md-bold", "Bold"),
+        ("md-italic", "italic"),
+        ("md-strikethrough", "old"),
+        ("md-code", "code"),
+        ("md-superscript", "2"),
+        ("md-subscript", "2"),
+    ] {
+        assert!(svg.contains(&format!(r#"<tspan class="{class}">{text}</tspan>"#)));
+    }
+    assert!(svg.contains(
+        ".md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace; font-weight: 600; }"
+    ));
+    assert!(svg.contains(".md-quote { font-style: italic; }"));
+    assert!(svg.contains("“Quote:"));
+    assert!(svg.contains(r#"<svg class="md-math""#));
+    assert!(svg.contains("<path d="));
+    assert!(
+        svg.contains(r#"<title xml:space="preserve">Bold italic old code x^(2) H_(2)O</title>"#)
+    );
+    assert!(describe(&svg).contains("Action: Bold italic old code x^(2) H_(2)O"));
+}
+
+#[test]
+fn renders_paired_inline_styles_as_svg_without_html() {
+    let source = r##"
+        #[kaalang]
+        fn styled(value: u8) -> u8 {
+            #[action(r#"<mark>**Bright**</mark> <u>underlined</u> <color name="red">red</color>"#)]
+            let decorated = |value| value;
+            #[action(r#"<color name="purple"><u>$x^2$</u></color>"#)]
+            let result = |decorated| decorated;
+            |result| return result;
+        }
+    "##;
+    let svg = render_source(source, "styled").expect("the styled description renders");
+    assert!(svg.contains(r#"<rect class="md-highlight-box""#));
+    assert!(svg.contains(r#"<tspan class="md-bold">Bright</tspan>"#));
+    assert!(svg.contains(r#"<tspan class="md-underline">underlined</tspan>"#));
+    assert!(svg.contains(r#"<tspan class="md-color-red">red</tspan>"#));
+    assert!(svg.contains(r#"<svg class="md-math md-color-purple""#));
+    assert!(svg.contains(r#"<line x1="0""#));
+    assert!(svg.contains(r#"<title xml:space="preserve">Bright underlined red</title>"#));
+    assert!(!svg.contains("<mark>"));
+    assert!(!svg.contains("<color name="));
+}
+
+#[test]
+fn highlight_offsets_follow_a_grapheme_split_across_styles() {
+    let source = r##"
+        #[kaalang]
+        fn highlighted(value: u8) -> u8 {
+            #[action(r#"<mark>e</mark>́<mark>x</mark>"#)]
+            let result = |value| value;
+            |result| return result;
+        }
+    "##;
+    let svg = render_source(source, "highlighted").unwrap();
+    let boxes = svg
+        .lines()
+        .filter(|line| line.contains("<rect class=\"md-highlight-box\""))
+        .collect::<Vec<_>>();
+    assert_eq!(boxes.len(), 2);
+    let attribute = |line: &str, name: &str| -> f64 {
+        line.split_once(&format!("{name}=\""))
+            .unwrap()
+            .1
+            .split_once('"')
+            .unwrap()
+            .0
+            .parse()
+            .unwrap()
+    };
+    let first_end = attribute(boxes[0], "x") + attribute(boxes[0], "width");
+    assert!((first_end - attribute(boxes[1], "x")).abs() < 0.001);
+    // The orphaned mark between the two runs takes no width of its own, so the
+    // second highlighted run starts where its box does.
+    let runs = svg
+        .lines()
+        .filter(|line| line.contains(r#"<text style="stroke: none""#))
+        .collect::<Vec<_>>();
+    assert_eq!(runs.len(), 2);
+    assert!((attribute(runs[1], "x") - attribute(boxes[1], "x")).abs() < 0.001);
+}
+
+/// A connection label strokes a white halo around its text, which would paint
+/// over the highlight box beneath it. A highlighted run drops that halo.
+#[test]
+fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
+    let source = r##"
+        #[kaalang]
+        fn highlighted(condition: bool) -> u8 {
+            #[question("Choose.")]
+            #[yes(r#"<mark>take it</mark>"#)]
+            #[no]
+            let (yes, no) = |condition| condition;
+            #[action("Yes.")]
+            let end = |yes| 1;
+            #[action("No.")]
+            let end = |no| 0;
+            |end| return end;
+        }
+    "##;
+    let svg = render_source(source, "highlighted").unwrap();
+    let group = svg
+        .split_once(r#"<g class="connection-label branch-label""#)
+        .expect("the branch description is a composed group")
+        .1
+        .split_once("</g>")
+        .expect("the group closes")
+        .0;
+
+    assert!(group.contains(r#"<rect class="md-highlight-box""#));
+    assert!(group.contains(r#"<text style="stroke: none""#));
+    assert!(group.contains(">take it</text>"));
+    // The unhighlighted labels of the same diagram keep their halo.
+    assert!(svg.contains("stroke: #ffffff; stroke-width: 5px"));
+}
+
+#[test]
 fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     let expanded = render_source(CYCLE_SOURCE, "count_to").expect("the cycle expands");
     let collapsed = render_source_with_options(

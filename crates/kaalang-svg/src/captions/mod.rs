@@ -9,16 +9,20 @@ use kaalang_compiler::topology::{
 use kaalang_compiler::{BlockKind, Input, ProducerId, SemanticModel};
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
+use crate::text::RichText;
+
 /// Every string the diagram shows, keyed by the structural item that owns it.
 #[derive(Clone, Default)]
 pub(crate) struct Captions {
-    label: BTreeMap<NodeId, String>,
+    label: BTreeMap<NodeId, RichText>,
     capture: BTreeMap<NodeId, Vec<String>>,
     capture_label: BTreeMap<NodeId, Vec<String>>,
     handover: BTreeMap<ExitId, Vec<String>>,
-    branch_description: BTreeMap<ExitId, String>,
+    branch_description: BTreeMap<ExitId, RichText>,
     loop_inputs: BTreeMap<usize, String>,
     loop_outputs: BTreeMap<usize, String>,
+    /// Borrowed for a node that has no caption of its own.
+    empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
     junction: Vec<Vec<String>>,
     shared: BTreeSet<Connection>,
@@ -27,8 +31,8 @@ pub(crate) struct Captions {
 impl Captions {
     /// The node's own caption: its block description, the flow header at start,
     /// or the return type at end.
-    pub(crate) fn label(&self, node: NodeId) -> &str {
-        self.label.get(&node).map_or("", String::as_str)
+    pub(crate) fn label(&self, node: NodeId) -> &RichText {
+        self.label.get(&node).unwrap_or(&self.empty)
     }
 
     /// The wires this node captures, in authored order, with capture modifiers.
@@ -50,8 +54,8 @@ impl Captions {
 
     /// The authored description of a question branch, which replaces that
     /// branch's output hand-over label.
-    pub(crate) fn branch_description(&self, exit: ExitId) -> Option<&str> {
-        self.branch_description.get(&exit).map(String::as_str)
+    pub(crate) fn branch_description(&self, exit: ExitId) -> Option<&RichText> {
+        self.branch_description.get(&exit)
     }
 
     pub(crate) fn loop_inputs(&self, block: usize) -> &str {
@@ -84,16 +88,18 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
 
     for node in &topology.nodes {
         let label = match node.id {
-            NodeId::Start => start.to_owned(),
-            NodeId::Block(_) if node.kind == NodeKind::End => return_type.to_owned(),
+            NodeId::Start => RichText::literal(start),
+            NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
             // Undescribed calls use the callee path (RFC 0002 §4.3).
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
-                Some(text) => text.clone(),
-                None if node.kind == NodeKind::Call => model.analysis.flow.blocks[block].callee(),
-                None => String::new(),
+                Some(text) => RichText::markdown(text),
+                None if node.kind == NodeKind::Call => {
+                    RichText::literal(model.analysis.flow.blocks[block].callee())
+                }
+                None => RichText::default(),
             },
             NodeId::Case { choice, branch } => {
-                model.analysis.flow.blocks[choice].case_descriptions[branch].clone()
+                RichText::markdown(&model.analysis.flow.blocks[choice].case_descriptions[branch])
             }
         };
         captions.label.insert(node.id, label);
@@ -128,7 +134,10 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let block = &model.analysis.flow.blocks[boundary.header];
         captions.label.insert(
             NodeId::Block(boundary.header),
-            block.description.clone().unwrap_or_default(),
+            block
+                .description
+                .as_deref()
+                .map_or_else(RichText::default, RichText::markdown),
         );
         captions.loop_inputs.insert(
             boundary.header,
@@ -170,7 +179,9 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .get(branch)
                 .and_then(|answer| answer.description.clone())
         {
-            captions.branch_description.insert(exit.id, description);
+            captions
+                .branch_description
+                .insert(exit.id, RichText::markdown(&description));
         }
     }
 

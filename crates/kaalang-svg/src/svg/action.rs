@@ -1,7 +1,7 @@
 //! Serializes an action node.
 use std::fmt::Write;
 
-use super::{Node, write_label};
+use super::{Node, TextAnchor, write_label};
 
 pub(super) fn name(label: &str) -> String {
     format!("Action: {label}")
@@ -16,5 +16,5 @@ pub(super) fn write(svg: &mut String, node: &Node) {
         node.width,
         node.height
     );
-    write_label(svg, node, 0, -half_width + 16);
+    write_label(svg, node, 0, -half_width + 16, TextAnchor::Start);
 }

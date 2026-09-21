@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="1639" viewBox="0 0 344 1639" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for render_markdown</title>
+  <desc id="kaalang-description">Nodes: Start: render_markdown; Action: Plain, bold, italic, and bold italic text. capturing nothing; Action: Use obsolete and inline code text. capturing nothing; Action: Styles: underlined, highlighted, and blue. capturing nothing; Action: Indices: x^(2) and H_(2)O. capturing nothing; Action: “Quoted guidance remains distinct.” capturing nothing; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} capturing nothing; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Plain text, one highlighted phrase, plain again. capturing nothing; End: () capturing nothing. Connections: Start: render_markdown to Action: Plain, bold, italic, and bold italic text.; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} to Action: Formulae: x^2 + y^2 and \frac{a+b}{2}.; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to End: ().</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 228 L 172 300
+      M 172 366 L 172 438
+      M 172 504 L 172 576
+      M 172 640 L 172 712
+      M 172 778 L 172 850
+      M 172 926 L 172 999
+      M 172 1063 L 172 1135
+      M 172 1201 L 172 1273
+      M 172 1339 L 172 1411
+      M 172 1477 L 172 1549
+    "/>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="427" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="565" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="701" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="839" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="988" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1124" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1262" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1400" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1538" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">render_markdown</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 195)">
+      <title xml:space="preserve">Plain, bold, italic, and bold italic text.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Plain, <tspan class="md-bold">bold</tspan>, <tspan class="md-italic">italic</tspan>, and <tspan class="md-bold md-italic">bold italic</tspan> </tspan><tspan x="-124" dy="18">text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 333)">
+      <title xml:space="preserve">Use obsolete and inline code text.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use <tspan class="md-strikethrough">obsolete</tspan> and <tspan class="md-code">inline code</tspan> </tspan><tspan x="-124" dy="18">text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 471)">
+      <title xml:space="preserve">Styles: underlined, highlighted, and blue.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="10.96" y="-15" width="76.16" height="15"/>
+        <text x="-124" y="-3" text-anchor="start" textLength="134.96" lengthAdjust="spacing" xml:space="preserve">Styles: <tspan class="md-underline">underlined</tspan>, </text>
+        <text style="stroke: none" x="10.96" y="-3" text-anchor="start" textLength="76.16" lengthAdjust="spacing" xml:space="preserve">highlighted</text>
+        <text x="87.12" y="-3" text-anchor="start" textLength="36.96" lengthAdjust="spacing" xml:space="preserve">, and </text>
+        <text x="-124" y="15" text-anchor="start" textLength="32.48" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-color-blue">blue</tspan>.</text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 608)">
+      <title xml:space="preserve">Indices: x^(2) and H_(2)O.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Indices: x<tspan class="md-superscript">2</tspan> and H<tspan class="md-subscript">2</tspan>O.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 745)">
+      <title xml:space="preserve">“Quoted guidance remains distinct.”</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0"><tspan class="md-quote">“Quoted </tspan><tspan class="md-bold md-quote">guidance</tspan><tspan class="md-quote"> remains </tspan></tspan><tspan x="-124" dy="18"><tspan class="md-quote">distinct.”</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 888)">
+      <title xml:space="preserve">\int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}</title>
+      <rect class="node-shape" x="-140" y="-38" width="280" height="77"/>
+      <g class="label">
+        <svg class="md-math" x="-124" y="-19.378" width="155.6977" height="42.7042" viewBox="0 0 11.1213 3.0503" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 873.0 1365.0 C 851.0 1346.0 840.0 1324.0 840.0 1297.0 C 840.0 1264.0 857.0 1247.0 883.0 1247.0 C 916.0 1247.0 957.0 1273.0 957.0 1334.0 C 957.0 1398.0 913.0 1429.0 853.0 1429.0 C 594.0 1429.0 518.0 800.0 456.0 259.0 C 382.0 -395.0 341.0 -868.0 169.0 -868.0 C 149.0 -868.0 140.0 -861.0 140.0 -861.0 L 140.0 -855.0 C 153.0 -835.0 164.0 -812.0 164.0 -783.0 C 164.0 -749.0 148.0 -727.0 118.0 -727.0 C 81.0 -727.0 50.0 -757.0 50.0 -816.0 C 50.0 -868.0 85.0 -917.0 168.0 -917.0 C 388.0 -917.0 500.0 -488.0 584.0 290.0 C 636.0 769.0 669.0 1378.0 839.0 1378.0 C 862.0 1378.0 873.0 1371.0 873.0 1371.0 Z" transform="translate(0.0 1.527) scale(0.001 -0.001)"/>
+<path d="M 878.0 227.0 C 878.0 364.0 784.0 440.0 692.0 440.0 C 588.0 440.0 541.0 375.0 494.0 290.0 C 397.0 421.0 346.0 440.0 271.0 440.0 C 212.0 440.0 75.0 393.0 75.0 205.0 C 75.0 63.0 168.0 0.0 256.0 0.0 C 354.0 0.0 424.0 55.0 470.0 148.0 C 533.0 54.0 592.0 0.0 675.0 0.0 C 805.0 0.0 878.0 128.0 878.0 227.0 Z M 447.0 185.0 C 419.0 148.0 370.0 86.0 279.0 86.0 C 189.0 86.0 137.0 171.0 137.0 258.0 C 137.0 323.0 182.0 380.0 239.0 380.0 C 309.0 380.0 373.0 310.0 447.0 188.0 Z M 515.0 251.0 C 544.0 294.0 583.0 354.0 674.0 354.0 C 765.0 354.0 817.0 275.0 817.0 182.0 C 817.0 116.0 772.0 60.0 714.0 60.0 C 645.0 60.0 588.0 126.0 515.0 248.0 Z" transform="translate(1.572 1.167) scale(0.0007 -0.0007)"/>
+<path d="M 468.0 317.0 C 468.0 523.0 378.0 642.0 249.0 642.0 C 104.0 642.0 27.0 510.0 27.0 320.0 C 27.0 143.0 86.0 -11.0 247.0 -11.0 C 404.0 -11.0 468.0 146.0 468.0 317.0 Z M 371.0 311.0 C 371.0 119.0 326.0 25.0 247.0 25.0 C 167.0 25.0 123.0 121.0 123.0 315.0 C 123.0 513.0 167.0 608.0 246.0 608.0 C 328.0 608.0 371.0 514.0 371.0 311.0 Z" transform="translate(1.572 1.7664) scale(0.0007 -0.0007)"/>
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(2.799388888888888888888888 0.887) scale(0.001 -0.001)"/>
+<path d="M 39.0 164.0 L 42.0 -8.0 L 63.0 -8.0 L 84.0 15.0 L 86.0 15.0 C 112.0 4.0 142.0 -11.0 200.0 -11.0 C 290.0 -11.0 368.0 25.0 368.0 119.0 C 368.0 193.0 319.0 230.0 228.0 278.0 C 144.0 321.0 111.0 346.0 111.0 385.0 C 111.0 430.0 146.0 451.0 192.0 451.0 C 253.0 451.0 290.0 422.0 312.0 327.0 L 339.0 327.0 L 336.0 480.0 L 316.0 480.0 L 299.0 459.0 L 298.0 459.0 C 273.0 471.0 243.0 485.0 193.0 485.0 C 107.0 485.0 40.0 441.0 40.0 359.0 C 40.0 285.0 81.0 250.0 172.0 204.0 C 265.0 158.0 284.0 139.0 284.0 92.0 C 284.0 45.0 248.0 26.0 198.0 26.0 C 124.0 26.0 86.0 61.0 65.0 164.0 Z" transform="translate(3.278388888888888888888888 0.527) scale(0.0007 -0.0007)"/>
+<path d="M 270.0 218.0 L 270.0 283.0 L 45.0 283.0 L 45.0 218.0 Z" transform="translate(3.554888888888888888888888 0.527) scale(0.0007 -0.0007)"/>
+<path d="M 426.0 0.0 L 426.0 28.0 C 334.0 28.0 297.0 46.0 297.0 95.0 L 297.0 639.0 L 268.0 639.0 L 74.0 584.0 L 74.0 551.0 C 105.0 561.0 156.0 567.0 176.0 567.0 C 201.0 567.0 209.0 553.0 209.0 518.0 L 209.0 95.0 C 209.0 45.0 174.0 28.0 80.0 28.0 L 80.0 0.0 Z" transform="translate(3.775388888888888888888888 0.527) scale(0.0007 -0.0007)"/>
+<rect x="2.433766666666666666666666" y="1.235" width="2.081744444444444444444444" height="0.068"/>
+<path d="M 415.0 143.0 C 383.0 101.0 352.0 65.0 271.0 65.0 C 191.0 65.0 115.0 128.0 115.0 266.0 L 431.0 266.0 C 426.0 406.0 354.0 485.0 245.0 485.0 C 128.0 485.0 34.0 405.0 34.0 238.0 C 34.0 77.0 127.0 -10.0 247.0 -10.0 C 350.0 -10.0 398.0 53.0 434.0 129.0 Z M 114.0 303.0 C 122.0 396.0 162.0 445.0 230.0 445.0 C 301.0 445.0 334.0 377.0 337.0 303.0 Z" transform="translate(2.433766666666666666666666 2.167) scale(0.001 -0.001)"/>
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(2.897766666666666666666666 1.915) scale(0.0007 -0.0007)"/>
+<path d="M 270.0 218.0 L 270.0 283.0 L 45.0 283.0 L 45.0 218.0 Z" transform="translate(3.483288888888888888888888 2.167) scale(0.001 -0.001)"/>
+<path d="M 426.0 0.0 L 426.0 28.0 C 334.0 28.0 297.0 46.0 297.0 95.0 L 297.0 639.0 L 268.0 639.0 L 74.0 584.0 L 74.0 551.0 C 105.0 561.0 156.0 567.0 176.0 567.0 C 201.0 567.0 209.0 553.0 209.0 518.0 L 209.0 95.0 C 209.0 45.0 174.0 28.0 80.0 28.0 L 80.0 0.0 Z" transform="translate(4.020511111111111111111111 2.167) scale(0.001 -0.001)"/>
+<path d="M 514.0 18.0 L 514.0 45.0 L 493.0 45.0 C 456.0 45.0 443.0 55.0 443.0 107.0 L 443.0 706.0 L 416.0 706.0 L 290.0 671.0 L 290.0 643.0 C 290.0 643.0 307.0 645.0 316.0 645.0 C 355.0 645.0 360.0 636.0 360.0 592.0 L 360.0 461.0 C 329.0 478.0 296.0 485.0 263.0 485.0 C 137.0 485.0 33.0 384.0 33.0 219.0 C 33.0 91.0 91.0 -8.0 204.0 -8.0 C 270.0 -8.0 321.0 30.0 359.0 64.0 L 363.0 64.0 L 363.0 -5.0 L 386.0 -5.0 Z M 360.0 101.0 C 325.0 77.0 298.0 64.0 251.0 64.0 C 166.0 64.0 120.0 120.0 120.0 258.0 C 120.0 384.0 177.0 445.0 261.0 445.0 C 323.0 445.0 352.0 406.0 360.0 365.0 Z" transform="translate(4.682177777777777777777777 1.527) scale(0.001 -0.001)"/>
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(5.221177777777777777777777 1.527) scale(0.001 -0.001)"/>
+<path d="M 658.0 327.0 L 658.0 395.0 L 62.0 395.0 L 62.0 327.0 Z M 658.0 123.0 L 658.0 190.0 L 62.0 190.0 L 62.0 123.0 Z" transform="translate(5.977955555555555555555555 1.527) scale(0.001 -0.001)"/>
+<path d="M 542.0 657.0 L 42.0 657.0 L 42.0 627.0 C 122.0 627.0 133.0 612.0 133.0 534.0 L 133.0 127.0 C 133.0 50.0 122.0 30.0 42.0 30.0 L 42.0 0.0 L 329.0 0.0 L 329.0 30.0 C 240.0 30.0 224.0 49.0 224.0 127.0 L 224.0 612.0 L 364.0 612.0 C 482.0 612.0 500.0 581.0 516.0 474.0 L 549.0 474.0 Z" transform="translate(6.975733333333333333333333 1.527) scale(0.001 -0.001)"/>
+<path d="M 45.0 270.0 C 45.0 47.0 150.0 -112.0 311.0 -196.0 L 327.0 -170.0 C 181.0 -71.0 127.0 66.0 127.0 270.0 C 127.0 474.0 181.0 611.0 327.0 710.0 L 311.0 736.0 C 150.0 652.0 45.0 493.0 45.0 270.0 Z" transform="translate(7.544733333333333333333333 1.527) scale(0.001 -0.001)"/>
+<path d="M 39.0 164.0 L 42.0 -8.0 L 63.0 -8.0 L 84.0 15.0 L 86.0 15.0 C 112.0 4.0 142.0 -11.0 200.0 -11.0 C 290.0 -11.0 368.0 25.0 368.0 119.0 C 368.0 193.0 319.0 230.0 228.0 278.0 C 144.0 321.0 111.0 346.0 111.0 385.0 C 111.0 430.0 146.0 451.0 192.0 451.0 C 253.0 451.0 290.0 422.0 312.0 327.0 L 339.0 327.0 L 336.0 480.0 L 316.0 480.0 L 299.0 459.0 L 298.0 459.0 C 273.0 471.0 243.0 485.0 193.0 485.0 C 107.0 485.0 40.0 441.0 40.0 359.0 C 40.0 285.0 81.0 250.0 172.0 204.0 C 265.0 158.0 284.0 139.0 284.0 92.0 C 284.0 45.0 248.0 26.0 198.0 26.0 C 124.0 26.0 86.0 61.0 65.0 164.0 Z" transform="translate(7.901733333333333333333333 1.527) scale(0.001 -0.001)"/>
+<path d="M 312.0 270.0 C 312.0 493.0 207.0 652.0 46.0 736.0 L 30.0 710.0 C 176.0 611.0 230.0 474.0 230.0 270.0 C 230.0 66.0 176.0 -71.0 30.0 -170.0 L 46.0 -196.0 C 207.0 -112.0 312.0 47.0 312.0 270.0 Z" transform="translate(8.296733333333333333333333 1.527) scale(0.001 -0.001)"/>
+<path d="M 1047.0 0.0 L 998.0 0.0 C 942.0 -192.0 906.0 -284.0 754.0 -284.0 L 183.0 -284.0 L 183.0 -278.0 L 639.0 316.0 L 639.0 336.0 L 224.0 851.0 L 224.0 856.0 L 666.0 856.0 C 862.0 856.0 932.0 824.0 959.0 596.0 L 1004.0 596.0 L 990.0 919.0 L 29.0 919.0 L 29.0 888.0 L 526.0 280.0 L 15.0 -380.0 L 15.0 -406.0 L 968.0 -406.0 Z" transform="translate(8.89125 1.527) scale(0.001 -0.001)"/>
+<path d="M 878.0 227.0 C 878.0 364.0 784.0 440.0 692.0 440.0 C 588.0 440.0 541.0 375.0 494.0 290.0 C 397.0 421.0 346.0 440.0 271.0 440.0 C 212.0 440.0 75.0 393.0 75.0 205.0 C 75.0 63.0 168.0 0.0 256.0 0.0 C 354.0 0.0 424.0 55.0 470.0 148.0 C 533.0 54.0 592.0 0.0 675.0 0.0 C 805.0 0.0 878.0 128.0 878.0 227.0 Z M 447.0 185.0 C 419.0 148.0 370.0 86.0 279.0 86.0 C 189.0 86.0 137.0 171.0 137.0 258.0 C 137.0 323.0 182.0 380.0 239.0 380.0 C 309.0 380.0 373.0 310.0 447.0 188.0 Z M 515.0 251.0 C 544.0 294.0 583.0 354.0 674.0 354.0 C 765.0 354.0 817.0 275.0 817.0 182.0 C 817.0 116.0 772.0 60.0 714.0 60.0 C 645.0 60.0 588.0 126.0 515.0 248.0 Z" transform="translate(9.1137 0.308) scale(0.0007 -0.0007)"/>
+<path d="M 481.0 307.0 C 481.0 422.0 438.0 485.0 347.0 485.0 C 284.0 485.0 240.0 449.0 186.0 401.0 L 182.0 401.0 L 183.0 482.0 L 160.0 482.0 L 33.0 453.0 L 33.0 424.0 C 33.0 424.0 43.0 426.0 60.0 426.0 C 87.0 426.0 102.0 418.0 102.0 382.0 L 102.0 101.0 C 102.0 45.0 99.0 28.0 32.0 28.0 L 32.0 0.0 L 261.0 0.0 L 261.0 28.0 C 189.0 28.0 185.0 45.0 185.0 101.0 L 185.0 358.0 C 215.0 385.0 252.0 421.0 306.0 421.0 C 351.0 421.0 398.0 402.0 398.0 282.0 L 398.0 101.0 C 398.0 45.0 395.0 28.0 324.0 28.0 L 324.0 0.0 L 555.0 0.0 L 555.0 28.0 C 488.0 28.0 481.0 45.0 481.0 101.0 Z" transform="translate(8.8204 3.0503) scale(0.0007 -0.0007)"/>
+<path d="M 658.0 327.0 L 658.0 395.0 L 62.0 395.0 L 62.0 327.0 Z M 658.0 123.0 L 658.0 190.0 L 62.0 190.0 L 62.0 123.0 Z" transform="translate(9.2236 3.0503) scale(0.0007 -0.0007)"/>
+<path d="M 426.0 0.0 L 426.0 28.0 C 334.0 28.0 297.0 46.0 297.0 95.0 L 297.0 639.0 L 268.0 639.0 L 74.0 584.0 L 74.0 551.0 C 105.0 561.0 156.0 567.0 176.0 567.0 C 201.0 567.0 209.0 553.0 209.0 518.0 L 209.0 95.0 C 209.0 45.0 174.0 28.0 80.0 28.0 L 80.0 0.0 Z" transform="translate(9.7276 3.0503) scale(0.0007 -0.0007)"/>
+<path d="M 426.0 0.0 L 426.0 28.0 C 334.0 28.0 297.0 46.0 297.0 95.0 L 297.0 639.0 L 268.0 639.0 L 74.0 584.0 L 74.0 551.0 C 105.0 561.0 156.0 567.0 176.0 567.0 C 201.0 567.0 209.0 553.0 209.0 518.0 L 209.0 95.0 C 209.0 45.0 174.0 28.0 80.0 28.0 L 80.0 0.0 Z" transform="translate(10.433516666666666666666666 0.887) scale(0.001 -0.001)"/>
+<rect x="10.240766666666666666666666" y="1.235" width="0.8805" height="0.068"/>
+<path d="M 481.0 307.0 C 481.0 422.0 438.0 485.0 347.0 485.0 C 284.0 485.0 240.0 449.0 186.0 401.0 L 182.0 401.0 L 183.0 482.0 L 160.0 482.0 L 33.0 453.0 L 33.0 424.0 C 33.0 424.0 43.0 426.0 60.0 426.0 C 87.0 426.0 102.0 418.0 102.0 382.0 L 102.0 101.0 C 102.0 45.0 99.0 28.0 32.0 28.0 L 32.0 0.0 L 261.0 0.0 L 261.0 28.0 C 189.0 28.0 185.0 45.0 185.0 101.0 L 185.0 358.0 C 215.0 385.0 252.0 421.0 306.0 421.0 C 351.0 421.0 398.0 402.0 398.0 282.0 L 398.0 101.0 C 398.0 45.0 395.0 28.0 324.0 28.0 L 324.0 0.0 L 555.0 0.0 L 555.0 28.0 C 488.0 28.0 481.0 45.0 481.0 101.0 Z" transform="translate(10.240766666666666666666666 2.167) scale(0.001 -0.001)"/>
+<path d="M 39.0 164.0 L 42.0 -8.0 L 63.0 -8.0 L 84.0 15.0 L 86.0 15.0 C 112.0 4.0 142.0 -11.0 200.0 -11.0 C 290.0 -11.0 368.0 25.0 368.0 119.0 C 368.0 193.0 319.0 230.0 228.0 278.0 C 144.0 321.0 111.0 346.0 111.0 385.0 C 111.0 430.0 146.0 451.0 192.0 451.0 C 253.0 451.0 290.0 422.0 312.0 327.0 L 339.0 327.0 L 336.0 480.0 L 316.0 480.0 L 299.0 459.0 L 298.0 459.0 C 273.0 471.0 243.0 485.0 193.0 485.0 C 107.0 485.0 40.0 441.0 40.0 359.0 C 40.0 285.0 81.0 250.0 172.0 204.0 C 265.0 158.0 284.0 139.0 284.0 92.0 C 284.0 45.0 248.0 26.0 198.0 26.0 C 124.0 26.0 86.0 61.0 65.0 164.0 Z" transform="translate(10.816766666666666666666666 1.915) scale(0.0007 -0.0007)"/>
+</g>
+        </svg>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1031)">
+      <title xml:space="preserve">Formulae: x^2 + y^2 and \frac{a+b}{2}.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="24.24" y="-12" width="31" height="28"/>
+        <text x="-124" y="7" text-anchor="start" textLength="74.76" lengthAdjust="spacing" xml:space="preserve">Formulae: </text>
+        <svg class="md-math md-color-purple" x="-49.24" y="-4.3512" width="40.2562" height="14.6412" viewBox="0 0 2.8754 1.0458" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.8108) scale(0.001 -0.001)"/>
+<path d="M 464.0 160.0 L 435.0 160.0 C 412.0 100.0 399.0 79.0 346.0 79.0 L 207.0 79.0 L 137.0 76.0 L 137.0 81.0 L 269.0 206.0 C 375.0 313.0 432.0 382.0 432.0 471.0 C 432.0 576.0 353.0 644.0 240.0 644.0 C 143.0 644.0 75.0 588.0 44.0 491.0 L 68.0 481.0 C 105.0 556.0 149.0 579.0 214.0 579.0 C 291.0 579.0 339.0 531.0 339.0 456.0 C 339.0 351.0 289.0 288.0 190.0 186.0 L 38.0 34.0 L 38.0 0.0 L 432.0 0.0 Z" transform="translate(0.479 0.4508) scale(0.0007 -0.0007)"/>
+<path d="M 658.0 225.0 L 658.0 293.0 L 396.0 293.0 L 396.0 558.0 L 324.0 558.0 L 324.0 293.0 L 62.0 293.0 L 62.0 225.0 L 324.0 225.0 L 324.0 -40.0 L 396.0 -40.0 L 396.0 225.0 Z" transform="translate(1.075722222222222222222222 0.8108) scale(0.001 -0.001)"/>
+<path d="M 493.0 473.0 L 323.0 473.0 L 323.0 444.0 C 356.0 444.0 379.0 439.0 379.0 419.0 C 379.0 412.0 376.0 401.0 374.0 394.0 L 277.0 104.0 L 270.0 104.0 L 257.0 153.0 L 159.0 373.0 C 153.0 387.0 145.0 404.0 145.0 417.0 C 145.0 434.0 157.0 443.0 202.0 443.0 L 202.0 473.0 L -12.0 473.0 L -12.0 444.0 C 24.0 444.0 38.0 431.0 48.0 408.0 L 195.0 87.0 C 207.0 60.0 225.0 18.0 225.0 5.0 C 225.0 -24.0 165.0 -162.0 129.0 -162.0 C 115.0 -162.0 86.0 -140.0 52.0 -140.0 C 26.0 -140.0 6.0 -153.0 6.0 -183.0 C 6.0 -221.0 36.0 -235.0 77.0 -235.0 C 162.0 -235.0 210.0 -175.0 268.0 -22.0 L 424.0 388.0 C 438.0 427.0 453.0 444.0 493.0 444.0 Z" transform="translate(2.017944444444444444444444 0.8108) scale(0.001 -0.001)"/>
+<path d="M 464.0 160.0 L 435.0 160.0 C 412.0 100.0 399.0 79.0 346.0 79.0 L 207.0 79.0 L 137.0 76.0 L 137.0 81.0 L 269.0 206.0 C 375.0 313.0 432.0 382.0 432.0 471.0 C 432.0 576.0 353.0 644.0 240.0 644.0 C 143.0 644.0 75.0 588.0 44.0 491.0 L 68.0 481.0 C 105.0 556.0 149.0 579.0 214.0 579.0 C 291.0 579.0 339.0 531.0 339.0 456.0 C 339.0 351.0 289.0 288.0 190.0 186.0 L 38.0 34.0 L 38.0 0.0 L 432.0 0.0 Z" transform="translate(2.500944444444444444444444 0.4508) scale(0.0007 -0.0007)"/>
+</g>
+          <line x1="0" y1="1.1458" x2="2.8754" y2="1.1458" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <text x="-8.24" y="7" text-anchor="start" textLength="32.48" lengthAdjust="spacing" xml:space="preserve"> and </text>
+        <svg class="md-math" x="24.24" y="-11.844" width="30.3302" height="27.804" viewBox="0 0 2.1664 1.986" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 308.0 62.0 C 314.0 18.0 324.0 -5.0 368.0 -5.0 C 419.0 -5.0 443.0 16.0 476.0 64.0 L 461.0 80.0 C 447.0 65.0 433.0 55.0 414.0 55.0 C 393.0 55.0 384.0 63.0 384.0 104.0 L 384.0 331.0 C 384.0 435.0 343.0 485.0 234.0 485.0 C 125.0 485.0 58.0 431.0 58.0 375.0 C 58.0 342.0 80.0 327.0 100.0 327.0 C 128.0 327.0 144.0 342.0 144.0 373.0 C 144.0 433.0 154.0 454.0 211.0 454.0 C 271.0 454.0 301.0 421.0 301.0 334.0 L 301.0 290.0 C 215.0 263.0 38.0 237.0 38.0 105.0 C 38.0 41.0 80.0 -7.0 157.0 -7.0 C 221.0 -7.0 257.0 21.0 304.0 62.0 Z M 301.0 92.0 C 267.0 64.0 231.0 48.0 198.0 48.0 C 155.0 48.0 126.0 79.0 126.0 129.0 C 126.0 207.0 210.0 234.0 301.0 257.0 Z" transform="translate(0.0 0.706) scale(0.001 -0.001)"/>
+<path d="M 658.0 225.0 L 658.0 293.0 L 396.0 293.0 L 396.0 558.0 L 324.0 558.0 L 324.0 293.0 L 62.0 293.0 L 62.0 225.0 L 324.0 225.0 L 324.0 -40.0 L 396.0 -40.0 L 396.0 225.0 Z" transform="translate(0.702222222222222222222222 0.706) scale(0.001 -0.001)"/>
+<path d="M 163.0 706.0 L 137.0 706.0 L 8.0 671.0 L 8.0 643.0 C 8.0 643.0 20.0 645.0 36.0 645.0 C 74.0 645.0 80.0 637.0 80.0 592.0 L 80.0 30.0 C 104.0 17.0 162.0 -10.0 247.0 -10.0 C 386.0 -10.0 487.0 84.0 487.0 263.0 C 487.0 393.0 419.0 485.0 320.0 485.0 C 253.0 485.0 201.0 442.0 166.0 400.0 L 163.0 400.0 Z M 163.0 356.0 C 181.0 380.0 225.0 417.0 276.0 417.0 C 371.0 417.0 396.0 327.0 396.0 231.0 C 396.0 120.0 360.0 31.0 265.0 31.0 C 212.0 31.0 182.0 55.0 163.0 78.0 Z" transform="translate(1.644444444444444444444444 0.706) scale(0.001 -0.001)"/>
+<rect x="0.0" y="1.054" width="2.166444444444444444444444" height="0.068"/>
+<path d="M 464.0 160.0 L 435.0 160.0 C 412.0 100.0 399.0 79.0 346.0 79.0 L 207.0 79.0 L 137.0 76.0 L 137.0 81.0 L 269.0 206.0 C 375.0 313.0 432.0 382.0 432.0 471.0 C 432.0 576.0 353.0 644.0 240.0 644.0 C 143.0 644.0 75.0 588.0 44.0 491.0 L 68.0 481.0 C 105.0 556.0 149.0 579.0 214.0 579.0 C 291.0 579.0 339.0 531.0 339.0 456.0 C 339.0 351.0 289.0 288.0 190.0 186.0 L 38.0 34.0 L 38.0 0.0 L 432.0 0.0 Z" transform="translate(0.835722222222222222222222 1.986) scale(0.001 -0.001)"/>
+</g>
+        </svg>
+        <text x="55.24" y="7" text-anchor="start" textLength="4.48" lengthAdjust="spacing" xml:space="preserve">.</text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1168)">
+      <title xml:space="preserve">Little titles fit in a strict, tidy list.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="-124" y="-15" width="230.16" height="15"/>
+        <text style="stroke: none" x="-124" y="-3" text-anchor="start" textLength="230.16" lengthAdjust="spacing" xml:space="preserve">Little titles fit in a strict, tidy </text>
+        <rect class="md-highlight-box" x="-124" y="3" width="29.12" height="15"/>
+        <text style="stroke: none" x="-124" y="15" text-anchor="start" textLength="29.12" lengthAdjust="spacing" xml:space="preserve">list.</text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1306)">
+      <title xml:space="preserve">Little titles fit in a strict, tidy list.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="-124" y="-15" width="241.668" height="15"/>
+        <text style="stroke: none" x="-124" y="-3" text-anchor="start" textLength="241.668" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-bold">Little titles fit in a strict, tidy </tspan></text>
+        <rect class="md-highlight-box" x="-124" y="3" width="30.576" height="15"/>
+        <text style="stroke: none" x="-124" y="15" text-anchor="start" textLength="30.576" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-bold">list.</tspan></text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1444)">
+      <title xml:space="preserve">Plain text, one highlighted phrase, plain again.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="-45.04" y="-15" width="155.68" height="15"/>
+        <text x="-124" y="-3" text-anchor="start" textLength="78.96" lengthAdjust="spacing" xml:space="preserve">Plain text, </text>
+        <text style="stroke: none" x="-45.04" y="-3" text-anchor="start" textLength="155.68" lengthAdjust="spacing" xml:space="preserve">one highlighted phrase</text>
+        <text x="110.64" y="-3" text-anchor="start" textLength="8.96" lengthAdjust="spacing" xml:space="preserve">, </text>
+        <text x="-124" y="15" text-anchor="start" textLength="77.28" lengthAdjust="spacing" xml:space="preserve">plain again.</text>
+      </g>
+    </g>
+    <g class="node end" transform="translate(172 1578)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -4,7 +4,11 @@ use crate::layout::{
     CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
     LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, Node, ParameterPanel, Point, Scene,
 };
+use crate::text::{
+    Formula, RichText, Script, Style, block_metrics, line_ink, span_advances, svg_dimension,
+};
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
+use latex_rust::Dim;
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
@@ -30,6 +34,7 @@ mod question;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     let mut svg = String::new();
+    let markdown_styles = markdown_styles(scene);
     emit!(
         svg,
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">"#,
@@ -71,7 +76,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }}
-    </style>
+{markdown_styles}    </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
@@ -120,6 +125,44 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     svg
 }
 
+fn markdown_styles(scene: &Scene) -> &'static str {
+    if scene
+        .nodes
+        .iter()
+        .flat_map(|node| &node.lines)
+        .chain(scene.labels.iter().flat_map(|label| &label.lines))
+        .chain(scene.loop_regions.iter().flat_map(|region| &region.caption))
+        .any(|line| {
+            line.spans()
+                .iter()
+                .any(|span| span.style != Style::default() || span.formula.is_some())
+        })
+    {
+        r#"      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
+"#
+    } else {
+        ""
+    }
+}
+
 fn write_connection(svg: &mut String, connection: &Connection) {
     let first = connection
         .points
@@ -138,12 +181,35 @@ fn write_connection_label(svg: &mut String, label: &Label) {
         LabelKind::Wire => "connection-label",
         LabelKind::Branch => "connection-label branch-label",
     };
+    if needs_composed_lines(&label.lines) {
+        let style = matches!(label.kind, LabelKind::Branch)
+            .then(|| format!("font-size: {}px", label.kind.font_size()));
+        write_composed_lines(
+            svg,
+            "    ",
+            class,
+            style.as_deref(),
+            &label.lines,
+            x,
+            y,
+            label.kind.font_size(),
+            label.kind.line_height(),
+            TextAnchor::Start,
+        );
+        return;
+    }
     emit_inline!(svg, "    <text class=\"{class}\"");
     if matches!(label.kind, LabelKind::Branch) {
         emit_inline!(svg, " style=\"font-size: {}px\"", label.kind.font_size());
     }
     emit_inline!(svg, " x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">");
-    write_lines(svg, &label.lines, x, label.kind.line_height());
+    write_lines(
+        svg,
+        &label.lines,
+        x,
+        label.kind.font_size(),
+        label.kind.line_height(),
+    );
 }
 
 fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
@@ -170,12 +236,227 @@ fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
 
 /// Writes the lines of one `<text>` as `<tspan>`s and closes it. The first line
 /// sits on the text's own baseline; each later one drops by `line_height`.
-fn write_lines(svg: &mut String, lines: &[String], x: i32, line_height: i32) {
+fn write_lines(svg: &mut String, lines: &[RichText], x: i32, font_size: i32, line_height: i32) {
+    let metrics = block_metrics(lines, font_size, line_height);
     for (index, line) in lines.iter().enumerate() {
-        let dy = if index == 0 { 0 } else { line_height };
-        emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">{}</tspan>", escape(line));
+        let dy = if index == 0 {
+            0
+        } else {
+            metrics.baselines[index] - metrics.baselines[index - 1]
+        };
+        emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">");
+        for span in line.spans() {
+            write_span(svg, &span.text, span.style);
+        }
+        svg.push_str("</tspan>");
     }
     emit!(svg, "</text>");
+}
+
+fn write_span(svg: &mut String, text: &str, style: Style) {
+    if style == Style::default() {
+        svg.push_str(&escape(text));
+        return;
+    }
+    let mut classes = Vec::new();
+    if style.bold {
+        classes.push("md-bold");
+    }
+    if style.italic {
+        classes.push("md-italic");
+    }
+    if style.quote {
+        classes.push("md-quote");
+    }
+    if style.strikethrough {
+        classes.push("md-strikethrough");
+    }
+    if style.underline {
+        classes.push("md-underline");
+    }
+    if let Some(color) = style.color {
+        classes.push(color.class());
+    }
+    if style.code {
+        classes.push("md-code");
+    }
+    match style.script {
+        Some(Script::Superscript) => classes.push("md-superscript"),
+        Some(Script::Subscript) => classes.push("md-subscript"),
+        None => {}
+    }
+    // A highlight is the rect behind the run, so a span carrying only that
+    // effect needs no element of its own.
+    if classes.is_empty() {
+        svg.push_str(&escape(text));
+        return;
+    }
+    emit_inline!(
+        svg,
+        "<tspan class=\"{}\">{}</tspan>",
+        classes.join(" "),
+        escape(text)
+    );
+}
+
+#[derive(Clone, Copy)]
+enum TextAnchor {
+    Start,
+    Middle,
+    End,
+}
+
+fn needs_composed_lines(lines: &[RichText]) -> bool {
+    lines
+        .iter()
+        .flat_map(RichText::spans)
+        .any(|span| span.formula.is_some() || span.style.highlight)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn write_composed_lines(
+    svg: &mut String,
+    indent: &str,
+    class: &str,
+    style: Option<&str>,
+    lines: &[RichText],
+    x: i32,
+    first_y: i32,
+    font_size: i32,
+    line_height: i32,
+    anchor: TextAnchor,
+) {
+    emit_inline!(svg, "{indent}<g class=\"{class}\"");
+    if let Some(style) = style {
+        emit_inline!(svg, " style=\"{style}\"");
+    }
+    emit!(svg, ">");
+    let metrics = block_metrics(lines, font_size, line_height);
+    let first_baseline = metrics.baselines.first().copied().unwrap_or_default();
+    for (index, line) in lines.iter().enumerate() {
+        let baseline = first_y + metrics.baselines[index] - first_baseline;
+        let advances = span_advances(line, font_size);
+        let width = Dim::ratio(advances.iter().copied().sum(), 10_000);
+        let spans = line.spans().iter().zip(&advances).collect::<Vec<_>>();
+        let x = Dim::from_i64(i64::from(x));
+        let start = match anchor {
+            TextAnchor::Start => x,
+            TextAnchor::Middle => x - width / Dim::from_i64(2),
+            TextAnchor::End => x - width,
+        };
+        let mut decorated_x = start.clone();
+        for (span, advance) in &spans {
+            let advance = Dim::ratio(**advance, 10_000);
+            if span.style.highlight {
+                let (ascent, descent) =
+                    line_ink(&RichText::from_spans(std::slice::from_ref(span)), font_size);
+                let ascent = Dim::from_i64(i64::from(ascent));
+                let descent = Dim::from_i64(i64::from(descent));
+                let top = Dim::from_i64(i64::from(baseline)) - &ascent;
+                let height = ascent + descent;
+                emit!(
+                    svg,
+                    "{indent}  <rect class=\"md-highlight-box\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\"/>",
+                    svg_dimension(&decorated_x),
+                    svg_dimension(&top),
+                    svg_dimension(&advance),
+                    svg_dimension(&height)
+                );
+            }
+            decorated_x = decorated_x + advance;
+        }
+        let mut cursor = start;
+        // A highlighted run starts its own `<text>`: the box already separates it
+        // from whatever it covers, and the white halo these classes stroke around
+        // their text would otherwise be painted over the box.
+        // The same per-span advances as the boxes: a grapheme split by a
+        // highlight boundary would otherwise measure differently in each half.
+        for run in spans.chunk_by(|(left, _), (right, _)| {
+            left.formula.is_none()
+                && right.formula.is_none()
+                && left.style.highlight == right.style.highlight
+        }) {
+            let width = Dim::ratio(
+                run.iter().map(|(_, advance)| **advance).sum::<i64>(),
+                10_000,
+            );
+            let (first, _) = run[0];
+            if let Some(formula) = &first.formula {
+                write_formula(
+                    svg,
+                    indent,
+                    formula,
+                    first.style,
+                    &cursor,
+                    baseline,
+                    font_size,
+                );
+            } else {
+                emit_inline!(svg, "{indent}  <text");
+                if first.style.highlight {
+                    emit_inline!(svg, " style=\"stroke: none\"");
+                }
+                // The run must occupy exactly the width it was measured at, or
+                // the next run and the highlight box drift off its ink. The
+                // estimate errs wide, so `spacing` spends the difference on the
+                // gaps; stretching the outlines instead would read as a heavier
+                // font, and unevenly, since the error depends on the glyphs.
+                emit_inline!(
+                    svg,
+                    " x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"spacing\" xml:space=\"preserve\">",
+                    svg_dimension(&cursor),
+                    svg_dimension(&width)
+                );
+                for (span, _) in run {
+                    write_span(svg, &span.text, span.style);
+                }
+                emit!(svg, "</text>");
+            }
+            cursor = cursor + width;
+        }
+    }
+    emit!(svg, "{indent}</g>");
+}
+
+fn write_formula(
+    svg: &mut String,
+    indent: &str,
+    formula: &Formula,
+    style: Style,
+    x: &Dim,
+    baseline: i32,
+    font_size: i32,
+) {
+    let width = formula.width(font_size);
+    let ascent = formula.ascent(font_size);
+    let height = &ascent + &formula.descent(font_size);
+    let top = &Dim::from_i64(i64::from(baseline)) - &ascent;
+    let class = style.color.map_or_else(
+        || "md-math".to_owned(),
+        |color| format!("md-math {}", color.class()),
+    );
+    emit!(
+        svg,
+        "{indent}  <svg class=\"{class}\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
+        svg_dimension(x),
+        svg_dimension(&top),
+        svg_dimension(&width),
+        svg_dimension(&height),
+        formula.view_box()
+    );
+    // The body is renderer-owned markup: latex-rust emits only shapes with
+    // numeric attributes, and no TeX source reaches it.
+    svg.push_str(formula.svg_body());
+    if style.underline {
+        let below = svg_dimension(&(formula.view_box_height() + Dim::ratio(1, 10)));
+        let x2 = formula.view_box_width();
+        emit!(
+            svg,
+            "{indent}    <line x1=\"0\" y1=\"{below}\" x2=\"{}\" y2=\"{below}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
+            svg_dimension(x2)
+        );
+    }
+    emit!(svg, "{indent}  </svg>");
 }
 
 /// Describes the diagram once: each node with the labels it and its exits own,
@@ -211,11 +492,12 @@ fn describe(scene: &Scene) -> String {
                 }
                 if let Some(description) = scene.captions.branch_description(exit.id) {
                     branches.push(format!(
-                        "branch {}: {description}",
+                        "branch {}: {}",
                         exit.id
                             .branch
                             .expect("only question branches have descriptions")
-                            + 1
+                            + 1,
+                        description.as_ref()
                     ));
                 }
             }
@@ -316,6 +598,7 @@ fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterP
         svg,
         &parameters.lines,
         16 - parameters.width / 2,
+        LABEL_FONT,
         LINE_HEIGHT,
     );
     svg.push_str("    </g>\n");
@@ -381,7 +664,7 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
 }
 
 fn node_name(scene: &Scene, id: NodeId) -> String {
-    let label = scene.captions.label(id);
+    let label = scene.captions.label(id).as_ref();
     match scene.topology.node(id).kind {
         NodeKind::Start => format!("Start: {label}"),
         NodeKind::Action => action::name(label),
@@ -404,13 +687,13 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         node.y
     );
     if !matches!(projected.kind, NodeKind::Start | NodeKind::End) {
-        write_title(svg, scene.captions.label(node.id));
+        write_title(svg, scene.captions.label(node.id).as_ref());
     }
     match projected.kind {
         // Start and end are the two ends of one flow, drawn alike.
         NodeKind::Start | NodeKind::End => {
             write_capsule(svg, node);
-            write_label(svg, node, 0, 0);
+            write_label(svg, node, 0, 0, TextAnchor::Middle);
         }
         NodeKind::Action => action::write(svg, node),
         NodeKind::Call => call::write(svg, node),
@@ -444,14 +727,32 @@ fn write_title(svg: &mut String, label: &str) {
     );
 }
 
-fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32) {
-    let block_height = node.lines.len() as i32 * LINE_HEIGHT;
-    let first_y = center_y - block_height / 2 + 15;
+/// Draws one node's caption. The anchor matches the `text-anchor` the node's
+/// class carries in the stylesheet; the composed path positions runs itself and
+/// cannot read it from the CSS.
+fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32, anchor: TextAnchor) {
+    let metrics = block_metrics(&node.lines, LABEL_FONT, LINE_HEIGHT);
+    let first_y = center_y - metrics.height / 2 + metrics.baselines[0];
+    if needs_composed_lines(&node.lines) {
+        write_composed_lines(
+            svg,
+            "      ",
+            "label",
+            None,
+            &node.lines,
+            x,
+            first_y,
+            LABEL_FONT,
+            LINE_HEIGHT,
+            anchor,
+        );
+        return;
+    }
     emit_inline!(
         svg,
         "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
-    write_lines(svg, &node.lines, x, LINE_HEIGHT);
+    write_lines(svg, &node.lines, x, LABEL_FONT, LINE_HEIGHT);
 }
 
 const fn node_class(kind: NodeKind) -> &'static str {

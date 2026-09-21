@@ -270,12 +270,7 @@ above. The output is a standalone SVG with no external rendering tools required.
 
 ## Read more
 
-The RFCs are the source of truth for syntax, semantics, and diagrams.
-
-- [Language](docs/rfcs/0001-language.md)
-- [Visual language](docs/rfcs/0002-visual-language.md)
-- [SVG renderer](docs/rfcs/0003-svg-renderer.md)
-- [Rust lowering](docs/rfcs/0004-rust-lowering.md)
+- [RFCs](docs/rfcs/), the source of truth for syntax, semantics, and diagrams.
 - [Contributing](CONTRIBUTING.md)
 
 [spring-running]: https://www.gutenberg.org/cache/epub/37364/pg37364-images.html

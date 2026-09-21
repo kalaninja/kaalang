@@ -2,8 +2,10 @@
 
 use std::fmt::Write;
 
-use super::{Node, escape, write_label, write_lines};
-use crate::layout::{CYCLE_CAPTION_LINE_HEIGHT, LoopRegion};
+use super::{
+    Node, TextAnchor, escape, needs_composed_lines, write_composed_lines, write_label, write_lines,
+};
+use crate::layout::{CYCLE_CAPTION_FONT, CYCLE_CAPTION_LINE_HEIGHT, LoopRegion};
 
 pub(super) fn write_node(svg: &mut String, node: &Node) {
     let half_width = node.width / 2;
@@ -14,7 +16,7 @@ pub(super) fn write_node(svg: &mut String, node: &Node) {
         node.width,
         node.height
     );
-    write_label(svg, node, 0, -half_width + 16);
+    write_label(svg, node, 0, -half_width + 16, TextAnchor::Start);
     emit!(
         svg,
         "      <text class=\"loop-marker\" x=\"{}\" y=\"7\" aria-hidden=\"true\">↻</text>",
@@ -39,12 +41,39 @@ pub(super) fn write(svg: &mut String, region: &LoopRegion) {
     );
     if !region.caption.is_empty() {
         let x = region.right - 12;
+        if needs_composed_lines(&region.caption) {
+            let metrics = crate::text::block_metrics(
+                &region.caption,
+                CYCLE_CAPTION_FONT,
+                CYCLE_CAPTION_LINE_HEIGHT,
+            );
+            write_composed_lines(
+                svg,
+                "    ",
+                "cycle-caption",
+                None,
+                &region.caption,
+                x,
+                region.top + 14.max(metrics.baselines[0]),
+                CYCLE_CAPTION_FONT,
+                CYCLE_CAPTION_LINE_HEIGHT,
+                TextAnchor::End,
+            );
+            emit!(svg, "    </g>");
+            return;
+        }
         emit_inline!(
             svg,
             "    <text class=\"cycle-caption\" x=\"{x}\" y=\"{}\" text-anchor=\"end\" xml:space=\"preserve\">",
             region.top + 14
         );
-        write_lines(svg, &region.caption, x, CYCLE_CAPTION_LINE_HEIGHT);
+        write_lines(
+            svg,
+            &region.caption,
+            x,
+            CYCLE_CAPTION_FONT,
+            CYCLE_CAPTION_LINE_HEIGHT,
+        );
     }
     emit!(svg, "    </g>");
 }

@@ -24,7 +24,11 @@ kaalang-render = { version = "0.1.0", path = "crates/kaalang-render" }
 kaalang-svg = { version = "0.1.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 
+# Pinned: `text.rs` corrects this release's glyph outline scales by rewriting
+# its emitted `scale(...)` transforms in traversal order.
+latex-rust = "=1.0.4"
 proc-macro2 = "1"
+pulldown-cmark = { version = "0.13", default-features = false }
 quote = "1"
 syn = { version = "3", features = ["full"] }
 trybuild = "1"

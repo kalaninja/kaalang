@@ -1,6 +1,6 @@
 //! Renders validated kaalang flows as standalone SVG diagrams.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, rc::Rc};
 
 use proc_macro2::Span;
 use syn::{File, Item, ItemFn, Meta, ReturnType, Signature, spanned::Spanned};
@@ -8,6 +8,7 @@ use syn::{File, Item, ItemFn, Meta, ReturnType, Signature, spanned::Spanned};
 mod captions;
 mod layout;
 mod svg;
+mod text;
 
 /// Presentation options for one rendered flow.
 #[derive(Clone, Copy, Default)]
@@ -139,7 +140,11 @@ pub fn render_source_with_options(
     let parameters = layout::parameter_text(parser_source, &function.sig);
     let return_type = layout::return_text(parser_source, &function.sig.output);
     validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
-    let scene = layout::layout(&model, &start, &parameters, &return_type).map_err(|reason| {
+    // Each formula is laid out once, here rather than per layout attempt.
+    // Validation above has already parsed the same descriptions, without their
+    // math, to read the characters a reader would see.
+    let captions = Rc::new(captions::derive(&model, &start, &return_type));
+    let scene = layout::layout(&model, &captions, &parameters).map_err(|reason| {
         RenderError::UnroutableTopology {
             name: flow_name.to_owned(),
             reason,
@@ -260,7 +265,7 @@ fn validate_labels(
                     .map(|text| (text, format!("question branch {} description", branch + 1)))
             });
         for (text, context) in description.into_iter().chain(cases).chain(branches) {
-            validate_label(text, block.span, context)?;
+            validate_markdown_label(text, block.span, context)?;
         }
     }
     validate_label(start, signature.span(), "flow header")?;
@@ -272,6 +277,31 @@ fn validate_labels(
     }
 
     Ok(())
+}
+
+fn validate_markdown_label(
+    label: &str,
+    span: Span,
+    context: impl Into<String>,
+) -> Result<(), RenderError> {
+    let context = context.into();
+    validate_label(label, span, context.clone())?;
+    let parsed = text::RichText::markdown_text(label);
+    let Some(character) = parsed
+        .spans()
+        .iter()
+        .flat_map(|span| span.text.chars())
+        .find(|character| !valid_xml_character(*character))
+    else {
+        return Ok(());
+    };
+    let (line, column) = location(span);
+    Err(RenderError::InvalidLabelCharacter {
+        character,
+        line,
+        column,
+        context,
+    })
 }
 
 fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result<(), RenderError> {
@@ -289,12 +319,16 @@ fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result
 
 /// Finds the first character XML 1.0 cannot represent.
 fn invalid_xml_character(label: &str) -> Option<char> {
-    label.chars().find(|character| {
-        !matches!(
-            *character,
-            '\u{9}' | '\u{A}' | '\u{D}' | '\u{20}'..='\u{D7FF}' | '\u{E000}'..='\u{FFFD}' | '\u{10000}'..='\u{10FFFF}'
-        )
-    })
+    label
+        .chars()
+        .find(|character| !valid_xml_character(*character))
+}
+
+const fn valid_xml_character(character: char) -> bool {
+    matches!(
+        character,
+        '\u{9}' | '\u{A}' | '\u{D}' | '\u{20}'..='\u{D7FF}' | '\u{E000}'..='\u{FFFD}' | '\u{10000}'..='\u{10FFFF}'
+    )
 }
 
 #[cfg(test)]
@@ -491,6 +525,26 @@ fn invalid(condition: bool) -> u32 {
                 context: "case 2 description".into(),
             })
         );
+    }
+
+    /// A character reference decodes before the diagram is written, so the
+    /// character it names is validated too (RFC 0005 §4).
+    #[test]
+    fn reports_an_invalid_character_a_reference_introduces() {
+        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";
+
+        assert_eq!(
+            render_source(source, "invalid"),
+            Err(RenderError::InvalidLabelCharacter {
+                character: '\u{1e}',
+                line: 3,
+                column: 5,
+                context: "block description".into(),
+            })
+        );
+        // Escaping the ampersand keeps the reference literal, and valid.
+        let escaped = source.replace("Record&#30;the", r"Record\\&#30;the");
+        assert!(render_source(&escaped, "invalid").is_ok());
     }
 
     #[test]

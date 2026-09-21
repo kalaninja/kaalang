@@ -11,8 +11,8 @@ use kaalang_compiler::{
 use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
     LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Rows, Scene,
-    text::{text_width, wrap_text},
 };
+use crate::text::{RichText, block_metrics, joined, line_ink, text_width, wrap_literal, wrap_text};
 
 /// A label beside a vertical run must fit before the next column's node,
 /// including clearance and its halo on both sides.
@@ -226,8 +226,8 @@ fn merge_anchor(scene: &Scene, rows: &Rows, junction: usize) -> Point {
 /// Wraps the wire names one label draws, or nothing when it names none.
 /// Wrapping an empty label would yield one blank line, so every caller needs
 /// the same guard.
-fn wrap_wires(names: &[String]) -> Option<Vec<String>> {
-    (!names.is_empty()).then(|| wrap_text(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
+fn wrap_wires(names: &[String]) -> Option<Vec<RichText>> {
+    (!names.is_empty()).then(|| wrap_literal(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
 }
 
 /// Wraps one label and stacks its lines against `at`. Its left edge, including
@@ -243,22 +243,39 @@ fn wire_label(
     Some(place_label(owner, lines, LabelKind::Wire, at, stack, clear))
 }
 
-fn branch_label(owner: Vertex, description: &str, at: Point, stack: Stack, clear: i32) -> Label {
+fn branch_label(
+    owner: Vertex,
+    description: &RichText,
+    at: Point,
+    stack: Stack,
+    clear: i32,
+) -> Label {
     let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
     place_label(owner, lines, LabelKind::Branch, at, stack, clear)
 }
 
 fn place_label(
     owner: Vertex,
-    lines: Vec<String>,
+    lines: Vec<RichText>,
     kind: LabelKind,
     at: Point,
     stack: Stack,
     clear: i32,
 ) -> Label {
-    let below_first = (lines.len() as i32 - 1) * kind.line_height();
+    let metrics = block_metrics(&lines, kind.font_size(), kind.line_height());
+    let below_first = metrics
+        .baselines
+        .last()
+        .zip(metrics.baselines.first())
+        .map_or(0, |(last, first)| last - first);
     let x = (at.x - label_width(&lines, kind.font_size()) / 2)
         .max(clear + CONNECTION_LABEL_HALO + CLEARANCE);
+    let (first_ascent, _) = lines
+        .first()
+        .map_or((0, 0), |line| line_ink(line, kind.font_size()));
+    let (_, last_descent) = lines
+        .last()
+        .map_or((0, 0), |line| line_ink(line, kind.font_size()));
 
     Label {
         owner,
@@ -267,8 +284,8 @@ fn place_label(
             x,
             y: at.y
                 - match stack {
-                    Stack::Above => below_first,
-                    Stack::Below => 0,
+                    Stack::Above => below_first + (last_descent - kind.font_size() / 2).max(0),
+                    Stack::Below => -(first_ascent - kind.font_size()).max(0),
                 },
         },
         lines,
@@ -287,23 +304,30 @@ pub(super) fn vertical_gaps(scene: &Scene) -> Vec<i32> {
         let Some(gap) = (if below { Some(row) } else { row.checked_sub(1) }) else {
             continue;
         };
-        gaps[gap] = gaps[gap].max(vertical_label_gap(label.lines.len(), label.kind));
+        gaps[gap] = gaps[gap].max(vertical_label_gap(&label.lines, label.kind));
     }
     gaps
 }
 
-fn vertical_label_gap(lines: usize, kind: LabelKind) -> i32 {
-    if lines == 0 {
+fn vertical_label_gap(lines: &[RichText], kind: LabelKind) -> i32 {
+    if lines.is_empty() {
         return 0;
     }
     let drop = match kind {
         LabelKind::Wire => DROP,
         LabelKind::Branch => BRANCH_DROP,
     };
+    let metrics = block_metrics(lines, kind.font_size(), kind.line_height());
+    let baseline_span = metrics.baselines.last().copied().unwrap_or_default()
+        - metrics.baselines.first().copied().unwrap_or_default();
+    let (first_ascent, _) = line_ink(&lines[0], kind.font_size());
+    let (_, last_descent) = line_ink(&lines[lines.len() - 1], kind.font_size());
     drop + RISE
         + kind.font_size()
         + 2 * CONNECTION_LABEL_HALO
-        + 2 * (lines as i32 - 1) * kind.line_height()
+        + 2 * baseline_span
+        + (first_ascent - kind.font_size()).max(0)
+        + (last_descent - kind.font_size() / 2).max(0)
 }
 
 /// The rectangle a label's ink and halo occupy, matching how the serializer
@@ -312,13 +336,22 @@ fn vertical_label_gap(lines: usize, kind: LabelKind) -> i32 {
 pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
     let font_size = label.kind.font_size();
     let width = label_width(&label.lines, font_size);
-    let last_baseline = label.at.y + (label.lines.len() as i32 - 1) * label.kind.line_height();
+    let metrics = block_metrics(&label.lines, font_size, label.kind.line_height());
+    let first = metrics.baselines.first().copied().unwrap_or_default();
+    let mut top = label.at.y - font_size;
+    let mut bottom = label.at.y + font_size / 2;
+    for (index, line) in label.lines.iter().enumerate() {
+        let baseline = label.at.y + metrics.baselines[index] - first;
+        let (ascent, descent) = line_ink(line, font_size);
+        top = top.min(baseline - ascent.max(font_size));
+        bottom = bottom.max(baseline + descent.max(font_size / 2));
+    }
 
     (
         label.at.x - CONNECTION_LABEL_HALO,
-        label.at.y - font_size - CONNECTION_LABEL_HALO,
+        top - CONNECTION_LABEL_HALO,
         label.at.x + width + CONNECTION_LABEL_HALO,
-        last_baseline + font_size / 2 + CONNECTION_LABEL_HALO,
+        bottom + CONNECTION_LABEL_HALO,
     )
 }
 
@@ -330,8 +363,12 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         .or_else(|| {
             scene.labels.iter().find_map(|label| {
                 let (left, top, right, bottom) = label_rect(label);
-                (left < 0 || top < 0 || right > scene.width || bottom > scene.height)
-                    .then(|| format!("the label `{}` leaves the canvas", label.lines.join(" ")))
+                (left < 0 || top < 0 || right > scene.width || bottom > scene.height).then(|| {
+                    format!(
+                        "the label `{}` leaves the canvas",
+                        joined(&label.lines, " ")
+                    )
+                })
             })
         })
         .or_else(|| {
@@ -346,7 +383,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                     .then(|| {
                         format!(
                             "an iteration back edge crosses the label `{}`",
-                            label.lines.join(" ")
+                            joined(&label.lines, " ")
                         )
                     })
             })
@@ -358,11 +395,11 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
 pub(super) fn clearance(scene: &Scene) -> Option<String> {
     for label in &scene.labels {
         let rect = label_rect(label);
-        let names = label.lines.join(" ");
+        let names = joined(&label.lines, " ");
         let nodes = scene.nodes.iter().map(|node| {
             (
                 Scene::bounds(node),
-                format!("the node `{}`", node.lines.join(" ")),
+                format!("the node `{}`", joined(&node.lines, " ")),
             )
         });
         let panel = scene.parameters.as_ref().map(|parameters| {
@@ -388,7 +425,7 @@ pub(super) const fn contains(outer: (i32, i32, i32, i32), inner: (i32, i32, i32,
     inner.0 >= outer.0 && inner.1 >= outer.1 && inner.2 <= outer.2 && inner.3 <= outer.3
 }
 
-fn label_width(lines: &[String], font_size: i32) -> i32 {
+fn label_width(lines: &[RichText], font_size: i32) -> i32 {
     lines
         .iter()
         .map(|line| text_width(line, font_size))
@@ -399,7 +436,6 @@ fn label_width(lines: &[String], font_size: i32) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::captions::Captions;
     use kaalang_compiler::topology::{NodeId, Topology};
 
     /// One label of a known width, so a test can put it where it must not be.
@@ -414,7 +450,7 @@ mod tests {
             height: 200,
             topology: Topology::default(),
             arrangement: kaalang_compiler::Arrangement::default(),
-            captions: Captions::default(),
+            captions: std::rc::Rc::default(),
             nodes: node
                 .into_iter()
                 .map(|(x, y)| super::super::Node {
@@ -423,7 +459,7 @@ mod tests {
                     y,
                     width: 40,
                     height: 20,
-                    lines: vec!["Do the work.".to_owned()],
+                    lines: vec![RichText::literal("Do the work.")],
                 })
                 .collect(),
             parameters: None,
@@ -431,7 +467,7 @@ mod tests {
             labels: vec![Label {
                 owner: Vertex::Node(NodeId::Block(0)),
                 kind: LabelKind::Wire,
-                lines: vec!["end".to_owned()],
+                lines: vec![RichText::literal("end")],
                 at,
             }],
             loop_regions: Vec::new(),
@@ -462,5 +498,24 @@ mod tests {
             verify(&scene(inside, Some((100, 100)))).as_deref(),
             Some("the label `end` reaches into the node `Do the work.`")
         );
+    }
+
+    #[test]
+    fn tall_math_stacks_away_from_the_connection() {
+        let text = RichText::markdown(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$");
+        for (stack, y) in [(Stack::Above, -BRANCH_RISE), (Stack::Below, BRANCH_DROP)] {
+            let label = branch_label(
+                Vertex::Node(NodeId::Start),
+                &text,
+                Point { x: 0, y },
+                stack,
+                0,
+            );
+            let (_, top, _, bottom) = label_rect(&label);
+            match stack {
+                Stack::Above => assert!(bottom <= 0, "bottom = {bottom}"),
+                Stack::Below => assert!(top >= 0, "top = {top}"),
+            }
+        }
     }
 }

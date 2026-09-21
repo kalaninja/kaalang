@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="524" viewBox="0 0 680 524" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for capture_the_end_wire</title>
-  <desc id="kaalang-description">Nodes: Start: capture_the_end_wire with parameters input: u32 handing over input; Action: Produce the result. capturing input handing over end; Action: Capture the ordinary `end` wire. capturing end handing over doubled; End: u32 capturing doubled. Connections: Start: capture_the_end_wire to Action: Produce the result.; Action: Produce the result. to Action: Capture the ordinary `end` wire.; Action: Capture the ordinary `end` wire. to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: capture_the_end_wire with parameters input: u32 handing over input; Action: Produce the result. capturing input handing over end; Action: Capture the ordinary end wire. capturing end handing over doubled; End: u32 capturing doubled. Connections: Start: capture_the_end_wire to Action: Produce the result.; Action: Produce the result. to Action: Capture the ordinary end wire.; Action: Capture the ordinary end wire. to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,6 +22,25 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -53,9 +72,9 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the result.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 330)">
-      <title xml:space="preserve">Capture the ordinary `end` wire.</title>
+      <title xml:space="preserve">Capture the ordinary end wire.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Capture the ordinary `end` wire.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Capture the ordinary <tspan class="md-code">end</tspan> wire.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 463)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

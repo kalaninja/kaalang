@@ -11,7 +11,9 @@ repository.workspace = true
 [dependencies]
 kaalang-compiler = { workspace = true }
 kaalang-render = { workspace = true }
+latex-rust = { workspace = true }
 proc-macro2 = { workspace = true, features = ["span-locations"] }
+pulldown-cmark = { workspace = true }
 syn = { workspace = true }
 unicode-segmentation = { workspace = true }
 

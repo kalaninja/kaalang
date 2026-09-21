@@ -426,7 +426,7 @@ fn name(scene: &Scene, connection: &Connection) -> String {
                 format!(
                     "{:?}({})",
                     projected.kind,
-                    scene.captions.label(node).trim()
+                    scene.captions.label(node).as_ref().trim()
                 )
             }
             None => format!("{node:?}"),
@@ -495,7 +495,7 @@ mod tests {
             height: 10,
             topology: Topology::default(),
             arrangement: kaalang_compiler::Arrangement::default(),
-            captions: crate::captions::Captions::default(),
+            captions: std::rc::Rc::default(),
             nodes: vec![],
             parameters: None,
             connections,

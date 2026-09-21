@@ -1,6 +1,8 @@
 use kaalang_compiler::SemanticModel;
 use kaalang_compiler::topology::{Connection, Destination, ExitId, NodeId, Source, Vertex};
 
+use crate::text::RichText;
+
 use super::{Captions, derive};
 
 fn read(source: &str) -> (SemanticModel, Captions) {
@@ -57,7 +59,7 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
         assert!(captions.capture_label(case).is_empty());
         assert_eq!(captions.handover(ExitId::of(case)), [name]);
         assert_eq!(
-            captions.label(case),
+            captions.label(case).as_ref(),
             if branch == 0 { "Near." } else { "Far." }
         );
         // The distributor is the fan-out this projection actually produces:
@@ -68,9 +70,9 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             destination: Destination::Node(case),
         }));
     }
-    assert_eq!(captions.label(NodeId::Block(0)), "Pick a case.");
-    assert_eq!(captions.label(NodeId::Start), "example");
-    assert_eq!(captions.label(NodeId::Block(5)), "u8");
+    assert_eq!(captions.label(NodeId::Block(0)).as_ref(), "Pick a case.");
+    assert_eq!(captions.label(NodeId::Start).as_ref(), "example");
+    assert_eq!(captions.label(NodeId::Block(5)).as_ref(), "u8");
     assert_eq!(captions.capture(NodeId::Block(5)), ["end"]);
 }
 
@@ -262,8 +264,11 @@ fn a_question_branch_description_replaces_its_output_label() {
         node: NodeId::Block(0),
         branch: Some(1),
     };
-    assert_eq!(captions.branch_description(yes), Some("Go ahead."));
-    assert_eq!(captions.branch_description(no), None);
+    assert_eq!(
+        captions.branch_description(yes).map(RichText::as_ref),
+        Some("Go ahead.")
+    );
+    assert!(captions.branch_description(no).is_none());
     // The hand-over is still recorded; the description replaces it at drawing
     // time rather than removing it.
     assert_eq!(captions.handover(yes), ["yes"]);
@@ -282,5 +287,5 @@ fn a_call_without_a_description_is_labeled_with_the_path_it_calls() {
             |end| return end;
         }",
     );
-    assert_eq!(captions.label(NodeId::Block(0)), "math::twice");
+    assert_eq!(captions.label(NodeId::Block(0)).as_ref(), "math::twice");
 }
