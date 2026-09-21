@@ -62,11 +62,17 @@ pub fn flow_named(source: &str, name: &str) -> ItemFn {
 }
 
 fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
+    let entries = fs::read_dir(directory)
+        .unwrap_or_else(|error| panic!("could not read {}: {error}", directory.display()));
+    for entry in entries {
+        let path = entry
+            .unwrap_or_else(|error| {
+                panic!(
+                    "could not read an entry in {}: {error}",
+                    directory.display()
+                )
+            })
+            .path();
         if path.is_dir() {
             // A rejected program never builds, so it has nothing to measure.
             if path.file_name().is_some_and(|name| name == "compile_fail") {
@@ -78,24 +84,18 @@ fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
         if path.extension().is_none_or(|extension| extension != "rs") {
             continue;
         }
-        if let Ok(source) = fs::read_to_string(&path) {
-            files.push((path, source));
-        }
+        let source = fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("could not read {}: {error}", path.display()));
+        files.push((path, source));
     }
 }
 
-/// Asserts the corpus is the whole tree, naming a free flow, one in an `impl`
-/// and one in a `trait`, so a loader that stops seeing a kind fails here.
+/// Asserts that the corpus retains its representative flow and fixture kinds.
 ///
 /// # Panics
 ///
-/// Panics when the corpus is short or has lost a kind of flow.
-pub fn assert_whole_tree(flows: &[(String, ItemFn, bool)]) {
-    assert!(
-        flows.len() > 100,
-        "the corpus should be the whole tree, found {}",
-        flows.len()
-    );
+/// Panics when the corpus has lost a kind of flow or its stress tier.
+pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)]) {
     for expected in [
         "destructure_singleton_tuple",
         "mutate_a_receiver",

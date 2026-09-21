@@ -88,6 +88,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
 /// and stay out of the gallery.
 fn fixture_directories(tests: &Path) -> Vec<PathBuf> {
     let mut directories: Vec<PathBuf> = read_directory(tests)
+        .filter(|suite| suite.is_dir())
         .flat_map(|suite| read_directory(&suite).collect::<Vec<_>>())
         .filter(|path| path.join("mod.rs").is_file())
         .collect();
@@ -97,8 +98,7 @@ fn fixture_directories(tests: &Path) -> Vec<PathBuf> {
 
 fn read_directory(path: &Path) -> impl Iterator<Item = PathBuf> {
     fs::read_dir(path)
-        .into_iter()
-        .flatten()
+        .unwrap_or_else(|error| panic!("could not read {}: {error}", path.display()))
         .map(|entry| entry.expect("readable directory entry").path())
 }
 
@@ -154,5 +154,8 @@ fn every_executable_fixture_is_declared_and_executed() {
             );
         }
     }
-    assert!(checked > 100, "the whole fixture tree should be walked");
+    assert!(
+        checked > 0,
+        "no executable fixture was found under {tests:?}"
+    );
 }

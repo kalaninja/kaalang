@@ -53,11 +53,7 @@ fn the_fixture_corpus_renderer_stays_inside_its_budgets() {
                 .collect::<Vec<_>>()
         })
         .collect();
-    assert!(
-        diagrams.len() > 100,
-        "the renderer corpus should be the whole tree, found {}",
-        diagrams.len()
-    );
+    assert!(!diagrams.is_empty(), "the renderer corpus is empty");
 
     assert_pass_budget(
         "renderer",

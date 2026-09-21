@@ -407,15 +407,12 @@ fn nested_break_routes_merge_without_crossing_side_departures() {
 /// Exercises the sweep directly on accepted fixtures, bypassing the preferred
 /// search. Every result must pass independent verification.
 #[test]
-fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
-    let mut checked = 0;
+fn the_sweep_alone_draws_every_executable_fixture() {
     let corpus = kaalang_testing::corpus::corpus();
-    kaalang_testing::corpus::assert_whole_tree(&corpus);
+    kaalang_testing::corpus::assert_corpus_shape(&corpus);
     for (name, function, _) in corpus {
-        let Ok(model) = crate::build(&function) else {
-            continue;
-        };
-        checked += 1;
+        let model = crate::build(&function)
+            .unwrap_or_else(|error| panic!("{name}: executable fixture was rejected: {error}"));
         swept(
             &name,
             &model.analysis.flow,
@@ -424,7 +421,6 @@ fn the_sweep_alone_draws_every_fixture_the_model_accepts() {
         )
         .unwrap_or_else(|blocked| panic!("{name}: the sweep refuses a drawable flow: {blocked}"));
     }
-    assert!(checked > 100, "the sweep should reach most of the corpus");
 }
 
 #[test]
