@@ -5,7 +5,8 @@ use crate::layout::{
     LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, Node, ParameterPanel, Point, Scene,
 };
 use crate::text::{
-    Formula, RichText, Script, Style, block_metrics, line_ink, span_advances, svg_dimension,
+    Formula, RichText, Script, Style, block_metrics, line_ink, shaping_spans, span_advances,
+    svg_dimension,
 };
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 use latex_rust::Dim;
@@ -151,6 +152,7 @@ fn markdown_styles(scene: &Scene) -> &'static str {
       .md-subscript { baseline-shift: -0.2em; }
       .md-math { color: inherit; overflow: visible; }
       .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
       .cycle-caption .md-math { color: #166534; }
       .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
       .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
@@ -347,7 +349,7 @@ fn write_composed_lines(
         let mut decorated_x = start.clone();
         for (span, advance) in &spans {
             let advance = Dim::ratio(**advance, 10_000);
-            if span.style.highlight {
+            if span.style.highlight && !advance.is_zero() {
                 let (ascent, descent) =
                     line_ink(&RichText::from_spans(std::slice::from_ref(span)), font_size);
                 let ascent = Dim::from_i64(i64::from(ascent));
@@ -365,22 +367,16 @@ fn write_composed_lines(
             }
             decorated_x = decorated_x + advance;
         }
+        let shaped = shaping_spans(line, font_size);
         let mut cursor = start;
-        // A highlighted run starts its own `<text>`: the box already separates it
-        // from whatever it covers, and the white halo these classes stroke around
-        // their text would otherwise be painted over the box.
-        // The same per-span advances as the boxes: a grapheme split by a
-        // highlight boundary would otherwise measure differently in each half.
-        for run in spans.chunk_by(|(left, _), (right, _)| {
+        for run in shaped.chunk_by(|(left, _, left_index), (right, _, right_index)| {
             left.formula.is_none()
                 && right.formula.is_none()
                 && left.style.highlight == right.style.highlight
+                && (!left.style.highlight || left_index == right_index)
         }) {
-            let width = Dim::ratio(
-                run.iter().map(|(_, advance)| **advance).sum::<i64>(),
-                10_000,
-            );
-            let (first, _) = run[0];
+            let width = Dim::ratio(run.iter().map(|(_, advance, _)| *advance).sum(), 10_000);
+            let first = &run[0].0;
             if let Some(formula) = &first.formula {
                 write_formula(
                     svg,
@@ -407,7 +403,7 @@ fn write_composed_lines(
                     svg_dimension(&cursor),
                     svg_dimension(&width)
                 );
-                for (span, _) in run {
+                for (span, _, _) in run {
                     write_span(svg, &span.text, span.style);
                 }
                 emit!(svg, "</text>");
@@ -427,14 +423,17 @@ fn write_formula(
     baseline: i32,
     font_size: i32,
 ) {
-    let width = formula.width(font_size);
-    let ascent = formula.ascent(font_size);
-    let height = &ascent + &formula.descent(font_size);
+    let width = formula.width(font_size, style);
+    let ascent = formula.ascent(font_size, style);
+    let height = &ascent + &formula.descent(font_size, style);
     let top = &Dim::from_i64(i64::from(baseline)) - &ascent;
-    let class = style.color.map_or_else(
+    let mut class = style.color.map_or_else(
         || "md-math".to_owned(),
         |color| format!("md-math {}", color.class()),
     );
+    if style.bold {
+        class.push_str(" md-bold");
+    }
     emit!(
         svg,
         "{indent}  <svg class=\"{class}\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
@@ -442,18 +441,37 @@ fn write_formula(
         svg_dimension(&top),
         svg_dimension(&width),
         svg_dimension(&height),
-        formula.view_box()
+        formula.view_box(style)
     );
+    if style.italic || style.quote {
+        let slant = &formula.view_box_width(style) - formula.view_box_width(Style::default());
+        emit!(
+            svg,
+            "{indent}    <g transform=\"translate({} 0) skewX(-8.5308)\">",
+            svg_dimension(&slant)
+        );
+    }
     // The body is renderer-owned markup: latex-rust emits only shapes with
     // numeric attributes, and no TeX source reaches it.
     svg.push_str(formula.svg_body());
+    if style.italic || style.quote {
+        emit!(svg, "{indent}    </g>");
+    }
     if style.underline {
         let below = svg_dimension(&(formula.view_box_height() + Dim::ratio(1, 10)));
-        let x2 = formula.view_box_width();
+        let x2 = formula.view_box_width(style);
         emit!(
             svg,
             "{indent}    <line x1=\"0\" y1=\"{below}\" x2=\"{}\" y2=\"{below}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
-            svg_dimension(x2)
+            svg_dimension(&x2)
+        );
+    }
+    if style.strikethrough {
+        let across = svg_dimension(&(formula.view_box_height() * Dim::ratio(1, 2)));
+        emit!(
+            svg,
+            "{indent}    <line x1=\"0\" y1=\"{across}\" x2=\"{}\" y2=\"{across}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
+            svg_dimension(&formula.view_box_width(style))
         );
     }
     emit!(svg, "{indent}  </svg>");

@@ -37,6 +37,18 @@ fn render_markdown() {
     #[action("Plain text, <mark>one highlighted phrase</mark>, plain again.")]
     {};
 
+    #[action(r#"<b>**warning**</b> <b><u>x</u></b> **outside**"#)]
+    {};
+
+    #[action("~~$x$~~, **$x$**, *$x$*, ^$x$^, and ~$x$~.")]
+    {};
+
+    #[action("> Quoted formula: $x$.")]
+    {};
+
+    #[action("<mark>👩</mark>&zwj;💻 and <mark>e</mark>\u{301}.")]
+    {};
+
     return;
 }
 

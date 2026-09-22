@@ -86,43 +86,70 @@ impl Formula {
         })
     }
 
-    pub(crate) fn width(&self, font_size: i32) -> Dim {
-        &self.layout.width * &self.scale * Dim::from_i64(i64::from(font_size))
+    fn size(&self, font_size: i32, style: Style) -> Dim {
+        let script = if style.script.is_some() {
+            Dim::ratio(3, 4)
+        } else {
+            Dim::one()
+        };
+        &self.scale * script * Dim::from_i64(i64::from(font_size))
     }
 
-    pub(crate) fn ascent(&self, font_size: i32) -> Dim {
-        &self.layout.height * &self.scale * Dim::from_i64(i64::from(font_size))
+    fn slant(&self, style: Style) -> Dim {
+        if style.italic || style.quote {
+            &self.view_box_height() * Dim::ratio(3, 20)
+        } else {
+            Dim::zero()
+        }
     }
 
-    pub(crate) fn descent(&self, font_size: i32) -> Dim {
-        &self.layout.depth * &self.scale * Dim::from_i64(i64::from(font_size))
+    pub(crate) fn width(&self, font_size: i32, style: Style) -> Dim {
+        (&self.layout.width + self.slant(style)) * self.size(font_size, style)
+    }
+
+    pub(crate) fn ascent(&self, font_size: i32, style: Style) -> Dim {
+        let ascent = &self.layout.height * self.size(font_size, style);
+        match style.script {
+            Some(Script::Superscript) => ascent + Dim::ratio(i64::from(font_size) * 2, 5),
+            Some(Script::Subscript) => ascent - Dim::ratio(i64::from(font_size), 5),
+            None => ascent,
+        }
+    }
+
+    pub(crate) fn descent(&self, font_size: i32, style: Style) -> Dim {
+        let descent = &self.layout.depth * self.size(font_size, style);
+        match style.script {
+            Some(Script::Superscript) => descent - Dim::ratio(i64::from(font_size) * 2, 5),
+            Some(Script::Subscript) => descent + Dim::ratio(i64::from(font_size), 5),
+            None => descent,
+        }
     }
 
     /// Whether the formula needs shrinking to fit the budget. Separate from
     /// [`Self::fit`] so a caller holding a shared formula only clones one that
     /// does.
-    fn overflows(&self, budget: i32, font_size: i32) -> bool {
-        self.width(font_size) > Dim::from_i64(i64::from(budget.max(1)))
+    fn overflows(&self, budget: i32, font_size: i32, style: Style) -> bool {
+        self.width(font_size, style) > Dim::from_i64(i64::from(budget.max(1)))
     }
 
-    fn fit(&mut self, budget: i32, font_size: i32) {
+    fn fit(&mut self, budget: i32, font_size: i32, style: Style) {
         let budget = Dim::from_i64(i64::from(budget.max(1)));
-        let width = self.width(font_size);
+        let width = self.width(font_size, style);
         if width > budget {
             self.scale = &self.scale * &budget / width;
         }
     }
 
-    pub(crate) fn view_box(&self) -> String {
+    pub(crate) fn view_box(&self, style: Style) -> String {
         format!(
             "0 0 {} {}",
-            svg_dimension(&self.layout.width),
+            svg_dimension(&self.view_box_width(style)),
             svg_dimension(&self.view_box_height())
         )
     }
 
-    pub(crate) fn view_box_width(&self) -> &Dim {
-        &self.layout.width
+    pub(crate) fn view_box_width(&self, style: Style) -> Dim {
+        &self.layout.width + self.slant(style)
     }
 
     pub(crate) fn view_box_height(&self) -> Dim {
@@ -421,6 +448,42 @@ fn inline_tag(source: &str) -> Option<InlineTag> {
     })
 }
 
+fn html_tag_name(source: &str, closing: bool) -> Option<&str> {
+    let body = source.strip_prefix(if closing { "</" } else { "<" })?;
+    if !closing && source.trim_end().ends_with("/>") {
+        return None;
+    }
+    let end = body.find(|ch: char| !ch.is_ascii_alphanumeric() && ch != '-')?;
+    let name = &body[..end];
+    (name.as_bytes().first().is_some_and(u8::is_ascii_alphabetic) && body[end..].contains('>'))
+        .then_some(name)
+}
+
+/// An unsupported HTML pair owns its complete source, including Markdown events inside it.
+fn unsupported_html_end(events: &[(Event<'_>, Range<usize>)], start: usize) -> Option<usize> {
+    let Event::InlineHtml(open) = &events[start].0 else {
+        return None;
+    };
+    if inline_tag(open).is_some() {
+        return None;
+    }
+    let name = html_tag_name(open, false)?;
+    let mut depth = 1;
+    for (index, (event, _)) in events.iter().enumerate().skip(start + 1) {
+        if let Event::InlineHtml(source) = event {
+            if html_tag_name(source, false) == Some(name) {
+                depth += 1;
+            } else if html_tag_name(source, true) == Some(name) {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(index);
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Only balanced, properly nested exact tags affect the parsed line. A tag
 /// inside a construct the line copies literally, such as a link, is part of
 /// that literal text and pairs with nothing outside it.
@@ -428,7 +491,17 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
     let mut paired = vec![false; events.len()];
     let mut opened = Vec::new();
     let mut literal_depth = 0_usize;
-    for (index, (event, _)) in events.iter().enumerate() {
+    let mut index = 0;
+    while index < events.len() {
+        if literal_depth == 0
+            && let Some(end) = unsupported_html_end(events, index)
+        {
+            index = end + 1;
+            continue;
+        }
+        let current = index;
+        let (event, _) = &events[current];
+        index += 1;
         let Event::InlineHtml(source) = event else {
             match event {
                 Event::Start(tag)
@@ -451,13 +524,13 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
             continue;
         }
         match inline_tag(source) {
-            Some(InlineTag::Open(effect)) => opened.push((index, effect)),
+            Some(InlineTag::Open(effect)) => opened.push((current, effect)),
             Some(InlineTag::Close(tag))
                 if opened.last().is_some_and(|(_, effect)| effect.tag() == tag) =>
             {
                 let (start, _) = opened.pop().expect("a matching tag was just found");
                 paired[start] = true;
-                paired[index] = true;
+                paired[current] = true;
             }
             Some(InlineTag::Close(tag)) => {
                 if let Some(position) = opened.iter().rposition(|(_, effect)| effect.tag() == tag) {
@@ -572,6 +645,13 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
                     }
                 }
                 consumed = consumed.max(range.end);
+            }
+            Event::InlineHtml(_) if unsupported_html_end(&events, index).is_some() => {
+                let end = unsupported_html_end(&events, index)
+                    .expect("the unsupported pair was just found");
+                output.push(&line[range.start..events[end].1.end], style);
+                consumed = consumed.max(events[end].1.end);
+                index = end;
             }
             Event::InlineHtml(_) | Event::Html(_) => {
                 output.push(&line[range.clone()], style);
@@ -863,6 +943,28 @@ pub(crate) fn span_advances(text: &RichText, font_size: i32) -> Vec<i64> {
     advances
 }
 
+/// The first style and advance own a grapheme that crosses span boundaries.
+pub(crate) fn shaping_spans(text: &RichText, font_size: i32) -> Vec<(StyledSpan, i64, usize)> {
+    let mut shaped: Vec<(StyledSpan, i64, usize)> = Vec::new();
+    for cluster in clusters(text) {
+        let advance = cluster.advance(font_size);
+        if let Some((previous, width, index)) = shaped.last_mut()
+            && *index == cluster.first_span
+            && previous.formula.is_none()
+        {
+            previous.text.push_str(&cluster.text);
+            *width += advance;
+            continue;
+        }
+        let mut first = cluster.spans[0].clone();
+        if first.formula.is_none() {
+            first.text = cluster.text;
+        }
+        shaped.push((first, advance, cluster.first_span));
+    }
+    shaped
+}
+
 #[derive(Clone)]
 /// One Unicode grapheme (possibly spanning styles), or one indivisible formula.
 struct Cluster {
@@ -878,7 +980,11 @@ impl Cluster {
         }
         self.spans[0].formula.as_ref().map_or_else(
             || cluster_advance(&self.text, self.spans[0].style, font_size),
-            |formula| i64::from(dimension_ceiling(&formula.width(font_size))) * 10_000,
+            |formula| {
+                i64::from(dimension_ceiling(
+                    &formula.width(font_size, self.spans[0].style),
+                )) * 10_000
+            },
         )
     }
 }
@@ -964,10 +1070,11 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
 pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<RichText> {
     let mut paragraphs = vec![Vec::new()];
     for mut cluster in clusters(text) {
+        let style = cluster.spans[0].style;
         if let Some(formula) = &mut cluster.spans[0].formula
-            && formula.overflows(budget, font_size)
+            && formula.overflows(budget, font_size, style)
         {
-            Rc::make_mut(formula).fit(budget, font_size);
+            Rc::make_mut(formula).fit(budget, font_size, style);
         }
         // A CRLF is one grapheme cluster, so match the terminator rather than
         // the whole cluster; either way the separator leaves no ink.
@@ -1032,9 +1139,9 @@ pub(crate) fn line_ink(text: &RichText, font_size: i32) -> (i32, i32) {
     let mut descent = (font_size + 4) / 5;
     for span in &text.spans {
         if let Some(formula) = &span.formula {
-            ascent = ascent.max(dimension_ceiling(&formula.ascent(font_size)));
+            ascent = ascent.max(dimension_ceiling(&formula.ascent(font_size, span.style)));
             descent = descent.max(
-                dimension_ceiling(&formula.descent(font_size))
+                dimension_ceiling(&formula.descent(font_size, span.style))
                     .saturating_add(if span.style.underline { 2 } else { 0 }),
             );
         }
@@ -1189,6 +1296,15 @@ mod tests {
         let mixed = RichText::markdown("<u>valid</u> <mark>unclosed");
         assert_eq!(mixed.as_ref(), "valid <mark>unclosed");
         assert!(mixed.spans()[0].style.underline);
+
+        let source = "**outside** <b>**warning** <u>raw</u> <b>*nested*</b></b> <u>after</u>";
+        let parsed = RichText::markdown(source);
+        assert_eq!(
+            parsed.as_ref(),
+            "outside <b>**warning** <u>raw</u> <b>*nested*</b></b> after"
+        );
+        assert!(parsed.spans()[0].style.bold);
+        assert!(parsed.spans().last().unwrap().style.underline);
     }
 
     #[test]
@@ -1196,6 +1312,70 @@ mod tests {
         let formula = RichText::markdown(r"$\frac{1}{x}$");
         let underlined = RichText::markdown(r"<u>$\frac{1}{x}$</u>");
         assert!(line_ink(&underlined, 14).1 > line_ink(&formula, 14).1);
+    }
+
+    #[test]
+    fn formula_effects_keep_their_style_and_measured_bounds() {
+        for (source, matches) in [
+            (
+                "**$x$**",
+                Style {
+                    bold: true,
+                    ..Style::default()
+                },
+            ),
+            (
+                "*$x$*",
+                Style {
+                    italic: true,
+                    ..Style::default()
+                },
+            ),
+            (
+                "~~$x$~~",
+                Style {
+                    strikethrough: true,
+                    ..Style::default()
+                },
+            ),
+            (
+                "> $x$",
+                Style {
+                    quote: true,
+                    ..Style::default()
+                },
+            ),
+            (
+                "^$x$^",
+                Style {
+                    script: Some(Script::Superscript),
+                    ..Style::default()
+                },
+            ),
+            (
+                "~$x$~",
+                Style {
+                    script: Some(Script::Subscript),
+                    ..Style::default()
+                },
+            ),
+        ] {
+            let parsed = RichText::markdown(source);
+            assert!(
+                parsed
+                    .spans()
+                    .iter()
+                    .any(|span| span.formula.is_some() && span.style == matches),
+                "{source}"
+            );
+        }
+        let plain = RichText::markdown("$x$");
+        let superscript = RichText::markdown("^$x$^");
+        let subscript = RichText::markdown("~$x$~");
+        assert!(text_width(&superscript, 14) < text_width(&plain, 14));
+        assert!(text_width(&subscript, 14) < text_width(&plain, 14));
+        assert!(line_ink(&superscript, 14).0 >= line_ink(&plain, 14).0);
+        assert!(line_ink(&subscript, 14).1 > line_ink(&plain, 14).1);
     }
 
     #[test]

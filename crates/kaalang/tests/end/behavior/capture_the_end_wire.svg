@@ -35,6 +35,7 @@
       .md-subscript { baseline-shift: -0.2em; }
       .md-math { color: inherit; overflow: visible; }
       .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
       .cycle-caption .md-math { color: #166534; }
       .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
       .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }

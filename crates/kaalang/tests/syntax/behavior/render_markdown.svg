@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="1639" viewBox="0 0 344 1639" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="2185" viewBox="0 0 344 2185" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_markdown</title>
-  <desc id="kaalang-description">Nodes: Start: render_markdown; Action: Plain, bold, italic, and bold italic text. capturing nothing; Action: Use obsolete and inline code text. capturing nothing; Action: Styles: underlined, highlighted, and blue. capturing nothing; Action: Indices: x^(2) and H_(2)O. capturing nothing; Action: “Quoted guidance remains distinct.” capturing nothing; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} capturing nothing; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Plain text, one highlighted phrase, plain again. capturing nothing; End: () capturing nothing. Connections: Start: render_markdown to Action: Plain, bold, italic, and bold italic text.; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} to Action: Formulae: x^2 + y^2 and \frac{a+b}{2}.; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to End: ().</desc>
+  <desc id="kaalang-description">Nodes: Start: render_markdown; Action: Plain, bold, italic, and bold italic text. capturing nothing; Action: Use obsolete and inline code text. capturing nothing; Action: Styles: underlined, highlighted, and blue. capturing nothing; Action: Indices: x^(2) and H_(2)O. capturing nothing; Action: “Quoted guidance remains distinct.” capturing nothing; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} capturing nothing; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Little titles fit in a strict, tidy list. capturing nothing; Action: Plain text, one highlighted phrase, plain again. capturing nothing; Action: &lt;b&gt;**warning**&lt;/b&gt; &lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt; outside capturing nothing; Action: x, x, x, ^(x), and _(x). capturing nothing; Action: “Quoted formula: x.” capturing nothing; Action: 👩‍💻 and é. capturing nothing; End: () capturing nothing. Connections: Start: render_markdown to Action: Plain, bold, italic, and bold italic text.; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} to Action: Formulae: x^2 + y^2 and \frac{a+b}{2}.; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to Action: &lt;b&gt;**warning**&lt;/b&gt; &lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt; outside; Action: &lt;b&gt;**warning**&lt;/b&gt; &lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt; outside to Action: x, x, x, ^(x), and _(x).; Action: x, x, x, ^(x), and _(x). to Action: “Quoted formula: x.”; Action: “Quoted formula: x.” to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to End: ().</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -35,6 +35,7 @@
       .md-subscript { baseline-shift: -0.2em; }
       .md-math { color: inherit; overflow: visible; }
       .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
       .cycle-caption .md-math { color: #166534; }
       .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
       .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
@@ -59,6 +60,10 @@
       M 172 1201 L 172 1273
       M 172 1339 L 172 1411
       M 172 1477 L 172 1549
+      M 172 1615 L 172 1687
+      M 172 1751 L 172 1823
+      M 172 1887 L 172 1959
+      M 172 2023 L 172 2095
     "/>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
@@ -71,6 +76,10 @@
     <text class="connection-label" x="185" y="1262" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="1400" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="1538" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1676" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1812" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="1948" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="2084" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">
@@ -209,7 +218,84 @@
         <text x="-124" y="15" text-anchor="start" textLength="77.28" lengthAdjust="spacing" xml:space="preserve">plain again.</text>
       </g>
     </g>
-    <g class="node end" transform="translate(172 1578)">
+    <g class="node action" transform="translate(172 1582)">
+      <title xml:space="preserve">&lt;b&gt;**warning**&lt;/b&gt; &lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt; outside</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">&lt;b&gt;**warning**&lt;/b&gt; </tspan><tspan x="-124" dy="18">&lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt; <tspan class="md-bold">outside</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1719)">
+      <title xml:space="preserve">x, x, x, ^(x), and _(x).</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <g class="label">
+        <svg class="md-math" x="-124" y="-0.622" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+          <line x1="0" y1="0.2365" x2="0.479" y2="0.2365" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <text x="-117" y="6" text-anchor="start" textLength="8.96" lengthAdjust="spacing" xml:space="preserve">, </text>
+        <svg class="md-math md-bold" x="-108.04" y="-0.622" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+        </svg>
+        <text x="-101.04" y="6" text-anchor="start" textLength="8.96" lengthAdjust="spacing" xml:space="preserve">, </text>
+        <svg class="md-math" x="-92.08" y="-0.622" width="7.6993" height="6.622" viewBox="0 0 0.55 0.473" aria-hidden="true">
+          <g transform="translate(0.071 0) skewX(-8.5308)">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+          </g>
+        </svg>
+        <text x="-84.08" y="6" text-anchor="start" textLength="8.96" lengthAdjust="spacing" xml:space="preserve">, </text>
+        <svg class="md-math" x="-75.12" y="-4.5665" width="5.0295" height="4.9665" viewBox="0 0 0.479 0.473" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+        </svg>
+        <text x="-69.12" y="6" text-anchor="start" textLength="36.96" lengthAdjust="spacing" xml:space="preserve">, and </text>
+        <svg class="md-math" x="-32.16" y="3.8335" width="5.0295" height="4.9665" viewBox="0 0 0.479 0.473" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+        </svg>
+        <text x="-26.16" y="6" text-anchor="start" textLength="4.48" lengthAdjust="spacing" xml:space="preserve">.</text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1855)">
+      <title xml:space="preserve">“Quoted formula: x.”</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <g class="label">
+        <text x="-124" y="6" text-anchor="start" textLength="139.062" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-quote">“Quoted formula: </tspan></text>
+        <svg class="md-math" x="15.062" y="-0.622" width="7.6993" height="6.622" viewBox="0 0 0.55 0.473" aria-hidden="true">
+          <g transform="translate(0.071 0) skewX(-8.5308)">
+
+<g fill="inherit">
+<path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
+</g>
+          </g>
+        </svg>
+        <text x="23.062" y="6" text-anchor="start" textLength="19.404" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-quote">.”</tspan></text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 1991)">
+      <title xml:space="preserve">👩‍💻 and é.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="-124" y="-6" width="14" height="15"/>
+        <rect class="md-highlight-box" x="-77.52" y="-6" width="7.84" height="15"/>
+        <text style="stroke: none" x="-124" y="6" text-anchor="start" textLength="14" lengthAdjust="spacing" xml:space="preserve">👩‍💻</text>
+        <text x="-110" y="6" text-anchor="start" textLength="32.48" lengthAdjust="spacing" xml:space="preserve"> and </text>
+        <text style="stroke: none" x="-77.52" y="6" text-anchor="start" textLength="7.84" lengthAdjust="spacing" xml:space="preserve">é</text>
+        <text x="-69.68" y="6" text-anchor="start" textLength="4.48" lengthAdjust="spacing" xml:space="preserve">.</text>
+      </g>
+    </g>
+    <g class="node end" transform="translate(172 2124)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>

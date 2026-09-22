@@ -173,14 +173,77 @@ fn highlight_offsets_follow_a_grapheme_split_across_styles() {
     };
     let first_end = attribute(boxes[0], "x") + attribute(boxes[0], "width");
     assert!((first_end - attribute(boxes[1], "x")).abs() < 0.001);
-    // The orphaned mark between the two runs takes no width of its own, so the
-    // second highlighted run starts where its box does.
+    // The combining mark stays in the same shaping run as its base character.
+    let run = svg
+        .lines()
+        .find(|line| line.contains("<text ") && line.contains("e\u{301}"))
+        .unwrap();
+    assert_eq!(run.matches("<text ").count(), 1);
+    assert!(run.contains("<text style=\"stroke: none\"") && run.contains("e\u{301}</text>"));
     let runs = svg
         .lines()
         .filter(|line| line.contains(r#"<text style="stroke: none""#))
         .collect::<Vec<_>>();
     assert_eq!(runs.len(), 2);
     assert!((attribute(runs[1], "x") - attribute(boxes[1], "x")).abs() < 0.001);
+}
+
+#[test]
+fn a_highlight_boundary_keeps_an_emoji_grapheme_together() {
+    let source = r##"
+        #[kaalang]
+        fn emoji(value: u8) -> u8 {
+            #[action(r#"<mark>👩</mark>&zwj;💻"#)]
+            let result = |value| value;
+            |result| return result;
+        }
+    "##;
+    let svg = render_source(source, "emoji").unwrap();
+    let run = svg
+        .lines()
+        .find(|line| line.contains("<text ") && line.contains("👩‍💻"))
+        .unwrap();
+    assert_eq!(run.matches("<text ").count(), 1);
+    assert!(run.contains(r#"<text style="stroke: none""#) && run.contains("👩‍💻</text>"));
+}
+
+#[test]
+fn unsupported_html_pairs_keep_their_markdown_source() {
+    let source = r##"
+        #[kaalang]
+        fn literal(value: u8) -> u8 {
+            #[action(r#"<b>**warning**</b> <b><u>x</u></b>"#)]
+            let result = |value| value;
+            |result| return result;
+        }
+    "##;
+    let svg = render_source(source, "literal").unwrap();
+    assert!(svg.contains("&lt;b&gt;**warning**&lt;/b&gt;"));
+    assert!(svg.contains("&lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt;"));
+    assert!(!svg.contains(r#"<tspan class="md-bold">warning</tspan>"#));
+}
+
+#[test]
+fn surrounding_styles_reach_formula_paths_and_decorations() {
+    let source = r##"
+        #[kaalang]
+        fn formula(value: u8) -> u8 {
+            #[action(r#"**~~*<u><mark>$x$</mark></u>*~~**"#)]
+            let first = |value| value;
+            #[action(r#"^$x$^ and ~$x$~"#)]
+            let second = |first| first;
+            #[action("> $x$")]
+            let result = |second| second;
+            |result| return result;
+        }
+    "##;
+    let svg = render_source(source, "formula").unwrap();
+    assert!(svg.contains(r#"<svg class="md-math md-bold""#));
+    assert!(svg.contains(".md-math.md-bold path { stroke: currentColor;"));
+    assert_eq!(svg.matches("skewX(-8.5308)").count(), 2);
+    assert!(svg.contains(r#"<rect class="md-highlight-box""#));
+    assert_eq!(svg.matches("<line x1=\"0\"").count(), 2);
+    assert!(svg.matches(r#"<svg class="md-math""#).count() >= 3);
 }
 
 /// A connection label strokes a white halo around its text, which would paint
