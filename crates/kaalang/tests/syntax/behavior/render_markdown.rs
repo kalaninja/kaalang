@@ -53,8 +53,11 @@ fn render_markdown(section: u8, condition: bool) {
     #[action("> Quoted formula: $x$.")]
     let graphemes = |quoted_math| quoted_math;
 
+    #[action("**👩**&zwj;💻 and e<color name=\"red\">\u{301}</color>.")]
+    let styled_graphemes = |graphemes| graphemes;
+
     #[action("<mark>👩</mark>&zwj;💻 and <mark>e</mark>\u{301}.")]
-    let measured = |graphemes| graphemes;
+    let measured = |styled_graphemes| styled_graphemes;
 
     #[action("<mark>W</mark>$x$")]
     let colored = |measured| measured;
@@ -68,7 +71,10 @@ fn render_markdown(section: u8, condition: bool) {
     let clipped = |framed| framed;
 
     #[action("<u>$x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x$</u>")]
-    let tested = |clipped| clipped;
+    let huge = |clipped| clipped;
+
+    #[action(r"$x\rule{1em}{1000000000em}$")]
+    let tested = |huge| huge;
 
     #[action(r#"<b>**warning**</b> <b><u>x</u></b> **outside**"#)]
     let crossing = |html| html;

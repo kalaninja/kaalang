@@ -288,6 +288,22 @@ fn a_highlight_boundary_keeps_an_emoji_grapheme_together() {
 }
 
 #[test]
+fn ordinary_styled_text_keeps_graphemes_together() {
+    let source = r#"
+        #[kaalang]
+        fn graphemes() {
+            #[action("**👩**&zwj;💻 and e<color name=\"red\">\u{301}</color>")]
+            {};
+            return;
+        }
+    "#;
+    let svg = render_source(source, "graphemes").unwrap();
+
+    assert!(svg.contains("<tspan class=\"md-bold\">👩‍💻</tspan>"));
+    assert!(svg.contains("and e\u{301}</tspan>"));
+}
+
+#[test]
 fn a_single_highlighted_grapheme_uses_its_measured_advance() {
     let source = r#"
         #[kaalang]
@@ -323,6 +339,17 @@ fn a_single_highlighted_grapheme_uses_its_measured_advance() {
         (attribute(formula, "x") - attribute(box_line, "x") - attribute(box_line, "width")).abs()
             < 0.001
     );
+}
+
+#[test]
+fn a_formula_too_tall_for_scene_coordinates_stays_literal() {
+    let formula = r"$x\rule{1em}{1000000000em}$";
+    let source = format!("#[kaalang] fn huge() {{ #[action(r\"{formula}\")] {{}}; return; }}");
+    let svg = render_source(&source, "huge").expect("oversized math uses literal fallback");
+
+    assert!(svg.contains(&format!("<title xml:space=\"preserve\">{formula}</title>")));
+    assert!(describe(&svg).contains(formula));
+    assert!(!svg.contains("<svg class=\"md-math"));
 }
 
 fn formula_scale(math: &str) -> f64 {

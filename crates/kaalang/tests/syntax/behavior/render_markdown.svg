@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1092" height="2391" viewBox="0 0 1092 2391" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1092" height="2663" viewBox="0 0 1092 2663" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_markdown</title>
-  <desc id="kaalang-description">Cycles: x with inputs done and outputs (). Nodes: Start: render_markdown with parameters section: u8; condition: bool handing over section, condition; Select: Markdown examples. capturing section, condition; Case: Text effects. handing over emphasis; Case: Formulas and graphemes. handing over display; Case: HTML and literal fallbacks. handing over html; Action: Plain, bold, italic, and bold italic text. capturing emphasis handing over code; Action: Use obsolete and inline code text. capturing code handing over tags; Action: Styles: underlined, highlighted, and blue. capturing tags handing over indices; Action: Indices: x^(2) and H_(2)O. capturing indices handing over quoted; Action: “Quoted guidance remains distinct.” capturing quoted handing over highlighted; Action: Little titles fit in a strict, tidy list. capturing highlighted handing over bold_highlight; Action: Little titles fit in a strict, tidy list. capturing bold_highlight handing over mixed_highlight; Action: Plain text, one highlighted phrase, plain again. capturing mixed_highlight handing over tested; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} capturing display handing over tinted; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. capturing tinted handing over styled; Action: x, x, x, ^(x), and _(x). capturing styled handing over quoted_math; Action: “Quoted formula: x.” capturing quoted_math handing over graphemes; Action: 👩‍💻 and é. capturing graphemes handing over measured; Action: Wx capturing measured handing over colored; Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x} capturing colored handing over framed; Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x} capturing framed handing over clipped; Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x capturing clipped handing over tested; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing html handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
+  <desc id="kaalang-description">Cycles: x with inputs done and outputs (). Nodes: Start: render_markdown with parameters section: u8; condition: bool handing over section, condition; Select: Markdown examples. capturing section, condition; Case: Text effects. handing over emphasis; Case: Formulas and graphemes. handing over display; Case: HTML and literal fallbacks. handing over html; Action: Plain, bold, italic, and bold italic text. capturing emphasis handing over code; Action: Use obsolete and inline code text. capturing code handing over tags; Action: Styles: underlined, highlighted, and blue. capturing tags handing over indices; Action: Indices: x^(2) and H_(2)O. capturing indices handing over quoted; Action: “Quoted guidance remains distinct.” capturing quoted handing over highlighted; Action: Little titles fit in a strict, tidy list. capturing highlighted handing over bold_highlight; Action: Little titles fit in a strict, tidy list. capturing bold_highlight handing over mixed_highlight; Action: Plain text, one highlighted phrase, plain again. capturing mixed_highlight handing over tested; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} capturing display handing over tinted; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. capturing tinted handing over styled; Action: x, x, x, ^(x), and _(x). capturing styled handing over quoted_math; Action: “Quoted formula: x.” capturing quoted_math handing over graphemes; Action: 👩‍💻 and é. capturing graphemes handing over styled_graphemes; Action: 👩‍💻 and é. capturing styled_graphemes handing over measured; Action: Wx capturing measured handing over colored; Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x} capturing colored handing over framed; Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x} capturing framed handing over clipped; Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x capturing clipped handing over huge; Action: $x\rule{1em}{1000000000em}$ capturing huge handing over tested; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing html handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after capturing crossing handing over overlapping; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; capturing overlapping handing over noncanonical; Action: &lt;B&gt;warning&lt;/b&gt;
 &lt;u&gt;foo&lt;/u &gt; capturing noncanonical handing over enclosing; Action: &lt;b&gt;foo&lt;/b&gt; capturing enclosing handing over indented; Action:    “quote  ” capturing indented handing over colors; Action: $\color{not-a-color}x$ capturing colors handing over empty_tags; Action: &lt;u&gt;&lt;/u&gt;
 &lt;mark&gt;&lt;/mark&gt;
-&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; Question: Highlighted formulas on branch labels. capturing tested handing over yes / no described as branch 1: x / branch 2: x; Action: Take the first formula. capturing yes handing over done; Action: Take the second formula. capturing no handing over done; Action: Complete one pass. capturing done handing over ready; End: () capturing nothing; Merge: tested; Merge: done. Connections: Start: render_markdown to Select: Markdown examples.; Select: Markdown examples. to Case: Text effects.; Select: Markdown examples. to Case: Formulas and graphemes.; Select: Markdown examples. to Case: HTML and literal fallbacks.; Case: Text effects. to Action: Plain, bold, italic, and bold italic text.; Case: Formulas and graphemes. to Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}; Case: HTML and literal fallbacks. to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to the tested merge; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} to Action: Formulae: x^2 + y^2 and \frac{a+b}{2}.; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. to Action: x, x, x, ^(x), and _(x).; Action: x, x, x, ^(x), and _(x). to Action: “Quoted formula: x.”; Action: “Quoted formula: x.” to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to Action: Wx; Action: Wx to Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x}; Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x} to Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x}; Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x} to Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x; Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x to the tested merge; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; Question: Highlighted formulas on branch labels. capturing tested handing over yes / no described as branch 1: x / branch 2: x; Action: Take the first formula. capturing yes handing over done; Action: Take the second formula. capturing no handing over done; Action: Complete one pass. capturing done handing over ready; End: () capturing nothing; Merge: tested; Merge: done. Connections: Start: render_markdown to Select: Markdown examples.; Select: Markdown examples. to Case: Text effects.; Select: Markdown examples. to Case: Formulas and graphemes.; Select: Markdown examples. to Case: HTML and literal fallbacks.; Case: Text effects. to Action: Plain, bold, italic, and bold italic text.; Case: Formulas and graphemes. to Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s}; Case: HTML and literal fallbacks. to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to the tested merge; Action: \int_{0}^{\infty}\frac{x^{s-1}}{e^x-1}\,dx=\Gamma(s)\sum_{n=1}^{\infty}\frac{1}{n^s} to Action: Formulae: x^2 + y^2 and \frac{a+b}{2}.; Action: Formulae: x^2 + y^2 and \frac{a+b}{2}. to Action: x, x, x, ^(x), and _(x).; Action: x, x, x, ^(x), and _(x). to Action: “Quoted formula: x.”; Action: “Quoted formula: x.” to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to Action: Wx; Action: Wx to Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x}; Action: \definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x} to Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x}; Action: \overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x} to Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x; Action: x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x to Action: $x\rule{1em}{1000000000em}$; Action: $x\rule{1em}{1000000000em}$ to the tested merge; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after to Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; to Action: &lt;B&gt;warning&lt;/b&gt;
 &lt;u&gt;foo&lt;/u &gt;; Action: &lt;B&gt;warning&lt;/b&gt;
@@ -61,10 +61,10 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">x</title>
-    <rect class="cycle-boundary" x="32" y="2130" width="336" height="134" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="2402" width="336" height="134" rx="12"/>
     <g class="cycle-caption">
-      <rect class="md-highlight-box" x="350" y="2134" width="6" height="13"/>
-      <svg class="md-math" stroke="none" x="350" y="2138.324" width="5.748" height="5.676" viewBox="0 0 0.479 0.473" aria-hidden="true">
+      <rect class="md-highlight-box" x="350" y="2406" width="6" height="13"/>
+      <svg class="md-math" stroke="none" x="350" y="2410.324" width="5.748" height="5.676" viewBox="0 0 0.479 0.473" aria-hidden="true">
 
 <g fill="inherit">
 <path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
@@ -89,7 +89,7 @@
       M 200 1085 L 200 1157
       M 200 1223 L 200 1295
       M 200 1361 L 200 1442
-      M 200 1508 L 200 1729
+      M 200 1508 L 200 2001
       M 560 532 L 560 606
       M 560 670 L 560 744
       M 560 808 L 560 882
@@ -98,7 +98,9 @@
       M 560 1222 L 560 1296
       M 560 1360 L 560 1443
       M 560 1507 L 560 1589
-      M 560 1653 L 560 1729 L 200 1729
+      M 560 1653 L 560 1725
+      M 560 1789 L 560 1861
+      M 560 1925 L 560 2001 L 200 2001
       M 920 526 L 920 605
       M 920 671 L 920 744
       M 920 808 L 920 881
@@ -106,17 +108,17 @@
       M 920 1084 L 920 1158
       M 920 1222 L 920 1296
       M 920 1360 L 920 1433
-      M 920 1517 L 920 1729 L 200 1729
-      M 200 1877 L 200 1949
-      M 340 1841 L 560 1841 L 560 1949
-      M 200 2013 L 200 2089
-      M 560 2013 L 560 2089 L 200 2089
-      M 200 2229 L 200 2301
-      M 200 1729 L 200 1805
-      M 200 2089 L 200 2165
+      M 920 1517 L 920 2001 L 200 2001
+      M 200 2149 L 200 2221
+      M 340 2113 L 560 2113 L 560 2221
+      M 200 2285 L 200 2361
+      M 560 2285 L 560 2361 L 200 2361
+      M 200 2501 L 200 2573
+      M 200 2001 L 200 2077
+      M 200 2361 L 200 2437
     "/>
-    <text class="connection-label" x="213" y="1747" xml:space="preserve"><tspan x="213" dy="0">tested</tspan></text>
-    <text class="connection-label" x="213" y="2107" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
+    <text class="connection-label" x="213" y="2019" xml:space="preserve"><tspan x="213" dy="0">tested</tspan></text>
+    <text class="connection-label" x="213" y="2379" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
     <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">section, condition</tspan></text>
     <text class="connection-label" x="213" y="450" xml:space="preserve"><tspan x="213" dy="0">emphasis</tspan></text>
     <text class="connection-label" x="573" y="445" xml:space="preserve"><tspan x="573" dy="0">display</tspan></text>
@@ -132,10 +134,12 @@
     <text class="connection-label" x="573" y="733" xml:space="preserve"><tspan x="573" dy="0">styled</tspan></text>
     <text class="connection-label" x="573" y="871" xml:space="preserve"><tspan x="573" dy="0">quoted_math</tspan></text>
     <text class="connection-label" x="573" y="1009" xml:space="preserve"><tspan x="573" dy="0">graphemes</tspan></text>
-    <text class="connection-label" x="573" y="1147" xml:space="preserve"><tspan x="573" dy="0">measured</tspan></text>
-    <text class="connection-label" x="573" y="1285" xml:space="preserve"><tspan x="573" dy="0">colored</tspan></text>
-    <text class="connection-label" x="573" y="1432" xml:space="preserve"><tspan x="573" dy="0">framed</tspan></text>
-    <text class="connection-label" x="573" y="1578" xml:space="preserve"><tspan x="573" dy="0">clipped</tspan></text>
+    <text class="connection-label" x="573" y="1147" xml:space="preserve"><tspan x="573" dy="0">styled_graphemes</tspan></text>
+    <text class="connection-label" x="573" y="1285" xml:space="preserve"><tspan x="573" dy="0">measured</tspan></text>
+    <text class="connection-label" x="573" y="1432" xml:space="preserve"><tspan x="573" dy="0">colored</tspan></text>
+    <text class="connection-label" x="573" y="1578" xml:space="preserve"><tspan x="573" dy="0">framed</tspan></text>
+    <text class="connection-label" x="573" y="1714" xml:space="preserve"><tspan x="573" dy="0">clipped</tspan></text>
+    <text class="connection-label" x="573" y="1850" xml:space="preserve"><tspan x="573" dy="0">huge</tspan></text>
     <text class="connection-label" x="933" y="594" xml:space="preserve"><tspan x="933" dy="0">crossing</tspan></text>
     <text class="connection-label" x="933" y="733" xml:space="preserve"><tspan x="933" dy="0">overlapping</tspan></text>
     <text class="connection-label" x="933" y="870" xml:space="preserve"><tspan x="933" dy="0">noncanonical</tspan></text>
@@ -144,8 +148,8 @@
     <text class="connection-label" x="933" y="1285" xml:space="preserve"><tspan x="933" dy="0">colors</tspan></text>
     <text class="connection-label" x="933" y="1422" xml:space="preserve"><tspan x="933" dy="0">empty_tags</tspan></text>
     <g class="connection-label branch-label" style="font-size: 14px">
-      <rect class="md-highlight-box" x="213" y="1885" width="7" height="15"/>
-      <svg class="md-math" stroke="none" x="213" y="1890.378" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
+      <rect class="md-highlight-box" x="213" y="2157" width="7" height="15"/>
+      <svg class="md-math" stroke="none" x="213" y="2162.378" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
 
 <g fill="inherit">
 <path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
@@ -153,16 +157,16 @@
       </svg>
     </g>
     <g class="connection-label branch-label" style="font-size: 14px">
-      <rect class="md-highlight-box" x="353" y="1817" width="7" height="15"/>
-      <svg class="md-math md-bold" stroke="none" x="353" y="1822.378" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
+      <rect class="md-highlight-box" x="353" y="2089" width="7" height="15"/>
+      <svg class="md-math md-bold" stroke="none" x="353" y="2094.378" width="6.706" height="6.622" viewBox="0 0 0.479 0.473" aria-hidden="true">
 
 <g fill="inherit">
 <path d="M 482.0 0.0 L 482.0 29.0 C 445.0 29.0 430.0 47.0 402.0 87.0 L 279.0 261.0 L 385.0 397.0 C 408.0 426.0 431.0 444.0 465.0 444.0 L 465.0 473.0 L 300.0 473.0 L 300.0 445.0 C 332.0 445.0 341.0 436.0 341.0 421.0 C 341.0 405.0 332.0 390.0 305.0 353.0 L 258.0 285.0 L 254.0 285.0 L 230.0 329.0 C 196.0 385.0 178.0 406.0 178.0 422.0 C 178.0 437.0 194.0 445.0 226.0 445.0 L 226.0 473.0 L 11.0 473.0 L 11.0 444.0 C 52.0 444.0 64.0 434.0 99.0 384.0 L 203.0 235.0 L 83.0 79.0 C 50.0 40.0 32.0 29.0 -2.0 29.0 L -2.0 0.0 L 165.0 0.0 L 165.0 29.0 C 132.0 29.0 120.0 33.0 120.0 44.0 C 120.0 52.0 134.0 70.0 144.0 86.0 L 226.0 204.0 L 230.0 204.0 L 250.0 169.0 L 313.0 72.0 C 318.0 64.0 320.0 58.0 320.0 51.0 C 320.0 34.0 308.0 29.0 273.0 29.0 L 273.0 0.0 Z" transform="translate(0.0 0.473) scale(0.001 -0.001)"/>
 </g>
       </svg>
     </g>
-    <text class="connection-label" x="213" y="2247" xml:space="preserve"><tspan x="213" dy="0">ready</tspan></text>
-    <text class="connection-label" x="213" y="2290" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="2519" xml:space="preserve"><tspan x="213" dy="0">ready</tspan></text>
+    <text class="connection-label" x="213" y="2562" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -170,11 +174,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">section: u8</tspan><tspan x="-104" dy="18">condition: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(200 1729)">
+    <g class="node merge" transform="translate(200 2001)">
       <title xml:space="preserve">the tested merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(200 2089)">
+    <g class="node merge" transform="translate(200 2361)">
       <title xml:space="preserve">the done merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -397,6 +401,11 @@
     <g class="node action" transform="translate(560 1052)">
       <title xml:space="preserve">👩‍💻 and é.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0"><tspan class="md-bold">👩‍💻</tspan> and é.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 1190)">
+      <title xml:space="preserve">👩‍💻 and é.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <g class="label">
         <rect class="md-highlight-box" x="-124" y="-6" width="14" height="15"/>
         <rect class="md-highlight-box" x="-77.52" y="-6" width="7.84" height="15"/>
@@ -406,7 +415,7 @@
         <text x="-69.68" y="6" text-anchor="start" textLength="4.48" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.</text>
       </g>
     </g>
-    <g class="node action" transform="translate(560 1190)">
+    <g class="node action" transform="translate(560 1328)">
       <title xml:space="preserve">Wx</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <g class="label">
@@ -420,7 +429,7 @@
         </svg>
       </g>
     </g>
-    <g class="node action" transform="translate(560 1328)">
+    <g class="node action" transform="translate(560 1475)">
       <title xml:space="preserve">\definecolor{foo}{rgb}{1,0,0}x and \definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x}</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <g class="label">
@@ -441,7 +450,7 @@
         </svg>
       </g>
     </g>
-    <g class="node action" transform="translate(560 1475)">
+    <g class="node action" transform="translate(560 1621)">
       <title xml:space="preserve">\overline{x}, \colorbox{yellow}{x} and \fcolorbox{blue}{yellow}{x}</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <g class="label">
@@ -471,7 +480,7 @@
         </svg>
       </g>
     </g>
-    <g class="node action" transform="translate(560 1621)">
+    <g class="node action" transform="translate(560 1757)">
       <title xml:space="preserve">x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <g class="label">
@@ -533,6 +542,11 @@
         <text class="md-math-ellipsis" x="110" y="6" text-anchor="start" textLength="14" lengthAdjust="spacingAndGlyphs" aria-hidden="true">…</text>
       </g>
     </g>
+    <g class="node action" transform="translate(560 1893)">
+      <title xml:space="preserve">$x\rule{1em}{1000000000em}$</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">$x\rule{1em}{1000000000em}$</tspan></text>
+    </g>
     <g class="node action" transform="translate(920 494)">
       <title xml:space="preserve">&lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
@@ -582,27 +596,27 @@
       <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">&lt;u&gt;&lt;/u&gt;</tspan><tspan x="-124" dy="18">&lt;mark&gt;&lt;/mark&gt;</tspan><tspan x="-124" dy="18">&lt;color name=&quot;red&quot;&gt;&lt;/color&gt;</tspan></text>
     </g>
-    <g class="node question" transform="translate(200 1841)">
+    <g class="node question" transform="translate(200 2113)">
       <title xml:space="preserve">Highlighted formulas on branch labels.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Highlighted formulas on </tspan><tspan x="0" dy="18">branch labels.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 1981)">
+    <g class="node action" transform="translate(200 2253)">
       <title xml:space="preserve">Take the first formula.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the first formula.</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 1981)">
+    <g class="node action" transform="translate(560 2253)">
       <title xml:space="preserve">Take the second formula.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the second formula.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 2197)">
+    <g class="node action" transform="translate(200 2469)">
       <title xml:space="preserve">Complete one pass.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Complete one pass.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 2330)">
+    <g class="node end" transform="translate(200 2602)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>

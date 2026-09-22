@@ -249,7 +249,7 @@ fn write_lines(svg: &mut String, lines: &[RichText], x: i32, font_size: i32, lin
             metrics.baselines[index] - metrics.baselines[index - 1]
         };
         emit_inline!(svg, "<tspan x=\"{x}\" dy=\"{dy}\">");
-        for span in line.spans() {
+        for (span, _, _) in shaping_spans(line, font_size) {
             write_span(svg, &span.text, span.style);
         }
         svg.push_str("</tspan>");

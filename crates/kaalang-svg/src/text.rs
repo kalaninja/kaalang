@@ -71,6 +71,12 @@ impl Formula {
         if layout.width <= Dim::zero() || &layout.height + &layout.depth <= Dim::zero() {
             return None;
         }
+        // ponytail: Extremely tall math falls back to source; use wider scene
+        // coordinates if labels above a million pixels ever need to render.
+        let max_height = Dim::ratio(1_000_000, i64::from(crate::layout::LABEL_FONT));
+        if layout.height.abs() > max_height || layout.depth.abs() > max_height {
+            return None;
+        }
         let mut options = SvgOptions::new();
         options.font_size_pt = Dim::one();
         // The backend writes its default color into every rule. Pick a color
@@ -1597,6 +1603,16 @@ mod tests {
         assert_eq!(text_width(&lines[0], LABEL_FONT), NODE_LABEL_WIDTH);
         assert!(text_width(&long, LABEL_FONT) > NODE_LABEL_WIDTH);
         assert!(lines[0].spans()[0].formula.as_ref().unwrap().is_clipped());
+    }
+
+    #[test]
+    fn math_too_tall_for_scene_coordinates_falls_back_to_source() {
+        let normal = RichText::markdown(r"$x\rule{1em}{100em}$");
+        assert!(normal.spans()[0].formula.is_some());
+
+        let oversized = RichText::markdown(r"$x\rule{1em}{1000000000em}$");
+        assert_eq!(oversized.as_ref(), r"$x\rule{1em}{1000000000em}$");
+        assert!(oversized.spans().iter().all(|span| span.formula.is_none()));
     }
 
     #[test]
