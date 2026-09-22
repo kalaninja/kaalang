@@ -40,6 +40,9 @@ fn render_markdown() {
     #[action(r#"<b>**warning**</b> <b><u>x</u></b> **outside**"#)]
     {};
 
+    #[action("**<b>foo**</b> after\n<b>**foo</b> after**")]
+    {};
+
     #[action("~~$x$~~, **$x$**, *$x$*, ^$x$^, and ~$x$~.")]
     {};
 
@@ -47,6 +50,15 @@ fn render_markdown() {
     {};
 
     #[action("<mark>👩</mark>&zwj;💻 and <mark>e</mark>\u{301}.")]
+    {};
+
+    #[action("<u></u>\n<mark></mark>\n<color name=\"red\"></color>")]
+    {};
+
+    #[action("<mark>W</mark>$x$")]
+    {};
+
+    #[action("<u>$x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x$</u>")]
     {};
 
     return;

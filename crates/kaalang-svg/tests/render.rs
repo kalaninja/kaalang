@@ -122,6 +122,62 @@ fn renders_markdown_as_styled_svg_text_and_math_paths() {
 }
 
 #[test]
+fn clips_a_wide_formula_without_losing_its_accessible_text() {
+    let body = format!("{}x", "x+".repeat(70));
+    let source = format!("#[kaalang] fn wide() {{ #[action(\"<u>${body}$</u>\")] {{}}; return; }}");
+    let svg = render_source(&source, "wide").expect("the formula fits by clipping");
+
+    assert!(svg.contains("<svg class=\"md-math\" style=\"overflow: hidden\""));
+    assert!(svg.contains(&format!("<title xml:space=\"preserve\">{body}</title>")));
+    assert!(describe(&svg).contains(&body));
+    let node = svg
+        .lines()
+        .filter(|line| line.contains(r#"<rect class="node-shape""#) && line.contains("width="))
+        .nth(1)
+        .unwrap();
+    assert!(node.contains("width=\"280\""));
+    let math = svg
+        .lines()
+        .find(|line| line.contains(r#"<svg class="md-math""#))
+        .unwrap();
+    let ellipsis = svg
+        .lines()
+        .find(|line| line.contains("md-math-ellipsis"))
+        .unwrap();
+    assert!(ellipsis.contains(">…</text>"));
+    let attribute = |line: &str, name: &str| -> f64 {
+        line.split_once(&format!("{name}=\""))
+            .unwrap()
+            .1
+            .split_once('"')
+            .unwrap()
+            .0
+            .parse()
+            .unwrap()
+    };
+    assert!(
+        (attribute(math, "x") + attribute(math, "width") - attribute(ellipsis, "x")).abs() < 0.001
+    );
+    assert!((attribute(math, "width") + attribute(ellipsis, "textLength") - 248.0).abs() < 0.001);
+    assert!((formula_scale(math) - 14.0).abs() < 0.01);
+    let view_box = math
+        .split_once("viewBox=\"")
+        .unwrap()
+        .1
+        .split_once('"')
+        .unwrap()
+        .0
+        .split_whitespace()
+        .map(|value| value.parse::<f64>().unwrap())
+        .collect::<Vec<_>>();
+    let underline = svg
+        .lines()
+        .find(|line| line.contains("<line x1=\"0\""))
+        .unwrap();
+    assert!(attribute(underline, "y1") + 0.5 / formula_scale(math) < view_box[1] + view_box[3]);
+}
+
+#[test]
 fn renders_paired_inline_styles_as_svg_without_html() {
     let source = r##"
         #[kaalang]
@@ -205,6 +261,100 @@ fn a_highlight_boundary_keeps_an_emoji_grapheme_together() {
         .unwrap();
     assert_eq!(run.matches("<text ").count(), 1);
     assert!(run.contains(r#"<text style="stroke: none""#) && run.contains("👩‍💻</text>"));
+}
+
+#[test]
+fn a_single_highlighted_grapheme_uses_its_measured_advance() {
+    let source = r#"
+        #[kaalang]
+        fn measured() {
+            #[action("<mark>W</mark>$x$")]
+            {};
+            return;
+        }
+    "#;
+    let svg = render_source(source, "measured").unwrap();
+    let run = svg.lines().find(|line| line.contains(">W</text>")).unwrap();
+    assert!(run.contains(r#"lengthAdjust="spacingAndGlyphs""#));
+    let box_line = svg
+        .lines()
+        .find(|line| line.contains(r#"<rect class="md-highlight-box""#))
+        .unwrap();
+    let formula = svg
+        .lines()
+        .find(|line| line.contains(r#"<svg class="md-math""#))
+        .unwrap();
+    let attribute = |line: &str, name: &str| -> f64 {
+        line.split_once(&format!("{name}=\""))
+            .unwrap()
+            .1
+            .split_once('"')
+            .unwrap()
+            .0
+            .parse()
+            .unwrap()
+    };
+    assert!((attribute(run, "textLength") - attribute(box_line, "width")).abs() < 0.001);
+    assert!(
+        (attribute(formula, "x") - attribute(box_line, "x") - attribute(box_line, "width")).abs()
+            < 0.001
+    );
+}
+
+fn formula_scale(math: &str) -> f64 {
+    let attribute = |name: &str| -> f64 {
+        math.split_once(&format!("{name}=\""))
+            .expect("formula has the attribute")
+            .1
+            .split_once('"')
+            .expect("attribute value is quoted")
+            .0
+            .parse()
+            .expect("attribute value is numeric")
+    };
+    let view_box_width: f64 = math
+        .split_once("viewBox=\"")
+        .expect("formula has a viewBox")
+        .1
+        .split_whitespace()
+        .nth(2)
+        .expect("viewBox has a width")
+        .parse()
+        .expect("viewBox width is numeric");
+    attribute("width") / view_box_width
+}
+
+#[test]
+fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
+    let math = format!("{}x", "x+".repeat(70));
+    let source = CYCLE_SOURCE.replace("Count to the limit.", &format!("${math}$"));
+    let expanded = render_source(&source, "count_to").unwrap();
+    let caption = expanded
+        .split_once(r#"<g class="cycle-caption""#)
+        .map(|(_, tail)| tail.split_once("</g>").unwrap().0);
+    if let Some(caption) = caption
+        && let Some(math) = caption
+            .lines()
+            .find(|line| line.contains(r#"<svg class="md-math""#))
+    {
+        assert!(math.contains("style=\"overflow: hidden\""));
+        assert!((formula_scale(math) - 12.0).abs() < 0.01);
+    }
+
+    let collapsed = render_source_with_options(
+        &source,
+        "count_to",
+        RenderOptions {
+            collapse_loops: true,
+        },
+    )
+    .unwrap();
+    let math = collapsed
+        .lines()
+        .find(|line| line.contains(r#"<svg class="md-math""#))
+        .unwrap();
+    assert!(math.contains("style=\"overflow: hidden\""));
+    assert!((formula_scale(math) - 14.0).abs() < 0.01);
 }
 
 #[test]

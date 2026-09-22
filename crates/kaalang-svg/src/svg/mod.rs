@@ -10,6 +10,7 @@ use crate::text::{
 };
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 use latex_rust::Dim;
+use unicode_segmentation::UnicodeSegmentation;
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
@@ -394,14 +395,18 @@ fn write_composed_lines(
                 }
                 // The run must occupy exactly the width it was measured at, or
                 // the next run and the highlight box drift off its ink. The
-                // estimate errs wide, so `spacing` spends the difference on the
-                // gaps; stretching the outlines instead would read as a heavier
-                // font, and unevenly, since the error depends on the glyphs.
+                // estimate errs wide, so spacing uses the gaps when there
+                // are any; a single grapheme must scale its outline instead.
                 emit_inline!(
                     svg,
-                    " x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"spacing\" xml:space=\"preserve\">",
+                    " x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"{}\" xml:space=\"preserve\">",
                     svg_dimension(&cursor),
-                    svg_dimension(&width)
+                    svg_dimension(&width),
+                    if run.len() == 1 && run[0].0.text.graphemes(true).count() == 1 {
+                        "spacingAndGlyphs"
+                    } else {
+                        "spacing"
+                    }
                 );
                 for (span, _, _) in run {
                     write_span(svg, &span.text, span.style);
@@ -424,9 +429,16 @@ fn write_formula(
     font_size: i32,
 ) {
     let width = formula.width(font_size, style);
+    let visible_width = formula.visible_width(font_size, style);
     let ascent = formula.ascent(font_size, style);
     let height = &ascent + &formula.descent(font_size, style);
     let top = &Dim::from_i64(i64::from(baseline)) - &ascent;
+    let top_padding = i32::from(formula.is_clipped());
+    let bottom_padding = if formula.is_clipped() {
+        1 + if style.underline { 2 } else { 0 }
+    } else {
+        0
+    };
     let mut class = style.color.map_or_else(
         || "md-math".to_owned(),
         |color| format!("md-math {}", color.class()),
@@ -434,47 +446,62 @@ fn write_formula(
     if style.bold {
         class.push_str(" md-bold");
     }
-    emit!(
-        svg,
-        "{indent}  <svg class=\"{class}\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
-        svg_dimension(x),
-        svg_dimension(&top),
-        svg_dimension(&width),
-        svg_dimension(&height),
-        formula.view_box(style)
-    );
-    if style.italic || style.quote {
-        let slant = &formula.view_box_width(style) - formula.view_box_width(Style::default());
+    let overflow = if formula.is_clipped() {
+        " style=\"overflow: hidden\""
+    } else {
+        ""
+    };
+    if !visible_width.is_zero() {
         emit!(
             svg,
-            "{indent}    <g transform=\"translate({} 0) skewX(-8.5308)\">",
-            svg_dimension(&slant)
+            "{indent}  <svg class=\"{class}\"{overflow} x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
+            svg_dimension(x),
+            svg_dimension(&(&top - Dim::from_i64(i64::from(top_padding)))),
+            svg_dimension(&visible_width),
+            svg_dimension(&(&height + Dim::from_i64(i64::from(top_padding + bottom_padding)))),
+            formula.view_box(font_size, style, top_padding, bottom_padding)
         );
+        if style.italic || style.quote {
+            let slant = &formula.view_box_width(style) - formula.view_box_width(Style::default());
+            emit!(
+                svg,
+                "{indent}    <g transform=\"translate({} 0) skewX(-8.5308)\">",
+                svg_dimension(&slant)
+            );
+        }
+        // The body is renderer-owned markup: latex-rust emits only shapes with
+        // numeric attributes, and no TeX source reaches it.
+        svg.push_str(formula.svg_body());
+        if style.italic || style.quote {
+            emit!(svg, "{indent}    </g>");
+        }
+        if style.underline {
+            let below = svg_dimension(&(formula.view_box_height() + Dim::ratio(1, 10)));
+            let x2 = formula.view_box_width(style);
+            emit!(
+                svg,
+                "{indent}    <line x1=\"0\" y1=\"{below}\" x2=\"{}\" y2=\"{below}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
+                svg_dimension(&x2)
+            );
+        }
+        if style.strikethrough {
+            let across = svg_dimension(&(formula.view_box_height() * Dim::ratio(1, 2)));
+            emit!(
+                svg,
+                "{indent}    <line x1=\"0\" y1=\"{across}\" x2=\"{}\" y2=\"{across}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
+                svg_dimension(&formula.view_box_width(style))
+            );
+        }
+        emit!(svg, "{indent}  </svg>");
     }
-    // The body is renderer-owned markup: latex-rust emits only shapes with
-    // numeric attributes, and no TeX source reaches it.
-    svg.push_str(formula.svg_body());
-    if style.italic || style.quote {
-        emit!(svg, "{indent}    </g>");
-    }
-    if style.underline {
-        let below = svg_dimension(&(formula.view_box_height() + Dim::ratio(1, 10)));
-        let x2 = formula.view_box_width(style);
+    if formula.is_clipped() {
         emit!(
             svg,
-            "{indent}    <line x1=\"0\" y1=\"{below}\" x2=\"{}\" y2=\"{below}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
-            svg_dimension(&x2)
+            "{indent}  <text class=\"md-math-ellipsis\" x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"spacingAndGlyphs\" aria-hidden=\"true\">…</text>",
+            svg_dimension(&(x + &visible_width)),
+            svg_dimension(&(&width - &visible_width))
         );
     }
-    if style.strikethrough {
-        let across = svg_dimension(&(formula.view_box_height() * Dim::ratio(1, 2)));
-        emit!(
-            svg,
-            "{indent}    <line x1=\"0\" y1=\"{across}\" x2=\"{}\" y2=\"{across}\" stroke=\"currentColor\" stroke-width=\"1\" vector-effect=\"non-scaling-stroke\"/>",
-            svg_dimension(&formula.view_box_width(style))
-        );
-    }
-    emit!(svg, "{indent}  </svg>");
 }
 
 /// Describes the diagram once: each node with the labels it and its exits own,

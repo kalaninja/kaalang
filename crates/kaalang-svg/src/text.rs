@@ -54,7 +54,7 @@ pub(crate) enum Script {
 pub(crate) struct Formula {
     layout: MathBox,
     svg_body: String,
-    scale: Dim,
+    clip_width: Option<i32>,
 }
 
 impl Formula {
@@ -82,17 +82,17 @@ impl Formula {
         Some(Self {
             layout,
             svg_body,
-            scale: Dim::one(),
+            clip_width: None,
         })
     }
 
-    fn size(&self, font_size: i32, style: Style) -> Dim {
+    fn size(font_size: i32, style: Style) -> Dim {
         let script = if style.script.is_some() {
             Dim::ratio(3, 4)
         } else {
             Dim::one()
         };
-        &self.scale * script * Dim::from_i64(i64::from(font_size))
+        script * Dim::from_i64(i64::from(font_size))
     }
 
     fn slant(&self, style: Style) -> Dim {
@@ -104,11 +104,24 @@ impl Formula {
     }
 
     pub(crate) fn width(&self, font_size: i32, style: Style) -> Dim {
-        (&self.layout.width + self.slant(style)) * self.size(font_size, style)
+        let width = (&self.layout.width + self.slant(style)) * Self::size(font_size, style);
+        self.clip_width.map_or_else(
+            || width.clone(),
+            |limit| width.min(&Dim::from_i64(i64::from(limit))),
+        )
+    }
+
+    pub(crate) fn visible_width(&self, font_size: i32, style: Style) -> Dim {
+        let width = self.width(font_size, style);
+        if self.is_clipped() {
+            (&width - Dim::from_i64(i64::from(font_size))).max(&Dim::zero())
+        } else {
+            width
+        }
     }
 
     pub(crate) fn ascent(&self, font_size: i32, style: Style) -> Dim {
-        let ascent = &self.layout.height * self.size(font_size, style);
+        let ascent = &self.layout.height * Self::size(font_size, style);
         match style.script {
             Some(Script::Superscript) => ascent + Dim::ratio(i64::from(font_size) * 2, 5),
             Some(Script::Subscript) => ascent - Dim::ratio(i64::from(font_size), 5),
@@ -117,7 +130,7 @@ impl Formula {
     }
 
     pub(crate) fn descent(&self, font_size: i32, style: Style) -> Dim {
-        let descent = &self.layout.depth * self.size(font_size, style);
+        let descent = &self.layout.depth * Self::size(font_size, style);
         match style.script {
             Some(Script::Superscript) => descent - Dim::ratio(i64::from(font_size) * 2, 5),
             Some(Script::Subscript) => descent + Dim::ratio(i64::from(font_size), 5),
@@ -125,27 +138,27 @@ impl Formula {
         }
     }
 
-    /// Whether the formula needs shrinking to fit the budget. Separate from
-    /// [`Self::fit`] so a caller holding a shared formula only clones one that
-    /// does.
-    fn overflows(&self, budget: i32, font_size: i32, style: Style) -> bool {
-        self.width(font_size, style) > Dim::from_i64(i64::from(budget.max(1)))
-    }
-
-    fn fit(&mut self, budget: i32, font_size: i32, style: Style) {
-        let budget = Dim::from_i64(i64::from(budget.max(1)));
-        let width = self.width(font_size, style);
-        if width > budget {
-            self.scale = &self.scale * &budget / width;
-        }
-    }
-
-    pub(crate) fn view_box(&self, style: Style) -> String {
+    pub(crate) fn view_box(
+        &self,
+        font_size: i32,
+        style: Style,
+        top_padding: i32,
+        bottom_padding: i32,
+    ) -> String {
+        let size = Self::size(font_size, style);
         format!(
-            "0 0 {} {}",
-            svg_dimension(&self.view_box_width(style)),
-            svg_dimension(&self.view_box_height())
+            "0 {} {} {}",
+            svg_dimension(&(-Dim::from_i64(i64::from(top_padding)) / &size)),
+            svg_dimension(&(self.visible_width(font_size, style) / &size)),
+            svg_dimension(
+                &(self.view_box_height()
+                    + Dim::from_i64(i64::from(top_padding + bottom_padding)) / size)
+            )
         )
+    }
+
+    pub(crate) fn is_clipped(&self) -> bool {
+        self.clip_width.is_some()
     }
 
     pub(crate) fn view_box_width(&self, style: Style) -> Dim {
@@ -529,8 +542,10 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
                 if opened.last().is_some_and(|(_, effect)| effect.tag() == tag) =>
             {
                 let (start, _) = opened.pop().expect("a matching tag was just found");
-                paired[start] = true;
-                paired[current] = true;
+                if events[start].1.end != events[current].1.start {
+                    paired[start] = true;
+                    paired[current] = true;
+                }
             }
             Some(InlineTag::Close(tag)) => {
                 if let Some(position) = opened.iter().rposition(|(_, effect)| effect.tag() == tag) {
@@ -541,6 +556,39 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
         }
     }
     paired
+}
+
+/// Markdown pairs that cross a literal source span keep both delimiters literal.
+fn crosses_literal(range: &Range<usize>, literals: &[Range<usize>]) -> bool {
+    literals.iter().any(|literal| {
+        (range.start < literal.start && literal.start < range.end && range.end < literal.end)
+            || (literal.start < range.start && range.start < literal.end && literal.end < range.end)
+    })
+}
+
+fn literal_ranges(events: &[(Event<'_>, Range<usize>)]) -> Vec<Range<usize>> {
+    events
+        .iter()
+        .enumerate()
+        .filter_map(|(index, (event, range))| match event {
+            Event::InlineHtml(_) => {
+                unsupported_html_end(events, index).map(|end| range.start..events[end].1.end)
+            }
+            Event::Start(tag)
+                if effect(tag).is_none() && !matches!(tag, Tag::Paragraph | Tag::BlockQuote(_)) =>
+            {
+                Some(range.clone())
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+const fn effect_marker_len(effect: Effect) -> usize {
+    match effect {
+        Effect::Bold | Effect::Strikethrough => 2,
+        Effect::Italic | Effect::Superscript | Effect::Subscript => 1,
+    }
 }
 
 #[allow(clippy::too_many_lines)] // One pass keeps parser events and their source ranges together.
@@ -562,6 +610,7 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         return output;
     };
     let paired = paired_tags(&events);
+    let literals = literal_ranges(&events);
 
     if quoted {
         output.push("“", active_style(&[], &[], true));
@@ -591,16 +640,31 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         }
         match event {
             Event::Start(tag) if effect(tag).is_some() => {
-                effects.push(effect(tag).expect("a supported tag has an effect"));
+                let started = effect(tag).expect("a supported tag has an effect");
+                if crosses_literal(range, &literals) {
+                    let marker_end = range.start + effect_marker_len(started);
+                    if marker_end > consumed {
+                        output.push(&line[consumed..marker_end], style);
+                        consumed = marker_end;
+                    }
+                } else {
+                    effects.push(started);
+                }
             }
             Event::End(tag) if end_effect(*tag).is_some() => {
-                let effect = end_effect(*tag).expect("a supported end tag has an effect");
-                let position = effects
-                    .iter()
-                    .rposition(|active| *active == effect)
-                    .expect("pulldown-cmark balances inline tags");
-                effects.remove(position);
-                consumed = consumed.max(range.end);
+                let ended = end_effect(*tag).expect("a supported end tag has an effect");
+                if crosses_literal(range, &literals) {
+                    if range.end > consumed {
+                        output.push(&line[consumed..range.end], style);
+                        consumed = range.end;
+                    }
+                } else if let Some(position) = effects.iter().rposition(|active| *active == ended) {
+                    effects.remove(position);
+                    consumed = consumed.max(range.end);
+                } else if range.end > consumed {
+                    output.push(&line[consumed..range.end], style);
+                    consumed = range.end;
+                }
             }
             Event::Start(tag) => {
                 output.push(&line[range.clone()], style);
@@ -1070,17 +1134,16 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
 pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<RichText> {
     let mut paragraphs = vec![Vec::new()];
     for mut cluster in clusters(text) {
-        let style = cluster.spans[0].style;
-        if let Some(formula) = &mut cluster.spans[0].formula
-            && formula.overflows(budget, font_size, style)
-        {
-            Rc::make_mut(formula).fit(budget, font_size, style);
-        }
         // A CRLF is one grapheme cluster, so match the terminator rather than
         // the whole cluster; either way the separator leaves no ink.
         if cluster.text.ends_with('\n') {
             paragraphs.push(Vec::new());
         } else {
+            if cluster.advance(font_size) > i64::from(budget) * 10_000
+                && let Some(formula) = &mut cluster.spans[0].formula
+            {
+                Rc::make_mut(formula).clip_width = Some(budget.max(1));
+            }
             paragraphs
                 .last_mut()
                 .expect("one paragraph exists")
@@ -1272,6 +1335,13 @@ mod tests {
         );
         assert_eq!(text.spans().last().unwrap().style.color, Some(Color::Red));
         for (source, expected) in [
+            ("<u></u>", "<u></u>"),
+            ("<mark></mark>", "<mark></mark>"),
+            (
+                "<color name=\"red\"></color>",
+                "<color name=\"red\"></color>",
+            ),
+            ("a<mark></mark>b", "a<mark></mark>b"),
             ("<u>unclosed", "<u>unclosed"),
             ("<mark>unclosed", "<mark>unclosed"),
             ("<u><mark>x</u></mark>", "<u><mark>x</u></mark>"),
@@ -1305,6 +1375,23 @@ mod tests {
         );
         assert!(parsed.spans()[0].style.bold);
         assert!(parsed.spans().last().unwrap().style.underline);
+
+        let crossing = RichText::markdown("**<b>foo**</b> after");
+        assert_eq!(crossing.as_ref(), "**<b>foo**</b> after");
+        assert!(crossing.spans().iter().all(|span| !span.style.bold));
+        let crossing = RichText::markdown("<b>**foo</b> after**");
+        assert_eq!(crossing.as_ref(), "<b>**foo</b> after**");
+        assert!(crossing.spans().iter().all(|span| !span.style.bold));
+        let mixed = RichText::markdown("*good* **<b>foo**</b> after *fine*");
+        assert_eq!(mixed.as_ref(), "good **<b>foo**</b> after fine");
+        assert!(mixed.spans().first().unwrap().style.italic);
+        assert!(mixed.spans().last().unwrap().style.italic);
+        let surrounding = RichText::markdown("**hello <b>x</b> world**");
+        assert_eq!(surrounding.as_ref(), "hello <b>x</b> world");
+        assert!(surrounding.spans().iter().all(|span| span.style.bold));
+        for source in ["*<b>foo*</b>", "~~<b>foo~~</b>"] {
+            assert_eq!(RichText::markdown(source).as_ref(), source);
+        }
     }
 
     #[test]
@@ -1411,7 +1498,7 @@ mod tests {
     }
 
     #[test]
-    fn math_uses_measured_script_sizes_and_fits_the_text_budget() {
+    fn math_uses_measured_script_sizes_and_clips_oversized_formulas() {
         let text = RichText::markdown("$x^2$");
         let formula = text.spans()[0].formula.as_ref().unwrap();
         let mut scales = formula.svg_body().split("scale(").skip(1).map(|path| {
@@ -1431,8 +1518,9 @@ mod tests {
         let lines = wrap_text(&long, NODE_LABEL_WIDTH, LABEL_FONT);
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].as_ref(), long.as_ref());
-        assert!(text_width(&lines[0], LABEL_FONT) <= NODE_LABEL_WIDTH);
-        assert!(lines[0].spans()[0].formula.is_some());
+        assert_eq!(text_width(&lines[0], LABEL_FONT), NODE_LABEL_WIDTH);
+        assert!(text_width(&long, LABEL_FONT) > NODE_LABEL_WIDTH);
+        assert!(lines[0].spans()[0].formula.as_ref().unwrap().is_clipped());
     }
 
     #[test]
