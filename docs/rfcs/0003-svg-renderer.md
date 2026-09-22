@@ -96,9 +96,8 @@ sufficiency, multiply any integer solution of the bounds by more than the number
 of anchors, then place anchors greedily from left to right, at least one unit
 apart. Each earlier lower bound is strictly below the current upper bound; the
 scale leaves room for all preceding choices. Extra scaling leaves room for every
-unanchored forward lifeline on either side of an event. The implementation
-reserves four such bands per anchor interval. Local forward coordinates are
-otherwise free.
+unanchored forward lifeline on either side of an event. Local forward
+coordinates are otherwise free.
 
 Every eligible vertex or complete case row is explored. Before choosing the next
 event, the search enumerates the finite orbit of the frontier under legal
@@ -216,10 +215,10 @@ with `b` are excluded from this argument, because they can exchange positions
 immediately. The remaining separation is unavoidable, so refusing it loses no
 drawing.
 
-The memo cache stops accepting entries after 64 MiB of estimated payload. This
-limits a performance optimization, not the search: uncached states are explored
-again and no continuation is omitted. Disabling both memoization and separator
-refusal gives the same finite search for comparison tests.
+Bounding the memo cache limits a performance optimization, not the search:
+uncached states are explored again and no continuation is omitted. Disabling
+both memoization and separator refusal gives the same finite search for
+comparison tests.
 
 #### Termination and cost
 

@@ -16,6 +16,12 @@ Rust documentation, diagnostics, test names, and test fixtures use the same
 terminology as the relevant RFC. Do not duplicate the language contract in other
 documentation.
 
+RFCs describe syntax, semantics, observable behavior, and design decisions.
+Algorithms, transformation steps, their rationale, and correctness arguments
+belong in the RFC covering that subject. Keep crate choices, library versions,
+and concrete build or runtime configuration in code or development
+documentation.
+
 Accepted RFCs are immutable. Change an accepted decision through a new RFC that
 explicitly identifies the earlier provisions it supersedes. The new accepted RFC
 takes precedence for those provisions; the earlier RFC text stays unchanged.

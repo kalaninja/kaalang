@@ -13,11 +13,10 @@ a formula, or call out a phrase. Today every character is displayed literally.
 Add bold, italic, strikethrough, code, superscript, subscript, quoted text,
 rendered TeX formulas, underline, highlight, and palette text colors.
 
-Use an existing Markdown parser for this restricted notation. This does not turn
-descriptions into Markdown documents. It adds no headings, tables, lists, fenced
-code blocks, links, images, general HTML, arbitrary font size, or arbitrary CSS.
-Formatting changes presentation only; it cannot affect execution, wire identity,
-branching, or diagram topology.
+This restricted notation does not turn descriptions into Markdown documents. It
+adds no headings, tables, lists, fenced code blocks, links, images, general
+HTML, arbitrary font size, or arbitrary CSS. Formatting changes presentation
+only; it cannot affect execution, wire identity, branching, or diagram topology.
 
 For example:
 
@@ -89,34 +88,33 @@ delimiters literally.
 
 ### 3.1 Delimiters and combinations
 
-Delegate delimiter matching to
-[`pulldown-cmark`](https://docs.rs/pulldown-cmark/0.13.4/pulldown_cmark/). Use
-its CommonMark rules for emphasis and code, and its strikethrough, superscript,
-and subscript extensions. The parser excludes single `^` and `~` pairs inside a
-word. Index notation adds one narrow exception after parsing: recognize a
-remaining pair when at least one outside neighbor is alphanumeric and the
-enclosed text is nonempty and has no leading or trailing whitespace. This makes
-`x^2^` and `H~2~O` useful without replacing the parser's delimiter grammar.
-Escaped markers and code spans remain literal. The three supported tag pairs are
-recognized from the parser's inline HTML events, but they never become HTML in
-the output.
+Emphasis and code follow [CommonMark](https://spec.commonmark.org/).
+Strikethrough, superscript, and subscript extend this notation with the
+delimiters in §3. Single `^` and `~` pairs normally delimit text at word
+boundaries. Index notation also permits a pair in otherwise plain text when at
+least one outside neighbor is alphanumeric and the enclosed text is nonempty and
+has no leading or trailing whitespace. This makes `x^2^` and `H~2~O` useful.
+Escaped markers and code spans remain literal. The three supported tag pairs
+denote text effects, not HTML content.
 
-Supported effects may combine as the parser recognizes them. For example,
-`***text***` is bold italic, and `**very *important* text**` adds italic to the
-bold word `important`. Underscores follow Markdown emphasis rules, which leave
-`some_identifier` literal. Source-derived labels remain outside Markdown
-interpretation altogether.
+Supported effects may combine. For example, `***text***` is bold italic, and
+`**very *important* text**` adds italic to the bold word `important`.
+Underscores follow Markdown emphasis rules, which leave `some_identifier`
+literal. Source-derived labels remain outside Markdown interpretation
+altogether.
 
-Unmatched delimiters remain text according to the parser. Invalid TeX and
-formatting introduce no syntax errors in otherwise valid descriptions.
-Unsupported constructs are preserved literally under §3.3.
+For nested superscripts or subscripts, the innermost position wins; nesting does
+not repeatedly shrink the font or accumulate baseline shifts.
+
+Unmatched delimiters remain text. Invalid TeX and formatting introduce no syntax
+errors in otherwise valid descriptions. Unsupported constructs are preserved
+literally under §3.3.
 
 ### 3.2 Escapes, code, and formulas
 
-Use the parser's
-[CommonMark escape rules](https://spec.commonmark.org/0.31.2/#backslash-escapes).
-Outside code, a backslash can escape ASCII punctuation, including formatting
-markers. A backslash before an ordinary letter remains literal.
+Use CommonMark escape rules. Outside code, a backslash can escape ASCII
+punctuation, including formatting markers. A backslash before an ordinary letter
+remains literal.
 
 The following Rust literals have the same value and display literal
 `**important**`:
@@ -126,45 +124,44 @@ The following Rust literals have the same value and display literal
 r"\*\*important\*\*"
 ```
 
-Code spans use matching backtick runs and the parser's whitespace handling.
-Longer backtick delimiters allow literal backticks inside code. Code contents
-have no nested Markdown interpretation, syntax highlighting, or evaluation.
+Code spans use matching backtick runs and CommonMark whitespace handling. Longer
+backtick delimiters allow literal backticks inside code. Code contents have no
+nested Markdown interpretation, syntax highlighting, or evaluation.
 
-The parser's math delimiter rules decide whether dollar signs open a formula.
-Backslash escapes can keep dollar signs literal. Within a recognized formula,
-backslashes belong to TeX commands; the formula renderer does not evaluate code
-or load external resources.
+Formulas use matching `$` or `$$` delimiters. Inline formulas must be nonempty
+and have no leading or trailing ASCII whitespace; display formulas may have that
+whitespace. Backslash escapes can keep dollar signs literal. Within a recognized
+formula, backslashes belong to TeX commands and no Markdown formatting applies.
+Formulas do not evaluate code or load external resources.
 
-Character references follow the parser too: outside code, `&amp;` displays as
-`&`; escaping the ampersand or putting the reference in code keeps it literal.
-Character references alone do not enable HTML. XML escaping happens after
-parsing and applies to all emitted text.
+Character references follow CommonMark: outside code and formulas, `&amp;`
+displays as `&`; escaping the ampersand or putting the reference in code keeps
+it literal. Character references alone do not enable HTML.
 
 ### 3.3 Lines and unsupported constructs
 
-Parse each authored line independently. A newline in the decoded Rust string
+Interpret each authored line independently. A newline in the decoded Rust string
 remains an explicit line break, including empty lines. Spans cannot cross those
 newlines. Automatic wrapping does not introduce another parsing boundary.
 
-Accept the parser's ordinary paragraph container and a single block quote around
-one paragraph. If a line is instead recognized as other document structure,
-display that entire line literally. For example, `# **Warning**` stays exactly
-`# **Warning**`, without becoming a heading. An empty parser result must not
-make a nonempty authored line disappear, as could happen with a link reference
-definition.
+Formatting applies to an ordinary CommonMark paragraph or a single block quote
+around one paragraph. If a line instead forms other document structure, display
+that entire line literally. For example, `# **Warning**` stays exactly
+`# **Warning**`, without becoming a heading. A nonempty authored line must not
+disappear; a link reference definition, for example, stays literal.
 
 Within a paragraph, links, images, and HTML other than the three exact tag pairs
 above are literal source spans. Copy the complete original span once, including
-its punctuation, rather than using its parsed children or dropping its
-delimiters. Thus `[**label**](url)` remains exactly that text. Supported
-formatting elsewhere on the line still applies. Disabled extensions, including
-tables, add no interpretation of their own.
+its contents, punctuation, and delimiters, rather than interpreting its
+children. Thus `[**label**](url)` remains exactly that text. Supported
+formatting elsewhere on the line still applies. Unsupported extensions,
+including tables, add no interpretation of their own.
 
 Preserve ordinary spacing, including leading and trailing whitespace, using
-source offsets where the parser omits it. Only recognized inline syntax may
+source ranges where interpretation omits it. Only recognized inline syntax may
 transform text: delimiters, escapes, character references, and code span
-whitespace. Do not add smart punctuation or prose normalization. Lines are
-parsed without their newline separators, so trailing spaces or a final backslash
+whitespace. Do not add smart punctuation or prose normalization. Interpret lines
+without their newline separators, so trailing spaces or a final backslash
 introduce no additional Markdown line break.
 
 Automatic wrapping may split a styled span across display lines; each part
@@ -206,12 +203,13 @@ structure. Existing geometry and label-clearance checks still apply.
 The expanded-cycle caption keeps its existing two-line limit and may shorten or
 disappear when space is insufficient. Shorten the interpreted spans at grapheme
 boundaries, retaining their effects, and append an unstyled ellipsis measured in
-the caption's base style. Never truncate the markup string and parse the prefix
-again: that could turn a valid opening delimiter into visible punctuation.
+the caption's base style. Never truncate the markup string and interpret the
+prefix again: that could turn a valid opening delimiter into visible
+punctuation.
 
 Tooltips and the accessible diagram description use the full plain-text
-projection of the same parsed spans. Remove bold, italic, strikethrough, and
-code delimiters, resolve escapes and character references, and retain code
+projection of the interpreted description. Remove bold, italic, strikethrough,
+and code delimiters, resolve escapes and character references, and retain code
 contents and literal fallback text. Remove supported tag delimiters while
 retaining their contents. Represent superscripts as `^(text)` and subscripts as
 `_(text)` so their position is not lost: `x^2^` becomes `x^(2)`, and `H~2~O`
@@ -221,70 +219,40 @@ even when a cycle caption is shortened or omitted. Styling has no execution
 meaning and must not be the only way an author communicates a condition or a
 branch's meaning.
 
-SVG output remains standalone. Serialize effects with renderer-owned styles on
-`<tspan>` elements and serialize formulas as nested SVG containing glyph paths
-and rules. Do not introduce HTML, `foreignObject`, JavaScript, external
-resources, or user-supplied CSS. Escape every text span, tooltip, and accessible
-description as XML, and do not insert serialization whitespace between adjacent
-spans. Keep the existing validation of XML-incompatible characters before
-formatting so no effect can hide invalid input. Validate parsed text as well,
-including characters introduced by numeric references, before serializing it.
+SVG output remains deterministic and standalone. Serialize effects with
+renderer-owned styles on `<tspan>` elements and formulas as nested SVG
+containing glyph paths and rules. Do not introduce HTML, `foreignObject`,
+JavaScript, external resources, or user-supplied CSS. Escape every text span,
+tooltip, and accessible description as XML, and do not insert whitespace between
+adjacent spans. Validate XML-incompatible characters before formatting so no
+effect can hide invalid input. Validate interpreted text as well, including
+characters introduced by numeric references, before serializing it.
 
-## 5. Implementation boundary
+## 5. Semantic and processing boundary
 
-Keep the original decoded description strings in the compiler's semantic model.
-The compiler's nonempty-description checks, diagnostics, arrangement checks, and
-Rust lowering do not interpret Markdown. This feature introduces no new compiler
-error.
+Keep the original decoded descriptions for nonempty-description checks,
+diagnostics, arrangement checks, and Rust lowering. Formatting applies only to
+presentation and introduces no new compiler error. A formula that cannot be
+parsed or laid out, uses unsupported features, or requires unavailable glyphs
+remains literal as defined in §3, rather than causing a renderer error.
 
-Use `pulldown-cmark` 0.13 with default Cargo features disabled: the SVG renderer
-needs parsing, not the library's HTML renderer or command-line support. Declare
-the dependency once in `[workspace.dependencies]` and inherit it only in
-`kaalang-svg`, following the repository's dependency convention.
+Interpret each authored line into styled spans for text, code, formulas, and the
+three paired style tags. Track active effects across balanced delimiters and
+flatten combinations for measurement. Preserve source ranges for literal
+fallback and spacing. Apply the intraword-index exception in §3.1 only to
+remaining plain spans. Do not generate HTML as an intermediate format.
 
-Use [`latex-rust`](https://docs.rs/latex-rust/1.0.4/latex_rust/) 1 for TeX math
-layout and SVG glyph outlines. Its embedded STIX Two Math face keeps output
-deterministic and standalone. Use neither its PNG nor egui features. Treat
-parser, layout, missing-glyph, and unsupported-feature errors as literal formula
-fallback rather than a kaalang renderer error.
+Parse and lay out each valid formula once. Keep its box metrics and rendered
+output with its span, and keep that span atomic during wrapping. Scale the
+formula to the label's font size during SVG serialization; position adjacent
+text using measured advances without browser scripting.
 
-Create the parser with `Parser::new_ext` and exactly these
-[extension options](https://docs.rs/pulldown-cmark/0.13.4/pulldown_cmark/struct.Options.html):
-`ENABLE_STRIKETHROUGH`, `ENABLE_SUPERSCRIPT`, `ENABLE_SUBSCRIPT`, and
-`ENABLE_MATH`. Leave the other extensions disabled. Base CommonMark constructs
-still exist in the parser; the adapter enforces §3.3 instead of assuming these
-flags disable headings or links.
+Preserve description provenance so source-derived and generated labels remain
+literal. Derive visible text and its full plain-text projection from the same
+spans. Carry those spans through measurement, wrapping, shortening, and
+serialization; do not reparse in the serializer or strip markers after layout.
 
-Consume
-[`into_offset_iter`](https://docs.rs/pulldown-cmark/latest/pulldown_cmark/struct.Parser.html#method.into_offset_iter)
-to retain source ranges. Convert text, code, math, and the three paired inline
-style tags into private styled text spans. Track active styles while consuming
-the balanced start/end events, flattening combinations into spans for
-measurement. For nested superscripts or subscripts, the innermost position wins;
-do not repeatedly shrink the font or accumulate baseline shifts. Unsupported
-constructs use their source ranges for literal fallback. Apply only the
-intraword-index exception in §3.1 to remaining plain spans. Do not generate HTML
-as an intermediate format.
-
-Parse and lay out each valid formula once. Store its box metrics and renderer
-output with the span, keep it atomic during wrapping, and scale it to the
-label's font size during SVG serialization. Text beside a formula uses the
-renderer's measured advances so the formula can be positioned without browser
-scripting.
-
-Implement this adapter once alongside caption derivation. Keep description
-provenance so source-derived and generated labels remain literal. Both visible
-text and its full plain-text projection come from the same spans.
-
-Carry description spans through measurement, wrapping, shortening, and
-serialization. Extend the existing text helpers and SVG line writer; do not add
-a second parser in the serializer or strip markers with a regular expression
-after layout. Reuse the existing grapheme segmentation and XML escaping.
-
-No new workspace crate, public API, renderer framework, or compiler model is
-needed. A future renderer must follow the same notation; extracting a shared
-adapter can wait until another renderer needs it. Parser upgrades must run the
-notation regression checks before changing how descriptions display.
+Every renderer must follow the same notation and literal fallback rules.
 
 ## 6. Compatibility and RFC integration
 
@@ -304,25 +272,21 @@ provisions only within the scope of description formatting:
 - [RFC 0002 §4.8](0002-visual-language.md#48-cycle) and
   [RFC 0003 §3](0003-svg-renderer.md#3-svg-output): tooltips and accessibility
   retain the full plain-text projection defined in §4 of this RFC, including
-  when a caption is shortened or omitted. Description measurement and SVG
-  serialization operate on styled spans as defined in §§4–5.
+  when a caption is shortened or omitted. Description measurement and display
+  use the same styled spans as defined in §§4–5.
 
 The requirement for nonempty Rust description strings in
 [RFC 0001 §3](0001-language.md#3-block-statements) and all other provisions of
 the earlier RFCs remain in force.
 
-## 7. Acceptance checks
+## 7. Acceptance criteria
 
-Implementation should extend the existing test suites with focused coverage:
-
-- Parser checks cover every supported effect, combinations, escapes, literal
-  fallback, quotes, valid formulas, invalid formulas, and explicit newlines.
-- Measurement and SVG checks cover wrapping, Unicode graphemes, formula paths,
-  formula baseline metrics, plain-text projection, and XML escaping.
-- One executable example displays the complete notation together and retains the
-  same Rust behavior as its plain-text equivalent.
-
-Run the repository validation baseline and the existing SVG performance budgets.
+- Every supported effect, combination, escape, quote, formula, literal fallback,
+  and explicit newline follows §3.
+- Wrapping, shortening, formula placement, accessibility, and XML validity meet
+  §4, including when several effects occur in one description.
+- A flow using the complete notation retains the same Rust behavior as its
+  plain-text equivalent.
 
 ## 8. Color limits
 
