@@ -5,7 +5,7 @@ fn render_markdown(section: u8, condition: bool) {
     #[choice("Markdown examples.")]
     #[case("Text effects.")]
     #[case("Formulas and graphemes.")]
-    #[case("Literal fallbacks.")]
+    #[case("HTML and literal fallbacks.")]
     let (emphasis, display, html) = |section, condition| match section {
         0 => condition,
         1 => condition,
@@ -74,7 +74,10 @@ fn render_markdown(section: u8, condition: bool) {
     let crossing = |html| html;
 
     #[action("**<b>foo**</b> after\n<b>**foo</b> after**")]
-    let noncanonical = |crossing| crossing;
+    let overlapping = |crossing| crossing;
+
+    #[action("<b><i>x</b><mark>**y**</mark></i>")]
+    let noncanonical = |overlapping| overlapping;
 
     #[action("<B>**warning**</b>\n<u>**foo**</u >")]
     let enclosing = |noncanonical| noncanonical;

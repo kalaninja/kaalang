@@ -382,19 +382,23 @@ fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
 }
 
 #[test]
-fn unsupported_html_pairs_keep_their_markdown_source() {
-    let source = r##"
+fn unsupported_html_tags_are_escaped_around_styled_contents() {
+    let source = r#"
         #[kaalang]
         fn literal(value: u8) -> u8 {
-            #[action(r#"<b>**warning**</b> <b><u>x</u></b>"#)]
+            #[action("<b>**warning**</b> <b><u>x</u></b>\n<b><i>x</b><mark>**y**</mark></i>")]
             let result = |value| value;
             |result| return result;
         }
-    "##;
+    "#;
     let svg = render_source(source, "literal").unwrap();
-    assert!(svg.contains("&lt;b&gt;**warning**&lt;/b&gt;"));
-    assert!(svg.contains("&lt;b&gt;&lt;u&gt;x&lt;/u&gt;&lt;/b&gt;"));
-    assert!(!svg.contains(r#"<tspan class="md-bold">warning</tspan>"#));
+    assert!(svg.contains(r#"&lt;b&gt;<tspan class="md-bold">warning</tspan>&lt;/b&gt;"#));
+    assert!(svg.contains(r#"&lt;b&gt;<tspan class="md-underline">x</tspan>&lt;/b&gt;"#));
+    assert!(svg.contains(r#"<rect class="md-highlight-box""#));
+    assert!(svg.contains(r#"<tspan class="md-bold">y</tspan>"#));
+    assert!(describe(&svg).contains("&lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt;"));
+    assert!(describe(&svg).contains("&lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;"));
+    assert!(!svg.contains("<b>") && !svg.contains("<i>") && !svg.contains("<mark>"));
 }
 
 #[test]

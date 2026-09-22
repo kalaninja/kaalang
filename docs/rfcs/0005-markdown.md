@@ -150,12 +150,20 @@ that entire line literally. For example, `# **Warning**` stays exactly
 `# **Warning**`, without becoming a heading. A nonempty authored line must not
 disappear; a link reference definition, for example, stays literal.
 
-Within a paragraph, links, images, and HTML other than the three exact tag pairs
-above are literal source spans. Copy the complete original span once, including
-its contents, punctuation, and delimiters, rather than interpreting its
-children. Thus `[**label**](url)` remains exactly that text. Supported
-formatting elsewhere on the line still applies. Unsupported extensions,
-including tables, add no interpretation of their own.
+Within a paragraph, links and images are literal source spans. Copy the complete
+original span once, including its contents, punctuation, and delimiters, rather
+than interpreting its children. Thus `[**label**](url)` remains exactly that
+text.
+
+HTML tags other than the three exact supported pairs stay literal individually,
+including their attributes. Do not match unsupported opening and closing tags or
+give the text between them special treatment. Supported formatting between or
+across those tags remains active: `<b>**warning**</b>` displays the literal tags
+around bold `warning`, and `<b><u>x</u></b>` displays the literal tags around
+underlined `x`. Inline HTML comments and declarations also stay literal as whole
+source tokens. The whole-line fallback for document structure still applies,
+including HTML blocks. Unsupported extensions, including tables, add no
+interpretation of their own.
 
 Preserve ordinary spacing, including leading and trailing whitespace, using
 source ranges where interpretation omits it. Only recognized inline syntax may

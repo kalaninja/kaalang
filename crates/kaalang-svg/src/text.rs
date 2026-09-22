@@ -488,42 +488,6 @@ fn inline_tag(source: &str) -> Option<InlineTag> {
     })
 }
 
-fn html_tag_name(source: &str, closing: bool) -> Option<&str> {
-    let body = source.strip_prefix(if closing { "</" } else { "<" })?;
-    if !closing && source.trim_end().ends_with("/>") {
-        return None;
-    }
-    let end = body.find(|ch: char| !ch.is_ascii_alphanumeric() && ch != '-')?;
-    let name = &body[..end];
-    (name.as_bytes().first().is_some_and(u8::is_ascii_alphabetic) && body[end..].contains('>'))
-        .then_some(name)
-}
-
-/// An unsupported HTML pair owns its complete source, including Markdown events inside it.
-fn unsupported_html_end(events: &[(Event<'_>, Range<usize>)], start: usize) -> Option<usize> {
-    let Event::InlineHtml(open) = &events[start].0 else {
-        return None;
-    };
-    let name = html_tag_name(open, false)?;
-    let mut depth = 1;
-    for (index, (event, _)) in events.iter().enumerate().skip(start + 1) {
-        if let Event::InlineHtml(source) = event {
-            if html_tag_name(source, false).is_some_and(|tag| tag.eq_ignore_ascii_case(name)) {
-                depth += 1;
-            } else if html_tag_name(source, true).is_some_and(|tag| tag.eq_ignore_ascii_case(name))
-            {
-                depth -= 1;
-                if depth == 0 {
-                    let supported = matches!(inline_tag(open), Some(InlineTag::Open(_)))
-                        && matches!(inline_tag(source), Some(InlineTag::Close(_)));
-                    return (!supported).then_some(index);
-                }
-            }
-        }
-    }
-    None
-}
-
 /// Only balanced, properly nested exact tags affect the parsed line. A tag
 /// inside a construct the line copies literally, such as a link, is part of
 /// that literal text and pairs with nothing outside it.
@@ -531,17 +495,7 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
     let mut paired = vec![false; events.len()];
     let mut opened = Vec::new();
     let mut literal_depth = 0_usize;
-    let mut index = 0;
-    while index < events.len() {
-        if literal_depth == 0
-            && let Some(end) = unsupported_html_end(events, index)
-        {
-            index = end + 1;
-            continue;
-        }
-        let current = index;
-        let (event, _) = &events[current];
-        index += 1;
+    for (current, (event, _)) in events.iter().enumerate() {
         let Event::InlineHtml(source) = event else {
             match event {
                 Event::Start(tag)
@@ -585,32 +539,6 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
     paired
 }
 
-/// Markdown pairs that cross a literal source span keep both delimiters literal.
-fn crosses_literal(range: &Range<usize>, literals: &[Range<usize>]) -> bool {
-    literals.iter().any(|literal| {
-        (range.start < literal.start && literal.start < range.end && range.end < literal.end)
-            || (literal.start < range.start && range.start < literal.end && literal.end < range.end)
-    })
-}
-
-fn literal_ranges(events: &[(Event<'_>, Range<usize>)]) -> Vec<Range<usize>> {
-    events
-        .iter()
-        .enumerate()
-        .filter_map(|(index, (event, range))| match event {
-            Event::InlineHtml(_) => {
-                unsupported_html_end(events, index).map(|end| range.start..events[end].1.end)
-            }
-            Event::Start(tag)
-                if effect(tag).is_none() && !matches!(tag, Tag::Paragraph | Tag::BlockQuote(_)) =>
-            {
-                Some(range.clone())
-            }
-            _ => None,
-        })
-        .collect()
-}
-
 const fn effect_marker_len(effect: Effect) -> usize {
     match effect {
         Effect::Bold | Effect::Strikethrough => 2,
@@ -637,7 +565,6 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         return output;
     };
     let paired = paired_tags(&events);
-    let literals = literal_ranges(&events);
 
     if quoted {
         let marker = line[..paragraph.start]
@@ -670,25 +597,12 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         match event {
             Event::Start(tag) if effect(tag).is_some() => {
                 let started = effect(tag).expect("a supported tag has an effect");
-                if crosses_literal(range, &literals) {
-                    let marker_end = range.start + effect_marker_len(started);
-                    if marker_end > consumed {
-                        output.push(&line[consumed..marker_end], style);
-                        consumed = marker_end;
-                    }
-                } else {
-                    effects.push(started);
-                    consumed = consumed.max(range.start + effect_marker_len(started));
-                }
+                effects.push(started);
+                consumed = consumed.max(range.start + effect_marker_len(started));
             }
             Event::End(tag) if end_effect(*tag).is_some() => {
                 let ended = end_effect(*tag).expect("a supported end tag has an effect");
-                if crosses_literal(range, &literals) {
-                    if range.end > consumed {
-                        output.push(&line[consumed..range.end], style);
-                        consumed = range.end;
-                    }
-                } else if let Some(position) = effects.iter().rposition(|active| *active == ended) {
+                if let Some(position) = effects.iter().rposition(|active| *active == ended) {
                     effects.remove(position);
                     consumed = consumed.max(range.end);
                 } else if range.end > consumed {
@@ -739,13 +653,6 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
                     }
                 }
                 consumed = consumed.max(range.end);
-            }
-            Event::InlineHtml(_) if unsupported_html_end(&events, index).is_some() => {
-                let end = unsupported_html_end(&events, index)
-                    .expect("the unsupported pair was just found");
-                output.push(&line[range.start..events[end].1.end], style);
-                consumed = consumed.max(events[end].1.end);
-                index = end;
             }
             Event::InlineHtml(_) | Event::Html(_) => {
                 output.push(&line[range.clone()], style);
@@ -1297,12 +1204,12 @@ mod tests {
     #[test]
     fn parses_the_supported_inline_effects_and_literal_fallbacks() {
         let text = RichText::markdown(
-            "  **bold** *italic* ~~old~~ `code` ^super^ ~sub~ $x^2$ [link](url) <b>raw</b>  ",
+            "  **bold** *italic* ~~old~~ `code` ^super^ ~sub~ $x^2$ [**link**](url) <b>raw</b>  ",
         );
 
         assert_eq!(
             text.as_ref(),
-            "  bold italic old code ^(super) _(sub) x^2 [link](url) <b>raw</b>  "
+            "  bold italic old code ^(super) _(sub) x^2 [**link**](url) <b>raw</b>  "
         );
         assert!(text.spans().iter().any(|span| span.style.bold));
         assert!(text.spans().iter().any(|span| span.style.italic));
@@ -1396,65 +1303,131 @@ mod tests {
         let mixed = RichText::markdown("<u>valid</u> <mark>unclosed");
         assert_eq!(mixed.as_ref(), "valid <mark>unclosed");
         assert!(mixed.spans()[0].style.underline);
+    }
 
+    #[test]
+    fn unsupported_html_tags_allow_supported_formatting() {
         let source = "**outside** <b>**warning** <u>raw</u> <b>*nested*</b></b> <u>after</u>";
         let parsed = RichText::markdown(source);
         assert_eq!(
             parsed.as_ref(),
-            "outside <b>**warning** <u>raw</u> <b>*nested*</b></b> after"
+            "outside <b>warning raw <b>nested</b></b> after"
         );
         assert!(parsed.spans()[0].style.bold);
+        assert!(
+            parsed
+                .spans()
+                .iter()
+                .any(|span| span.text == "warning" && span.style.bold)
+        );
+        assert!(
+            parsed
+                .spans()
+                .iter()
+                .any(|span| span.text == "raw" && span.style.underline)
+        );
+        assert!(
+            parsed
+                .spans()
+                .iter()
+                .any(|span| span.text == "nested" && span.style.italic)
+        );
         assert!(parsed.spans().last().unwrap().style.underline);
 
+        let overlapping = RichText::markdown("<b><i>x</b><mark>**y**</mark></i> *after*");
+        assert_eq!(overlapping.as_ref(), "<b><i>x</b>y</i> after");
+        assert!(
+            overlapping
+                .spans()
+                .iter()
+                .any(|span| { span.text == "y" && span.style.bold && span.style.highlight })
+        );
+        assert!(overlapping.spans().last().unwrap().style.italic);
+
+        let source = r#"<b title="**literal** &amp;">**bold**</b> <!-- *literal* --> *after*"#;
+        let parsed = RichText::markdown(source);
+        assert_eq!(
+            parsed.as_ref(),
+            r#"<b title="**literal** &amp;">bold</b> <!-- *literal* --> after"#
+        );
+        assert!(
+            parsed
+                .spans()
+                .iter()
+                .any(|span| span.text == "bold" && span.style.bold)
+        );
+        assert!(parsed.spans().last().unwrap().style.italic);
+
+        let parsed = RichText::markdown("<b>`**code**` x^2^ $x$ &amp;");
+        assert_eq!(parsed.as_ref(), "<b>**code** x^(2) x &");
+        assert!(parsed.spans().iter().any(|span| span.style.code));
+        assert!(parsed.spans().iter().any(|span| span.formula.is_some()));
+    }
+
+    #[test]
+    fn emphasis_pairs_can_cross_literal_html_tags() {
         let crossing = RichText::markdown("**<b>foo**</b> after");
-        assert_eq!(crossing.as_ref(), "**<b>foo**</b> after");
-        assert!(crossing.spans().iter().all(|span| !span.style.bold));
+        assert_eq!(crossing.as_ref(), "<b>foo</b> after");
+        assert_eq!(crossing.spans()[0].text, "<b>foo");
+        assert!(crossing.spans()[0].style.bold);
+        assert!(!crossing.spans().last().unwrap().style.bold);
         let crossing = RichText::markdown("<b>**foo</b> after**");
-        assert_eq!(crossing.as_ref(), "<b>**foo</b> after**");
-        assert!(crossing.spans().iter().all(|span| !span.style.bold));
+        assert_eq!(crossing.as_ref(), "<b>foo</b> after");
+        assert!(!crossing.spans()[0].style.bold);
+        assert_eq!(crossing.spans().last().unwrap().text, "foo</b> after");
+        assert!(crossing.spans().last().unwrap().style.bold);
         let mixed = RichText::markdown("*good* **<b>foo**</b> after *fine*");
-        assert_eq!(mixed.as_ref(), "good **<b>foo**</b> after fine");
+        assert_eq!(mixed.as_ref(), "good <b>foo</b> after fine");
         assert!(mixed.spans().first().unwrap().style.italic);
         assert!(mixed.spans().last().unwrap().style.italic);
         let surrounding = RichText::markdown("**hello <b>x</b> world**");
         assert_eq!(surrounding.as_ref(), "hello <b>x</b> world");
         assert!(surrounding.spans().iter().all(|span| span.style.bold));
         for source in ["*<b>foo*</b>", "~~<b>foo~~</b>"] {
-            assert_eq!(RichText::markdown(source).as_ref(), source);
+            let parsed = RichText::markdown(source);
+            assert_eq!(parsed.as_ref(), "<b>foo</b>");
+            assert!(parsed.spans()[0].style.italic || parsed.spans()[0].style.strikethrough);
+            assert_eq!(parsed.spans().last().unwrap().style, Style::default());
         }
     }
 
     #[test]
-    fn unsupported_html_pairs_preserve_their_source_with_noncanonical_tags() {
-        for source in [
-            "<B>**warning**</b>",
-            "<b>**warning**</B>",
-            "<u>**foo**</u >",
-            "<u>**foo**</U>",
-            "<mark>*foo*</MARK>",
-            "<color name=\"red\">**foo**</color >",
-            "<b><B>**one**</b> **two**</b>",
+    fn noncanonical_html_tags_keep_their_spelling_and_allow_markdown() {
+        for (source, expected) in [
+            ("<B>**warning**</b>", "<B>warning</b>"),
+            ("<b>**warning**</B>", "<b>warning</B>"),
+            ("<u>**foo**</u >", "<u>foo</u >"),
+            ("<u>**foo**</U>", "<u>foo</U>"),
+            ("<mark>*foo*</MARK>", "<mark>foo</MARK>"),
+            (
+                "<color name=\"red\">**foo**</color >",
+                "<color name=\"red\">foo</color >",
+            ),
+            ("<b><B>**one**</b> **two**</b>", "<b><B>one</b> two</b>"),
         ] {
             let parsed = RichText::markdown(source);
-            assert_eq!(parsed.as_ref(), source);
+            assert_eq!(parsed.as_ref(), expected, "{source}");
             assert!(
                 parsed
                     .spans()
                     .iter()
-                    .all(|span| span.style == Style::default())
+                    .any(|span| span.style.bold || span.style.italic)
             );
+            assert!(parsed.spans().iter().all(|span| !span.style.underline
+                && !span.style.highlight
+                && span.style.color.is_none()));
         }
         let parsed = RichText::markdown("<u><B>**raw**</b> **bold**</u>");
-        assert_eq!(parsed.as_ref(), "<B>**raw**</b> bold");
+        assert_eq!(parsed.as_ref(), "<B>raw</b> bold");
         assert!(parsed.spans().iter().all(|span| span.style.underline));
         assert!(parsed.spans().last().unwrap().style.bold);
     }
 
     #[test]
-    fn literal_delimiters_do_not_copy_an_enclosing_effects_opening_marker() {
+    fn nested_emphasis_around_html_follows_markdown() {
         for (source, expected) in [
-            ("**<b>foo*</b>*", "*<b>foo*</b>"),
-            ("**x <b>*foo**</b> after*", "*x <b>*foo**</b> after"),
+            ("**<b>foo*</b>*", "<b>foo</b>"),
+            ("**x <b>*foo**</b> after*", "x <b>foo</b> after"),
         ] {
             let parsed = RichText::markdown(source);
             assert_eq!(parsed.as_ref(), expected);
@@ -1786,6 +1759,7 @@ mod tests {
             "---",
             "    indented **code**",
             "# **heading**",
+            "<div>**warning**</div>",
         ] {
             assert_eq!(RichText::markdown(source).as_ref(), source, "{source}");
         }
