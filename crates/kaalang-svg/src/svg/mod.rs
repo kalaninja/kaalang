@@ -152,8 +152,9 @@ fn markdown_styles(scene: &Scene) -> &'static str {
       .md-superscript { baseline-shift: 0.4em; }
       .md-subscript { baseline-shift: -0.2em; }
       .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { vector-effect: non-scaling-stroke; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
       .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
       .cycle-caption .md-math { color: #166534; }
       .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
       .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
@@ -451,10 +452,15 @@ fn write_formula(
     } else {
         ""
     };
+    let stroke = if style.highlight {
+        " stroke=\"none\""
+    } else {
+        ""
+    };
     if !visible_width.is_zero() {
         emit!(
             svg,
-            "{indent}  <svg class=\"{class}\"{overflow} x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
+            "{indent}  <svg class=\"{class}\"{overflow}{stroke} x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",
             svg_dimension(x),
             svg_dimension(&(&top - Dim::from_i64(i64::from(top_padding)))),
             svg_dimension(&visible_width),
@@ -497,7 +503,7 @@ fn write_formula(
     if formula.is_clipped() {
         emit!(
             svg,
-            "{indent}  <text class=\"md-math-ellipsis\" x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"spacingAndGlyphs\" aria-hidden=\"true\">…</text>",
+            "{indent}  <text class=\"md-math-ellipsis\"{stroke} x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"spacingAndGlyphs\" aria-hidden=\"true\">…</text>",
             svg_dimension(&(x + &visible_width)),
             svg_dimension(&(&width - &visible_width))
         );

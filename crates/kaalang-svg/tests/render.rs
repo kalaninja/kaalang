@@ -122,6 +122,30 @@ fn renders_markdown_as_styled_svg_text_and_math_paths() {
 }
 
 #[test]
+fn renders_tex_colors_without_losing_inherited_or_explicit_colors() {
+    let source = r##"
+        #[kaalang]
+        fn colors() {
+            #[action(r#"<color name="purple">$\frac{1}{2}$ **$\textcolor{black}{x}$**</color> $\definecolor{accent}{HTML}{010203}\textcolor{accent}{x}$ $\fcolorbox{blue}{yellow}{x}$"#)]
+            {};
+            return;
+        }
+    "##;
+    let svg = render_source(source, "colors").expect("TeX colors render in descriptions");
+
+    assert!(svg.contains(r#"<svg class="md-math md-color-purple""#));
+    assert!(svg.contains(r#"<svg class="md-math md-color-purple md-bold""#));
+    assert!(svg.contains(".md-math rect:not([stroke]) { stroke: none;"));
+    assert!(svg.contains(".md-math.md-bold g[stroke] path { stroke: inherit; }"));
+    assert!(svg.contains(r#"<g fill="inherit">"#));
+    assert!(svg.contains(r##"<g fill="#000000" stroke="#000000">"##));
+    assert!(svg.contains(r##"<g fill="#010203" stroke="#010203">"##));
+    assert!(svg.contains(r##"fill="#ffff00""##));
+    assert!(svg.contains(r##"stroke="#0000ff""##));
+    assert!(describe(&svg).contains(r"\definecolor{accent}{HTML}{010203}\textcolor{accent}{x}"));
+}
+
+#[test]
 fn clips_a_wide_formula_without_losing_its_accessible_text() {
     let body = format!("{}x", "x+".repeat(70));
     let source = format!("#[kaalang] fn wide() {{ #[action(\"<u>${body}$</u>\")] {{}}; return; }}");
@@ -428,6 +452,30 @@ fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
     assert!(group.contains(">take it</text>"));
     // The unhighlighted labels of the same diagram keep their halo.
     assert!(svg.contains("stroke: #ffffff; stroke-width: 5px"));
+
+    for formula in [
+        "$x$".to_owned(),
+        "**$x$**".to_owned(),
+        format!("${}x$", "x+".repeat(70)),
+    ] {
+        for (source, name) in [
+            (source.replace("take it", &formula), "highlighted"),
+            (
+                CYCLE_SOURCE.replace("Count to the limit.", &format!("<mark>{formula}</mark>")),
+                "count_to",
+            ),
+        ] {
+            let svg = render_source(&source, name).unwrap();
+            let math = svg
+                .lines()
+                .find(|line| line.contains("<svg class=\"md-math"))
+                .unwrap();
+            assert!(math.contains("stroke=\"none\""), "{name}: {math}");
+            if let Some(ellipsis) = svg.lines().find(|line| line.contains("md-math-ellipsis")) {
+                assert!(ellipsis.contains("stroke=\"none\""), "{name}: {ellipsis}");
+            }
+        }
+    }
 }
 
 #[test]

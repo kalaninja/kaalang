@@ -189,12 +189,14 @@ beneath the text, and highlight paints a pale background behind its measured
 span without changing the text color. Palette colors use fixed, dark SVG colors
 chosen to remain legible on white, the node fills, and the highlight background.
 These effects may surround formulas: their paths take the selected text color,
-and highlight and underline are drawn around the formula's measured bounds.
-Formulas use the description's base font size and align their math baseline with
-surrounding text. Subsequent plain text returns to the base size, weight, and
-baseline. Use the existing line height as a minimum and grow it from formula
-metrics when required. Effects must not make text escape its measured bounds or
-overlap adjacent content.
+and highlight and underline are drawn around the formula's measured bounds. An
+explicit TeX color overrides a surrounding palette color within its math scope;
+uncolored formula content inherits the surrounding color. Formulas use the
+description's base font size and align their math baseline with surrounding
+text. Subsequent plain text returns to the base size, weight, and baseline. Use
+the existing line height as a minimum and grow it from formula metrics when
+required. Effects must not make text escape its measured bounds or overlap
+adjacent content.
 
 Formatting may change pixel dimensions and spacing. It must not change the
 verified arrangement's rows, columns, branch order, connections, or cycle
@@ -290,7 +292,13 @@ the earlier RFCs remain in force.
 
 ## 8. Color limits
 
-The five color names have renderer-owned definitions. Other names, color codes,
-CSS declarations, and TeX color commands remain literal fallback. A color tag
+The five color tag names have renderer-owned definitions. Color tags with other
+names, color codes, or CSS declarations remain literal fallback. A color tag
 affects only its contents, including formulas; text after the closing tag
 returns to the enclosing or base color.
+
+Within formulas, support the math renderer's TeX color commands, including
+`\color`, `\textcolor`, `\colorbox`, `\fcolorbox`, and `\definecolor`. TeX color
+names and models follow that renderer's rules. A color definition alone does not
+color any glyph; it takes effect when a later command uses the defined name.
+Unknown names and unsupported models leave the complete formula literal.

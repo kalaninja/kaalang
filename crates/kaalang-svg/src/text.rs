@@ -3,7 +3,8 @@
 use std::{fmt::Write, ops::Range, rc::Rc, sync::OnceLock};
 
 use latex_rust::{
-    BoxContent, Dim, MathBox, MathFont, MathStyle, SvgOptions, layout, parse, render_svg,
+    BoxContent, Color as MathColor, Dim, MathBox, MathFont, MathStyle, SvgOptions, layout, parse,
+    render_svg,
 };
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use unicode_segmentation::UnicodeSegmentation;
@@ -72,13 +73,26 @@ impl Formula {
         }
         let mut options = SvgOptions::new();
         options.font_size_pt = Dim::one();
+        // The backend writes its default color into every rule. Pick a color
+        // absent from the formula so only that default becomes the label color.
+        let mut marker = 0x0001_0203_u32;
+        while uses_color(&layout, marker_color(marker)) {
+            marker += 1;
+        }
+        options.color = marker_color(marker);
         let document = render_svg(&layout, font, &options).ok()?;
         let svg = document.find("<svg ")?;
         let body = svg + document[svg..].find('>')? + 1;
         let end = document.rfind("</svg>")?;
         let svg_body = scaled_glyphs(&document[body..end], &layout, font)?
-            .replace("fill=\"#000000\"", "fill=\"inherit\"")
-            .replace("stroke=\"#000000\"", "stroke=\"currentColor\"");
+            .replace(
+                &format!("fill=\"{}\"", options.color.css_hex()),
+                "fill=\"inherit\"",
+            )
+            .replace(
+                &format!("stroke=\"{}\"", options.color.css_hex()),
+                "stroke=\"currentColor\"",
+            );
         Some(Self {
             layout,
             svg_body,
@@ -174,6 +188,26 @@ impl Formula {
     }
 }
 
+fn marker_color(marker: u32) -> MathColor {
+    let [_, red, green, blue] = marker.to_be_bytes();
+    MathColor::rgb(red, green, blue)
+}
+
+fn uses_color(layout: &MathBox, color: MathColor) -> bool {
+    match &layout.content {
+        BoxContent::Color(value, inner) | BoxContent::BackColor(value, inner) => {
+            *value == color || uses_color(inner, color)
+        }
+        BoxContent::Frame { stroke, inner, .. } => {
+            stroke.is_some_and(|value| value == color) || uses_color(inner, color)
+        }
+        BoxContent::HList(children)
+        | BoxContent::VList(children)
+        | BoxContent::Overlap(children) => children.iter().any(|child| uses_color(child, color)),
+        _ => false,
+    }
+}
+
 /// latex-rust 1.0.4 measures script glyphs at their reduced size but emits every
 /// outline at one em. Correct its path scales from the same measured glyphs.
 fn scaled_glyphs(svg: &str, layout: &MathBox, font: &MathFont) -> Option<String> {
@@ -200,16 +234,9 @@ fn scaled_glyphs(svg: &str, layout: &MathBox, font: &MathFont) -> Option<String>
                     collect(child, font, scales)?;
                 }
             }
-            BoxContent::Frame {
-                stroke: None,
-                inner,
-                ..
-            } => collect(inner, font, scales)?,
-            BoxContent::Color(..)
-            | BoxContent::BackColor(..)
-            | BoxContent::Frame {
-                stroke: Some(_), ..
-            } => return None,
+            BoxContent::Color(_, inner)
+            | BoxContent::BackColor(_, inner)
+            | BoxContent::Frame { inner, .. } => collect(inner, font, scales)?,
             BoxContent::Empty
             | BoxContent::Kern(_)
             | BoxContent::Rule
@@ -477,19 +504,19 @@ fn unsupported_html_end(events: &[(Event<'_>, Range<usize>)], start: usize) -> O
     let Event::InlineHtml(open) = &events[start].0 else {
         return None;
     };
-    if inline_tag(open).is_some() {
-        return None;
-    }
     let name = html_tag_name(open, false)?;
     let mut depth = 1;
     for (index, (event, _)) in events.iter().enumerate().skip(start + 1) {
         if let Event::InlineHtml(source) = event {
-            if html_tag_name(source, false) == Some(name) {
+            if html_tag_name(source, false).is_some_and(|tag| tag.eq_ignore_ascii_case(name)) {
                 depth += 1;
-            } else if html_tag_name(source, true) == Some(name) {
+            } else if html_tag_name(source, true).is_some_and(|tag| tag.eq_ignore_ascii_case(name))
+            {
                 depth -= 1;
                 if depth == 0 {
-                    return Some(index);
+                    let supported = matches!(inline_tag(open), Some(InlineTag::Open(_)))
+                        && matches!(inline_tag(source), Some(InlineTag::Close(_)));
+                    return (!supported).then_some(index);
                 }
             }
         }
@@ -613,12 +640,14 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
     let literals = literal_ranges(&events);
 
     if quoted {
+        let marker = line[..paragraph.start]
+            .find('>')
+            .expect("a quoted paragraph has a marker");
+        output.push(&line[..marker], Style::default());
         output.push("“", active_style(&[], &[], true));
         // The marker is `>` and at most one space; anything further is content.
-        let content = line[..paragraph.start].find('>').map_or(0, |angle| {
-            let after = angle + 1;
-            after + usize::from(line[after..].starts_with([' ', '\t']))
-        });
+        let after = marker + 1;
+        let content = after + usize::from(line[after..].starts_with([' ', '\t']));
         output.push(
             &line[content.min(paragraph.start)..paragraph.start],
             active_style(&[], &[], true),
@@ -649,6 +678,7 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
                     }
                 } else {
                     effects.push(started);
+                    consumed = consumed.max(range.start + effect_marker_len(started));
                 }
             }
             Event::End(tag) if end_effect(*tag).is_some() => {
@@ -1298,8 +1328,8 @@ mod tests {
             r"Bad $\unknown{}$ formula."
         );
         assert_eq!(
-            RichText::markdown(r"$\color{red}x$").as_ref(),
-            r"$\color{red}x$"
+            RichText::markdown(r"$\color{not-a-color}x$").as_ref(),
+            r"$\color{not-a-color}x$"
         );
         assert_eq!(
             RichText::markdown("# **heading**").as_ref(),
@@ -1392,6 +1422,79 @@ mod tests {
         for source in ["*<b>foo*</b>", "~~<b>foo~~</b>"] {
             assert_eq!(RichText::markdown(source).as_ref(), source);
         }
+    }
+
+    #[test]
+    fn unsupported_html_pairs_preserve_their_source_with_noncanonical_tags() {
+        for source in [
+            "<B>**warning**</b>",
+            "<b>**warning**</B>",
+            "<u>**foo**</u >",
+            "<u>**foo**</U>",
+            "<mark>*foo*</MARK>",
+            "<color name=\"red\">**foo**</color >",
+            "<b><B>**one**</b> **two**</b>",
+        ] {
+            let parsed = RichText::markdown(source);
+            assert_eq!(parsed.as_ref(), source);
+            assert!(
+                parsed
+                    .spans()
+                    .iter()
+                    .all(|span| span.style == Style::default())
+            );
+        }
+        let parsed = RichText::markdown("<u><B>**raw**</b> **bold**</u>");
+        assert_eq!(parsed.as_ref(), "<B>**raw**</b> bold");
+        assert!(parsed.spans().iter().all(|span| span.style.underline));
+        assert!(parsed.spans().last().unwrap().style.bold);
+    }
+
+    #[test]
+    fn literal_delimiters_do_not_copy_an_enclosing_effects_opening_marker() {
+        for (source, expected) in [
+            ("**<b>foo*</b>*", "*<b>foo*</b>"),
+            ("**x <b>*foo**</b> after*", "*x <b>*foo**</b> after"),
+        ] {
+            let parsed = RichText::markdown(source);
+            assert_eq!(parsed.as_ref(), expected);
+            assert!(parsed.spans().iter().all(|span| span.style.italic));
+        }
+    }
+
+    #[test]
+    fn quotes_preserve_whitespace_before_and_after_the_marker() {
+        for (source, expected) in [
+            ("   > **quote**  ", "   “quote  ”"),
+            (" >   *quote*", " “  quote”"),
+            ("  >\t quote", "  “ quote”"),
+        ] {
+            assert_eq!(RichText::markdown(source).as_ref(), expected);
+        }
+    }
+
+    #[test]
+    fn tex_colors_render_and_keep_explicit_black_distinct_from_inherited_color() {
+        for body in [
+            r"\color{red}x",
+            r"\textcolor{blue}{x}",
+            r"\colorbox{yellow}{x}",
+            r"\fcolorbox{blue}{yellow}{x}",
+            r"\definecolor{foo}{rgb}{1,0,0}x",
+            r"\definecolor{foo}{rgb}{1,0,0}\textcolor{foo}{x}",
+        ] {
+            let text = RichText::markdown(&format!("${body}$"));
+            assert!(text.spans()[0].formula.is_some(), "{body}");
+        }
+        let text = RichText::markdown(r"$\textcolor{black}{x}+\frac{1}{2}$");
+        let svg = text.spans()[0].formula.as_ref().unwrap().svg_body();
+        assert!(svg.contains("fill=\"inherit\""));
+        assert!(svg.contains("<g fill=\"#000000\" stroke=\"#000000\">"));
+
+        let text = RichText::markdown(r"$\definecolor{foo}{HTML}{010203}\textcolor{foo}{x}$");
+        let svg = text.spans()[0].formula.as_ref().unwrap().svg_body();
+        assert!(svg.contains("fill=\"inherit\""));
+        assert!(svg.contains("<g fill=\"#010203\" stroke=\"#010203\">"));
     }
 
     #[test]
