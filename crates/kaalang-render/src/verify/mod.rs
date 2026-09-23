@@ -25,16 +25,7 @@ impl<'a> ArrangementVerifier<'a> {
         let body_vertices = topology
             .loops
             .iter()
-            .map(|loop_| loop_.header)
-            .chain(
-                topology
-                    .loop_boundaries
-                    .iter()
-                    .map(|boundary| boundary.header),
-            )
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .map(|header| (header, topology.body_vertices(flow, header)))
+            .map(|loop_| (loop_.header, topology.body_vertices(flow, loop_.header)))
             .collect();
         Self {
             checks: ArrangementChecks::new(flow, topology),
@@ -62,16 +53,12 @@ impl<'a> ArrangementVerifier<'a> {
     }
 
     /// Whether this relation may rise beside a cycle whose boundary it leaves.
-    #[must_use]
-    pub fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
+    pub(crate) fn may_rise_beside(&self, arrangement: &Arrangement, edge: &Connection) -> bool {
         self.bodies.may_rise_beside(arrangement, edge)
     }
 
-    /// Vertices drawn inside the cycle body beginning at `header`.
-    ///
-    /// Returns an empty set when `header` does not identify a cycle in this topology.
-    #[must_use]
-    pub fn body_vertices(&self, header: usize) -> BTreeSet<Vertex> {
-        self.body_vertices.get(&header).cloned().unwrap_or_default()
+    /// Vertices drawn inside the body of the cycle repeating at `header`.
+    pub(crate) fn body_vertices(&self, header: usize) -> &BTreeSet<Vertex> {
+        &self.body_vertices[&header]
     }
 }

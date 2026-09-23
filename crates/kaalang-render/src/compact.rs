@@ -158,9 +158,7 @@ fn lift(verifier: &ArrangementVerifier<'_>, topology: &Topology, built: &mut Arr
                 edge.destination == vertex && !verifier.may_rise_beside(built, edge)
             }))
             .map(|edge| built.rank[&Vertex::from(edge.source)])
-            .max()
-            .unwrap_or(1)
-            .max(1);
+            .fold(1, usize::max);
         'earlier: for rank in first..built.rank[&vertex] {
             let gap = rank - 1;
             for lane in 0..=built.gap_lanes[gap] {
@@ -314,10 +312,11 @@ mod tests {
         ] {
             let mut model = kaalang_compiler::build(&fixture(source, name)).unwrap();
             compact_arrangement(&mut model);
-            let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
             let built = &model.arrangement;
             let beside = model.topology.loop_boundaries.iter().any(|boundary| {
-                let body = verifier.body_vertices(boundary.header);
+                let body = model
+                    .topology
+                    .body_vertices(&model.analysis.flow, boundary.header);
                 let rows = body.iter().map(|vertex| built.rank[vertex]);
                 let columns = body.iter().map(|vertex| built.column[vertex]);
                 let (top, bottom) = (rows.clone().min(), rows.max());

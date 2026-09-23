@@ -49,6 +49,18 @@ pub const fn inside(point: Point, (left, top, right, bottom): (i32, i32, i32, i3
     point.x > left && point.x < right && point.y > top && point.y < bottom
 }
 
+/// Whether two rectangles share any area.
+#[must_use]
+pub const fn overlaps(rect: (i32, i32, i32, i32), other: (i32, i32, i32, i32)) -> bool {
+    rect.2 > other.0 && rect.0 < other.2 && rect.3 > other.1 && rect.1 < other.3
+}
+
+/// Whether `outer` holds all of `inner`, edges included.
+#[must_use]
+pub const fn contains(outer: (i32, i32, i32, i32), inner: (i32, i32, i32, i32)) -> bool {
+    inner.0 >= outer.0 && inner.1 >= outer.1 && inner.2 <= outer.2 && inner.3 <= outer.3
+}
+
 #[must_use]
 pub(crate) fn on_segment(point: Point, segment: &[Point]) -> bool {
     point.x >= segment[0].x.min(segment[1].x)

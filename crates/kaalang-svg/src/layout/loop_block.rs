@@ -1,11 +1,11 @@
 //! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
+use kaalang_compiler::geometry::{contains, overlaps};
 use kaalang_compiler::topology::{NodeId, Source, Vertex};
 
 use super::{
     CYCLE_CAPTION_FONT, LoopRegion, MARGIN, NODE_LABEL_WIDTH, NODE_WIDTH, Point, Scene,
-    block_dimensions,
-    label::{contains, label_rect, overlaps},
+    block_dimensions, label::label_rect,
 };
 use crate::text::{self, RichText};
 

@@ -710,7 +710,7 @@ fn math_branch_descriptions_clear_their_nodes_and_connections() {
         assert!(rect.3 - rect.1 > 2 * LINE_HEIGHT, "{rect:?}");
         for node in &scene.nodes {
             assert!(
-                !super::label::overlaps(rect, Scene::bounds(node)),
+                !kaalang_compiler::geometry::overlaps(rect, Scene::bounds(node)),
                 "{rect:?} meets the node at {},{}",
                 node.x,
                 node.y

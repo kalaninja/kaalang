@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 
 use kaalang_compiler::{
     RunLine,
+    geometry::overlaps,
     topology::{Destination, ExitId, NodeId, Source, Vertex},
 };
 
@@ -408,16 +409,6 @@ pub(super) fn clearance(scene: &Scene) -> Option<String> {
         }
     }
     None
-}
-
-/// Whether two rectangles share any area, each as left, top, right, bottom.
-pub(super) const fn overlaps(rect: (i32, i32, i32, i32), other: (i32, i32, i32, i32)) -> bool {
-    rect.2 > other.0 && rect.0 < other.2 && rect.3 > other.1 && rect.1 < other.3
-}
-
-/// Whether `outer` holds all of `inner`, edges included.
-pub(super) const fn contains(outer: (i32, i32, i32, i32), inner: (i32, i32, i32, i32)) -> bool {
-    inner.0 >= outer.0 && inner.1 >= outer.1 && inner.2 <= outer.2 && inner.3 <= outer.3
 }
 
 fn label_width(lines: &[RichText], font_size: i32) -> i32 {

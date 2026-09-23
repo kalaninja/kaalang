@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use kaalang_compiler::geometry::{Point, enters, inside};
+use kaalang_compiler::geometry::{Point, contains, enters, inside, overlaps};
 use kaalang_compiler::topology::{Connection, Topology, Vertex};
 use kaalang_compiler::{Arrangement, ArrangementGeometry, Flow};
 
@@ -95,11 +95,7 @@ impl Bodies {
                 return false;
             }
             let mut columns = body.owned.iter().map(|vertex| arrangement.column[vertex]);
-            let first = columns.next().unwrap_or(landing);
-            let (left, right) = columns.fold((first, first), |(left, right), column| {
-                (left.min(column), right.max(column))
-            });
-            landing < left || landing > right
+            columns.clone().all(|column| column > landing) || columns.all(|column| column < landing)
         })
     }
 
@@ -201,18 +197,15 @@ fn owned(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
 }
 
 fn extents(points: &[Point]) -> (i32, i32, i32, i32) {
-    let first = points.first().copied().unwrap_or(Point { x: 0, y: 0 });
-    points.iter().fold(
-        (first.x, first.y, first.x, first.y),
-        |(left, top, right, bottom), point| {
-            (
-                left.min(point.x),
-                top.min(point.y),
-                right.max(point.x),
-                bottom.max(point.y),
-            )
-        },
-    )
+    points
+        .iter()
+        .map(|point| (point.x, point.y, point.x, point.y))
+        .reduce(union)
+        .unwrap_or_default()
+}
+
+fn union(a: (i32, i32, i32, i32), b: (i32, i32, i32, i32)) -> (i32, i32, i32, i32) {
+    (a.0.min(b.0), a.1.min(b.1), a.2.max(b.2), a.3.max(b.3))
 }
 
 fn rectangles(
@@ -237,27 +230,11 @@ fn rectangles(
             .chain(body.internal.iter().map(|&route| route_extents[route]))
             .chain(body.own_back_edge.iter().map(|&loop_| back_extents[loop_]))
             .chain(body.nests.iter().filter_map(|&nested| settled[nested]));
-        let (left, top, right, bottom) = held
-            .reduce(|a, b| (a.0.min(b.0), a.1.min(b.1), a.2.max(b.2), a.3.max(b.3)))
-            .unwrap_or((0, 0, 0, 0));
+        let (left, top, right, bottom) = held.reduce(union).unwrap_or_default();
         settled[index] = Some((left - 1, top - 1, right + 1, bottom + 1));
     }
     settled
         .into_iter()
         .map(|rectangle| rectangle.expect("every boundary settles once"))
         .collect()
-}
-
-const fn contains(
-    (left, top, right, bottom): (i32, i32, i32, i32),
-    (other_left, other_top, other_right, other_bottom): (i32, i32, i32, i32),
-) -> bool {
-    left <= other_left && top <= other_top && right >= other_right && bottom >= other_bottom
-}
-
-const fn overlaps(
-    (left, top, right, bottom): (i32, i32, i32, i32),
-    (other_left, other_top, other_right, other_bottom): (i32, i32, i32, i32),
-) -> bool {
-    left < other_right && other_left < right && top < other_bottom && other_top < bottom
 }
