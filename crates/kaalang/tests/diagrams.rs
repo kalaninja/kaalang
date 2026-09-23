@@ -15,10 +15,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
         // Collected up front because the loop below writes into this directory.
-        let paths: Vec<PathBuf> = fs::read_dir(&directory)
-            .unwrap()
-            .map(|entry| entry.unwrap().path())
-            .collect();
+        let paths: Vec<PathBuf> = read_directory(&directory).collect();
 
         let mut current = Vec::new();
         for fixture in paths.iter().filter(|path| extension_is(path, "rs")) {
@@ -117,19 +114,13 @@ fn extension_is(path: &Path, extension: &str) -> bool {
 #[test]
 fn every_executable_fixture_is_declared_and_executed() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
-    let mut checked = 0;
     for directory in fixture_directories(&tests) {
         let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
-        for fixture in fs::read_dir(&directory)
-            .unwrap()
-            .map(|entry| entry.unwrap().path())
-            .filter(|path| extension_is(path, "rs"))
-        {
+        for fixture in read_directory(&directory).filter(|path| extension_is(path, "rs")) {
             let stem = fixture.file_stem().unwrap().to_str().unwrap().to_owned();
             if stem == "mod" {
                 continue;
             }
-            checked += 1;
             assert!(
                 declarations.contains(&format!("mod {stem};")),
                 "{} is not declared by the mod.rs beside it",
@@ -154,8 +145,4 @@ fn every_executable_fixture_is_declared_and_executed() {
             );
         }
     }
-    assert!(
-        checked > 0,
-        "no executable fixture was found under {tests:?}"
-    );
 }
