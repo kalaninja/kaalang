@@ -1,7 +1,6 @@
 //! kaalang procedural macro entry point; compilation lives in `kaalang-compiler`.
 
-use proc_macro::TokenStream;
-use proc_macro2::Span;
+use proc_macro::{Span, TokenStream};
 use quote::ToTokens;
 use syn::{Error, ItemFn, parse_macro_input};
 
@@ -9,9 +8,12 @@ use syn::{Error, ItemFn, parse_macro_input};
 #[proc_macro_attribute]
 pub fn kaalang(attributes: TokenStream, item: TokenStream) -> TokenStream {
     if !attributes.is_empty() {
-        return Error::new(Span::call_site(), "#[kaalang] does not accept arguments")
-            .into_compile_error()
-            .into();
+        return Error::new(
+            Span::call_site().into(),
+            "#[kaalang] does not accept arguments",
+        )
+        .into_compile_error()
+        .into();
     }
 
     let function = parse_macro_input!(item as ItemFn);
