@@ -342,6 +342,36 @@ fn a_single_highlighted_grapheme_uses_its_measured_advance() {
 }
 
 #[test]
+fn width_only_formula_advances_text_without_an_empty_svg() {
+    let source = r#"
+        #[kaalang]
+        fn spaced() {
+            #[action(r"a<u>$\,$</u>b")]
+            {};
+            return;
+        }
+    "#;
+    let svg = render_source(source, "spaced").unwrap();
+    assert!(svg.contains(r#"<title xml:space="preserve">a\,b</title>"#));
+    assert!(!svg.contains(r#"<svg class="md-math""#));
+    assert!(svg.contains(r#"<line class="md-math""#));
+    let a = svg.lines().find(|line| line.contains(">a</text>")).unwrap();
+    let b = svg.lines().find(|line| line.contains(">b</text>")).unwrap();
+    let attribute = |line: &str, name: &str| -> f64 {
+        line.split_once(&format!("{name}=\""))
+            .unwrap()
+            .1
+            .split_once('"')
+            .unwrap()
+            .0
+            .parse()
+            .unwrap()
+    };
+    let gap = attribute(b, "x") - attribute(a, "x") - attribute(a, "textLength");
+    assert!((gap - 3.0).abs() < 0.001);
+}
+
+#[test]
 fn a_formula_too_tall_for_scene_coordinates_stays_literal() {
     let formula = r"$x\rule{1em}{1000000000em}$";
     let source = format!("#[kaalang] fn huge() {{ #[action(r\"{formula}\")] {{}}; return; }}");

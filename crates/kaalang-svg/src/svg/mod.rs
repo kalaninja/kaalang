@@ -457,7 +457,27 @@ fn write_formula(
     } else {
         ""
     };
-    if !visible_width.is_zero() {
+    if height.is_zero() {
+        let end = x + &visible_width;
+        for (draw, y) in [
+            (style.underline, &top + Dim::ratio(i64::from(font_size), 10)),
+            (
+                style.strikethrough,
+                &top - Dim::ratio(i64::from(font_size), 3),
+            ),
+        ] {
+            if draw && !visible_width.is_zero() {
+                emit!(
+                    svg,
+                    r#"{indent}  <line class="{class}" x1="{}" y1="{}" x2="{}" y2="{}" stroke="currentColor" stroke-width="1"/>"#,
+                    svg_dimension(x),
+                    svg_dimension(&y),
+                    svg_dimension(&end),
+                    svg_dimension(&y)
+                );
+            }
+        }
+    } else if !visible_width.is_zero() {
         emit!(
             svg,
             "{indent}  <svg class=\"{class}\"{overflow}{stroke} x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" viewBox=\"{}\" aria-hidden=\"true\">",

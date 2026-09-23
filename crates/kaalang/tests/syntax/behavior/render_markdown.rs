@@ -47,7 +47,7 @@ fn render_markdown(section: u8, condition: bool) {
     #[action(r#"Formulae: <color name="purple"><u>$x^2 + y^2$</u></color> and <mark>$$\frac{a+b}{2}$$</mark>."#)]
     let styled = |tinted| tinted;
 
-    #[action("~~$x$~~, **$x$**, *$x$*, ^$x$^, and ~$x$~.")]
+    #[action(r"~~$x$~~, **$x$**, *$x$*, ^$x$^, ~$x$~, and a<u>$\,$</u>b.")]
     let quoted_math = |styled| styled;
 
     #[action("> Quoted formula: $x$.")]

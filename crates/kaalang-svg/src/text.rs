@@ -68,7 +68,7 @@ impl Formula {
             MathStyle::Text
         };
         let layout = layout(&ast, font, style).ok()?;
-        if layout.width <= Dim::zero() || &layout.height + &layout.depth <= Dim::zero() {
+        if layout.width <= Dim::zero() || &layout.height + &layout.depth < Dim::zero() {
             return None;
         }
         // ponytail: Extremely tall math falls back to source; use wider scene
@@ -1613,6 +1613,14 @@ mod tests {
         let oversized = RichText::markdown(r"$x\rule{1em}{1000000000em}$");
         assert_eq!(oversized.as_ref(), r"$x\rule{1em}{1000000000em}$");
         assert!(oversized.spans().iter().all(|span| span.formula.is_none()));
+    }
+
+    #[test]
+    fn width_only_math_keeps_its_advance_without_visible_ink() {
+        let text = RichText::markdown(r"a$\,$b");
+        assert_eq!(text.as_ref(), r"a\,b");
+        assert!(text.spans()[1].formula.is_some());
+        assert_eq!(text_width(&RichText::markdown(r"$\,$"), LABEL_FONT), 3);
     }
 
     #[test]
