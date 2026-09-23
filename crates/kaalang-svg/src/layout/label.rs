@@ -262,20 +262,9 @@ fn place_label(
     stack: Stack,
     clear: i32,
 ) -> Label {
-    let metrics = block_metrics(&lines, kind.font_size(), kind.line_height());
-    let below_first = metrics
-        .baselines
-        .last()
-        .zip(metrics.baselines.first())
-        .map_or(0, |(last, first)| last - first);
     let x = (at.x - label_width(&lines, kind.font_size()) / 2)
         .max(clear + CONNECTION_LABEL_HALO + CLEARANCE);
-    let (first_ascent, _) = lines
-        .first()
-        .map_or((0, 0), |line| line_ink(line, kind.font_size()));
-    let (_, last_descent) = lines
-        .last()
-        .map_or((0, 0), |line| line_ink(line, kind.font_size()));
+    let (baseline_span, above, below) = extent(&lines, kind);
 
     Label {
         owner,
@@ -284,8 +273,8 @@ fn place_label(
             x,
             y: at.y
                 - match stack {
-                    Stack::Above => below_first + (last_descent - kind.font_size() / 2).max(0),
-                    Stack::Below => -(first_ascent - kind.font_size()).max(0),
+                    Stack::Above => baseline_span + below,
+                    Stack::Below => -above,
                 },
         },
         lines,
@@ -317,17 +306,23 @@ fn vertical_label_gap(lines: &[RichText], kind: LabelKind) -> i32 {
         LabelKind::Wire => DROP,
         LabelKind::Branch => BRANCH_DROP,
     };
-    let metrics = block_metrics(lines, kind.font_size(), kind.line_height());
-    let baseline_span = metrics.baselines.last().copied().unwrap_or_default()
-        - metrics.baselines.first().copied().unwrap_or_default();
-    let (first_ascent, _) = line_ink(&lines[0], kind.font_size());
-    let (_, last_descent) = line_ink(&lines[lines.len() - 1], kind.font_size());
-    drop + RISE
-        + kind.font_size()
-        + 2 * CONNECTION_LABEL_HALO
-        + 2 * baseline_span
-        + (first_ascent - kind.font_size()).max(0)
-        + (last_descent - kind.font_size() / 2).max(0)
+    let (baseline_span, above, below) = extent(lines, kind);
+    drop + RISE + kind.font_size() + 2 * CONNECTION_LABEL_HALO + 2 * baseline_span + above + below
+}
+
+/// How far a label's last baseline sits below its first, and how far its ink
+/// reaches past a plain first line's top and a plain last line's bottom.
+fn extent(lines: &[RichText], kind: LabelKind) -> (i32, i32, i32) {
+    let font_size = kind.font_size();
+    let (Some(first), Some(last)) = (lines.first(), lines.last()) else {
+        return (0, 0, 0);
+    };
+    let baselines = block_metrics(lines, font_size, kind.line_height()).baselines;
+    (
+        baselines[baselines.len() - 1] - baselines[0],
+        (line_ink(first.spans(), font_size).0 - font_size).max(0),
+        (line_ink(last.spans(), font_size).1 - font_size / 2).max(0),
+    )
 }
 
 /// The rectangle a label's ink and halo occupy, matching how the serializer
@@ -342,7 +337,7 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
     let mut bottom = label.at.y + font_size / 2;
     for (index, line) in label.lines.iter().enumerate() {
         let baseline = label.at.y + metrics.baselines[index] - first;
-        let (ascent, descent) = line_ink(line, font_size);
+        let (ascent, descent) = line_ink(line.spans(), font_size);
         top = top.min(baseline - ascent.max(font_size));
         bottom = bottom.max(baseline + descent.max(font_size / 2));
     }

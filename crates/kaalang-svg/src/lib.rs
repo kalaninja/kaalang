@@ -264,8 +264,15 @@ fn validate_labels(
                     .as_deref()
                     .map(|text| (text, format!("question branch {} description", branch + 1)))
             });
-        for (text, context) in description.into_iter().chain(cases).chain(branches) {
-            validate_markdown_label(text, block.span, context)?;
+        for (label, context) in description.into_iter().chain(cases).chain(branches) {
+            // A character reference decodes to the character it names, so the
+            // text a reader sees is checked as well as its source.
+            validate_label(label, block.span, context.clone())?;
+            validate_label(
+                text::RichText::markdown_text(label).as_ref(),
+                block.span,
+                context,
+            )?;
         }
     }
     validate_label(start, signature.span(), "flow header")?;
@@ -279,33 +286,11 @@ fn validate_labels(
     Ok(())
 }
 
-fn validate_markdown_label(
-    label: &str,
-    span: Span,
-    context: impl Into<String>,
-) -> Result<(), RenderError> {
-    let context = context.into();
-    validate_label(label, span, context.clone())?;
-    let parsed = text::RichText::markdown_text(label);
-    let Some(character) = parsed
-        .spans()
-        .iter()
-        .flat_map(|span| span.text.chars())
+fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result<(), RenderError> {
+    let Some(character) = label
+        .chars()
         .find(|character| !valid_xml_character(*character))
     else {
-        return Ok(());
-    };
-    let (line, column) = location(span);
-    Err(RenderError::InvalidLabelCharacter {
-        character,
-        line,
-        column,
-        context,
-    })
-}
-
-fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result<(), RenderError> {
-    let Some(character) = invalid_xml_character(label) else {
         return Ok(());
     };
     let (line, column) = location(span);
@@ -317,13 +302,7 @@ fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result
     })
 }
 
-/// Finds the first character XML 1.0 cannot represent.
-fn invalid_xml_character(label: &str) -> Option<char> {
-    label
-        .chars()
-        .find(|character| !valid_xml_character(*character))
-}
-
+/// Whether XML 1.0 can represent the character.
 const fn valid_xml_character(character: char) -> bool {
     matches!(
         character,
@@ -461,7 +440,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn rejects_xml_incompatible_signature_labels() {
-        assert_eq!(invalid_xml_character("λ\t\n\r<&>"), None);
+        assert!("λ\t\n\r<&>".chars().all(valid_xml_character));
 
         for (source, line, column, context) in [
             (

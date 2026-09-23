@@ -169,31 +169,12 @@ fn clips_a_wide_formula_without_losing_its_accessible_text() {
         .find(|line| line.contains("md-math-ellipsis"))
         .unwrap();
     assert!(ellipsis.contains(">…</text>"));
-    let attribute = |line: &str, name: &str| -> f64 {
-        line.split_once(&format!("{name}=\""))
-            .unwrap()
-            .1
-            .split_once('"')
-            .unwrap()
-            .0
-            .parse()
-            .unwrap()
-    };
     assert!(
         (attribute(math, "x") + attribute(math, "width") - attribute(ellipsis, "x")).abs() < 0.001
     );
     assert!((attribute(math, "width") + attribute(ellipsis, "textLength") - 248.0).abs() < 0.001);
     assert!((formula_scale(math) - 14.0).abs() < 0.01);
-    let view_box = math
-        .split_once("viewBox=\"")
-        .unwrap()
-        .1
-        .split_once('"')
-        .unwrap()
-        .0
-        .split_whitespace()
-        .map(|value| value.parse::<f64>().unwrap())
-        .collect::<Vec<_>>();
+    let view_box = view_box(math);
     let underline = svg
         .lines()
         .find(|line| line.contains("<line x1=\"0\""))
@@ -241,16 +222,6 @@ fn highlight_offsets_follow_a_grapheme_split_across_styles() {
         .filter(|line| line.contains("<rect class=\"md-highlight-box\""))
         .collect::<Vec<_>>();
     assert_eq!(boxes.len(), 2);
-    let attribute = |line: &str, name: &str| -> f64 {
-        line.split_once(&format!("{name}=\""))
-            .unwrap()
-            .1
-            .split_once('"')
-            .unwrap()
-            .0
-            .parse()
-            .unwrap()
-    };
     let first_end = attribute(boxes[0], "x") + attribute(boxes[0], "width");
     assert!((first_end - attribute(boxes[1], "x")).abs() < 0.001);
     // The combining mark stays in the same shaping run as its base character.
@@ -324,16 +295,6 @@ fn a_single_highlighted_grapheme_uses_its_measured_advance() {
         .lines()
         .find(|line| line.contains(r#"<svg class="md-math""#))
         .unwrap();
-    let attribute = |line: &str, name: &str| -> f64 {
-        line.split_once(&format!("{name}=\""))
-            .unwrap()
-            .1
-            .split_once('"')
-            .unwrap()
-            .0
-            .parse()
-            .unwrap()
-    };
     assert!((attribute(run, "textLength") - attribute(box_line, "width")).abs() < 0.001);
     assert!(
         (attribute(formula, "x") - attribute(box_line, "x") - attribute(box_line, "width")).abs()
@@ -357,16 +318,6 @@ fn width_only_formula_advances_text_without_an_empty_svg() {
     assert!(svg.contains(r#"<line class="md-math""#));
     let a = svg.lines().find(|line| line.contains(">a</text>")).unwrap();
     let b = svg.lines().find(|line| line.contains(">b</text>")).unwrap();
-    let attribute = |line: &str, name: &str| -> f64 {
-        line.split_once(&format!("{name}=\""))
-            .unwrap()
-            .1
-            .split_once('"')
-            .unwrap()
-            .0
-            .parse()
-            .unwrap()
-    };
     let gap = attribute(b, "x") - attribute(a, "x") - attribute(a, "textLength");
     assert!((gap - 3.0).abs() < 0.001);
 }
@@ -383,26 +334,28 @@ fn a_formula_too_tall_for_scene_coordinates_stays_literal() {
 }
 
 fn formula_scale(math: &str) -> f64 {
-    let attribute = |name: &str| -> f64 {
-        math.split_once(&format!("{name}=\""))
-            .expect("formula has the attribute")
-            .1
-            .split_once('"')
-            .expect("attribute value is quoted")
-            .0
-            .parse()
-            .expect("attribute value is numeric")
-    };
-    let view_box_width: f64 = math
-        .split_once("viewBox=\"")
-        .expect("formula has a viewBox")
-        .1
-        .split_whitespace()
-        .nth(2)
-        .expect("viewBox has a width")
+    attribute(math, "width") / view_box(math)[2]
+}
+
+/// The first `name="…"` value on one line of the SVG.
+fn quoted<'a>(line: &'a str, name: &str) -> &'a str {
+    line.split_once(&format!("{name}=\""))
+        .and_then(|(_, value)| value.split_once('"'))
+        .expect("the line carries the attribute")
+        .0
+}
+
+fn attribute(line: &str, name: &str) -> f64 {
+    quoted(line, name)
         .parse()
-        .expect("viewBox width is numeric");
-    attribute("width") / view_box_width
+        .expect("the attribute is numeric")
+}
+
+fn view_box(line: &str) -> Vec<f64> {
+    quoted(line, "viewBox")
+        .split_whitespace()
+        .map(|value| value.parse().expect("the viewBox is numeric"))
+        .collect()
 }
 
 #[test]

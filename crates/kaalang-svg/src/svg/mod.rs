@@ -5,7 +5,7 @@ use crate::layout::{
     LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, Node, ParameterPanel, Point, Scene,
 };
 use crate::text::{
-    Formula, RichText, Script, Style, block_metrics, line_ink, shaping_spans, span_advances,
+    Color, Formula, RichText, Script, Style, block_metrics, line_ink, shaping_spans, span_advances,
     svg_dimension,
 };
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
@@ -258,39 +258,22 @@ fn write_lines(svg: &mut String, lines: &[RichText], x: i32, font_size: i32, lin
 }
 
 fn write_span(svg: &mut String, text: &str, style: Style) {
-    if style == Style::default() {
-        svg.push_str(&escape(text));
-        return;
-    }
-    let mut classes = Vec::new();
-    if style.bold {
-        classes.push("md-bold");
-    }
-    if style.italic {
-        classes.push("md-italic");
-    }
-    if style.quote {
-        classes.push("md-quote");
-    }
-    if style.strikethrough {
-        classes.push("md-strikethrough");
-    }
-    if style.underline {
-        classes.push("md-underline");
-    }
-    if let Some(color) = style.color {
-        classes.push(color.class());
-    }
-    if style.code {
-        classes.push("md-code");
-    }
-    match style.script {
-        Some(Script::Superscript) => classes.push("md-superscript"),
-        Some(Script::Subscript) => classes.push("md-subscript"),
-        None => {}
-    }
+    let classes = [
+        (style.bold, "md-bold"),
+        (style.italic, "md-italic"),
+        (style.quote, "md-quote"),
+        (style.strikethrough, "md-strikethrough"),
+        (style.underline, "md-underline"),
+        (style.color.is_some(), style.color.map_or("", Color::class)),
+        (style.code, "md-code"),
+        (style.script == Some(Script::Superscript), "md-superscript"),
+        (style.script == Some(Script::Subscript), "md-subscript"),
+    ]
+    .into_iter()
+    .filter_map(|(on, class)| on.then_some(class))
+    .collect::<Vec<_>>();
     // A highlight is the rect behind the run, so a span carrying only that
-    // effect needs no element of its own.
+    // effect, like an unstyled one, needs no element of its own.
     if classes.is_empty() {
         svg.push_str(&escape(text));
         return;
@@ -352,8 +335,7 @@ fn write_composed_lines(
         for (span, advance) in &spans {
             let advance = Dim::ratio(**advance, 10_000);
             if span.style.highlight && !advance.is_zero() {
-                let (ascent, descent) =
-                    line_ink(&RichText::from_spans(std::slice::from_ref(span)), font_size);
+                let (ascent, descent) = line_ink(std::slice::from_ref(*span), font_size);
                 let ascent = Dim::from_i64(i64::from(ascent));
                 let descent = Dim::from_i64(i64::from(descent));
                 let top = Dim::from_i64(i64::from(baseline)) - &ascent;
@@ -488,11 +470,10 @@ fn write_formula(
             formula.view_box(font_size, style, top_padding, bottom_padding)
         );
         if style.italic || style.quote {
-            let slant = &formula.view_box_width(style) - formula.view_box_width(Style::default());
             emit!(
                 svg,
                 "{indent}    <g transform=\"translate({} 0) skewX(-8.5308)\">",
-                svg_dimension(&slant)
+                svg_dimension(&formula.slant(style))
             );
         }
         // The body is renderer-owned markup: latex-rust emits only shapes with

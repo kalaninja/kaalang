@@ -1020,7 +1020,7 @@ fn capsule_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
         let line_width = text::text_width(line, LABEL_FONT);
         let x = f64::from(line_width) / 2.0 + 4.0;
         let baseline = -metrics.height / 2 + metrics.baselines[index];
-        let (ascent, descent) = text::line_ink(line, LABEL_FONT);
+        let (ascent, descent) = text::line_ink(line.spans(), LABEL_FONT);
         let y = f64::from(
             (baseline - ascent.max(LABEL_FONT))
                 .abs()

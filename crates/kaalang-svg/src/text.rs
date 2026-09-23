@@ -115,7 +115,7 @@ impl Formula {
         script * Dim::from_i64(i64::from(font_size))
     }
 
-    fn slant(&self, style: Style) -> Dim {
+    pub(crate) fn slant(&self, style: Style) -> Dim {
         if style.italic || style.quote {
             &self.view_box_height() * Dim::ratio(3, 20)
         } else {
@@ -333,15 +333,6 @@ impl RichText {
         &self.spans
     }
 
-    pub(crate) fn from_spans(spans: &[StyledSpan]) -> Self {
-        let mut result = Self {
-            spans: spans.to_vec(),
-            plain: String::new(),
-        };
-        result.finish();
-        result
-    }
-
     pub(crate) fn pop_grapheme(&mut self) {
         let Some(index) = self.spans.iter().rposition(|span| !span.text.is_empty()) else {
             return;
@@ -501,19 +492,14 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
     let mut paired = vec![false; events.len()];
     let mut opened = Vec::new();
     let mut literal_depth = 0_usize;
+    let literal = |tag: TagEnd| {
+        effect(tag).is_none() && !matches!(tag, TagEnd::Paragraph | TagEnd::BlockQuote(_))
+    };
     for (current, (event, _)) in events.iter().enumerate() {
         let Event::InlineHtml(source) = event else {
             match event {
-                Event::Start(tag)
-                    if effect(tag).is_none()
-                        && !matches!(tag, Tag::Paragraph | Tag::BlockQuote(_)) =>
-                {
-                    literal_depth += 1;
-                }
-                Event::End(tag)
-                    if end_effect(*tag).is_none()
-                        && !matches!(tag, TagEnd::Paragraph | TagEnd::BlockQuote(_)) =>
-                {
+                Event::Start(tag) if literal(tag.to_end()) => literal_depth += 1,
+                Event::End(tag) if literal(*tag) => {
                     literal_depth = literal_depth.saturating_sub(1);
                 }
                 _ => {}
@@ -601,13 +587,13 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
             pending.flush(&mut output, style);
         }
         match event {
-            Event::Start(tag) if effect(tag).is_some() => {
-                let started = effect(tag).expect("a supported tag has an effect");
+            Event::Start(tag) if effect(tag.to_end()).is_some() => {
+                let started = effect(tag.to_end()).expect("a supported tag has an effect");
                 effects.push(started);
                 consumed = consumed.max(range.start + effect_marker_len(started));
             }
-            Event::End(tag) if end_effect(*tag).is_some() => {
-                let ended = end_effect(*tag).expect("a supported end tag has an effect");
+            Event::End(tag) if effect(*tag).is_some() => {
+                let ended = effect(*tag).expect("a supported end tag has an effect");
                 if let Some(position) = effects.iter().rposition(|active| *active == ended) {
                     effects.remove(position);
                     consumed = consumed.max(range.end);
@@ -791,18 +777,7 @@ impl InlineText {
     }
 }
 
-const fn effect(tag: &Tag<'_>) -> Option<Effect> {
-    match tag {
-        Tag::Strong => Some(Effect::Bold),
-        Tag::Emphasis => Some(Effect::Italic),
-        Tag::Strikethrough => Some(Effect::Strikethrough),
-        Tag::Superscript => Some(Effect::Superscript),
-        Tag::Subscript => Some(Effect::Subscript),
-        _ => None,
-    }
-}
-
-const fn end_effect(tag: TagEnd) -> Option<Effect> {
+const fn effect(tag: TagEnd) -> Option<Effect> {
     match tag {
         TagEnd::Strong => Some(Effect::Bold),
         TagEnd::Emphasis => Some(Effect::Italic),
@@ -1140,10 +1115,10 @@ pub(crate) struct TextBlockMetrics {
     pub(crate) baselines: Vec<i32>,
 }
 
-pub(crate) fn line_ink(text: &RichText, font_size: i32) -> (i32, i32) {
+pub(crate) fn line_ink(spans: &[StyledSpan], font_size: i32) -> (i32, i32) {
     let mut ascent = (font_size * 4 + 4) / 5;
     let mut descent = (font_size + 4) / 5;
-    for span in &text.spans {
+    for span in spans {
         if let Some(formula) = &span.formula {
             ascent = ascent.max(dimension_ceiling(&formula.ascent(font_size, span.style)));
             descent = descent.max(
@@ -1153,7 +1128,7 @@ pub(crate) fn line_ink(text: &RichText, font_size: i32) -> (i32, i32) {
         }
     }
     // Match the 75% font size and explicit em shifts in the SVG stylesheet.
-    for span in &text.spans {
+    for span in spans {
         match span.style.script {
             Some(Script::Superscript) => ascent = ascent.max((font_size * 90 + 99) / 100),
             Some(Script::Subscript) => descent = descent.max((font_size * 30 + 99) / 100),
@@ -1173,7 +1148,7 @@ pub(crate) fn block_metrics(
     let mut height = 0;
     let mut baselines = Vec::with_capacity(lines.len());
     for line in lines {
-        let (ascent, descent) = line_ink(line, font_size);
+        let (ascent, descent) = line_ink(line.spans(), font_size);
         baselines.push(height + leading + ascent);
         height += line_height.max(leading + ascent + descent);
     }
@@ -1480,7 +1455,7 @@ mod tests {
     fn underlined_formula_reserves_space_below_the_baseline() {
         let formula = RichText::markdown(r"$\frac{1}{x}$");
         let underlined = RichText::markdown(r"<u>$\frac{1}{x}$</u>");
-        assert!(line_ink(&underlined, 14).1 > line_ink(&formula, 14).1);
+        assert!(line_ink(underlined.spans(), 14).1 > line_ink(formula.spans(), 14).1);
     }
 
     #[test]
@@ -1543,8 +1518,8 @@ mod tests {
         let subscript = RichText::markdown("~$x$~");
         assert!(text_width(&superscript, 14) < text_width(&plain, 14));
         assert!(text_width(&subscript, 14) < text_width(&plain, 14));
-        assert!(line_ink(&superscript, 14).0 >= line_ink(&plain, 14).0);
-        assert!(line_ink(&subscript, 14).1 > line_ink(&plain, 14).1);
+        assert!(line_ink(superscript.spans(), 14).0 >= line_ink(plain.spans(), 14).0);
+        assert!(line_ink(subscript.spans(), 14).1 > line_ink(plain.spans(), 14).1);
     }
 
     #[test]
@@ -1794,7 +1769,7 @@ mod tests {
         let inline = RichText::markdown(r"$\sum_{n=1}^{5} n$");
         let display = RichText::markdown(r"$$\sum_{n=1}^{5} n$$");
         let ink = |text: &RichText| {
-            let (ascent, descent) = line_ink(text, LABEL_FONT);
+            let (ascent, descent) = line_ink(text.spans(), LABEL_FONT);
             ascent + descent
         };
 
