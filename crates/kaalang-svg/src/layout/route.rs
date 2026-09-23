@@ -29,24 +29,7 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
             // A side exit reaches its branch column horizontally before it
             // descends into the row gaps. The brancher's footprint reserves
             // this space beside the node.
-            let mut points = vec![
-                start,
-                Point {
-                    x: scene.column_x(route.departure),
-                    y: start.y,
-                },
-            ];
-            for run in &route.runs {
-                let y = rows.line_y(run.line);
-                points.push(Point {
-                    x: scene.column_x(run.enter),
-                    y,
-                });
-                points.push(Point {
-                    x: scene.column_x(run.exit),
-                    y,
-                });
-            }
+            let mut points = route.corners(start, |c| scene.column_x(c), |l| rows.line_y(l));
             points.push(end);
 
             Connection {
@@ -121,24 +104,13 @@ fn bent_back_edge(scene: &Scene, rows: &Rows, index: usize, from: Point, end: Po
     let Some(route) = scene.arrangement.back_routes.get(&index) else {
         return back_edge_points(from, x(scene.arrangement.contours[index].column), end);
     };
-    let mut points = vec![
-        from,
-        Point {
-            x: x(route.arrival),
-            y: from.y,
-        },
-    ];
-    for run in route.runs.iter().rev() {
-        let y = rows.line_y(run.line);
-        points.extend([Point { x: x(run.exit), y }, Point { x: x(run.enter), y }]);
-    }
-    points.extend([
-        Point {
-            x: x(route.departure),
-            y: end.y,
-        },
-        end,
-    ]);
+    let mut points = route.corners(end, x, |l| rows.line_y(l));
+    points.push(Point {
+        x: x(route.arrival),
+        y: from.y,
+    });
+    points.push(from);
+    points.reverse();
     straighten(points)
 }
 

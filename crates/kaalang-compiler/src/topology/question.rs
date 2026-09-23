@@ -12,7 +12,7 @@ pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits:
 
 /// One branch's exit. A question is drawn as a single node, so the branch is
 /// named in the exit rather than in the node.
-pub const fn exit(index: usize, branch: usize) -> ExitId {
+pub(super) const fn exit(index: usize, branch: usize) -> ExitId {
     ExitId {
         node: NodeId::Block(index),
         branch: Some(branch),

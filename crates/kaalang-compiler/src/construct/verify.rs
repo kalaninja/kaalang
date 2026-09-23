@@ -154,33 +154,14 @@ pub(super) fn polyline(
     let route = &arrangement.routes[index];
     // A route leaves its node's own boundary, whatever branch column it then
     // descends in: the exit is on the node, not on the column beside it.
-    let departure = arrangement.column[&Vertex::from(wire.source)];
-    let source_line = grid.rank(arrangement.rank[&Vertex::from(wire.source)]);
-    let destination_line = grid.rank(arrangement.rank[&wire.destination]);
-    let mut points = vec![
-        Point {
-            x: grid.column(departure),
-            y: source_line,
-        },
-        Point {
-            x: grid.column(route.departure),
-            y: source_line,
-        },
-    ];
-    for run in &route.runs {
-        let line = grid.line(run.line);
-        points.push(Point {
-            x: grid.column(run.enter),
-            y: line,
-        });
-        points.push(Point {
-            x: grid.column(run.exit),
-            y: line,
-        });
-    }
+    let start = Point {
+        x: grid.column(arrangement.column[&Vertex::from(wire.source)]),
+        y: grid.rank(arrangement.rank[&Vertex::from(wire.source)]),
+    };
+    let mut points = route.corners(start, |c| grid.column(c), |l| grid.line(l));
     points.push(Point {
         x: grid.column(route.arrival),
-        y: destination_line,
+        y: grid.rank(arrangement.rank[&wire.destination]),
     });
     straighten(points)
 }
@@ -196,49 +177,29 @@ pub(super) fn back_edge_polyline(
     contour: super::Contour,
 ) -> Vec<Point> {
     let Loop { tail, entry, .. } = topology.loops[index];
-    let tail_line = grid.rank(arrangement.rank[&Vertex::Junction(tail)]);
-    let entry_line = grid.rank(arrangement.rank[&Vertex::Junction(entry)]);
-    let position = |column| grid.contour(super::Contour { column, ..contour });
+    let at = |junction| {
+        let vertex = Vertex::Junction(junction);
+        Point {
+            x: grid.column(arrangement.column[&vertex]),
+            y: grid.rank(arrangement.rank[&vertex]),
+        }
+    };
     // Without recorded runs the climb is straight, up the contour's own column.
-    let (arrival, departure, runs) = arrangement
-        .back_routes
-        .get(&index)
-        .map_or((contour.column, contour.column, &[][..]), |route| {
-            (route.arrival, route.departure, route.runs.as_slice())
-        });
-    let mut points = vec![
-        Point {
-            x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
-            y: tail_line,
-        },
-        Point {
-            x: position(arrival),
-            y: tail_line,
-        },
-    ];
-    for run in runs.iter().rev() {
-        let y = grid.line(run.line);
-        points.extend([
-            Point {
-                x: position(run.exit),
-                y,
-            },
-            Point {
-                x: position(run.enter),
-                y,
-            },
-        ]);
-    }
-    points.extend([
-        Point {
-            x: position(departure),
-            y: entry_line,
-        },
-        Point {
-            x: grid.column(arrangement.column[&Vertex::Junction(entry)]),
-            y: entry_line,
-        },
-    ]);
+    let straight = super::Route {
+        departure: contour.column,
+        arrival: contour.column,
+        runs: Vec::new(),
+    };
+    let route = arrangement.back_routes.get(&index).unwrap_or(&straight);
+    let position = |column| grid.contour(super::Contour { column, ..contour });
+    let tail = at(tail);
+    let mut points = route.corners(at(entry), position, |l| grid.line(l));
+    points.push(Point {
+        x: position(route.arrival),
+        y: tail.y,
+    });
+    points.push(tail);
+    points.reverse();
     straighten(points)
 }
 

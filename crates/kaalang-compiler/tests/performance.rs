@@ -9,7 +9,7 @@ use syn::ItemFn;
 
 use kaalang_testing::corpus;
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::{branching, branching_loops, flow, nested_cycles};
+use kaalang_testing::probes::{accepted, branching, branching_loops, flow};
 
 /// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {
@@ -142,19 +142,8 @@ fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
 /// it goes here because `branching(n)` enumerates 2ⁿ executions.
 #[test]
 fn generated_accepted_probes_stay_inside_their_budget() {
-    let shapes = [(8, 8), (8, 64), (4, 120)]
-        .map(|(loops, actions)| {
-            (
-                format!("{loops} loops and {actions} steps"),
-                flow(&nested_cycles(loops, actions, false)),
-            )
-        })
-        .into_iter()
-        .chain(std::iter::once((
-            "eight branching stages".to_owned(),
-            flow(&branching(8)),
-        )));
-    for (what, function) in shapes {
+    for (what, source, _) in accepted() {
+        let function = flow(&source);
         // One warm-up run, for the same reason as the corpus budgets.
         let _ = cost(&function);
         let Some(measured) = cost(&function) else {

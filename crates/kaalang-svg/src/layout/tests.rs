@@ -1060,37 +1060,18 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
     assert!(vertical[0].x >= label_rect(label).2 + LANE);
 }
 
-const IMPOSSIBLE_CYCLE: &str = r#"
-    #[kaalang]
-    fn impossible_cycle(mode: u8) -> u8 {
-        #[cycle("Advance until the mode can leave.")]
-        let result = |mut mode| {
-            #[choice("Exit or advance?")]
-            #[case("Advance from zero.")]
-            #[case("Leave the cycle.")]
-            #[case("Advance from another mode.")]
-            let (first, leave, last) = |mode| match mode {
-                0 => (),
-                1 => (),
-                _ => (),
-            };
-
-            #[action("Set the mode to one.")]
-            |first, &mut mode| *mode = 1;
-
-            |leave, mode| break mode;
-
-            #[action("Set the mode to one.")]
-            |last, &mut mode| *mode = 1;
-        };
-
-        |result| return result;
-    }
-"#;
-
 #[test]
 fn a_break_between_repeating_cases_is_rejected_before_layout() {
-    let error = crate::render_source(IMPOSSIBLE_CYCLE, "impossible_cycle").unwrap_err();
+    // Collapsed, because the expanded diagram must still be checked before its
+    // loops fold into nodes that would hide the conflict.
+    let error = crate::render_source_with_options(
+        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_break.rs"),
+        "invalid",
+        crate::RenderOptions {
+            collapse_loops: true,
+        },
+    )
+    .unwrap_err();
     let crate::RenderError::InvalidFlow { message, .. } = &error else {
         panic!("an unrealizable topology is an invalid flow, not a rendering error: {error}")
     };

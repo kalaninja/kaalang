@@ -5,12 +5,8 @@ use kaalang_testing::shapes::{declared_domain, flat_bodies, loop_shapes, nested,
 
 use super::{Arrangement, Contour, Side, place, verify};
 use crate::model::{Flow, SemanticModel, WireMerge};
+use crate::tests::model;
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex, linked};
-
-fn model(source: &str) -> SemanticModel {
-    let function = syn::parse_str(source).expect("the flow parses");
-    crate::build(&function).expect("the flow is valid")
-}
 
 fn arrangement(model: &SemanticModel) -> Arrangement {
     super::construct(
@@ -741,20 +737,10 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
 
 #[test]
 fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
-    let file = syn::parse_file(include_str!(
-        "../../../../kaalang/tests/loop/behavior/conditional_nested_loop.rs"
-    ))
-    .unwrap();
-    let function = file
-        .items
-        .into_iter()
-        .find_map(|item| match item {
-            syn::Item::Fn(function) if function.sig.ident == "conditional_nested_loop" => {
-                Some(function)
-            }
-            _ => None,
-        })
-        .unwrap();
+    let function = crate::tests::fixture(
+        include_str!("../../../../kaalang/tests/loop/behavior/conditional_nested_loop.rs"),
+        "conditional_nested_loop",
+    );
     let model = crate::build(&function).expect("the flow is valid");
     let [outer, inner] = model.topology.loop_boundaries[..] else {
         panic!("the flow has two cycle boundaries");

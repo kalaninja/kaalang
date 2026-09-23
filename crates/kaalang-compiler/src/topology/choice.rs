@@ -33,7 +33,7 @@ pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits:
 
 /// The node one case is drawn as. A choice gives each case a node of its own, so
 /// the branch is named in the node and its exit takes no branch.
-pub const fn case(index: usize, branch: usize) -> NodeId {
+const fn case(index: usize, branch: usize) -> NodeId {
     NodeId::Case {
         choice: index,
         branch,
@@ -41,7 +41,7 @@ pub const fn case(index: usize, branch: usize) -> NodeId {
 }
 
 /// One case's own exit, which hands over the output that case provides.
-pub const fn exit(index: usize, branch: usize) -> ExitId {
+pub(super) const fn exit(index: usize, branch: usize) -> ExitId {
     ExitId::of(case(index, branch))
 }
 

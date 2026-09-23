@@ -19,6 +19,27 @@ pub fn flow(source: &str) -> ItemFn {
         .expect("the generated source declares a flow")
 }
 
+/// The generated shapes every budget expects to be drawn, each with what it
+/// stresses and the name of the flow it declares.
+#[must_use]
+pub fn accepted() -> Vec<(String, String, &'static str)> {
+    [(8, 8), (8, 64), (4, 120)]
+        .map(|(loops, actions)| {
+            (
+                format!("{loops} loops and {actions} steps"),
+                nested_cycles(loops, actions, false),
+                "nested_cycles",
+            )
+        })
+        .into_iter()
+        .chain(std::iter::once((
+            "eight branching stages".to_owned(),
+            branching(8),
+            "branching",
+        )))
+        .collect()
+}
+
 /// The indentation of one nesting level's cycle attribute.
 fn indent(depth: usize) -> String {
     "    ".repeat(depth * 2 + 1)

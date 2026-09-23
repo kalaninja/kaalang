@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use kaalang_svg::RenderOptions;
 use kaalang_testing::corpus;
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::{branching, nested_cycles};
+use kaalang_testing::probes::accepted;
 
 // The corpus budget includes ordinary and stress fixtures, with both expanded
 // and collapsed diagrams for every cycle fixture. Each diagram is also checked
@@ -80,21 +80,7 @@ fn the_fixture_corpus_renderer_stays_inside_its_budgets() {
 /// expose growth in routing and label costs.
 #[test]
 fn generated_probes_render_inside_their_budget() {
-    let shapes = [(8, 8), (8, 64), (4, 120)]
-        .map(|(loops, actions)| {
-            (
-                format!("{loops} loops and {actions} steps"),
-                nested_cycles(loops, actions, false),
-                "nested_cycles",
-            )
-        })
-        .into_iter()
-        .chain(std::iter::once((
-            "eight branching stages".to_owned(),
-            branching(8),
-            "branching",
-        )));
-    for (what, source, name) in shapes {
+    for (what, source, name) in accepted() {
         for collapse_loops in [false, true] {
             let options = RenderOptions { collapse_loops };
             // No warm-up: at seconds a page fault is noise, not what it removes.

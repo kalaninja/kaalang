@@ -186,6 +186,12 @@ mod tests {
             .count()
     }
 
+    /// The validated model of one inline flow.
+    pub(crate) fn model(source: &str) -> SemanticModel {
+        let function = syn::parse_str(source).expect("the flow parses");
+        build(&function).expect("the flow is valid")
+    }
+
     /// The flow named `flow` in a fixture file's source.
     pub(crate) fn fixture(source: &str, flow: &str) -> ItemFn {
         let file = syn::parse_file(source).expect("the fixture parses");

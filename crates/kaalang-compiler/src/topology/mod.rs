@@ -14,10 +14,10 @@ use crate::model::{
 mod action;
 mod break_block;
 mod call;
-pub(crate) mod choice;
+mod choice;
 mod end;
 mod loop_block;
-pub(crate) mod question;
+mod question;
 
 /// One drawn unit: the synthetic start node, one block of the flow, or one case
 /// derived from a choice. `Flow::blocks` carries the implicit end block last, so
@@ -997,7 +997,7 @@ pub struct Loop {
     /// The preferred contour, not a requirement: RFC 0002 §8 prefers the left
     /// side unless every repeating route takes the rightmost branch of the
     /// first selection in the body.
-    pub prefer_left: bool,
+    pub(crate) prefer_left: bool,
 }
 
 /// The visible interface of one expanded cycle.

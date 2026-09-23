@@ -2,11 +2,7 @@ use std::collections::BTreeSet;
 
 use super::*;
 use crate::model::SemanticModel;
-
-fn model(source: &str) -> SemanticModel {
-    let function = syn::parse_str(source).expect("the flow parses");
-    crate::build(&function).expect("the flow is valid")
-}
+use crate::tests::model;
 
 fn drawn(source: &str) -> Topology {
     model(source).topology

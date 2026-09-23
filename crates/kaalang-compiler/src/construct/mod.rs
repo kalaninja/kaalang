@@ -13,6 +13,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::Error;
 
+use crate::geometry::Point;
 use crate::model::{Flow, WireMerge};
 use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
 
@@ -220,6 +221,32 @@ pub struct Route {
     pub arrival: i32,
     /// Sideways runs in drawing order, each on its recorded rank or gap lane.
     pub runs: Vec<Run>,
+}
+
+impl Route {
+    /// The corridor's corners from `start` through its last run, placing its
+    /// columns by `x` and its run lines by `y`. The caller finishes it at its
+    /// destination; a back edge, recorded from its entry, draws it reversed.
+    #[must_use]
+    pub fn corners(
+        &self,
+        start: Point,
+        x: impl Fn(i32) -> i32,
+        y: impl Fn(RunLine) -> i32,
+    ) -> Vec<Point> {
+        let mut points = Vec::with_capacity(self.runs.len() * 2 + 4);
+        points.push(start);
+        points.push(Point {
+            x: x(self.departure),
+            y: start.y,
+        });
+        for run in &self.runs {
+            let y = y(run.line);
+            points.push(Point { x: x(run.enter), y });
+            points.push(Point { x: x(run.exit), y });
+        }
+        points
+    }
 }
 
 /// The horizontal line occupied by a sideways run.
