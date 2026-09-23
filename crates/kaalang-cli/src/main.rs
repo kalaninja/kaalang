@@ -125,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn accepts_collapsed_output_with_or_without_an_explicit_path() {
+    fn accepts_collapse_loops_anywhere_among_the_options() {
         for line in [
             "cargo-kaalang diagram flow.rs --flow decide --collapse-loops",
             "cargo-kaalang diagram flow.rs --collapse-loops -o chosen.svg --flow decide",
