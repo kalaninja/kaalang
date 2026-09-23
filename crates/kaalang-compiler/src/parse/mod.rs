@@ -742,10 +742,7 @@ fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result
             ),
         ));
     };
-    if inputs
-        .iter()
-        .any(|input| input.alias.unraw() == ident.unraw())
-    {
+    if captured(inputs, ident) {
         Ok(())
     } else {
         Err(Error::new_spanned(
@@ -753,6 +750,13 @@ fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result
             format!("a kaalang {kind} value must name a captured input"),
         ))
     }
+}
+
+/// Whether one of a block's captures is spelled `name`, raw or not.
+pub(super) fn captured(inputs: &[Input], name: &Ident) -> bool {
+    inputs
+        .iter()
+        .any(|input| input.alias.unraw() == name.unraw())
 }
 
 /// Rejects transfers out of the body's own control-flow

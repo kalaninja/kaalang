@@ -860,21 +860,9 @@ mod tests {
             }
         };
 
-        let model = build(&function).expect("a partial continuation may feed a wider merge");
-        let false_result = model
-            .analysis
-            .merges
-            .iter()
-            .find(|merge| merge.wire == "false_result")
-            .expect("the false routes merge");
-        let combined = model
-            .analysis
-            .merges
-            .iter()
-            .find(|merge| merge.wire == "combined")
-            .expect("the partial and direct routes merge");
-        assert_eq!(false_result.after, [4]);
-        assert_eq!(combined.after, [5]);
+        assert_eq!(merge(&function, "false_result").after, [4]);
+        assert_eq!(merge(&function, "combined").after, [5]);
+        agrees("three selectors in a row above one merge", &function);
     }
 
     #[test]
@@ -900,6 +888,7 @@ mod tests {
         ] {
             let function = syn::parse_str::<ItemFn>(&source).expect("the flow parses");
             build(&function).expect("a repeat does not reach the merge after its loop");
+            agrees("a merge fed from inside and outside a cycle", &function);
         }
     }
 
@@ -956,6 +945,7 @@ mod tests {
         assert_eq!(merge.wire, Ident::new("_marker", merge.wire.span()));
         assert_eq!(merge.producers, [output(1, 0), output(2, 0)]);
         assert_eq!(merge.before, [1, 2]);
+        agrees("an unused output merging beside a used one", &function);
     }
 
     #[test]
@@ -1098,13 +1088,12 @@ mod tests {
         );
     }
 
-    /// A choice with one case per execution: the count is exactly `cases`, so
-    /// this walks the boundary between the two comparison strategies, and every
-    /// case is one producer of the same merge.
-    fn wide_choice(cases: usize) -> ItemFn {
+    /// The opening of a flow over `parameters` whose first block is a choice
+    /// of `cases` cases on `value`, handing out `case_0` onwards.
+    fn choice_source(parameters: &str, cases: usize) -> String {
         use std::fmt::Write as _;
 
-        let mut source = String::from("fn valid(value: usize) -> usize {\n");
+        let mut source = format!("fn valid({parameters}) -> usize {{\n");
         let _ = writeln!(source, "    #[choice(\"Which case?\")]");
         for case in 0..cases {
             let _ = writeln!(source, "    #[case(\"Case {case}.\")]");
@@ -1127,6 +1116,16 @@ mod tests {
             source,
             "    let ({outputs}) = |value| match value {{ {arms} }};"
         );
+        source
+    }
+
+    /// A choice with one case per execution: the count is exactly `cases`, so
+    /// this walks the boundary between the two comparison strategies, and every
+    /// case is one producer of the same merge.
+    fn wide_choice(cases: usize) -> ItemFn {
+        use std::fmt::Write as _;
+
+        let mut source = choice_source("value: usize", cases);
         for case in 0..cases {
             let _ = writeln!(
                 source,
@@ -1162,7 +1161,7 @@ mod tests {
     }
 
     #[test]
-    fn the_index_agrees_on_independent_nested_and_unused_merges() {
+    fn the_index_agrees_on_independent_nested_and_partial_merges() {
         let shapes: [(&str, ItemFn); 4] = [
             (
                 "two merges with independent contexts",
@@ -1214,27 +1213,6 @@ mod tests {
                 },
             ),
             (
-                "an unused output merging beside a used one",
-                parse_quote! {
-                    fn valid(condition: bool) -> u8 {
-                        #[question("Which marker?")]
-                        let (yes, no) = |condition| { condition };
-                        #[action("First marker.")] let (_marker, end) = |yes| { ((), 1) };
-                        #[action("Second marker.")] let (_marker, end) = |no| { ((), 2) };
-                        |end| return end;
-                    }
-                },
-            ),
-        ];
-        for (name, function) in shapes {
-            agrees(name, &function);
-        }
-    }
-
-    #[test]
-    fn the_index_agrees_on_partial_merges_cycles_and_selector_chains() {
-        let shapes: [(&str, ItemFn); 3] = [
-            (
                 "a merge one branch never reaches",
                 parse_quote! {
                     fn valid(skip: bool, pick: bool) -> u8 {
@@ -1247,44 +1225,6 @@ mod tests {
                         #[action("Use the picked value.")] let value = |picked| { picked };
                         #[action("Skip picking.")] let value = |single| { 0 };
                         |value| return value;
-                    }
-                },
-            ),
-            (
-                "a merge fed from inside and outside a cycle",
-                parse_quote! {
-                    fn valid(run: bool, done: bool, value: u8) -> u8 {
-                        #[question("Run the loop?")]
-                        let (enter, fallback) = |run| { run };
-                        #[cycle("Wait until done.")]
-                        let result = |enter, done, value| {
-                            #[question("Done?")]
-                            let (leave, _again) = |done| { done };
-                            |leave, value| break value;
-                        };
-                        #[action("Use the fallback.")]
-                        let result = |fallback| { 2 };
-                        |result| return result;
-                    }
-                },
-            ),
-            (
-                "three selectors in a row above one merge",
-                parse_quote! {
-                    fn valid(a: bool, b: bool, c: bool) -> bool {
-                        #[question("a")]
-                        let (check_b, false_result) = |a| { a };
-                        #[question("b")]
-                        let (check_c, false_result) = |check_b, b| { b };
-                        #[question("c")]
-                        let (true_result, false_result) = |check_c, c| { c };
-                        #[action("Build true.")]
-                        let combined = |true_result| { true };
-                        #[action("Build false.")]
-                        let combined = |false_result| { false };
-                        #[action("Use the wider merge.")]
-                        let result = |combined| { combined };
-                        |result| return result;
                     }
                 },
             ),
@@ -1365,30 +1305,7 @@ mod tests {
         use std::fmt::Write as _;
 
         let cases = super::PAIRWISE_EXECUTIONS;
-        let mut source =
-            String::from("fn valid(value: usize, pick: bool, result: usize) -> usize {\n");
-        let _ = writeln!(source, "    #[choice(\"Which case?\")]");
-        for case in 0..cases {
-            let _ = writeln!(source, "    #[case(\"Case {case}.\")]");
-        }
-        let outputs = (0..cases)
-            .map(|case| format!("case_{case}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let arms = (0..cases)
-            .map(|case| {
-                if case + 1 == cases {
-                    "_ => ()".to_owned()
-                } else {
-                    format!("{case} => ()")
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(", ");
-        let _ = writeln!(
-            source,
-            "    let ({outputs}) = |value| match value {{ {arms} }};"
-        );
+        let mut source = choice_source("value: usize, pick: bool, result: usize", cases);
         for case in 0..cases - 1 {
             let _ = writeln!(
                 source,

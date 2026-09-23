@@ -5,20 +5,16 @@ use syn::{Expr, ExprMatch, Stmt};
 /// Returns the sole match expression from a valid choice body.
 #[must_use]
 pub fn choice_match(body: &Expr) -> Option<&ExprMatch> {
-    let expression = single_body_expression(body)?;
-    let Expr::Match(choice) = expression else {
-        return None;
-    };
-    Some(choice)
+    match single_body_expression(body)? {
+        Expr::Match(choice) => Some(choice),
+        _ => None,
+    }
 }
 
 /// Reports whether a block body is exactly an argument-free `todo!()` call.
 #[must_use]
 pub fn is_todo_body(body: &Expr) -> bool {
-    let Some(expression) = single_body_expression(body) else {
-        return false;
-    };
-    is_todo_macro(expression)
+    single_body_expression(body).is_some_and(is_todo_macro)
 }
 
 /// Reports whether an expression is an argument-free `todo!()` call.

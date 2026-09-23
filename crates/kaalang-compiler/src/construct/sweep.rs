@@ -418,12 +418,7 @@ pub(super) fn search_shape(
 
 fn decide(sweep: &Sweep<'_>, merges: &[WireMerge]) -> Result<Arrangement, Refusal> {
     let (flow, topology) = (sweep.flow, sweep.topology);
-    let mut state = State {
-        placed: vec![false; topology.vertices.len()],
-        frontier: Vec::new(),
-        sides: vec![None; topology.loops.len()],
-        order: sweep.columns.base.clone(),
-    };
+    let mut state = sweep.start();
     let mut deepest = (0, None);
     if let Some(arrangement) = sweep.walk(
         &mut state,
@@ -549,6 +544,16 @@ impl<'a> Sweep<'a> {
             paths,
             barriers,
         })
+    }
+
+    /// The state before any event: nothing placed, nothing live.
+    fn start(&self) -> State {
+        State {
+            placed: vec![false; self.topology.vertices.len()],
+            frontier: Vec::new(),
+            sides: vec![None; self.topology.loops.len()],
+            order: self.columns.base.clone(),
+        }
     }
 
     fn consumed(&self, state: &State, vertex: usize) -> Option<(usize, usize)> {
@@ -1398,12 +1403,7 @@ mod tests {
         let source = super::super::tests::looping(&["repeat", "break", "repeat"]);
         let parts = super::super::tests::parts_of(&source).unwrap();
         let sweep = Sweep::of(&parts.flow, &parts.topology, true).unwrap();
-        let mut state = State {
-            placed: vec![false; parts.topology.vertices.len()],
-            frontier: Vec::new(),
-            sides: vec![None; parts.topology.loops.len()],
-            order: sweep.columns.base.clone(),
-        };
+        let mut state = sweep.start();
         let mut steps = Vec::new();
         loop {
             let vertex = (0..state.placed.len())
@@ -1468,12 +1468,7 @@ mod tests {
                 let Some(sweep) = Sweep::of(&parts.flow, &parts.topology, flexible) else {
                     continue;
                 };
-                let initial = State {
-                    placed: vec![false; parts.topology.vertices.len()],
-                    frontier: Vec::new(),
-                    sides: vec![None; parts.topology.loops.len()],
-                    order: sweep.columns.base.clone(),
-                };
+                let initial = sweep.start();
                 let outcomes = [false, true].map(|memo| {
                     let result = sweep.walk(
                         &mut initial.clone(),

@@ -60,21 +60,11 @@ pub(super) fn parts_of(source: &str) -> Option<Parts> {
 
 /// The same, for a function a caller has already parsed.
 pub(super) fn parts_from(function: &syn::ItemFn) -> Option<Parts> {
-    let mut flow = crate::parse::flow(function).ok()?;
-    crate::scope::resolve(&mut flow).ok()?;
-    crate::resolve::flow(&flow).ok()?;
-    let (executions, _, merges) = crate::analyze::flow(&flow).ok()?;
-    let execution_plan = crate::plan::flow(&flow, &executions, &merges);
-    let topology = crate::topology::project(&crate::topology::Analyzed {
-        flow: &flow,
-        executions: &executions,
-        merges: &merges,
-        execution_plan: &execution_plan,
-        collapse_loops: false,
-    });
+    let analysis = crate::analyze(function).ok()?;
+    let topology = crate::project(&analysis, false);
     Some(Parts {
-        flow,
-        merges,
+        flow: analysis.flow,
+        merges: analysis.merges,
         topology,
     })
 }

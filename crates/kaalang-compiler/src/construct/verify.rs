@@ -199,37 +199,24 @@ pub(super) fn back_edge_polyline(
     let tail_line = grid.rank(arrangement.rank[&Vertex::Junction(tail)]);
     let entry_line = grid.rank(arrangement.rank[&Vertex::Junction(entry)]);
     let position = |column| grid.contour(super::Contour { column, ..contour });
-    let Some(route) = arrangement.back_routes.get(&index) else {
-        return straighten(vec![
-            Point {
-                x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
-                y: tail_line,
-            },
-            Point {
-                x: position(contour.column),
-                y: tail_line,
-            },
-            Point {
-                x: position(contour.column),
-                y: entry_line,
-            },
-            Point {
-                x: grid.column(arrangement.column[&Vertex::Junction(entry)]),
-                y: entry_line,
-            },
-        ]);
-    };
+    // Without recorded runs the climb is straight, up the contour's own column.
+    let (arrival, departure, runs) = arrangement
+        .back_routes
+        .get(&index)
+        .map_or((contour.column, contour.column, &[][..]), |route| {
+            (route.arrival, route.departure, route.runs.as_slice())
+        });
     let mut points = vec![
         Point {
             x: grid.column(arrangement.column[&Vertex::Junction(tail)]),
             y: tail_line,
         },
         Point {
-            x: position(route.arrival),
+            x: position(arrival),
             y: tail_line,
         },
     ];
-    for run in route.runs.iter().rev() {
+    for run in runs.iter().rev() {
         let y = grid.line(run.line);
         points.extend([
             Point {
@@ -244,7 +231,7 @@ pub(super) fn back_edge_polyline(
     }
     points.extend([
         Point {
-            x: position(route.departure),
+            x: position(departure),
             y: entry_line,
         },
         Point {

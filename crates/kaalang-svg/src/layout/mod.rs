@@ -573,6 +573,7 @@ fn attempt(
     slack: i32,
     narrow: bool,
 ) -> Result<Scene, Blocked> {
+    let (flow, topology) = (&model.analysis.flow, &model.topology);
     let mut scene = Scene {
         slack,
         narrow,
@@ -589,13 +590,13 @@ fn attempt(
             .topology
             .loops
             .iter()
-            .map(|loop_| model.body_vertices(loop_.header))
+            .map(|loop_| topology.body_vertices(flow, loop_.header))
             .collect(),
         region_bodies: model
             .topology
             .loop_boundaries
             .iter()
-            .map(|boundary| model.body_vertices(boundary.header))
+            .map(|boundary| topology.body_vertices(flow, boundary.header))
             .collect(),
         arrangement: model.arrangement.clone(),
         topology: model.topology.clone(),

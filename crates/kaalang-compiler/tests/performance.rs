@@ -11,24 +11,16 @@ use kaalang_testing::corpus;
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
 use kaalang_testing::probes::{branching, branching_loops, flow, nested_cycles};
 
-/// The diagram-decision costs for one flow, and whether construction succeeded.
+/// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {
     /// Whether the construction found a conforming arrangement. A refusal is
     /// a potential worst case: it exhausts the conflict-guided search.
     accepted: bool,
-    /// Projecting the topology.
-    projection: Duration,
-    /// Constructing an arrangement and checking it.
-    construction: Duration,
-}
-
-impl Cost {
-    /// The diagram decision alone. The generated-probe bounds are stated over
-    /// this: each branching stage doubles the executions analysis enumerates,
-    /// which would otherwise dominate a shape built to stress the decision.
-    fn diagram(&self) -> Duration {
-        self.projection + self.construction
-    }
+    /// Projection, construction and its check: the diagram decision alone. The
+    /// generated-probe bounds are stated over it, since each branching stage
+    /// doubles the executions analysis enumerates, which would otherwise
+    /// dominate a shape built to stress the decision.
+    diagram: Duration,
 }
 
 fn cost(function: &ItemFn) -> Option<Cost> {
@@ -36,11 +28,8 @@ fn cost(function: &ItemFn) -> Option<Cost> {
 
     let started = Instant::now();
     let topology = kaalang_compiler::project(&analyzed, false);
-    let projection = started.elapsed();
-
-    let started = Instant::now();
     let built = kaalang_compiler::construct(&analyzed, &topology);
-    let construction = started.elapsed();
+    let diagram = started.elapsed();
 
     if let Err(error) = &built {
         assert!(!error.to_string().contains("internal kaalang"), "{error}");
@@ -48,8 +37,7 @@ fn cost(function: &ItemFn) -> Option<Cost> {
 
     Some(Cost {
         accepted: built.is_ok(),
-        projection,
-        construction,
+        diagram,
     })
 }
 
@@ -179,7 +167,7 @@ fn generated_accepted_probes_stay_inside_their_budget() {
         assert_within(
             &format!("generated accepted probe: {what}"),
             GENERATED_DIAGRAM_DECISION_BUDGET,
-            measured.diagram(),
+            measured.diagram,
         );
     }
 }
@@ -228,7 +216,7 @@ fn generated_refused_probes_stay_inside_their_budget() {
                 "generated refused probe: {loops} loops, {actions} actions, choice={distributor}"
             ),
             GENERATED_DIAGRAM_DECISION_BUDGET,
-            measured.diagram(),
+            measured.diagram,
         );
     }
 }

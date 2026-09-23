@@ -1,9 +1,9 @@
 //! A call applies one function to its captured inputs and takes no companion
 //! attributes.
 
-use syn::{Error, Expr, ExprCall, Meta, Result, Stmt, ext::IdentExt};
+use syn::{Error, Expr, ExprCall, Meta, Result, Stmt};
 
-use super::{BlockSyntax, description, ungrouped};
+use super::{BlockSyntax, captured, description, ungrouped};
 use crate::model::{Block, Input};
 
 /// A call describes itself with the function it runs when no description is
@@ -93,12 +93,6 @@ fn application(body: &Expr, inputs: &[Input]) -> Result<ExprCall> {
     }
 
     Ok(call.clone())
-}
-
-fn captured(inputs: &[Input], name: &proc_macro2::Ident) -> bool {
-    inputs
-        .iter()
-        .any(|input| input.alias.unraw() == name.unraw())
 }
 
 /// A call body carries nothing around its application: no braces, and so no

@@ -151,33 +151,30 @@ impl Builder<'_> {
         };
         let mut next_done = done.clone();
         next_done.insert(block);
-        // An action and a call each run in place and hand over every output.
-        let kind = self.flow.blocks[block].kind;
-        if matches!(kind, BlockKind::Action | BlockKind::Call) {
-            let mut next = self.lower(executions, &next_done, forbidden, scopes)?;
-            next.emitted.insert(block);
-            let index = block;
-            let plan = Box::new(next.plan);
-            return Ok(Lowered {
-                plan: if kind == BlockKind::Call {
-                    ExecutionPlan::Call { index, next: plan }
-                } else {
-                    ExecutionPlan::Action { index, next: plan }
-                },
-                yielding: next.yielding,
-                emitted: next.emitted,
-            });
+        match self.flow.blocks[block].kind {
+            // An action and a call each run in place and hand over every output.
+            kind @ (BlockKind::Action | BlockKind::Call) => {
+                let mut next = self.lower(executions, &next_done, forbidden, scopes)?;
+                next.emitted.insert(block);
+                let index = block;
+                let plan = Box::new(next.plan);
+                Ok(Lowered {
+                    plan: if kind == BlockKind::Call {
+                        ExecutionPlan::Call { index, next: plan }
+                    } else {
+                        ExecutionPlan::Action { index, next: plan }
+                    },
+                    yielding: next.yielding,
+                    emitted: next.emitted,
+                })
+            }
+            BlockKind::Loop => {
+                loop_block::lower(self, block, executions, &next_done, forbidden, scopes)
+            }
+            BlockKind::Break => Ok(break_block::lower(self.flow, block)),
+            BlockKind::Return => Ok(return_block::lower(block)),
+            _ => self.branch(block, executions, &next_done, forbidden, scopes),
         }
-        if self.flow.blocks[block].kind == BlockKind::Loop {
-            return loop_block::lower(self, block, executions, &next_done, forbidden, scopes);
-        }
-        if self.flow.blocks[block].kind == BlockKind::Break {
-            return Ok(break_block::lower(self.flow, block));
-        }
-        if self.flow.blocks[block].kind == BlockKind::Return {
-            return Ok(return_block::lower(block));
-        }
-        self.branch(block, executions, &next_done, forbidden, scopes)
     }
 
     /// No block can run here: the executions yield to the innermost enclosing

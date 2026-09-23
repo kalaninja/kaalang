@@ -40,17 +40,6 @@ pub struct SemanticModel {
     pub arrangement: Arrangement,
 }
 
-impl SemanticModel {
-    /// Body vertices used by shared and concrete renderers for loop bounds (RFC 0002 §8).
-    #[must_use]
-    pub fn body_vertices(
-        &self,
-        header: usize,
-    ) -> std::collections::BTreeSet<crate::topology::Vertex> {
-        self.topology.body_vertices(&self.analysis.flow, header)
-    }
-}
-
 /// The semantic role of one block. Every kind but `End` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {

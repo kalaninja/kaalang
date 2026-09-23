@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, BranchSelection, Execution, Flow, ProducerId, WireMerge};
+use crate::model::{BranchSelection, Execution, Flow, ProducerId, WireMerge};
 
 /// The selections one producer occurrence sits inside: what its block inherited
 /// by capture, plus the branch it selects when the block is a question or choice.
@@ -82,20 +82,14 @@ impl<'a> Junction<'a> {
         merge: &'a WireMerge,
         owners: &'a [(usize, Vec<usize>)],
     ) -> Self {
-        let outputs = merge.producers.iter().map(|producer| match *producer {
-            ProducerId::BlockOutput { block, output } => (block, output),
-            ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => {
-                unreachable!("a wire merge combines block outputs")
-            }
-        });
         let mut position = 0;
         let mut producers = Vec::with_capacity(merge.producers.len());
-        for (block, output) in outputs {
+        for &producer in &merge.producers {
+            let ProducerId::BlockOutput { block, output } = producer else {
+                unreachable!("a wire merge combines block outputs")
+            };
             position = position.max(block);
-            producers.push((
-                ProducerId::BlockOutput { block, output },
-                occurrence(flow, &ancestry[block], block, output),
-            ));
+            producers.push((producer, occurrence(flow, &ancestry[block], block, output)));
         }
         Self {
             flow,
@@ -200,10 +194,7 @@ pub(super) fn flow(
         return Ok(());
     };
     let declaration = &flow.blocks[selection];
-    let kind = match declaration.kind {
-        BlockKind::Choice => "choice",
-        _ => "question",
-    };
+    let kind = crate::parse::noun(declaration.kind);
     let described = declaration
         .description
         .as_deref()
