@@ -96,7 +96,6 @@ pub fn assert_within(what: &str, budget: Duration, elapsed: Duration) {
 ///
 /// Panics when there are no samples. Percentages above 100 may overflow or
 /// index past the samples.
-#[must_use]
 fn percentile(samples: &[Duration], percent: usize) -> Duration {
     assert!(!samples.is_empty(), "a budget needs at least one sample");
     let mut samples = samples.to_vec();
@@ -106,21 +105,11 @@ fn percentile(samples: &[Duration], percent: usize) -> Duration {
 }
 
 /// Budget statistic: the median reduces sensitivity to concurrent test load.
-///
-/// # Panics
-///
-/// Panics when there are no samples.
-#[must_use]
 fn median(samples: &[Duration]) -> Duration {
     percentile(samples, 50)
 }
 
 /// Formats p50, p75, and p100 to expose outliers alongside the budget verdict.
-///
-/// # Panics
-///
-/// Panics when there are no samples.
-#[must_use]
 fn spread(samples: &[Duration]) -> String {
     // Distinct ranks at `SAMPLES`: the 5th, 7th and 9th of nine. A p90 lands on
     // the 9th too and would report the maximum twice.

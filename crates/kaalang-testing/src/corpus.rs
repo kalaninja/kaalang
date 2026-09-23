@@ -39,9 +39,8 @@ pub fn corpus() -> Vec<(String, ItemFn, bool)> {
                 .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             kaalang_compiler::flows(&file.items)
                 .into_iter()
-                .map(|function| (function, is_stress(path)))
+                .map(|function| (function.sig.ident.to_string(), function, is_stress(path)))
         })
-        .map(|(function, stress)| (function.sig.ident.to_string(), function, stress))
         .collect();
     flows.sort_by(|a, b| a.0.cmp(&b.0));
     flows
@@ -115,10 +114,6 @@ pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)]) {
 /// Whether a fixture belongs to the stress tier of the corpus.
 #[must_use]
 pub fn is_stress(path: &Path) -> bool {
-    path.ancestors().any(|directory| {
-        directory.file_name().is_some_and(|name| name == "stress")
-            && directory
-                .parent()
-                .is_some_and(|parent| parent.file_name().is_some_and(|name| name == "tests"))
-    })
+    path.ancestors()
+        .any(|directory| directory.ends_with("tests/stress"))
 }

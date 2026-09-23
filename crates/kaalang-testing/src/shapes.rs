@@ -42,15 +42,14 @@ pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
 ///
 /// # Panics
 ///
-/// Panics on a route it does not generate. The arms below fall through to
-/// `repeat`, so a misspelled name would quietly drop its case instead.
+/// Panics on a route it does not generate.
 #[must_use]
 pub fn looping(routes: &[&str]) -> String {
-    assert!(
-        routes.iter().all(|route| ROUTES.contains(route)),
-        "unknown route in {routes:?}"
-    );
-    let choice = selection(routes, "case_");
+    looping_with(routes, &selection(routes, "case_"))
+}
+
+/// [`looping`] opened by `choice` instead of the distributor it generates.
+fn looping_with(routes: &[&str], choice: &str) -> String {
     let bodies = routes
         .iter()
         .enumerate()
@@ -61,19 +60,15 @@ pub fn looping(routes: &[&str]) -> String {
             "finish" => format!(
                 "        #[action(\"Finish from case {index}.\")]\n        let completed = |case_{index}| 7;"
             ),
-            _ => format!(
+            "repeat" => format!(
                 "        #[action(\"Advance in case {index}.\")]\n        |case_{index}| ();"
             ),
+            other => panic!("unknown route {other} in {routes:?}"),
         })
         .collect::<Vec<_>>()
         .join("\n");
     let completes = routes.iter().any(|route| *route != "repeat");
-    cycle_flow(
-        "Exercise the generated routes.",
-        &choice,
-        &bodies,
-        completes,
-    )
+    cycle_flow("Exercise the generated routes.", choice, &bodies, completes)
 }
 
 /// The flow around one generated cycle body: the cycle's caption, the selection
@@ -127,21 +122,9 @@ fn selection(routes: &[&str], prefix: &str) -> String {
 ///
 /// # Panics
 ///
-/// Panics on a route it does not generate, for the reason [`looping`] does.
-/// An unrecognized outer route also costs the nested cycle itself, which is
-/// the whole point of the shape.
+/// Panics on a route it does not generate.
 #[must_use]
 pub fn nested(outer: &[&str], inner: &[&str]) -> String {
-    assert!(
-        outer
-            .iter()
-            .all(|route| ROUTES.contains(route) || *route == "inner"),
-        "unknown outer route in {outer:?}"
-    );
-    assert!(
-        inner.iter().all(|route| NESTED_ROUTES.contains(route)),
-        "unknown inner route in {inner:?}"
-    );
     let inner_selection = selection(inner, "i");
     let propagates = inner
         .iter()
@@ -162,9 +145,10 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
             ("finish", _) => format!(
                 "        #[action(\"Finish from i{index}.\")]\n        let inner_value = |i{index}| Some(7);"
             ),
-            _ => format!(
+            ("repeat", _) => format!(
                 "        #[action(\"Advance in i{index}.\")]\n        |i{index}| ();"
             ),
+            (other, _) => panic!("unknown inner route {other} in {inner:?}"),
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -198,9 +182,10 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
                 "        #[action(\"Finish from o{index}.\")]\n        let completed = |o{index}| 7;"
             ),
             "inner" => inner_cycle(index),
-            _ => format!(
+            "repeat" => format!(
                 "        #[action(\"Advance in o{index}.\")]\n        |o{index}| ();"
             ),
+            other => panic!("unknown outer route {other} in {outer:?}"),
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -261,32 +246,14 @@ pub fn loop_shapes() -> Vec<String> {
 /// distributor exit. Both forms must respect authored branch order, while
 /// their different ports and endpoints exercise different constructions.
 ///
-/// # Panics
-///
-/// Panics when `looping` stops emitting the choice this rewrites, which is a
-/// defect in the generator rather than in what it is meant to exercise.
 #[must_use]
 pub fn question_shapes() -> Vec<String> {
-    combinations(&ROUTES, 3)
-        .iter()
-        .map(|routes| {
-            let mut source = looping(routes);
-            let start = source
-                .find("        #[choice")
-                .expect("the generated cycle opens with a choice");
-            let end = start
-                + source[start..]
-                    .find("        };")
-                    .expect("the choice is closed")
-                + "        };".len();
-            source.replace_range(
-                start..end,
-                r#"        #[question("Take the first route?")]
+    const QUESTIONS: &str = r#"        #[question("Take the first route?")]
         let (case_0, other) = |mode| mode == 0;
         #[question("Take the second route?")]
-        let (case_1, case_2) = |other, mode| mode == 1;"#,
-            );
-            source
-        })
+        let (case_1, case_2) = |other, mode| mode == 1;"#;
+    combinations(&ROUTES, 3)
+        .iter()
+        .map(|routes| looping_with(routes, QUESTIONS))
         .collect()
 }
