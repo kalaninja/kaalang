@@ -16,6 +16,16 @@ Rust documentation, diagnostics, test names, and test fixtures use the same
 terminology as the relevant RFC. Do not duplicate the language contract in other
 documentation.
 
+RFCs describe syntax, semantics, observable behavior, and design decisions.
+Algorithms, transformation steps, their rationale, and correctness arguments
+belong in the RFC covering that subject. Keep crate choices, library versions,
+and concrete build or runtime configuration in code or development
+documentation.
+
+Accepted RFCs are immutable. Change an accepted decision through a new RFC that
+explicitly identifies the earlier provisions it supersedes. The new accepted RFC
+takes precedence for those provisions; the earlier RFC text stays unchanged.
+
 Keep comments and Rust documentation concise: explain contracts and non-obvious
 decisions, avoid restating code, and link to RFCs for detailed rationale.
 
@@ -70,7 +80,8 @@ For syntax or semantic changes:
 
 1. Read the relevant RFC, implementation, and tests.
 2. State the design problem and chosen tradeoff.
-3. Update the RFC together with the implementation.
+3. Add a new RFC or update a proposed RFC together with the implementation;
+   never edit an accepted RFC.
 4. Add behavior and compile-fail coverage as appropriate.
 5. Check terminology across documentation, Rust documentation, diagnostics,
    identifiers, and test names.

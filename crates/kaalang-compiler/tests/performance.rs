@@ -91,7 +91,7 @@ fn check_compiler_corpus_budgets(
     run: impl Fn(&str, &ItemFn),
 ) {
     let flows = corpus::corpus();
-    corpus::assert_whole_tree(&flows);
+    corpus::assert_corpus_shape(&flows);
 
     assert_pass_budget(
         label,

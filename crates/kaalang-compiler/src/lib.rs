@@ -160,7 +160,6 @@ pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<A
 mod tests {
     use std::collections::BTreeSet;
 
-    use quote::ToTokens;
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{
@@ -1195,100 +1194,5 @@ mod tests {
             message(&fixture(source, "invalid")),
             "a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name"
         );
-    }
-
-    /// Every kaalang program an RFC prints is one a reader copies, so each one
-    /// still has to parse. A rule the RFCs tighten reaches the examples of
-    /// every section, not only the section that states it, and most examples
-    /// are loose block statements rather than whole flows.
-    #[test]
-    fn every_program_an_rfc_prints_still_parses() {
-        const RFCS: [(&str, &str); 4] = [
-            ("0001", include_str!("../../../docs/rfcs/0001-language.md")),
-            (
-                "0002",
-                include_str!("../../../docs/rfcs/0002-visual-language.md"),
-            ),
-            (
-                "0003",
-                include_str!("../../../docs/rfcs/0003-svg-renderer.md"),
-            ),
-            (
-                "0004",
-                include_str!("../../../docs/rfcs/0004-rust-lowering.md"),
-            ),
-        ];
-        let mut checked = 0;
-        for (rfc, text) in RFCS {
-            for (offset, block) in fenced_rust(text) {
-                let line = text[..offset].lines().count();
-                for program in flow_programs(block) {
-                    let function: ItemFn = syn::parse_str(&program)
-                        .unwrap_or_else(|error| panic!("RFC {rfc} line {line}: {error}"));
-                    if let Err(error) = crate::parse::flow(&function) {
-                        panic!("RFC {rfc} line {line}: {error}");
-                    }
-                    checked += 1;
-                }
-            }
-        }
-        assert!(
-            checked >= 28,
-            "expected the RFCs to print kaalang programs, saw {checked}"
-        );
-    }
-
-    /// One fence as functions the parser can take: every flow it declares, free
-    /// or associated, or a loose run of block statements wrapped in one.
-    fn flow_programs(block: &str) -> Vec<String> {
-        if block.contains("#[kaalang]") {
-            let file = syn::parse_file(block).expect("an RFC prints valid Rust");
-            return file
-                .items
-                .iter()
-                .flat_map(|item| match item {
-                    syn::Item::Fn(function) => vec![function.to_token_stream()],
-                    syn::Item::Impl(block) => block
-                        .items
-                        .iter()
-                        .filter_map(|item| match item {
-                            syn::ImplItem::Fn(method) => Some(method.to_token_stream()),
-                            _ => None,
-                        })
-                        .collect(),
-                    _ => Vec::new(),
-                })
-                .map(|function| function.to_string())
-                .filter(|function| function.contains("kaalang"))
-                .collect();
-        }
-        let Some(first) = block.lines().find(|line| !line.trim().is_empty()) else {
-            return Vec::new();
-        };
-        let first = first.trim();
-        if ["action", "call", "question", "choice", "cycle"]
-            .iter()
-            .any(|kind| first.starts_with(&format!("#[{kind}(")) || first == format!("#[{kind}]"))
-        {
-            vec![format!("fn probe() {{ {block} }}")]
-        } else {
-            Vec::new()
-        }
-    }
-
-    /// Each fenced Rust block in one document, with its byte offset.
-    fn fenced_rust(text: &str) -> Vec<(usize, &str)> {
-        const FENCE: &str = "```rust\n";
-        let mut blocks = Vec::new();
-        let mut rest = text;
-        let mut offset = 0;
-        while let Some(start) = rest.find(FENCE) {
-            let body = &rest[start + FENCE.len()..];
-            let Some(end) = body.find("```") else { break };
-            blocks.push((offset + start, &body[..end]));
-            offset += start + FENCE.len() + end;
-            rest = &body[end..];
-        }
-        blocks
     }
 }

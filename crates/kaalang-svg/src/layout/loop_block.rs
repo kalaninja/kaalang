@@ -1,14 +1,13 @@
 //! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
 use kaalang_compiler::topology::{NodeId, Source, Vertex};
-use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     CYCLE_CAPTION_FONT, LoopRegion, MARGIN, NODE_LABEL_WIDTH, NODE_WIDTH, Point, Scene,
     block_dimensions,
     label::{contains, label_rect, overlaps},
-    text,
 };
+use crate::text::{self, RichText};
 
 const VERTICAL_PADDING: i32 = 35;
 
@@ -44,7 +43,7 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
     padding
 }
 
-pub(super) fn dimensions(label: &str) -> (i32, i32, Vec<String>) {
+pub(super) fn dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH - 28, 64)
 }
 
@@ -172,7 +171,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 top,
                 right,
                 bottom,
-                description: description.to_owned(),
+                description: description.as_ref().to_owned(),
                 caption: caption(description, right - caption_left - 24),
                 inputs: scene.captions.loop_inputs(boundary.header).to_owned(),
                 outputs: scene.captions.loop_outputs(boundary.header).to_owned(),
@@ -185,9 +184,10 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
 
 /// Fits the optional caption beside the incoming route in the existing top
 /// padding. The complete description remains available through the SVG title.
-fn caption(description: &str, width: i32) -> Vec<String> {
-    let ellipsis = text::text_width("…", CYCLE_CAPTION_FONT);
-    if width < ellipsis {
+fn caption(description: &RichText, width: i32) -> Vec<RichText> {
+    let ellipsis = text::RichText::literal("…");
+    let ellipsis_width = text::text_width(&ellipsis, CYCLE_CAPTION_FONT);
+    if width < ellipsis_width {
         return Vec::new();
     }
     let mut lines = text::wrap_text(description, width, CYCLE_CAPTION_FONT);
@@ -197,18 +197,20 @@ fn caption(description: &str, width: i32) -> Vec<String> {
         {
             lines.truncate(index + 1);
             let last = &mut lines[index];
-            while text::text_width(last, CYCLE_CAPTION_FONT) + ellipsis > width {
-                let (end, _) = last
-                    .grapheme_indices(true)
-                    .next_back()
-                    .expect("an overwide caption still contains text");
-                last.truncate(end);
+            while text::text_width(last, CYCLE_CAPTION_FONT) + ellipsis_width > width {
+                last.pop_grapheme();
             }
-            last.push('…');
+            last.push_literal("…");
             break;
         }
     }
-    lines
+    if text::block_metrics(&lines, CYCLE_CAPTION_FONT, super::CYCLE_CAPTION_LINE_HEIGHT).height
+        <= VERTICAL_PADDING
+    {
+        lines
+    } else {
+        Vec::new()
+    }
 }
 
 /// Extra column spacing needed when a boundary collides with a neighbouring

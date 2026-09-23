@@ -1140,7 +1140,7 @@ mod tests {
     #[test]
     fn the_index_agrees_with_the_pairwise_reference_over_the_fixture_corpus() {
         let corpus = kaalang_testing::corpus::corpus();
-        kaalang_testing::corpus::assert_whole_tree(&corpus);
+        kaalang_testing::corpus::assert_corpus_shape(&corpus);
         for (name, function, _) in corpus {
             agrees(&name, &function);
         }

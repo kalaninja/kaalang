@@ -2,12 +2,14 @@
 //! positions the labels its exits and nodes own.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::rc::Rc;
 
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
 use kaalang_compiler::{Arrangement, RunLine, SemanticModel, Side};
 use syn::{ReturnType, Signature, spanned::Spanned};
 
-use crate::captions::{self, Captions};
+use crate::captions::Captions;
+use crate::text::{self, RichText, wrap_literal, wrap_text};
 
 mod action;
 mod call;
@@ -19,10 +21,8 @@ mod question;
 mod route;
 #[cfg(test)]
 mod tests;
-mod text;
 
 use label::{label_rect, vertical_gaps};
-use text::wrap_text;
 
 const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
@@ -61,7 +61,7 @@ pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
 /// Distance between two horizontal runs sharing one row gap.
 const LANE: i32 = 20;
 /// Text budget inside a rectangular node.
-const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 32;
+pub(crate) const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 32;
 /// Branch icons lose horizontal space to their slanted sides.
 const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
 /// Text budget inside a case icon.
@@ -90,7 +90,7 @@ pub(crate) struct Scene {
     /// that have no repeating execution and therefore no back edge.
     region_bodies: Vec<BTreeSet<Vertex>>,
     /// The strings its nodes, exits, and junctions show.
-    pub(crate) captions: Captions,
+    pub(crate) captions: Rc<Captions>,
     pub(crate) nodes: Vec<Node>,
     pub(crate) parameters: Option<ParameterPanel>,
     pub(crate) connections: Vec<Connection>,
@@ -106,7 +106,7 @@ pub(crate) struct LoopRegion {
     pub(crate) right: i32,
     pub(crate) bottom: i32,
     pub(crate) description: String,
-    pub(crate) caption: Vec<String>,
+    pub(crate) caption: Vec<RichText>,
     pub(crate) inputs: String,
     pub(crate) outputs: String,
 }
@@ -126,7 +126,7 @@ pub(crate) struct ParameterPanel {
     pub(crate) y: i32,
     pub(crate) width: i32,
     pub(crate) height: i32,
-    pub(crate) lines: Vec<String>,
+    pub(crate) lines: Vec<RichText>,
 }
 
 /// One placed node. Its role and caption stay in the topology; only geometry
@@ -138,7 +138,7 @@ pub(crate) struct Node {
     pub(crate) y: i32,
     pub(crate) width: i32,
     pub(crate) height: i32,
-    pub(crate) lines: Vec<String>,
+    pub(crate) lines: Vec<RichText>,
 }
 
 /// One point of the diagram, in pixels. The model's own check reads the same
@@ -163,7 +163,7 @@ pub(crate) struct Label {
     /// The topology vertex whose hand-over, capture, or branch this label describes.
     pub(crate) owner: Vertex,
     pub(crate) kind: LabelKind,
-    pub(crate) lines: Vec<String>,
+    pub(crate) lines: Vec<RichText>,
     pub(crate) at: Point,
 }
 
@@ -395,19 +395,17 @@ fn contour_reaches(model: &SemanticModel) -> BTreeMap<i32, (i32, i32)> {
 /// connections under RFC 0002 §8.
 pub(crate) fn layout(
     model: &SemanticModel,
-    start: &str,
+    captions: &Rc<Captions>,
     parameters: &[String],
-    return_type: &str,
 ) -> Result<Scene, String> {
-    layout_spaced(model, start, parameters, return_type, true)
-        .or_else(|_| layout_spaced(model, start, parameters, return_type, false))
+    layout_spaced(model, captions, parameters, true)
+        .or_else(|_| layout_spaced(model, captions, parameters, false))
 }
 
 fn layout_spaced(
     model: &SemanticModel,
-    start: &str,
+    captions: &Rc<Captions>,
     parameters: &[String],
-    return_type: &str,
     narrow: bool,
 ) -> Result<Scene, String> {
     // Labels and opposing rails may need a wider column gap. Node and label
@@ -422,7 +420,7 @@ fn layout_spaced(
     let bound = label::LABEL_WIDTH + left + right + LANE;
     let mut slack = 0;
     loop {
-        match attempt(model, start, parameters, return_type, slack, narrow) {
+        match attempt(model, captions, parameters, slack, narrow) {
             Ok(scene) => return Ok(scene),
             Err(Blocked::Refused(reason)) => return Err(reason),
             Err(Blocked::Narrow(_)) if slack >= bound => {
@@ -570,9 +568,8 @@ fn back_edge_correspondence(scene: &Scene) -> Option<String> {
 
 fn attempt(
     model: &SemanticModel,
-    start: &str,
+    captions: &Rc<Captions>,
     parameters: &[String],
-    return_type: &str,
     slack: i32,
     narrow: bool,
 ) -> Result<Scene, Blocked> {
@@ -586,7 +583,7 @@ fn attempt(
         connections: Vec::new(),
         labels: Vec::new(),
         loop_regions: Vec::new(),
-        captions: captions::derive(model, start, return_type),
+        captions: Rc::clone(captions),
         reach: contour_reaches(model),
         bodies: model
             .topology
@@ -988,7 +985,7 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
     }
     let lines = parameters
         .iter()
-        .flat_map(|parameter| wrap_text(parameter, PARAMETER_LABEL_WIDTH, LABEL_FONT))
+        .flat_map(|parameter| wrap_literal(parameter, PARAMETER_LABEL_WIDTH, LABEL_FONT))
         .collect::<Vec<_>>();
     Some(ParameterPanel {
         parameters: parameters.to_vec(),
@@ -1000,7 +997,7 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
     })
 }
 
-fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
+fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>) {
     match kind {
         NodeKind::Start | NodeKind::End => capsule_dimensions(label),
         NodeKind::Action => action::dimensions(label),
@@ -1016,17 +1013,18 @@ fn node_dimensions(kind: NodeKind, label: &str) -> (i32, i32, Vec<String>) {
 /// Fits each line inside the curved ends, not just the capsule's bounding box.
 /// SVG clamps the horizontal radius once the capsule grows taller than wide,
 /// so those tall capsules use the corresponding ellipse bound instead.
-fn capsule_dimensions(label: &str) -> (i32, i32, Vec<String>) {
+fn capsule_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     let (width, mut height, lines) = block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 58);
-    let first_baseline = 15 - lines.len() as i32 * LINE_HEIGHT / 2;
+    let metrics = text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT);
     for (index, line) in lines.iter().enumerate() {
         let line_width = text::text_width(line, LABEL_FONT);
         let x = f64::from(line_width) / 2.0 + 4.0;
-        let baseline = first_baseline + index as i32 * LINE_HEIGHT;
+        let baseline = -metrics.height / 2 + metrics.baselines[index];
+        let (ascent, descent) = text::line_ink(line, LABEL_FONT);
         let y = f64::from(
-            (baseline - LABEL_FONT)
+            (baseline - ascent.max(LABEL_FONT))
                 .abs()
-                .max((baseline + LABEL_FONT / 3).abs()),
+                .max((baseline + descent.max(LABEL_FONT / 3)).abs()),
         ) + 4.0;
         let inset = f64::from(width) / 2.0 - x;
         // The corner fits when (radius - inset)^2 + y^2 <= radius^2.
@@ -1046,12 +1044,13 @@ fn capsule_dimensions(label: &str) -> (i32, i32, Vec<String>) {
 }
 
 fn block_dimensions(
-    label: &str,
+    label: &RichText,
     width: i32,
     budget: i32,
     minimum_height: i32,
-) -> (i32, i32, Vec<String>) {
+) -> (i32, i32, Vec<RichText>) {
     let lines = wrap_text(label, budget, LABEL_FONT);
-    let height = minimum_height.max(30 + lines.len() as i32 * LINE_HEIGHT);
+    let height =
+        minimum_height.max(30 + text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT).height);
     (width, height, lines)
 }

@@ -4,10 +4,8 @@ use std::collections::BTreeMap;
 
 use super::{Node, NodeId, Point, Scene};
 
-use super::{
-    CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, SELECT_SKEW,
-    text::wrap_text,
-};
+use super::{CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, SELECT_SKEW};
+use crate::text::{RichText, block_metrics, wrap_text};
 
 pub(super) fn exit_anchor(node: &Node, branch: usize) -> Point {
     if branch == 0 {
@@ -23,9 +21,9 @@ pub(super) fn exit_anchor(node: &Node, branch: usize) -> Point {
     }
 }
 
-pub(super) fn case_dimensions(label: &str) -> (i32, i32, Vec<String>) {
+pub(super) fn case_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     let lines = wrap_text(label, CASE_LABEL_WIDTH, LABEL_FONT);
-    let body_height = 52.max(28 + lines.len() as i32 * LINE_HEIGHT);
+    let body_height = 52.max(28 + block_metrics(&lines, LABEL_FONT, LINE_HEIGHT).height);
     (CASE_WIDTH, body_height + CASE_TIP_HEIGHT, lines)
 }
 

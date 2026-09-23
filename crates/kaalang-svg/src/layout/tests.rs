@@ -1,4 +1,8 @@
 use super::*;
+use std::rc::Rc;
+
+use crate::captions::Captions;
+use crate::text::joined;
 
 /// The source of `crates/kaalang/tests/<dir>/<stem>.rs` and the flow named after it.
 macro_rules! fixture {
@@ -79,7 +83,7 @@ fn shared_wire_labels_stay_at_the_receiving_node() {
             let labels = scene
                 .labels
                 .iter()
-                .filter(|label| label.lines.concat() == name)
+                .filter(|label| joined(&label.lines, "") == name)
                 .collect::<Vec<_>>();
             assert_eq!(labels.len(), 1, "one label represents both ends");
             assert_eq!(labels[0].owner, Vertex::Node(node.id));
@@ -118,7 +122,7 @@ fn cycle_entry_labels_use_the_same_padding_when_shared() {
             scene
                 .labels
                 .iter()
-                .filter(|label| label.lines.concat() == name)
+                .filter(|label| joined(&label.lines, "") == name)
                 .count(),
             1
         );
@@ -188,7 +192,7 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
             );
             assert_eq!(region.description, description);
             assert!(region.caption.len() <= 2);
-            let shown = region.caption.concat();
+            let shown = joined(&region.caption, "");
             let prefix = shown.trim_end_matches('…');
             assert!(description.starts_with(prefix));
             assert!(
@@ -201,9 +205,9 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
         let caption = &scene.loop_regions[0].caption;
         assert_eq!(caption.len(), 2, "the body leaves room to wrap");
         if shortened {
-            assert!(caption.last().unwrap().ends_with('…'));
+            assert!(caption.last().unwrap().as_ref().ends_with('…'));
         } else {
-            assert_eq!(caption.concat(), description);
+            assert_eq!(joined(caption, ""), description);
         }
         assert!(
             scene.loop_regions[1].caption.is_empty(),
@@ -293,16 +297,22 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
             }
         };
         let model = kaalang_compiler::build(&function).unwrap();
-        let scene = layout(&model, "example", &[], "usize").unwrap();
+        let captions = captions_of(&model, "example", "usize");
+        let scene = layout(&model, &captions, &[]).unwrap();
         let labels = scene
             .labels
             .iter()
-            .map(|label| label.lines.join(" "))
+            .map(|label| joined(&label.lines, " "))
             .collect::<Vec<_>>();
         assert_eq!(labels.iter().filter(|label| *label == "value").count(), 1);
         assert_eq!(labels.iter().filter(|label| *label == "&value").count(), 1);
         assert_eq!(labels.contains(&"value, _note".to_owned()), extra_output);
     }
+}
+
+/// The captions one layout pass reads, derived once as the renderer does.
+fn captions_of(model: &SemanticModel, start: &str, return_type: &str) -> Rc<Captions> {
+    Rc::new(crate::captions::derive(model, start, return_type))
 }
 
 /// Lays out one flow and holds it to RFC 0002 §8 before returning it, so every
@@ -323,13 +333,9 @@ fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement
     let model = model;
     let start = start_text(source, &function.sig);
     let parameters = parameter_text(source, &function.sig);
-    let scene = layout(
-        &model,
-        &start,
-        &parameters,
-        &return_text(source, &function.sig.output),
-    )
-    .expect("the fixture has a conforming diagram");
+    let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
+    let scene =
+        layout(&model, &captions, &parameters).expect("the fixture has a conforming diagram");
 
     for connection in &scene.connections {
         let [start, .., end] = connection.points[..] else {
@@ -540,7 +546,7 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
     let empty = scene
         .labels
         .iter()
-        .filter(|label| label.lines == ["()"])
+        .filter(|label| joined(&label.lines, "") == "()")
         .collect::<Vec<_>>();
     assert_eq!(empty.len(), 1);
     assert!(empty[0].at.y < scene.top_anchor(setup.id).y);
@@ -641,13 +647,15 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
         .collect::<Vec<_>>();
     assert_eq!(branch_labels.len(), 1);
     assert!(branch_labels[0].lines.len() > 1);
-    assert!(scene.labels.iter().all(|label| label.lines != ["proceed"]));
     assert!(
         scene
             .labels
             .iter()
-            .any(|label| { matches!(label.kind, LabelKind::Wire) && label.lines == ["fallback"] })
+            .all(|label| joined(&label.lines, "") != "proceed")
     );
+    assert!(scene.labels.iter().any(|label| {
+        matches!(label.kind, LabelKind::Wire) && joined(&label.lines, "") == "fallback"
+    }));
     let connection = scene
         .connections
         .iter()
@@ -660,6 +668,61 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
         })
         .unwrap();
     assert!(label_rect(branch_labels[0]).3 <= connection.points[0].y);
+}
+
+#[test]
+fn math_branch_descriptions_clear_their_nodes_and_connections() {
+    let scene = drawn((
+        r#"
+        #[kaalang]
+        fn example(condition: bool) -> u8 {
+            #[question("$x^2$ or $y^2$?")]
+            #[no(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$")]
+            #[yes(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$")]
+            let (fallback, proceed) = |condition| condition;
+            #[action("Use the fallback.")]
+            let end = |fallback| 0;
+            #[action("Proceed.")]
+            let end = |proceed| 1;
+            |end| return end;
+        }
+    "#,
+        "example",
+    ));
+    let branch_labels = scene
+        .labels
+        .iter()
+        .filter(|label| matches!(label.kind, LabelKind::Branch))
+        .collect::<Vec<_>>();
+
+    assert_eq!(branch_labels.len(), 2);
+    for label in branch_labels {
+        assert!(
+            label
+                .lines
+                .iter()
+                .flat_map(RichText::spans)
+                .any(|span| span.formula.is_some())
+        );
+        // Display math is taller than one text line, so its label reserves more
+        // room than the line count alone would give it.
+        let rect = label_rect(label);
+        assert!(rect.3 - rect.1 > 2 * LINE_HEIGHT, "{rect:?}");
+        for node in &scene.nodes {
+            assert!(
+                !super::label::overlaps(rect, Scene::bounds(node)),
+                "{rect:?} meets the node at {},{}",
+                node.x,
+                node.y
+            );
+        }
+        for connection in &scene.connections {
+            assert!(
+                !super::route::crosses(&connection.points, rect),
+                "{rect:?} meets a connection"
+            );
+        }
+    }
 }
 
 #[test]
@@ -817,12 +880,19 @@ fn start_separates_the_flow_name_and_typed_parameters() {
     ";
     let scene = drawn((source, "example"));
     assert_eq!(
-        scene.captions.label(NodeId::Start),
+        scene.captions.label(NodeId::Start).as_ref(),
         "example<'a, T> where T: Copy,"
     );
     let parameters = scene.parameters.as_ref().expect("the flow has parameters");
     assert_eq!(parameters.parameters, ["r#type: &'a T", "_: usize"]);
-    assert_eq!(parameters.lines, parameters.parameters);
+    assert_eq!(
+        parameters
+            .lines
+            .iter()
+            .map(RichText::as_ref)
+            .collect::<Vec<_>>(),
+        parameters.parameters
+    );
     assert!(parameters.x > scene.node(NodeId::Start).x);
 }
 
@@ -848,7 +918,11 @@ fn capsule_captions_fit_the_curved_outline() {
                 let baseline = first_baseline + index as i32 * LINE_HEIGHT;
                 for y in [baseline - LABEL_FONT, baseline + LABEL_FONT / 3] {
                     let inside = (x / rx).powi(2) + (f64::from(y) / ry).powi(2) <= 1.0;
-                    assert!(inside, "{id:?}: caption leaves the curved outline: {line}");
+                    assert!(
+                        inside,
+                        "{id:?}: caption leaves the curved outline: {}",
+                        line.as_ref()
+                    );
                 }
             }
         }
@@ -969,7 +1043,7 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
     let label = scene
         .labels
         .iter()
-        .find(|label| label.lines.concat() == description)
+        .find(|label| joined(&label.lines, "") == description)
         .unwrap();
     assert!(label.lines.len() > 1);
     let outer = scene.topology.loops[0];
@@ -1144,7 +1218,7 @@ fn named_node<'a>(scene: &'a Scene, description: &str) -> &'a Node {
         .topology
         .nodes
         .iter()
-        .find(|node| scene.captions.label(node.id) == description)
+        .find(|node| scene.captions.label(node.id).as_ref() == description)
         .expect("the fixture contains the described node")
         .id;
     scene.node(id)
@@ -1381,7 +1455,7 @@ fn clearing_one_label_can_take_more_than_one_lane() {
     scene.labels = vec![Label {
         owner: Vertex::Node(NodeId::Start),
         kind: LabelKind::Wire,
-        lines: vec!["wwwwwwwwww".to_owned()],
+        lines: vec![crate::text::RichText::literal("wwwwwwwwww")],
         at: Point {
             x: climb[0].x - 3 * LANE,
             y: i32::midpoint(climb[0].y, climb[1].y),
@@ -1635,12 +1709,8 @@ fn every_generated_shape_the_model_accepts_also_renders() {
         kaalang_render::compact_arrangement(&mut model);
         let start = start_text(source, &function.sig);
         let parameters = parameter_text(source, &function.sig);
-        if let Err(reason) = layout(
-            &model,
-            &start,
-            &parameters,
-            &return_text(source, &function.sig.output),
-        ) {
+        let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
+        if let Err(reason) = layout(&model, &captions, &parameters) {
             // One shape leaves the model with an arrangement whose route
             // passes through a nested cycle's columns. The rectangle is
             // checked on compaction candidates and the searches stay unaware

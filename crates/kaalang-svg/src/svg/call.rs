@@ -3,7 +3,7 @@ use std::fmt::Write;
 
 use crate::layout::CALL_BAR_INSET;
 
-use super::{Node, write_label};
+use super::{Node, TextAnchor, write_label};
 
 pub(super) fn name(label: &str) -> String {
     format!("Call: {label}")
@@ -24,5 +24,5 @@ pub(super) fn write(svg: &mut String, node: &Node) {
         svg,
         "      <path class=\"call-bars\" d=\"M -{bar} -{half_height} V {half_height} M {bar} -{half_height} V {half_height}\"/>"
     );
-    write_label(svg, node, 0, -bar + 16);
+    write_label(svg, node, 0, -bar + 16, TextAnchor::Start);
 }
