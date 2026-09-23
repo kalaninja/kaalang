@@ -107,20 +107,17 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
 mod tests {
     use super::*;
 
+    fn parse(line: &str) -> Result<Options, String> {
+        parse_arguments(line.split_whitespace().map(OsString::from))
+    }
+
     #[test]
     fn accepts_cargo_and_direct_invocation_shapes() {
-        for arguments in [
-            vec!["cargo-kaalang", "diagram", "flow.rs", "--flow", "decide"],
-            vec![
-                "cargo-kaalang",
-                "kaalang",
-                "diagram",
-                "flow.rs",
-                "--flow",
-                "decide",
-            ],
+        for line in [
+            "cargo-kaalang diagram flow.rs --flow decide",
+            "cargo-kaalang kaalang diagram flow.rs --flow decide",
         ] {
-            let options = parse_arguments(arguments.into_iter().map(OsString::from)).unwrap();
+            let options = parse(line).unwrap();
             assert_eq!(options.source, PathBuf::from("flow.rs"));
             assert_eq!(options.flow, "decide");
             assert!(!options.collapse_loops);
@@ -129,53 +126,21 @@ mod tests {
 
     #[test]
     fn accepts_collapsed_output_with_or_without_an_explicit_path() {
-        for arguments in [
-            vec![
-                "cargo-kaalang",
-                "diagram",
-                "flow.rs",
-                "--flow",
-                "decide",
-                "--collapse-loops",
-            ],
-            vec![
-                "cargo-kaalang",
-                "diagram",
-                "flow.rs",
-                "--collapse-loops",
-                "-o",
-                "chosen.svg",
-                "--flow",
-                "decide",
-            ],
+        for line in [
+            "cargo-kaalang diagram flow.rs --flow decide --collapse-loops",
+            "cargo-kaalang diagram flow.rs --collapse-loops -o chosen.svg --flow decide",
         ] {
-            let options = parse_arguments(arguments.into_iter().map(OsString::from)).unwrap();
-            assert!(options.collapse_loops);
+            assert!(parse(line).unwrap().collapse_loops);
         }
     }
 
     #[test]
     fn rejects_unknown_or_duplicate_collapse_options() {
-        for arguments in [
-            vec![
-                "cargo-kaalang",
-                "diagram",
-                "flow.rs",
-                "--flow",
-                "decide",
-                "--collapsed",
-            ],
-            vec![
-                "cargo-kaalang",
-                "diagram",
-                "flow.rs",
-                "--flow",
-                "decide",
-                "--collapse-loops",
-                "--collapse-loops",
-            ],
+        for line in [
+            "cargo-kaalang diagram flow.rs --flow decide --collapsed",
+            "cargo-kaalang diagram flow.rs --flow decide --collapse-loops --collapse-loops",
         ] {
-            assert!(parse_arguments(arguments.into_iter().map(OsString::from)).is_err());
+            assert!(parse(line).is_err());
         }
     }
 }

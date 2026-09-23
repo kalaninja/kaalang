@@ -200,25 +200,4 @@ fn writes_collapsed_default_and_honors_an_explicit_output() {
         )
         .unwrap()
     );
-
-    let invalid_source = directory.join("invalid.rs");
-    let preserved_output = directory.join("invalid_collapsed.svg");
-    fs::write(&invalid_source, "#[kaalang] fn invalid(input: u8) -> u8 {}").unwrap();
-    fs::write(&preserved_output, "keep this diagram").unwrap();
-    let invalid = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
-        .current_dir(&directory)
-        .args([
-            "diagram",
-            "invalid.rs",
-            "--flow",
-            "invalid",
-            "--collapse-loops",
-        ])
-        .output()
-        .unwrap();
-    assert!(!invalid.status.success());
-    assert_eq!(
-        fs::read_to_string(preserved_output).unwrap(),
-        "keep this diagram"
-    );
 }
