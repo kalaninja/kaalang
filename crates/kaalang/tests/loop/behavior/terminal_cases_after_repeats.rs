@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
     #[cycle("Repeat until either finishing case.")]
-    let result = || {
+    let result = {
         #[choice("Which route?")]
         #[case("Advance on the left.")]
         #[case("Advance on the right.")]

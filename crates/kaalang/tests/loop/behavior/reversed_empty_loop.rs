@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn reversed_empty_loop(mut checks: usize) -> usize {
     #[cycle("Repeat the check until its first branch leaves.")]
-    let checked = || {
+    let checked = {
         #[question("Check once more?")]
         #[no("NO")]
         #[yes("YES")]

@@ -101,20 +101,20 @@ let end = |plain| {                     // output = |inputs|
 };
 ```
 
-| Part                 | In this action          | Variations                                                                            |
-| -------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
-| Kind and description | `#[action("...")]`      | Both are required for an action. The description labels its diagram node.             |
-| Outputs              | `let end =`             | Omit for an effect returning `()`. Use `let (left, right) =` to expose two outputs.   |
-| Inputs               | `\|plain\|`             | Use `\|\|` when there are no inputs. Every wire used by the body must be listed here. |
-| Body                 | `{ plain.to_string() }` | A Rust expression. An action may omit the braces, as in the full example.             |
+| Part                 | In this action          | Variations                                                                          |
+| -------------------- | ----------------------- | ----------------------------------------------------------------------------------- |
+| Kind and description | `#[action("...")]`      | Both are required for an action. The description labels its diagram node.           |
+| Outputs              | `let end =`             | Omit for an effect returning `()`. Use `let (left, right) =` to expose two outputs. |
+| Inputs               | `\|plain\|`             | Omit it when there are no inputs. Every wire used by the body must be listed here.  |
+| Body                 | `{ plain.to_string() }` | A Rust expression. An action may omit the braces, as in the full example.           |
 
 Actions can also create a value without inputs, consume inputs without producing
 outputs, or perform an effect with neither:
 
 ```rust
-// No inputs.
+// No inputs: the capture list can be omitted.
 #[action("Start with fifteen.")]
-let number = || { 15 };
+let number = 15;
 
 // No outputs.
 #[action("Print the result.")]
@@ -181,7 +181,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
-    let result = || {
+    let result = {
         #[question("Does the search range contain any elements?")]
         #[yes("YES")]
         #[no("NO")]

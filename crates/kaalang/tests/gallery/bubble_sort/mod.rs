@@ -11,7 +11,7 @@ fn bubble_sort(mut values: &mut [i32]) {
     let mut unsorted = |&values| values.len();
 
     #[cycle("🫧 Float the largest unsorted value to its place.")]
-    let sorted = || {
+    let sorted = {
         #[question("Is more than one value still unplaced?")]
         #[yes("YES")]
         #[no("NO")]

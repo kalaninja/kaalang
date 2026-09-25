@@ -128,7 +128,7 @@ fn capture_free_transfers_redirect_without_structural_junctions() {
         r#"
         fn example() {
             #[cycle("Complete immediately.")]
-            let () = || {
+            let () = {
                 break;
             };
             return;

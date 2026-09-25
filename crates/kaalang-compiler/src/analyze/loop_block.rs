@@ -36,9 +36,9 @@ mod tests {
             #[kaalang]
             fn invalid(mut mode: u8) -> u8 {
                 #[cycle("Select an exit from a nested cycle.")]
-                let selected = || {
+                let selected = {
                     #[cycle("Advance at most once.")]
-                    let inner = || {
+                    let inner = {
                         #[question("Exit immediately?")]
                         let (done, check) = |mode| mode == 0;
 

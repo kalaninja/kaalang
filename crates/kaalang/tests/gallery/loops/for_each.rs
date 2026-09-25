@@ -13,7 +13,7 @@ fn for_each(values: &[i32]) -> i32 {
     let mut cursor = |values| values.iter();
 
     #[cycle("Add every value to the total.")]
-    let total = || {
+    let total = {
         #[choice("Is there another value?")]
         #[case("There is one.")]
         #[case("The values ran out.")]

@@ -38,7 +38,7 @@ const CYCLE_SOURCE: &str = r#"
     #[kaalang]
     fn count_to(mut count: usize, limit: usize) -> usize {
         #[cycle("Count to the limit.")]
-        let total = || {
+        let total = {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 

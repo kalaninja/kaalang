@@ -5,7 +5,7 @@ fn invalid(mut mode: u8) -> u8 {
     #[cycle("Run the outer cycle.")]
     let result = |mode| {
         #[cycle("Put a repeating route between completions.")]
-        let nested = || {
+        let nested = {
             #[choice("Leave or advance?")]
             #[case("Leave immediately.")]
             #[case("Advance once.")]

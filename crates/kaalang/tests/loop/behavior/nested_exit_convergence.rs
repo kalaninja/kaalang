@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_exit_convergence(mut count: usize) -> usize {
     #[cycle("Count down to zero.")]
-    let result = || {
+    let result = {
         #[cycle("Converge the inner stopping routes.")]
         {
             #[choice("Leave the inner loop?")]

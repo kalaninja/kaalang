@@ -1,5 +1,7 @@
 //! Parses a kaalang flow and validates each block's local syntax.
 
+use std::borrow::Cow;
+
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprAsync, ExprClosure, ExprForLoop, ExprReturn, ExprTry, FnArg, Item,
@@ -308,6 +310,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
 /// Parses one statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
     let (attributes, output_pattern, closure) = block_statement(statement)?;
+    let closure = closure.as_deref();
     let (kind, kind_attribute, companions) = block_kind(attributes, statement.span())?;
     let (inputs, body) = match closure {
         Some(closure) => block_closure(closure)?,
@@ -427,11 +430,15 @@ fn unexpected_companion(companion: &Attribute) -> Error {
     )
 }
 
+/// A block's capture list and body. An initializer written without a capture
+/// list is read as `|| body`, so only that one is synthesized.
+type Closure<'a> = Cow<'a, ExprClosure>;
+
 /// Extracts a block's attributes, interfaces, and body. An expression statement
 /// declares no outputs; a bare block or bare application additionally declares
 /// no inputs.
-fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprClosure>)> {
-    let (attributes, pattern, expression) = match statement {
+fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closure<'_>>)> {
+    match statement {
         Stmt::Local(local) => {
             let Some(initializer) = &local.init else {
                 return Err(Error::new_spanned(
@@ -445,61 +452,48 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprC
                     "kaalang blocks do not support `let else`",
                 ));
             }
-            // A call that captures nothing writes its application alone, with
-            // or without outputs; there is no capture list to delimit.
-            if matches!(ungrouped(initializer.expr.as_ref()), Expr::Call(_)) {
-                return Ok((local.attrs.as_slice(), local.pat.clone(), None));
-            }
-            (
-                local.attrs.as_slice(),
-                local.pat.clone(),
-                initializer.expr.as_ref(),
-            )
+            // A block that captures nothing may omit its empty capture list:
+            // `let output = body;` is `let output = || body;`. A closure or
+            // body written by another macro arrives in an invisible group.
+            let closure = match ungrouped(initializer.expr.as_ref()) {
+                Expr::Closure(closure) if !closure.attrs.is_empty() => {
+                    return Err(Error::new_spanned(
+                        closure,
+                        "kaalang block attributes belong before the statement",
+                    ));
+                }
+                Expr::Closure(closure) => Cow::Borrowed(closure),
+                body => Cow::Owned(parse_quote_spanned!(body.span()=> || #body)),
+            };
+            Ok((local.attrs.as_slice(), local.pat.clone(), Some(closure)))
         }
-        Stmt::Expr(Expr::Closure(closure), _) => {
-            return Ok((
-                &closure.attrs,
-                parse_quote_spanned!(closure.inputs_end.span()=> ()),
-                Some(closure),
-            ));
-        }
+        Stmt::Expr(Expr::Closure(closure), _) => Ok((
+            &closure.attrs,
+            parse_quote_spanned!(closure.inputs_end.span()=> ()),
+            Some(Cow::Borrowed(closure)),
+        )),
         Stmt::Expr(Expr::Block(block), _) => {
-            return Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None));
+            Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None))
         }
         // A call's body is one application, so it needs no braces to delimit
         // it. The attributes decide: an unattributed application is ordinary
         // Rust, which a flow body does not accept, and it must keep reporting
         // that through the arm below.
         Stmt::Expr(Expr::Call(call), _) if !call.attrs.is_empty() => {
-            return Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None));
+            Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None))
         }
         // The same statement written by another macro, where the substitution
         // carries the attributes and the application sits inside it.
         Stmt::Expr(Expr::Group(group), _)
             if !group.attrs.is_empty() && matches!(ungrouped(&group.expr), Expr::Call(_)) =>
         {
-            return Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None));
+            Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None))
         }
-        _ => {
-            return Err(Error::new_spanned(
-                statement,
-                "a kaalang flow body may contain only attributed block statements",
-            ));
-        }
-    };
-    let Expr::Closure(closure) = expression else {
-        return Err(Error::new_spanned(
-            expression,
-            "a kaalang block initializer must have the form `|inputs| { body }`",
-        ));
-    };
-    if !closure.attrs.is_empty() {
-        return Err(Error::new_spanned(
-            expression,
-            "kaalang block attributes belong before the statement",
-        ));
+        _ => Err(Error::new_spanned(
+            statement,
+            "a kaalang flow body may contain only attributed block statements",
+        )),
     }
-    Ok((attributes, pattern, Some(closure)))
 }
 
 fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
@@ -532,17 +526,6 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             let mut application = call.clone();
             application.attrs.clear();
             application
-        }
-        // A `let` carries its own, so whatever sits on the application there
-        // is the body's and stays.
-        Stmt::Local(local) => {
-            let Some(initializer) = &local.init else {
-                unreachable!("a bare application body has an initializer")
-            };
-            let Expr::Call(application) = ungrouped(initializer.expr.as_ref()) else {
-                unreachable!("a missing closure denotes a bare application body")
-            };
-            application.clone()
         }
         _ => unreachable!("a missing closure denotes a bare block or bare application body"),
     };

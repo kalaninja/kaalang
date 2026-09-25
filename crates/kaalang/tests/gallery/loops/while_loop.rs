@@ -7,7 +7,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn while_loop(mut a: u64, mut b: u64) -> u64 {
     #[cycle("Replace the pair with a smaller equivalent one.")]
-    let divisor = || {
+    let divisor = {
         #[question("Is the second number zero?")]
         #[yes("YES")]
         #[no("NO")]

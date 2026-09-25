@@ -6,7 +6,7 @@ fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str
     let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
     #[cycle("Run work between two stopping checks.")]
-    let log = || {
+    let log = {
         #[question("Stop before the work?")]
         let (done, work) = |&initial_count, before_limit, &mut initial_log| {
             initial_log.push("check before");

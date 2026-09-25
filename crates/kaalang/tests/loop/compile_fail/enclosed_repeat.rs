@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut mode: u8) -> u8 {
     #[cycle("Put a repeating route between breaks.")]
-    let result = || {
+    let result = {
         #[choice("Exit or advance?")]
         #[case("Exit immediately.")]
         #[case("Advance once.")]

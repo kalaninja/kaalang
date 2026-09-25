@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool, value: usize) -> usize {
     #[cycle("Choose a result.")]
-    let result = || {
+    let result = {
         #[question("Use the first route?")]
         let (first, second) = |flag| flag;
 

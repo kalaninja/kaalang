@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn condition_effects(mut checks: usize) -> usize {
     #[cycle("Repeat the check until it fails.")]
-    let checked = || {
+    let checked = {
         #[question("Check once more?")]
         #[yes("YES")]
         #[no("NO")]

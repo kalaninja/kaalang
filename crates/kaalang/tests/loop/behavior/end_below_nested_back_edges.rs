@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn end_below_nested_back_edges(mut mode: u8) -> u8 {
     #[cycle("Choose an outer route until one produces a result.")]
-    let result = || {
+    let result = {
         #[choice("Which outer route?")]
         #[case("Enter the inner loop.")]
         #[case("Finish with seven.")]

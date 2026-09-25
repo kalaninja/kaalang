@@ -9,7 +9,7 @@ fn do_while(mut number: u64) -> Vec<u8> {
     let mut digits = || Vec::new();
 
     #[cycle("Take one digit off the end.")]
-    let collected = || {
+    let collected = {
         #[action("✂️ Record the last digit and drop it.")]
         |&mut number, &mut digits| {
             digits.push((*number % 10) as u8);

@@ -6,7 +6,7 @@ fn nested_loops(limit: usize) -> usize {
     let mut outer = || 0;
 
     #[cycle("Advance the outer counter to the limit.")]
-    let result = || {
+    let result = {
         #[action("Initialize the iteration counter.")]
         let mut inner = || 0;
 

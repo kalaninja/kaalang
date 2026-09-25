@@ -1,5 +1,6 @@
 mod borrowed_break_branch;
 mod borrowed_result;
+mod braced_cycle_result;
 mod collect_steps;
 mod condition_effects;
 mod conditional_entry;

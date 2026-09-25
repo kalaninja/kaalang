@@ -1356,7 +1356,7 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
         #[kaalang]
         fn nested_exit_convergence(mut count: usize) -> usize {
             #[cycle("Count to completion.")]
-            let result = || {
+            let result = {
                 #[cycle("Resolve the inner count.")]
                 {
                     #[choice("Leave the inner loop?")]
@@ -1460,7 +1460,7 @@ const FAR_CONTOUR: (&str, &str) = (
         #[kaalang]
         fn far_contour(mut mode: u8) -> u8 {
             #[cycle("Advance until the mode can leave.")]
-            let result = || {
+            let result = {
                 #[choice("Which route?")]
                 #[case("Case 0 repeat.")]
                 #[case("Case 1 repeat.")]
@@ -1557,7 +1557,7 @@ const FOUR_LANES: (&str, &str) = (
         #[kaalang]
         fn deep(mut step: usize) -> usize {
             #[cycle("Repeat the first cycle.")]
-            let result = || {
+            let result = {
                 #[question("Leave the first?")]
                 let (stay_0, leave_0) = |&step| *step > 0;
                 |leave_0, step| break step;

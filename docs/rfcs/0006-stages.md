@@ -358,10 +358,10 @@ selected its current visit.
 | Repeat                                    | The cycle's structural `continue`                        | An output targeting the stage's own entry              |
 | End reached without an output or transfer | Invalid                                                  | Invalid                                                |
 
-A cycle with `||` participates according to the containing sequence's source and
-branch rules. A header `|start|` additionally gates that entry on the signal;
-subsequent iterations are selected by `continue`. The header establishes a
-capture dependency for producer usage and branch validation, but performs no
+A cycle without a gate participates according to the containing sequence's
+source and branch rules. A header `|start|` additionally gates that entry on the
+signal; subsequent iterations are selected by `continue`. The header establishes
+a capture dependency for producer usage and branch validation, but performs no
 Rust move, copy, or borrow. Its gate may have any Rust type, including in a
 `const fn`. The gate remains an ordinary outer wire available to explicit inner
 captures. The header creates no separate data alias and does not remove that
@@ -429,16 +429,16 @@ structural-transfer alternatives with:
 ```text
 cycle_statement :=
     "#[cycle(" block_description ")]"
-    (("let" output_pattern "=")?
-     "|" (identifier ","?)? "|" "{" block_statement* "}" ";"
-     | "{" block_statement* "}" ";")
+    ("let" output_pattern "=")?
+    ("|" (identifier ","?)? "|")? "{" block_statement* "}" ";"
 block_statement :=
     action_statement | call_statement | question_statement | choice_statement
     | cycle_statement | continue_statement | return_statement
 ```
 
-Omitting `let` or using `let ()` declares no outputs. The existing bare-body
-shorthand remains available when both the entry header and outputs are empty.
+Omitting `let` or using `let ()` declares no outputs. A cycle without a gate may
+omit its empty header, with or without outputs: `let found = { ... };` is
+`let found = || { ... };`.
 
 ### 5.3 Explicit repetition with continue
 
@@ -506,7 +506,7 @@ fn count_with_cycle(limit: usize) -> usize {
     let mut counter = || 0usize;
 
     #[cycle("Count to the limit.")]
-    let finish = || {
+    let finish = {
         #[question("Has the limit been reached?")]
         let (finish, again) = |counter, limit| counter >= limit;
 
@@ -534,7 +534,7 @@ drop rules as a stage (§4.2).
 #[kaalang]
 fn pop_nonempty(mut items: Vec<String>) -> Option<String> {
     #[cycle("Find a nonempty item.")]
-    let (found, exhausted) = || {
+    let (found, exhausted) = {
         #[choice("Is another item available?")]
         #[case("Inspect the item.")]
         #[case("The collection is exhausted.")]
@@ -1065,7 +1065,7 @@ fn drain(mut input: Vec<u8>) -> usize {
     #[stage("Remove every item.")]
     let finish = |draining| {
         #[cycle("Drain the collection.")]
-        let finish = || {
+        let finish = {
             #[question("Is the collection empty?")]
             let (finish, occupied) = |&input| input.is_empty();
 
@@ -1088,11 +1088,11 @@ fn drain(mut input: Vec<u8>) -> usize {
 }
 ```
 
-The cycle's inner blocks capture the surrounding `input`; its empty header
-introduces no data binding. The occupied route explicitly continues after
-removing an item. The selected unit output is exported as `finish` first by the
-cycle and then by the stage. Borrowing is local to the actual borrowing blocks,
-and the terminal stage can read the same shared collection.
+The cycle's inner blocks capture the surrounding `input`; the cycle itself binds
+no data. The occupied route explicitly continues after removing an item. The
+selected unit output is exported as `finish` first by the cycle and then by the
+stage. Borrowing is local to the actual borrowing blocks, and the terminal stage
+can read the same shared collection.
 
 ### 8.4 Divergence through transitions
 
@@ -1180,7 +1180,7 @@ fn quick_sort<T: Ord>(mut values: Vec<T>) -> Vec<T> {
         let (mut lower, mut cursor, mut upper) = |start, pivot| (start, start, pivot);
 
         #[cycle("Scan the range.")]
-        let scanned = || {
+        let scanned = {
             #[question("Has the cursor reached the upper region?")]
             let (scanned, more) = |cursor, upper| cursor >= upper;
 
@@ -1345,6 +1345,22 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
   structural `break`. Each cycle owns at most one structural `continue`, and
   every repeating route must reach it; reaching the body end without an output
   or transfer is invalid.
+- **RFC 0001 §3 and §8:** a `let` block without inputs may omit its empty
+  capture list. For every block kind, `let output = body;` whose `body` is not a
+  closure is `let output = || body;`, and that kind's rules then apply to the
+  body. An action may write `let count = 0;` and a cycle `let found = { ... };`.
+  An initializer that is itself a closure is always read as the capture list, so
+  a closure-valued action still writes `let f = || |x| x + 1;`. A statement
+  without `let` keeps RFC 0001 §3's forms. Replace the action alternative with:
+
+  ```text
+  action_statement :=
+      "#[action(" block_description ")]"
+      ("let" output_pattern "=" ("|" input_list? "|")? rust_expression
+       | "|" input_list? "|" rust_expression
+       | "{" rust_statement* "}") ";"
+  ```
+
 - **RFC 0001 §§4.7, 5–7:** place a staged flow's return in its terminal stage.
   Both stage and cycle bodies access outer data through inner block captures and
   create fresh local scopes per visit or iteration. Multiple cycle outputs
@@ -1479,6 +1495,7 @@ These scenarios define required language behavior and visual representation.
 | Stage entry carries a mutable reference or interior mutability                   | Preserve ordinary Rust behavior of the value; entry immutability concerns its binding.                                                    |
 | Stage-local producer shadows a common outer wire or the current entry            | Reject except for a declared self-transition output; alternative local producers still follow ordinary merge rules.                       |
 | Function input or direct preparation output named after an entry                 | Treat it as an initial transition value, with a Copy bound only in a const function; it is not common outer data.                         |
+| Block initializer with outputs and no capture list                               | Treat `let output = body;` as `let output = \|\| body;` and apply the block kind's own rules.                                             |
 | Singleton stage or cycle output pattern                                          | Treat (found,) and found as the same single output, transferring its whole value.                                                         |
 | Stage entry captured through a nested cycle                                      | Resolve the stage, cycle, and inner captures to the same current entry wire.                                                              |
 | Local self-transition output sharing the stage entry name                        | Captures through its first declaration read the entry; subsequent captures read the new local wire.                                       |

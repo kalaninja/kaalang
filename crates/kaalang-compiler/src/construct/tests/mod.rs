@@ -766,7 +766,7 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
 /// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
 const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
-    let result = || {
+    let result = {
         #[choice(\"Which route?\")]
         #[case(\"Advance and repeat.\")]
         #[case(\"Spin forever.\")]

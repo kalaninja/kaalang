@@ -10,7 +10,7 @@ fn call_inside_a_cycle(limit: usize) -> usize {
     let mut count = || 0;
 
     #[cycle("Count to the limit.")]
-    let total = || {
+    let total = {
         #[question("Is the counter below the limit?")]
         #[yes("YES")]
         #[no("NO")]

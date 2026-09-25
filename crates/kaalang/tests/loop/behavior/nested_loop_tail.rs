@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_loop_tail(mut count: usize, limit: usize) -> usize {
     #[cycle("Count to the limit through an inner cycle.")]
-    let result = || {
+    let result = {
         #[question("Is another counting pass needed?")]
         #[no("NO")]
         #[yes("YES")]

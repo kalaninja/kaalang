@@ -6,7 +6,7 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
     let mut row = || 0;
 
     #[cycle("Search each row.")]
-    let result = || {
+    let result = {
         #[question("Are there more rows?")]
         #[no("All rows have been searched.")]
         #[yes("Search this row.")]

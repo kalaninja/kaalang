@@ -8,7 +8,7 @@ fn nested_unconditional_loops(limit: usize) -> usize {
         let mut count = || 0;
 
         #[cycle("Count to the limit.")]
-        let final_count = || {
+        let final_count = {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 

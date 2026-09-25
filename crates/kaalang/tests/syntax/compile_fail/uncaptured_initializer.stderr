@@ -1,0 +1,13 @@
+error[E0381]: used binding `input` isn't initialized
+ --> tests/syntax/compile_fail/uncaptured_initializer.rs:6:15
+  |
+4 | fn invalid(input: u32) -> u32 {
+  |            ----- binding declared here but left uninitialized
+5 |     #[action("Copy the input without capturing it.")]
+6 |     let end = input;
+  |               ^^^^^ `input` used here but it isn't initialized
+  |
+help: consider assigning a value
+  |
+4 | fn invalid(input: u32 = 42) -> u32 {
+  |                       ++++
