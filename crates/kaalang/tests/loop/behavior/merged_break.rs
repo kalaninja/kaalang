@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn merged_break(stop: bool, remaining: usize) -> usize {
+fn merged_break(stop: bool, mut remaining: usize) -> usize {
     #[cycle("Count down until either stopping condition is met.")]
-    let result = |stop, mut remaining| {
+    let result = || {
         #[question("Stop immediately?")]
         let (leave, check) = |stop| stop;
 

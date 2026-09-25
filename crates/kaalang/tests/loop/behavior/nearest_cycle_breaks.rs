@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-const fn nearest_cycle_breaks(count: usize) -> usize {
+const fn nearest_cycle_breaks(mut count: usize) -> usize {
     #[cycle("Run passes until two have finished.")]
-    let result = |mut count| {
+    let result = || {
         #[cycle("Complete the inner pass immediately.")]
         || {
             break;

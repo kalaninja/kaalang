@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1140" height="836" viewBox="0 0 1140 836" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for merged_break</title>
-  <desc id="kaalang-description">Cycles: Count down until either stopping condition is met. with inputs stop, mut remaining and outputs result. Nodes: Start: merged_break with parameters stop: bool; remaining: usize handing over stop, remaining; Question: Stop immediately? capturing stop handing over leave / check; Question: Has the countdown finished? capturing check, remaining handing over leave / again; Action: Advance the countdown. capturing again, &amp;mut remaining; End: usize capturing result; Merge: leave. Connections: Start: merged_break to the entry of the cycle; Question: Stop immediately? branch 1 to the leave merge at the cycle result; Question: Stop immediately? branch 2 to Question: Has the countdown finished?; Question: Has the countdown finished? branch 1 to the leave merge at the cycle result; Question: Has the countdown finished? branch 2 to Action: Advance the countdown.; Action: Advance the countdown. to the iteration tail of the cycle; the leave merge at the cycle result to End: usize; the entry of the cycle to Question: Stop immediately?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count down until either stopping condition is met. with inputs stop, mut remaining and outputs result. Nodes: Start: merged_break with parameters stop: bool; mut remaining: usize handing over stop, mut remaining; Question: Stop immediately? capturing stop handing over leave / check; Question: Has the countdown finished? capturing check, remaining handing over leave / again; Action: Advance the countdown. capturing again, &amp;mut remaining; End: usize capturing result; Merge: leave. Connections: Start: merged_break to the entry of the cycle; Question: Stop immediately? branch 1 to the leave merge at the cycle result; Question: Stop immediately? branch 2 to Question: Has the countdown finished?; Question: Has the countdown finished? branch 1 to the leave merge at the cycle result; Question: Has the countdown finished? branch 2 to Action: Advance the countdown.; Action: Advance the countdown. to the iteration tail of the cycle; the leave merge at the cycle result to End: usize; the entry of the cycle to Question: Stop immediately?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -48,7 +48,7 @@
       M 920 670 L 1080 670 L 1080 170 L 200 170
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="688" xml:space="preserve"><tspan x="213" dy="0">leave</tspan></text>
-    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">stop, remaining</tspan></text>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">stop, mut remaining</tspan></text>
     <text class="connection-label" x="353" y="296" xml:space="preserve"><tspan x="353" dy="0">check</tspan></text>
     <text class="connection-label" x="713" y="440" xml:space="preserve"><tspan x="713" dy="0">again</tspan></text>
     <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">stop</tspan></text>
@@ -60,7 +60,7 @@
     <path class="parameter-link" d="M 340 65 L 436 65"/>
     <g class="parameter-panel" transform="translate(556 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">stop: bool</tspan><tspan x="-104" dy="18">remaining: usize</tspan></text>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">stop: bool</tspan><tspan x="-104" dy="18">mut remaining: usize</tspan></text>
     </g>
     <g class="node merge" transform="translate(200 670)">
       <title xml:space="preserve">the leave merge at the cycle result</title>

@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn owned_local_result(count: usize) -> String {
+fn owned_local_result(mut count: usize) -> String {
     #[cycle("Repeat before producing an owned local result.")]
-    let result = |mut count| {
+    let result = || {
         #[question("Has the countdown finished?")]
         let (done, again) = |count| count == 0;
 

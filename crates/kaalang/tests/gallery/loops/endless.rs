@@ -12,9 +12,9 @@ enum Light {
 
 #[allow(dead_code)]
 #[kaalang]
-fn endless(showing: Light) -> ! {
+fn endless(mut showing: Light) -> ! {
     #[cycle("🚦 Show the next colour, forever.")]
-    |mut showing| {
+    {
         #[choice("Which colour is showing?")]
         #[case("🔴 Red.")]
         #[case("🟡 Amber.")]

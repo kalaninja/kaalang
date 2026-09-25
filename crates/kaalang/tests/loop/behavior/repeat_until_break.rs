@@ -6,7 +6,7 @@ fn repeat_until_break(limit: usize) -> usize {
     let mut count = || 0;
 
     #[cycle("Count until the limit is reached.")]
-    let result = |mut count, limit| {
+    let result = || {
         #[question("Has the counter reached the limit?")]
         let (done, again) = |&count, &limit| *count == *limit;
 

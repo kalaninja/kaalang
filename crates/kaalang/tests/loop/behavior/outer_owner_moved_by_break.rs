@@ -9,12 +9,12 @@ impl Drop for Entry {
 }
 
 #[kaalang]
-fn entry_captures(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) -> usize {
+fn outer_owner_moved_by_break(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) -> usize {
     #[action("Initialize the counter.")]
     let mut count = || 0;
 
     #[cycle("Count three entries.")]
-    let final_count = |entry, mut count| {
+    let final_count = || {
         #[question("Has the counter reached three?")]
         let (done, again) = |&count| *count == 3;
 
@@ -27,7 +27,7 @@ fn entry_captures(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) -> usize {
         };
     };
 
-    #[action("Record work after the cycle input drops.")]
+    #[action("Record work after the moved entry drops.")]
     let result = |final_count, &mut log| {
         log.borrow_mut().push(100);
         final_count
@@ -37,8 +37,11 @@ fn entry_captures(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) -> usize {
 }
 
 #[test]
-fn a_cycle_input_is_evaluated_once_and_drops_before_the_continuation() {
+fn an_outer_owner_moved_by_the_break_drops_before_the_continuation() {
     let log = Rc::new(RefCell::new(Vec::new()));
-    assert_eq!(entry_captures(Entry(log.clone()), log.clone()), 3);
+    assert_eq!(
+        outer_owner_moved_by_break(Entry(log.clone()), log.clone()),
+        3
+    );
     assert_eq!(*log.borrow(), [0, 1, 2, 99, 100]);
 }

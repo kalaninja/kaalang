@@ -162,11 +162,11 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}, mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
             )
         } else {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}, mode| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         }
     };

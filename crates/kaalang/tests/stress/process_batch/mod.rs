@@ -128,7 +128,7 @@ impl BatchProcessor {
         let (mut pending, mut report) = |jobs| (jobs.into_iter(), Report::default());
 
         #[cycle("Process tasks until the queue ends or cancellation is requested.")]
-        let stop = |started, &mut pending, &mut report, policy, &mut self| {
+        let stop = |started| {
             #[question("Has the cancellation boundary been reached?")]
             #[no("Take another task.")]
             #[yes("Cancel the batch.")]
@@ -194,12 +194,12 @@ impl BatchProcessor {
             };
 
             #[action("Prepare the remote attempt queue.")]
-            let (responses, attempt_number) = |remote| (remote.into_iter(), 0usize);
+            let (mut responses, mut attempt_number) = |remote| (remote.into_iter(), 0usize);
 
             #[cycle(
                 "Retry transient failures; complete on a response, a fatal error, or exhaustion."
             )]
-            let (processed, attempts) = |mut responses, mut attempt_number, index, &mut self| {
+            let (processed, attempts) = |responses| {
                 #[question("Is there another scripted response?")]
                 let (try_next, exhausted) = |&responses| responses.len() > 0;
 
@@ -238,10 +238,11 @@ impl BatchProcessor {
                 |retry, index, &mut self| self.events.borrow_mut().push(Event::Retry(index));
 
                 #[action("Prepare the response parts and their running total.")]
-                let (parts, subtotal, part_index) = |payload| (payload.into_iter(), 0i128, 0usize);
+                let (mut parts, mut subtotal, mut part_index) =
+                    |payload| (payload.into_iter(), 0i128, 0usize);
 
                 #[cycle("Parse each response part; discard the subtotal if any part is malformed.")]
-                let checked = |mut parts, mut subtotal, mut part_index, index, &mut self| {
+                let checked = |parts| {
                     #[call]
                     let part = |&mut parts| Iterator::next(parts);
 
@@ -338,10 +339,10 @@ impl BatchProcessor {
         };
 
         #[action("Take the pending audit records.")]
-        let audit_queue = |&mut self| std::mem::take(&mut self.pending_audit).into_iter();
+        let mut audit_queue = |&mut self| std::mem::take(&mut self.pending_audit).into_iter();
 
         #[cycle("Audit every recorded task before returning the report.")]
-        |mut audit_queue, &mut self| {
+        {
             #[call]
             let entry = |&mut audit_queue| Iterator::next(audit_queue);
 

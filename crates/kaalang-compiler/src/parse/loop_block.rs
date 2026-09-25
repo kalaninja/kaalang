@@ -1,4 +1,4 @@
-//! Parses a described, self-contained cycle interface.
+//! Parses a described cycle and its optional entry gate.
 
 use syn::{Attribute, Error, Expr, ExprLoop, Result};
 
@@ -17,6 +17,23 @@ pub(super) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     }
     let description = description(syntax.kind_attribute, "kaalang cycle")?;
     syntax.reject_companions()?;
+    // The header only gates entry; the body captures outer data itself.
+    if let Some(extra) = syntax.inputs.get(1) {
+        return Err(Error::new(
+            extra.alias.span(),
+            "a kaalang cycle header names at most one gate",
+        ));
+    }
+    if let Some(gate) = syntax
+        .inputs
+        .first()
+        .filter(|gate| gate.borrowed || gate.mutable)
+    {
+        return Err(Error::new(
+            gate.alias.span(),
+            "a kaalang cycle gate is a plain wire name, without `mut` or `&`",
+        ));
+    }
     Ok(syntax.into_block(Some(description), Vec::new()))
 }
 

@@ -766,7 +766,7 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
 /// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
 const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
-    let result = |mode, stay| {
+    let result = || {
         #[choice(\"Which route?\")]
         #[case(\"Advance and repeat.\")]
         #[case(\"Spin forever.\")]
@@ -895,17 +895,17 @@ pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
         let (stay_0, leave_0) = |&step| *step > 0;
         |leave_0| break;
         #[cycle(\"Repeat the second cycle.\")]
-        |stay_0, step| {
+        |stay_0| {
             #[question(\"Leave the second?\")]
             let (stay_1, leave_1) = |&step| *step > 1;
             |leave_1| break;
             #[cycle(\"Repeat the third cycle.\")]
-            |stay_1, step| {
+            |stay_1| {
                 #[question(\"Leave the third?\")]
                 let (stay_2, leave_2) = |&step| *step > 2;
                 |leave_2| break;
                 #[cycle(\"Repeat the fourth cycle.\")]
-                |stay_2, mut step| {
+                |stay_2| {
                     #[question(\"Leave the fourth?\")]
                     let (stay_3, leave_3) = |&step| *step > 3;
                     |leave_3| break;

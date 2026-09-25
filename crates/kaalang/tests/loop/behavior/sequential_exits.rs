@@ -3,10 +3,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str> {
     #[action("Initialize the counter and log.")]
-    let (initial_count, initial_log) = || (0, Vec::new());
+    let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
     #[cycle("Run work between two stopping checks.")]
-    let log = |before_limit, after_limit, mut initial_count, mut initial_log| {
+    let log = || {
         #[question("Stop before the work?")]
         let (done, work) = |&initial_count, before_limit, &mut initial_log| {
             initial_log.push("check before");

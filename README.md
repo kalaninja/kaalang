@@ -145,15 +145,15 @@ the details.
 FizzBuzz uses `choice` and `action`. The other kinds let a flow ask a yes/no
 question, call an existing function, or repeat a sequence:
 
-| Kind       | Role in a flow                                                                      |
-| ---------- | ----------------------------------------------------------------------------------- |
-| `action`   | Perform a computation or effect with a Rust expression.                             |
-| `call`     | Call one named Rust function. Its name supplies the description if omitted.         |
-| `question` | Select one of two branch outputs using a boolean expression.                        |
-| `choice`   | Select one output per visit from the cases of a Rust `match`.                       |
-| `cycle`    | Repeat a nested kaalang sequence, preserving its captured state between iterations. |
-| `break`    | Complete the directly containing cycle and hand back its result.                    |
-| `return`   | Complete the root flow and hand back its result.                                    |
+| Kind       | Role in a flow                                                               |
+| ---------- | ---------------------------------------------------------------------------- |
+| `action`   | Perform a computation or effect with a Rust expression.                      |
+| `call`     | Call one named Rust function. Its name supplies the description if omitted.  |
+| `question` | Select one of two branch outputs using a boolean expression.                 |
+| `choice`   | Select one output per visit from the cases of a Rust `match`.                |
+| `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
+| `break`    | Complete the directly containing cycle and hand back its result.             |
+| `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
 declare their branch outputs. A cycle contains kaalang blocks; its result
@@ -178,10 +178,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
+    let result = || {
         #[question("Does the search range contain any elements?")]
         #[yes("YES")]
         #[no("NO")]
@@ -223,10 +223,10 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 
 [Source](crates/kaalang/tests/gallery/binary_search/mod.rs)
 
-The cycle captures `left` and `right` as mutable local state. The `less` and
-`greater` branches update that state and reach the next iteration. The `equal`
-and `leave` branches instead produce `outcome`, merging before the shared
-`break`. That value becomes the cycle's `result`, which the flow returns.
+The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
+the `less` and `greater` branches can update them before the next iteration. The
+`equal` and `leave` branches instead produce `outcome`, merging before the
+shared `break`. That value becomes the cycle's `result`, which the flow returns.
 
 <details>
 <summary>See the same flow with its cycle collapsed</summary>

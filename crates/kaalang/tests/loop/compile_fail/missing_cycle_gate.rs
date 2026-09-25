@@ -2,7 +2,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid() -> ! {
-    #[cycle("Capture a missing cycle input.")]
+    #[cycle("Gate on a missing wire.")]
     |missing| {};
 }
 

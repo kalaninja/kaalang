@@ -6,9 +6,9 @@ struct Ladder {
 
 impl Ladder {
     #[kaalang]
-    fn receive_inside_a_cycle(&self, start: u32) -> u32 {
+    fn receive_inside_a_cycle(&self, mut start: u32) -> u32 {
         #[cycle("Climb to the top.")]
-        let reached = |&self, mut start| {
+        let reached = || {
             #[question("Is the rung below the top?")]
             #[yes("YES")]
             #[no("NO")]

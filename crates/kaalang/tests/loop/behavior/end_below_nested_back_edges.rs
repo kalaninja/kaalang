@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn end_below_nested_back_edges(mode: u8) -> u8 {
+fn end_below_nested_back_edges(mut mode: u8) -> u8 {
     #[cycle("Choose an outer route until one produces a result.")]
-    let result = |mut mode| {
+    let result = || {
         #[choice("Which outer route?")]
         #[case("Enter the inner loop.")]
         #[case("Finish with seven.")]
@@ -15,19 +15,19 @@ fn end_below_nested_back_edges(mode: u8) -> u8 {
         };
 
         #[cycle("Choose an inner route until one completes.")]
-        let inner_result = |enter, &mut mode| {
+        let inner_result = |enter| {
             #[choice("Which inner route?")]
             #[case("Repeat the inner loop.")]
             #[case("Repeat the outer loop.")]
             #[case("Finish with eleven.")]
-            let (repeat, leave, eleven) = |&mode| match **mode {
+            let (repeat, leave, eleven) = |&mode| match *mode {
                 0 | 3 => (),
                 1 => (),
                 _ => (),
             };
 
             #[action("Advance to the next route.")]
-            |repeat, &mut mode| **mode += 1;
+            |repeat, &mut mode| *mode += 1;
 
             #[action("Continue with the outer cycle.")]
             let outcome = |leave| None;

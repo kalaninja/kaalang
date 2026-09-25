@@ -6,28 +6,28 @@ fn trailing_inner_loop() -> usize {
     let (mut outer, mut inner) = || (0, 0);
 
     #[cycle("Repeat outer iterations until the inner cycle finishes.")]
-    let result = |mut outer, mut inner| {
+    let result = || {
         #[action("Enter the outer iteration.")]
         |&mut outer| *outer += 1;
 
         #[cycle("Advance the inner counter or request another outer pass.")]
-        let inner_result = |&mut inner, &outer| {
+        let inner_result = || {
             #[question("Is the inner counter below three?")]
             #[no("NO")]
             #[yes("YES")]
-            let (leave_1, iterate_1) = |&inner| **inner < 3;
+            let (leave_1, iterate_1) = |&inner| *inner < 3;
 
             #[action("Request another outer pass.")]
             let outcome = |leave_1| None;
 
             #[action("Increment the inner counter.")]
-            let incremented = |iterate_1, &mut inner| **inner += 1;
+            let incremented = |iterate_1, &mut inner| *inner += 1;
 
             #[question("Has the inner counter reached three?")]
-            let (done, again) = |incremented, &inner| **inner == 3;
+            let (done, again) = |incremented, &inner| *inner == 3;
 
             #[action("Produce the outer counter.")]
-            let outcome = |done, outer| Some(*outer);
+            let outcome = |done, outer| Some(outer);
 
             |outcome| break outcome;
 

@@ -2,8 +2,8 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(flag: bool) -> ! {
-    #[cycle("Try duplicate cycle captures.")]
-    |flag, flag| {};
+    #[cycle("Try to borrow the gate.")]
+    |&flag| {};
 }
 
 fn main() {}

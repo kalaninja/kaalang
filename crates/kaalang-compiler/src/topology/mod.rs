@@ -8,7 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 
 use crate::model::{
-    Block, BlockKind, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, WireMerge,
+    Block, BlockKind, CaptureDependency, Execution, ExecutionOutcome, ExecutionPlan, Flow,
+    ProducerId, WireMerge,
 };
 
 mod action;
@@ -434,9 +435,6 @@ fn merges(model: &Analyzed<'_>) -> Vec<Vec<usize>> {
                     let branch = model.flow.blocks[block].branch_count() > 0;
                     entries.insert(block, branch.then_some(output));
                 }
-                ProducerId::CycleInput { block, .. } => {
-                    entries.insert(block, None);
-                }
                 ProducerId::FlowInput(_) => {}
             }
         }
@@ -474,11 +472,11 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
     let mut later = vec![BTreeSet::new(); blocks];
     for execution in model.executions {
         for dependency in &execution.dependencies {
-            match dependency.producer {
-                ProducerId::BlockOutput { block, .. } | ProducerId::CycleInput { block, .. } => {
+            match (entered(model, dependency), dependency.producer) {
+                (Some(block), _) | (None, ProducerId::BlockOutput { block, .. }) => {
                     later[block].insert(dependency.capture.block);
                 }
-                ProducerId::FlowInput(_) => {}
+                (None, ProducerId::FlowInput(_)) => {}
             }
         }
     }
@@ -579,14 +577,19 @@ fn connections(
             if !returns && !represented(model, structural, capture.block) {
                 continue;
             }
-            let source = source(model, dependency.producer, boundaries);
+            let entered = entered(model, dependency);
+            let source = entered.map_or_else(
+                || source(model, dependency.producer, boundaries),
+                |header| Source::Junction(structural[&header]),
+            );
             let consumer = if returns {
                 end::destination(model.flow)
             } else {
                 destination(structural, capture.block)
             };
             let wire = &model.flow.blocks[capture.block].inputs[capture.input].ident;
-            match junction_of(wire) {
+            // A wire entering a cycle has already met its merge outside it.
+            match junction_of(wire).filter(|_| entered.is_none()) {
                 // Alternative producers meet before any capture, so the route
                 // runs producer to junction to consumer rather than direct.
                 Some(junction) => {
@@ -932,17 +935,18 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .collect()
 }
 
+/// The cycle an outer wire enters to reach this consumer: its innermost
+/// enclosing cycle, unless the wire is local to that same body. Outer data
+/// arrives through that cycle's entry (RFC 0006 §7.5).
+fn entered(model: &Analyzed<'_>, dependency: &CaptureDependency) -> Option<usize> {
+    let parent = model.flow.blocks[dependency.capture.block].parent;
+    parent.filter(|_| parent != model.flow.producer_cycle(dependency.producer))
+}
+
 /// Visual source of a producer: start, a cycle boundary, or a block's output exit.
 fn source(model: &Analyzed<'_>, producer: ProducerId, boundaries: &[LoopBoundary]) -> Source {
     match producer {
         ProducerId::FlowInput(_) => Source::Exit(ExitId::of(NodeId::Start)),
-        ProducerId::CycleInput { block, .. } => Source::Junction(
-            boundaries
-                .iter()
-                .find(|boundary| boundary.header == block)
-                .expect("an expanded cycle input has an entry boundary")
-                .entry_junction(),
-        ),
         ProducerId::BlockOutput { block, output: _ }
             if model.flow.blocks[block].kind == BlockKind::Loop && !model.collapse_loops =>
         {

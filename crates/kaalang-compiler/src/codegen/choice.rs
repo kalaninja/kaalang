@@ -91,7 +91,7 @@ pub(crate) fn emit(
     // before its continuation. Separate labels allow different output types.
     let mut dispatch = authored_match(
         block,
-        &input_bindings(&block.inputs, bindings, false),
+        &input_bindings(&block.inputs, bindings),
         |case, arm_value| {
             let label = &labels[case];
             quote!({

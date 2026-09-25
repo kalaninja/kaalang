@@ -6,7 +6,7 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
     let mut row = || 0;
 
     #[cycle("Search each row.")]
-    let result = |mut row, rows, target| {
+    let result = || {
         #[question("Are there more rows?")]
         #[no("All rows have been searched.")]
         #[yes("Search this row.")]
@@ -19,24 +19,24 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
         let mut column = |iterate_1| 0;
 
         #[cycle("Search the current row.")]
-        let found = |mut column, &row, rows, target| {
+        let found = |column| {
             #[question("Are there more columns?")]
             #[yes("YES")]
             #[no("NO")]
-            let (iterate_2, leave_2) = |&column, &row, &rows| *column < (*rows)[**row].len();
+            let (iterate_2, leave_2) = |&column, &row, &rows| *column < (*rows)[*row].len();
 
             #[action("No match exists in this row.")]
             let matched = |leave_2| None;
 
             #[question("Does the value differ from the target?")]
             let (different, equal) =
-                |iterate_2, &rows, &row, &column, &target| (*rows)[**row][*column] != *target;
+                |iterate_2, &rows, &row, &column, &target| (*rows)[*row][*column] != *target;
 
             #[action("Advance to the next column.")]
             |different, &mut column| *column += 1;
 
             #[action("Produce the matching position.")]
-            let matched = |equal, &row, &column| Some((**row, *column));
+            let matched = |equal, &row, &column| Some((*row, *column));
 
             |matched| break matched;
         };

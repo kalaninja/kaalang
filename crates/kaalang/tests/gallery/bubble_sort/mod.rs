@@ -6,22 +6,22 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn bubble_sort(values: &mut [i32]) {
+fn bubble_sort(mut values: &mut [i32]) {
     #[action("📏 Every value is still unplaced.")]
-    let unsorted = |&values| values.len();
+    let mut unsorted = |&values| values.len();
 
     #[cycle("🫧 Float the largest unsorted value to its place.")]
-    let sorted = |mut values, mut unsorted| {
+    let sorted = || {
         #[question("Is more than one value still unplaced?")]
         #[yes("YES")]
         #[no("NO")]
         let (pass, done) = |unsorted| unsorted > 1;
 
         #[action("⏮️ Start at the second value.")]
-        let index = |pass| 1;
+        let mut index = |pass| 1;
 
         #[cycle("Compare every adjacent pair in the pass.")]
-        let compared = |&mut values, unsorted, mut index| {
+        let compared = |index| {
             #[question("Is there another pair in this pass?")]
             #[yes("YES")]
             #[no("NO")]

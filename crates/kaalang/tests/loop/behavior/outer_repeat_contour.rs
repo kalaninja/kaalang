@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn outer_repeat_contour(mode: u8) -> u8 {
+fn outer_repeat_contour(mut mode: u8) -> u8 {
     #[cycle("Advance until the left route leaves.")]
-    let result = |mut mode| {
+    let result = || {
         #[choice("Which route?")]
         #[case("Leave on the left.")]
         #[case("Advance in the middle.")]

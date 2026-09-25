@@ -693,7 +693,7 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
         mutable,
         ident: alias.unraw(),
         alias,
-        binding: None,
+        derived: false,
     }
 }
 

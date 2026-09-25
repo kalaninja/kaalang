@@ -1,7 +1,5 @@
 //! Flow models, execution summaries, convergence, and lowering plans.
 
-use std::collections::BTreeMap;
-
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
 use syn::ext::IdentExt;
@@ -67,6 +65,8 @@ pub struct Block {
     /// Each binding preserves its authored mutability. An outputless block uses `()`.
     pub output_pattern: Pat,
     pub output_span: Span,
+    /// The authored captures, in order. A cycle's are its optional gate, then
+    /// its derived inputs.
     pub inputs: Vec<Input>,
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
@@ -191,9 +191,10 @@ pub struct Input {
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
-    /// The persistent local wire created by a cycle capture. Ordinary block
-    /// captures do not declare a wire and leave this absent.
-    pub binding: Option<Ident>,
+    /// An outer wire a cycle's body captures, recorded on the cycle itself so
+    /// the dependency enters through the cycle (RFC 0006 §7.5). It binds
+    /// nothing and does not decide whether the cycle runs.
+    pub derived: bool,
 }
 
 /// A flow's named inputs and blocks, wire-validated by the time consumers see it.
@@ -203,25 +204,34 @@ pub struct Flow {
 }
 
 impl Flow {
-    /// The persistent local wire of every capture of one cycle, keyed by its binding.
-    pub(crate) fn cycle_bindings(&self, header: usize) -> BTreeMap<Ident, ProducerId> {
-        self.blocks[header]
-            .inputs
+    /// The first producer of one logical wire. Alternative producers share its
+    /// name and mutability.
+    #[must_use]
+    pub fn producer(&self, wire: &Ident) -> Option<ProducerId> {
+        self.flow_inputs
             .iter()
-            .enumerate()
-            .map(|(input, declaration)| {
-                (
-                    declaration
-                        .binding
-                        .clone()
-                        .expect("a cycle capture declares a local binding"),
-                    ProducerId::CycleInput {
-                        block: header,
-                        input,
-                    },
-                )
+            .position(|input| input == wire)
+            .map(ProducerId::FlowInput)
+            .or_else(|| {
+                self.blocks
+                    .iter()
+                    .enumerate()
+                    .find_map(|(block, declaration)| {
+                        declaration
+                            .outputs
+                            .iter()
+                            .position(|output| output == wire)
+                            .map(|output| ProducerId::BlockOutput { block, output })
+                    })
             })
-            .collect()
+    }
+
+    /// The cycle whose body provides a producer's wire, or `None` at the root.
+    pub(crate) fn producer_cycle(&self, producer: ProducerId) -> Option<usize> {
+        match producer {
+            ProducerId::FlowInput(_) => None,
+            ProducerId::BlockOutput { block, .. } => self.blocks[block].parent,
+        }
     }
 
     /// The loops enclosing one block, innermost first.
@@ -245,7 +255,6 @@ impl Flow {
     pub(crate) fn produces(&self, execution: &Execution, producer: ProducerId) -> bool {
         match producer {
             ProducerId::FlowInput(_) => true,
-            ProducerId::CycleInput { block, .. } => execution.participates(block),
             ProducerId::BlockOutput { block, output } => {
                 execution.participates(block)
                     && match self.blocks[block].kind {
@@ -272,39 +281,22 @@ impl Flow {
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
     pub(crate) fn wire_name(&self, wire: &Ident) -> String {
-        self.blocks
-            .iter()
-            .find_map(|block| {
-                block
-                    .outputs
-                    .iter()
-                    .position(|output| output == wire)
-                    .map(|index| block.output_binding(index).ident.unraw().to_string())
-                    .or_else(|| {
-                        block.inputs.iter().find_map(|input| {
-                            (input.binding.as_ref() == Some(wire))
-                                .then(|| input.alias.unraw().to_string())
-                        })
-                    })
-            })
-            .unwrap_or_else(|| wire.unraw().to_string())
+        match self.producer(wire) {
+            Some(ProducerId::BlockOutput { block, output }) => self.blocks[block]
+                .output_binding(output)
+                .ident
+                .unraw()
+                .to_string(),
+            _ => wire.unraw().to_string(),
+        }
     }
 }
 
-/// One occurrence that provides a wire: a flow input, a persistent cycle
-/// input, or one block output.
+/// One occurrence that provides a wire: a flow input or one block output.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ProducerId {
     FlowInput(usize),
-    /// One persistent input binding inside a cycle body.
-    CycleInput {
-        block: usize,
-        input: usize,
-    },
-    BlockOutput {
-        block: usize,
-        output: usize,
-    },
+    BlockOutput { block: usize, output: usize },
 }
 
 /// One block input, identified by the block and the input position.

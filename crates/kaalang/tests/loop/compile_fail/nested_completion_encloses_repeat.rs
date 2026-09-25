@@ -1,11 +1,11 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(mode: u8) -> u8 {
+fn invalid(mut mode: u8) -> u8 {
     #[cycle("Run the outer cycle.")]
     let result = |mode| {
         #[cycle("Put a repeating route between completions.")]
-        let nested = |mut mode| {
+        let nested = || {
             #[choice("Leave or advance?")]
             #[case("Leave immediately.")]
             #[case("Advance once.")]

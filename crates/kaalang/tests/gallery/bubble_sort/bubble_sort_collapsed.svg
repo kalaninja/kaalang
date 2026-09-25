@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="526" viewBox="0 0 680 526" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for bubble_sort</title>
-  <desc id="kaalang-description">Nodes: Start: bubble_sort with parameters values: &amp;mut [i32] handing over values; Action: 📏 Every value is still unplaced. capturing &amp;values handing over unsorted; Cycle: 🫧 Float the largest unsorted value to its place. capturing mut values, mut unsorted handing over sorted; End: () capturing sorted. Connections: Start: bubble_sort to Action: 📏 Every value is still unplaced.; Action: 📏 Every value is still unplaced. to Cycle: 🫧 Float the largest unsorted value to its place.; Cycle: 🫧 Float the largest unsorted value to its place. to End: ().</desc>
+  <desc id="kaalang-description">Nodes: Start: bubble_sort with parameters mut values: &amp;mut [i32] handing over mut values; Action: 📏 Every value is still unplaced. capturing &amp;values handing over mut unsorted; Cycle: 🫧 Float the largest unsorted value to its place. capturing mut unsorted, mut values handing over sorted; End: () capturing sorted. Connections: Start: bubble_sort to Action: 📏 Every value is still unplaced.; Action: 📏 Every value is still unplaced. to Cycle: 🫧 Float the largest unsorted value to its place.; Cycle: 🫧 Float the largest unsorted value to its place. to End: ().</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -34,16 +34,16 @@
       M 172 364 L 172 436
     "/>
     <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">sorted</tspan></text>
-    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">values</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">unsorted</tspan></text>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">mut values</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut unsorted</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">&amp;values</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">mut values, mut unsorted</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">mut unsorted, mut values</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;mut [i32]</tspan></text>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: &amp;mut [i32]</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

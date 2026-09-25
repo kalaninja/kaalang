@@ -5,10 +5,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
+    let result = || {
         #[question("Does the search range contain any elements?")]
         #[yes("YES")]
         #[no("NO")]
@@ -48,10 +48,10 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 #[kaalang]
 fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
+    let result = || {
         #[question("Does the search range contain any elements?")]
         #[no("NO")]
         #[yes("YES")]

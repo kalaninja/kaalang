@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_break_routes(a: bool, b: bool, c: bool) {
     #[cycle("Leave from any nested question.")]
-    |a, b, c| {
+    {
         #[question("First?")]
         let (next, stop) = |a| a;
         #[question("Second?")]

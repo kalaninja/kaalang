@@ -1,0 +1,5 @@
+error: a kaalang cycle body must not capture the cycle's own output
+  --> tests/loop/compile_fail/own_output_inside_body.rs:14:21
+   |
+14 |         let next = |value| value + 1;
+   |                     ^^^^^

@@ -7,7 +7,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle("Choose a repeating, diverging, or leaving route.")]
-    let result = |mut mode, stay| {
+    let result = || {
         #[choice("Which route?")]
         #[case("Advance and repeat.")]
         #[case("Spin forever.")]

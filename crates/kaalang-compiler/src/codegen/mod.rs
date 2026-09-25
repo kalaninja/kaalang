@@ -35,12 +35,6 @@ impl Bindings {
             .flow_inputs
             .iter()
             .chain(analysis.flow.blocks.iter().flat_map(|block| &block.outputs))
-            .chain(analysis.flow.blocks.iter().flat_map(|block| {
-                block
-                    .inputs
-                    .iter()
-                    .filter_map(|input| input.binding.as_ref())
-            }))
             .enumerate()
             .map(|(index, wire)| {
                 (
@@ -178,7 +172,7 @@ pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2
 fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan) -> TokenStream2 {
     let continuation = self::flow(flow, next, bindings);
     let block = &flow.blocks[index];
-    let input_bindings = input_bindings(&block.inputs, bindings, false);
+    let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let pattern = output_pattern(block, bindings);
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
@@ -197,7 +191,7 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
 /// target native loop, or `return` from the root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let captures = input_bindings(&block.inputs, bindings, false);
+    let captures = input_bindings(&block.inputs, bindings);
     let value = transfer_value(&block.body);
     quote_spanned! {block.span=>
         #[allow(unused_mut)]
@@ -275,12 +269,7 @@ fn transfer_value(body: &Expr) -> Option<TokenStream2> {
 }
 
 /// Binds explicit captures at their own spans for Rust's move/borrow diagnostics.
-/// Persistent cycle captures bind once and retain storage across iterations.
-pub(crate) fn input_bindings(
-    inputs: &[Input],
-    bindings: &Bindings,
-    persistent: bool,
-) -> TokenStream2 {
+pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
     let bindings = inputs
         .iter()
         .filter(|input| input.ident != "self")
@@ -290,23 +279,14 @@ pub(crate) fn input_bindings(
             let wire = bindings.wire_at(&input.ident);
             let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
             let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
-            let (target, binding_mut, borrow_mut) = if persistent {
-                let name = input
-                    .binding
-                    .as_ref()
-                    .expect("a cycle capture declares a local binding");
-                let binding_mut = bindings.mutability(name).map(|mutable| quote!(#mutable));
-                let borrow_mut = if input.borrowed { mutable } else { None };
-                (bindings.wire_at(name), binding_mut, borrow_mut)
-            } else if input.borrowed {
-                (alias.clone(), None, mutable)
+            let (binding_mut, borrow_mut) = if input.borrowed {
+                (None, mutable)
             } else {
-                (alias.clone(), mutable, None)
+                (mutable, None)
             };
-            let unused_mut = persistent.then(|| quote!(unused_mut,));
             quote_spanned!(alias.span()=>
-                #[allow(#unused_mut unused_variables, clippy::let_unit_value)]
-                let #binding_mut #target = #borrow #borrow_mut #wire;
+                #[allow(unused_variables, clippy::let_unit_value)]
+                let #binding_mut #alias = #borrow #borrow_mut #wire;
             )
         });
 

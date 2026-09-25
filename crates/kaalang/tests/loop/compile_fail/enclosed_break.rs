@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn invalid(mode: u8) -> u8 {
+fn invalid(mut mode: u8) -> u8 {
     #[cycle("Put a break between repeating routes.")]
-    let result = |mut mode| {
+    let result = || {
         #[choice("Exit or advance?")]
         #[case("Advance from zero.")]
         #[case("Leave the cycle.")]

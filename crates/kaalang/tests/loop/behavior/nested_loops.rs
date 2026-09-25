@@ -6,16 +6,16 @@ fn nested_loops(limit: usize) -> usize {
     let mut outer = || 0;
 
     #[cycle("Advance the outer counter to the limit.")]
-    let result = |mut outer, limit| {
+    let result = || {
         #[action("Initialize the iteration counter.")]
         let mut inner = || 0;
 
         #[cycle("Advance the inner counter to the outer counter.")]
-        |mut inner, &outer| {
+        {
             #[question("Is the iteration counter below the outer counter?")]
             #[yes("YES")]
             #[no("NO")]
-            let (iterate_1, leave_1) = |&inner, outer| *inner < *outer;
+            let (iterate_1, leave_1) = |&inner, &outer| *inner < *outer;
 
             |leave_1| break;
 

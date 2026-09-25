@@ -2,8 +2,8 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(count: usize) -> ! {
-    #[cycle("Try to redeclare a cycle input.")]
-    |count| {
+    #[cycle("Try to shadow an outer wire.")]
+    {
         #[action("Replace the counter.")]
         let count = || 1;
     };

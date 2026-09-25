@@ -1218,11 +1218,11 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
             let mut initial_log = |run| Vec::new();
 
             #[cycle("Collect the first steps.")]
-            let log = |mut initial_log, &limit| {
+            let mut log = |initial_log| {
                 #[question("Are there more first steps?")]
                 #[yes("YES")]
                 #[no("NO")]
-                let (iterate_1, leave_1) = |&initial_log, limit| initial_log.len() < *limit;
+                let (iterate_1, leave_1) = |&initial_log, &limit| initial_log.len() < *limit;
 
                 |leave_1, initial_log| break initial_log;
 
@@ -1244,11 +1244,11 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
             };
 
             #[cycle("Collect the second steps.")]
-            let end = |mut log, &limit| {
+            let end = |log| {
                 #[question("Are there more second steps?")]
                 #[yes("YES")]
                 #[no("NO")]
-                let (iterate_2, leave_2) = |&log, limit| log.len() < *limit * 2;
+                let (iterate_2, leave_2) = |&log, &limit| log.len() < *limit * 2;
 
                 |leave_2, log| break log;
 
@@ -1356,14 +1356,14 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
         #[kaalang]
         fn nested_exit_convergence(mut count: usize) -> usize {
             #[cycle("Count to completion.")]
-            let result = |mut count| {
+            let result = || {
                 #[cycle("Resolve the inner count.")]
-                |&mut count| {
+                {
                     #[choice("Leave the inner loop?")]
                     #[case("Leave at zero.")]
                     #[case("Leave at one.")]
                     #[case("Count down.")]
-                    let (zero, one, wwwwwwww) = |&count| match **count {
+                    let (zero, one, wwwwwwww) = |&count| match *count {
                         0 => (),
                         1 => (),
                         _ => (),
@@ -1376,7 +1376,7 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
                     |done| break;
 
                     #[action("Count down.")]
-                    |wwwwwwww, &mut count| **count -= 1;
+                    |wwwwwwww, &mut count| *count -= 1;
                 };
 
                 #[question("Finish the outer loop?")]
@@ -1458,9 +1458,9 @@ fn clearing_one_label_can_take_more_than_one_lane() {
 const FAR_CONTOUR: (&str, &str) = (
     r#"
         #[kaalang]
-        fn far_contour(mode: u8) -> u8 {
+        fn far_contour(mut mode: u8) -> u8 {
             #[cycle("Advance until the mode can leave.")]
-            let result = |mut mode| {
+            let result = || {
                 #[choice("Which route?")]
                 #[case("Case 0 repeat.")]
                 #[case("Case 1 repeat.")]
@@ -1557,27 +1557,27 @@ const FOUR_LANES: (&str, &str) = (
         #[kaalang]
         fn deep(mut step: usize) -> usize {
             #[cycle("Repeat the first cycle.")]
-            let result = |mut step| {
+            let result = || {
                 #[question("Leave the first?")]
                 let (stay_0, leave_0) = |&step| *step > 0;
                 |leave_0, step| break step;
                 #[cycle("Repeat the second cycle.")]
-                |stay_0, &mut step| {
+                |stay_0| {
                     #[question("Leave the second?")]
-                    let (stay_1, leave_1) = |&step| **step > 1;
+                    let (stay_1, leave_1) = |&step| *step > 1;
                     |leave_1| break;
                     #[cycle("Repeat the third cycle.")]
-                    |stay_1, &mut step| {
+                    |stay_1| {
                         #[question("Leave the third?")]
-                        let (stay_2, leave_2) = |&step| **step > 2;
+                        let (stay_2, leave_2) = |&step| *step > 2;
                         |leave_2| break;
                         #[cycle("Repeat the fourth cycle.")]
-                        |stay_2, &mut step| {
+                        |stay_2| {
                             #[question("Leave the fourth?")]
-                            let (stay_3, leave_3) = |&step| **step > 3;
+                            let (stay_3, leave_3) = |&step| *step > 3;
                             |leave_3| break;
                             #[action("Advance at the deepest level.")]
-                            |stay_3, &mut step| **step += 1;
+                            |stay_3, &mut step| *step += 1;
                         };
                     };
                 };

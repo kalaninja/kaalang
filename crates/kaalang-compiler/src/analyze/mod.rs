@@ -200,9 +200,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
         preceding[block].extend(flow.enclosing(block));
     }
     for dependency in &execution.dependencies {
-        if let ProducerId::BlockOutput { block, .. } | ProducerId::CycleInput { block, .. } =
-            dependency.producer
-        {
+        if let ProducerId::BlockOutput { block, .. } = dependency.producer {
             preceding[dependency.capture.block].insert(block);
         }
     }
@@ -212,7 +210,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
             .iter()
             .filter_map(|producer| match producer {
                 ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
+                ProducerId::FlowInput(_) => None,
             })
             .chain(merge.before.iter().copied())
             .filter(|&block| execution.participates(block))
@@ -304,9 +302,27 @@ impl Walk<'_> {
         if !block
             .inputs
             .iter()
+            .filter(|input| !input.derived)
             .all(|input| state.available.contains_key(&input.ident))
         {
             self.visit(block.loop_end.unwrap_or(index + 1), state);
+            return;
+        }
+        // An inner capture cannot make entering the cycle conditional.
+        if block.kind == BlockKind::Loop
+            && let Some((position, input)) = block
+                .inputs
+                .iter()
+                .enumerate()
+                .find(|(_, input)| input.derived && !state.available.contains_key(&input.ident))
+        {
+            self.report(
+                (index, position),
+                Error::new(
+                    input.ident.span(),
+                    "an outer wire captured inside a kaalang cycle must be available whenever the cycle is entered",
+                ),
+            );
             return;
         }
         state.enter(self.flow, index);
@@ -376,9 +392,6 @@ impl Walk<'_> {
             return false;
         };
         state.loops.remove(&header).expect("the iteration is open");
-        let bindings = self.flow.cycle_bindings(header);
-        state.produced = bindings.keys().cloned().collect();
-        state.available = bindings;
         state.repeats.insert(header);
         self.record(
             state.clone(),

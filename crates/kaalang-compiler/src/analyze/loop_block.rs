@@ -1,20 +1,13 @@
 //! Enters one cycle iteration; reaching its end records a repeat.
 
-use std::collections::BTreeSet;
-
-use proc_macro2::Ident;
-
 use super::{LoopState, State, Walk};
 use crate::model::Flow;
 
+/// The body inherits every outer wire; completion drops its locals again.
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
-    let bindings = walk.flow.cycle_bindings(block);
     let outside = LoopState {
-        available: std::mem::replace(&mut state.available, bindings.clone()),
-        produced: std::mem::replace(
-            &mut state.produced,
-            bindings.keys().cloned().collect::<BTreeSet<Ident>>(),
-        ),
+        available: state.available.clone(),
+        produced: state.produced.clone(),
     };
     state.loops.insert(block, outside);
     walk.visit(block + 1, state);
@@ -41,11 +34,11 @@ mod tests {
         }
         let source = r#"
             #[kaalang]
-            fn invalid(mode: u8) -> u8 {
+            fn invalid(mut mode: u8) -> u8 {
                 #[cycle("Select an exit from a nested cycle.")]
-                let selected = |mut mode| {
+                let selected = || {
                     #[cycle("Advance at most once.")]
-                    let inner = |mut mode| {
+                    let inner = || {
                         #[question("Exit immediately?")]
                         let (done, check) = |mode| mode == 0;
 

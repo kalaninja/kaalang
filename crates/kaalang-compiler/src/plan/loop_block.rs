@@ -68,7 +68,7 @@ pub(super) fn replay(
 ) -> Option<super::verify::Exit> {
     use super::verify::Exit;
     replay.enter(index, crate::model::BlockKind::Loop)?;
-    let outside = std::mem::replace(&mut replay.available, replay.flow.cycle_bindings(index));
+    let outside = replay.available.clone();
     match replay.iteration(index, body)? {
         Exit::Break(target) if target == index => {
             replay.available = outside;

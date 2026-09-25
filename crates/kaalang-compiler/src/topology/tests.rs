@@ -244,9 +244,9 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
         r#"
         fn example(first: bool, second: bool) {
             #[cycle("Repeat the outer cycle.")]
-            |first, second| {
+            {
                 #[cycle("Leave or repeat the inner cycle.")]
-                |first, second| {
+                {
                     #[question("Leave immediately?")]
                     let (leave, check) = |first| first;
 

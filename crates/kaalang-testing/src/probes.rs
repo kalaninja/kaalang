@@ -45,14 +45,14 @@ fn indent(depth: usize) -> String {
     "    ".repeat(depth * 2 + 1)
 }
 
-/// One nesting level's cycle attribute and the closure that takes the enclosing
+/// One nesting level's cycle attribute and the closure gated by the enclosing
 /// level's repeat wire. Every level is closed again by [`close_levels`].
 fn open_level(depth: usize) -> String {
     let pad = indent(depth);
     let opening = if depth == 0 {
         "|step| {".to_owned()
     } else {
-        format!("|stay_{}, step| {{", depth - 1)
+        format!("|stay_{}| {{", depth - 1)
     };
     format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
 }

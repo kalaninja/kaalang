@@ -562,7 +562,7 @@ fn validate_adjacency(
             .iter()
             .filter_map(|producer| match producer {
                 ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
+                ProducerId::FlowInput(_) => None,
             })
             .collect::<Vec<_>>()
     };
@@ -706,16 +706,16 @@ pub(super) fn collect(flow: &Flow) -> Vec<WireMerge> {
         .into_iter()
         .filter(|(_, producers)| producers.len() > 1)
         .map(|(wire, producers)| WireMerge {
+            // A capture inside a cycle reaches the wire through that cycle's
+            // derived input, so the cycle is the consumer at the merge's level.
             after: flow
                 .blocks
                 .iter()
                 .enumerate()
                 .filter_map(|(block, declaration)| {
-                    declaration
-                        .inputs
-                        .iter()
-                        .any(|input| input.ident == wire)
-                        .then_some(block)
+                    (declaration.parent == flow.producer_cycle(producers[0])
+                        && declaration.inputs.iter().any(|input| input.ident == wire))
+                    .then_some(block)
                 })
                 .collect(),
             wire,
@@ -872,7 +872,7 @@ mod tests {
                 #[question("Run the loop?")]
                 let (enter, fallback) = |run| { run };
                 #[cycle("Wait until done.")]
-                let result = |enter, done, value| {
+                let result = |enter| {
                     #[question("Done?")]
                     let (leave, _again) = |done| { done };
                     |leave, value| break value;

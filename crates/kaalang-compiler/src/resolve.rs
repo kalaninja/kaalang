@@ -56,11 +56,18 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                     "a kaalang block output must not reuse a flow input name",
                 ));
             }
-            if block.inputs.iter().any(|input| input.ident == *output) {
-                return Err(Error::new(
-                    output.span(),
-                    "a kaalang wire must not be produced more than once in one execution",
-                ));
+            if let Some(input) = block.inputs.iter().find(|input| input.ident == *output) {
+                return Err(if input.derived {
+                    Error::new(
+                        input.ident.span(),
+                        "a kaalang cycle body must not capture the cycle's own output",
+                    )
+                } else {
+                    Error::new(
+                        output.span(),
+                        "a kaalang wire must not be produced more than once in one execution",
+                    )
+                });
             }
             if earlier_inputs.contains(output) {
                 return Err(Error::new(
@@ -78,12 +85,6 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
                 ));
             }
             producers.insert(output.clone());
-        }
-        for input in &block.inputs {
-            if let Some(binding) = &input.binding {
-                producers.insert(binding.clone());
-                output_mutability.insert(binding.clone(), input.mutable);
-            }
         }
         earlier_inputs.extend(block.inputs.iter().map(|input| input.ident.clone()));
     }

@@ -105,7 +105,7 @@ fn settled(
         .iter()
         .filter(|dependency| dependency.capture.block == block)
         .all(|dependency| match dependency.producer {
-            ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
+            ProducerId::FlowInput(_) => true,
             ProducerId::BlockOutput { block, .. } => done.contains(&block),
         })
         && merges
@@ -120,7 +120,7 @@ fn settled(
                         ProducerId::BlockOutput { block, .. } => {
                             !execution.participates(*block) || done.contains(block)
                         }
-                        ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
+                        ProducerId::FlowInput(_) => true,
                     })
             })
 }
@@ -492,7 +492,7 @@ impl Builder<'_> {
             };
             if producers.len() < 2
                 || producers.iter().all(|producer| match producer {
-                    ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => true,
+                    ProducerId::FlowInput(_) => true,
                     ProducerId::BlockOutput { block, .. } => outside.contains(block),
                 })
             {

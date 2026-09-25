@@ -4,12 +4,12 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn do_while(number: u64) -> Vec<u8> {
+fn do_while(mut number: u64) -> Vec<u8> {
     #[action("📭 Start with no digits.")]
-    let digits = || Vec::new();
+    let mut digits = || Vec::new();
 
     #[cycle("Take one digit off the end.")]
-    let collected = |mut number, mut digits| {
+    let collected = || {
         #[action("✂️ Record the last digit and drop it.")]
         |&mut number, &mut digits| {
             digits.push((*number % 10) as u8);

@@ -4,10 +4,9 @@ error[E0382]: use of moved value
  3 | #[kaalang]
    | ---------- in this attribute macro expansion
  4 | fn invalid(text: String, done: bool) -> String {
- 5 |     #[cycle("Move persistent state on a repeating route.")]
+   |            ---- move occurs because value has type `String`, which does not implement the `Copy` trait
+ 5 |     #[cycle("Move outer data on a repeating route.")]
    |     - inside of this loop
- 6 |     let result = |text, done| {
-   |                   ---- move occurs because value has type `String`, which does not implement the `Copy` trait
 ...
 13 |         |again, text| drop(text);
    |                 ^^^^ value moved here, in previous iteration of loop

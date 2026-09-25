@@ -1,15 +1,17 @@
-//! Gives cycle interfaces and local wires distinct internal keys, keeping
-//! authored spellings in captures and output patterns.
+//! Gives cycle-local wires distinct internal keys, keeping authored spellings
+//! in captures and output patterns, and records the outer wires each cycle's
+//! body captures.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
-use syn::{Error, Result, ext::IdentExt};
+use syn::{Error, Result};
 
-use crate::model::{BlockKind, Flow};
+use crate::model::{BlockKind, Flow, Input};
 
 #[derive(Default)]
 struct Scope {
+    /// The wires visible where the cycle is declared, or the flow inputs.
     inherited: BTreeMap<Ident, Ident>,
     local: BTreeMap<Ident, Ident>,
 }
@@ -54,18 +56,24 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             {
                 input.ident = key.clone();
                 input.ident.set_span(input.alias.span());
-            } else if block.parent.is_some() {
-                return Err(Error::new(
-                    input.ident.span(),
-                    "a block inside a kaalang cycle may capture only a cycle input or an earlier local output",
-                ));
             }
         }
+        // A cycle's own outputs exist only once it completes, so its body
+        // inherits what was visible before them.
+        let body = (block.kind == BlockKind::Loop).then(|| Scope {
+            inherited: scope
+                .inherited
+                .iter()
+                .chain(&scope.local)
+                .map(|(name, key)| (name.clone(), key.clone()))
+                .collect(),
+            local: BTreeMap::new(),
+        });
         for output in &mut block.outputs {
             if block.parent.is_some() && scope.inherited.contains_key(output) {
                 return Err(Error::new(
                     output.span(),
-                    "a cycle-local output must not redeclare a cycle input",
+                    "a cycle-local output must not shadow a wire visible outside the cycle",
                 ));
             }
             let name = output.clone();
@@ -78,34 +86,51 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             *output = key.clone();
             output.set_span(name.span());
         }
-        if block.kind == BlockKind::Loop {
-            let inherited = block
-                .inputs
-                .iter_mut()
-                .map(|input| {
-                    let name = input.alias.unraw();
-                    // The receiver is the one wire a cycle cannot rebind: Rust
-                    // binds `self` only as a receiver, so it stays the same
-                    // wire inside the cycle as outside it.
-                    let binding = if name == "self" {
-                        name.clone()
-                    } else {
-                        fresh(&name, &mut used, &mut serial)
-                    };
-                    input.binding = Some(binding.clone());
-                    (name, binding)
-                })
-                .collect();
-            scopes.insert(
-                Some(index),
-                Scope {
-                    inherited,
-                    local: BTreeMap::new(),
-                },
-            );
+        if let Some(body) = body {
+            scopes.insert(Some(index), body);
         }
     }
+    derive_cycle_inputs(flow);
     Ok(())
+}
+
+/// Appends to each cycle the outer wires its body captures, nested cycles
+/// included, after its gate and in source order (RFC 0006 §7.5).
+fn derive_cycle_inputs(flow: &mut Flow) {
+    let derived = flow
+        .blocks
+        .iter()
+        .enumerate()
+        .filter_map(|(header, block)| {
+            let end = block.loop_end?;
+            let body = &flow.blocks[header + 1..end];
+            let local = body
+                .iter()
+                .flat_map(|block| &block.outputs)
+                .collect::<BTreeSet<_>>();
+            let mut seen = block
+                .inputs
+                .iter()
+                .map(|gate| &gate.ident)
+                .collect::<BTreeSet<_>>();
+            let inputs = body
+                .iter()
+                .flat_map(|block| &block.inputs)
+                .filter(|input| !local.contains(&input.ident) && seen.insert(&input.ident))
+                .map(|input| Input {
+                    borrowed: false,
+                    mutable: false,
+                    ident: input.ident.clone(),
+                    alias: input.alias.clone(),
+                    derived: true,
+                })
+                .collect::<Vec<_>>();
+            Some((header, inputs))
+        })
+        .collect::<Vec<_>>();
+    for (header, inputs) in derived {
+        flow.blocks[header].inputs.extend(inputs);
+    }
 }
 
 fn fresh(name: &Ident, used: &mut BTreeSet<Ident>, serial: &mut usize) -> Ident {
@@ -115,5 +140,58 @@ fn fresh(name: &Ident, used: &mut BTreeSet<Ident>, serial: &mut usize) -> Ident 
         if used.insert(key.clone()) {
             return key;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use syn::parse_quote;
+
+    #[test]
+    fn a_cycle_lists_its_gate_then_each_outer_capture_once() {
+        let mut flow = crate::parse::flow(&parse_quote! {
+            fn probe(a: u32, b: u32, go: bool) {
+                #[cycle("Run the outer cycle.")]
+                |go| {
+                    #[action("Use b and the gate.")]
+                    |b, go| {};
+
+                    #[action("Produce a local.")]
+                    let local = || 1;
+
+                    #[cycle("Run the inner cycle.")]
+                    {
+                        #[action("Use a, b and the local.")]
+                        |&a, &mut b, local| {};
+
+                        break;
+                    };
+
+                    break;
+                };
+
+                return;
+            }
+        })
+        .expect("the flow parses");
+        super::resolve(&mut flow).expect("the flow resolves");
+        let inputs = |header: usize| {
+            flow.blocks[header]
+                .inputs
+                .iter()
+                .map(|input| (input.alias.to_string(), input.derived))
+                .collect::<Vec<_>>()
+        };
+        let named = |names: &[(&str, bool)]| {
+            names
+                .iter()
+                .map(|&(name, derived)| (name.to_owned(), derived))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(inputs(0), named(&[("go", false), ("b", true), ("a", true)]));
+        assert_eq!(
+            inputs(3),
+            named(&[("a", true), ("b", true), ("local", true)])
+        );
     }
 }

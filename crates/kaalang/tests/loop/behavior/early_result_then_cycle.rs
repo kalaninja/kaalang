@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn early_result_then_cycle(first: bool, count: usize) -> usize {
+fn early_result_then_cycle(first: bool, mut count: usize) -> usize {
     #[cycle("Select an early result or continue.")]
     let early_result = |first| {
         #[question("Check for an early result?")]
@@ -25,7 +25,7 @@ fn early_result_then_cycle(first: bool, count: usize) -> usize {
     let end = |finish_early, early_result| early_result.expect("the early route has a result");
 
     #[cycle("Count to three.")]
-    let end = |count_more, mut count| {
+    let end = |count_more| {
         #[question("Has the count reached three?")]
         #[yes("YES")]
         #[no("NO")]

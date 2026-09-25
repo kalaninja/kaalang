@@ -2,14 +2,14 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn invalid(text: String, done: bool) -> String {
-    #[cycle("Move persistent state on a repeating route.")]
-    let result = |text, done| {
+    #[cycle("Move outer data on a repeating route.")]
+    let result = || {
         #[question("Finish?")]
         let (finish, again) = |done| done;
 
         |finish, text| break text;
 
-        #[action("Consume the persistent value.")]
+        #[action("Consume the outer value.")]
         |again, text| drop(text);
     };
 

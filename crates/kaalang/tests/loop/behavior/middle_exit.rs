@@ -3,10 +3,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn middle_exit(limit: usize) -> Vec<usize> {
     #[action("Initialize the counter and log.")]
-    let (initial_count, initial_log) = || (0, Vec::new());
+    let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
     #[cycle("Record iterations through the requested limit.")]
-    let result_log = |limit, mut initial_count, mut initial_log| {
+    let result_log = || {
         #[action("Record the start of the iteration.")]
         |&initial_count, &mut initial_log| initial_log.push(*initial_count);
 

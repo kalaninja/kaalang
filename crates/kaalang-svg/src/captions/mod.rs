@@ -108,6 +108,9 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         // return captures for ordering.
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
+            NodeId::Block(block) if node.kind == NodeKind::Loop => {
+                cycle_inputs(model, &parameters, block)
+            }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
                 .iter()
@@ -139,17 +142,13 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .as_deref()
                 .map_or_else(RichText::default, RichText::markdown),
         );
+        let inputs = cycle_inputs(model, &parameters, boundary.header);
         captions.loop_inputs.insert(
             boundary.header,
-            if block.inputs.is_empty() {
+            if inputs.is_empty() {
                 "()".to_owned()
             } else {
-                block
-                    .inputs
-                    .iter()
-                    .map(captured)
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                inputs.join(", ")
             },
         );
         captions.loop_outputs.insert(
@@ -296,18 +295,26 @@ fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) 
             .get(input)
             .expect("a flow input caption names a declared parameter")
             .clone(),
-        ProducerId::CycleInput { block, input } => {
-            let capture = &model.analysis.flow.blocks[block].inputs[input];
-            format!(
-                "{}{}",
-                if capture.mutable { "mut " } else { "" },
-                capture.alias.unraw()
-            )
-        }
         ProducerId::BlockOutput { block, output } => {
             binding_label(model.analysis.flow.blocks[block].output_binding(output))
         }
     }
+}
+
+/// A cycle's gate and the outer wires its body captures, each with its
+/// producer's `mut` rather than a capture form (RFC 0006 §7.5).
+fn cycle_inputs(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
+    let flow = &model.analysis.flow;
+    flow.blocks[block]
+        .inputs
+        .iter()
+        .map(|input| {
+            let producer = flow
+                .producer(&input.ident)
+                .expect("a cycle input names a produced wire");
+            provided(model, parameters, producer)
+        })
+        .collect()
 }
 
 /// Capture modifiers distinguish the four authored input forms.

@@ -291,7 +291,7 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
                 #[cycle("Count to three.")]
-                let final_count = |mut count| {
+                let final_count = || {
                     #[question("Finished?")]
                     let (done, again) = |count| count == 3;
                     |done, count| break count;
