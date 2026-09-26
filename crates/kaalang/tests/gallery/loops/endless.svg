@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1142" height="725" viewBox="0 0 1142 725" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1142" height="729" viewBox="0 0 1142 729" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for endless</title>
-  <desc id="kaalang-description">Cycles: 🚦 Show the next colour, forever. with inputs mut showing and outputs (). Nodes: Start: endless with parameters mut showing: Light handing over mut showing; Select: Which colour is showing? capturing &amp;showing; Case: 🔴 Red. handing over red; Case: 🟡 Amber. handing over amber; Case: 🟢 Green. handing over green; Action: 🚗 Let the waiting traffic go. capturing red, &amp;mut showing; Action: 🛑 Stop the traffic. capturing amber, &amp;mut showing; Action: ⚠️ Warn that the light is about to change. capturing green, &amp;mut showing. Connections: Start: endless to the entry of the cycle; Select: Which colour is showing? to Case: 🔴 Red.; Select: Which colour is showing? to Case: 🟡 Amber.; Select: Which colour is showing? to Case: 🟢 Green.; Case: 🔴 Red. to Action: 🚗 Let the waiting traffic go.; Case: 🟡 Amber. to Action: 🛑 Stop the traffic.; Case: 🟢 Green. to Action: ⚠️ Warn that the light is about to change.; Action: 🚗 Let the waiting traffic go. to the iteration tail of the cycle; Action: 🛑 Stop the traffic. to the iteration tail of the cycle; Action: ⚠️ Warn that the light is about to change. to the iteration tail of the cycle; the entry of the cycle to Select: Which colour is showing?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: 🚦 Show the next colour, forever. with inputs mut showing and outputs (). Nodes: Start: endless with parameters mut showing: Light handing over mut showing; Select: Which colour is showing? capturing &amp;showing; Case: 🔴 Red. handing over red; Case: 🟡 Amber. handing over amber; Case: 🟢 Green. handing over green; Action: 🚗 Let the waiting traffic go. capturing red, &amp;mut showing handing over changed; Action: 🛑 Stop the traffic. capturing amber, &amp;mut showing handing over changed; Action: ⚠️ Warn that the light is about to change. capturing green, &amp;mut showing handing over changed; Merge: changed. Connections: Start: endless to the entry of the cycle; Select: Which colour is showing? to Case: 🔴 Red.; Select: Which colour is showing? to Case: 🟡 Amber.; Select: Which colour is showing? to Case: 🟢 Green.; Case: 🔴 Red. to Action: 🚗 Let the waiting traffic go.; Case: 🟡 Amber. to Action: 🛑 Stop the traffic.; Case: 🟢 Green. to Action: ⚠️ Warn that the light is about to change.; Action: 🚗 Let the waiting traffic go. to the changed merge at the iteration tail of the cycle; Action: 🛑 Stop the traffic. to the changed merge at the iteration tail of the cycle; Action: ⚠️ Warn that the light is about to change. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which colour is showing?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -28,7 +28,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">🚦 Show the next colour, forever.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1078" height="566" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="127" width="1078" height="570" rx="12"/>
     <text class="cycle-caption" x="1098" y="141" text-anchor="end" xml:space="preserve"><tspan x="1098" dy="0">🚦 Show the next colour, forever.</tspan></text>
     </g>
   </g>
@@ -42,14 +42,15 @@
       M 220 448 L 220 521
       M 580 448 L 580 521
       M 940 448 L 940 520
-      M 220 585 L 220 658
-      M 580 585 L 580 658 L 220 658
-      M 940 586 L 940 658 L 220 658
+      M 220 585 L 220 662
+      M 580 585 L 580 662 L 220 662
+      M 940 586 L 940 662 L 220 662
       M 220 162 L 220 234
     "/>
     <path class="connection" d="
-      M 220 658 L 60 658 L 60 162 L 220 162
+      M 220 662 L 60 662 L 60 162 L 220 162
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="680" xml:space="preserve"><tspan x="233" dy="0">changed</tspan></text>
     <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut showing</tspan></text>
     <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">red</tspan></text>
     <text class="connection-label" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">amber</tspan></text>
@@ -64,6 +65,10 @@
     <g class="parameter-panel" transform="translate(576 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut showing: Light</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(220 662)">
+      <title xml:space="preserve">the changed merge at the iteration tail of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(220 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

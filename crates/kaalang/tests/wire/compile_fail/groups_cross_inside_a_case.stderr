@@ -1,0 +1,5 @@
+error: kaalang choice convergence groups must be disjoint or nested
+  --> tests/wire/compile_fail/groups_cross_inside_a_case.rs:12:17
+   |
+12 |     let (first, second, third) = |value| match value {
+   |                 ^^^^^^

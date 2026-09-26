@@ -7,9 +7,11 @@ fn borrowed_break_branch(flag: bool) {
     #[cycle("Check the flag.")]
     |flag| {
         #[question("Exit?")]
-        let (done, _again) = |flag| flag;
+        let (done, again) = |flag| flag;
 
         |&done| break;
+
+        |again| continue;
     };
 
     return;

@@ -153,12 +153,15 @@ question, call an existing function, or repeat a sequence:
 | `choice`   | Select one output per visit from the cases of a Rust `match`.                |
 | `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
 | `break`    | Complete the directly containing cycle and hand back its result.             |
+| `continue` | Start the next iteration of the directly containing cycle.                   |
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
-declare their branch outputs. A cycle contains kaalang blocks; its result
-becomes available when it reaches `break`. In the diagram, `break` and `return`
-appear as routes to the cycle boundary or flow end.
+declare their branch outputs. A cycle contains kaalang blocks; each route
+through it either repeats at its one `continue` or leaves at `break`, whose
+result then becomes available. In the diagram, `continue` routes meet at the
+cycle's back edge, and `break` and `return` appear as routes to the cycle
+boundary or flow end.
 
 The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) defines each kind;
 the [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds)
@@ -204,15 +207,17 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         };
 
         #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
         #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        let stepped = |greater, mid, &mut right| *right = mid;
 
         #[action("🎯 The target was found.")]
         let outcome = |equal, mid| Some(mid);
 
         |outcome| break outcome;
+
+        |stepped| continue;
     };
 
     |result| return result;
@@ -224,9 +229,10 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 [Source](crates/kaalang/tests/gallery/binary_search/mod.rs)
 
 The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
-the `less` and `greater` branches can update them before the next iteration. The
-`equal` and `leave` branches instead produce `outcome`, merging before the
-shared `break`. That value becomes the cycle's `result`, which the flow returns.
+the `less` and `greater` branches can update them. Both then produce `stepped`,
+merging before the shared `continue` that starts the next iteration. The `equal`
+and `leave` branches instead produce `outcome`, merging before the shared
+`break`. That value becomes the cycle's `result`, which the flow returns.
 
 <details>
 <summary>See the same flow with its cycle collapsed</summary>

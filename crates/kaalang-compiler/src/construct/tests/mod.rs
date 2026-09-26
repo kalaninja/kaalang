@@ -69,8 +69,9 @@ pub(super) fn parts_from(function: &syn::ItemFn) -> Option<Parts> {
 /// acceptance and one refusal swapping places.
 #[test]
 fn every_three_case_cycle_body_settles_the_same_way() {
-    // Four shapes violate semantic rules; two enclose an exit between
-    // converging routes when the cases occupy their mandatory common row.
+    // Every refusal is semantic: four merge exit routes around a repeating
+    // route, and two merge repeating routes around an exit before their one
+    // continue.
     let refused = [
         ["repeat", "break", "repeat"],
         ["repeat", "finish", "repeat"],
@@ -143,17 +144,6 @@ fn a_cycle_takes_the_clear_contour_whatever_the_preference() {
         let model = crate::build(&function).expect("the probe has a conforming diagram");
         assert_eq!(arrangement(&model).contours[0].side, side, "{routes:?}");
     }
-}
-
-/// A terminal route between repeats cannot escape while the cases share a row.
-#[test]
-fn a_terminal_route_between_two_repeats_is_rejected() {
-    let source = looping(&["repeat", "finish", "repeat"]);
-    let function = syn::parse_str(&source).unwrap();
-    let error = crate::build(&function)
-        .err()
-        .expect("the flow has no diagram");
-    assert!(error.to_string().contains("no conforming arrangement"));
 }
 
 /// A cycle is a projection bug, not an undrawable flow: ranking refuses it and
@@ -474,7 +464,10 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
         #[action(\"Third.\")]
         let third = |second| ();
         #[cycle(\"Diverge in the inner cycle.\")]
-        |third| {};
+        |third| {
+            continue;
+        };
+        |again| continue;
     };
 }
 
@@ -514,30 +507,24 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
 
 mod reference;
 
-/// Distributor routes may share rails, but all their case endpoints must
-/// arrive on one row. Neither search may hide an enclosed exit below the tail.
+/// The repeating cases around an exit merge before their one continue, so the
+/// exit separates that merge and validation rejects the flow before any search
+/// runs.
 #[test]
-fn exits_between_repeating_cases_are_refused_by_both_procedures() {
+fn exits_between_repeating_cases_separate_their_merge() {
     for routes in [
         ["repeat", "break", "repeat"].as_slice(),
         ["repeat", "finish", "repeat"].as_slice(),
         ["repeat", "finish", "finish", "repeat"].as_slice(),
     ] {
         let source = looping(routes);
-        let parts = parts_of(&source).expect("the flow is semantically valid");
-        assert!(
-            matches!(
-                super::sweep::search(&parts.flow, &parts.merges, &parts.topology),
-                Err(super::sweep::Refusal::Impossible(_))
-            ),
-            "{routes:?}"
-        );
-        assert!(
-            !reference::admissible(&parts.flow, &parts.topology),
-            "{routes:?}"
-        );
+        assert!(parts_of(&source).is_none(), "{routes:?}");
         let function = syn::parse_str(&source).unwrap();
-        assert!(crate::build(&function).is_err(), "{routes:?}");
+        let error = crate::build(&function).err().expect("the merge is split");
+        assert!(
+            error.to_string().contains("must be adjacent"),
+            "{routes:?}: {error}"
+        );
     }
 }
 
@@ -602,7 +589,7 @@ pub(super) fn small_decision_cases() -> Vec<String> {
 fn the_construction_agrees_with_an_independent_procedure() {
     let counted = agree(&flat_bodies(2..=3));
     assert!(
-        counted.drawn == 30 && counted.refused == 2 && counted.rejected_earlier == 4,
+        counted.drawn == 30 && counted.refused == 0 && counted.rejected_earlier == 6,
         "the flat domain should preserve every known outcome: {counted:?}"
     );
 }
@@ -617,7 +604,7 @@ fn the_declared_domain_agrees_with_the_independent_procedure() {
     let counted = agree(&declared_domain());
     println!("{counted:?}");
     assert!(
-        counted.drawn == 239 && counted.refused == 70 && counted.rejected_earlier == 240,
+        counted.drawn == 243 && counted.refused == 0 && counted.rejected_earlier == 306,
         "the declared distributor domain preserves every independently checked answer: {counted:?}"
     );
 }
@@ -721,7 +708,9 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
                     |leave| break;
                     #[action(\"Repeat.\")]
                     |again| ();
+                    |again| continue;
                 };
+                continue;
             };
         }",
     );
@@ -779,21 +768,23 @@ const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay
             _ => (),
         };
         #[action(\"Advance.\")]
-        |advance| {};
+        let advanced = |advance| {};
         #[cycle(\"Spin forever.\")]
         |spin| {
             #[action(\"Spin.\")]
             || {};
+            continue;
         };
         #[question(\"Stay in the loop?\")]
         let (again, leave) = |decide, stay| stay;
         #[action(\"Advance after the decision.\")]
-        |again| {};
+        let advanced = |again| {};
         #[action(\"Leave after the decision.\")]
         let selected = |leave, mode| mode;
         #[action(\"Leave immediately.\")]
         let selected = |leave_now, mode| mode;
         |selected| break selected;
+        |advanced| continue;
     };
     |result| return result;
 }
@@ -911,9 +902,13 @@ pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
                     |leave_3| break;
                     #[action(\"Advance at the deepest level.\")]
                     |stay_3, &mut step| *step += 1;
+                    |stay_3| continue;
                 };
+                |stay_2| continue;
             };
+            |stay_1| continue;
         };
+        |stay_0| continue;
     };
     |step| return step;
 }
@@ -947,11 +942,11 @@ pub(super) const fn deep_lane(index: usize) -> usize {
 }
 
 #[test]
-fn ordered_question_ports_cover_genuine_refusals_in_both_procedures() {
+fn ordered_question_ports_agree_with_the_independent_procedure() {
     let counted = agree(&question_shapes());
     assert_eq!(
         (counted.drawn, counted.refused, counted.rejected_earlier),
-        (21, 2, 4)
+        (21, 0, 6)
     );
 }
 

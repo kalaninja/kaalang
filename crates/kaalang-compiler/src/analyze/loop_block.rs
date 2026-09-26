@@ -1,4 +1,4 @@
-//! Enters one cycle iteration; reaching its end records a repeat.
+//! Enters one cycle iteration; its `continue` records a repeat.
 
 use super::{LoopState, State, Walk};
 use crate::model::Flow;
@@ -49,6 +49,7 @@ mod tests {
                         |advance, &mut mode| *mode = 2;
 
                         |done, mode| break mode;
+                        |advance| continue;
                     };
 
                     |inner| break inner;
@@ -65,8 +66,8 @@ mod tests {
     fn a_converged_selection_does_not_split_loop_exit_routes() {
         let source = include_str!("../../../kaalang/tests/loop/behavior/multiple_exits.rs")
             .replace(
-                "    let selected = |mut mode| {",
-                r#"    let selected = |mut mode| {
+                "    let selected = {",
+                r#"    let selected = {
         #[question("Prepare this iteration?")]
         let (left, right) = |mode| mode == 0;
 

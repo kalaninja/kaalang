@@ -32,6 +32,8 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
 
         #[action("Record the first step.")]
         |&mut initial_log, step| initial_log.push(step);
+
+        |iterate_1| continue;
     };
 
     #[cycle("Collect the second steps.")]
@@ -54,6 +56,8 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
 
         #[action("Record the second step.")]
         |&mut log, step| log.push(step);
+
+        |iterate_2| continue;
     };
 
     #[action("Return an empty log.")]

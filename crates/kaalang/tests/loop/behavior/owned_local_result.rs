@@ -14,6 +14,8 @@ fn owned_local_result(mut count: usize) -> String {
         let text = |done| String::from("done");
 
         |text| break text;
+
+        |again| continue;
     };
 
     |result| return result;

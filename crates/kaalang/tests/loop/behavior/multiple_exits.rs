@@ -24,6 +24,8 @@ fn multiple_exits(mut mode: u8) -> u8 {
         let result = |last, mode| mode;
 
         |result| break result;
+
+        |advance| continue;
     };
 
     |selected| return selected;

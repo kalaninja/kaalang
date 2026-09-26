@@ -39,6 +39,8 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
             let matched = |equal, &row, &column| Some((*row, *column));
 
             |matched| break matched;
+
+            |different| continue;
         };
 
         #[question("Was the target found in this row?")]
@@ -51,6 +53,8 @@ fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
 
         #[action("Advance to the next row.")]
         |again, &mut row| *row += 1;
+
+        |again| continue;
     };
 
     |result| return result;

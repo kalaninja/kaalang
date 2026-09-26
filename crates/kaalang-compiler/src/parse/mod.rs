@@ -19,6 +19,7 @@ mod action;
 mod break_block;
 mod call;
 mod choice;
+mod continue_block;
 mod end;
 mod loop_block;
 mod question;
@@ -212,10 +213,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             }
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
-                return Err(Error::new_spanned(
-                    expression,
-                    "kaalang cycles repeat implicitly and do not support authored `continue`",
-                ));
+                continue_block::parse(expression, inputs, parent, blocks)?
             }
             Some(Expr::While(expression)) => {
                 return Err(Error::new_spanned(
@@ -261,6 +259,7 @@ pub(crate) fn noun(kind: BlockKind) -> &'static str {
         BlockKind::Choice => "choice",
         BlockKind::Loop => "cycle",
         BlockKind::Break => "break",
+        BlockKind::Continue => "continue",
         BlockKind::Return => "return",
         BlockKind::End => unreachable!("the end block is implicit"),
     }
@@ -339,7 +338,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
         BlockKind::Loop => loop_block::parse(syntax),
-        BlockKind::End | BlockKind::Break | BlockKind::Return => {
+        BlockKind::End | BlockKind::Break | BlockKind::Continue | BlockKind::Return => {
             unreachable!("structural blocks parse separately")
         }
     }

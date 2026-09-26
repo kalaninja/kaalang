@@ -1,0 +1,5 @@
+error: a route through this kaalang cycle reaches the end of its body; repeat it with `continue` or complete it with `break`
+ --> tests/loop/compile_fail/missing_continue.rs:5:5
+  |
+5 |     #[cycle("Forget to repeat.")]
+  |     ^

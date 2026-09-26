@@ -29,6 +29,8 @@ fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str
 
         #[action("Finish the iteration.")]
         |again, &mut initial_log| initial_log.push("repeat");
+
+        |again| continue;
     };
 
     #[action("Continue after the loop.")]

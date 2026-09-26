@@ -28,6 +28,8 @@ fn middle_exit(number: u64) -> u64 {
 
         #[action("🔽 Take the smaller guess.")]
         |again, next, &mut guess| *guess = next;
+
+        |again| continue;
     };
 
     #[action("⭕ The root of zero is zero.")]

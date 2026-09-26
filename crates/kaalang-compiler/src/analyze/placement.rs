@@ -2,6 +2,7 @@
 //! source order runs must stay inside the selected branch, or inside a nested
 //! continuation of it, until a wire merge joins that branch with the others.
 
+use std::cell::OnceCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::Ident;
@@ -31,7 +32,7 @@ fn occurrence(
 /// when it captures the branch output itself or a wire produced inside that
 /// branch; a wire with alternative producers carries only what all of them
 /// agree on, which is how a merge hands the branch back to the common path.
-fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
+pub(super) fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
     let mut wires = BTreeMap::<Ident, BTreeSet<BranchSelection>>::new();
     for input in &flow.flow_inputs {
         wires.insert(input.clone(), BTreeSet::new());
@@ -58,6 +59,30 @@ fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
         blocks.push(inherited);
     }
     blocks
+}
+
+/// The selections each block carries in one execution: those of the producers
+/// it actually captured, not only those every alternative shares. A partial
+/// merge therefore keeps its branch on the value until a later merge closes it.
+fn carried_in(flow: &Flow, execution: &Execution) -> Vec<BTreeSet<BranchSelection>> {
+    let mut captured = vec![Vec::new(); flow.blocks.len()];
+    for dependency in &execution.dependencies {
+        if let ProducerId::BlockOutput { block, output } = dependency.producer {
+            captured[dependency.capture.block].push((block, output));
+        }
+    }
+    let mut carried = vec![BTreeSet::new(); flow.blocks.len()];
+    for &block in &execution.blocks {
+        let mut selections = flow.blocks[block]
+            .parent
+            .map(|parent| carried[parent].clone())
+            .unwrap_or_default();
+        for &(producer, output) in &captured[block] {
+            selections.extend(occurrence(flow, &carried[producer], producer, output));
+        }
+        carried[block] = selections;
+    }
+    carried
 }
 
 /// One implicit junction seen from source order: its last alternative, the
@@ -102,10 +127,12 @@ impl<'a> Junction<'a> {
     }
 
     /// A completed merge admits a block only within the branches it joins.
-    /// Producer selection also carries ancestry through earlier partial merges.
+    /// The producer that ran carries its selections through earlier partial
+    /// merges.
     fn closes(
         &mut self,
         execution: &Execution,
+        carried: &OnceCell<Vec<BTreeSet<BranchSelection>>>,
         block: usize,
         selection: BranchSelection,
         executions: &[Execution],
@@ -121,18 +148,29 @@ impl<'a> Junction<'a> {
         {
             return false;
         }
-        let Some((_, reached)) = self
+        let Some((producer, occurrence)) = self
             .producers
             .iter()
             .find(|&&(producer, _)| self.flow.produces(execution, producer))
         else {
             return false;
         };
+        let ProducerId::BlockOutput { block: ran, .. } = *producer else {
+            unreachable!("a wire merge combines block outputs")
+        };
+        // The occurrence keeps only what every alternative shares, a subset of
+        // what the value that ran carries: selections made before it ran.
+        let reached = || {
+            occurrence.contains(&selection)
+                || (selection.block < ran
+                    && carried.get_or_init(|| carried_in(self.flow, execution))[ran]
+                        .contains(&selection))
+        };
         let closes = self
             .owners
             .iter()
             .any(|&(owner, _)| owner == selection.block)
-            || (reached.contains(&selection)
+            || (reached()
                 && self
                     .producers
                     .iter()
@@ -165,23 +203,25 @@ pub(super) fn flow(
     executions: &[Execution],
     merges: &[WireMerge],
     owners: &[Vec<(usize, Vec<usize>)>],
+    ancestry: &[BTreeSet<BranchSelection>],
 ) -> Result<()> {
-    let ancestry = ancestry(flow);
     let mut junctions = merges
         .iter()
         .zip(owners)
-        .map(|(merge, owners)| Junction::of(flow, &ancestry, merge, owners))
+        .map(|(merge, owners)| Junction::of(flow, ancestry, merge, owners))
         .collect::<Vec<_>>();
     let end = flow.blocks.len() - 1;
     let mut offending = None::<(usize, usize)>;
     for execution in executions {
+        // Built on the first junction that needs it; most pairs never do.
+        let carried = OnceCell::new();
         for &block in execution.blocks.iter().filter(|&&block| block < end) {
             for selection in execution.branches.iter().filter(|s| s.block < block) {
                 if super::loop_block::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
-                    || junctions
-                        .iter_mut()
-                        .any(|junction| junction.closes(execution, block, *selection, executions))
+                    || junctions.iter_mut().any(|junction| {
+                        junction.closes(execution, &carried, block, *selection, executions)
+                    })
                 {
                     continue;
                 }

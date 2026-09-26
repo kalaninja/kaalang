@@ -31,15 +31,17 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         };
 
         #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
         #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        let stepped = |greater, mid, &mut right| *right = mid;
 
         #[action("🎯 The target was found.")]
         let outcome = |equal, mid| Some(mid);
 
         |outcome| break outcome;
+
+        |stepped| continue;
     };
 
     |result| return result;
@@ -79,10 +81,12 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         |outcome| break outcome;
 
         #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
         #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        let stepped = |greater, mid, &mut right| *right = mid;
+
+        |stepped| continue;
     };
 
     |result| return result;

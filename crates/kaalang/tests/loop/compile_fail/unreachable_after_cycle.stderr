@@ -1,5 +1,5 @@
 error: this kaalang block is unreachable
- --> tests/loop/compile_fail/unreachable_after_cycle.rs:8:5
-  |
-8 |     return;
-  |     ^^^^^^
+  --> tests/loop/compile_fail/unreachable_after_cycle.rs:10:5
+   |
+10 |     return;
+   |     ^^^^^^

@@ -37,7 +37,6 @@ pub(super) fn plan(
                 last: None,
                 dependencies: BTreeSet::new(),
                 loop_indices: Vec::new(),
-                repeats: BTreeSet::new(),
             };
             (match (replay.walk(plan), execution.outcome) {
                 (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
@@ -57,11 +56,6 @@ pub(super) fn plan(
                     .iter()
                     .copied()
                     .eq(execution.dependencies.iter().copied())
-                && replay
-                    .repeats
-                    .iter()
-                    .copied()
-                    .eq(execution.repeats.iter().copied())
         })
 }
 
@@ -93,7 +87,6 @@ pub(super) struct Replay<'a> {
     dependencies: BTreeSet<CaptureDependency>,
     /// Only the innermost active body may be the target of a native continue.
     pub(super) loop_indices: Vec<usize>,
-    repeats: BTreeSet<usize>,
 }
 
 impl Replay<'_> {
@@ -152,10 +145,7 @@ impl Replay<'_> {
                 super::break_block::replay(self, *index, *target)
             }
             ExecutionPlan::Return { index } => super::return_block::replay(self, *index),
-            ExecutionPlan::Repeat { index } => (self.loop_indices.last() == Some(index)
-                && self.execution.repeats.contains(index)
-                && self.repeats.insert(*index))
-            .then_some(Exit::Repeat(*index)),
+            ExecutionPlan::Continue { index } => super::continue_block::replay(self, *index),
             ExecutionPlan::Action { index, next } => {
                 self.enter(*index, BlockKind::Action)?;
                 self.walk(next)
@@ -297,6 +287,7 @@ mod tests {
                     |done, count| break count;
                     #[action("Advance.")]
                     |again, &mut count| *count += 1;
+                    |again| continue;
                 };
 
                 |final_count| return final_count;
@@ -314,7 +305,7 @@ mod tests {
         };
         let mut misplaced = std::mem::replace(
             &mut branches[1].plan,
-            Box::new(ExecutionPlan::Repeat { index: 0 }),
+            Box::new(ExecutionPlan::Continue { index: 4 }),
         );
         let ExecutionPlan::Action { next: suffix, .. } = misplaced.as_mut() else {
             unreachable!()
@@ -343,9 +334,11 @@ mod tests {
                     #[cycle("Repeat the inner cycle.")]
                     |flag| {
                         #[question("Repeat?")]
-                        let (_iterate_1, leave_1) = |flag| flag;
+                        let (iterate_1, leave_1) = |flag| flag;
                         |leave_1| break;
+                        |iterate_1| continue;
                     };
+                    continue;
                 };
             }
         })
@@ -364,13 +357,13 @@ mod tests {
         };
         assert!(matches!(
             branches[0].plan.as_ref(),
-            ExecutionPlan::Repeat { index: 1 }
+            ExecutionPlan::Continue { index: 4 }
         ));
         assert!(matches!(
             next.as_deref(),
-            Some(ExecutionPlan::Repeat { index: 0 })
+            Some(ExecutionPlan::Continue { index: 5 })
         ));
-        *branches[0].plan = ExecutionPlan::Repeat { index: 0 };
+        *branches[0].plan = ExecutionPlan::Continue { index: 5 };
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
@@ -384,7 +377,9 @@ mod tests {
                     let (iterate_2, leave_2) = |flag| flag;
                     |leave_2| break;
                     #[cycle("Repeat forever.")]
-                    |iterate_2| {};
+                    |iterate_2| {
+                        continue;
+                    };
                 };
                 #[action("Finish.")]
                 let end = || 0;
@@ -401,7 +396,7 @@ mod tests {
                 .map(|execution| execution.outcome)
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
-                ExecutionOutcome::Return { block_index: 5 },
+                ExecutionOutcome::Return { block_index: 6 },
                 ExecutionOutcome::Repeat { loop_index: 3 }
             ])
         );

@@ -11,6 +11,8 @@ fn invalid(text: String, done: bool) -> String {
 
         #[action("Consume the outer value.")]
         |again, text| drop(text);
+
+        |again| continue;
     };
 
     |result| return result;

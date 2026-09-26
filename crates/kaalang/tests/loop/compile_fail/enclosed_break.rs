@@ -15,12 +15,14 @@ fn invalid(mut mode: u8) -> u8 {
         };
 
         #[action("Set the mode to one.")]
-        |first, &mut mode| *mode = 1;
+        let advanced = |first, &mut mode| *mode = 1;
 
         |leave, mode| break mode;
 
         #[action("Set the mode to one.")]
-        |last, &mut mode| *mode = 1;
+        let advanced = |last, &mut mode| *mode = 1;
+
+        |advanced| continue;
     };
 
     |result| return result;

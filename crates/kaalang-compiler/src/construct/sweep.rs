@@ -1398,65 +1398,6 @@ mod tests {
         compare_reductions(super::super::tests::decision_cases());
     }
 
-    #[test]
-    fn a_shared_rail_cannot_lower_a_case_past_its_siblings() {
-        let source = super::super::tests::looping(&["repeat", "break", "repeat"]);
-        let parts = super::super::tests::parts_of(&source).unwrap();
-        let sweep = Sweep::of(&parts.flow, &parts.topology, true).unwrap();
-        let mut state = sweep.start();
-        let mut steps = Vec::new();
-        loop {
-            let vertex = (0..state.placed.len())
-                .find(|&v| {
-                    !state.placed[v]
-                        && sweep.predecessors[v].iter().all(|&p| state.placed[p])
-                        && sweep.consumed(&state, v).is_some()
-                })
-                .unwrap();
-            let (position, count) = sweep.consumed(&state, vertex).unwrap();
-            let mut emitted = sweep.departures[vertex]
-                .iter()
-                .flatten()
-                .copied()
-                .map(Lifeline::Wire)
-                .collect::<Vec<_>>();
-            let side = sweep.entry_of[vertex].map(|i| {
-                emitted.insert(0, Lifeline::BackEdge(i));
-                Side::Left
-            });
-            let step = Step {
-                vertex: Some(vertex),
-                position,
-                consumed: state.frontier[position..position + count].to_vec(),
-                emitted,
-                side,
-            };
-            state.order = sweep.constrain(&state, &step).unwrap();
-            state.placed[vertex] = true;
-            if let Some(i) = sweep.entry_of[vertex] {
-                state.sides[i] = side;
-            }
-            state
-                .frontier
-                .splice(position..position + count, step.emitted.iter().copied());
-            steps.push(step);
-            if sweep.departures[vertex].iter().any(|group| group.len() > 1) {
-                break;
-            }
-        }
-        let result = sweep.walk(
-            &mut state,
-            &mut steps,
-            &mut BTreeSet::new(),
-            &mut (0, None),
-            true,
-        );
-        assert!(
-            matches!(result, Ok(None)),
-            "the case row must stay together"
-        );
-    }
-
     fn compare_reductions(cases: Vec<String>) {
         for source in cases {
             let Some(parts) = super::super::tests::parts_of(&source) else {

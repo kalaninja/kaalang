@@ -21,6 +21,8 @@ fn nested_loops(limit: usize) -> usize {
 
             #[action("Increment the iteration counter.")]
             |iterate_1, &mut inner| *inner += 1;
+
+            |iterate_1| continue;
         };
 
         #[question("Has the outer counter reached the limit?")]
@@ -30,6 +32,8 @@ fn nested_loops(limit: usize) -> usize {
 
         #[action("Increment the outer counter.")]
         |again, &mut outer| *outer += 1;
+
+        |again| continue;
     };
 
     |result| return result;

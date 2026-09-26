@@ -17,6 +17,8 @@ fn conditional_entry(enabled: bool, limit: usize) -> usize {
 
         #[action("Increment the counter.")]
         |again, &mut count| *count += 1;
+
+        |again| continue;
     };
 
     #[action("Skip the counter.")]

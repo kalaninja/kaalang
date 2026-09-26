@@ -6,7 +6,9 @@ fn invalid(flag: bool) -> ! {
     let (_run, _skip) = |flag| flag;
 
     #[cycle("Enter without selecting a branch.")]
-    || {};
+    {
+        continue;
+    };
 }
 
 fn main() {}

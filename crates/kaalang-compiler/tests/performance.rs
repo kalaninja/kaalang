@@ -9,7 +9,7 @@ use syn::ItemFn;
 
 use kaalang_testing::corpus;
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::{accepted, branching, branching_loops, flow};
+use kaalang_testing::probes::{accepted, branching, flow};
 
 /// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {
@@ -68,8 +68,8 @@ const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
 /// The bound on analysis alone for a generated probe, against a measured median
 /// of about 380 ms for nine branching stages.
 const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
-/// The bound on the diagram decision for a generated probe, accepted or
-/// refused, against a worst measured figure of about 290 ms.
+/// The bound on the diagram decision for a generated probe, against a worst
+/// measured figure of about 290 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
 fn check_compiler_corpus_budgets(
     label: &str,
@@ -181,31 +181,4 @@ fn a_generated_branching_probe_analyzes_inside_its_budget() {
             kaalang_compiler::analyze(function).unwrap_or_else(|error| panic!("{name}: {error}"));
         },
     );
-}
-
-/// The worst case of the whole decision: both searches run, and the deciding
-/// sweep only stops once it has visited every state its space holds.
-#[test]
-fn generated_refused_probes_stay_inside_their_budget() {
-    for (loops, actions, distributor) in [(1, 0), (4, 0), (8, 0), (8, 64), (4, 120)]
-        .into_iter()
-        .flat_map(|(l, a)| [(l, a, false), (l, a, true)])
-    {
-        let function = flow(&branching_loops(loops, actions, distributor));
-        let _ = cost(&function);
-        let Some(measured) = cost(&function) else {
-            panic!("the generated refused probe with {loops} loops should parse")
-        };
-        assert!(
-            !measured.accepted,
-            "the generated refused probe with {loops} loops should have no diagram"
-        );
-        assert_within(
-            &format!(
-                "generated refused probe: {loops} loops, {actions} actions, choice={distributor}"
-            ),
-            GENERATED_DIAGRAM_DECISION_BUDGET,
-            measured.diagram,
-        );
-    }
 }

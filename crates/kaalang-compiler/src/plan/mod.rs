@@ -16,6 +16,7 @@ use crate::model::{
 
 mod break_block;
 mod choice;
+mod continue_block;
 mod loop_block;
 mod question;
 mod return_block;
@@ -80,8 +81,7 @@ struct Lowered<'e> {
     emitted: BTreeSet<usize>,
 }
 
-/// An enclosing selection or loop, with the blocks its joins or normal exit
-/// run. Cycle scopes also mark iteration boundaries without a pending successor.
+/// An enclosing selection or loop, with the blocks its joins or normal exit run.
 #[derive(Clone)]
 struct Scope {
     block: usize,
@@ -172,15 +172,15 @@ impl Builder<'_> {
                 loop_block::lower(self, block, executions, &next_done, forbidden, scopes)
             }
             BlockKind::Break => Ok(break_block::lower(self.flow, block)),
+            BlockKind::Continue => Ok(continue_block::lower(block)),
             BlockKind::Return => Ok(return_block::lower(block)),
             _ => self.branch(block, executions, &next_done, forbidden, scopes),
         }
     }
 
     /// No block can run here: the executions yield to the innermost enclosing
-    /// join whose shared computation is still pending, repeat the enclosing
-    /// iteration, or arrive at end. A block pending in only some of them has no
-    /// place in the branch tree.
+    /// join whose shared computation is still pending. A block pending in only
+    /// some of them has no place in the branch tree.
     fn leaf<'e>(
         &self,
         executions: &[&'e Execution],
@@ -199,48 +199,30 @@ impl Builder<'_> {
             .copied()
             .filter(|&block| pending(block))
             .collect::<BTreeSet<_>>();
-        let target = scopes.iter().rev().find_map(|scope| {
-            scope
-                .groups
+        if waiting.is_empty()
+            || (0..self.end).any(|block| !forbidden.contains(&block) && pending(block))
+            || !executions
                 .iter()
-                .enumerate()
-                .skip(scope.from)
-                .find(|(_, group)| !group.is_disjoint(&waiting))
-                .map(|(join, _)| JoinTarget {
-                    block: scope.block,
-                    join,
-                })
-        });
-        let all_wait = !waiting.is_empty()
-            && executions
-                .iter()
-                .all(|execution| waiting.iter().any(|&block| execution.participates(block)));
-        if (0..self.end).any(|block| !forbidden.contains(&block) && pending(block))
-            || (!waiting.is_empty() && !all_wait)
+                .all(|execution| waiting.iter().any(|&block| execution.participates(block)))
         {
             return Err(Unstructured);
         }
-        let emitted = BTreeSet::new();
-        if waiting.is_empty() {
-            // A body repeats only its own innermost active iteration.
-            if let Some(scope) = scopes
-                .iter()
-                .rev()
-                .find(|scope| self.flow.blocks[scope.block].loop_end.is_some())
-                && executions
+        let join = scopes
+            .iter()
+            .rev()
+            .find_map(|scope| {
+                scope
+                    .groups
                     .iter()
-                    .all(|execution| execution.repeats.contains(&scope.block))
-            {
-                return Ok(Lowered {
-                    plan: ExecutionPlan::Repeat { index: scope.block },
-                    yielding: Vec::new(),
-                    emitted,
-                });
-            }
-            return Err(Unstructured);
-        }
-
-        let join = target.expect("every shared block belongs to a join of an enclosing scope");
+                    .enumerate()
+                    .skip(scope.from)
+                    .find(|(_, group)| !group.is_disjoint(&waiting))
+                    .map(|(join, _)| JoinTarget {
+                        block: scope.block,
+                        join,
+                    })
+            })
+            .expect("every shared block belongs to a join of an enclosing scope");
         // Every wire available here, spelled by its own producer so a type
         // error names the authored occurrence. The join keeps the ones it
         // carries.
@@ -248,7 +230,7 @@ impl Builder<'_> {
         Ok(Lowered {
             plan: ExecutionPlan::Yield { wires, join },
             yielding: executions.to_vec(),
-            emitted,
+            emitted: BTreeSet::new(),
         })
     }
 
@@ -327,6 +309,7 @@ impl Builder<'_> {
             | BlockKind::End
             | BlockKind::Loop
             | BlockKind::Break
+            | BlockKind::Continue
             | BlockKind::Return => {
                 unreachable!("only questions and choices branch")
             }
@@ -382,16 +365,39 @@ impl Builder<'_> {
             .flat_map(|(branches, groups)| {
                 groups
                     .into_iter()
-                    .map(move |(_, blocks)| (branches.clone(), blocks))
+                    .map(move |(context, blocks)| (branches.clone(), context, blocks))
             })
             .collect::<Vec<_>>();
         // The map already orders by branches, then by insertion; the stable
         // sort only moves narrower groups first.
-        groups.sort_by_key(|(branches, _)| branches.len());
-        if self.flow.blocks[block].kind == BlockKind::Choice && !choice::joinable(&groups) {
-            return Err(Unstructured);
+        groups.sort_by_key(|(branches, ..)| branches.len());
+        // A single join has nothing to nest against.
+        if self.flow.blocks[block].kind == BlockKind::Choice && groups.len() > 1 {
+            let executions = selections.iter().flatten().collect::<Vec<_>>();
+            let joins = groups
+                .iter()
+                .map(|(_, context, blocks)| {
+                    let reaching = executions
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, execution)| {
+                            blocks
+                                .iter()
+                                .any(|&block| self.flow.reaches(execution, block))
+                        })
+                        .map(|(execution, _)| execution)
+                        .collect();
+                    (context.clone(), reaching)
+                })
+                .collect::<Vec<_>>();
+            if !choice::joinable(&joins) {
+                return Err(Unstructured);
+            }
         }
-        Ok(groups)
+        Ok(groups
+            .into_iter()
+            .map(|(branches, _, blocks)| (branches, blocks))
+            .collect())
     }
 
     /// Lowers shared groups innermost first. Each continuation runs once and
@@ -571,7 +577,9 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
                 serial_order(next, order);
             }
         }
-        ExecutionPlan::Break { index, .. } | ExecutionPlan::Return { index } => {
+        ExecutionPlan::Break { index, .. }
+        | ExecutionPlan::Continue { index }
+        | ExecutionPlan::Return { index } => {
             order.push(*index);
         }
         ExecutionPlan::Action { index, next } | ExecutionPlan::Call { index, next } => {
@@ -600,7 +608,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
             serial_order(body, order);
             order.push(*index);
         }
-        ExecutionPlan::Yield { .. } | ExecutionPlan::Repeat { .. } => {}
+        ExecutionPlan::Yield { .. } => {}
     }
 }
 
@@ -648,7 +656,7 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
                 .collect();
         }
         ExecutionPlan::Yield { .. }
-        | ExecutionPlan::Repeat { .. }
+        | ExecutionPlan::Continue { .. }
         | ExecutionPlan::Break { .. }
         | ExecutionPlan::Return { .. } => {}
     }

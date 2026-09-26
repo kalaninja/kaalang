@@ -16,6 +16,8 @@ fn nested_unconditional_loops(limit: usize) -> usize {
 
             #[action("Increment the counter.")]
             |again, &mut count| *count += 1;
+
+            |again| continue;
         };
 
         |final_count| break final_count;

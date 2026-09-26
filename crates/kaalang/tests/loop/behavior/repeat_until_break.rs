@@ -14,6 +14,8 @@ fn repeat_until_break(limit: usize) -> usize {
 
         #[action("Increment the counter.")]
         |again, &mut count| *count += 1;
+
+        |again| continue;
     };
 
     |result| return result;

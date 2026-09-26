@@ -11,6 +11,8 @@ fn invalid(flag: bool) {
 
         #[action("Create the unused local wire.")]
         let local = |again| 1;
+
+        |again| continue;
     };
 
     return;

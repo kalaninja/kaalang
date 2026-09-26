@@ -58,7 +58,9 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
         r#"
         fn example() -> usize {
             #[cycle("Repeat forever.")]
-            || {};
+            {
+                continue;
+            };
         }
     "#,
     );
@@ -94,7 +96,9 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
         r#"
         fn forever() -> ! {
             #[cycle("Never completes.")]
-            let _result = || {};
+            let _result = {
+                continue;
+            };
         }
         "#,
     );
@@ -210,9 +214,11 @@ fn an_inner_break_reaches_the_outer_iteration_tail() {
                 #[cycle("Leave or repeat the inner cycle.")]
                 |flag| {
                     #[question("Flag?")]
-                    let (_iterate_2, leave_2) = |flag| flag;
+                    let (iterate_2, leave_2) = |flag| flag;
                     |leave_2| break;
+                    |iterate_2| continue;
                 };
+                continue;
             };
         }
         "#,
@@ -251,10 +257,12 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
                     let (leave, check) = |first| first;
 
                     #[question("Leave after checking?")]
-                    let (leave, _again) = |check, second| second;
+                    let (leave, again) = |check, second| second;
 
                     |leave| break;
+                    |again| continue;
                 };
+                continue;
             };
         }
         "#,

@@ -7,12 +7,14 @@ fn reversed_empty_loop(mut checks: usize) -> usize {
         #[question("Check once more?")]
         #[no("NO")]
         #[yes("YES")]
-        let (leave_1, _iterate_1) = |&mut checks| {
+        let (leave_1, iterate_1) = |&mut checks| {
             *checks += 1;
             *checks < 4
         };
 
         |leave_1, checks| break checks;
+
+        |iterate_1| continue;
     };
 
     |checked| return checked;

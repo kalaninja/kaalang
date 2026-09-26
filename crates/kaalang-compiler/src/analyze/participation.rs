@@ -17,7 +17,8 @@ use super::only_difference;
 /// branches of it, agree at every other question or choice they both run, and
 /// differ in whether the block participates. A question or choice on a path
 /// that one execution cut short runs in only one of the two and takes no part
-/// in the comparison.
+/// in the comparison. An execution that repeats a cycle not enclosing the block
+/// never reaches it, so it does not skip the block either.
 pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<usize>> {
     (0..flow.blocks.len() - 1)
         .map(|block| {
@@ -29,6 +30,7 @@ pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<us
                 .flat_map(|run| {
                     skipping
                         .iter()
+                        .filter(|skip| flow.reaches(skip, block))
                         .filter_map(|skip| only_difference(run, skip))
                 })
                 .collect()

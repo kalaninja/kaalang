@@ -21,6 +21,8 @@ fn while_loop(mut a: u64, mut b: u64) -> u64 {
             *a = *b;
             *b = remainder;
         };
+
+        |again| continue;
     };
 
     |divisor| return divisor;

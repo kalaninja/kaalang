@@ -36,10 +36,12 @@ fn end_below_nested_back_edges(mut mode: u8) -> u8 {
             let outcome = |eleven| Some(11);
 
             |outcome| break outcome;
+
+            |repeat| continue;
         };
 
         #[question("Did the inner cycle produce a result?")]
-        let (_repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
+        let (repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
 
         #[action("Extract the inner result.")]
         let selected = |finish_inner, inner_result| {
@@ -53,6 +55,8 @@ fn end_below_nested_back_edges(mut mode: u8) -> u8 {
         let selected = |nine| 9;
 
         |selected| break selected;
+
+        |repeat_outer| continue;
     };
 
     |result| return result;

@@ -19,6 +19,8 @@ const fn nearest_cycle_breaks(mut count: usize) -> usize {
 
         #[action("Finish this pass.")]
         |again| {};
+
+        |again| continue;
     };
 
     |result| return result;

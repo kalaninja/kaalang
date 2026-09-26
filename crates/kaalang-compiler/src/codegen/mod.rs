@@ -187,8 +187,8 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
     }
 }
 
-/// Captures a transfer's inputs and leaves through `exit`: `break` to the
-/// target native loop, or `return` from the root flow.
+/// Captures a transfer's inputs and leaves through `exit`: `break` or
+/// `continue` to the target native loop, or `return` from the root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
     let captures = input_bindings(&block.inputs, bindings);
@@ -217,9 +217,18 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             let span = flow.blocks[*index].span;
             transfer(flow, bindings, *index, &quote_spanned!(span=> return))
         }
-        ExecutionPlan::Repeat { index } => {
-            let label = loop_label(*index, flow.blocks[*index].span);
-            quote_spanned!(flow.blocks[*index].span=> continue #label;)
+        ExecutionPlan::Continue { index } => {
+            let span = flow.blocks[*index].span;
+            let target = flow.blocks[*index]
+                .parent
+                .expect("a continue belongs to a cycle");
+            let label = loop_label(target, span);
+            transfer(
+                flow,
+                bindings,
+                *index,
+                &quote_spanned!(span=> continue #label),
+            )
         }
         // An action and a call both bind their outputs from their own body and
         // continue; only what the parser accepts as that body differs.

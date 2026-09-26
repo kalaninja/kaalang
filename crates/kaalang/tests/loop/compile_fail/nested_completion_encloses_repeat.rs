@@ -26,6 +26,7 @@ fn invalid(mut mode: u8) -> u8 {
         let selected = |last, mode| mode;
 
         |selected| break selected;
+        |advance| continue;
         };
 
         |nested| break nested;

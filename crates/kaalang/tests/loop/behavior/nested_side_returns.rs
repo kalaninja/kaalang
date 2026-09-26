@@ -17,10 +17,13 @@ fn nested_side_returns(flag: bool) {
             #[cycle("Repeat level 2.")]
             |stay_1| {
                 #[question("Leave level 2?")]
-                let (_stay_2, leave_2) = |flag| flag;
+                let (stay_2, leave_2) = |flag| flag;
                 |leave_2| break;
+                |stay_2| continue;
             };
+            |stay_1| continue;
         };
+        |stay_0| continue;
     };
     return;
 }

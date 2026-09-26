@@ -675,6 +675,7 @@ fn destination_name(scene: &Scene, destination: Destination) -> String {
 }
 
 fn merge_name(scene: &Scene, junction: usize) -> String {
+    let wires = scene.captions.junction_wires(junction);
     if let Some(loop_) = scene
         .topology
         .loops
@@ -691,14 +692,18 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         } else {
             "the cycle".to_owned()
         };
-        let part = if loop_.tail == junction {
-            "iteration tail"
+        return if loop_.tail != junction {
+            format!("the entry of {owner}")
+        } else if wires.is_empty() {
+            format!("the iteration tail of {owner}")
         } else {
-            "entry"
+            // A merge that feeds only the continue is drawn as the tail.
+            format!(
+                "the {} merge at the iteration tail of {owner}",
+                wires.join(" and ")
+            )
         };
-        return format!("the {part} of {owner}");
     }
-    let wires = scene.captions.junction_wires(junction);
     let junction = &scene.topology.junctions[junction];
     if junction.is_loop_result && !wires.is_empty() {
         format!("the {} merge at the cycle result", wires.join(" and "))

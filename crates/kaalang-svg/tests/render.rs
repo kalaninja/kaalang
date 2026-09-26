@@ -46,6 +46,8 @@ const CYCLE_SOURCE: &str = r#"
 
             #[action("Increment the counter.")]
             |again, &mut count| *count += 1;
+
+            |again| continue;
         };
 
         |total| return total;

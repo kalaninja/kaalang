@@ -138,8 +138,9 @@ pub(super) fn outside(
     body.iter().all(|&column| clears(grid.column(column))) && nested.iter().copied().all(clears)
 }
 
-/// Tries lanes beside the body's edge column, nearest first. On failure,
-/// reports the nearest candidate's obstruction and any blocking connection.
+/// Tries lanes beside `edge`, the body's outermost column on `side`, nearest
+/// first. On failure, reports the nearest candidate's obstruction and any
+/// blocking connection.
 #[allow(clippy::too_many_arguments)]
 fn climb(
     flow: &Flow,
@@ -153,14 +154,9 @@ fn climb(
     nested: &[i32],
     index: usize,
     side: Side,
+    edge: i32,
 ) -> Result<(Contour, Vec<Point>), (String, Option<usize>)> {
     let loop_ = topology.loops[index];
-    let edge = match side {
-        Side::Left => body.iter().min(),
-        Side::Right => body.iter().max(),
-    }
-    .copied()
-    .expect("a repeating cycle owns an entry and a tail");
     let back = (
         Source::Junction(loop_.tail),
         Destination::Junction(loop_.entry),
@@ -226,20 +222,41 @@ pub(super) fn contours(
         let side = sides[index];
         let body = body_columns(flow, topology, arrangement, header);
         let nested = nested_back_edges(flow, topology, &grid, header, &chosen);
-        let (contour, line) = climb(
-            flow,
-            merges,
-            topology,
-            arrangement,
-            &grid,
-            &lines,
-            &drawn,
-            &body,
-            &nested,
-            index,
-            side,
-        )
-        .map_err(|(blocked, culprit)| {
+        let outermost = |columns: &BTreeSet<i32>| {
+            match side {
+                Side::Left => columns.first(),
+                Side::Right => columns.last(),
+            }
+            .copied()
+            .expect("a repeating cycle owns an entry and a tail")
+        };
+        let from = |edge| {
+            climb(
+                flow,
+                merges,
+                topology,
+                arrangement,
+                &grid,
+                &lines,
+                &drawn,
+                &body,
+                &nested,
+                index,
+                side,
+                edge,
+            )
+        };
+        let climbed = from(outermost(&body)).or_else(|blocked| {
+            // A route between two body vertices may run beyond every one of
+            // them, down a branch column, where every lane nearer the body
+            // crosses it.
+            let routed = routed_columns(flow, topology, arrangement, header, &body);
+            if outermost(&routed) == outermost(&body) {
+                return Err(blocked);
+            }
+            from(outermost(&routed)).map_err(|_| blocked)
+        });
+        let (contour, line) = climbed.map_err(|(blocked, culprit)| {
             let side = match side {
                 Side::Left => "left",
                 Side::Right => "right",
@@ -259,4 +276,26 @@ pub(super) fn contours(
     }
 
     Ok(chosen.into_iter().flatten().collect())
+}
+
+/// The body columns together with every column a route between two body
+/// vertices occupies.
+fn routed_columns(
+    flow: &Flow,
+    topology: &Topology,
+    arrangement: &Arrangement,
+    header: usize,
+    body: &BTreeSet<i32>,
+) -> BTreeSet<i32> {
+    let vertices = body_vertices(flow, topology, header);
+    let mut columns = body.clone();
+    for (connection, route) in topology.connections.iter().zip(&arrangement.routes) {
+        if vertices.contains(&Vertex::from(connection.source))
+            && vertices.contains(&connection.destination)
+        {
+            columns.extend([route.departure, route.arrival]);
+            columns.extend(route.runs.iter().flat_map(|run| [run.enter, run.exit]));
+        }
+    }
+    columns
 }

@@ -46,6 +46,7 @@ pub enum BlockKind {
     Question,
     Loop,
     Break,
+    Continue,
     Return,
     Choice,
     End,
@@ -241,6 +242,31 @@ impl Flow {
         })
     }
 
+    /// The innermost cycle whose repeat reaches `block`: the block itself for a
+    /// cycle, otherwise the cycle directly containing it.
+    #[must_use]
+    pub(crate) fn level(&self, block: usize) -> Option<usize> {
+        match self.blocks[block].kind {
+            BlockKind::Loop => Some(block),
+            _ => self.blocks[block].parent,
+        }
+    }
+
+    /// Whether an execution reaches `block`: it finishes the flow, or repeats
+    /// the level of `block` or a cycle enclosing it. A repeat of any other
+    /// cycle stops at that cycle's tail, so blocks at one level are reached
+    /// alike.
+    #[must_use]
+    pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
+        match execution.outcome {
+            ExecutionOutcome::Return { .. } => true,
+            ExecutionOutcome::Repeat { loop_index } => {
+                std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
+                    .any(|header| header == loop_index)
+            }
+        }
+    }
+
     /// A cycle produces its result only when the execution reaches a matching break.
     #[must_use]
     pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
@@ -263,7 +289,10 @@ impl Flow {
                         }
                         BlockKind::Loop => self.completes_loop(execution, block),
                         BlockKind::Action | BlockKind::Call => true,
-                        BlockKind::Break | BlockKind::Return | BlockKind::End => false,
+                        BlockKind::Break
+                        | BlockKind::Continue
+                        | BlockKind::Return
+                        | BlockKind::End => false,
                     }
             }
         }
@@ -329,8 +358,6 @@ pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Cycles whose represented iteration reaches its body boundary.
-    pub repeats: Vec<usize>,
     /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
 }
@@ -397,8 +424,8 @@ pub enum ExecutionPlan {
     Break { index: usize, target: usize },
     /// An authored completion of the root flow.
     Return { index: usize },
-    /// Normal completion of an iteration along the cycle's back edge.
-    Repeat { index: usize },
+    /// An authored repetition of the directly containing cycle.
+    Continue { index: usize },
     Action {
         index: usize,
         next: Box<ExecutionPlan>,

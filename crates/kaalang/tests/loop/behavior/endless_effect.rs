@@ -7,5 +7,7 @@ fn endless_effect(mut count: usize) -> ! {
     {
         #[action("Increment the counter.")]
         |&mut count| *count = count.wrapping_add(1);
+
+        continue;
     };
 }

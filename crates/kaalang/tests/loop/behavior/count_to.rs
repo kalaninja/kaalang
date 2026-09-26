@@ -16,6 +16,8 @@ const fn count_to(limit: usize) -> usize {
 
         #[action("Increment the counter.")]
         |iterate_1, &mut count| *count += 1;
+
+        |iterate_1| continue;
     };
 
     |total| return total;

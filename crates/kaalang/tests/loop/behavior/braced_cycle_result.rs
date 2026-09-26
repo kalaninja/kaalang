@@ -11,6 +11,8 @@ fn braced_cycle_result(mut count: usize) -> usize {
 
         #[action("Count down.")]
         |again, &mut count| *count -= 1;
+
+        |again| continue;
     };
 
     |zero| return zero;

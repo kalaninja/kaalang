@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1124" viewBox="0 0 1424 1124" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for split_case_between_merges</title>
+  <desc id="kaalang-description">Nodes: Start: split_case_between_merges with parameters value: u8; low: bool handing over value, low; Select: Which source? capturing value; Case: The first source. handing over first; Case: The middle source. handing over middle; Case: The last source. handing over last; Question: Does the middle source lean low? capturing middle, low handing over lower / upper; Action: Build the low value from the first source. capturing first handing over low_value; Action: Build the low value from the middle source. capturing lower handing over low_value; Action: Build the high value from the middle source. capturing upper handing over high_value; Action: Build the high value from the last source. capturing last handing over high_value; Action: Finish a low value. capturing low_value handing over end; Action: Finish a high value. capturing high_value handing over end; End: u8 capturing end; Merge: low_value; Merge: high_value; Merge: end. Connections: Start: split_case_between_merges to Select: Which source?; Select: Which source? to Case: The first source.; Select: Which source? to Case: The middle source.; Select: Which source? to Case: The last source.; Case: The first source. to Action: Build the low value from the first source.; Case: The middle source. to Question: Does the middle source lean low?; Case: The last source. to Action: Build the high value from the last source.; Question: Does the middle source lean low? branch 1 to Action: Build the low value from the middle source.; Question: Does the middle source lean low? branch 2 to Action: Build the high value from the middle source.; Action: Build the low value from the first source. to the low_value merge; Action: Build the low value from the middle source. to the low_value merge; Action: Build the high value from the middle source. to the high_value merge; Action: Build the high value from the last source. to the high_value merge; Action: Finish a low value. to the end merge; Action: Finish a high value. to the end merge; the low_value merge to Action: Finish a low value.; the high_value merge to Action: Finish a high value.; the end merge to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 242 L 172 314
+      M 300 206 L 532 206 L 532 314
+      M 300 206 L 1252 206 L 1252 314
+      M 172 384 L 172 459
+      M 532 384 L 532 456
+      M 1252 384 L 1252 459
+      M 532 528 L 532 600
+      M 672 492 L 892 492 L 892 600
+      M 172 525 L 172 742
+      M 532 666 L 532 742 L 172 742
+      M 892 666 L 892 742
+      M 1252 525 L 1252 742 L 892 742
+      M 172 882 L 172 958
+      M 892 882 L 892 958 L 172 958
+      M 172 742 L 172 818
+      M 892 742 L 892 818
+      M 172 958 L 172 1034
+    "/>
+    <text class="connection-label" x="185" y="760" xml:space="preserve"><tspan x="185" dy="0">low_value</tspan></text>
+    <text class="connection-label" x="905" y="760" xml:space="preserve"><tspan x="905" dy="0">high_value</tspan></text>
+    <text class="connection-label" x="185" y="976" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="1265" y="448" xml:space="preserve"><tspan x="1265" dy="0">last</tspan></text>
+    <text class="connection-label" x="545" y="589" xml:space="preserve"><tspan x="545" dy="0">lower</tspan></text>
+    <text class="connection-label" x="905" y="589" xml:space="preserve"><tspan x="905" dy="0">upper</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">value, low</tspan></text>
+    <text class="connection-label" x="545" y="402" xml:space="preserve"><tspan x="545" dy="0">middle</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">middle, low</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">low: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 742)">
+      <title xml:space="preserve">the low_value merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(892 742)">
+      <title xml:space="preserve">the high_value merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 958)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">split_case_between_merges</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 206)">
+      <title xml:space="preserve">Which source?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which source?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 349)">
+      <title xml:space="preserve">The first source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The first source.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 349)">
+      <title xml:space="preserve">The middle source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The middle source.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 349)">
+      <title xml:space="preserve">The last source.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The last source.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(532 492)">
+      <title xml:space="preserve">Does the middle source lean low?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the middle source lean </tspan><tspan x="0" dy="18">low?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 492)">
+      <title xml:space="preserve">Build the low value from the first source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the low value from the first </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 633)">
+      <title xml:space="preserve">Build the low value from the middle source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the low value from the </tspan><tspan x="-124" dy="18">middle source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 633)">
+      <title xml:space="preserve">Build the high value from the middle source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the high value from the </tspan><tspan x="-124" dy="18">middle source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 492)">
+      <title xml:space="preserve">Build the high value from the last source.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the high value from the last </tspan><tspan x="-124" dy="18">source.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 850)">
+      <title xml:space="preserve">Finish a low value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish a low value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 850)">
+      <title xml:space="preserve">Finish a high value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish a high value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1063)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

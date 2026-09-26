@@ -289,6 +289,8 @@ impl BatchProcessor {
                     };
 
                     |checked_result| break checked_result;
+
+                    |number| continue;
                 };
 
                 #[action("Finish validation while the attempt resource is still alive.")]
@@ -304,6 +306,8 @@ impl BatchProcessor {
                 let final_result = |last_failure| Outcome::Failed(Failure::Exhausted);
 
                 |final_result, attempt_number| break (final_result, attempt_number);
+
+                |retry| continue;
             };
 
             #[action("Join local and remote processing before recording the task.")]
@@ -327,9 +331,12 @@ impl BatchProcessor {
             };
 
             #[call("Record exactly one outcome and schedule its audit.")]
-            |outcome, count, &mut report, &mut self| Self::record(self, report, outcome, count);
+            let recorded =
+                |outcome, count, &mut report, &mut self| Self::record(self, report, outcome, count);
 
             |reason| break reason;
+
+            |recorded| continue;
         };
 
         #[action("Attach the batch's completion reason.")]
@@ -355,9 +362,11 @@ impl BatchProcessor {
             };
 
             #[call("Commit the audit record.")]
-            |record, &mut self| Self::audit(self, record);
+            let audited = |record, &mut self| Self::audit(self, record);
 
             |flushed| break;
+
+            |audited| continue;
         };
 
         #[action("Close the batch after all audits.")]

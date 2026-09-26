@@ -327,7 +327,9 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn forever() -> usize {
                 #[cycle("Repeat forever")]
-                || {};
+                {
+                    continue;
+                };
             }
         };
 
@@ -340,7 +342,7 @@ mod tests {
         assert!(matches!(
             end_body(&model.analysis.execution_plan),
             ExecutionPlan::Loop { index: 0, body, .. }
-                if matches!(body.as_ref(), ExecutionPlan::Repeat { index: 0 })
+                if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
         let model = build(&fixture(
@@ -356,7 +358,7 @@ mod tests {
                 .map(|execution| execution.outcome)
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
-                ExecutionOutcome::Return { block_index: 5 },
+                ExecutionOutcome::Return { block_index: 6 },
                 ExecutionOutcome::Repeat { loop_index: 1 },
             ])
         );
@@ -1115,7 +1117,9 @@ mod tests {
                 let (_tag, repeat) = |no| { (2u8, ()) };
 
                 #[cycle("Keep the other route open")]
-                |repeat| {};
+                |repeat| {
+                    continue;
+                };
             }
         };
         let ExecutionPlan::End { gates, .. } = build(&terminal)

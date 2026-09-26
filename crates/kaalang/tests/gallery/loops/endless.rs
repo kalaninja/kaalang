@@ -26,12 +26,14 @@ fn endless(mut showing: Light) -> ! {
         };
 
         #[action("🚗 Let the waiting traffic go.")]
-        |red, &mut showing| *showing = Light::Green;
+        let changed = |red, &mut showing| *showing = Light::Green;
 
         #[action("🛑 Stop the traffic.")]
-        |amber, &mut showing| *showing = Light::Red;
+        let changed = |amber, &mut showing| *showing = Light::Red;
 
         #[action("⚠️ Warn that the light is about to change.")]
-        |green, &mut showing| *showing = Light::Amber;
+        let changed = |green, &mut showing| *showing = Light::Amber;
+
+        |changed| continue;
     };
 }

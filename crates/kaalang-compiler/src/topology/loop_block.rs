@@ -6,7 +6,7 @@ use super::{
     Analyzed, Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology,
     Vertex, block_node, destination, represented, sequential_exit,
 };
-use crate::model::Block;
+use crate::model::{Block, ExecutionOutcome};
 
 pub(super) fn project_collapsed(
     index: usize,
@@ -109,6 +109,29 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
 /// A sole side exit may reach an enclosing tail beside the completed body.
 /// An absent back edge or convergence must not reserve an empty row.
 pub(super) fn coalesce_boundaries(topology: &mut Topology) {
+    // The repeating routes of a cycle merge before its one continue; when that
+    // merge feeds nothing else, it is the iteration tail.
+    let tails = topology
+        .loops
+        .iter()
+        .filter_map(|loop_| {
+            let mut incoming = topology.incoming(Destination::Junction(loop_.tail));
+            let source = incoming.next()?.source;
+            if incoming.next().is_some() {
+                return None;
+            }
+            let Source::Junction(merge) = source else {
+                return None;
+            };
+            (!topology.junctions[merge].merges.is_empty()
+                && topology
+                    .outgoing(source.into())
+                    .filter(|edge| edge.source == source)
+                    .count()
+                    == 1)
+                .then_some((loop_.tail, source))
+        })
+        .collect::<Vec<_>>();
     let mut replacements = topology
         .loop_boundaries
         .iter()
@@ -165,6 +188,7 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
             );
         }
     }
+    replacements.extend(tails);
     if !replacements.is_empty() {
         replace_junctions(topology, &replacements);
     }
@@ -281,6 +305,6 @@ pub(super) fn prefer_left(model: &Analyzed<'_>, header: usize) -> bool {
     model
         .executions
         .iter()
-        .filter(|execution| execution.repeats.contains(&header))
+        .filter(|execution| execution.outcome == ExecutionOutcome::Repeat { loop_index: header })
         .any(|execution| execution.selected(first) != Some(last))
 }

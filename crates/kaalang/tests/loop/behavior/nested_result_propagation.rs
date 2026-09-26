@@ -30,6 +30,8 @@ fn nested_result_propagation(limit: usize, log: Rc<RefCell<Vec<&'static str>>>) 
 
             #[action("Advance the search.")]
             |again, &mut count| *count += 1;
+
+            |again| continue;
         };
 
         |next_count, next_log| break (next_count, next_log);

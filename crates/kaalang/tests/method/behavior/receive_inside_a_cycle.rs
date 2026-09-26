@@ -18,6 +18,8 @@ impl Ladder {
 
             #[action("Step up one rung.")]
             |climb, &mut start| *start += 1;
+
+            |climb| continue;
         };
 
         |reached| return reached;

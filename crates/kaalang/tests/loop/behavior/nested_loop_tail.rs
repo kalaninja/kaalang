@@ -22,7 +22,11 @@ fn nested_loop_tail(mut count: usize, limit: usize) -> usize {
 
             #[action("Increment the count.")]
             |iterate_2, &mut count| *count += 1;
+
+            |iterate_2| continue;
         };
+
+        |iterate_1| continue;
     };
 
     |result| return result;

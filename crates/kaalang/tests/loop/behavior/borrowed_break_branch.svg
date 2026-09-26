@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="708" height="468" viewBox="0 0 708 468" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for borrowed_break_branch</title>
-  <desc id="kaalang-description">Cycles: Check the flag. with inputs flag and outputs (). Nodes: Start: borrowed_break_branch with parameters flag: bool handing over flag; Question: Exit? capturing flag handing over done / _again; End: () capturing nothing. Connections: Start: borrowed_break_branch to the entry of the cycle; Question: Exit? branch 1 to End: (); Question: Exit? branch 2 to the iteration tail of the cycle; the entry of the cycle to Question: Exit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Check the flag. with inputs flag and outputs (). Nodes: Start: borrowed_break_branch with parameters flag: bool handing over flag; Question: Exit? capturing flag handing over done / again; End: () capturing nothing. Connections: Start: borrowed_break_branch to the entry of the cycle; Question: Exit? branch 1 to End: (); Question: Exit? branch 2 to the iteration tail of the cycle; the entry of the cycle to Question: Exit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -45,7 +45,7 @@
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">flag</tspan></text>
     <text class="connection-label" x="213" y="324" xml:space="preserve"><tspan x="213" dy="0">done</tspan></text>
-    <text class="connection-label" x="353" y="288" xml:space="preserve"><tspan x="353" dy="0">_again</tspan></text>
+    <text class="connection-label" x="353" y="288" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
     <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">flag</tspan></text>
     <text class="connection-label" x="213" y="367" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
   </g>

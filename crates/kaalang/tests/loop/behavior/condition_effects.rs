@@ -7,12 +7,14 @@ fn condition_effects(mut checks: usize) -> usize {
         #[question("Check once more?")]
         #[yes("YES")]
         #[no("NO")]
-        let (_iterate_1, leave_1) = |&mut checks| {
+        let (iterate_1, leave_1) = |&mut checks| {
             *checks += 1;
             *checks < 4
         };
 
         |leave_1, checks| break checks;
+
+        |iterate_1| continue;
     };
 
     |checked| return checked;

@@ -37,7 +37,7 @@ pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
 }
 
 /// A cycle whose body selects one route per named outcome, in that order.
-/// `repeat` falls through to the end of the body, `break` returns the mode, and
+/// `repeat` reaches the body's one `continue`, `break` returns the mode, and
 /// `finish` computes seven before completing the cycle.
 ///
 /// # Panics
@@ -61,24 +61,40 @@ fn looping_with(routes: &[&str], choice: &str) -> String {
                 "        #[action(\"Finish from case {index}.\")]\n        let completed = |case_{index}| 7;"
             ),
             "repeat" => format!(
-                "        #[action(\"Advance in case {index}.\")]\n        |case_{index}| ();"
+                "        #[action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
             ),
             other => panic!("unknown route {other} in {routes:?}"),
         })
         .collect::<Vec<_>>()
         .join("\n");
     let completes = routes.iter().any(|route| *route != "repeat");
-    cycle_flow("Exercise the generated routes.", choice, &bodies, completes)
+    let repeats = routes.contains(&"repeat");
+    cycle_flow(
+        "Exercise the generated routes.",
+        choice,
+        &bodies,
+        completes,
+        repeats,
+    )
 }
 
 /// The flow around one generated cycle body: the cycle's caption, the selection
-/// that opens it, and the transfer and return a completing body needs.
-fn cycle_flow(caption: &str, selection: &str, bodies: &str, completes: bool) -> String {
-    let transfer = if completes {
-        "\n        |completed| break completed;"
-    } else {
-        ""
-    };
+/// that opens it, the transfers its routes reach, and the return a completing
+/// body needs. Repeating routes merge `again` before the one `continue`.
+fn cycle_flow(
+    caption: &str,
+    selection: &str,
+    bodies: &str,
+    completes: bool,
+    repeats: bool,
+) -> String {
+    let mut transfer = String::new();
+    if completes {
+        transfer.push_str("\n        |completed| break completed;");
+    }
+    if repeats {
+        transfer.push_str("\n        |again| continue;");
+    }
     let (output, after) = if completes {
         ("let result = ", "\n    |result| return result;")
     } else {
@@ -119,6 +135,8 @@ fn selection(routes: &[&str], prefix: &str) -> String {
 /// One cycle whose body selects `routes`, wrapped in an outer cycle whose other
 /// branches take `propagate`. It uses the same names as `looping`, plus
 /// `propagate` for an inner result that the enclosing cycle explicitly handles.
+/// The inner cycle repeats through `inner_again`: a nested local cannot reuse
+/// the outer `again` it can see.
 ///
 /// # Panics
 ///
@@ -146,23 +164,31 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
                 "        #[action(\"Finish from i{index}.\")]\n        let inner_value = |i{index}| Some(7);"
             ),
             ("repeat", _) => format!(
-                "        #[action(\"Advance in i{index}.\")]\n        |i{index}| ();"
+                "        #[action(\"Advance in i{index}.\")]\n        let inner_again = |i{index}| ();"
             ),
             (other, _) => panic!("unknown inner route {other} in {inner:?}"),
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let inner_transfer = if inner.iter().any(|route| *route != "repeat") {
-        "\n        |inner_value| break inner_value;"
-    } else {
-        ""
-    };
+    let inner_completes = inner.iter().any(|route| *route != "repeat");
+    let mut inner_transfer = String::new();
+    if inner_completes {
+        inner_transfer.push_str("\n        |inner_value| break inner_value;");
+    }
+    if inner.contains(&"repeat") {
+        inner_transfer.push_str("\n        |inner_again| continue;");
+    }
     // The inner cycle takes the outer route that selected it: a block sitting
     // where the outer branches are still separate has to belong to one of them.
+    // Its completion repeats the outer cycle, so it hands over `again` itself.
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, _repeat_outer) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
+            )
+        } else if inner_completes {
+            format!(
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         } else {
             format!(
@@ -183,7 +209,7 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
             ),
             "inner" => inner_cycle(index),
             "repeat" => format!(
-                "        #[action(\"Advance in o{index}.\")]\n        |o{index}| ();"
+                "        #[action(\"Advance in o{index}.\")]\n        let again = |o{index}| ();"
             ),
             other => panic!("unknown outer route {other} in {outer:?}"),
         })
@@ -193,11 +219,13 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .any(|route| matches!(*route, "break" | "finish"))
         || outer.contains(&"inner") && propagates;
+    let repeats = outer.contains(&"repeat") || outer.contains(&"inner") && inner_completes;
     cycle_flow(
         "Exercise the generated outer routes.",
         &outer_selection,
         &outer_bodies,
         completes,
+        repeats,
     )
 }
 

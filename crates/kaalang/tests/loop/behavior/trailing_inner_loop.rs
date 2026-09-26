@@ -33,6 +33,8 @@ fn trailing_inner_loop() -> usize {
 
             #[action("Finish the inner iteration.")]
             |again| {};
+
+            |again| continue;
         };
 
         #[question("Did the inner cycle finish the flow?")]
@@ -45,6 +47,8 @@ fn trailing_inner_loop() -> usize {
 
         #[action("Finish the outer iteration.")]
         |again| {};
+
+        |again| continue;
     };
 
     |result| return result;

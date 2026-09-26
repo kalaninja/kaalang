@@ -16,6 +16,7 @@ mod action;
 mod break_block;
 mod call;
 mod choice;
+mod continue_block;
 mod end;
 mod loop_block;
 mod question;
@@ -265,15 +266,23 @@ impl Topology {
 
     /// A side exit may meet a visible merge or its sole iteration tail on its row.
     /// A tail with no other arrivals needs no empty row before turning upward.
+    /// A tail stays a tail when a merge serves as it: other arrivals still keep
+    /// it below the body.
     pub(crate) fn same_row_junction(&self, connection: &Connection) -> bool {
-        matches!(
-            (connection.source, connection.destination),
-            (Source::Exit(exit), Destination::Junction(junction))
-                if exit.branch.is_some_and(|branch| branch > 0)
-                    && (self.junctions.get(junction).is_some_and(|junction| !junction.merges.is_empty())
-                        || self.loops.iter().any(|loop_| loop_.tail == junction)
-                            && self.incoming(connection.destination).count() == 1)
-        )
+        let (Source::Exit(exit), Destination::Junction(junction)) =
+            (connection.source, connection.destination)
+        else {
+            return false;
+        };
+        if exit.branch.is_none_or(|branch| branch == 0) {
+            return false;
+        }
+        if self.loops.iter().any(|loop_| loop_.tail == junction) {
+            return self.incoming(connection.destination).count() == 1;
+        }
+        self.junctions
+            .get(junction)
+            .is_some_and(|junction| !junction.merges.is_empty())
     }
 }
 
@@ -324,7 +333,11 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
             {
                 end::project(index, &mut nodes);
             }
-            BlockKind::Loop | BlockKind::Break | BlockKind::Return | BlockKind::End => {}
+            BlockKind::Loop
+            | BlockKind::Break
+            | BlockKind::Continue
+            | BlockKind::Return
+            | BlockKind::End => {}
         }
     }
 
@@ -355,9 +368,10 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
                     .iter()
                     .find(|boundary| boundary.header == block)
                     .map(LoopBoundary::entry_junction)?,
-                BlockKind::Break if statement.inputs.is_empty() => return None,
-                BlockKind::Break => break_block::result(model.flow, &loop_boundaries, block),
-                _ => return None,
+                BlockKind::Break | BlockKind::Continue if statement.inputs.is_empty() => {
+                    return None;
+                }
+                _ => transfer_junction(model, &loops, &loop_boundaries, block)?,
             };
             Some((block, junction))
         })
@@ -563,7 +577,10 @@ fn connections(
     order.retain(|&block| {
         represented(model, structural, block)
             || (!model.collapse_loops
-                && model.flow.blocks[block].kind == BlockKind::Break
+                && matches!(
+                    model.flow.blocks[block].kind,
+                    BlockKind::Break | BlockKind::Continue
+                )
                 && !structural.contains_key(&block))
     });
     let mut union = BTreeSet::new();
@@ -696,7 +713,6 @@ fn serial_connections(
 ) -> BTreeSet<Connection> {
     let mut direct = BTreeSet::new();
     let mut previous = Source::Exit(ExitId::of(NodeId::Start));
-    let mut closed = BTreeSet::new();
     let mut steps = order
         .iter()
         .copied()
@@ -707,42 +723,28 @@ fn serial_connections(
         })
         .peekable();
     while let Some(block) = steps.next() {
-        if !model.collapse_loops {
-            for &header in execution.repeats.iter().rev() {
-                if model.flow.blocks[header]
-                    .loop_end
-                    .is_some_and(|end| end <= block)
-                    && closed.insert(header)
-                {
-                    reach_tail(loops, header, &mut direct, &mut previous);
-                }
-            }
-        }
-        let break_result = (model.flow.blocks[block].kind == BlockKind::Break
-            && !model.collapse_loops)
-            .then(|| break_block::result(model.flow, boundaries, block));
-        if let Some(result) = break_result
-            && !structural.contains_key(&block)
-        {
-            direct.insert(Connection {
-                source: previous,
-                destination: Destination::Junction(result),
-            });
-            previous = Source::Junction(result);
-            continue;
-        }
+        let transfer = if model.collapse_loops {
+            None
+        } else {
+            transfer_junction(model, loops, boundaries, block)
+        };
         direct.insert(Connection {
             source: previous,
-            destination: destination(structural, block),
+            destination: match transfer {
+                Some(junction) if !structural.contains_key(&block) => {
+                    Destination::Junction(junction)
+                }
+                _ => destination(structural, block),
+            },
         });
+        if let Some(junction) = transfer {
+            previous = Source::Junction(junction);
+            continue;
+        }
         if model.flow.blocks[block].kind == BlockKind::End {
             continue;
         }
         let exit = departure(model, execution, boundaries, structural, block);
-        if let Some(result) = break_result {
-            previous = Source::Junction(result);
-            continue;
-        }
         // Branch-local work still owed to the merge keeps the route on the
         // block's own exit; hopping to the junction would invert that order.
         previous = junction_after(
@@ -756,35 +758,22 @@ fn serial_connections(
         )
         .map_or(exit, Source::Junction);
     }
-    if !model.collapse_loops && matches!(execution.outcome, ExecutionOutcome::Repeat { .. }) {
-        // No following block connects the repeating route to its cycle tail.
-        for &header in execution.repeats.iter().rev() {
-            if closed.insert(header) {
-                reach_tail(loops, header, &mut direct, &mut previous);
-            }
-        }
-    }
     direct
 }
 
-/// Routes the running connection through one repeating cycle's iteration tail,
-/// which then becomes what the next connection leaves from.
-fn reach_tail(
+/// The junction a structural transfer ends its route at: a break's cycle
+/// result, or a continue's iteration tail.
+fn transfer_junction(
+    model: &Analyzed<'_>,
     loops: &[Loop],
-    header: usize,
-    direct: &mut BTreeSet<Connection>,
-    previous: &mut Source,
-) {
-    let tail = loops
-        .iter()
-        .find(|loop_| loop_.header == header)
-        .expect("a repeating cycle has topology")
-        .tail;
-    direct.insert(Connection {
-        source: *previous,
-        destination: Destination::Junction(tail),
-    });
-    *previous = Source::Junction(tail);
+    boundaries: &[LoopBoundary],
+    block: usize,
+) -> Option<usize> {
+    match model.flow.blocks[block].kind {
+        BlockKind::Break => Some(break_block::result(model.flow, boundaries, block)),
+        BlockKind::Continue => Some(continue_block::tail(model.flow, loops, block)),
+        _ => None,
+    }
 }
 
 /// First reachable merge completed by `block`, provided `next` owes it no work.
@@ -826,7 +815,7 @@ fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block:
     represented_block(model, block)
         && (!matches!(
             model.flow.blocks[block].kind,
-            BlockKind::Break | BlockKind::Return
+            BlockKind::Break | BlockKind::Continue | BlockKind::Return
         ) || structural.contains_key(&block))
 }
 
@@ -986,7 +975,7 @@ fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
         // An action, a call and a completed cycle each hand over every output
         // at one non-branching exit.
         BlockKind::Action | BlockKind::Call | BlockKind::Loop => ExitId::of(NodeId::Block(block)),
-        BlockKind::End | BlockKind::Break | BlockKind::Return => {
+        BlockKind::End | BlockKind::Break | BlockKind::Continue | BlockKind::Return => {
             unreachable!("this kind has no exit")
         }
     })
@@ -1070,7 +1059,10 @@ fn loops(model: &Analyzed<'_>, boundaries: &[LoopBoundary], count: &mut usize) -
     model
         .executions
         .iter()
-        .flat_map(|execution| execution.repeats.iter().copied())
+        .filter_map(|execution| match execution.outcome {
+            ExecutionOutcome::Repeat { loop_index } => Some(loop_index),
+            ExecutionOutcome::Return { .. } => None,
+        })
         .collect::<BTreeSet<_>>()
         .into_iter()
         .map(|header| {

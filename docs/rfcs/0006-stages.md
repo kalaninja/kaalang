@@ -1361,6 +1361,22 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
        | "{" rust_statement* "}") ";"
   ```
 
+- **RFC 0001 §7:** convergence groups of one question or choice are compared by
+  route, not by case. A route is the selected case followed by the selections
+  nested inside that case; selections below the point where the cases converge
+  belong to every case alike and are not part of it. Two groups are invalid only
+  when they share a route and each also takes a route that the other reaches but
+  does not take. A later selection inside one case may therefore send its routes
+  to different groups: a timeout case can give up with the completing routes of
+  other cases and retry with their repeating routes. A route that repeats a
+  cycle not enclosing a group never reaches that group, so it neither sets two
+  groups apart nor separates a group's cases, as the adjacency trace of §7
+  already states.
+- **RFC 0001 §2:** a question or choice decides a block only through executions
+  that reach the block. An execution that repeats a cycle not enclosing the
+  block stops at that cycle's tail, so it does not skip the block. Cycles on
+  separate branches that merge their results are therefore decided only by the
+  selection between them, not by the questions inside them.
 - **RFC 0001 §§4.7, 5–7:** place a staged flow's return in its terminal stage.
   Both stage and cycle bodies access outer data through inner block captures and
   create fresh local scopes per visit or iteration. Multiple cycle outputs
@@ -1383,6 +1399,11 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
   symbolic stage links. Expanded and collapsed cycle checks include alternative
   result exits and explicit continue routes in the same validated model.
+- **RFC 0003 §2.3:** an exit enclosed between repeating routes splits the merge
+  before their one continue, so validation rejects it before construction. The
+  generated domains therefore contain no topology refusals, and no shared-rail
+  exchange test remains: no valid flow is known to reach a refusal. The
+  construction still reports one when a search exhausts its space.
 - **RFC 0004 §§1–2 and §5:** retain shared data around the generated stage
   dispatcher, carry each selected entry in its enum variant, and emit the
   terminal return directly from its arm. Each arm binds its received entry
@@ -1460,6 +1481,8 @@ These scenarios define required language behavior and visual representation.
 | Exported cycle binding declared mutable                                          | Permit later mutable captures according to the outer declaration.                                                                         |
 | Nested output export                                                             | Pass through each enclosing declaration before becoming a stage transition.                                                               |
 | Unit signal remains inside a cycle without export                                | Keep it local; it does not select a stage.                                                                                                |
+| One case splits between completing and repeating routes                          | Compare convergence groups by route, so the completing and repeating groups stay disjoint.                                                |
+| Case diverging in a nested cycle between two merged cases                        | Keep the merge adjacent: a route that never reaches it cannot separate its cases.                                                         |
 | Several repeating branches and one continue                                      | Require their ordinary convergence before the shared transfer and draw one back edge.                                                     |
 | Missing continue on a route with no declared output                              | Reject the forgotten iteration ending.                                                                                                    |
 | More than one structural continue in one cycle                                   | Reject, counting nested cycles separately.                                                                                                |

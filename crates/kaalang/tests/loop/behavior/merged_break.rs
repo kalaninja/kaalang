@@ -14,6 +14,8 @@ fn merged_break(stop: bool, mut remaining: usize) -> usize {
 
         #[action("Advance the countdown.")]
         |again, &mut remaining| *remaining -= 1;
+
+        |again| continue;
     };
 
     |result| return result;

@@ -88,6 +88,7 @@ fn block_name(flow: &Flow, block: usize) -> String {
         (None, BlockKind::Loop) => loop_name(flow, block),
         (None, BlockKind::Call) => format!("the call `{}`", flow.blocks[block].callee()),
         (None, BlockKind::Break) => "a break".to_owned(),
+        (None, BlockKind::Continue) => "a continue".to_owned(),
         (None, BlockKind::End) => "the end of the flow".to_owned(),
         (None, _) => format!("the block at position {}", block + 1),
     }

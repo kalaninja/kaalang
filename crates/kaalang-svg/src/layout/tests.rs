@@ -1010,12 +1010,14 @@ fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
 }
 
 #[test]
-fn even_an_empty_cycle_draws_its_described_boundary() {
+fn a_cycle_that_only_repeats_draws_its_described_boundary() {
     let source = r#"
         #[kaalang]
         fn example() {
             #[cycle("Repeat forever.")]
-            || {};
+            {
+                continue;
+            };
         }
     "#;
     let scene = drawn((source, "example"));
@@ -1062,7 +1064,7 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
 
 #[test]
 fn a_break_between_repeating_cases_is_rejected_before_layout() {
-    // Collapsed, because the expanded diagram must still be checked before its
+    // Collapsed, because the expanded flow must still be checked before its
     // loops fold into nodes that would hide the conflict.
     let error = crate::render_source_with_options(
         include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_break.rs"),
@@ -1075,11 +1077,9 @@ fn a_break_between_repeating_cases_is_rejected_before_layout() {
     let crate::RenderError::InvalidFlow { message, .. } = &error else {
         panic!("an unrealizable topology is an invalid flow, not a rendering error: {error}")
     };
-    // The realizability decision, not some earlier wire rule.
-    assert!(
-        message.contains("could not construct a diagram under RFC 0002"),
-        "{message}"
-    );
+    // The repeating cases merge before their one continue, so the break
+    // between them splits that merge before any diagram is decided.
+    assert!(message.contains("must be adjacent"), "{message}");
 }
 
 /// Pulling a back edge over its body is rejected by the final geometry check.
@@ -1241,6 +1241,8 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
 
                 #[action("Record the first step.")]
                 |&mut initial_log, wwwwwwwwwwwwwwwwwwwwwwww| initial_log.push(wwwwwwwwwwwwwwwwwwwwwwww);
+
+                |iterate_1| continue;
             };
 
             #[cycle("Collect the second steps.")]
@@ -1263,6 +1265,8 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
 
                 #[action("Record the second step.")]
                 |&mut log, wwwwwwwwwwwwwwwwwwwwwwww| log.push(wwwwwwwwwwwwwwwwwwwwwwww);
+
+                |iterate_2| continue;
             };
 
             #[action("Return an empty log.")]
@@ -1299,7 +1303,11 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
                 let third = |second| ();
 
                 #[cycle("Repeat the inner cycle.")]
-                |third| {};
+                |third| {
+                    continue;
+                };
+
+                |again| continue;
             };
         }
     "#;
@@ -1377,6 +1385,8 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
 
                     #[action("Count down.")]
                     |wwwwwwww, &mut count| *count -= 1;
+
+                    |wwwwwwww| continue;
                 };
 
                 #[question("Finish the outer loop?")]
@@ -1386,6 +1396,8 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
 
                 #[action("Count down once more.")]
                 |wwwwwwww, &mut count| *count -= 1;
+
+                |wwwwwwww| continue;
             };
 
             |result| return result;
@@ -1471,10 +1483,11 @@ const FAR_CONTOUR: (&str, &str) = (
                     _ => (),
                 };
                 #[action("Advance in case 0.")]
-                |case_0| ();
+                let again = |case_0| ();
                 #[action("Advance in case 1.")]
-                |case_1| ();
+                let again = |case_1| ();
                 |case_2, mode| break mode;
+                |again| continue;
             };
 
             |result| return result;
@@ -1578,9 +1591,13 @@ const FOUR_LANES: (&str, &str) = (
                             |leave_3| break;
                             #[action("Advance at the deepest level.")]
                             |stay_3, &mut step| *step += 1;
+                            |stay_3| continue;
                         };
+                        |stay_2| continue;
                     };
+                    |stay_1| continue;
                 };
+                |stay_0| continue;
             };
 
             |result| return result;
@@ -1660,8 +1677,8 @@ fn four_nested_back_edges_are_drawn_in_four_lanes() {
     );
 }
 
-/// Accepted generated cycles render except for one pinned boundary crossing.
-/// Extends coverage beyond authored fixtures.
+/// Every generated cycle the model accepts also renders. Extends coverage
+/// beyond authored fixtures.
 #[test]
 fn every_generated_shape_the_model_accepts_also_renders() {
     let sources = kaalang_testing::shapes::loop_shapes()
@@ -1671,7 +1688,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
         .collect::<Vec<_>>();
     assert_eq!(sources.len(), 2835);
 
-    let (mut drawn, mut refused, mut undrawable) = (0, 0, 0);
+    let (mut drawn, mut refused) = (0, 0);
     for source in &sources {
         let file = crate::parse_file(source).expect("the probe is valid Rust");
         let function = crate::select_flow(&file.items, "probe").expect("the probe declares it");
@@ -1692,20 +1709,10 @@ fn every_generated_shape_the_model_accepts_also_renders() {
         let parameters = parameter_text(source, &function.sig);
         let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
         if let Err(reason) = layout(&model, &captions, &parameters) {
-            // One shape leaves the model with an arrangement whose route
-            // passes through a nested cycle's columns. The rectangle is
-            // checked on compaction candidates and the searches stay unaware
-            // of it, so this one reaches the renderer and the renderer is
-            // right to refuse it. Pinned rather than tolerated: it is the
-            // whole gap, and it must not widen.
-            assert!(
-                reason.contains("is crossed by external route"),
-                "{source}\nan accepted flow did not render: {reason}"
-            );
-            undrawable += 1;
+            panic!("{source}\nan accepted flow did not render: {reason}");
         }
     }
-    assert_eq!((drawn, refused, undrawable), (1091, 1744, 1));
+    assert_eq!((drawn, refused), (1095, 1740));
 }
 
 /// Moving the climb alone can keep the route connected while violating the

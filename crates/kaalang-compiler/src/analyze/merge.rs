@@ -7,7 +7,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
+use crate::model::{
+    BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge,
+};
 
 use super::only_difference;
 
@@ -16,10 +18,14 @@ pub(super) fn flow(
     executions: &[Execution],
     merges: Vec<WireMerge>,
     owners: Vec<Vec<(usize, Vec<usize>)>>,
+    ancestry: &[BTreeSet<BranchSelection>],
 ) -> Result<Vec<WireMerge>> {
     let blocks = flow.blocks.len();
     let mut successors = vec![BTreeSet::new(); blocks + merges.len()];
-    let mut groups = vec![BTreeMap::<Vec<usize>, BTreeSet<usize>>::new(); blocks];
+    let mut routes_by_owner = BTreeMap::new();
+    let mut groups = (0..blocks)
+        .map(|_| Vec::<super::choice::Group>::new())
+        .collect::<Vec<_>>();
     for dependency in executions
         .iter()
         .flat_map(|execution| &execution.dependencies)
@@ -41,16 +47,42 @@ pub(super) fn flow(
             successors[block].insert(node);
         }
         for (owner, branches) in owners {
-            groups[owner].entry(branches).or_default().insert(node);
+            if flow.blocks[owner].kind != BlockKind::Choice {
+                continue;
+            }
+            // The routes producing this merge and those reaching it, each with
+            // its case of the owner.
+            let owner_routes = routes_by_owner
+                .entry(owner)
+                .or_insert_with(|| super::choice::routes(ancestry, executions, owner));
+            let routes = executions
+                .iter()
+                .zip(owner_routes.iter())
+                .filter(|(execution, _)| {
+                    merge
+                        .producers
+                        .iter()
+                        .any(|&producer| flow.produces(execution, producer))
+                })
+                .filter_map(|(_, &route)| route)
+                .collect();
+            let reaching = executions
+                .iter()
+                .zip(owner_routes.iter())
+                .filter(|(execution, _)| reaches(flow, execution, merge))
+                .filter_map(|(_, &route)| route)
+                .collect();
+            groups[owner].push(super::choice::Group {
+                cases: branches,
+                routes,
+                reaching,
+            });
         }
     }
 
-    for (block, groups) in groups.into_iter().enumerate() {
+    for (block, groups) in groups.iter().enumerate() {
         if flow.blocks[block].kind == BlockKind::Choice {
-            super::choice::validate_groups(
-                &flow.blocks[block].outputs,
-                &groups.into_iter().collect::<Vec<_>>(),
-            )?;
+            super::choice::validate_groups(&flow.blocks[block].outputs, groups)?;
         }
     }
     validate_order(flow, &merges, &successors)?;
@@ -544,6 +576,27 @@ impl Compatible<'_> {
     }
 }
 
+/// Whether an execution reaches the level where a merge completes. A repeating
+/// summary stops at its loop tail, so it cannot separate the routes of a merge
+/// outside that loop: it never reaches the merge.
+fn reaches(flow: &Flow, execution: &Execution, merge: &WireMerge) -> bool {
+    if !merge.after.is_empty() {
+        return merge
+            .after
+            .iter()
+            .any(|&block| flow.reaches(execution, block));
+    }
+    // Without a consumer the merge completes where its producers run. A
+    // repeating cycle never hands over its own result.
+    merge.producers.iter().any(|producer| match *producer {
+        ProducerId::BlockOutput { block, .. } => {
+            flow.reaches(execution, block)
+                && execution.outcome != ExecutionOutcome::Repeat { loop_index: block }
+        }
+        ProducerId::FlowInput(_) => false,
+    })
+}
+
 /// Producer routes occupy one interval in authored branch order.
 fn validate_adjacency(
     flow: &Flow,
@@ -551,31 +604,10 @@ fn validate_adjacency(
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
 ) -> Result<()> {
-    // A repeating summary stops at its loop tail. It cannot separate routes
-    // of a merge outside that loop because it never reaches the merge.
-    let has_consumer = !merge.after.is_empty();
-    let points = if has_consumer {
-        merge.after.clone()
-    } else {
-        merge
-            .producers
-            .iter()
-            .filter_map(|producer| match producer {
-                ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) => None,
-            })
-            .collect::<Vec<_>>()
-    };
     let (executions, producers): (Vec<_>, Vec<_>) = executions
         .iter()
         .zip(producers)
-        .filter(|(execution, _)| match execution.outcome {
-            ExecutionOutcome::Return { .. } => true,
-            ExecutionOutcome::Repeat { loop_index } => points.iter().any(|&block| {
-                (has_consumer && block == loop_index)
-                    || flow.enclosing(block).any(|parent| parent == loop_index)
-            }),
-        })
+        .filter(|(execution, _)| reaches(flow, execution, merge))
         .map(|(execution, producer)| (execution, *producer))
         .unzip();
     let ordered = super::branch_order(&executions, &producers);
@@ -874,8 +906,9 @@ mod tests {
                 #[cycle("Wait until done.")]
                 let result = |enter| {
                     #[question("Done?")]
-                    let (leave, _again) = |done| { done };
+                    let (leave, again) = |done| { done };
                     |leave, value| break value;
+                    |again| continue;
                 };
                 #[action("Use the fallback.")]
                 let result = |fallback| { 2 };
@@ -884,7 +917,7 @@ mod tests {
         "#;
         for source in [
             source.to_owned(),
-            source.replace("(leave, _again)", "(_again, leave)"),
+            source.replace("(leave, again)", "(again, leave)"),
         ] {
             let function = syn::parse_str::<ItemFn>(&source).expect("the flow parses");
             build(&function).expect("a repeat does not reach the merge after its loop");

@@ -1,5 +1,5 @@
 //! Generated performance probes beyond fixture coverage: deep cycles, large
-//! flows, branching, and deliberately impossible topologies.
+//! flows, and branching.
 
 use std::fmt::Write as _;
 
@@ -57,10 +57,13 @@ fn open_level(depth: usize) -> String {
     format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
 }
 
-/// Closes every level [`open_level`] opened, innermost first.
+/// Closes every level [`open_level`] opened, innermost first, each after the
+/// `continue` its staying route reaches.
 fn close_levels(body: &mut String, loops: usize) {
     for depth in (0..loops).rev() {
-        let _ = writeln!(body, "{}}};", indent(depth));
+        let pad = indent(depth);
+        let _ = writeln!(body, "{pad}    |stay_{depth}| continue;");
+        let _ = writeln!(body, "{pad}}};");
     }
 }
 
@@ -78,14 +81,9 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
         let pad = indent(depth);
         body.push_str(&open_level(depth));
         let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
-        let ignored = if empty_tail && depth + 1 == loops {
-            "_"
-        } else {
-            ""
-        };
         let _ = writeln!(
             body,
-            "{pad}    let ({ignored}stay_{depth}, leave_{depth}) = |step| step > {depth};"
+            "{pad}    let (stay_{depth}, leave_{depth}) = |step| step > {depth};"
         );
         let _ = writeln!(body, "{pad}    |leave_{depth}| break;");
     }
@@ -104,67 +102,6 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
     }
     let _ = writeln!(body, "    |step| return step;");
     format!("#[kaalang]\nfn nested_cycles(step: usize) -> usize {{\n{body}}}\n")
-}
-
-/// With a distributor, a middle exit cannot pass the surrounding repeats on a
-/// common case row; with ordered questions, the middle break route separates
-/// two arrivals of an iteration tail it must follow.
-///
-/// # Panics
-///
-/// Panics when `loops` is zero: every shape here nests at least one.
-#[must_use]
-pub fn branching_loops(loops: usize, actions: usize, distributor: bool) -> String {
-    assert!(loops > 0, "a refused shape needs at least one loop");
-    let mut body = String::new();
-    for depth in 0..loops {
-        let pad = indent(depth);
-        body.push_str(&open_level(depth));
-        if distributor {
-            let _ = writeln!(
-                body,
-                "{pad}    #[choice(\"Which route at level {depth}?\")]"
-            );
-            for case in 0..3 {
-                let _ = writeln!(body, "{pad}    #[case(\"Case {case} at level {depth}.\")]");
-            }
-            let _ = writeln!(
-                body,
-                "{pad}    let (again_{depth}, leave_{depth}, stay_{depth}) = |step| match step {{\n{pad}        0 => (),\n{pad}        1 => (),\n{pad}        _ => (),\n{pad}    }};"
-            );
-        } else {
-            let _ = writeln!(
-                body,
-                "{pad}    #[question(\"Repeat at level {depth}?\")]\n{pad}    let (again_{depth}, other_{depth}) = |step| step == 0;"
-            );
-            let _ = writeln!(
-                body,
-                "{pad}    #[question(\"Leave level {depth}?\")]\n{pad}    let (leave_{depth}, stay_{depth}) = |other_{depth}, step| step == 1;"
-            );
-        }
-        let _ = writeln!(body, "{pad}    |leave_{depth}| break;");
-        let _ = writeln!(
-            body,
-            "{pad}    #[action(\"Repeat level {depth}.\")]\n{pad}    |again_{depth}| ();"
-        );
-    }
-    let deepest = loops - 1;
-    let pad = indent(deepest);
-    let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
-    let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
-    close_levels(&mut body, loops);
-    for action in 0..actions {
-        let _ = writeln!(
-            body,
-            "    #[action(\"Read step {action}.\")]\n    let read_{action} = |&step| *step;"
-        );
-        let _ = writeln!(
-            body,
-            "    #[action(\"Use step {action}.\")]\n    |read_{action}| ();"
-        );
-    }
-    let _ = writeln!(body, "    |step| return step;");
-    format!("#[kaalang]\nfn refused(mut step: usize) -> usize {{\n{body}}}\n")
 }
 
 /// A chain of `stages` questions, each selecting between two actions that

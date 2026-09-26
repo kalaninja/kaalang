@@ -429,11 +429,12 @@ fn preferred(
             Ok(arrangement) => return Ok(arrangement),
             Err(sweep::Refusal::Internal(reason)) => return Err(Preferred::Inconsistent(reason)),
             Err(sweep::Refusal::Impossible(reason)) => {
+                // Lowering every tail is the last resort, blamed or not: a
+                // route crossing a nested body can pass below it instead.
+                pending.push((every_tail.clone(), sides.clone()));
                 if let Some(index) = reason.loop_index {
                     // Pushed in reverse order of preference: flipping one
-                    // contour is tried before lowering one tail, and lowering
-                    // every tail is the last resort.
-                    pending.push((every_tail.clone(), sides.clone()));
+                    // contour is tried before lowering one tail.
                     let mut lowered = sunk.clone();
                     lowered.insert(tails[index]);
                     pending.push((lowered, sides.clone()));

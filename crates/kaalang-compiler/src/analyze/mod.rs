@@ -18,6 +18,7 @@ mod action;
 mod break_block;
 mod call;
 mod choice;
+mod continue_block;
 mod convergence;
 mod end;
 mod loop_block;
@@ -41,7 +42,8 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     let executions = walk.executions.into_iter().collect::<Vec<_>>();
     let mut merges = merge::collect(flow);
     let owners = merge::completion(flow, &executions, &mut merges);
-    placement::flow(flow, &executions, &merges, &owners)?;
+    let ancestry = placement::ancestry(flow);
+    placement::flow(flow, &executions, &merges, &owners, &ancestry)?;
     if let Some(error) = walk.incomplete {
         return Err(error);
     }
@@ -53,12 +55,12 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         .map(|execution| predecessors(flow, execution, &[]))
         .collect::<Vec<_>>();
     participation::flow(flow, &executions, &captures)?;
-    let merges = merge::flow(flow, &executions, merges, owners)?;
+    let merges = merge::flow(flow, &executions, merges, owners, &ancestry)?;
     let precedence = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
-    let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
+    let convergence_groups = convergence::flow(flow, &executions, &precedence, &ancestry)?;
     Ok((executions, convergence_groups, merges))
 }
 
@@ -87,7 +89,6 @@ fn walk(flow: &Flow) -> Walk<'_> {
             executed: BTreeSet::new(),
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
-            repeats: BTreeSet::new(),
             loops: BTreeMap::new(),
         },
     );
@@ -237,7 +238,6 @@ struct State {
     executed: BTreeSet<usize>,
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
-    repeats: BTreeSet<usize>,
     loops: BTreeMap<usize, LoopState>,
 }
 
@@ -290,7 +290,7 @@ impl Walk<'_> {
     /// whose inputs this execution has all provided participates; the others
     /// belong to branches this execution did not select.
     fn visit(&mut self, index: usize, mut state: State) {
-        if self.close_loops(index, &mut state) {
+        if self.close_loops(index, &state) {
             return;
         }
         if index == self.end {
@@ -332,6 +332,7 @@ impl Walk<'_> {
             BlockKind::Question => question::visit(self, index, &state),
             BlockKind::Loop => loop_block::visit(self, index, state),
             BlockKind::Break => break_block::visit(self, index, state),
+            BlockKind::Continue => continue_block::visit(self, index, state),
             BlockKind::Return => return_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
@@ -380,8 +381,9 @@ impl Walk<'_> {
         true
     }
 
-    /// Reaching the innermost body's boundary records a repeating summary.
-    fn close_loops(&mut self, index: usize, state: &mut State) -> bool {
+    /// An iteration still open at its body's boundary reached neither
+    /// `continue` nor `break`: repetition is authored, never implied.
+    fn close_loops(&mut self, index: usize, state: &State) -> bool {
         let Some(header) = state
             .loops
             .keys()
@@ -391,11 +393,13 @@ impl Walk<'_> {
         else {
             return false;
         };
-        state.loops.remove(&header).expect("the iteration is open");
-        state.repeats.insert(header);
-        self.record(
-            state.clone(),
-            ExecutionOutcome::Repeat { loop_index: header },
+        // The route falls off at the body's end, after every block inside it.
+        self.report(
+            (index - 1, usize::MAX),
+            Error::new(
+                self.flow.blocks[header].span,
+                "a route through this kaalang cycle reaches the end of its body; repeat it with `continue` or complete it with `break`",
+            ),
         );
         true
     }
@@ -405,7 +409,6 @@ impl Walk<'_> {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
-            repeats: state.repeats.into_iter().collect(),
             outcome,
         });
     }

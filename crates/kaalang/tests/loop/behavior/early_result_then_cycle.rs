@@ -35,6 +35,8 @@ fn early_result_then_cycle(first: bool, mut count: usize) -> usize {
 
         #[action("Increment the count.")]
         |iterate, &mut count| *count += 1;
+
+        |iterate| continue;
     };
 
     |end| return end;

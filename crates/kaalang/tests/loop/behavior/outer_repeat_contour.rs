@@ -17,10 +17,12 @@ fn outer_repeat_contour(mut mode: u8) -> u8 {
         |leave, mode| break mode;
 
         #[action("Advance through the middle case.")]
-        |middle, &mut mode| *mode = 0;
+        let advanced = |middle, &mut mode| *mode = 0;
 
         #[action("Advance through the right case.")]
-        |right, &mut mode| *mode = 1;
+        let advanced = |right, &mut mode| *mode = 1;
+
+        |advanced| continue;
     };
 
     |result| return result;

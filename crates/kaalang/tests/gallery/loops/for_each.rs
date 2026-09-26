@@ -26,6 +26,8 @@ fn for_each(values: &[i32]) -> i32 {
 
         #[action("➕ Add it to the total.")]
         |value, &mut running| *running += value;
+
+        |value| continue;
     };
 
     |total| return total;

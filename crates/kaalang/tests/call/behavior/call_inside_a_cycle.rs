@@ -20,6 +20,8 @@ fn call_inside_a_cycle(limit: usize) -> usize {
 
         #[call("Increment the counter.")]
         |iterate_1, &mut count| bump(count);
+
+        |iterate_1| continue;
     };
 
     |total| return total;

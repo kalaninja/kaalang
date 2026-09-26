@@ -21,25 +21,28 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
         };
 
         #[action("Advance.")]
-        |advance| {};
+        let advanced = |advance| {};
 
         #[cycle("Spin forever.")]
         |spin| {
             #[action("Spin.")]
             || {};
+
+            continue;
         };
 
         #[question("Stay in the loop?")]
         let (again, leave) = |decide, stay| stay;
 
         #[action("Advance after the decision.")]
-        |again| {};
+        let advanced = |again| {};
 
         #[action("Leave after the decision.")]
         let selected = |leave, mode| mode;
         #[action("Leave immediately.")]
         let selected = |leave_now, mode| mode;
         |selected| break selected;
+        |advanced| continue;
     };
 
     |result| return result;

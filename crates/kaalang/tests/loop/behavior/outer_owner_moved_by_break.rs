@@ -25,6 +25,8 @@ fn outer_owner_moved_by_break(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) ->
             entry.0.borrow_mut().push(*count);
             *count += 1;
         };
+
+        |again| continue;
     };
 
     #[action("Record work after the moved entry drops.")]

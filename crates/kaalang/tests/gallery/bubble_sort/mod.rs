@@ -39,12 +39,16 @@ fn bubble_sort(mut values: &mut [i32]) {
 
             #[action("⏭️ Move on to the next pair.")]
             |stepped, &mut index| *index += 1;
+
+            |stepped| continue;
         };
 
         #[action("🔻 One more value is in its place.")]
         |compared, &mut unsorted| *unsorted -= 1;
 
         |done| break;
+
+        |compared| continue;
     };
 
     |sorted| return sorted;

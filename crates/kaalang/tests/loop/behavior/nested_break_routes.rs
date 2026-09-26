@@ -9,8 +9,9 @@ fn nested_break_routes(a: bool, b: bool, c: bool) {
         #[question("Second?")]
         let (next_b, stop) = |next, b| b;
         #[question("Third?")]
-        let (_again, stop) = |next_b, c| c;
+        let (again, stop) = |next_b, c| c;
         |stop| break;
+        |again| continue;
     };
 
     return;

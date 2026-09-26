@@ -26,6 +26,8 @@ fn nested_exit_convergence(mut count: usize) -> usize {
 
             #[action("Count down.")]
             |again, &mut count| *count -= 1;
+
+            |again| continue;
         };
 
         #[question("Finish the outer loop?")]
@@ -35,6 +37,8 @@ fn nested_exit_convergence(mut count: usize) -> usize {
 
         #[action("Count down once more.")]
         |again, &mut count| *count -= 1;
+
+        |again| continue;
     };
 
     |result| return result;

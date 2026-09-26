@@ -20,6 +20,8 @@ fn middle_exit(limit: usize) -> Vec<usize> {
             *initial_count += 1;
             initial_log.push(99);
         };
+
+        |again| continue;
     };
 
     |result_log| return result_log;

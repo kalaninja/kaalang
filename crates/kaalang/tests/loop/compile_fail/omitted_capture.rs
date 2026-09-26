@@ -13,6 +13,8 @@ fn invalid(count: usize) {
         |again| {
             count -= 1;
         };
+
+        |again| continue;
     };
 
     return;
