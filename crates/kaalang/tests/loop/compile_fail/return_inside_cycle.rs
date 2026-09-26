@@ -8,7 +8,7 @@ fn invalid(condition: bool) {
         let (leave, repeat) = |condition| condition;
 
         |leave| return;
-        |repeat| break;
+        |repeat| continue;
     };
 }
 

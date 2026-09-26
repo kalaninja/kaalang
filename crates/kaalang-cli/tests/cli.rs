@@ -17,9 +17,7 @@ fn route(request: u8) -> u8 {
     #[cycle("Use the request.")]
     let response = |request| {
         #[action("Copy the request.")]
-        let ready = |request| request;
-
-        |ready| break ready;
+        let response = |request| request;
     };
 
     |response| return response;

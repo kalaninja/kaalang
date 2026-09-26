@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1340" viewBox="0 0 1480 1340" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for output_routes_before_a_question</title>
+  <desc id="kaalang-description">Cycles: Sort the value. with inputs value and outputs tiny or larger. Nodes: Start: output_routes_before_a_question with parameters value: u8; flag: u8 handing over value, flag; Question: Is it below ten? capturing value handing over low / high; Question: Is it below five? capturing low, value handing over below / small; Action: Mark a tiny value. capturing below handing over tiny; Action: Mark a small value. capturing small handing over larger; Action: Mark a high value. capturing high handing over larger; Question: Is the flag even? capturing larger, flag handing over even / odd; Action: Score the tiny value. capturing tiny handing over score; Action: Score the even flag. capturing even handing over score; Action: Keep the score. capturing score handing over result; Action: Score the odd flag. capturing odd handing over result; End: u8 capturing result; Merge: larger; Merge: score; Merge: result. Connections: Start: output_routes_before_a_question to Question: Is it below ten?; Question: Is it below ten? branch 1 to Question: Is it below five?; Question: Is it below ten? branch 2 to Action: Mark a high value.; Question: Is it below five? branch 1 to Action: Mark a tiny value.; Question: Is it below five? branch 2 to Action: Mark a small value.; Action: Mark a tiny value. to the tiny result of the cycle; Action: Mark a small value. to the larger merge at the larger result of the cycle; Action: Mark a high value. to the larger merge at the larger result of the cycle; Question: Is the flag even? branch 1 to Action: Score the even flag.; Question: Is the flag even? branch 2 to Action: Score the odd flag.; Action: Score the tiny value. to the score merge; Action: Score the even flag. to the score merge; Action: Keep the score. to the result merge; Action: Score the odd flag. to the result merge; the larger merge at the larger result of the cycle to Question: Is the flag even?; the score merge to Action: Keep the score.; the result merge to End: u8; the tiny result of the cycle to Action: Score the tiny value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Sort the value.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="1416" height="498" rx="12"/>
+    <text class="cycle-caption" x="1436" y="149" text-anchor="end" xml:space="preserve"><tspan x="1436" dy="0">Sort the value.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 242 L 200 314
+      M 340 206 L 1280 206 L 1280 318
+      M 200 386 L 200 458
+      M 340 350 L 560 350 L 560 458
+      M 200 522 L 200 598
+      M 560 522 L 560 598
+      M 1280 382 L 1280 598 L 560 598
+      M 560 746 L 560 818
+      M 700 710 L 920 710 L 920 818
+      M 200 742 L 200 958
+      M 560 882 L 560 958 L 200 958
+      M 200 1098 L 200 1174
+      M 920 882 L 920 1174 L 200 1174
+      M 560 598 L 560 674
+      M 200 958 L 200 1034
+      M 200 1174 L 200 1250
+      M 200 598 L 200 678
+    "/>
+    <text class="connection-label" x="573" y="616" xml:space="preserve"><tspan x="573" dy="0">larger</tspan></text>
+    <text class="connection-label" x="213" y="976" xml:space="preserve"><tspan x="213" dy="0">score</tspan></text>
+    <text class="connection-label" x="213" y="1192" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="1293" y="307" xml:space="preserve"><tspan x="1293" dy="0">high</tspan></text>
+    <text class="connection-label" x="213" y="447" xml:space="preserve"><tspan x="213" dy="0">below</tspan></text>
+    <text class="connection-label" x="573" y="447" xml:space="preserve"><tspan x="573" dy="0">small</tspan></text>
+    <text class="connection-label" x="573" y="807" xml:space="preserve"><tspan x="573" dy="0">even</tspan></text>
+    <text class="connection-label" x="933" y="807" xml:space="preserve"><tspan x="933" dy="0">odd</tspan></text>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">value, flag</tspan></text>
+    <text class="connection-label" x="213" y="260" xml:space="preserve"><tspan x="213" dy="0">low</tspan></text>
+    <text class="connection-label" x="213" y="540" xml:space="preserve"><tspan x="213" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="303" xml:space="preserve"><tspan x="213" dy="0">low, value</tspan></text>
+    <text class="connection-label" x="573" y="663" xml:space="preserve"><tspan x="573" dy="0">larger, flag</tspan></text>
+    <text class="connection-label" x="213" y="667" xml:space="preserve"><tspan x="213" dy="0">tiny</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(560 598)">
+      <title xml:space="preserve">the larger merge at the larger result of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(200 958)">
+      <title xml:space="preserve">the score merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(200 1174)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">output_routes_before_a_question</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 206)">
+      <title xml:space="preserve">Is it below ten?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it below ten?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 350)">
+      <title xml:space="preserve">Is it below five?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it below five?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 490)">
+      <title xml:space="preserve">Mark a tiny value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a tiny value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 490)">
+      <title xml:space="preserve">Mark a small value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a small value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1280 350)">
+      <title xml:space="preserve">Mark a high value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a high value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(560 710)">
+      <title xml:space="preserve">Is the flag even?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the flag even?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 710)">
+      <title xml:space="preserve">Score the tiny value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the tiny value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 850)">
+      <title xml:space="preserve">Score the even flag.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the even flag.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 1066)">
+      <title xml:space="preserve">Keep the score.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the score.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 850)">
+      <title xml:space="preserve">Score the odd flag.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the odd flag.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1279)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

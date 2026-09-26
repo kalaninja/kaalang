@@ -1,0 +1,5 @@
+error: branches in a kaalang choice convergence group must be adjacent
+  --> tests/loop/compile_fail/enclosed_exit.rs:11:21
+   |
+11 |         let (first, leave, last) = |mode| match mode {
+   |                     ^^^^^

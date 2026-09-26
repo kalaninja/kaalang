@@ -325,7 +325,7 @@ mod tests {
                     .topology
                     .connections
                     .iter()
-                    .filter(|edge| Some(edge.source) == boundary.result)
+                    .filter(|edge| boundary.results.contains(&edge.source))
                     .any(|edge| {
                         let (rank, column) = (
                             built.rank[&edge.destination],
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn unused_lanes_can_disappear_together_during_compaction() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
         let mut model = kaalang_compiler::build(&syn::parse_str(&source).unwrap()).unwrap();
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn compaction_is_deterministic_and_idempotent() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
         let function: syn::ItemFn = syn::parse_str(&source).unwrap();
         let mut first = kaalang_compiler::build(&function).unwrap();
         let mut second = kaalang_compiler::build(&function).unwrap();

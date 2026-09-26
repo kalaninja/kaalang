@@ -24,7 +24,8 @@ fn middle_exit(number: u64) -> u64 {
         #[no("NO")]
         let (done, again) = |next, guess| next >= guess;
 
-        |done, guess| break guess;
+        #[action("✅ The settled guess is the root.")]
+        let root = |done, guess| guess;
 
         #[action("🔽 Take the smaller guess.")]
         |again, next, &mut guess| *guess = next;

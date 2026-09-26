@@ -6,8 +6,6 @@ fn whole_tuple_result(value: usize) -> (usize, usize) {
     let pair = |value| {
         #[action("Build the tuple.")]
         let pair = |value| (value, value + 1);
-
-        |pair| break pair;
     };
 
     |pair| return pair;

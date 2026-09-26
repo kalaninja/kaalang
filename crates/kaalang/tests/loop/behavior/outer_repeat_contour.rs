@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn outer_repeat_contour(mut mode: u8) -> u8 {
     #[cycle("Advance until the left route leaves.")]
-    let result = {
+    let leave = {
         #[choice("Which route?")]
         #[case("Leave on the left.")]
         #[case("Advance in the middle.")]
@@ -14,8 +14,6 @@ fn outer_repeat_contour(mut mode: u8) -> u8 {
             _ => (),
         };
 
-        |leave, mode| break mode;
-
         #[action("Advance through the middle case.")]
         let advanced = |middle, &mut mode| *mode = 0;
 
@@ -25,13 +23,13 @@ fn outer_repeat_contour(mut mode: u8) -> u8 {
         |advanced| continue;
     };
 
-    |result| return result;
+    |leave, mode| return mode;
 }
 
-/// The only break is the leftmost case, so the iteration back edge climbs the
+/// The only completing case is the leftmost, so the iteration back edge climbs the
 /// right of the body even though RFC 0002 §8 prefers the left contour here.
 #[test]
-fn the_back_edge_takes_the_flank_the_break_leaves_clear() {
+fn the_back_edge_takes_the_flank_the_exit_leaves_clear() {
     assert_eq!(outer_repeat_contour(0), 0);
     assert_eq!(outer_repeat_contour(1), 0);
     assert_eq!(outer_repeat_contour(2), 0);

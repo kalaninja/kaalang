@@ -247,13 +247,13 @@ fn nested_partial_joins_emit_each_body_once_without_routing_values() {
                 Stmt::Expr(expression, _) => expression,
                 _ => panic!("each fixture statement declares a block"),
             };
-            if matches!(expression, Expr::Break(_) | Expr::Return(_)) {
+            if matches!(expression, Expr::Return(_)) {
                 continue;
             }
             let Expr::Closure(closure) = expression else {
                 panic!("each block has a closure initializer");
             };
-            if matches!(closure.body.as_ref(), Expr::Break(_) | Expr::Return(_)) {
+            if matches!(closure.body.as_ref(), Expr::Return(_)) {
                 continue;
             }
             if !matches!(closure.body.as_ref(), Expr::Block(_)) {

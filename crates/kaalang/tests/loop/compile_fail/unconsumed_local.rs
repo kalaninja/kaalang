@@ -3,11 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Create an unused local wire.")]
-    |flag| {
+    let done = |flag| {
         #[question("Repeat?")]
         let (again, done) = |flag| flag;
-
-        |done| break;
 
         #[action("Create the unused local wire.")]
         let local = |again| 1;
@@ -15,7 +13,7 @@ fn invalid(flag: bool) {
         |again| continue;
     };
 
-    return;
+    |done| return;
 }
 
 fn main() {}

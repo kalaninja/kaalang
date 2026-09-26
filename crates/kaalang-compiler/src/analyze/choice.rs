@@ -2,11 +2,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use proc_macro2::Ident;
 use syn::{Error, Result};
 
 use super::{State, Walk};
-use crate::model::{BranchSelection, Execution};
+use crate::model::{Block, BlockKind, BranchSelection, Execution};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &State) {
     walk.branch(block, state);
@@ -26,7 +25,7 @@ pub(super) fn routes(
     executions
         .iter()
         .map(|execution| {
-            let case = execution.selected(choice)?;
+            let case = super::frame::branch(execution.selected(choice)?);
             let own = BranchSelection {
                 block: choice,
                 branch: case,
@@ -60,11 +59,19 @@ pub(super) struct Group {
 /// Choice groups occupy adjacent cases and may nest, but may not cross. Both
 /// are decided by route, not by case: a later selection inside one case may
 /// send its routes to different groups, and only a route that reaches a group
-/// can separate it or set it apart from another.
-pub(super) fn validate_groups(outputs: &[Ident], groups: &[Group]) -> Result<()> {
-    let mut offending = None::<(usize, &str)>;
-    let mut report = |case: usize, message: &'static str| {
-        if offending.is_none_or(|(earliest, _)| case < earliest) {
+/// can separate it or set it apart from another. A cycle's declared outputs
+/// group the same way.
+pub(super) fn validate_groups(owner: &Block, groups: &[Group]) -> Result<()> {
+    let (noun, members) = match owner.kind {
+        BlockKind::Loop => ("cycle", "outputs"),
+        _ => ("choice", "branches"),
+    };
+    let mut offending = None::<(usize, String)>;
+    let mut report = |case: usize, message: String| {
+        if offending
+            .as_ref()
+            .is_none_or(|(earliest, _)| case < *earliest)
+        {
             offending = Some((case, message));
         }
     };
@@ -76,7 +83,7 @@ pub(super) fn validate_groups(outputs: &[Ident], groups: &[Group]) -> Result<()>
         {
             report(
                 gap,
-                "branches in a kaalang choice convergence group must be adjacent",
+                format!("{members} in a kaalang {noun} convergence group must be adjacent"),
             );
         }
         for other in &groups[position + 1..] {
@@ -90,13 +97,13 @@ pub(super) fn validate_groups(outputs: &[Ident], groups: &[Group]) -> Result<()>
             {
                 report(
                     shared,
-                    "kaalang choice convergence groups must be disjoint or nested",
+                    format!("kaalang {noun} convergence groups must be disjoint or nested"),
                 );
             }
         }
     }
     match offending {
-        Some((case, message)) => Err(Error::new(outputs[case].span(), message)),
+        Some((case, message)) => Err(Error::new(owner.outputs[case].span(), message)),
         None => Ok(()),
     }
 }

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="396" viewBox="0 0 680 396" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for retry_or_give_up</title>
-  <desc id="kaalang-description">Nodes: Start: retry_or_give_up with parameters mut attempts: u32; mut state: u8 handing over mut attempts, mut state; Cycle: Poll until a response arrives. capturing mut state, mut attempts handing over response; End: Option&lt;u8&gt; capturing response. Connections: Start: retry_or_give_up to Cycle: Poll until a response arrives.; Cycle: Poll until a response arrives. to End: Option&lt;u8&gt;.</desc>
+  <desc id="kaalang-description">Nodes: Start: retry_or_give_up with parameters mut attempts: u32; mut state: u8 handing over mut attempts, mut state; Cycle: Poll until a response arrives. capturing mut state, mut attempts handing over result; End: Option&lt;u8&gt; capturing result. Connections: Start: retry_or_give_up to Cycle: Poll until a response arrives.; Cycle: Poll until a response arrives. to End: Option&lt;u8&gt;.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -32,7 +32,7 @@
       M 172 94 L 172 170
       M 172 234 L 172 306
     "/>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">response</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">mut attempts, mut state</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut state, mut attempts</tspan></text>
   </g>

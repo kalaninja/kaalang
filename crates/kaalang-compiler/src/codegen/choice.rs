@@ -100,18 +100,6 @@ pub(crate) fn emit(
             })
         },
     );
-    // Each continuation leaves for a join or returns the flow result, so it
-    // cannot fall through into the continuation of a different case.
-    for (case, branch) in branches.iter().enumerate() {
-        let label = &labels[case];
-        let wire = bindings.pattern(block.output_span, &block.outputs[case..=case]);
-        let gate = bindings.gate(&block.outputs[case]);
-        let path = super::flow(flow, &branch.plan, bindings);
-        dispatch = quote! {
-            let #wire = #label: { #dispatch };
-            #gate
-            #path
-        };
-    }
+    dispatch = super::exits(flow, bindings, index, &labels, branches, dispatch);
     join::emit(flow, bindings, index, joins, dispatch)
 }

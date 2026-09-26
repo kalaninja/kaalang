@@ -324,8 +324,10 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if collapsed(connection) || collapsed(other) {
                 continue;
             }
-            let shared =
-                connection.source == other.source || connection.destination == other.destination;
+            // The side exits of one node fan out along one row (RFC 0006 §7.5).
+            let shared = connection.source == other.source
+                || connection.destination == other.destination
+                || connection.source.is_side_exit_beside(other.source);
             let meetings = if shared {
                 bundle_meetings(&connection.points, &other.points)
             } else {

@@ -10,17 +10,13 @@ fn long_cycle_captions(flag: bool) {
     )]
     let done = |left| {
         #[action("Collect the results.")]
-        let ready = |left| {};
-
-        |ready| break;
+        let done = |left| {};
     };
 
     #[cycle("Read the next item and prepare it for processing.")]
     let done = |right| {
         #[action("Read the item.")]
-        let ready = |right| {};
-
-        |ready| break;
+        let done = |right| {};
     };
 
     |done| return;

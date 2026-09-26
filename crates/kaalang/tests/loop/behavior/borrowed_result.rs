@@ -4,7 +4,8 @@ use kaalang::kaalang;
 fn borrowed_result(text: &str) -> &str {
     #[cycle("Expose a borrowed outer wire.")]
     let result = |text| {
-        |text| break text;
+        #[action("Borrow the text.")]
+        let result = |text| text;
     };
 
     |result| return result;

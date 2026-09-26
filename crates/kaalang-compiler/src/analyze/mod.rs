@@ -15,12 +15,13 @@ use crate::model::{
 };
 
 mod action;
-mod break_block;
 mod call;
 mod choice;
 mod continue_block;
 mod convergence;
 mod end;
+mod export;
+mod frame;
 mod loop_block;
 mod merge;
 mod participation;
@@ -40,10 +41,11 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
     }
 
     let executions = walk.executions.into_iter().collect::<Vec<_>>();
+    let frames = frame::Frames::of(flow, &executions);
     let mut merges = merge::collect(flow);
-    let owners = merge::completion(flow, &executions, &mut merges);
+    let owners = merge::completion(flow, &frames, &mut merges);
     let ancestry = placement::ancestry(flow);
-    placement::flow(flow, &executions, &merges, &owners, &ancestry)?;
+    placement::flow(flow, &executions, &merges, &owners, &ancestry, &frames)?;
     if let Some(error) = walk.incomplete {
         return Err(error);
     }
@@ -54,13 +56,14 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         .iter()
         .map(|execution| predecessors(flow, execution, &[]))
         .collect::<Vec<_>>();
-    participation::flow(flow, &executions, &captures)?;
-    let merges = merge::flow(flow, &executions, merges, owners, &ancestry)?;
+    participation::flow(flow, &frames, &captures)?;
+    let merges = merge::flow(flow, &frames, merges, owners, &ancestry)?;
+    loop_block::output_order(flow, &frames)?;
     let precedence = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
-    let convergence_groups = convergence::flow(flow, &executions, &precedence, &ancestry)?;
+    let convergence_groups = convergence::flow(flow, &frames, &precedence, &ancestry)?;
     Ok((executions, convergence_groups, merges))
 }
 
@@ -138,7 +141,8 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
 /// Unfold only selections that change the observed outcome. Earlier converged
 /// selections and later questions do not split its branch interval. Source
 /// order puts deciding ancestors before descendants, so projected traces sort
-/// in authored branch order.
+/// in authored branch order. A cycle seen as a black box sorts by its output
+/// alone: the body route it carries tells executions apart but orders nothing.
 pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
     let mut selectors = BTreeSet::new();
     for (first, execution) in executions.iter().enumerate() {
@@ -156,7 +160,10 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
             .branches
             .iter()
             .filter(|selection| selectors.contains(&selection.block))
-            .copied()
+            .map(|selection| BranchSelection {
+                block: selection.block,
+                branch: frame::branch(selection.branch),
+            })
             .collect::<Vec<_>>()
     });
     ordered
@@ -331,7 +338,7 @@ impl Walk<'_> {
             BlockKind::Call => call::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
             BlockKind::Loop => loop_block::visit(self, index, state),
-            BlockKind::Break => break_block::visit(self, index, state),
+            BlockKind::Export => export::visit(self, index, state),
             BlockKind::Continue => continue_block::visit(self, index, state),
             BlockKind::Return => return_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
@@ -382,7 +389,7 @@ impl Walk<'_> {
     }
 
     /// An iteration still open at its body's boundary reached neither
-    /// `continue` nor `break`: repetition is authored, never implied.
+    /// `continue` nor a declared output: repetition is authored, never implied.
     fn close_loops(&mut self, index: usize, state: &State) -> bool {
         let Some(header) = state
             .loops
@@ -394,12 +401,14 @@ impl Walk<'_> {
             return false;
         };
         // The route falls off at the body's end, after every block inside it.
+        let message = if self.flow.blocks[header].outputs.is_empty() {
+            "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"
+        } else {
+            "a route through this kaalang cycle reaches the end of its body without a declared output; produce one of its outputs or repeat it with `continue`"
+        };
         self.report(
             (index - 1, usize::MAX),
-            Error::new(
-                self.flow.blocks[header].span,
-                "a route through this kaalang cycle reaches the end of its body; repeat it with `continue` or complete it with `break`",
-            ),
+            Error::new(self.flow.blocks[header].span, message),
         );
         true
     }
@@ -414,6 +423,32 @@ impl Walk<'_> {
     }
 }
 
+/// The positions of the declared outputs of `header` an execution has already
+/// produced inside its body.
+fn produced_outputs<'s>(
+    flow: &'s Flow,
+    state: &'s State,
+    header: usize,
+) -> impl Iterator<Item = usize> + 's {
+    flow.exports(header)
+        .filter(move |&consumer| {
+            state
+                .available
+                .contains_key(&flow.blocks[consumer].inputs[0].ident)
+        })
+        .map(move |consumer| flow.exported_output(consumer))
+}
+
+/// The authored name of the declared output a boundary consumer exports.
+fn exported_name(flow: &Flow, consumer: usize) -> &Ident {
+    let header = flow.blocks[consumer]
+        .export_target
+        .expect("a boundary consumer has a cycle");
+    &flow.blocks[header]
+        .output_binding(flow.exported_output(consumer))
+        .ident
+}
+
 /// Every authored block participates in at least one execution.
 fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let end = flow.blocks.len() - 1;
@@ -422,6 +457,14 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
             .iter()
             .any(|execution| execution.participates(block))
     }) {
+        // A boundary consumer carries its declared output's span.
+        Some(block) if flow.blocks[block].kind == BlockKind::Export => Err(Error::new(
+            flow.blocks[block].span,
+            format!(
+                "no route through this kaalang cycle reaches the end of its body with its output `{}`",
+                exported_name(flow, block)
+            ),
+        )),
         Some(block) => Err(Error::new(
             flow.blocks[block].span,
             "this kaalang block is unreachable",
@@ -487,10 +530,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -
     {
         if let ProducerId::BlockOutput { block, output } = dependency.producer
             && !merged_wires.contains(&flow.blocks[block].outputs[output])
-            && matches!(
-                flow.blocks[block].kind,
-                BlockKind::Question | BlockKind::Choice
-            )
+            && flow.blocks[block].branch_count() > 0
         {
             captures
                 .entry(dependency.producer)

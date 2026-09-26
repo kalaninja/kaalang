@@ -1,5 +1,5 @@
-error: a kaalang cycle body must not capture the cycle's own output
-  --> tests/loop/compile_fail/own_output_inside_body.rs:14:21
+error: `value` is a declared output of the enclosing kaalang cycle; capture it after its producer in the cycle body
+  --> tests/loop/compile_fail/own_output_inside_body.rs:14:22
    |
-14 |         let next = |value| value + 1;
-   |                     ^^^^^
+14 |         let value = |value| value + 1;
+   |                      ^^^^^

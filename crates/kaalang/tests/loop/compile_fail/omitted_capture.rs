@@ -3,11 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(count: usize) {
     #[cycle("Try an implicit environment capture.")]
-    {
+    let done = {
         #[question("Repeat?")]
         let (again, done) = |count| count > 0;
-
-        |done| break;
 
         #[action("Change the counter without capturing it.")]
         |again| {
@@ -17,7 +15,7 @@ fn invalid(count: usize) {
         |again| continue;
     };
 
-    return;
+    |done| return;
 }
 
 fn main() {}

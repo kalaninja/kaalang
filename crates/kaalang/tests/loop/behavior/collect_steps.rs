@@ -9,13 +9,11 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     let mut initial_log = |run| Vec::new();
 
     #[cycle("Collect the first steps.")]
-    let mut log = |initial_log| {
+    let leave_1 = |initial_log| {
         #[question("Are there more first steps?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate_1, leave_1) = |&initial_log, &limit| initial_log.len() < *limit;
-
-        |leave_1, initial_log| break initial_log;
 
         #[action("Build the first step.")]
         let step = |iterate_1| {
@@ -37,16 +35,17 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     };
 
     #[cycle("Collect the second steps.")]
-    let end = |log| {
+    let end = |leave_1| {
         #[question("Are there more second steps?")]
         #[yes("YES")]
         #[no("NO")]
-        let (iterate_2, leave_2) = |&log, &limit| log.len() < *limit * 2;
+        let (iterate_2, leave_2) = |&initial_log, &limit| initial_log.len() < *limit * 2;
 
-        |leave_2, log| break log;
+        #[action("Hand over the collected log.")]
+        let end = |leave_2, initial_log| initial_log;
 
         #[question("Is the log length odd?")]
-        let (odd, even) = |iterate_2, &log| log.len() % 2 == 1;
+        let (odd, even) = |iterate_2, &initial_log| initial_log.len() % 2 == 1;
 
         #[action("Build an odd step.")]
         let step = |odd| String::from("b");
@@ -55,7 +54,7 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
         let step = |even| String::from("c");
 
         #[action("Record the second step.")]
-        |&mut log, step| log.push(step);
+        |&mut initial_log, step| initial_log.push(step);
 
         |iterate_2| continue;
     };

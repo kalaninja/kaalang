@@ -152,16 +152,17 @@ question, call an existing function, or repeat a sequence:
 | `question` | Select one of two branch outputs using a boolean expression.                 |
 | `choice`   | Select one output per visit from the cases of a Rust `match`.                |
 | `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
-| `break`    | Complete the directly containing cycle and hand back its result.             |
 | `continue` | Start the next iteration of the directly containing cycle.                   |
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
 declare their branch outputs. A cycle contains kaalang blocks; each route
-through it either repeats at its one `continue` or leaves at `break`, whose
-result then becomes available. In the diagram, `continue` routes meet at the
-cycle's back edge, and `break` and `return` appear as routes to the cycle
-boundary or flow end.
+through it either repeats at its one `continue` or reaches the end of the body
+with one of the cycle's
+[declared outputs](docs/rfcs/0006-stages.md#52-alternative-outputs), which then
+becomes available after the cycle. In the diagram, `continue` routes meet at the
+cycle's back edge, completing routes leave through the cycle boundary, and
+`return` reaches the flow end.
 
 The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) defines each kind;
 the [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds)
@@ -191,7 +192,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         let (iterate, leave) = |left, right| left < right;
 
         #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        let result = |leave| None;
 
         #[action("📍 Find the middle index.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
@@ -213,9 +214,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         let stepped = |greater, mid, &mut right| *right = mid;
 
         #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
-
-        |outcome| break outcome;
+        let result = |equal, mid| Some(mid);
 
         |stepped| continue;
     };
@@ -231,8 +230,9 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
 the `less` and `greater` branches can update them. Both then produce `stepped`,
 merging before the shared `continue` that starts the next iteration. The `equal`
-and `leave` branches instead produce `outcome`, merging before the shared
-`break`. That value becomes the cycle's `result`, which the flow returns.
+and `leave` branches instead produce `result`, the cycle's declared output. They
+merge at the end of the body, and the cycle hands `result` to the flow, which
+returns it.
 
 <details>
 <summary>See the same flow with its cycle collapsed</summary>

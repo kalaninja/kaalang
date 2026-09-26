@@ -7,7 +7,8 @@ fn invalid() {
         #[action("Read the unavailable result.")]
         |result| {};
 
-        break;
+        #[action("Produce the result.")]
+        let result = || ();
     };
 
     |result| return result;

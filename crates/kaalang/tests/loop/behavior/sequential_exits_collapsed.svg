@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="705" viewBox="0 0 680 705" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for sequential_exits</title>
-  <desc id="kaalang-description">Nodes: Start: sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over mut initial_count, mut initial_log; Cycle: Run work between two stopping checks. capturing mut initial_count, before_limit, mut initial_log, after_limit handing over log; Action: Continue after the loop. capturing mut log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result. Connections: Start: sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to Cycle: Run work between two stopping checks.; Cycle: Run work between two stopping checks. to Action: Continue after the loop.; Action: Continue after the loop. to End: Vec&lt;&amp;&apos;static str&gt;.</desc>
+  <desc id="kaalang-description">Nodes: Start: sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over mut initial_count, mut initial_log; Cycle: Run work between two stopping checks. capturing mut initial_count, before_limit, mut initial_log, after_limit handing over done; Action: Continue after the loop. capturing done, mut initial_log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result. Connections: Start: sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to Cycle: Run work between two stopping checks.; Cycle: Run work between two stopping checks. to Action: Continue after the loop.; Action: Continue after the loop. to End: Vec&lt;&amp;&apos;static str&gt;.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -37,10 +37,10 @@
     <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">before_limit, after_limit</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">mut initial_count, mut </tspan><tspan x="185" dy="14">initial_log</tspan></text>
-    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>
+    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
     <text class="connection-label" x="185" y="302" xml:space="preserve"><tspan x="185" dy="0">mut initial_count, </tspan><tspan x="185" dy="14">before_limit, mut initial_log, </tspan><tspan x="185" dy="14">after_limit</tspan></text>
-    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">mut log</tspan></text>
+    <text class="connection-label" x="185" y="468" xml:space="preserve"><tspan x="185" dy="0">done, mut initial_log</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

@@ -1,5 +1,5 @@
 error: an outer wire captured inside a kaalang cycle must be available whenever the cycle is entered
-  --> tests/loop/compile_fail/conditional_outer_capture.rs:19:10
+  --> tests/loop/compile_fail/conditional_outer_capture.rs:20:23
    |
-19 |         |value| break value;
-   |          ^^^^^
+20 |         let result = |value| value;
+   |                       ^^^^^

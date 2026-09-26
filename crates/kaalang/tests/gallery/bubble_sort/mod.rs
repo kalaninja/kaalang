@@ -15,7 +15,7 @@ fn bubble_sort(mut values: &mut [i32]) {
         #[question("Is more than one value still unplaced?")]
         #[yes("YES")]
         #[no("NO")]
-        let (pass, done) = |unsorted| unsorted > 1;
+        let (pass, sorted) = |unsorted| unsorted > 1;
 
         #[action("⏮️ Start at the second value.")]
         let mut index = |pass| 1;
@@ -25,9 +25,7 @@ fn bubble_sort(mut values: &mut [i32]) {
             #[question("Is there another pair in this pass?")]
             #[yes("YES")]
             #[no("NO")]
-            let (compare, complete) = |index, unsorted| index < unsorted;
-
-            |complete| break;
+            let (compare, compared) = |index, unsorted| index < unsorted;
 
             #[question("Does the earlier value exceed the later one?")]
             #[yes("YES")]
@@ -45,8 +43,6 @@ fn bubble_sort(mut values: &mut [i32]) {
 
         #[action("🔻 One more value is in its place.")]
         |compared, &mut unsorted| *unsorted -= 1;
-
-        |done| break;
 
         |compared| continue;
     };

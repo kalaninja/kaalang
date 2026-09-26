@@ -3,11 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn braced_cycle_result(mut count: usize) -> usize {
     #[cycle("Count down to zero.")]
-    let zero = {
+    let done = {
         #[question("Is the count zero?")]
         let (done, again) = |count| count == 0;
-
-        |done, count| break count;
 
         #[action("Count down.")]
         |again, &mut count| *count -= 1;
@@ -15,7 +13,7 @@ fn braced_cycle_result(mut count: usize) -> usize {
         |again| continue;
     };
 
-    |zero| return zero;
+    |done, count| return count;
 }
 
 #[test]

@@ -20,7 +20,8 @@ pub(crate) struct Captions {
     handover: BTreeMap<ExitId, Vec<String>>,
     branch_description: BTreeMap<ExitId, RichText>,
     loop_inputs: BTreeMap<usize, String>,
-    loop_outputs: BTreeMap<usize, String>,
+    /// Per cycle, each declared output's binding label and bare name.
+    loop_outputs: BTreeMap<usize, Vec<(String, String)>>,
     /// Borrowed for a node that has no caption of its own.
     empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
@@ -62,8 +63,22 @@ impl Captions {
         self.loop_inputs.get(&block).map_or("()", String::as_str)
     }
 
-    pub(crate) fn loop_outputs(&self, block: usize) -> &str {
-        self.loop_outputs.get(&block).map_or("()", String::as_str)
+    /// A cycle's declared outputs, `()` for none. Several are alternatives:
+    /// one leaves per completion.
+    pub(crate) fn loop_outputs(&self, block: usize) -> String {
+        match self.loop_outputs.get(&block).map(Vec::as_slice) {
+            None | Some([]) => "()".to_owned(),
+            Some(outputs) => outputs
+                .iter()
+                .map(|(label, _)| label.as_str())
+                .collect::<Vec<_>>()
+                .join(" or "),
+        }
+    }
+
+    /// The name of one declared output of a cycle, without its `mut`.
+    pub(crate) fn loop_output(&self, block: usize, output: usize) -> &str {
+        &self.loop_outputs[&block][output].1
     }
 
     /// The wires that meet at one junction, in model order.
@@ -151,17 +166,21 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 inputs.join(", ")
             },
         );
-        captions.loop_outputs.insert(
-            boundary.header,
-            if block.outputs.is_empty() {
-                "()".to_owned()
-            } else {
+    }
+    // Both views name a cycle's outputs: the expanded results and the
+    // collapsed node's exits.
+    for (header, block) in model.analysis.flow.blocks.iter().enumerate() {
+        if block.loop_end.is_some() {
+            captions.loop_outputs.insert(
+                header,
                 (0..block.outputs.len())
-                    .map(|output| binding_label(block.output_binding(output)))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            },
-        );
+                    .map(|output| {
+                        let binding = block.output_binding(output);
+                        (binding_label(binding), binding.ident.unraw().to_string())
+                    })
+                    .collect(),
+            );
+        }
     }
 
     for exit in &topology.exits {
@@ -252,9 +271,10 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
     !captions.handover(exit).is_empty()
         // The body's hand-over and the cycle's output are separate transfers,
         // even when a body exit supplies the cycle's result directly.
-        && !topology.loop_boundaries.iter().any(|boundary| {
-            boundary.result == Some(connection.source)
-        })
+        && !topology
+            .loop_boundaries
+            .iter()
+            .any(|boundary| boundary.results.contains(&connection.source))
         && captions.handover(exit) == captions.capture_label(node)
         && topology.leaving(exit).count() == 1
         && topology.single_arrival(node)

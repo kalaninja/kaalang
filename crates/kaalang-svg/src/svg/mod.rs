@@ -658,6 +658,15 @@ fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterP
 
 fn source_name(scene: &Scene, source: Source) -> String {
     match source {
+        // A collapsed cycle's branch exits are its declared outputs.
+        Source::Exit(ExitId {
+            node: node @ NodeId::Block(block),
+            branch: Some(output),
+        }) if scene.topology.node(node).kind == NodeKind::Loop => format!(
+            "{} output {}",
+            node_name(scene, node),
+            scene.captions.loop_output(block, output)
+        ),
         Source::Exit(ExitId {
             node,
             branch: Some(branch),
@@ -704,13 +713,29 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
             )
         };
     }
+    // A cycle with several outputs names the one each result hands over.
+    if let Some((boundary, output)) = scene.topology.loop_boundaries.iter().find_map(|boundary| {
+        let output = boundary
+            .results
+            .iter()
+            .position(|&result| result == Source::Junction(junction))?;
+        (boundary.results.len() > 1).then_some((boundary, output))
+    }) {
+        let name = scene.captions.loop_output(boundary.header, output);
+        return if wires.is_empty() {
+            format!("the {name} result of the cycle")
+        } else {
+            format!(
+                "the {} merge at the {name} result of the cycle",
+                wires.join(" and ")
+            )
+        };
+    }
     let junction = &scene.topology.junctions[junction];
     if junction.is_loop_result && !wires.is_empty() {
         format!("the {} merge at the cycle result", wires.join(" and "))
     } else if junction.is_loop_result {
         "the cycle result".to_owned()
-    } else if junction.is_break {
-        "a cycle break".to_owned()
     } else if junction.is_loop_entry {
         "the cycle entry".to_owned()
     } else if wires.is_empty() {

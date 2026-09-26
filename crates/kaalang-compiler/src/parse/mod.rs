@@ -16,7 +16,6 @@ use syn::{
 use crate::model::{Block, BlockKind, Flow, Input};
 
 mod action;
-mod break_block;
 mod call;
 mod choice;
 mod continue_block;
@@ -208,9 +207,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         };
         let mut block = match expression {
             Some(Expr::Loop(expression)) => return Err(loop_block::legacy(expression)),
-            Some(Expr::Break(expression)) => {
-                break_block::parse(expression, inputs, parent, blocks)?
-            }
+            Some(Expr::Break(expression)) => return Err(loop_block::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
                 continue_block::parse(expression, inputs, parent, blocks)?
@@ -218,7 +215,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             Some(Expr::While(expression)) => {
                 return Err(Error::new_spanned(
                     expression,
-                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `break`",
+                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `continue`",
                 ));
             }
             _ => parse_block(statement)?,
@@ -244,6 +241,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             };
             let statements = body.block.stmts.clone();
             self::statements(&statements, Some(index), blocks)?;
+            loop_block::exports(blocks, index)?;
             blocks[index].loop_end = Some(blocks.len());
         }
     }
@@ -258,10 +256,9 @@ pub(crate) fn noun(kind: BlockKind) -> &'static str {
         BlockKind::Question => "question",
         BlockKind::Choice => "choice",
         BlockKind::Loop => "cycle",
-        BlockKind::Break => "break",
         BlockKind::Continue => "continue",
         BlockKind::Return => "return",
-        BlockKind::End => unreachable!("the end block is implicit"),
+        BlockKind::End | BlockKind::Export => unreachable!("this block is implicit"),
     }
 }
 
@@ -302,7 +299,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         span,
         parent: None,
         loop_end: None,
-        break_target: None,
+        export_target: None,
     }
 }
 
@@ -338,7 +335,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
         BlockKind::Loop => loop_block::parse(syntax),
-        BlockKind::End | BlockKind::Break | BlockKind::Continue | BlockKind::Return => {
+        BlockKind::End | BlockKind::Export | BlockKind::Continue | BlockKind::Return => {
             unreachable!("structural blocks parse separately")
         }
     }
@@ -412,7 +409,7 @@ impl<'a> BlockSyntax<'a> {
             span: self.kind_attribute.span(),
             parent: None,
             loop_end: None,
-            break_target: None,
+            export_target: None,
         }
     }
 }
@@ -676,61 +673,6 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
         ident: alias.unraw(),
         alias,
         derived: false,
-    }
-}
-
-/// Returns the one value a structural transfer carries, after checking that it
-/// consists only of bindings introduced by that transfer's capture list.
-pub(super) fn transfer_value(
-    value: Option<&Expr>,
-    span: Span,
-    inputs: &[Input],
-    kind: &str,
-) -> Result<Expr> {
-    let value = value
-        .cloned()
-        .unwrap_or_else(|| parse_quote_spanned!(span=> ()));
-    validate_transfer_value(&value, inputs, kind)?;
-    Ok(value)
-}
-
-fn validate_transfer_value(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
-    match value {
-        Expr::Paren(parenthesized) if parenthesized.attrs.is_empty() => {
-            validate_transfer_value(&parenthesized.expr, inputs, kind)
-        }
-        Expr::Group(group) if group.attrs.is_empty() => {
-            validate_transfer_value(&group.expr, inputs, kind)
-        }
-        Expr::Tuple(tuple) if tuple.attrs.is_empty() && tuple.elems.is_empty() => Ok(()),
-        Expr::Tuple(tuple) if tuple.attrs.is_empty() => tuple
-            .elems
-            .iter()
-            .try_for_each(|element| captured_transfer_input(element, inputs, kind)),
-        value => captured_transfer_input(value, inputs, kind),
-    }
-}
-
-fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
-    let ident = match value {
-        Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() => path.path.get_ident(),
-        _ => None,
-    };
-    let Some(ident) = ident else {
-        return Err(Error::new_spanned(
-            value,
-            format!(
-                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
-            ),
-        ));
-    };
-    if captured(inputs, ident) {
-        Ok(())
-    } else {
-        Err(Error::new_spanned(
-            ident,
-            format!("a kaalang {kind} value must name a captured input"),
-        ))
     }
 }
 

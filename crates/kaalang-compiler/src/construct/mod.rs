@@ -487,6 +487,23 @@ fn corridors(
 ) -> Result<Arrangement, sweep::Refusal> {
     let placement =
         place::place(topology, footprints, sunk, sides).map_err(sweep::Refusal::Internal)?;
+    // No corridor shape moves a column, so results placed out of declaration
+    // order leave nothing to try here (RFC 0006 §7.5).
+    if let Some(boundary) = topology.loop_boundaries.iter().find(|boundary| {
+        !boundary.results.windows(2).all(|pair| {
+            placement.column[&Vertex::from(pair[0])] < placement.column[&Vertex::from(pair[1])]
+        })
+    }) {
+        return Err(sweep::Refusal::Impossible(Obstruction {
+            span: flow.blocks[boundary.header].span,
+            message: format!(
+                "the outputs of {} cannot leave it in declaration order",
+                describe::loop_name(flow, boundary.header)
+            ),
+            loop_index: None,
+            connection: None,
+        }));
+    }
     let count = topology.connections.len();
     let mut pending = vec![vec![Shape::default(); count]];
     let mut seen = BTreeSet::new();

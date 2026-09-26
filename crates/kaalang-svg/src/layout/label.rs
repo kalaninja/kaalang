@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use kaalang_compiler::{
     RunLine,
     geometry::overlaps,
-    topology::{Destination, ExitId, NodeId, Source, Vertex},
+    topology::{Destination, ExitId, NodeId, NodeKind, Source, Vertex},
 };
 
 use super::{
@@ -83,7 +83,7 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
             &mut labels,
             scene,
             exit.id,
-            scene.exit_anchor(exit.id),
+            exit_label_anchor(scene, exit.id),
             skip_handover,
         );
     }
@@ -171,6 +171,31 @@ fn place_merge_label(
         Stack::Below,
         anchor.x,
     ));
+}
+
+/// Several side exits of one node leave along the same row until each turns
+/// down to its own destination, so their labels stand at those corners rather
+/// than together at the node's tip (RFC 0006 §7.5).
+fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
+    let anchor = scene.exit_anchor(exit);
+    let several = exit.branch.is_some_and(|branch| branch > 0)
+        && scene.topology.node(exit.node).kind == NodeKind::Loop
+        && scene.topology.exits.iter().any(|other| {
+            other.id
+                == ExitId {
+                    branch: Some(2),
+                    ..exit
+                }
+        });
+    if !several {
+        return anchor;
+    }
+    scene
+        .topology
+        .leaving(exit)
+        .map(|connection| scene.column_x(scene.column(connection.destination)))
+        .min()
+        .map_or(anchor, |x| Point { x, y: anchor.y })
 }
 
 fn place_exit_labels(

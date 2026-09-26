@@ -13,11 +13,11 @@ use crate::model::{
 };
 
 mod action;
-mod break_block;
 mod call;
 mod choice;
 mod continue_block;
 mod end;
+mod export;
 mod loop_block;
 mod question;
 
@@ -121,12 +121,11 @@ pub struct Exit {
 
 /// A merge or cycle/transfer boundary, with no computation or new producer.
 /// Merges with identical arrivals share one junction. A cycle result may reuse
-/// the merge feeding its break; other structural junctions merge no wires.
+/// the merge feeding its output; other structural junctions merge no wires.
 #[derive(Clone, Default)]
 pub struct Junction {
     /// The `SemanticModel::merges` entries that meet here, in model order.
     pub merges: Vec<usize>,
-    pub is_break: bool,
     pub is_loop_entry: bool,
     pub is_loop_result: bool,
 }
@@ -334,7 +333,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
                 end::project(index, &mut nodes);
             }
             BlockKind::Loop
-            | BlockKind::Break
+            | BlockKind::Export
             | BlockKind::Continue
             | BlockKind::Return
             | BlockKind::End => {}
@@ -368,7 +367,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
                     .iter()
                     .find(|boundary| boundary.header == block)
                     .map(LoopBoundary::entry_junction)?,
-                BlockKind::Break | BlockKind::Continue if statement.inputs.is_empty() => {
+                BlockKind::Continue if statement.inputs.is_empty() => {
                     return None;
                 }
                 _ => transfer_junction(model, &loops, &loop_boundaries, block)?,
@@ -406,12 +405,9 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
         departures: BTreeMap::new(),
     };
     topology.index();
-    for (&block, &junction) in &structural {
-        topology.junctions[junction].is_break = model.flow.blocks[block].kind == BlockKind::Break;
-    }
     for boundary in &topology.loop_boundaries {
         topology.junctions[boundary.entry_junction()].is_loop_entry = true;
-        if let Some(result) = boundary.result_junction() {
+        for result in boundary.result_junctions() {
             topology.junctions[result].is_loop_result = true;
         }
     }
@@ -501,6 +497,16 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
 /// One exit per branch output, each handing over the single output it carries.
 /// `exit` names the id the kind gives one branch, which is the only part that
 /// differs between a question and a choice.
+/// One branch's exit of a node drawn once for all its branches, a question or
+/// a collapsed cycle with several outputs: the branch is named in the exit
+/// rather than in the node.
+const fn drawn_branch_exit(index: usize, branch: usize) -> ExitId {
+    ExitId {
+        node: NodeId::Block(index),
+        branch: Some(branch),
+    }
+}
+
 fn branch_exits(
     index: usize,
     block: &Block,
@@ -545,6 +551,18 @@ pub enum Vertex {
     Junction(usize),
 }
 
+impl Source {
+    /// Whether two sources are side exits of one node, which leave it along
+    /// one row.
+    #[must_use]
+    pub fn is_side_exit_beside(self, other: Self) -> bool {
+        matches!((self, other), (Self::Exit(left), Self::Exit(right))
+            if left.node == right.node
+                && left.branch.is_some_and(|branch| branch > 0)
+                && right.branch.is_some_and(|branch| branch > 0))
+    }
+}
+
 impl From<Source> for Vertex {
     fn from(source: Source) -> Self {
         match source {
@@ -579,7 +597,7 @@ fn connections(
             || (!model.collapse_loops
                 && matches!(
                     model.flow.blocks[block].kind,
-                    BlockKind::Break | BlockKind::Continue
+                    BlockKind::Export | BlockKind::Continue
                 )
                 && !structural.contains_key(&block))
     });
@@ -761,8 +779,8 @@ fn serial_connections(
     direct
 }
 
-/// The junction a structural transfer ends its route at: a break's cycle
-/// result, or a continue's iteration tail.
+/// The junction a structural transfer ends its route at: a boundary
+/// consumer's cycle result, or a continue's iteration tail.
 fn transfer_junction(
     model: &Analyzed<'_>,
     loops: &[Loop],
@@ -770,7 +788,7 @@ fn transfer_junction(
     block: usize,
 ) -> Option<usize> {
     match model.flow.blocks[block].kind {
-        BlockKind::Break => Some(break_block::result(model.flow, boundaries, block)),
+        BlockKind::Export => Some(export::result(model.flow, boundaries, block)),
         BlockKind::Continue => Some(continue_block::tail(model.flow, loops, block)),
         _ => None,
     }
@@ -815,7 +833,7 @@ fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block:
     represented_block(model, block)
         && (!matches!(
             model.flow.blocks[block].kind,
-            BlockKind::Break | BlockKind::Continue | BlockKind::Return
+            BlockKind::Export | BlockKind::Continue | BlockKind::Return
         ) || structural.contains_key(&block))
 }
 
@@ -936,14 +954,14 @@ fn entered(model: &Analyzed<'_>, dependency: &CaptureDependency) -> Option<usize
 fn source(model: &Analyzed<'_>, producer: ProducerId, boundaries: &[LoopBoundary]) -> Source {
     match producer {
         ProducerId::FlowInput(_) => Source::Exit(ExitId::of(NodeId::Start)),
-        ProducerId::BlockOutput { block, output: _ }
+        ProducerId::BlockOutput { block, output }
             if model.flow.blocks[block].kind == BlockKind::Loop && !model.collapse_loops =>
         {
             Source::Junction(
                 boundaries
                     .iter()
                     .find(|boundary| boundary.header == block)
-                    .and_then(LoopBoundary::result_junction)
+                    .and_then(|boundary| boundary.result_junction(output))
                     .expect("a produced cycle result has a boundary"),
             )
         }
@@ -958,9 +976,12 @@ fn selected_exit(
     boundaries: &[LoopBoundary],
     block: usize,
 ) -> Source {
+    // A cycle that repeats or diverges in this execution selects nothing, and
+    // its route ends inside it.
     let output = if model.flow.blocks[block].branch_count() > 0 {
         execution
             .selected(block)
+            .or((model.flow.blocks[block].kind == BlockKind::Loop).then_some(0))
             .expect("a participating brancher selects a branch")
     } else {
         0
@@ -970,12 +991,16 @@ fn selected_exit(
 
 fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
     Source::Exit(match model.flow.blocks[block].kind {
-        BlockKind::Question => question::exit(block, output),
+        BlockKind::Question => drawn_branch_exit(block, output),
         BlockKind::Choice => choice::exit(block, output),
+        // A cycle with several outputs hands each over at its own branch exit.
+        BlockKind::Loop if model.flow.blocks[block].branch_count() > 0 => {
+            drawn_branch_exit(block, output)
+        }
         // An action, a call and a completed cycle each hand over every output
         // at one non-branching exit.
         BlockKind::Action | BlockKind::Call | BlockKind::Loop => ExitId::of(NodeId::Block(block)),
-        BlockKind::End | BlockKind::Break | BlockKind::Continue | BlockKind::Return => {
+        BlockKind::End | BlockKind::Export | BlockKind::Continue | BlockKind::Return => {
             unreachable!("this kind has no exit")
         }
     })
@@ -994,15 +1019,16 @@ pub struct Loop {
 }
 
 /// The visible interface of one expanded cycle.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct LoopBoundary {
     pub header: usize,
     pub end: usize,
     /// A junction when routes meet here, or the first body node otherwise.
     pub entry: Vertex,
-    /// A junction or the body exit supplying the result, including its branch.
-    /// Absent when the cycle never completes.
-    pub result: Option<Source>,
+    /// Per declared output, in declaration order, the junction or body exit
+    /// that supplies it, including its branch. Empty when the cycle never
+    /// completes.
+    pub results: Vec<Source>,
 }
 
 impl LoopBoundary {
@@ -1014,9 +1040,13 @@ impl LoopBoundary {
         junction
     }
 
-    fn result_junction(&self) -> Option<usize> {
-        self.result.map(|result| {
-            let Source::Junction(junction) = result else {
+    fn result_junction(&self, output: usize) -> Option<usize> {
+        self.result_junctions().nth(output)
+    }
+
+    fn result_junctions(&self) -> impl Iterator<Item = usize> + '_ {
+        self.results.iter().map(|result| {
+            let Source::Junction(junction) = *result else {
                 unreachable!("result junctions are read before boundary coalescing");
             };
             junction
@@ -1034,22 +1064,26 @@ fn boundaries(model: &Analyzed<'_>, count: &mut usize) -> Vec<LoopBoundary> {
         .map(|(header, _)| {
             let entry = *count;
             *count += 1;
-            let result = model
+            // Every declared output reaches its consumer on some route, or
+            // reachability already rejected the flow.
+            let completes = model
                 .executions
                 .iter()
-                .any(|execution| model.flow.completes_loop(execution, header))
-                .then(|| {
-                    let result = *count;
-                    *count += 1;
-                    result
-                });
+                .any(|execution| model.flow.completes_loop(execution, header));
+            let outputs = if completes {
+                model.flow.blocks[header].outputs.len()
+            } else {
+                0
+            };
+            let results = (*count..*count + outputs).map(Source::Junction).collect();
+            *count += outputs;
             LoopBoundary {
                 header,
                 end: model.flow.blocks[header]
                     .loop_end
                     .expect("a cycle owns a body"),
                 entry: Vertex::Junction(entry),
-                result: result.map(Source::Junction),
+                results,
             }
         })
         .collect()

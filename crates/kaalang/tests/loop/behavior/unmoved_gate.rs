@@ -3,12 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn unmoved_gate(text: String) -> usize {
     #[cycle("Enter through an owned gate.")]
-    |text| {
-        break;
+    let entered = |text| {
+        #[action("Enter once.")]
+        let entered = || {};
     };
 
     #[action("Use the gate after the cycle.")]
-    let result = |text| text.len();
+    let result = |entered, text| text.len();
 
     |result| return result;
 }

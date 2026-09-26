@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1414" viewBox="0 0 1536 1414" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for inner_routes_before_a_question</title>
+  <desc id="kaalang-description">Cycles: Classify the value. with inputs value, flag and outputs first or second; Sort the value. with inputs value and outputs tiny or larger. Nodes: Start: inner_routes_before_a_question with parameters value: u8; flag: u8 handing over value, flag; Question: Is it below ten? capturing value handing over low / high; Question: Is it below five? capturing low, value handing over below / small; Action: Mark a tiny value. capturing below handing over tiny; Action: Mark a small value. capturing small handing over larger; Action: Mark a high value. capturing high handing over larger; Action: Take the first class for a tiny value. capturing tiny handing over first; Question: Is the flag even? capturing larger, flag handing over even / odd; Action: Take the first class for an even flag. capturing even handing over first; Action: Take the second class. capturing odd handing over second; Action: Keep the first class. capturing first handing over result; Action: Scale the second class. capturing second handing over result; End: u8 capturing result; Merge: larger; Merge: first; Merge: result. Connections: Start: inner_routes_before_a_question to the cycle entry; Question: Is it below ten? branch 1 to Question: Is it below five?; Question: Is it below ten? branch 2 to Action: Mark a high value.; Question: Is it below five? branch 1 to Action: Mark a tiny value.; Question: Is it below five? branch 2 to Action: Mark a small value.; Action: Mark a tiny value. to the tiny result of the cycle; Action: Mark a small value. to the larger merge at the larger result of the cycle; Action: Mark a high value. to the larger merge at the larger result of the cycle; Action: Take the first class for a tiny value. to the first merge at the first result of the cycle; Question: Is the flag even? branch 1 to Action: Take the first class for an even flag.; Question: Is the flag even? branch 2 to Action: Take the second class.; Action: Take the first class for an even flag. to the first merge at the first result of the cycle; Action: Take the second class. to the second result of the cycle; Action: Keep the first class. to the result merge; Action: Scale the second class. to the result merge; the larger merge at the larger result of the cycle to Question: Is the flag even?; the first merge at the first result of the cycle to Action: Keep the first class.; the result merge to End: u8; the cycle entry to Question: Is it below ten?; the second result of the cycle to Action: Scale the second class.; the tiny result of the cycle to Action: Take the first class for a tiny value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Classify the value.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="1472" height="932" rx="12"/>
+    <text class="cycle-caption" x="1492" y="149" text-anchor="end" xml:space="preserve"><tspan x="1492" dy="0">Classify the value.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Sort the value.</title>
+    <rect class="cycle-boundary" x="60" y="207" width="1416" height="498" rx="12"/>
+    <text class="cycle-caption" x="1464" y="221" text-anchor="end" xml:space="preserve"><tspan x="1464" dy="0">Sort the value.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 228 94 L 228 170
+      M 228 314 L 228 386
+      M 368 278 L 1308 278 L 1308 390
+      M 228 458 L 228 530
+      M 368 422 L 588 422 L 588 530
+      M 228 594 L 228 670
+      M 588 594 L 588 670
+      M 1308 454 L 1308 670 L 588 670
+      M 228 815 L 228 1032
+      M 588 818 L 588 890
+      M 728 782 L 948 782 L 948 891
+      M 588 956 L 588 1032 L 228 1032
+      M 948 955 L 948 1032
+      M 228 1172 L 228 1248
+      M 948 1172 L 948 1248 L 228 1248
+      M 588 670 L 588 746
+      M 228 1032 L 228 1108
+      M 228 1248 L 228 1324
+      M 228 170 L 228 242
+      M 948 1032 L 948 1108
+      M 228 670 L 228 749
+    "/>
+    <text class="connection-label" x="601" y="688" xml:space="preserve"><tspan x="601" dy="0">larger</tspan></text>
+    <text class="connection-label" x="241" y="1050" xml:space="preserve"><tspan x="241" dy="0">first</tspan></text>
+    <text class="connection-label" x="241" y="1266" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
+    <text class="connection-label" x="1321" y="379" xml:space="preserve"><tspan x="1321" dy="0">high</tspan></text>
+    <text class="connection-label" x="241" y="519" xml:space="preserve"><tspan x="241" dy="0">below</tspan></text>
+    <text class="connection-label" x="601" y="519" xml:space="preserve"><tspan x="601" dy="0">small</tspan></text>
+    <text class="connection-label" x="601" y="879" xml:space="preserve"><tspan x="601" dy="0">even</tspan></text>
+    <text class="connection-label" x="961" y="880" xml:space="preserve"><tspan x="961" dy="0">odd</tspan></text>
+    <text class="connection-label" x="241" y="112" xml:space="preserve"><tspan x="241" dy="0">value, flag</tspan></text>
+    <text class="connection-label" x="241" y="332" xml:space="preserve"><tspan x="241" dy="0">low</tspan></text>
+    <text class="connection-label" x="241" y="612" xml:space="preserve"><tspan x="241" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="961" y="973" xml:space="preserve"><tspan x="961" dy="0">second</tspan></text>
+    <text class="connection-label" x="241" y="231" xml:space="preserve"><tspan x="241" dy="0">value</tspan></text>
+    <text class="connection-label" x="241" y="375" xml:space="preserve"><tspan x="241" dy="0">low, value</tspan></text>
+    <text class="connection-label" x="241" y="738" xml:space="preserve"><tspan x="241" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="601" y="735" xml:space="preserve"><tspan x="601" dy="0">larger, flag</tspan></text>
+    <text class="connection-label" x="961" y="1097" xml:space="preserve"><tspan x="961" dy="0">second</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 368 65 L 464 65"/>
+    <g class="parameter-panel" transform="translate(584 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(588 670)">
+      <title xml:space="preserve">the larger merge at the larger result of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(228 1032)">
+      <title xml:space="preserve">the first merge at the first result of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(228 1248)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(228 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">inner_routes_before_a_question</tspan></text>
+    </g>
+    <g class="node question" transform="translate(228 278)">
+      <title xml:space="preserve">Is it below ten?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it below ten?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(228 422)">
+      <title xml:space="preserve">Is it below five?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it below five?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(228 562)">
+      <title xml:space="preserve">Mark a tiny value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a tiny value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(588 562)">
+      <title xml:space="preserve">Mark a small value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a small value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1308 422)">
+      <title xml:space="preserve">Mark a high value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a high value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(228 782)">
+      <title xml:space="preserve">Take the first class for a tiny value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take the first class for a tiny </tspan><tspan x="-124" dy="18">value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(588 782)">
+      <title xml:space="preserve">Is the flag even?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the flag even?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(588 923)">
+      <title xml:space="preserve">Take the first class for an even flag.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take the first class for an even </tspan><tspan x="-124" dy="18">flag.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(948 923)">
+      <title xml:space="preserve">Take the second class.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the second class.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(228 1140)">
+      <title xml:space="preserve">Keep the first class.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the first class.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(948 1140)">
+      <title xml:space="preserve">Scale the second class.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Scale the second class.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(228 1353)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

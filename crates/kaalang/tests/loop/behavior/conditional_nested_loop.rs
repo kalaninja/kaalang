@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn conditional_nested_loop(flag: bool) -> usize {
     #[cycle("Choose between a nested cycle and a direct result.")]
-    let result = |flag| {
+    let selected = |flag| {
         #[question("Enter the loop?")]
         #[yes("YES")]
         #[no("NO")]
@@ -15,15 +15,11 @@ fn conditional_nested_loop(flag: bool) -> usize {
         #[cycle("Produce one.")]
         let selected = |iterate_1| {
             #[action("Produce one.")]
-            let one = || 1;
-
-            |one| break one;
+            let selected = || 1;
         };
-
-        |selected| break selected;
     };
 
-    |result| return result;
+    |selected| return selected;
 }
 
 #[test]

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="612" viewBox="0 0 760 612" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for first_value</title>
-  <desc id="kaalang-description">Cycles: Find the first value. with inputs values and outputs result. Nodes: Start: first_value with parameters values: &amp;[i32] handing over values; Question: Is there a first value? capturing values handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Report that no first value exists. capturing leave_1 handing over selected; Action: Produce the first value. capturing iterate_1, values handing over selected; End: Option&lt;i32&gt; capturing result; Merge: selected. Connections: Start: first_value to Question: Is there a first value?; Question: Is there a first value? branch 1 to Action: Produce the first value.; Question: Is there a first value? branch 2 to Action: Report that no first value exists.; Action: Report that no first value exists. to the selected merge at the cycle result; Action: Produce the first value. to the selected merge at the cycle result; the selected merge at the cycle result to End: Option&lt;i32&gt;.</desc>
+  <desc id="kaalang-description">Cycles: Find the first value. with inputs values and outputs selected. Nodes: Start: first_value with parameters values: &amp;[i32] handing over values; Question: Is there a first value? capturing values handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Report that no first value exists. capturing leave_1 handing over selected; Action: Produce the first value. capturing iterate_1, values handing over selected; End: Option&lt;i32&gt; capturing selected; Merge: selected. Connections: Start: first_value to Question: Is there a first value?; Question: Is there a first value? branch 1 to Action: Produce the first value.; Question: Is there a first value? branch 2 to Action: Report that no first value exists.; Action: Report that no first value exists. to the selected merge at the cycle result; Action: Produce the first value. to the selected merge at the cycle result; the selected merge at the cycle result to End: Option&lt;i32&gt;.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -46,7 +46,6 @@
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="254" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="353" y="186" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
     <text class="connection-label" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">iterate_1, values</tspan></text>
-    <text class="connection-label" x="213" y="511" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>

@@ -15,7 +15,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         let (iterate, leave) = |left, right| left < right;
 
         #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        let result = |leave| None;
 
         #[action("📍 Find the middle index.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
@@ -37,9 +37,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         let stepped = |greater, mid, &mut right| *right = mid;
 
         #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
-
-        |outcome| break outcome;
+        let result = |equal, mid| Some(mid);
 
         |stepped| continue;
     };
@@ -60,7 +58,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         let (leave, iterate) = |left, right| left < right;
 
         #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        let result = |leave| None;
 
         #[action("📍 Find the middle index.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
@@ -76,9 +74,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         };
 
         #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
-
-        |outcome| break outcome;
+        let result = |equal, mid| Some(mid);
 
         #[action("➡️ Search the right half.")]
         let stepped = |less, mid, &mut left| *left = mid + 1;

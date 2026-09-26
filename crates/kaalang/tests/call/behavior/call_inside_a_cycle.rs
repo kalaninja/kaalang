@@ -10,13 +10,11 @@ fn call_inside_a_cycle(limit: usize) -> usize {
     let mut count = || 0;
 
     #[cycle("Count to the limit.")]
-    let total = {
+    let leave_1 = {
         #[question("Is the counter below the limit?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate_1, leave_1) = |&count, &limit| *count < *limit;
-
-        |leave_1, count| break count;
 
         #[call("Increment the counter.")]
         |iterate_1, &mut count| bump(count);
@@ -24,7 +22,7 @@ fn call_inside_a_cycle(limit: usize) -> usize {
         |iterate_1| continue;
     };
 
-    |total| return total;
+    |leave_1, count| return count;
 }
 
 #[test]

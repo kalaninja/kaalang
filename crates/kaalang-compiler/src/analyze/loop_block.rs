@@ -1,7 +1,10 @@
 //! Enters one cycle iteration; its `continue` records a repeat.
 
+use syn::{Error, Result};
+
+use super::frame::Frames;
 use super::{LoopState, State, Walk};
-use crate::model::Flow;
+use crate::model::{ExecutionOutcome, Flow};
 
 /// The body inherits every outer wire; completion drops its locals again.
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
@@ -15,11 +18,81 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
 
 /// A selection stops governing its iteration's branches when that cycle completes.
 /// Reaching a later block depends on completing the cycle. This is control
-/// order, not a capture dependency or a wire merge.
+/// order, not a capture dependency or a wire merge. A cycle with several
+/// outputs selects one as it completes, so its own selection stays open.
 pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
-    std::iter::once(selection)
-        .chain(flow.enclosing(selection))
+    flow.enclosing(selection)
         .any(|index| flow.blocks[index].loop_end.is_some_and(|end| end <= next))
+}
+
+/// A cycle's outputs leave it left to right in declaration order, so the routes
+/// exporting them keep that order among the body's branches (RFC 0006 §7.5).
+/// Its back edge climbs one flank, so no repeating route lies between two of
+/// them.
+pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {
+    // A nested cycle ends before the one around it, so its own order is
+    // reported first rather than as a disorder of the enclosing cycle.
+    let mut headers = (0..flow.blocks.len())
+        .filter(|&header| flow.blocks[header].has_alternative_outputs())
+        .collect::<Vec<_>>();
+    headers.sort_by_key(|&header| flow.blocks[header].loop_end);
+    for header in headers {
+        let cycle = &flow.blocks[header];
+        let exports = flow.exports(header);
+        // Each route that reaches this cycle's end or its continue, with the
+        // output it exports; `None` repeats the cycle.
+        let (executions, outcomes): (Vec<_>, Vec<_>) = frames
+            .view(Some(header))
+            .iter()
+            .filter_map(|execution| {
+                let output = exports
+                    .clone()
+                    .position(|consumer| execution.participates(consumer));
+                let repeats = execution.outcome == ExecutionOutcome::Repeat { loop_index: header };
+                (output.is_some() || repeats).then_some((execution, output))
+            })
+            .unzip();
+        let ordered = super::branch_order(&executions, &outcomes);
+        let outputs = ordered
+            .iter()
+            .filter_map(|&index| outcomes[index])
+            .collect::<Vec<_>>();
+        let first = ordered.iter().position(|&index| outcomes[index].is_some());
+        let last = ordered.iter().rposition(|&index| outcomes[index].is_some());
+        if let (Some(first), Some(last)) = (first, last)
+            && let Some(between) = (first..last).find(|&at| outcomes[ordered[at]].is_none())
+        {
+            let before = outcomes[ordered[between - 1]].expect("an output precedes the repeat");
+            let after = ordered[between..]
+                .iter()
+                .find_map(|&index| outcomes[index])
+                .expect("an output follows the repeat");
+            return Err(Error::new(
+                cycle.span,
+                format!(
+                    "a route repeating this kaalang cycle lies between routes exporting `{}` and `{}`; move the repeating routes to one edge of the body",
+                    cycle.output_binding(before).ident,
+                    cycle.output_binding(after).ident
+                ),
+            ));
+        }
+        // `drawn_first` leaves to the left of `drawn_later` yet is declared after it.
+        if let Some((drawn_first, drawn_later)) = outputs
+            .windows(2)
+            .map(|pair| (pair[0], pair[1]))
+            .find(|(first, later)| first > later)
+        {
+            return Err(Error::new(
+                cycle.output_binding(drawn_first).ident.span(),
+                format!(
+                    "the routes exporting `{}` leave this kaalang cycle to the left of those exporting `{}`; declare its outputs in the order their routes leave it",
+                    cycle.output_binding(drawn_first).ident,
+                    cycle.output_binding(drawn_later).ident
+                ),
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -38,7 +111,7 @@ mod tests {
                 #[cycle("Select an exit from a nested cycle.")]
                 let selected = {
                     #[cycle("Advance at most once.")]
-                    let inner = {
+                    let selected = {
                         #[question("Exit immediately?")]
                         let (done, check) = |mode| mode == 0;
 
@@ -48,11 +121,10 @@ mod tests {
                         #[action("Advance to the final case.")]
                         |advance, &mut mode| *mode = 2;
 
-                        |done, mode| break mode;
+                        #[action("Keep the mode.")]
+                        let selected = |done, mode| mode;
                         |advance| continue;
                     };
-
-                    |inner| break inner;
                 };
 
                 |selected| return selected;

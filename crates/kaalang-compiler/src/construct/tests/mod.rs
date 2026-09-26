@@ -1,7 +1,9 @@
 use std::collections::BTreeSet;
 
 pub(super) use kaalang_testing::shapes::looping;
-use kaalang_testing::shapes::{declared_domain, flat_bodies, loop_shapes, nested, question_shapes};
+use kaalang_testing::shapes::{
+    alternative_bodies, declared_domain, flat_bodies, loop_shapes, nested, question_shapes,
+};
 
 use super::{Arrangement, Contour, Side, place, verify};
 use crate::model::{Flow, SemanticModel, WireMerge};
@@ -73,17 +75,17 @@ fn every_three_case_cycle_body_settles_the_same_way() {
     // route, and two merge repeating routes around an exit before their one
     // continue.
     let refused = [
-        ["repeat", "break", "repeat"],
+        ["repeat", "leave", "repeat"],
         ["repeat", "finish", "repeat"],
-        ["break", "repeat", "break"],
-        ["break", "repeat", "finish"],
-        ["finish", "repeat", "break"],
+        ["leave", "repeat", "leave"],
+        ["leave", "repeat", "finish"],
+        ["finish", "repeat", "leave"],
         ["finish", "repeat", "finish"],
     ];
     let mut settled = Vec::new();
-    for first in ["repeat", "break", "finish"] {
-        for second in ["repeat", "break", "finish"] {
-            for third in ["repeat", "break", "finish"] {
+    for first in ["repeat", "leave", "finish"] {
+        for second in ["repeat", "leave", "finish"] {
+            for third in ["repeat", "leave", "finish"] {
                 let routes = [first, second, third];
                 let function: syn::ItemFn =
                     syn::parse_str(&looping(&routes)).expect("the probe parses");
@@ -106,13 +108,13 @@ fn every_three_case_cycle_body_settles_the_same_way() {
 #[test]
 fn semantic_restrictions_keep_their_specific_diagnostics() {
     for (routes, expected) in [
-        // Both completing routes provide the wire captured by the single break.
+        // Both completing routes provide the declared output, which merges once.
         (
-            ["finish", "repeat", "break"],
+            ["finish", "repeat", "leave"],
             "branches in a kaalang choice convergence group must be adjacent",
         ),
         (
-            ["break", "repeat", "break"],
+            ["leave", "repeat", "leave"],
             "branches in a kaalang choice convergence group must be adjacent",
         ),
     ] {
@@ -136,8 +138,8 @@ fn semantic_restrictions_keep_their_specific_diagnostics() {
 #[test]
 fn a_cycle_takes_the_clear_contour_whatever_the_preference() {
     for (routes, side) in [
-        (["break", "repeat", "repeat"], Side::Right),
-        (["repeat", "repeat", "break"], Side::Left),
+        (["leave", "repeat", "repeat"], Side::Right),
+        (["repeat", "repeat", "leave"], Side::Left),
     ] {
         let source = looping(&routes);
         let function = syn::parse_str(&source).expect("the probe parses");
@@ -302,9 +304,9 @@ fn mutations() -> Vec<Mutation> {
 /// shared geometry tests cover crossing rejection separately.
 #[test]
 fn the_verifier_rejects_every_mutation() {
-    // Both a cycle break and flow completion outside the repeating branches.
+    // Both a cycle exit and flow completion outside the repeating branches.
     for routes in [
-        ["repeat", "repeat", "break"].as_slice(),
+        ["repeat", "repeat", "leave"].as_slice(),
         ["repeat", "repeat", "finish", "finish"].as_slice(),
     ] {
         let model = model(&looping(routes));
@@ -329,7 +331,7 @@ fn the_verifier_rejects_every_mutation() {
 /// had under short ones.
 #[test]
 fn descriptions_do_not_change_the_arrangement() {
-    let plain = looping(&["repeat", "repeat", "break"]);
+    let plain = looping(&["repeat", "repeat", "leave"]);
     let first = model(&plain).arrangement;
     // Everything a presentation measures and the topology does not: the
     // description text and its script, the authored return type, and the
@@ -353,15 +355,15 @@ fn descriptions_do_not_change_the_arrangement() {
 /// The same topology keeps the same arrangement however often it is built.
 #[test]
 fn the_construction_is_deterministic() {
-    let source = looping(&["repeat", "repeat", "break"]);
+    let source = looping(&["repeat", "repeat", "leave"]);
     let first = arrangement(&model(&source));
     assert_eq!(first, arrangement(&model(&source)));
 }
 
 #[test]
-fn nested_break_routes_merge_without_crossing_side_departures() {
-    let source = include_str!("../../../../kaalang/tests/loop/behavior/nested_break_routes.rs");
-    let model = crate::build(&crate::tests::fixture(source, "nested_break_routes")).unwrap();
+fn nested_exit_routes_merge_without_crossing_side_departures() {
+    let source = include_str!("../../../../kaalang/tests/loop/behavior/nested_exit_routes.rs");
+    let model = crate::build(&crate::tests::fixture(source, "nested_exit_routes")).unwrap();
     let built = arrangement(&model);
     verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
     // The first exit reaches the shared wire merge in its own branch column.
@@ -397,6 +399,34 @@ fn the_sweep_alone_draws_every_executable_fixture() {
         )
         .unwrap_or_else(|blocked| panic!("{name}: the sweep refuses a drawable flow: {blocked}"));
     }
+}
+
+/// Cycle bodies with two declared outputs draw them in declaration order or
+/// are rejected before construction; none reaches an internal error or a
+/// construction refusal.
+#[test]
+fn generated_alternative_outputs_draw_in_order_or_are_rejected_early() {
+    let (mut drawn, mut rejected_earlier) = (0, 0);
+    for source in alternative_bodies(2..=4) {
+        let function: syn::ItemFn = syn::parse_str(&source).expect("the probe parses");
+        match crate::build(&function) {
+            Ok(model) => {
+                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
+                    .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
+                drawn += 1;
+            }
+            Err(error) => {
+                let message = error.to_string();
+                assert!(
+                    !message.contains("internal kaalang")
+                        && !message.contains("could not construct"),
+                    "{source}\n{message}"
+                );
+                rejected_earlier += 1;
+            }
+        }
+    }
+    assert_eq!((drawn, rejected_earlier), (14, 50));
 }
 
 #[test]
@@ -513,7 +543,7 @@ mod reference;
 #[test]
 fn exits_between_repeating_cases_separate_their_merge() {
     for routes in [
-        ["repeat", "break", "repeat"].as_slice(),
+        ["repeat", "leave", "repeat"].as_slice(),
         ["repeat", "finish", "repeat"].as_slice(),
         ["repeat", "finish", "finish", "repeat"].as_slice(),
     ] {
@@ -531,10 +561,10 @@ fn exits_between_repeating_cases_separate_their_merge() {
 #[test]
 fn authors_can_reorder_enclosed_cases_to_restore_a_drawing() {
     for routes in [
-        ["repeat", "repeat", "break"].as_slice(),
+        ["repeat", "repeat", "leave"].as_slice(),
         ["repeat", "repeat", "finish"].as_slice(),
         ["repeat", "repeat", "finish", "finish"].as_slice(),
-        ["break", "break", "finish"].as_slice(),
+        ["leave", "leave", "finish"].as_slice(),
     ] {
         let model = model(&looping(routes));
         let cases = (0..routes.len())
@@ -553,15 +583,15 @@ fn authors_can_reorder_enclosed_cases_to_restore_a_drawing() {
 /// Decision-test shapes: flat bodies of two to four routes, nested loops, and
 /// ordered question ports, including both drawable and impossible cases.
 pub(super) fn decision_cases() -> Vec<String> {
-    let names = ["repeat", "break", "finish"];
+    let names = ["repeat", "leave", "finish"];
     let mut cases = flat_bodies(2..=4);
     for inner in [
-        ["repeat", "break"].as_slice(),
-        ["break", "repeat"].as_slice(),
+        ["repeat", "leave"].as_slice(),
+        ["leave", "repeat"].as_slice(),
         ["propagate", "repeat"].as_slice(),
         ["repeat", "propagate"].as_slice(),
         ["finish", "repeat"].as_slice(),
-        ["repeat", "break", "repeat"].as_slice(),
+        ["repeat", "leave", "repeat"].as_slice(),
     ] {
         for other in names {
             cases.push(nested(&["inner", other], inner));
@@ -659,7 +689,7 @@ fn agree(cases: &[String]) -> Counted {
 
 #[test]
 fn the_verifier_rejects_a_case_on_a_different_row() {
-    let model = model(&looping(&["repeat", "repeat", "break"]));
+    let model = model(&looping(&["repeat", "repeat", "leave"]));
     let mut broken = model.arrangement.clone();
     let case = Vertex::Node(NodeId::Case {
         choice: 1,
@@ -702,15 +732,14 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
             #[cycle(\"Repeat the outer cycle.\")]
             |flag| {
                 #[cycle(\"Repeat or leave the inner cycle.\")]
-                |flag| {
+                let leave = |flag| {
                     #[question(\"Repeat?\")]
                     let (again, leave) = |flag| flag;
-                    |leave| break;
                     #[action(\"Repeat.\")]
                     |again| ();
                     |again| continue;
                 };
-                continue;
+                |leave| continue;
             };
         }",
     );
@@ -725,19 +754,19 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
 }
 
 #[test]
-fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
+fn a_nested_result_and_its_continuation_belong_to_the_outer_body() {
     let function = crate::tests::fixture(
         include_str!("../../../../kaalang/tests/loop/behavior/conditional_nested_loop.rs"),
         "conditional_nested_loop",
     );
     let model = crate::build(&function).expect("the flow is valid");
-    let [outer, inner] = model.topology.loop_boundaries[..] else {
+    let [outer, inner] = &model.topology.loop_boundaries[..] else {
         panic!("the flow has two cycle boundaries");
     };
-    let result = inner
-        .result
-        .map(Vertex::from)
-        .expect("the inner cycle completes");
+    let [result] = inner.results[..] else {
+        panic!("the inner cycle completes with one output");
+    };
+    let result = Vertex::from(result);
     let body = model
         .topology
         .body_vertices(&model.analysis.flow, outer.header);
@@ -755,7 +784,7 @@ fn a_nested_result_and_its_following_break_belong_to_the_outer_body() {
 /// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
 const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
-    let result = {
+    let selected = {
         #[choice(\"Which route?\")]
         #[case(\"Advance and repeat.\")]
         #[case(\"Spin forever.\")]
@@ -783,10 +812,9 @@ const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay
         let selected = |leave, mode| mode;
         #[action(\"Leave immediately.\")]
         let selected = |leave_now, mode| mode;
-        |selected| break selected;
         |advanced| continue;
     };
-    |result| return result;
+    |selected| return selected;
 }
 ";
 
@@ -813,13 +841,13 @@ fn a_diverging_branch_between_partial_merges_is_drawn() {
 fn every_audit_shape_reaches_a_decision() {
     let cases: [(usize, &[&str], &[&str]); 8] = [
         (1, &["inner", "repeat", "repeat"], &["propagate", "repeat"]),
-        (2, &["break", "inner", "repeat"], &["propagate", "repeat"]),
+        (2, &["leave", "inner", "repeat"], &["propagate", "repeat"]),
         (3, &["finish", "inner", "repeat"], &["propagate", "repeat"]),
-        (4, &["break", "inner", "repeat"], &["finish", "repeat"]),
+        (4, &["leave", "inner", "repeat"], &["finish", "repeat"]),
         (5, &["finish", "inner", "repeat"], &["finish", "repeat"]),
-        (6, &["break", "inner", "repeat"], &["propagate", "break"]),
-        (7, &["repeat", "finish", "inner"], &["finish", "break"]),
-        (8, &["finish", "inner", "repeat"], &["finish", "break"]),
+        (6, &["leave", "inner", "repeat"], &["propagate", "leave"]),
+        (7, &["repeat", "finish", "inner"], &["finish", "leave"]),
+        (8, &["finish", "inner", "repeat"], &["finish", "leave"]),
     ];
     for (case, outer, inner) in cases {
         let source = nested(outer, inner);
@@ -845,7 +873,7 @@ fn every_audit_shape_reaches_a_decision() {
 /// this witness to check that the recorded column survives realization.
 #[test]
 fn a_back_edge_may_stand_beyond_the_body_it_clears() {
-    let model = model(&looping(&["repeat", "repeat", "break"]));
+    let model = model(&looping(&["repeat", "repeat", "leave"]));
     let columns = || model.arrangement.column.values().copied();
     let contour = model.arrangement.contours[0];
     let beyond = match contour.side {
@@ -881,36 +909,32 @@ fn a_back_edge_with_one_arrival_may_stand_beyond_its_body() {
 /// four lanes. The outermost takes lane 3, which no fixture reaches.
 pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
     #[cycle(\"Repeat the first cycle.\")]
-    |step| {
+    let leave_0 = |step| {
         #[question(\"Leave the first?\")]
         let (stay_0, leave_0) = |&step| *step > 0;
-        |leave_0| break;
         #[cycle(\"Repeat the second cycle.\")]
-        |stay_0| {
+        let leave_1 = |stay_0| {
             #[question(\"Leave the second?\")]
             let (stay_1, leave_1) = |&step| *step > 1;
-            |leave_1| break;
             #[cycle(\"Repeat the third cycle.\")]
-            |stay_1| {
+            let leave_2 = |stay_1| {
                 #[question(\"Leave the third?\")]
                 let (stay_2, leave_2) = |&step| *step > 2;
-                |leave_2| break;
                 #[cycle(\"Repeat the fourth cycle.\")]
-                |stay_2| {
+                let leave_3 = |stay_2| {
                     #[question(\"Leave the fourth?\")]
                     let (stay_3, leave_3) = |&step| *step > 3;
-                    |leave_3| break;
                     #[action(\"Advance at the deepest level.\")]
                     |stay_3, &mut step| *step += 1;
                     |stay_3| continue;
                 };
-                |stay_2| continue;
+                |leave_3| continue;
             };
-            |stay_1| continue;
+            |leave_2| continue;
         };
-        |stay_0| continue;
+        |leave_1| continue;
     };
-    |step| return step;
+    |leave_0, step| return step;
 }
 ";
 
@@ -951,8 +975,8 @@ fn ordered_question_ports_agree_with_the_independent_procedure() {
 }
 
 #[test]
-fn value_producing_exit_routes_share_the_merge_before_break() {
-    let counted = agree(&[looping(&["break", "finish", "break", "repeat"])]);
+fn value_producing_exit_routes_share_the_merge_before_the_result() {
+    let counted = agree(&[looping(&["leave", "finish", "leave", "repeat"])]);
     assert_eq!(counted.drawn, 1);
 }
 
@@ -965,7 +989,7 @@ fn junction_arrivals_record_their_rank() {
     for (function, minimum) in [
         (merge, 2),
         (
-            syn::parse_str(&looping(&["repeat", "repeat", "break"])).unwrap(),
+            syn::parse_str(&looping(&["repeat", "repeat", "leave"])).unwrap(),
             1,
         ),
     ] {
@@ -1013,7 +1037,7 @@ fn junction_arrivals_record_their_rank() {
 
 #[test]
 fn a_back_edge_can_bend_outside_its_body() {
-    let model = model(&looping(&["repeat", "repeat", "break"]));
+    let model = model(&looping(&["repeat", "repeat", "leave"]));
     let mut bent = model.arrangement.clone();
     let contour = bent.contours[0];
     let delta = match contour.side {

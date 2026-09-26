@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn owned_local_result(mut count: usize) -> String {
     #[cycle("Repeat before producing an owned local result.")]
-    let result = {
+    let text = {
         #[question("Has the countdown finished?")]
         let (done, again) = |count| count == 0;
 
@@ -13,12 +13,10 @@ fn owned_local_result(mut count: usize) -> String {
         #[action("Build the owned result.")]
         let text = |done| String::from("done");
 
-        |text| break text;
-
         |again| continue;
     };
 
-    |result| return result;
+    |text| return text;
 }
 
 #[test]

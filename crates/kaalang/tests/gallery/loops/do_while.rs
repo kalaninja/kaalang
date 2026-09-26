@@ -19,17 +19,15 @@ fn do_while(mut number: u64) -> Vec<u8> {
         #[question("Is the number gone?")]
         #[yes("YES")]
         #[no("NO")]
-        let (done, again) = |number| number == 0;
-
-        |done, digits| break digits;
+        let (collected, again) = |number| number == 0;
 
         |again| continue;
     };
 
     #[action("🔄 Put the digits back in reading order.")]
-    let result = |mut collected| {
-        collected.reverse();
-        collected
+    let result = |collected, mut digits| {
+        digits.reverse();
+        digits
     };
 
     |result| return result;

@@ -16,7 +16,7 @@ macro_rules! fixture {
 
 #[test]
 fn a_shifted_cycle_entry_is_rejected_even_when_its_routes_still_meet() {
-    let mut scene = drawn(fixture!("loop/behavior", "merged_break"));
+    let mut scene = drawn(fixture!("loop/behavior", "merged_exit"));
     let entry = scene.topology.loops[0].entry;
     let gaps = vertical_gaps(&scene);
     let y = scene
@@ -159,11 +159,10 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
             #[cycle("Collect.")]
             let done = |left| {
                 #[action("Collect the results.")]
-                let ready = |left| ();
-                |ready| break;
+                let done = |left| ();
             };
             #[cycle("Skip.")]
-            let done = |right| { |right| break; };
+            |right| { continue; };
             |done| return;
         }
     "#;
@@ -996,9 +995,9 @@ fn enclosing_back_edges_leave_a_lane_beside_nested_boundaries() {
 fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
     let source = include_str!("../../../kaalang/tests/gallery/binary_search/mod.rs");
     for repeats in [2, 8] {
-        let source = source.replace("outcome", &"a_long_outcome_wire_name".repeat(repeats));
+        let source = source.replace("result", &"a_long_result_wire_name".repeat(repeats));
         let scene = drawn((&source, "binary_search"));
-        let result = scene.topology.loop_boundaries[0].result.unwrap();
+        let result = scene.topology.loop_boundaries[0].results[0];
         let label = scene
             .labels
             .iter()
@@ -1063,11 +1062,11 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
 }
 
 #[test]
-fn a_break_between_repeating_cases_is_rejected_before_layout() {
+fn an_exit_between_repeating_cases_is_rejected_before_layout() {
     // Collapsed, because the expanded flow must still be checked before its
     // loops fold into nodes that would hide the conflict.
     let error = crate::render_source_with_options(
-        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_break.rs"),
+        include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_exit.rs"),
         "invalid",
         crate::RenderOptions {
             collapse_loops: true,
@@ -1077,7 +1076,7 @@ fn a_break_between_repeating_cases_is_rejected_before_layout() {
     let crate::RenderError::InvalidFlow { message, .. } = &error else {
         panic!("an unrealizable topology is an invalid flow, not a rendering error: {error}")
     };
-    // The repeating cases merge before their one continue, so the break
+    // The repeating cases merge before their one continue, so the exit
     // between them splits that merge before any diagram is decided.
     assert!(message.contains("must be adjacent"), "{message}");
 }
@@ -1218,13 +1217,11 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
             let mut initial_log = |run| Vec::new();
 
             #[cycle("Collect the first steps.")]
-            let mut log = |initial_log| {
+            let leave_1 = |initial_log| {
                 #[question("Are there more first steps?")]
                 #[yes("YES")]
                 #[no("NO")]
                 let (iterate_1, leave_1) = |&initial_log, &limit| initial_log.len() < *limit;
-
-                |leave_1, initial_log| break initial_log;
 
                 #[action("Build the first step.")]
                 let wwwwwwwwwwwwwwwwwwwwwwww = |iterate_1| {
@@ -1246,16 +1243,17 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
             };
 
             #[cycle("Collect the second steps.")]
-            let end = |log| {
+            let end = |leave_1| {
                 #[question("Are there more second steps?")]
                 #[yes("YES")]
                 #[no("NO")]
-                let (iterate_2, leave_2) = |&log, &limit| log.len() < *limit * 2;
+                let (iterate_2, leave_2) = |&initial_log, &limit| initial_log.len() < *limit * 2;
 
-                |leave_2, log| break log;
+                #[action("Hand over the collected log.")]
+                let end = |leave_2, initial_log| initial_log;
 
                 #[question("Is the log length odd?")]
-                let (odd, even) = |iterate_2, &log| log.len() % 2 == 1;
+                let (odd, even) = |iterate_2, &initial_log| initial_log.len() % 2 == 1;
 
                 #[action("Build an odd step.")]
                 let wwwwwwwwwwwwwwwwwwwwwwww = |odd| String::from("b");
@@ -1264,7 +1262,7 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
                 let wwwwwwwwwwwwwwwwwwwwwwww = |even| String::from("c");
 
                 #[action("Record the second step.")]
-                |&mut log, wwwwwwwwwwwwwwwwwwwwwwww| log.push(wwwwwwwwwwwwwwwwwwwwwwww);
+                |&mut initial_log, wwwwwwwwwwwwwwwwwwwwwwww| initial_log.push(wwwwwwwwwwwwwwwwwwwwwwww);
 
                 |iterate_2| continue;
             };
@@ -1364,9 +1362,9 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
         #[kaalang]
         fn nested_exit_convergence(mut count: usize) -> usize {
             #[cycle("Count to completion.")]
-            let result = {
+            let done = {
                 #[cycle("Resolve the inner count.")]
-                {
+                let inner_done = {
                     #[choice("Leave the inner loop?")]
                     #[case("Leave at zero.")]
                     #[case("Leave at one.")]
@@ -1378,11 +1376,9 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
                     };
 
                     #[action("Finish at zero.")]
-                    let done = |zero| {};
+                    let inner_done = |zero| {};
                     #[action("Finish at one.")]
-                    let done = |one| {};
-                    |done| break;
-
+                    let inner_done = |one| {};
                     #[action("Count down.")]
                     |wwwwwwww, &mut count| *count -= 1;
 
@@ -1390,9 +1386,7 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
                 };
 
                 #[question("Finish the outer loop?")]
-                let (done, wwwwwwww) = |&count| *count == 0;
-
-                |done, count| break count;
+                let (done, wwwwwwww) = |inner_done, &count| *count == 0;
 
                 #[action("Count down once more.")]
                 |wwwwwwww, &mut count| *count -= 1;
@@ -1400,7 +1394,7 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
                 |wwwwwwww| continue;
             };
 
-            |result| return result;
+            |done, count| return count;
         }
     "#;
     let scene = drawn((source, "nested_exit_convergence"));
@@ -1472,11 +1466,11 @@ const FAR_CONTOUR: (&str, &str) = (
         #[kaalang]
         fn far_contour(mut mode: u8) -> u8 {
             #[cycle("Advance until the mode can leave.")]
-            let result = {
+            let case_2 = {
                 #[choice("Which route?")]
                 #[case("Case 0 repeat.")]
                 #[case("Case 1 repeat.")]
-                #[case("Case 2 break.")]
+                #[case("Case 2 leave.")]
                 let (case_0, case_1, case_2) = |mode| match mode {
                     0 => (),
                     1 => (),
@@ -1486,11 +1480,10 @@ const FAR_CONTOUR: (&str, &str) = (
                 let again = |case_0| ();
                 #[action("Advance in case 1.")]
                 let again = |case_1| ();
-                |case_2, mode| break mode;
                 |again| continue;
             };
 
-            |result| return result;
+            |case_2, mode| return mode;
         }
     "#,
     "far_contour",
@@ -1570,37 +1563,33 @@ const FOUR_LANES: (&str, &str) = (
         #[kaalang]
         fn deep(mut step: usize) -> usize {
             #[cycle("Repeat the first cycle.")]
-            let result = {
+            let leave_0 = {
                 #[question("Leave the first?")]
                 let (stay_0, leave_0) = |&step| *step > 0;
-                |leave_0, step| break step;
                 #[cycle("Repeat the second cycle.")]
-                |stay_0| {
+                let leave_1 = |stay_0| {
                     #[question("Leave the second?")]
                     let (stay_1, leave_1) = |&step| *step > 1;
-                    |leave_1| break;
                     #[cycle("Repeat the third cycle.")]
-                    |stay_1| {
+                    let leave_2 = |stay_1| {
                         #[question("Leave the third?")]
                         let (stay_2, leave_2) = |&step| *step > 2;
-                        |leave_2| break;
                         #[cycle("Repeat the fourth cycle.")]
-                        |stay_2| {
+                        let leave_3 = |stay_2| {
                             #[question("Leave the fourth?")]
                             let (stay_3, leave_3) = |&step| *step > 3;
-                            |leave_3| break;
                             #[action("Advance at the deepest level.")]
                             |stay_3, &mut step| *step += 1;
                             |stay_3| continue;
                         };
-                        |stay_2| continue;
+                        |leave_3| continue;
                     };
-                    |stay_1| continue;
+                    |leave_2| continue;
                 };
-                |stay_0| continue;
+                |leave_1| continue;
             };
 
-            |result| return result;
+            |leave_0, step| return step;
         }
     "#,
     "deep",
@@ -1713,6 +1702,28 @@ fn every_generated_shape_the_model_accepts_also_renders() {
         }
     }
     assert_eq!((drawn, refused), (1095, 1740));
+}
+
+/// Every generated cycle with two outputs the model accepts renders, expanded
+/// and collapsed.
+#[test]
+fn every_accepted_alternative_output_shape_renders_in_both_views() {
+    let mut drawn = 0;
+    for source in kaalang_testing::shapes::alternative_bodies(2..=4) {
+        let source = format!("#[kaalang]\n{source}");
+        for collapse_loops in [false, true] {
+            match crate::render_source_with_options(
+                &source,
+                "probe",
+                crate::RenderOptions { collapse_loops },
+            ) {
+                Ok(_) => drawn += 1,
+                Err(crate::RenderError::InvalidFlow { .. }) => {}
+                Err(error) => panic!("{source}\nan accepted flow did not render: {error}"),
+            }
+        }
+    }
+    assert_eq!(drawn, 28);
 }
 
 /// Moving the climb alone can keep the route connected while violating the

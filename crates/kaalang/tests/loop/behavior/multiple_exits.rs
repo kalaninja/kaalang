@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn multiple_exits(mut mode: u8) -> u8 {
     #[cycle("Select an exit after zero or one advances.")]
-    let selected = {
+    let result = {
         #[choice("Exit or advance?")]
         #[case("Exit immediately.")]
         #[case("Exit after advancing.")]
@@ -23,16 +23,14 @@ fn multiple_exits(mut mode: u8) -> u8 {
         #[action("Keep the result after advancing.")]
         let result = |last, mode| mode;
 
-        |result| break result;
-
         |advance| continue;
     };
 
-    |selected| return selected;
+    |result| return result;
 }
 
 #[test]
-fn exit_routes_merge_before_the_single_break() {
+fn exit_routes_merge_before_the_single_output() {
     assert_eq!(multiple_exits(0), 0);
     assert_eq!(multiple_exits(1), 2);
     assert_eq!(multiple_exits(2), 2);

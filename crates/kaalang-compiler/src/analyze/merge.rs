@@ -11,15 +11,17 @@ use crate::model::{
     BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge,
 };
 
+use super::frame::Frames;
 use super::only_difference;
 
 pub(super) fn flow(
     flow: &Flow,
-    executions: &[Execution],
+    frames: &Frames<'_>,
     merges: Vec<WireMerge>,
     owners: Vec<Vec<(usize, Vec<usize>)>>,
     ancestry: &[BTreeSet<BranchSelection>],
 ) -> Result<Vec<WireMerge>> {
+    let executions = frames.view(None);
     let blocks = flow.blocks.len();
     let mut successors = vec![BTreeSet::new(); blocks + merges.len()];
     let mut routes_by_owner = BTreeMap::new();
@@ -46,16 +48,18 @@ pub(super) fn flow(
         for &block in &merge.before {
             successors[block].insert(node);
         }
+        // A merge compares the selections its producers' frame sees.
+        let seen = frames.view(frames.of_merge(merge));
         for (owner, branches) in owners {
-            if flow.blocks[owner].kind != BlockKind::Choice {
+            if !matches!(flow.blocks[owner].kind, BlockKind::Choice | BlockKind::Loop) {
                 continue;
             }
             // The routes producing this merge and those reaching it, each with
             // its case of the owner.
             let owner_routes = routes_by_owner
                 .entry(owner)
-                .or_insert_with(|| super::choice::routes(ancestry, executions, owner));
-            let routes = executions
+                .or_insert_with(|| super::choice::routes(ancestry, seen, owner));
+            let routes = seen
                 .iter()
                 .zip(owner_routes.iter())
                 .filter(|(execution, _)| {
@@ -66,7 +70,7 @@ pub(super) fn flow(
                 })
                 .filter_map(|(_, &route)| route)
                 .collect();
-            let reaching = executions
+            let reaching = seen
                 .iter()
                 .zip(owner_routes.iter())
                 .filter(|(execution, _)| reaches(flow, execution, merge))
@@ -81,12 +85,13 @@ pub(super) fn flow(
     }
 
     for (block, groups) in groups.iter().enumerate() {
-        if flow.blocks[block].kind == BlockKind::Choice {
-            super::choice::validate_groups(&flow.blocks[block].outputs, groups)?;
+        if matches!(flow.blocks[block].kind, BlockKind::Choice | BlockKind::Loop) {
+            super::choice::validate_groups(&flow.blocks[block], groups)?;
         }
     }
     validate_order(flow, &merges, &successors)?;
     for merge in &merges {
+        let executions = frames.view(frames.of_merge(merge));
         let producers = executions
             .iter()
             .map(|execution| {
@@ -164,7 +169,7 @@ impl Completion {
                     .filter(|(_, producer)| producer.is_some())
                     .flat_map(|(execution, _)| &execution.branches)
                     .filter(|selection| selection.block == owner)
-                    .map(|selection| selection.branch)
+                    .map(|selection| super::frame::branch(selection.branch))
                     .collect::<BTreeSet<_>>()
                     .into_iter()
                     .collect();
@@ -181,6 +186,37 @@ impl Completion {
 /// the whole flow and each one is handed to the merges both its executions
 /// produce.
 pub(super) fn completion(
+    flow: &Flow,
+    frames: &Frames<'_>,
+    merges: &mut [WireMerge],
+) -> Vec<Vec<(usize, Vec<usize>)>> {
+    if frames.is_flat() {
+        return completion_at(flow, frames.view(None), merges);
+    }
+    // Each merge compares the selections its own frame sees.
+    let mut by_frame = BTreeMap::<Option<usize>, Vec<usize>>::new();
+    for (index, merge) in merges.iter().enumerate() {
+        by_frame
+            .entry(frames.of_merge(merge))
+            .or_default()
+            .push(index);
+    }
+    let mut owners = vec![Vec::new(); merges.len()];
+    for (frame, indices) in by_frame {
+        let mut subset = indices
+            .iter()
+            .map(|&index| merges[index].clone())
+            .collect::<Vec<_>>();
+        let found = completion_at(flow, frames.view(frame), &mut subset);
+        for ((index, merge), found) in indices.into_iter().zip(subset).zip(found) {
+            merges[index] = merge;
+            owners[index] = found;
+        }
+    }
+    owners
+}
+
+fn completion_at(
     flow: &Flow,
     executions: &[Execution],
     merges: &mut [WireMerge],
@@ -778,8 +814,8 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::{
-        Completion, collect, compare_compatible, compare_every_pair, completion, context,
-        only_difference,
+        Completion, collect, compare_compatible, compare_every_pair, completion, completion_at,
+        context, only_difference,
     };
     use crate::tests::message as error;
     use crate::{Execution, Flow, ProducerId, WireMerge, build};
@@ -897,6 +933,32 @@ mod tests {
         agrees("three selectors in a row above one merge", &function);
     }
 
+    /// The merge after a cycle with several outputs is owned by the cycle, not
+    /// by the body selections that made its choice.
+    #[test]
+    fn a_cycle_with_several_outputs_owns_the_merge_after_it() {
+        let model = build(&crate::tests::fixture(
+            include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            "alternative_outputs",
+        ))
+        .expect("the fixture is valid");
+        let flow = &model.analysis.flow;
+        let mut merges = collect(flow);
+        let frames = crate::analyze::frame::Frames::of(flow, &model.analysis.executions);
+        let owners = completion(flow, &frames, &mut merges);
+        let result = merges
+            .iter()
+            .position(|merge| flow.wire_name(&merge.wire) == "result")
+            .expect("the outputs' continuations merge");
+        assert_eq!(
+            owners[result]
+                .iter()
+                .map(|&(owner, _)| owner)
+                .collect::<Vec<_>>(),
+            [0]
+        );
+    }
+
     #[test]
     fn a_repeat_route_does_not_split_a_merge_after_its_loop() {
         let source = r#"
@@ -907,7 +969,8 @@ mod tests {
                 let result = |enter| {
                     #[question("Done?")]
                     let (leave, again) = |done| { done };
-                    |leave, value| break value;
+                    #[action("Keep the value.")]
+                    let result = |leave, value| { value };
                     |again| continue;
                 };
                 #[action("Use the fallback.")]
@@ -1098,7 +1161,7 @@ mod tests {
             .iter()
             .map(|merge| reference(&flow, &executions, merge))
             .collect::<Vec<_>>();
-        let owners = completion(&flow, &executions, &mut merges);
+        let owners = completion_at(&flow, &executions, &mut merges);
 
         for ((merge, owners), (before, groups)) in merges.iter().zip(owners).zip(expected) {
             let wire = &merge.wire;
@@ -1325,7 +1388,7 @@ mod tests {
         assert!(merges.is_empty(), "the probe repeats no output name");
         assert!(executions.len() > 1, "the probe reaches several executions");
         assert!(
-            completion(&flow, &executions, &mut merges).is_empty(),
+            completion_at(&flow, &executions, &mut merges).is_empty(),
             "a flow without merges owns no branches"
         );
     }

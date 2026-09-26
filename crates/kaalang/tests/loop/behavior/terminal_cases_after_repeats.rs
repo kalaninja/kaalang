@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
     #[cycle("Repeat until either finishing case.")]
-    let result = {
+    let selected = {
         #[choice("Which route?")]
         #[case("Advance on the left.")]
         #[case("Advance on the right.")]
@@ -22,8 +22,6 @@ fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
         #[action("Finish the flow with nine.")]
         let selected = |nine| 9;
 
-        |selected| break selected;
-
         #[action("Advance through the left case.")]
         let advanced = |left, &mut mode| *mode = 1;
 
@@ -33,7 +31,7 @@ fn terminal_cases_after_repeats(mut mode: u8) -> u8 {
         |advanced| continue;
     };
 
-    |result| return result;
+    |selected| return selected;
 }
 
 /// Both finishing cases lie outside the two repeating routes.

@@ -46,13 +46,14 @@ fn indent(depth: usize) -> String {
 }
 
 /// One nesting level's cycle attribute and the closure gated by the enclosing
-/// level's repeat wire. Every level is closed again by [`close_levels`].
+/// level's repeat wire. The level completes with its unit `_leave_{depth}`,
+/// which nothing consumes. Every level is closed again by [`close_levels`].
 fn open_level(depth: usize) -> String {
     let pad = indent(depth);
     let opening = if depth == 0 {
-        "|step| {".to_owned()
+        "let _leave_0 = |step| {".to_owned()
     } else {
-        format!("|stay_{}| {{", depth - 1)
+        format!("let _leave_{depth} = |stay_{}| {{", depth - 1)
     };
     format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
 }
@@ -83,9 +84,8 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
         let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
         let _ = writeln!(
             body,
-            "{pad}    let (stay_{depth}, leave_{depth}) = |step| step > {depth};"
+            "{pad}    let (stay_{depth}, _leave_{depth}) = |step| step > {depth};"
         );
-        let _ = writeln!(body, "{pad}    |leave_{depth}| break;");
     }
     let deepest = loops - 1;
     let pad = indent(deepest);

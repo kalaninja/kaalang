@@ -206,16 +206,17 @@ pub(super) fn back_edge_polyline(
 /// Where two routes are allowed to meet, and whether they may share a run.
 ///
 /// RFC 0002 §8 lets connections leaving one exit or reaching one destination
-/// share a collinear segment and split or join where they touch. Otherwise only
-/// the incoming and outgoing routes of one junction may meet, and only at that
-/// junction's own point.
+/// share a collinear segment and split or join where they touch. The side
+/// exits of one node fan out along one row the same way (RFC 0006 §7.5).
+/// Otherwise only the incoming and outgoing routes of one junction may meet,
+/// and only at that junction's own point.
 pub(super) fn meetings(
     left: (Source, Destination),
     left_line: &[Point],
     right: (Source, Destination),
     right_line: &[Point],
 ) -> (bool, Vec<Point>) {
-    let shared = left.0 == right.0 || left.1 == right.1;
+    let shared = left.0 == right.0 || left.1 == right.1 || left.0.is_side_exit_beside(right.0);
     let mut points = if shared {
         bundle_meetings(left_line, right_line)
     } else {
@@ -354,7 +355,34 @@ pub(super) fn placement(
 ) -> Result<(), String> {
     super::end::verify(topology, arrangement)?;
     order(topology, arrangement, allow_order_exception)?;
-    serial_columns(topology, arrangement)
+    serial_columns(topology, arrangement)?;
+    result_order(topology, arrangement)
+}
+
+/// A cycle with several outputs draws its result exits left to right in
+/// declaration order (RFC 0006 §7.5).
+pub(super) fn result_order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+    for boundary in &topology.loop_boundaries {
+        let columns = boundary
+            .results
+            .iter()
+            .map(|&result| {
+                let vertex = Vertex::from(result);
+                arrangement
+                    .column
+                    .get(&vertex)
+                    .copied()
+                    .ok_or_else(|| format!("{vertex:?} has no column"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        if !columns.windows(2).all(|pair| pair[0] < pair[1]) {
+            return Err(format!(
+                "the cycle at block {} draws its result exits out of declaration order: {columns:?}",
+                boundary.header + 1
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn geometry_after_choice(
@@ -533,7 +561,10 @@ fn order(
             edge.source == Source::Junction(loop_.tail)
                 && topology.loop_boundaries.iter().any(|boundary| {
                     boundary.header == loop_.header
-                        && boundary.result.map(Vertex::from) == Some(edge.destination)
+                        && boundary
+                            .results
+                            .iter()
+                            .any(|&result| Vertex::from(result) == edge.destination)
                 })
         });
         if (from > to || (from == to && !aligned)) && !allow_order_exception(edge) {
@@ -869,7 +900,7 @@ mod tests {
     /// serial column, which the complete verifier may reject first.
     #[test]
     fn a_sibling_inside_a_reserved_footprint_is_caught() {
-        let source = super::super::tests::looping(&["repeat", "repeat", "break", "break"]);
+        let source = super::super::tests::looping(&["repeat", "repeat", "leave", "leave"]);
         let model = crate::build(&syn::parse_str(&source).unwrap()).unwrap();
         let reachable = super::super::regions::reachable(&model.topology);
         let block = super::super::regions::branchers(&model.analysis.flow, &model.topology)[0];

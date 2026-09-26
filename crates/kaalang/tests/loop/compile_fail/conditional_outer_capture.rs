@@ -16,7 +16,8 @@ fn invalid(flag: bool) -> usize {
 
     #[cycle("Read a value only one route prepared.")]
     let result = |ready| {
-        |value| break value;
+        #[action("Copy the value.")]
+        let result = |value| value;
     };
 
     |result| return result;

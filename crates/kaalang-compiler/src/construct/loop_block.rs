@@ -31,11 +31,12 @@ pub(super) fn body_columns(
 pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
     let end = flow.blocks[header].loop_end.expect("a loop owns a body");
     let body = header + 1..end;
-    let result = topology
+    let results = topology
         .loop_boundaries
         .iter()
         .find(|boundary| boundary.header == header)
-        .and_then(|boundary| boundary.result);
+        .map(|boundary| boundary.results.as_slice())
+        .unwrap_or_default();
     let mut vertices = BTreeSet::new();
     for node in &topology.nodes {
         let block = match node.id {
@@ -56,16 +57,22 @@ pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
     for boundary in &topology.loop_boundaries {
         if boundary.header == header {
             vertices.insert(boundary.entry);
-            vertices.extend(boundary.result.map(Vertex::from).filter(|result| {
-                matches!(result, Vertex::Junction(junction)
-                        if !topology.junctions[*junction].merges.is_empty())
-            }));
+            vertices.extend(
+                boundary
+                    .results
+                    .iter()
+                    .map(|&result| Vertex::from(result))
+                    .filter(|result| {
+                        matches!(result, Vertex::Junction(junction)
+                            if !topology.junctions[*junction].merges.is_empty())
+                    }),
+            );
         } else if body.contains(&boundary.header) {
             vertices.insert(boundary.entry);
-            vertices.extend(boundary.result.map(Vertex::from));
+            vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
         }
     }
-    // A wire merge or a break inside the body draws a junction and no node, so
+    // A wire merge or an export inside the body draws a junction and no node, so
     // the blocks alone miss it. Everything reaching such a junction comes from
     // the body, and a chain of them needs more than one pass.
     let mut settled = false;
@@ -91,7 +98,7 @@ pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> 
             let mut arrivals = topology.incoming(vertex).peekable();
             if arrivals.peek().is_some()
                 && arrivals.all(|edge| {
-                    Some(edge.source) != result && vertices.contains(&Vertex::from(edge.source))
+                    !results.contains(&edge.source) && vertices.contains(&Vertex::from(edge.source))
                 })
             {
                 vertices.insert(vertex);

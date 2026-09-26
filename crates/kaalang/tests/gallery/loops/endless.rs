@@ -1,4 +1,4 @@
-//! An endless cycle: nothing in the body breaks, so the flow never finishes
+//! An endless cycle: no route completes it, so the flow never finishes
 //! and the function returns `!`. A traffic light has no reason to stop.
 
 use kaalang::kaalang;

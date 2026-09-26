@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
     #[cycle("Settle the mode.")]
-    let result = {
+    let leave = {
         #[choice("Which route?")]
         #[case("Advance on the left.")]
         #[case("Serve forever.")]
@@ -41,12 +41,10 @@ fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
         #[action("Settle from the right.")]
         let advanced = |right, &mut mode| *mode = 3;
 
-        |leave, mode| break mode;
-
         |advanced| continue;
     };
 
-    |result| return result;
+    |leave, mode| return mode;
 }
 
 /// The serving route never returns, so the settling routes on either side of it

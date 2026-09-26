@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, ItemFn, Lifetime, Pat, Result, token::Mut};
 
-use crate::{Analysis, Block, ExecutionPlan, Flow, Input};
+use crate::{Analysis, Block, Branch, ExecutionPlan, Flow, Input};
 
 mod parameters;
 #[cfg(test)]
@@ -187,8 +187,9 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
     }
 }
 
-/// Captures a transfer's inputs and leaves through `exit`: `break` or
-/// `continue` to the target native loop, or `return` from the root flow.
+/// Captures a transfer's inputs and leaves through `exit`: `break` to a
+/// cycle's loop or result block, `continue` to its loop, or `return` from the
+/// root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
     let captures = input_bindings(&block.inputs, bindings);
@@ -205,12 +206,21 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     match plan {
-        ExecutionPlan::Loop { index, body, next } => {
-            loop_block::emit(flow, bindings, *index, body, next.as_deref())
-        }
-        ExecutionPlan::Break { index, target } => {
+        ExecutionPlan::Loop {
+            index,
+            body,
+            branches,
+            joins,
+        } => loop_block::emit(flow, bindings, *index, body, branches, joins),
+        ExecutionPlan::Export { index, target } => {
             let span = flow.blocks[*index].span;
-            let label = loop_label(*target, span);
+            // One output is the loop's own value; several leave by their own
+            // result blocks.
+            let label = if flow.blocks[*target].branch_count() > 0 {
+                loop_block::exit_label(*target, flow.exported_output(*index))
+            } else {
+                loop_label(*target, span)
+            };
             transfer(flow, bindings, *index, &quote_spanned!(span=> break #label))
         }
         ExecutionPlan::Return { index } => {
@@ -252,6 +262,33 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         }
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     }
+}
+
+/// Binds each branch output from its own labeled block around `dispatch`,
+/// innermost first, and follows it with that branch's continuation. Each
+/// continuation leaves for a join or returns the flow result, so it cannot
+/// fall through into the continuation of a different branch.
+pub(super) fn exits(
+    flow: &Flow,
+    bindings: &Bindings,
+    index: usize,
+    labels: &[Lifetime],
+    branches: &[Branch],
+    mut dispatch: TokenStream2,
+) -> TokenStream2 {
+    let block = &flow.blocks[index];
+    for (output, branch) in branches.iter().enumerate() {
+        let label = &labels[output];
+        let wire = bindings.pattern(block.output_span, &block.outputs[output..=output]);
+        let gate = bindings.gate(&block.outputs[output]);
+        let path = self::flow(flow, &branch.plan, bindings);
+        dispatch = quote! {
+            let #wire = #label: { #dispatch };
+            #gate
+            #path
+        };
+    }
+    dispatch
 }
 
 fn loop_label(index: usize, span: Span) -> Lifetime {

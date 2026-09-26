@@ -6,11 +6,9 @@ fn cycle_on_each_branch(up: bool, mut n: u32) -> u32 {
     let (rise, fall) = |up| up;
 
     #[cycle("Count up to ten.")]
-    let end = |rise| {
+    let done = |rise| {
         #[question("Reached ten?")]
         let (done, more) = |&n| *n >= 10;
-
-        |done, n| break n;
 
         #[action("Step up.")]
         let stepped = |more, &mut n| *n += 1;
@@ -19,11 +17,9 @@ fn cycle_on_each_branch(up: bool, mut n: u32) -> u32 {
     };
 
     #[cycle("Count down to zero.")]
-    let end = |fall| {
+    let done = |fall| {
         #[question("Reached zero?")]
         let (done, more) = |&n| *n == 0;
-
-        |done, n| break n;
 
         #[action("Step down.")]
         let stepped = |more, &mut n| *n -= 1;
@@ -31,7 +27,7 @@ fn cycle_on_each_branch(up: bool, mut n: u32) -> u32 {
         |stepped| continue;
     };
 
-    |end| return end;
+    |done, n| return n;
 }
 
 #[test]

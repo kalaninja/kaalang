@@ -3,11 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Check the flag.")]
-    |flag| {
+    let leave = |flag| {
         #[question("Repeat?")]
         let (again, leave) = |flag| flag;
-
-        |leave| break;
 
         #[action("Escape from the action.")]
         |again| {
@@ -15,7 +13,7 @@ fn invalid(flag: bool) {
         };
     };
 
-    return;
+    |leave| return;
 }
 
 fn main() {}

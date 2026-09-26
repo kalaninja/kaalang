@@ -21,7 +21,7 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
         .map(|(body, boundary)| {
             body.iter()
                 .copied()
-                .chain(boundary.result.map(Vertex::from))
+                .chain(boundary.results.iter().map(|&result| Vertex::from(result)))
                 .map(|vertex| scene.rank(vertex))
                 .max()
                 .expect("every cycle body includes its entry")
@@ -64,7 +64,10 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
         let owns_vertex = |vertex| {
             body.contains(&vertex)
                 || vertex == boundary.entry
-                || Some(vertex) == boundary.result.map(Vertex::from)
+                || boundary
+                    .results
+                    .iter()
+                    .any(|&result| Vertex::from(result) == vertex)
         };
         let mut boxes = scene
             .nodes
@@ -86,8 +89,8 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 .filter(|label| owns_vertex(label.owner))
                 .map(label_rect),
         );
-        let mut points = [point(boundary.entry), boundary.result.and_then(exit_point)]
-            .into_iter()
+        let mut points = std::iter::once(point(boundary.entry))
+            .chain(boundary.results.iter().map(|&result| exit_point(result)))
             .flatten()
             .collect::<Vec<_>>();
         points.extend(
@@ -174,7 +177,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 description: description.as_ref().to_owned(),
                 caption: caption(description, right - caption_left - 24),
                 inputs: scene.captions.loop_inputs(boundary.header).to_owned(),
-                outputs: scene.captions.loop_outputs(boundary.header).to_owned(),
+                outputs: scene.captions.loop_outputs(boundary.header),
             },
         ));
     }
@@ -290,7 +293,10 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         let owns_vertex = |vertex| {
             body.contains(&vertex)
                 || vertex == boundary.entry
-                || Some(vertex) == boundary.result.map(Vertex::from)
+                || boundary
+                    .results
+                    .iter()
+                    .any(|&result| Vertex::from(result) == vertex)
         };
         for node in &scene.nodes {
             let bounds = Scene::bounds(node);
@@ -338,7 +344,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             let source_owned = owns_vertex(Vertex::from(edge.source));
             let destination_owned = owns_vertex(edge.destination);
             let crosses_interface =
-                edge.destination == boundary.entry || boundary.result == Some(edge.source);
+                edge.destination == boundary.entry || boundary.results.contains(&edge.source);
             if source_owned
                 && destination_owned
                 && edge.points.iter().any(|point| {

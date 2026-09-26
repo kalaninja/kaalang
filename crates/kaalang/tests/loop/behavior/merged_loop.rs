@@ -8,17 +8,13 @@ fn merged_loop(select_first: bool) -> usize {
     #[cycle("Produce the first result.")]
     let result = |first| {
         #[action("Build the first value.")]
-        let value = || 1;
-
-        |value| break value;
+        let result = || 1;
     };
 
     #[cycle("Produce the second result.")]
     let result = |second| {
         #[action("Build the second value.")]
-        let value = || 2;
-
-        |value| break value;
+        let result = || 2;
     };
 
     |result| return result;

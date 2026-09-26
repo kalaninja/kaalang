@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BranchSelection, Execution, Flow, ProducerId, WireMerge};
+use crate::model::{BlockKind, BranchSelection, Execution, Flow, ProducerId, WireMerge};
 
 /// The selections one producer occurrence sits inside: what its block inherited
 /// by capture, plus the branch it selects when the block is a question or choice.
@@ -113,7 +113,9 @@ impl<'a> Junction<'a> {
             let ProducerId::BlockOutput { block, output } = producer else {
                 unreachable!("a wire merge combines block outputs")
             };
-            position = position.max(block);
+            // A cycle's output is ready only once its whole body has run.
+            let ready = flow.blocks[block].loop_end.map_or(block, |end| end - 1);
+            position = position.max(ready);
             producers.push((producer, occurrence(flow, &ancestry[block], block, output)));
         }
         Self {
@@ -204,6 +206,7 @@ pub(super) fn flow(
     merges: &[WireMerge],
     owners: &[Vec<(usize, Vec<usize>)>],
     ancestry: &[BTreeSet<BranchSelection>],
+    frames: &super::frame::Frames<'_>,
 ) -> Result<()> {
     let mut junctions = merges
         .iter()
@@ -216,7 +219,12 @@ pub(super) fn flow(
         // Built on the first junction that needs it; most pairs never do.
         let carried = OnceCell::new();
         for &block in execution.blocks.iter().filter(|&&block| block < end) {
-            for selection in execution.branches.iter().filter(|s| s.block < block) {
+            let frame = frames.frame(block);
+            for selection in execution
+                .branches
+                .iter()
+                .filter(|s| s.block < block && frames.visible(frame, s.block))
+            {
                 if super::loop_block::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
                     || junctions.iter_mut().any(|junction| {
@@ -239,12 +247,18 @@ pub(super) fn flow(
         .description
         .as_deref()
         .expect("every selection is authored with a description");
-    Err(Error::new(
-        flow.blocks[block].span,
+    // A boundary consumer is not authored: it exports at the end of the body.
+    let message = if flow.blocks[block].kind == BlockKind::Export {
+        format!(
+            "this kaalang cycle exports `{}` while the branches of the {kind} `{described}` are still separate; merge those branches before the end of its body",
+            super::exported_name(flow, block)
+        )
+    } else {
         format!(
             "this kaalang block runs while the branches of the {kind} `{described}` are still separate; give it an input from one branch, or merge those branches above it"
-        ),
-    ))
+        )
+    };
+    Err(Error::new(flow.blocks[block].span, message))
 }
 
 #[cfg(test)]

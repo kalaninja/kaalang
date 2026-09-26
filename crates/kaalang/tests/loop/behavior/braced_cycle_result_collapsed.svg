@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="388" viewBox="0 0 680 388" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for braced_cycle_result</title>
-  <desc id="kaalang-description">Nodes: Start: braced_cycle_result with parameters mut count: usize handing over mut count; Cycle: Count down to zero. capturing mut count handing over zero; End: usize capturing zero. Connections: Start: braced_cycle_result to Cycle: Count down to zero.; Cycle: Count down to zero. to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: braced_cycle_result with parameters mut count: usize handing over mut count; Cycle: Count down to zero. capturing mut count handing over done; End: usize capturing count. Connections: Start: braced_cycle_result to Cycle: Count down to zero.; Cycle: Count down to zero. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -33,7 +33,8 @@
       M 172 226 L 172 298
     "/>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut count</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">zero</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">count</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>

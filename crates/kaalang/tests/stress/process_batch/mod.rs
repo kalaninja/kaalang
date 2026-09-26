@@ -128,7 +128,7 @@ impl BatchProcessor {
         let (mut pending, mut report) = |jobs| (jobs.into_iter(), Report::default());
 
         #[cycle("Process tasks until the queue ends or cancellation is requested.")]
-        let stop = |started| {
+        let reason = |started| {
             #[question("Has the cancellation boundary been reached?")]
             #[no("Take another task.")]
             #[yes("Cancel the batch.")]
@@ -199,7 +199,7 @@ impl BatchProcessor {
             #[cycle(
                 "Retry transient failures; complete on a response, a fatal error, or exhaustion."
             )]
-            let (processed, attempts) = |responses| {
+            let final_result = |responses| {
                 #[question("Is there another scripted response?")]
                 let (try_next, exhausted) = |&responses| responses.len() > 0;
 
@@ -255,7 +255,7 @@ impl BatchProcessor {
                     };
 
                     #[action("Accept the complete response total.")]
-                    let checked_result = |complete, subtotal| Outcome::Value(subtotal);
+                    let checked = |complete, subtotal| Outcome::Value(subtotal);
 
                     #[action("Borrow the part for parsing.")]
                     let source = |&text| text.as_str();
@@ -281,14 +281,12 @@ impl BatchProcessor {
                     };
 
                     #[action("Keep the malformed part and its position.")]
-                    let checked_result = |invalid, text, part_index| {
+                    let checked = |invalid, text, part_index| {
                         Outcome::Failed(Failure::Malformed {
                             part: part_index,
                             text,
                         })
                     };
-
-                    |checked_result| break checked_result;
 
                     |number| continue;
                 };
@@ -305,10 +303,12 @@ impl BatchProcessor {
                 #[action("The final transient error exhausted the attempts.")]
                 let final_result = |last_failure| Outcome::Failed(Failure::Exhausted);
 
-                |final_result, attempt_number| break (final_result, attempt_number);
-
                 |retry| continue;
             };
+
+            #[action("Pair the remote result with its attempt count.")]
+            let (processed, attempts) =
+                |final_result, attempt_number| (final_result, attempt_number);
 
             #[action("Join local and remote processing before recording the task.")]
             let (outcome, count) = |processed, attempts, index, &mut self| {
@@ -334,14 +334,12 @@ impl BatchProcessor {
             let recorded =
                 |outcome, count, &mut report, &mut self| Self::record(self, report, outcome, count);
 
-            |reason| break reason;
-
             |recorded| continue;
         };
 
         #[action("Attach the batch's completion reason.")]
-        let result = |stop, mut report| {
-            report.stop = stop;
+        let result = |reason, mut report| {
+            report.stop = reason;
             report
         };
 
@@ -349,7 +347,7 @@ impl BatchProcessor {
         let mut audit_queue = |&mut self| std::mem::take(&mut self.pending_audit).into_iter();
 
         #[cycle("Audit every recorded task before returning the report.")]
-        {
+        let flushed = {
             #[call]
             let entry = |&mut audit_queue| Iterator::next(audit_queue);
 
@@ -364,13 +362,11 @@ impl BatchProcessor {
             #[call("Commit the audit record.")]
             let audited = |record, &mut self| Self::audit(self, record);
 
-            |flushed| break;
-
             |audited| continue;
         };
 
         #[action("Close the batch after all audits.")]
-        |&mut self| self.events.borrow_mut().push(Event::Finished);
+        |flushed, &mut self| self.events.borrow_mut().push(Event::Finished);
 
         |result| return result;
     }

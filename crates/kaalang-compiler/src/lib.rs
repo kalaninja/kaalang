@@ -272,8 +272,8 @@ mod tests {
                 include_str!("../../kaalang/tests/loop/behavior/empty_loop.rs"),
             ),
             (
-                "repeat_until_break",
-                include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
+                "repeat_until_done",
+                include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
             ),
             (
                 "nested_loops",
@@ -346,8 +346,8 @@ mod tests {
         ));
 
         let model = build(&fixture(
-            include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
-            "repeat_until_break",
+            include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
+            "repeat_until_done",
         ))
         .expect("the cycle may either repeat or finish");
         assert_eq!(
@@ -1130,6 +1130,28 @@ mod tests {
             panic!("the plan is rooted at end")
         };
         assert_eq!(gates, ["_tag"]);
+    }
+
+    /// Outside a cycle with several outputs only its own selection decides:
+    /// a selection in its body converges inside the body or not at all.
+    #[test]
+    fn a_body_selection_converges_only_inside_its_cycle() {
+        let model = build(&fixture(
+            include_str!("../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            "alternative_outputs",
+        ))
+        .expect("the flow is valid");
+        let end = model.analysis.flow.blocks[0]
+            .loop_end
+            .expect("the flow opens with its cycle");
+        for group in &model.analysis.convergence_groups {
+            if (1..end).contains(&group.branching_block) {
+                assert!(
+                    group.continuation.iter().all(|&block| block < end),
+                    "{group:?}"
+                );
+            }
+        }
     }
 
     #[test]

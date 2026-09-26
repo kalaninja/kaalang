@@ -14,9 +14,9 @@ use crate::model::{
     ProducerId, WireMerge,
 };
 
-mod break_block;
 mod choice;
 mod continue_block;
+mod export;
 mod loop_block;
 mod question;
 mod return_block;
@@ -71,6 +71,10 @@ struct Builder<'a> {
     /// values a join carries.
     classes: Vec<BTreeSet<ProducerId>>,
 }
+
+/// The branches of one branching block, its joins, the yields passing on
+/// outward, and every block they emit.
+type Continuations<'e> = (Vec<Branch>, Vec<Join>, Vec<&'e Execution>, BTreeSet<usize>);
 
 /// One lowered subtree and what the executions passing through it do next.
 struct Lowered<'e> {
@@ -171,7 +175,7 @@ impl Builder<'_> {
             BlockKind::Loop => {
                 loop_block::lower(self, block, executions, &next_done, forbidden, scopes)
             }
-            BlockKind::Break => Ok(break_block::lower(self.flow, block)),
+            BlockKind::Export => Ok(export::lower(self.flow, block)),
             BlockKind::Continue => Ok(continue_block::lower(block)),
             BlockKind::Return => Ok(return_block::lower(block)),
             _ => self.branch(block, executions, &next_done, forbidden, scopes),
@@ -244,6 +248,41 @@ impl Builder<'_> {
         forbidden: &BTreeSet<usize>,
         scopes: &[Scope],
     ) -> Result<Lowered<'e>, Unstructured> {
+        let (branches, joins, yielding, mut emitted) =
+            self.continuations(block, executions, done, forbidden, scopes)?;
+        emitted.insert(block);
+        let plan = match self.flow.blocks[block].kind {
+            BlockKind::Question => question::dispatch(block, branches, joins),
+            BlockKind::Choice => choice::dispatch(block, branches, joins),
+            BlockKind::Action
+            | BlockKind::Call
+            | BlockKind::End
+            | BlockKind::Loop
+            | BlockKind::Export
+            | BlockKind::Continue
+            | BlockKind::Return => {
+                unreachable!("only questions and choices dispatch here")
+            }
+        };
+        Ok(Lowered {
+            plan,
+            yielding,
+            emitted,
+        })
+    }
+
+    /// The branches of one branching block and its joins: exclusive
+    /// computation inside each branch, shared computation once after the join
+    /// its branches yield into. Returns the yields passing on outward and every
+    /// block the branches and joins emit.
+    pub(super) fn continuations<'e>(
+        &mut self,
+        block: usize,
+        executions: &[&'e Execution],
+        done: &BTreeSet<usize>,
+        forbidden: &BTreeSet<usize>,
+        scopes: &[Scope],
+    ) -> Result<Continuations<'e>, Unstructured> {
         let selections = (0..self.flow.blocks[block].outputs.len())
             .map(|branch| {
                 let selection = BranchSelection { block, branch };
@@ -271,7 +310,7 @@ impl Builder<'_> {
             .map(|selection| self.lower(selection, done, &inner_forbidden, &inner_scopes))
             .collect::<Result<Vec<_>, Unstructured>>()?;
 
-        let mut emitted = BTreeSet::from([block]);
+        let mut emitted = BTreeSet::new();
         for branch in &branches {
             emitted.extend(&branch.emitted);
         }
@@ -300,25 +339,7 @@ impl Builder<'_> {
                 plan: Box::new(branch.plan),
             })
             .collect::<Vec<_>>();
-
-        let plan = match self.flow.blocks[block].kind {
-            BlockKind::Question => question::dispatch(block, branches, joins),
-            BlockKind::Choice => choice::dispatch(block, branches, joins),
-            BlockKind::Action
-            | BlockKind::Call
-            | BlockKind::End
-            | BlockKind::Loop
-            | BlockKind::Break
-            | BlockKind::Continue
-            | BlockKind::Return => {
-                unreachable!("only questions and choices branch")
-            }
-        };
-        Ok(Lowered {
-            plan,
-            yielding,
-            emitted,
-        })
+        Ok((branches, joins, yielding, emitted))
     }
 
     /// Blocks that two or more branches run are shared: they run once after
@@ -372,7 +393,11 @@ impl Builder<'_> {
         // sort only moves narrower groups first.
         groups.sort_by_key(|(branches, ..)| branches.len());
         // A single join has nothing to nest against.
-        if self.flow.blocks[block].kind == BlockKind::Choice && groups.len() > 1 {
+        if matches!(
+            self.flow.blocks[block].kind,
+            BlockKind::Choice | BlockKind::Loop
+        ) && groups.len() > 1
+        {
             let executions = selections.iter().flatten().collect::<Vec<_>>();
             let joins = groups
                 .iter()
@@ -570,14 +595,22 @@ impl Builder<'_> {
 /// including branches yielding to an outer join.
 pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     match plan {
-        ExecutionPlan::Loop { index, body, next } => {
+        ExecutionPlan::Loop {
+            index,
+            body,
+            branches,
+            joins,
+        } => {
             order.push(*index);
             serial_order(body, order);
-            if let Some(next) = next {
-                serial_order(next, order);
+            for branch in branches {
+                serial_order(&branch.plan, order);
+            }
+            for join in joins {
+                serial_order(&join.next, order);
             }
         }
-        ExecutionPlan::Break { index, .. }
+        ExecutionPlan::Export { index, .. }
         | ExecutionPlan::Continue { index }
         | ExecutionPlan::Return { index } => {
             order.push(*index);
@@ -616,10 +649,18 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
 /// each yield's own producer spellings.
 fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
     match plan {
-        ExecutionPlan::Loop { body, next, .. } => {
+        ExecutionPlan::Loop {
+            body,
+            branches,
+            joins,
+            ..
+        } => {
             fill_yields(body, wires, target);
-            if let Some(next) = next {
-                fill_yields(next, wires, target);
+            for branch in branches {
+                fill_yields(&mut branch.plan, wires, target);
+            }
+            for join in joins {
+                fill_yields(&mut join.next, wires, target);
             }
         }
         ExecutionPlan::Action { next, .. }
@@ -657,7 +698,7 @@ fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
         }
         ExecutionPlan::Yield { .. }
         | ExecutionPlan::Continue { .. }
-        | ExecutionPlan::Break { .. }
+        | ExecutionPlan::Export { .. }
         | ExecutionPlan::Return { .. } => {}
     }
 }

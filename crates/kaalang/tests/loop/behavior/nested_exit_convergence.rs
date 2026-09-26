@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_exit_convergence(mut count: usize) -> usize {
     #[cycle("Count down to zero.")]
-    let result = {
+    let done = {
         #[cycle("Converge the inner stopping routes.")]
-        {
+        let inner_done = {
             #[choice("Leave the inner loop?")]
             #[case("Leave at zero.")]
             #[case("Leave at one.")]
@@ -17,12 +17,10 @@ fn nested_exit_convergence(mut count: usize) -> usize {
             };
 
             #[action("Finish at zero.")]
-            let done = |zero| {};
+            let inner_done = |zero| {};
 
             #[action("Finish at one.")]
-            let done = |one| {};
-
-            |done| break;
+            let inner_done = |one| {};
 
             #[action("Count down.")]
             |again, &mut count| *count -= 1;
@@ -31,9 +29,7 @@ fn nested_exit_convergence(mut count: usize) -> usize {
         };
 
         #[question("Finish the outer loop?")]
-        let (done, again) = |&count| *count == 0;
-
-        |done, count| break count;
+        let (done, again) = |inner_done, &count| *count == 0;
 
         #[action("Count down once more.")]
         |again, &mut count| *count -= 1;
@@ -41,7 +37,7 @@ fn nested_exit_convergence(mut count: usize) -> usize {
         |again| continue;
     };
 
-    |result| return result;
+    |done, count| return count;
 }
 
 #[test]

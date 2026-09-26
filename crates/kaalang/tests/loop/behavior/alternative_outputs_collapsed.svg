@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="604" viewBox="0 0 704 604" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for alternative_outputs</title>
+  <desc id="kaalang-description">Nodes: Start: alternative_outputs with parameters mut items: Vec&lt;String&gt; handing over mut items; Cycle: Find a nonempty item. capturing mut items handing over found / exhausted; Action: Return the found item. capturing found handing over result; Action: Report exhaustion. capturing exhausted handing over result; End: Option&lt;String&gt; capturing result; Merge: result. Connections: Start: alternative_outputs to Cycle: Find a nonempty item.; Cycle: Find a nonempty item. output found to Action: Return the found item.; Cycle: Find a nonempty item. output exhausted to Action: Report exhaustion.; Action: Return the found item. to the result merge; Action: Report exhaustion. to the result merge; the result merge to End: Option&lt;String&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 312 194 L 532 194 L 532 298
+      M 172 362 L 172 438
+      M 532 362 L 532 438 L 172 438
+      M 172 438 L 172 514
+    "/>
+    <text class="connection-label" x="185" y="456" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut items</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">found</tspan></text>
+    <text class="connection-label" x="545" y="287" xml:space="preserve"><tspan x="545" dy="0">exhausted</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut items: Vec&lt;String&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 438)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">alternative_outputs</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 194)">
+      <title xml:space="preserve">Find a nonempty item.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Find a nonempty item.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 330)">
+      <title xml:space="preserve">Return the found item.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the found item.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 330)">
+      <title xml:space="preserve">Report exhaustion.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report exhaustion.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 543)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;String&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

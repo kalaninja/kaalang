@@ -8,13 +8,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::model::{BlockKind, Flow};
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
-/// Every question and choice of a flow, in authored order.
+/// Every drawn question, choice and collapsed cycle with several outputs, in
+/// authored order.
 pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
     flow.blocks
         .iter()
         .enumerate()
         .filter(|(index, block)| {
-            matches!(block.kind, BlockKind::Question | BlockKind::Choice)
+            block.branch_count() > 0
                 && topology
                     .nodes
                     .iter()

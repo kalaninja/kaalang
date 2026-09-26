@@ -11,9 +11,7 @@ fn invalid(flag: bool) -> u32 {
     #[cycle("Read the value this cycle produces.")]
     let value = |second| {
         #[action("Read the value.")]
-        let next = |value| value + 1;
-
-        |next| break next;
+        let value = |value| value + 1;
     };
 
     |value| return value;

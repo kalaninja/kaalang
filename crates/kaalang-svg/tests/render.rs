@@ -38,11 +38,9 @@ const CYCLE_SOURCE: &str = r#"
     #[kaalang]
     fn count_to(mut count: usize, limit: usize) -> usize {
         #[cycle("Count to the limit.")]
-        let total = {
+        let done = {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
-
-            |done, count| break count;
 
             #[action("Increment the counter.")]
             |again, &mut count| *count += 1;
@@ -50,7 +48,7 @@ const CYCLE_SOURCE: &str = r#"
             |again| continue;
         };
 
-        |total| return total;
+        |done, count| return count;
     }
 "#;
 
@@ -519,12 +517,12 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     assert!(collapsed.contains("Count to the limit."));
     assert!(collapsed.contains("Cycle: Count to the limit."));
     assert!(collapsed.contains(">mut count, limit</tspan>"));
-    assert!(collapsed.contains(">total</tspan>"));
+    assert!(collapsed.contains(">done</tspan>"));
     assert!(collapsed.contains(
         ".action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }"
     ));
 
-    let invalid = CYCLE_SOURCE.replace("break count", "return count");
+    let invalid = CYCLE_SOURCE.replace("|again| continue;", "|again, count| return count;");
     for collapse_loops in [false, true] {
         assert!(matches!(
             render_source_with_options(&invalid, "count_to", RenderOptions { collapse_loops }),

@@ -5,11 +5,11 @@
 use std::ops::RangeInclusive;
 
 /// The outcomes a flat cycle body selects between.
-const ROUTES: [&str; 3] = ["repeat", "break", "finish"];
+const ROUTES: [&str; 3] = ["repeat", "leave", "finish"];
 
 /// The same for a cycle nested in another, where `propagate` hands its result
 /// to the enclosing cycle instead of completing only its own.
-const NESTED_ROUTES: [&str; 4] = ["repeat", "break", "propagate", "finish"];
+const NESTED_ROUTES: [&str; 4] = ["repeat", "leave", "propagate", "finish"];
 
 /// Every body of `count` routes drawn from `names`, counted like an odometer
 /// so the order is stable across the crates that pin their totals.
@@ -37,8 +37,8 @@ pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
 }
 
 /// A cycle whose body selects one route per named outcome, in that order.
-/// `repeat` reaches the body's one `continue`, `break` returns the mode, and
-/// `finish` computes seven before completing the cycle.
+/// `repeat` reaches the body's one `continue`, `leave` completes it with the
+/// mode, and `finish` computes seven before completing the cycle.
 ///
 /// # Panics
 ///
@@ -54,7 +54,7 @@ fn looping_with(routes: &[&str], choice: &str) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match *route {
-            "break" => format!(
+            "leave" => format!(
                 "        #[action(\"Keep the mode from case {index}.\")]\n        let completed = |case_{index}, mode| mode;"
             ),
             "finish" => format!(
@@ -79,8 +79,9 @@ fn looping_with(routes: &[&str], choice: &str) -> String {
 }
 
 /// The flow around one generated cycle body: the cycle's caption, the selection
-/// that opens it, the transfers its routes reach, and the return a completing
-/// body needs. Repeating routes merge `again` before the one `continue`.
+/// that opens it, the transfer its repeating routes reach, and the return a
+/// completing body needs. Repeating routes merge `again` before the one
+/// `continue`; completing routes merge the declared output `completed`.
 fn cycle_flow(
     caption: &str,
     selection: &str,
@@ -88,20 +89,60 @@ fn cycle_flow(
     completes: bool,
     repeats: bool,
 ) -> String {
-    let mut transfer = String::new();
-    if completes {
-        transfer.push_str("\n        |completed| break completed;");
-    }
-    if repeats {
-        transfer.push_str("\n        |again| continue;");
-    }
+    let transfer = if repeats {
+        "\n        |again| continue;"
+    } else {
+        ""
+    };
     let (output, after) = if completes {
-        ("let result = ", "\n    |result| return result;")
+        ("let completed = ", "\n    |completed| return completed;")
     } else {
         ("", "")
     };
     format!(
         "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
+    )
+}
+
+/// The outcomes of a cycle body with two declared outputs.
+const ALTERNATIVE_ROUTES: [&str; 3] = ["repeat", "first", "second"];
+
+/// Every flat body of `lengths` routes that exports both of two declared
+/// outputs, `first` and `second`, and may repeat. Kept apart from the pinned
+/// domains, which stay single-output.
+#[must_use]
+pub fn alternative_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
+    lengths
+        .flat_map(|count| combinations(&ALTERNATIVE_ROUTES, count))
+        .filter(|routes| routes.contains(&"first") && routes.contains(&"second"))
+        .map(|routes| alternative(&routes))
+        .collect()
+}
+
+/// A cycle whose `first` and `second` routes export its two outputs, each
+/// continued after the cycle before they merge at the return.
+fn alternative(routes: &[&str]) -> String {
+    let bodies = routes
+        .iter()
+        .enumerate()
+        .map(|(index, route)| match *route {
+            "repeat" => format!(
+                "        #[action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
+            ),
+            output => format!(
+                "        #[action(\"Export {output} from case {index}.\")]\n        let {output} = |case_{index}| {index}u8;"
+            ),
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let transfer = if routes.contains(&"repeat") {
+        "\n        |again| continue;"
+    } else {
+        ""
+    };
+    let selection = selection(routes, "case_");
+    format!(
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
     )
 }
 
@@ -151,10 +192,10 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match (*route, propagates) {
-            ("break", false) => format!(
-                "        #[action(\"Complete the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| ();"
+            ("leave", false) => format!(
+                "        #[action(\"Complete the inner cycle from i{index}.\")]\n        let again = |i{index}| ();"
             ),
-            ("break", true) => format!(
+            ("leave", true) => format!(
                 "        #[action(\"Complete only the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| None;"
             ),
             ("propagate", _) => format!(
@@ -171,20 +212,19 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     let inner_completes = inner.iter().any(|route| *route != "repeat");
-    let mut inner_transfer = String::new();
-    if inner_completes {
-        inner_transfer.push_str("\n        |inner_value| break inner_value;");
-    }
-    if inner.contains(&"repeat") {
-        inner_transfer.push_str("\n        |inner_again| continue;");
-    }
+    let inner_transfer = if inner.contains(&"repeat") {
+        "\n        |inner_again| continue;"
+    } else {
+        ""
+    };
     // The inner cycle takes the outer route that selected it: a block sitting
     // where the outer branches are still separate has to belong to one of them.
-    // Its completion repeats the outer cycle, so it hands over `again` itself.
+    // Its completion repeats the outer cycle, so it declares `again` itself,
+    // even where an earlier outer branch produces `again` too.
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_result = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_result| inner_result.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_result| inner_result.unwrap();"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
             )
         } else if inner_completes {
             format!(
@@ -201,7 +241,7 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .iter()
         .enumerate()
         .map(|(index, route)| match *route {
-            "break" => format!(
+            "leave" => format!(
                 "        #[action(\"Keep the mode from o{index}.\")]\n        let completed = |o{index}, mode| mode;"
             ),
             "finish" => format!(
@@ -217,7 +257,7 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .join("\n");
     let completes = outer
         .iter()
-        .any(|route| matches!(*route, "break" | "finish"))
+        .any(|route| matches!(*route, "leave" | "finish"))
         || outer.contains(&"inner") && propagates;
     let repeats = outer.contains(&"repeat") || outer.contains(&"inner") && inner_completes;
     cycle_flow(
@@ -229,8 +269,8 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     )
 }
 
-/// Exhaustive comparison domain: flat bodies of 2–4 `repeat/break/finish` routes,
-/// and three-route outer bodies with two-route `repeat/break/propagate/finish` cycles.
+/// Exhaustive comparison domain: flat bodies of 2–4 `repeat/leave/finish` routes,
+/// and three-route outer bodies with two-route `repeat/leave/propagate/finish` cycles.
 #[must_use]
 pub fn declared_domain() -> Vec<String> {
     let mut cases = flat_bodies(2..=4);

@@ -10,12 +10,10 @@ fn early_result_then_cycle(first: bool, mut count: usize) -> usize {
         let (produce_early, continue_counting) = |first| first;
 
         #[action("Continue to the counter.")]
-        let selected = |continue_counting| None;
+        let early_result = |continue_counting| None;
 
         #[action("Produce the early result.")]
-        let selected = |produce_early| Some(99);
-
-        |selected| break selected;
+        let early_result = |produce_early| Some(99);
     };
 
     #[question("Was an early result selected?")]
@@ -31,7 +29,8 @@ fn early_result_then_cycle(first: bool, mut count: usize) -> usize {
         #[no("NO")]
         let (leave, iterate) = |&count| *count >= 3;
 
-        |leave, count| break count;
+        #[action("Hand over the count.")]
+        let end = |leave, count| count;
 
         #[action("Increment the count.")]
         |iterate, &mut count| *count += 1;

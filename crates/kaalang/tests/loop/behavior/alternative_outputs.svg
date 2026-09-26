@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1178" viewBox="0 0 1120 1178" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for alternative_outputs</title>
+  <desc id="kaalang-description">Cycles: Find a nonempty item. with inputs mut items and outputs found or exhausted. Nodes: Start: alternative_outputs with parameters mut items: Vec&lt;String&gt; handing over mut items; Select: Is another item available? capturing &amp;mut items; Case: Inspect the item. handing over item; Case: The collection is exhausted. handing over exhausted; Question: Is the item empty? capturing &amp;item handing over skip / keep; Action: Provide the nonempty item. capturing keep, item handing over found; Action: Return the found item. capturing found handing over result; Action: Report exhaustion. capturing exhausted handing over result; End: Option&lt;String&gt; capturing result; Merge: result. Connections: Start: alternative_outputs to the entry of the cycle; Select: Is another item available? to Case: Inspect the item.; Select: Is another item available? to Case: The collection is exhausted.; Case: Inspect the item. to Question: Is the item empty?; Case: The collection is exhausted. to the exhausted result of the cycle; Question: Is the item empty? branch 1 to the iteration tail of the cycle; Question: Is the item empty? branch 2 to Action: Provide the nonempty item.; Action: Provide the nonempty item. to the found result of the cycle; Action: Return the found item. to the result merge; Action: Report exhaustion. to the result merge; the result merge to End: Option&lt;String&gt;; the entry of the cycle to Select: Is another item available?; the found result of the cycle to Action: Return the found item.; the exhausted result of the cycle to Action: Report exhaustion.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Find a nonempty item.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1056" height="708" rx="12"/>
+    <text class="cycle-caption" x="1076" y="141" text-anchor="end" xml:space="preserve"><tspan x="1076" dy="0">Find a nonempty item.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 306 L 220 378
+      M 348 270 L 940 270 L 940 378
+      M 220 448 L 220 520
+      M 940 448 L 940 800
+      M 220 592 L 220 696
+      M 360 556 L 580 556 L 580 664
+      M 580 728 L 580 800
+      M 580 936 L 580 1012
+      M 940 936 L 940 1012 L 580 1012
+      M 580 1012 L 580 1088
+      M 220 162 L 220 234
+      M 580 800 L 580 872
+      M 940 800 L 940 872
+    "/>
+    <path class="connection" d="
+      M 220 696 L 60 696 L 60 162 L 220 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="593" y="1030" xml:space="preserve"><tspan x="593" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut items</tspan></text>
+    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">item</tspan></text>
+    <text class="connection-label" x="953" y="466" xml:space="preserve"><tspan x="953" dy="0">exhausted</tspan></text>
+    <text class="connection-label" x="233" y="610" xml:space="preserve"><tspan x="233" dy="0">skip</tspan></text>
+    <text class="connection-label" x="373" y="574" xml:space="preserve"><tspan x="373" dy="0">keep</tspan></text>
+    <text class="connection-label" x="593" y="746" xml:space="preserve"><tspan x="593" dy="0">found</tspan></text>
+    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;mut items</tspan></text>
+    <text class="connection-label" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">&amp;item</tspan></text>
+    <text class="connection-label" x="593" y="653" xml:space="preserve"><tspan x="593" dy="0">keep, item</tspan></text>
+    <text class="connection-label" x="593" y="861" xml:space="preserve"><tspan x="593" dy="0">found</tspan></text>
+    <text class="connection-label" x="953" y="861" xml:space="preserve"><tspan x="953" dy="0">exhausted</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut items: Vec&lt;String&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(580 1012)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">alternative_outputs</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 270)">
+      <title xml:space="preserve">Is another item available?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is another item available?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 413)">
+      <title xml:space="preserve">Inspect the item.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Inspect the item.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 413)">
+      <title xml:space="preserve">The collection is exhausted.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The collection is exhausted.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 556)">
+      <title xml:space="preserve">Is the item empty?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the item empty?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 696)">
+      <title xml:space="preserve">Provide the nonempty item.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the nonempty item.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 904)">
+      <title xml:space="preserve">Return the found item.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Return the found item.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 904)">
+      <title xml:space="preserve">Report exhaustion.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report exhaustion.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 1117)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;String&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

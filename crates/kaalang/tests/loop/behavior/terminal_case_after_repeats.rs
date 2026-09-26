@@ -17,8 +17,6 @@ fn terminal_case_after_repeats(mut mode: u8) -> u8 {
         #[action("Finish from the final case.")]
         let result = |finish| 7;
 
-        |result| break result;
-
         #[action("Advance through the left case.")]
         let advanced = |left, &mut mode| *mode = 1;
 

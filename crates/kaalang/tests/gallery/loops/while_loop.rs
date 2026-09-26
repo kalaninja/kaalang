@@ -13,7 +13,8 @@ fn while_loop(mut a: u64, mut b: u64) -> u64 {
         #[no("NO")]
         let (done, again) = |b| b == 0;
 
-        |done, a| break a;
+        #[action("🟰 The first number is the divisor.")]
+        let divisor = |done, a| a;
 
         #[action("➗ Divide and keep the remainder.")]
         |again, &mut a, &mut b| {

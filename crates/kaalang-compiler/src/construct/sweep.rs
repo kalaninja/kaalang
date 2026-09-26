@@ -226,6 +226,15 @@ fn branch_rules(
             }
         }
     }
+    // A cycle with several outputs draws its results in declaration order.
+    for boundary in &topology.loop_boundaries {
+        inequalities.extend(
+            boundary
+                .results
+                .windows(2)
+                .map(|pair| (index(Vertex::from(pair[0])), index(Vertex::from(pair[1])))),
+        );
+    }
     (inequalities, minima)
 }
 

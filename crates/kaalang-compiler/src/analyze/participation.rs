@@ -8,7 +8,9 @@ use std::collections::BTreeSet;
 
 use syn::{Error, Result};
 
-use crate::model::{Execution, Flow};
+use crate::model::{BlockKind, Flow};
+
+use super::frame::Frames;
 
 use super::only_difference;
 
@@ -18,11 +20,13 @@ use super::only_difference;
 /// differ in whether the block participates. A question or choice on a path
 /// that one execution cut short runs in only one of the two and takes no part
 /// in the comparison. An execution that repeats a cycle not enclosing the block
-/// never reaches it, so it does not skip the block either.
-pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<usize>> {
+/// never reaches it, so it does not skip the block either. Each block compares
+/// the selections its frame sees.
+pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>> {
     (0..flow.blocks.len() - 1)
         .map(|block| {
-            let (running, skipping): (Vec<_>, Vec<_>) = executions
+            let (running, skipping): (Vec<_>, Vec<_>) = frames
+                .at(block)
                 .iter()
                 .partition(|execution| execution.participates(block));
             running
@@ -46,9 +50,10 @@ pub(super) fn deciders(flow: &Flow, executions: &[Execution]) -> Vec<BTreeSet<us
 /// unproduced.
 pub(super) fn flow(
     flow: &Flow,
-    executions: &[Execution],
+    frames: &Frames<'_>,
     precedence: &[Vec<BTreeSet<usize>>],
 ) -> Result<()> {
+    let executions = frames.view(None);
     let dependent = |first: usize, second: usize| {
         precedence
             .iter()
@@ -62,7 +67,7 @@ pub(super) fn flow(
                             || super::loop_block::closed_before(flow, second, first)))
             })
     };
-    for (block, deciders) in deciders(flow, executions).into_iter().enumerate() {
+    for (block, deciders) in deciders(flow, frames).into_iter().enumerate() {
         let deciders = deciders.into_iter().collect::<Vec<_>>();
         let independent = deciders.iter().enumerate().any(|(position, &first)| {
             deciders[position + 1..]
@@ -70,10 +75,16 @@ pub(super) fn flow(
                 .any(|&second| !dependent(first, second))
         });
         if independent {
-            return Err(Error::new(
-                flow.blocks[block].span,
-                "this kaalang block must not be decided by two independent questions or choices",
-            ));
+            // A boundary consumer is not authored: it carries its output's span.
+            let message = if flow.blocks[block].kind == BlockKind::Export {
+                format!(
+                    "this kaalang cycle exports `{}` on routes decided by two independent questions, choices, or cycles",
+                    super::exported_name(flow, block)
+                )
+            } else {
+                "this kaalang block must not be decided by two independent questions, choices, or cycles".to_owned()
+            };
+            return Err(Error::new(flow.blocks[block].span, message));
         }
     }
     Ok(())
@@ -82,16 +93,30 @@ pub(super) fn flow(
 #[cfg(test)]
 mod tests {
     use super::deciders;
+    use crate::analyze::frame::Frames;
     use crate::build;
 
     /// The questions deciding each computational block of one fixture, in
     /// authored order.
     fn fixture(source: &str, flow: &str) -> Vec<Vec<usize>> {
         let model = build(&crate::tests::fixture(source, flow)).expect("the fixture is valid");
-        deciders(&model.analysis.flow, &model.analysis.executions)
-            .into_iter()
-            .map(|deciders| deciders.into_iter().collect())
-            .collect()
+        deciders(
+            &model.analysis.flow,
+            &Frames::of(&model.analysis.flow, &model.analysis.executions),
+        )
+        .into_iter()
+        .map(|deciders| deciders.into_iter().collect())
+        .collect()
+    }
+
+    /// Outside a cycle with several outputs only its exported output decides:
+    /// the body's own selections stay inside it (RFC 0006 §5.2).
+    #[test]
+    fn a_cycle_with_several_outputs_decides_the_blocks_after_it() {
+        let source = include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs");
+        let deciders = fixture(source, "alternative_outputs");
+        assert_eq!(deciders[7], [0], "return the found item");
+        assert_eq!(deciders[8], [0], "report exhaustion");
     }
 
     /// The outer question keeps deciding the late blocks although the nested

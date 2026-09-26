@@ -17,7 +17,6 @@ mod choice;
 mod end;
 mod label;
 mod loop_block;
-mod question;
 mod route;
 #[cfg(test)]
 mod tests;
@@ -894,11 +893,14 @@ impl Scene {
     /// override it according to their destination branch.
     pub(super) fn exit_anchor(&self, exit: ExitId) -> Point {
         let node = self.node(exit.node);
-        match self.topology.node(exit.node).kind {
-            NodeKind::Question => question::exit_anchor(
-                node,
-                exit.branch.expect("a question exit belongs to a branch"),
-            ),
+        match (self.topology.node(exit.node).kind, exit.branch) {
+            // A question, or a collapsed cycle with several outputs, leaves by
+            // its first branch below and by the others from its right tip
+            // (RFC 0006 §7.5).
+            (NodeKind::Question | NodeKind::Loop, Some(branch)) if branch > 0 => Point {
+                x: node.x + node.width / 2,
+                y: node.y,
+            },
             _ => Point {
                 x: node.x,
                 y: node.y + node.height / 2,

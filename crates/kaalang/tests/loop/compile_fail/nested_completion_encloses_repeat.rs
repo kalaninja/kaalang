@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut mode: u8) -> u8 {
     #[cycle("Run the outer cycle.")]
-    let result = |mode| {
+    let selected = |mode| {
         #[cycle("Put a repeating route between completions.")]
-        let nested = {
+        let selected = {
             #[choice("Leave or advance?")]
             #[case("Leave immediately.")]
             #[case("Advance once.")]
@@ -17,22 +17,19 @@ fn invalid(mut mode: u8) -> u8 {
             };
 
             #[action("Keep the immediate result.")]
-        let selected = |first, mode| mode;
+            let selected = |first, mode| mode;
 
             #[action("Advance to the final case.")]
             |advance, &mut mode| *mode = 2;
 
             #[action("Keep the later result.")]
-        let selected = |last, mode| mode;
+            let selected = |last, mode| mode;
 
-        |selected| break selected;
-        |advance| continue;
+            |advance| continue;
         };
-
-        |nested| break nested;
     };
 
-    |result| return result;
+    |selected| return selected;
 }
 
 fn main() {}

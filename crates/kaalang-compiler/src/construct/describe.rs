@@ -87,7 +87,15 @@ fn block_name(flow: &Flow, block: usize) -> String {
         (Some(text), _) => format!("`{text}`"),
         (None, BlockKind::Loop) => loop_name(flow, block),
         (None, BlockKind::Call) => format!("the call `{}`", flow.blocks[block].callee()),
-        (None, BlockKind::Break) => "a break".to_owned(),
+        (None, BlockKind::Export) => {
+            let header = declaration
+                .export_target
+                .expect("a boundary consumer has a cycle");
+            let output = &flow.blocks[header]
+                .output_binding(flow.exported_output(block))
+                .ident;
+            format!("the export of `{output}`")
+        }
         (None, BlockKind::Continue) => "a continue".to_owned(),
         (None, BlockKind::End) => "the end of the flow".to_owned(),
         (None, _) => format!("the block at position {}", block + 1),
@@ -116,9 +124,6 @@ fn junction_name(
     if junction.is_loop_result {
         return "a cycle result".to_owned();
     }
-    if junction.is_break {
-        return "a cycle break".to_owned();
-    }
     let wires = junction
         .merges
         .iter()
@@ -141,7 +146,12 @@ mod tests {
             fn example(value: u8) -> u8 {
                 #[cycle("Choose the result.")]
                 let result = |value| {
-                    |value| break value;
+                    #[question("Keep the value?")]
+                    let (keep, zero) = |value| value > 1;
+                    #[action("Keep it.")]
+                    let result = |keep, value| value;
+                    #[action("Use zero.")]
+                    let result = |zero| 0;
                 };
                 |result| return result;
             }
@@ -156,7 +166,6 @@ mod tests {
                 index,
             )
         };
-        assert_eq!(name(|junction| junction.is_break), "a cycle result");
         assert_eq!(name(|junction| junction.is_loop_result), "a cycle result");
 
         let mut topology = model.topology.clone();

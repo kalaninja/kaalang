@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1324" viewBox="0 0 1360 1324" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for extra_step_before_the_tail</title>
-  <desc id="kaalang-description">Cycles: Climb past ten. with inputs mut n and outputs result; Climb to a multiple of three. with inputs nest, mut n and outputs again. Nodes: Start: extra_step_before_the_tail with parameters mut n: u32 handing over mut n; Question: Is the number past ten? capturing &amp;n handing over leave / rest; Question: Step, then nest on an even number? capturing rest, &amp;mut n handing over nest / again; Question: Is it a multiple of three? capturing &amp;n handing over done / more; Action: Take one step. capturing more, &amp;mut n handing over stepped; Action: Take an extra step. capturing again, &amp;mut n handing over bumped; End: u32 capturing result; Merge: again. Connections: Start: extra_step_before_the_tail to the entry of the cycle; Question: Is the number past ten? branch 1 to End: u32; Question: Is the number past ten? branch 2 to Question: Step, then nest on an even number?; Question: Step, then nest on an even number? branch 1 to the entry of the cycle; Question: Step, then nest on an even number? branch 2 to the again merge; Question: Is it a multiple of three? branch 1 to the again merge; Question: Is it a multiple of three? branch 2 to Action: Take one step.; Action: Take one step. to the iteration tail of the cycle; Action: Take an extra step. to the iteration tail of the cycle; the again merge to Action: Take an extra step.; the entry of the cycle to Question: Is the number past ten?; the entry of the cycle to Question: Is it a multiple of three?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Climb past ten. with inputs mut n and outputs leave; Climb to a multiple of three. with inputs nest, mut n and outputs again. Nodes: Start: extra_step_before_the_tail with parameters mut n: u32 handing over mut n; Question: Is the number past ten? capturing &amp;n handing over leave / rest; Question: Step, then nest on an even number? capturing rest, &amp;mut n handing over nest / again; Question: Is it a multiple of three? capturing &amp;n handing over again / more; Action: Take one step. capturing more, &amp;mut n handing over stepped; Action: Take an extra step. capturing again, &amp;mut n handing over bumped; End: u32 capturing n; Merge: again. Connections: Start: extra_step_before_the_tail to the entry of the cycle; Question: Is the number past ten? branch 1 to End: u32; Question: Is the number past ten? branch 2 to Question: Step, then nest on an even number?; Question: Step, then nest on an even number? branch 1 to the entry of the cycle; Question: Step, then nest on an even number? branch 2 to the again merge; Question: Is it a multiple of three? branch 1 to the again merge; Question: Is it a multiple of three? branch 2 to Action: Take one step.; Action: Take one step. to the iteration tail of the cycle; Action: Take an extra step. to the iteration tail of the cycle; the again merge to Action: Take an extra step.; the entry of the cycle to Question: Is the number past ten?; the entry of the cycle to Question: Is it a multiple of three?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -59,12 +59,11 @@
     <path class="connection" d="
       M 560 1162 L 1300 1162 L 1300 162 L 200 162
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="573" y="968" xml:space="preserve"><tspan x="573" dy="0">again</tspan></text>
     <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mut n</tspan></text>
     <text class="connection-label" x="213" y="324" xml:space="preserve"><tspan x="213" dy="0">leave</tspan></text>
     <text class="connection-label" x="353" y="288" xml:space="preserve"><tspan x="353" dy="0">rest</tspan></text>
     <text class="connection-label" x="573" y="468" xml:space="preserve"><tspan x="573" dy="0">nest</tspan></text>
-    <text class="connection-label" x="713" y="432" xml:space="preserve"><tspan x="713" dy="0">again</tspan></text>
-    <text class="connection-label" x="573" y="684" xml:space="preserve"><tspan x="573" dy="0">done</tspan></text>
     <text class="connection-label" x="713" y="648" xml:space="preserve"><tspan x="713" dy="0">more</tspan></text>
     <text class="connection-label" x="933" y="820" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
     <text class="connection-label" x="573" y="1108" xml:space="preserve"><tspan x="573" dy="0">bumped</tspan></text>
@@ -73,7 +72,7 @@
     <text class="connection-label" x="573" y="583" xml:space="preserve"><tspan x="573" dy="0">&amp;n</tspan></text>
     <text class="connection-label" x="933" y="727" xml:space="preserve"><tspan x="933" dy="0">more, &amp;mut n</tspan></text>
     <text class="connection-label" x="573" y="1015" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut n</tspan></text>
-    <text class="connection-label" x="213" y="1223" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="1223" xml:space="preserve"><tspan x="213" dy="0">n</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>

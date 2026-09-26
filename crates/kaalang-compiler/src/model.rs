@@ -38,21 +38,24 @@ pub struct SemanticModel {
     pub arrangement: Arrangement,
 }
 
-/// The semantic role of one block. Every kind but `End` is authored.
+/// The semantic role of one block. Every kind but `End` and `Export` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {
     Action,
     Call,
     Question,
     Loop,
-    Break,
+    /// The boundary consumer of one declared cycle output, closing the body in
+    /// declaration order (RFC 0006 §5.2). It lowers to a Rust `break`.
+    Export,
     Continue,
     Return,
     Choice,
     End,
 }
 
-/// One kaalang block: an authored statement, or the implicit end block.
+/// One kaalang block: an authored statement, a cycle's boundary consumer, or
+/// the implicit end block.
 pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for transfers and end.
@@ -76,19 +79,29 @@ pub struct Block {
     pub parent: Option<usize>,
     /// The exclusive end of a cycle body's depth-first block sequence.
     pub loop_end: Option<usize>,
-    /// The enclosing cycle a break exits.
-    pub break_target: Option<usize>,
+    /// The cycle whose declared output a boundary consumer exports.
+    pub export_target: Option<usize>,
 }
 
 impl Block {
-    /// The number of alternative control exits, for a question or choice.
+    /// The number of alternative control exits: a question's two answers, a
+    /// choice's cases, or a cycle's declared outputs when it has several. A
+    /// single cycle output is an ordinary completed result (RFC 0006 §5.2).
     #[must_use]
     pub fn branch_count(&self) -> usize {
         match self.kind {
             BlockKind::Question => 2,
             BlockKind::Choice => self.outputs.len(),
+            BlockKind::Loop if self.outputs.len() > 1 => self.outputs.len(),
             _ => 0,
         }
+    }
+
+    /// Whether this is a cycle whose declared outputs are alternatives: it
+    /// completes with exactly one of several, like the cases of a choice.
+    #[must_use]
+    pub fn has_alternative_outputs(&self) -> bool {
+        self.kind == BlockKind::Loop && self.outputs.len() > 1
     }
 
     /// Returns the authored binding at one validated output position.
@@ -242,6 +255,24 @@ impl Flow {
         })
     }
 
+    /// The hidden boundary consumers of a cycle's declared outputs: one per
+    /// output, in declaration order, closing its body.
+    #[must_use]
+    pub(crate) fn exports(&self, header: usize) -> std::ops::Range<usize> {
+        let end = self.blocks[header].loop_end.expect("a cycle owns a body");
+        end - self.blocks[header].outputs.len()..end
+    }
+
+    /// The position, among its cycle's declared outputs, of the one a boundary
+    /// consumer exports.
+    #[must_use]
+    pub(crate) fn exported_output(&self, consumer: usize) -> usize {
+        let header = self.blocks[consumer]
+            .export_target
+            .expect("a boundary consumer has a cycle");
+        consumer - self.exports(header).start
+    }
+
     /// The innermost cycle whose repeat reaches `block`: the block itself for a
     /// cycle, otherwise the cycle directly containing it.
     #[must_use]
@@ -267,13 +298,11 @@ impl Flow {
         }
     }
 
-    /// A cycle produces its result only when the execution reaches a matching break.
+    /// A cycle completes only when the execution exports one of its outputs.
     #[must_use]
     pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
-        execution.blocks.iter().any(|&block| {
-            self.blocks[block].kind == BlockKind::Break
-                && self.blocks[block].break_target == Some(header)
-        })
+        self.exports(header)
+            .any(|consumer| execution.participates(consumer))
     }
 
     /// Whether one producer occurrence exists in this finite execution.
@@ -287,9 +316,11 @@ impl Flow {
                         BlockKind::Question | BlockKind::Choice => {
                             execution.selected(block) == Some(output)
                         }
-                        BlockKind::Loop => self.completes_loop(execution, block),
+                        BlockKind::Loop => {
+                            execution.participates(self.exports(block).start + output)
+                        }
                         BlockKind::Action | BlockKind::Call => true,
-                        BlockKind::Break
+                        BlockKind::Export
                         | BlockKind::Continue
                         | BlockKind::Return
                         | BlockKind::End => false,
@@ -418,10 +449,15 @@ pub enum ExecutionPlan {
     Loop {
         index: usize,
         body: Box<ExecutionPlan>,
-        next: Option<Box<ExecutionPlan>>,
+        /// What runs once the cycle completes: one continuation per declared
+        /// output when it declares several, otherwise the one continuation of
+        /// its result, or none when it never completes.
+        branches: Vec<Branch>,
+        /// The shared continuations of several outputs, as for a choice.
+        joins: Vec<Join>,
     },
-    /// An authored exit from an active enclosing loop.
-    Break { index: usize, target: usize },
+    /// A boundary consumer exporting one declared output of an active cycle.
+    Export { index: usize, target: usize },
     /// An authored completion of the root flow.
     Return { index: usize },
     /// An authored repetition of the directly containing cycle.

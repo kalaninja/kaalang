@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
     Analyzed, Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology,
-    Vertex, block_node, destination, represented, sequential_exit,
+    Vertex, block_node, branch_exits, destination, represented, sequential_exit,
 };
 use crate::model::{Block, ExecutionOutcome};
 
@@ -16,7 +16,14 @@ pub(super) fn project_collapsed(
     exits: &mut Vec<Exit>,
 ) {
     nodes.push(block_node(index, NodeKind::Loop));
-    if completes {
+    if !completes {
+        return;
+    }
+    // Several outputs leave by branch exits in declaration order, the first
+    // down and the others to the right (RFC 0006 §7.5).
+    if block.branch_count() > 0 {
+        exits.extend(branch_exits(index, block, super::drawn_branch_exit));
+    } else {
         exits.push(sequential_exit(index, block));
     }
 }
@@ -30,7 +37,7 @@ pub(super) fn order_exits(
 ) {
     for execution in model.executions {
         for (position, &block) in execution.blocks.iter().enumerate() {
-            let Some(target) = model.flow.blocks[block].break_target else {
+            let Some(target) = model.flow.blocks[block].export_target else {
                 continue;
             };
             let Some(&next) = execution.blocks[position + 1..]
@@ -63,41 +70,41 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();
     for boundary in &topology.loop_boundaries {
         let owns = |block| (boundary.header + 1..boundary.end).contains(&block);
-        let Some(result) = boundary.result_junction() else {
-            continue;
-        };
-        order.extend(topology.nodes.iter().filter_map(|node| {
-            let block = match node.id {
-                NodeId::Block(block) | NodeId::Case { choice: block, .. } => block,
-                NodeId::Start => return None,
-            };
-            owns(block).then_some(Connection {
-                source: Source::Exit(ExitId::of(node.id)),
-                destination: Destination::Junction(result),
-            })
-        }));
-        order.extend(
-            topology
-                .loops
-                .iter()
-                .filter(|loop_| (boundary.header..boundary.end).contains(&loop_.header))
-                .map(|loop_| Connection {
-                    source: Source::Junction(loop_.tail),
+        for result in boundary.result_junctions() {
+            order.extend(topology.nodes.iter().filter_map(|node| {
+                let block = match node.id {
+                    NodeId::Block(block) | NodeId::Case { choice: block, .. } => block,
+                    NodeId::Start => return None,
+                };
+                owns(block).then_some(Connection {
+                    source: Source::Exit(ExitId::of(node.id)),
                     destination: Destination::Junction(result),
-                }),
-        );
-        order.extend(
-            topology
-                .loop_boundaries
-                .iter()
-                .filter(|nested| owns(nested.header))
-                .flat_map(|nested| [Some(nested.entry_junction()), nested.result_junction()])
-                .flatten()
-                .map(|junction| Connection {
-                    source: Source::Junction(junction),
-                    destination: Destination::Junction(result),
-                }),
-        );
+                })
+            }));
+            order.extend(
+                topology
+                    .loops
+                    .iter()
+                    .filter(|loop_| (boundary.header..boundary.end).contains(&loop_.header))
+                    .map(|loop_| Connection {
+                        source: Source::Junction(loop_.tail),
+                        destination: Destination::Junction(result),
+                    }),
+            );
+            order.extend(
+                topology
+                    .loop_boundaries
+                    .iter()
+                    .filter(|nested| owns(nested.header))
+                    .flat_map(|nested| {
+                        std::iter::once(nested.entry_junction()).chain(nested.result_junctions())
+                    })
+                    .map(|junction| Connection {
+                        source: Source::Junction(junction),
+                        destination: Destination::Junction(result),
+                    }),
+            );
+        }
     }
     order.retain(|edge| !topology.connections.contains(edge));
     topology.order.extend(order);
@@ -132,32 +139,38 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
                 .then_some((loop_.tail, source))
         })
         .collect::<Vec<_>>();
-    let mut replacements = topology
+    let view: &Topology = topology;
+    let mut replacements = view
         .loop_boundaries
         .iter()
-        .filter_map(|boundary| {
-            let result = boundary.result_junction()?;
-            let mut incoming = topology.incoming(Destination::Junction(result));
-            let source = incoming.next()?.source;
-            if incoming.next().is_some() {
-                return None;
-            }
-            if matches!(source, Source::Junction(junction)
-                if topology.junctions[junction].merges.is_empty())
-            {
-                return None;
-            }
-            (topology
-                .outgoing(source.into())
-                .filter(|edge| edge.source == source)
-                .count()
-                == 1)
-                .then_some((result, source))
+        .flat_map(|boundary| {
+            // Several results keep their own junctions, which construction
+            // orders by output; one may still reuse the merge feeding it.
+            let several = boundary.results.len() > 1;
+            boundary.result_junctions().filter_map(move |result| {
+                let mut incoming = view.incoming(Destination::Junction(result));
+                let source = incoming.next()?.source;
+                if incoming.next().is_some() {
+                    return None;
+                }
+                match source {
+                    Source::Junction(junction) if view.junctions[junction].merges.is_empty() => {
+                        return None;
+                    }
+                    Source::Exit(_) if several => return None,
+                    _ => {}
+                }
+                (view
+                    .outgoing(source.into())
+                    .filter(|edge| edge.source == source)
+                    .count()
+                    == 1)
+                    .then_some((result, source))
+            })
         })
         .collect::<BTreeMap<_, _>>();
-    for (&result, &merge) in &replacements {
+    for &merge in replacements.values() {
         if let Source::Junction(merge) = merge {
-            topology.junctions[merge].is_break = topology.junctions[result].is_break;
             topology.junctions[merge].is_loop_result = true;
         }
     }
@@ -281,7 +294,9 @@ fn replace_junctions(topology: &mut Topology, replacements: &BTreeMap<usize, Sou
     };
     for boundary in &mut topology.loop_boundaries {
         boundary.entry = vertex(boundary.entry);
-        boundary.result = boundary.result.map(source);
+        for result in &mut boundary.results {
+            *result = source(*result);
+        }
     }
     for loop_ in &mut topology.loops {
         loop_.entry = junction(loop_.entry);

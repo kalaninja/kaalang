@@ -236,7 +236,7 @@ fn columns(
                 arrivals.min()
             }
             .unwrap_or(0)
-        } else if topology.junctions[junction].is_break {
+        } else if topology.junctions[junction].is_loop_result {
             topology
                 .incoming(vertex)
                 .map(|connection| arrives_from(topology, &columns, footprints, connection))

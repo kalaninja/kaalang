@@ -71,7 +71,7 @@ pub(super) enum Exit {
     Return(usize),
     Yield(JoinTarget),
     Repeat(usize),
-    Break(usize),
+    Export(usize),
 }
 
 pub(super) struct Replay<'a> {
@@ -138,12 +138,13 @@ impl Replay<'_> {
 
     pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
-            ExecutionPlan::Loop { index, body, next } => {
-                super::loop_block::replay(self, *index, body, next.as_deref())
-            }
-            ExecutionPlan::Break { index, target } => {
-                super::break_block::replay(self, *index, *target)
-            }
+            ExecutionPlan::Loop {
+                index,
+                body,
+                branches,
+                joins,
+            } => super::loop_block::replay(self, *index, body, branches, joins),
+            ExecutionPlan::Export { index, target } => super::export::replay(self, *index, *target),
             ExecutionPlan::Return { index } => super::return_block::replay(self, *index),
             ExecutionPlan::Continue { index } => super::continue_block::replay(self, *index),
             ExecutionPlan::Action { index, next } => {
@@ -180,7 +181,12 @@ impl Replay<'_> {
 
     /// A join's continuation may hand its value to a later join of the same
     /// block, so one branch can pass through several of them in turn.
-    fn branch(&mut self, block: usize, branches: &[Branch], joins: &[Join]) -> Option<Exit> {
+    pub(super) fn branch(
+        &mut self,
+        block: usize,
+        branches: &[Branch],
+        joins: &[Join],
+    ) -> Option<Exit> {
         let selected = self.execution.selected(block)?;
         let outside = self
             .available
@@ -227,15 +233,15 @@ mod tests {
     }
 
     #[test]
-    fn rejects_a_break_target_that_is_not_active() {
+    fn rejects_an_export_target_that_is_not_active() {
         let mut model = crate::build(&parse_quote! {
             fn sequential() {
                 #[cycle("Leave the first cycle.")]
-                || { break; };
+                let first = { #[action("Finish the first cycle.")] let first = || (); };
                 #[cycle("Leave the second cycle.")]
-                || { break; };
+                let second = |first| { #[action("Finish the second cycle.")] let second = || (); };
                 #[action("Finish.")]
-                let end = || {};
+                let end = |second| {};
 
                 |end| return end;
             }
@@ -247,13 +253,16 @@ mod tests {
         let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
             unreachable!()
         };
-        let ExecutionPlan::Break { target, .. } = body.as_mut() else {
+        let ExecutionPlan::Action { next, .. } = body.as_mut() else {
             unreachable!()
         };
-        *target = 2;
+        let ExecutionPlan::Export { target, .. } = next.as_mut() else {
+            unreachable!()
+        };
+        *target = 3;
         // Even agreement with a corrupted resolved target cannot authorize a
         // jump into a sibling loop that has not been entered.
-        model.analysis.flow.blocks[1].break_target = Some(2);
+        model.analysis.flow.blocks[2].export_target = Some(3);
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
@@ -277,27 +286,31 @@ mod tests {
     }
 
     #[test]
-    fn rejects_body_work_moved_after_a_break() {
+    fn rejects_body_work_moved_after_an_export() {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
                 #[cycle("Count to three.")]
-                let final_count = {
+                let done = {
                     #[question("Finished?")]
                     let (done, again) = |count| count == 3;
-                    |done, count| break count;
                     #[action("Advance.")]
                     |again, &mut count| *count += 1;
                     |again| continue;
                 };
 
-                |final_count| return final_count;
+                |done, count| return count;
             }
         })
         .expect("the body work belongs to the repeating branch");
         let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
-        let ExecutionPlan::Loop { body, next, .. } = body.as_mut() else {
+        let ExecutionPlan::Loop {
+            body,
+            branches: continuations,
+            ..
+        } = body.as_mut()
+        else {
             unreachable!()
         };
         let ExecutionPlan::Question { branches, .. } = body.as_mut() else {
@@ -305,13 +318,16 @@ mod tests {
         };
         let mut misplaced = std::mem::replace(
             &mut branches[1].plan,
-            Box::new(ExecutionPlan::Continue { index: 4 }),
+            Box::new(ExecutionPlan::Continue { index: 3 }),
         );
         let ExecutionPlan::Action { next: suffix, .. } = misplaced.as_mut() else {
             unreachable!()
         };
-        *suffix = next.take().expect("the loop has a continuation");
-        *next = Some(misplaced);
+        *suffix = std::mem::replace(
+            &mut continuations[0].plan,
+            Box::new(ExecutionPlan::Continue { index: 0 }),
+        );
+        continuations[0].plan = misplaced;
         // Every block is still represented exactly once, but the exiting
         // execution would now run work it should have skipped.
         let emitted = emitted(&model.analysis.execution_plan);
@@ -332,13 +348,12 @@ mod tests {
                 #[cycle("Repeat the outer cycle.")]
                 |flag| {
                     #[cycle("Repeat the inner cycle.")]
-                    |flag| {
+                    let leave_1 = |flag| {
                         #[question("Repeat?")]
                         let (iterate_1, leave_1) = |flag| flag;
-                        |leave_1| break;
                         |iterate_1| continue;
                     };
-                    continue;
+                    |leave_1| continue;
                 };
             }
         })
@@ -349,7 +364,12 @@ mod tests {
         let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
             unreachable!()
         };
-        let ExecutionPlan::Loop { body, next, .. } = body.as_mut() else {
+        let ExecutionPlan::Loop {
+            body,
+            branches: continuations,
+            ..
+        } = body.as_mut()
+        else {
             unreachable!()
         };
         let ExecutionPlan::Question { branches, .. } = body.as_mut() else {
@@ -357,11 +377,11 @@ mod tests {
         };
         assert!(matches!(
             branches[0].plan.as_ref(),
-            ExecutionPlan::Continue { index: 4 }
+            ExecutionPlan::Continue { index: 3 }
         ));
         assert!(matches!(
-            next.as_deref(),
-            Some(ExecutionPlan::Continue { index: 5 })
+            continuations[0].plan.as_ref(),
+            ExecutionPlan::Continue { index: 5 }
         ));
         *branches[0].plan = ExecutionPlan::Continue { index: 5 };
         assert!(!replays(&model, &model.analysis.execution_plan));
@@ -372,17 +392,16 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Choose whether to finish.")]
-                |flag| {
+                let leave_2 = |flag| {
                     #[question("Enter the loop?")]
                     let (iterate_2, leave_2) = |flag| flag;
-                    |leave_2| break;
                     #[cycle("Repeat forever.")]
                     |iterate_2| {
                         continue;
                     };
                 };
                 #[action("Finish.")]
-                let end = || 0;
+                let end = |leave_2| 0;
 
                 |end| return end;
             }
@@ -397,7 +416,7 @@ mod tests {
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
                 ExecutionOutcome::Return { block_index: 6 },
-                ExecutionOutcome::Repeat { loop_index: 3 }
+                ExecutionOutcome::Repeat { loop_index: 2 }
             ])
         );
         assert!(replays(&model, &model.analysis.execution_plan));

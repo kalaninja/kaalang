@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Check the flag.")]
-    |flag| {
+    let leave = |flag| {
         #[question("Repeat?")]
         let (_again, leave) = |flag| {
             if flag {
@@ -11,11 +11,9 @@ fn invalid(flag: bool) {
             }
             false
         };
-
-        |leave| break;
     };
 
-    return;
+    |leave| return;
 }
 
 fn main() {}

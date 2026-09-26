@@ -8,13 +8,11 @@ impl Ladder {
     #[kaalang]
     fn receive_inside_a_cycle(&self, mut start: u32) -> u32 {
         #[cycle("Climb to the top.")]
-        let reached = {
+        let arrived = {
             #[question("Is the rung below the top?")]
             #[yes("YES")]
             #[no("NO")]
             let (climb, arrived) = |&start, &self| *start < self.top;
-
-            |arrived, start| break start;
 
             #[action("Step up one rung.")]
             |climb, &mut start| *start += 1;
@@ -22,7 +20,7 @@ impl Ladder {
             |climb| continue;
         };
 
-        |reached| return reached;
+        |arrived, start| return start;
     }
 }
 

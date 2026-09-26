@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1042" viewBox="0 0 1500 1042" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for outputs_with_extra_captures</title>
+  <desc id="kaalang-description">Cycles: Settle on a colour. with inputs mut state and outputs red or green or blue. Nodes: Start: outputs_with_extra_captures with parameters mut state: u8; bonus: u8 handing over mut state, bonus; Select: Which colour is it? capturing &amp;state; Case: Red. handing over red; Case: Green. handing over green; Case: Blue. handing over blue; Case: Not settled yet. handing over other; Action: Try again. capturing other, &amp;mut state handing over stepped; Action: Score red. capturing red, bonus handing over score; Action: Score green. capturing green, bonus handing over score; Action: Score blue. capturing blue, bonus handing over score; End: u8 capturing score; Merge: score. Connections: Start: outputs_with_extra_captures to the entry of the cycle; Select: Which colour is it? to Case: Red.; Select: Which colour is it? to Case: Green.; Select: Which colour is it? to Case: Blue.; Select: Which colour is it? to Case: Not settled yet.; Case: Red. to the red result of the cycle; Case: Green. to the green result of the cycle; Case: Blue. to the blue result of the cycle; Case: Not settled yet. to Action: Try again.; Action: Try again. to the iteration tail of the cycle; Action: Score red. to the score merge; Action: Score green. to the score merge; Action: Score blue. to the score merge; the score merge to End: u8; the entry of the cycle to Select: Which colour is it?; the red result of the cycle to Action: Score red.; the green result of the cycle to Action: Score green.; the blue result of the cycle to Action: Score blue.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Settle on a colour.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="1436" height="564" rx="12"/>
+    <text class="cycle-caption" x="1456" y="149" text-anchor="end" xml:space="preserve"><tspan x="1456" dy="0">Settle on a colour.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 314 L 200 386
+      M 328 278 L 560 278 L 560 386
+      M 328 278 L 920 278 L 920 386
+      M 328 278 L 1280 278 L 1280 386
+      M 200 456 L 200 664
+      M 560 456 L 560 664
+      M 920 456 L 920 664
+      M 1280 456 L 1280 528
+      M 1280 592 L 1280 664
+      M 200 800 L 200 876
+      M 560 800 L 560 876 L 200 876
+      M 920 800 L 920 876 L 200 876
+      M 200 876 L 200 952
+      M 200 170 L 200 242
+      M 200 664 L 200 736
+      M 560 664 L 560 736
+      M 920 664 L 920 736
+    "/>
+    <path class="connection" d="
+      M 1280 664 L 1440 664 L 1440 170 L 200 170
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="894" xml:space="preserve"><tspan x="213" dy="0">score</tspan></text>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut state, bonus</tspan></text>
+    <text class="connection-label" x="213" y="474" xml:space="preserve"><tspan x="213" dy="0">red</tspan></text>
+    <text class="connection-label" x="573" y="474" xml:space="preserve"><tspan x="573" dy="0">green</tspan></text>
+    <text class="connection-label" x="933" y="474" xml:space="preserve"><tspan x="933" dy="0">blue</tspan></text>
+    <text class="connection-label" x="1293" y="474" xml:space="preserve"><tspan x="1293" dy="0">other</tspan></text>
+    <text class="connection-label" x="1293" y="610" xml:space="preserve"><tspan x="1293" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;state</tspan></text>
+    <text class="connection-label" x="1293" y="517" xml:space="preserve"><tspan x="1293" dy="0">other, &amp;mut state</tspan></text>
+    <text class="connection-label" x="213" y="725" xml:space="preserve"><tspan x="213" dy="0">red, bonus</tspan></text>
+    <text class="connection-label" x="573" y="725" xml:space="preserve"><tspan x="573" dy="0">green, bonus</tspan></text>
+    <text class="connection-label" x="933" y="725" xml:space="preserve"><tspan x="933" dy="0">blue, bonus</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut state: u8</tspan><tspan x="-104" dy="18">bonus: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 876)">
+      <title xml:space="preserve">the score merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">outputs_with_extra_captures</tspan></text>
+    </g>
+    <g class="node select" transform="translate(200 278)">
+      <title xml:space="preserve">Which colour is it?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which colour is it?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(200 421)">
+      <title xml:space="preserve">Red.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Red.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(560 421)">
+      <title xml:space="preserve">Green.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Green.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(920 421)">
+      <title xml:space="preserve">Blue.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Blue.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1280 421)">
+      <title xml:space="preserve">Not settled yet.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Not settled yet.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1280 560)">
+      <title xml:space="preserve">Try again.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Try again.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 768)">
+      <title xml:space="preserve">Score red.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score red.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 768)">
+      <title xml:space="preserve">Score green.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score green.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 768)">
+      <title xml:space="preserve">Score blue.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score blue.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 981)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

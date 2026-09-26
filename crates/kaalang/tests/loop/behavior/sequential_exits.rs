@@ -6,7 +6,7 @@ fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str
     let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
     #[cycle("Run work between two stopping checks.")]
-    let log = {
+    let done = {
         #[question("Stop before the work?")]
         let (done, work) = |&initial_count, before_limit, &mut initial_log| {
             initial_log.push("check before");
@@ -25,8 +25,6 @@ fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str
             *initial_count >= after_limit
         };
 
-        |done, initial_log| break initial_log;
-
         #[action("Finish the iteration.")]
         |again, &mut initial_log| initial_log.push("repeat");
 
@@ -34,16 +32,16 @@ fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str
     };
 
     #[action("Continue after the loop.")]
-    let result = |mut log| {
-        log.push("done");
-        log
+    let result = |done, mut initial_log| {
+        initial_log.push("done");
+        initial_log
     };
 
     |result| return result;
 }
 
 #[test]
-fn sequential_stopping_checks_merge_before_one_break() {
+fn sequential_stopping_checks_merge_before_one_exit() {
     assert_eq!(sequential_exits(0, 5), ["check before", "done"]);
     assert_eq!(
         sequential_exits(5, 1),

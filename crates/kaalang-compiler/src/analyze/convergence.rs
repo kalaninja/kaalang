@@ -5,27 +5,33 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::Result;
 
-use crate::model::{BlockKind, BranchSelection, ConvergenceGroup, Execution, Flow};
+use crate::model::{BlockKind, BranchSelection, ConvergenceGroup, Flow};
+
+use super::frame::Frames;
 
 /// Returns every convergence group in canonical order, or the earliest
 /// crossing or separated choice group. Divergence after a convergence is the
 /// wire merges' rule: a block gated by branch-local work cannot follow one.
 pub(super) fn flow(
     flow: &Flow,
-    executions: &[Execution],
+    frames: &Frames<'_>,
     precedence: &[Vec<BTreeSet<usize>>],
     ancestry: &[BTreeSet<BranchSelection>],
 ) -> Result<Vec<ConvergenceGroup>> {
     let mut recorded = Vec::new();
     for (brancher, declaration) in flow.blocks.iter().enumerate() {
-        if !matches!(declaration.kind, BlockKind::Question | BlockKind::Choice) {
+        if declaration.branch_count() == 0 {
             continue;
         }
+        let executions = frames.at(brancher);
+        // A cycle's continuation starts after its body, which only makes the
+        // selection (RFC 0006 §5.2).
+        let past_body = |block: usize| declaration.loop_end.is_none_or(|end| block >= end);
+        // Choice-like branchers compare their groups by route: the routes
+        // each block continues, with the case each selected.
+        let cases = matches!(declaration.kind, BlockKind::Choice | BlockKind::Loop);
         let mut branch_sets = vec![BTreeSet::new(); flow.blocks.len()];
-        // A choice's groups are compared by route: the routes each block
-        // continues, with the case each selected.
-        let route_of = (declaration.kind == BlockKind::Choice)
-            .then(|| super::choice::routes(ancestry, executions, brancher));
+        let route_of = cases.then(|| super::choice::routes(ancestry, executions, brancher));
         let mut routes = vec![BTreeMap::new(); flow.blocks.len()];
         let mut selected = Vec::new();
         for (index, (execution, preceding)) in executions.iter().zip(precedence).enumerate() {
@@ -34,8 +40,11 @@ pub(super) fn flow(
             };
             let route = route_of.as_ref().and_then(|route_of| route_of[index]);
             for &block in &execution.blocks {
-                if preceding[block].contains(&brancher) {
-                    branch_sets[block].insert(selection.branch);
+                if preceding[block].contains(&brancher)
+                    && past_body(block)
+                    && frames.visible(frames.frame(block), brancher)
+                {
+                    branch_sets[block].insert(super::frame::branch(selection.branch));
                     if let Some((route, case)) = route {
                         routes[block].insert(route, case);
                     }
@@ -55,7 +64,7 @@ pub(super) fn flow(
             }
         }
         let groups = groups.into_iter().collect::<Vec<_>>();
-        if declaration.kind == BlockKind::Choice {
+        if cases {
             // Keep until merge validation is proven to imply this check.
             // Ownership requires an `only_difference` pair, not just ancestry
             // (`question_after_a_partial_merge`). Other branchers filter contexts;
@@ -95,7 +104,7 @@ pub(super) fn flow(
                     reaching,
                 })
                 .collect::<Vec<_>>();
-            super::choice::validate_groups(&declaration.outputs, &continued)?;
+            super::choice::validate_groups(declaration, &continued)?;
         }
         for (branches, shared) in groups {
             recorded.push(ConvergenceGroup {

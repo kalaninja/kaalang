@@ -1,0 +1,5 @@
+error: a route repeating this kaalang cycle lies between routes exporting `positive` and `empty`; move the repeating routes to one edge of the body
+ --> tests/loop/compile_fail/repeat_between_outputs.rs:5:5
+  |
+5 |     #[cycle("Take the next positive value.")]
+  |     ^

@@ -5,14 +5,10 @@ fn invalid(flag: bool) {
     #[cycle("Repeat without choosing the repeating branch.")]
     {
         #[question("Leave now?")]
-        let (leave, _again) = |flag| flag;
-
-        |leave| break;
+        let (_stay, _again) = |flag| flag;
 
         continue;
     };
-
-    return;
 }
 
 fn main() {}

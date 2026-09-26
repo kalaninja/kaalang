@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1062" viewBox="0 0 1140 1062" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for generic_owned_outputs</title>
+  <desc id="kaalang-description">Cycles: Count down, then pick a side. with inputs mut remaining, take_left, value and outputs left or right. Nodes: Start: const generic_owned_outputs&lt;T&gt; with parameters value: T; mut remaining: usize; take_left: bool handing over value, mut remaining, take_left; Question: Is any count left? capturing &amp;remaining handing over again / decide; Action: Count down. capturing again, &amp;mut remaining handing over stepped; Question: Take the left side? capturing decide, take_left handing over take / skip; Action: Hand the value to the left. capturing take, value handing over left; Action: Hand the value to the right. capturing skip, value handing over right; Action: Keep the left value. capturing left handing over chosen; Action: Keep the right value. capturing right handing over chosen; End: T capturing chosen; Merge: chosen. Connections: Start: const generic_owned_outputs&lt;T&gt; to the entry of the cycle; Question: Is any count left? branch 1 to Action: Count down.; Question: Is any count left? branch 2 to Question: Take the left side?; Action: Count down. to the iteration tail of the cycle; Question: Take the left side? branch 1 to Action: Hand the value to the left.; Question: Take the left side? branch 2 to Action: Hand the value to the right.; Action: Hand the value to the left. to the left result of the cycle; Action: Hand the value to the right. to the right result of the cycle; Action: Keep the left value. to the chosen merge; Action: Keep the right value. to the chosen merge; the chosen merge to End: T; the entry of the cycle to Question: Is any count left?; the left result of the cycle to Action: Keep the left value.; the right result of the cycle to Action: Keep the right value.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Count down, then pick a side.</title>
+    <rect class="cycle-boundary" x="32" y="153" width="1076" height="566" rx="12"/>
+    <text class="cycle-caption" x="1096" y="167" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Count down, then pick a side.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 103 L 220 188
+      M 220 332 L 220 408
+      M 360 296 L 580 296 L 580 404
+      M 220 472 L 220 580
+      M 580 476 L 580 548
+      M 720 440 L 940 440 L 940 548
+      M 580 612 L 580 684
+      M 940 612 L 940 684
+      M 580 820 L 580 896
+      M 940 820 L 940 896 L 580 896
+      M 580 896 L 580 972
+      M 220 188 L 220 260
+      M 580 684 L 580 756
+      M 940 684 L 940 756
+    "/>
+    <path class="connection" d="
+      M 220 580 L 60 580 L 60 188 L 220 188
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="593" y="914" xml:space="preserve"><tspan x="593" dy="0">chosen</tspan></text>
+    <text class="connection-label" x="233" y="121" xml:space="preserve"><tspan x="233" dy="0">value, mut remaining, take_left</tspan></text>
+    <text class="connection-label" x="233" y="350" xml:space="preserve"><tspan x="233" dy="0">again</tspan></text>
+    <text class="connection-label" x="373" y="314" xml:space="preserve"><tspan x="373" dy="0">decide</tspan></text>
+    <text class="connection-label" x="233" y="490" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="593" y="494" xml:space="preserve"><tspan x="593" dy="0">take</tspan></text>
+    <text class="connection-label" x="733" y="458" xml:space="preserve"><tspan x="733" dy="0">skip</tspan></text>
+    <text class="connection-label" x="593" y="630" xml:space="preserve"><tspan x="593" dy="0">left</tspan></text>
+    <text class="connection-label" x="953" y="630" xml:space="preserve"><tspan x="953" dy="0">right</tspan></text>
+    <text class="connection-label" x="233" y="249" xml:space="preserve"><tspan x="233" dy="0">&amp;remaining</tspan></text>
+    <text class="connection-label" x="233" y="397" xml:space="preserve"><tspan x="233" dy="0">again, &amp;mut remaining</tspan></text>
+    <text class="connection-label" x="593" y="393" xml:space="preserve"><tspan x="593" dy="0">decide, take_left</tspan></text>
+    <text class="connection-label" x="593" y="537" xml:space="preserve"><tspan x="593" dy="0">take, value</tspan></text>
+    <text class="connection-label" x="953" y="537" xml:space="preserve"><tspan x="953" dy="0">skip, value</tspan></text>
+    <text class="connection-label" x="593" y="745" xml:space="preserve"><tspan x="593" dy="0">left</tspan></text>
+    <text class="connection-label" x="953" y="745" xml:space="preserve"><tspan x="953" dy="0">right</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 74 L 456 74"/>
+    <g class="parameter-panel" transform="translate(576 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">value: T</tspan><tspan x="-104" dy="18">mut remaining: usize</tspan><tspan x="-104" dy="18">take_left: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(580 896)">
+      <title xml:space="preserve">the chosen merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const generic_owned_outputs&lt;T&gt;</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 296)">
+      <title xml:space="preserve">Is any count left?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is any count left?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 440)">
+      <title xml:space="preserve">Count down.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 440)">
+      <title xml:space="preserve">Take the left side?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the left side?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 580)">
+      <title xml:space="preserve">Hand the value to the left.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Hand the value to the left.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 580)">
+      <title xml:space="preserve">Hand the value to the right.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Hand the value to the right.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 788)">
+      <title xml:space="preserve">Keep the left value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the left value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 788)">
+      <title xml:space="preserve">Keep the right value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the right value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 1001)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
+    </g>
+  </g>
+</svg>

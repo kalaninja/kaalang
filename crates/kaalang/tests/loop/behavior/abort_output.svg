@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1042" viewBox="0 0 1120 1042" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for abort_output</title>
+  <desc id="kaalang-description">Cycles: Count until done or aborted. with inputs mut count, limit and outputs done or abort. Nodes: Start: abort_output with parameters mut count: u32; limit: u32 handing over mut count, limit; Select: Where is the count? capturing &amp;count, &amp;limit; Case: Below the limit. handing over below; Case: At the limit. handing over done; Case: Past the limit. handing over abort; Action: Count up. capturing below, &amp;mut count handing over stepped; Action: Report the count. capturing done, count handing over result; Action: Report the abort. capturing abort, count handing over result; End: Result&lt;u32, u32&gt; capturing result; Merge: result. Connections: Start: abort_output to the entry of the cycle; Select: Where is the count? to Case: Below the limit.; Select: Where is the count? to Case: At the limit.; Select: Where is the count? to Case: Past the limit.; Case: Below the limit. to Action: Count up.; Case: At the limit. to the done result of the cycle; Case: Past the limit. to the abort result of the cycle; Action: Count up. to the iteration tail of the cycle; Action: Report the count. to the result merge; Action: Report the abort. to the result merge; the result merge to End: Result&lt;u32, u32&gt;; the entry of the cycle to Select: Where is the count?; the done result of the cycle to Action: Report the count.; the abort result of the cycle to Action: Report the abort.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Count until done or aborted.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="1056" height="564" rx="12"/>
+    <text class="cycle-caption" x="1076" y="149" text-anchor="end" xml:space="preserve"><tspan x="1076" dy="0">Count until done or aborted.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 94 L 220 170
+      M 220 314 L 220 386
+      M 348 278 L 580 278 L 580 386
+      M 348 278 L 940 278 L 940 386
+      M 220 456 L 220 528
+      M 580 456 L 580 664
+      M 940 456 L 940 664
+      M 220 592 L 220 664
+      M 580 800 L 580 876
+      M 940 800 L 940 876 L 580 876
+      M 580 876 L 580 952
+      M 220 170 L 220 242
+      M 580 664 L 580 736
+      M 940 664 L 940 736
+    "/>
+    <path class="connection" d="
+      M 220 664 L 60 664 L 60 170 L 220 170
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="593" y="894" xml:space="preserve"><tspan x="593" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mut count, limit</tspan></text>
+    <text class="connection-label" x="233" y="474" xml:space="preserve"><tspan x="233" dy="0">below</tspan></text>
+    <text class="connection-label" x="593" y="474" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
+    <text class="connection-label" x="953" y="474" xml:space="preserve"><tspan x="953" dy="0">abort</tspan></text>
+    <text class="connection-label" x="233" y="610" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;count, &amp;limit</tspan></text>
+    <text class="connection-label" x="233" y="517" xml:space="preserve"><tspan x="233" dy="0">below, &amp;mut count</tspan></text>
+    <text class="connection-label" x="593" y="725" xml:space="preserve"><tspan x="593" dy="0">done, count</tspan></text>
+    <text class="connection-label" x="953" y="725" xml:space="preserve"><tspan x="953" dy="0">abort, count</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 65 L 456 65"/>
+    <g class="parameter-panel" transform="translate(576 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut count: u32</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(580 876)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">abort_output</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 278)">
+      <title xml:space="preserve">Where is the count?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Where is the count?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 421)">
+      <title xml:space="preserve">Below the limit.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Below the limit.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 421)">
+      <title xml:space="preserve">At the limit.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">At the limit.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 421)">
+      <title xml:space="preserve">Past the limit.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Past the limit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 560)">
+      <title xml:space="preserve">Count up.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count up.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 768)">
+      <title xml:space="preserve">Report the count.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report the count.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 768)">
+      <title xml:space="preserve">Report the abort.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report the abort.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 981)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Result&lt;u32, u32&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -3,22 +3,18 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_loop_tail(mut count: usize, limit: usize) -> usize {
     #[cycle("Count to the limit through an inner cycle.")]
-    let result = {
+    let leave_1 = {
         #[question("Is another counting pass needed?")]
         #[no("NO")]
         #[yes("YES")]
         let (leave_1, iterate_1) = |&count, &limit| *count < *limit;
 
-        |leave_1, count| break count;
-
         #[cycle("Increment until the current pass is complete.")]
-        |iterate_1| {
+        let leave_2 = |iterate_1| {
             #[question("Is the count below the limit?")]
             #[yes("YES")]
             #[no("NO")]
             let (iterate_2, leave_2) = |&count, &limit| *count < *limit;
-
-            |leave_2| break;
 
             #[action("Increment the count.")]
             |iterate_2, &mut count| *count += 1;
@@ -26,10 +22,10 @@ fn nested_loop_tail(mut count: usize, limit: usize) -> usize {
             |iterate_2| continue;
         };
 
-        |iterate_1| continue;
+        |leave_2| continue;
     };
 
-    |result| return result;
+    |leave_1, count| return count;
 }
 
 #[test]

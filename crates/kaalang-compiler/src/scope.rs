@@ -14,6 +14,9 @@ struct Scope {
     /// The wires visible where the cycle is declared, or the flow inputs.
     inherited: BTreeMap<Ident, Ident>,
     local: BTreeMap<Ident, Ident>,
+    /// Outputs of the enclosing cycles that no body has produced yet. Inside a
+    /// cycle its own outputs never name an outer wire (RFC 0006 §5.1).
+    hidden: BTreeSet<Ident>,
 }
 
 pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
@@ -41,6 +44,7 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
                 .map(|name| (name.clone(), name.clone()))
                 .collect(),
             local: BTreeMap::new(),
+            hidden: BTreeSet::new(),
         },
     )]);
     let mut serial = 0;
@@ -56,18 +60,37 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             {
                 input.ident = key.clone();
                 input.ident.set_span(input.alias.span());
+            } else if scope.hidden.contains(&input.ident) {
+                return Err(Error::new(
+                    input.alias.span(),
+                    format!(
+                        "`{}` is a declared output of the enclosing kaalang cycle; capture it after its producer in the cycle body",
+                        input.alias
+                    ),
+                ));
             }
         }
         // A cycle's own outputs exist only once it completes, so its body
-        // inherits what was visible before them.
-        let body = (block.kind == BlockKind::Loop).then(|| Scope {
-            inherited: scope
-                .inherited
-                .iter()
-                .chain(&scope.local)
-                .map(|(name, key)| (name.clone(), key.clone()))
-                .collect(),
-            local: BTreeMap::new(),
+        // inherits what was visible before them, and never under those names.
+        let body = (block.kind == BlockKind::Loop).then(|| {
+            let own = block.outputs.iter().collect::<BTreeSet<_>>();
+            Scope {
+                inherited: scope
+                    .inherited
+                    .iter()
+                    .chain(&scope.local)
+                    .filter(|(name, _)| !own.contains(name))
+                    .map(|(name, key)| (name.clone(), key.clone()))
+                    .collect(),
+                local: BTreeMap::new(),
+                hidden: scope
+                    .hidden
+                    .iter()
+                    .filter(|name| !scope.local.contains_key(*name))
+                    .chain(own)
+                    .cloned()
+                    .collect(),
+            }
         });
         for output in &mut block.outputs {
             if block.parent.is_some() && scope.inherited.contains_key(output) {
@@ -164,10 +187,10 @@ mod tests {
                         #[action("Use a, b and the local.")]
                         |&a, &mut b, local| {};
 
-                        break;
+                        continue;
                     };
 
-                    break;
+                    continue;
                 };
 
                 return;
