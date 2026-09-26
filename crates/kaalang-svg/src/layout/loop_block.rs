@@ -216,17 +216,43 @@ fn caption(description: &RichText, width: i32) -> Vec<RichText> {
     }
 }
 
-/// Extra column spacing needed when a boundary collides with a neighbouring
-/// rail or boundary. Uses the same layout retry as label clearance.
+/// Extra column spacing needed when a boundary collides with neighbouring
+/// content, rails, or boundaries. Uses the same layout retry as label clearance.
 pub(super) fn clearance(scene: &Scene) -> i32 {
     let mut wanted = 0;
-    for (boundary, region) in scene
+    for (index, (boundary, region)) in scene
         .topology
         .loop_boundaries
         .iter()
         .zip(&scene.loop_regions)
+        .enumerate()
     {
         let (left, _, right, _) = region.bounds();
+        let owns = |vertex| {
+            scene.region_bodies[index].contains(&vertex)
+                || vertex == boundary.entry
+                || boundary
+                    .results
+                    .iter()
+                    .any(|&result| Vertex::from(result) == vertex)
+        };
+        for bounds in scene
+            .nodes
+            .iter()
+            .filter(|node| !owns(Vertex::Node(node.id)))
+            .map(Scene::bounds)
+            .chain(
+                scene
+                    .labels
+                    .iter()
+                    .filter(|label| !owns(label.owner))
+                    .map(label_rect),
+            )
+        {
+            if overlaps(region.bounds(), bounds) {
+                wanted = wanted.max((right - bounds.0).min(bounds.2 - left) + super::LANE);
+            }
+        }
         for edge in &scene.connections {
             let climbing = scene.topology.loops.iter().any(|loop_| {
                 edge.source == Source::Junction(loop_.tail)

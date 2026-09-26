@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use syn::{Error, Result};
 
-use crate::model::Flow;
+use crate::model::{Flow, FlowKind};
 
 /// Resolves a parsed flow's wires: every reachable input names an earlier
 /// producer and declarations do not collide with themselves.
@@ -22,6 +22,15 @@ pub(crate) fn flow(flow: &Flow) -> Result<()> {
     for block in &flow.blocks {
         let mut seen_inputs = HashSet::new();
         for input in &block.inputs {
+            if matches!(&flow.kind, FlowKind::Stage { entry, .. } if input.ident == *entry)
+                && input.borrowed
+                && input.mutable
+            {
+                return Err(Error::new(
+                    input.alias.span(),
+                    "a kaalang stage entry cannot be captured through `&mut`",
+                ));
+            }
             if !seen_inputs.insert(input.ident.clone()) {
                 return Err(Error::new(
                     input.ident.span(),

@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Flow, Input};
+use crate::model::{BlockKind, Flow, FlowKind, Input};
 
 #[derive(Default)]
 struct Scope {
@@ -19,6 +19,7 @@ struct Scope {
     hidden: BTreeSet<Ident>,
 }
 
+#[allow(clippy::too_many_lines)] // Scope resolution and shadow checks need the same evolving map.
 pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
     let mut used = flow
         .flow_inputs
@@ -48,6 +49,10 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
         },
     )]);
     let mut serial = 0;
+    let stage_entry = match &flow.kind {
+        FlowKind::Stage { entry, self_output } => Some((entry.clone(), *self_output)),
+        FlowKind::Plain | FlowKind::Preparation => None,
+    };
     for (index, block) in flow.blocks.iter_mut().enumerate() {
         let scope = scopes
             .get_mut(&block.parent)
@@ -93,15 +98,28 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             }
         });
         for output in &mut block.outputs {
-            if block.parent.is_some() && scope.inherited.contains_key(output) {
+            let shadows_entry = stage_entry
+                .as_ref()
+                .is_some_and(|(entry, _)| output == entry);
+            let permitted_self_output = shadows_entry
+                && block.parent.is_none()
+                && stage_entry.as_ref().is_some_and(|(_, allowed)| *allowed);
+            if (scope.inherited.contains_key(output) || (shadows_entry && block.parent.is_some()))
+                && (block.parent.is_some() || stage_entry.is_some())
+                && !permitted_self_output
+            {
                 return Err(Error::new(
                     output.span(),
-                    "a cycle-local output must not shadow a wire visible outside the cycle",
+                    if stage_entry.is_some() {
+                        "a stage-local output must not shadow a visible outer wire"
+                    } else {
+                        "a cycle-local output must not shadow a wire visible outside the cycle"
+                    },
                 ));
             }
             let name = output.clone();
             let key = scope.local.entry(name.clone()).or_insert_with(|| {
-                if block.parent.is_none() {
+                if block.parent.is_none() && !shadows_entry {
                     return name.clone();
                 }
                 fresh(&name, &mut used, &mut serial)

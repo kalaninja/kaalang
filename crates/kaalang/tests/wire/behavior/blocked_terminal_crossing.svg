@@ -34,13 +34,13 @@
       M 300 198 L 532 198 L 532 306
       M 300 198 L 1612 198 L 1612 306
       M 300 198 L 1972 198 L 1972 306
-      M 172 376 L 172 449
-      M 532 376 L 532 449
-      M 1612 376 L 1612 449
+      M 172 376 L 172 448
+      M 532 376 L 532 448
+      M 1612 376 L 1612 448
       M 1972 376 L 1972 448
-      M 172 513 L 172 619
-      M 532 513 L 532 619 L 172 619
-      M 1612 513 L 1612 1378 L 172 1378
+      M 172 514 L 172 619
+      M 532 514 L 532 619 L 172 619
+      M 1612 514 L 1612 1378 L 172 1378
       M 1972 514 L 1972 586
       M 1972 652 L 1972 1378 L 172 1378
       M 172 808 L 172 880
@@ -64,9 +64,9 @@
     <text class="connection-label" x="185" y="1396" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="1180" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">request</tspan></text>
-    <text class="connection-label" x="185" y="438" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="545" y="438" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
-    <text class="connection-label" x="1625" y="438" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
+    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
+    <text class="connection-label" x="1625" y="437" xml:space="preserve"><tspan x="1625" dy="0">first</tspan></text>
     <text class="connection-label" x="1985" y="437" xml:space="preserve"><tspan x="1985" dy="0">second</tspan></text>
     <text class="connection-label" x="1985" y="575" xml:space="preserve"><tspan x="1985" dy="0">stepped</tspan></text>
     <text class="connection-label" x="185" y="1011" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
@@ -123,17 +123,17 @@
     </g>
     <g class="node action" transform="translate(172 481)">
       <title xml:space="preserve">Build the left shared value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the left shared value.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 481)">
       <title xml:space="preserve">Build the right shared value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the right shared value.</tspan></text>
     </g>
     <g class="node action" transform="translate(1612 481)">
       <title xml:space="preserve">Produce the first terminal result.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the first terminal result.</tspan></text>
     </g>
     <g class="node action" transform="translate(1972 481)">

@@ -9,6 +9,7 @@ use crate::construct::Arrangement;
 use crate::topology::Topology;
 
 /// Semantic analysis and lowering plan, before diagram construction.
+#[derive(Clone)]
 pub struct Analysis {
     /// The authored flow function name.
     pub name: Ident,
@@ -26,6 +27,20 @@ pub struct Analysis {
     pub convergence_groups: Vec<ConvergenceGroup>,
     /// Implicit junctions of equally named alternative outputs, before captures.
     pub merges: Vec<WireMerge>,
+    /// Other locally analyzed parts of a staged flow, in declaration order.
+    pub stages: Vec<StageAnalysis>,
+    /// Preparation outputs that remain in scope across stage visits.
+    pub common_wires: Vec<Ident>,
+}
+
+/// One stage and its independent, verified local execution plan.
+#[derive(Clone)]
+pub struct StageAnalysis {
+    pub description: String,
+    pub entry: Ident,
+    pub entry_alias: Ident,
+    pub outputs: Vec<Ident>,
+    pub analysis: Box<Analysis>,
 }
 
 /// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
@@ -36,6 +51,8 @@ pub struct SemanticModel {
     pub topology: Topology,
     /// Verified arrangement for the renderer to realize.
     pub arrangement: Arrangement,
+    /// Locally checked stage diagrams, in declaration order.
+    pub stages: Vec<SemanticModel>,
 }
 
 /// The semantic role of one block. Every kind but `End` and `Export` is authored.
@@ -56,6 +73,7 @@ pub enum BlockKind {
 
 /// One kaalang block: an authored statement, a cycle's boundary consumer, or
 /// the implicit end block.
+#[derive(Clone)]
 pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for transfers and end.
@@ -81,6 +99,8 @@ pub struct Block {
     pub loop_end: Option<usize>,
     /// The cycle whose declared output a boundary consumer exports.
     pub export_target: Option<usize>,
+    /// Destination of a synthetic stage transition, absent on authored returns.
+    pub transition_target: Option<usize>,
 }
 
 impl Block {
@@ -188,6 +208,7 @@ const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
 }
 
 /// One positional branch of a question.
+#[derive(Clone)]
 pub struct QuestionBranch {
     /// Whether a true question body selects this branch.
     pub is_yes: bool,
@@ -196,6 +217,7 @@ pub struct QuestionBranch {
 }
 
 /// One consuming or borrowing block input.
+#[derive(Clone)]
 pub struct Input {
     /// Whether the input borrows the wire rather than binding its value.
     pub borrowed: bool,
@@ -212,9 +234,19 @@ pub struct Input {
 }
 
 /// A flow's named inputs and blocks, wire-validated by the time consumers see it.
+#[derive(Clone)]
 pub struct Flow {
     pub flow_inputs: Vec<Ident>,
     pub blocks: Vec<Block>,
+    pub kind: FlowKind,
+}
+
+/// The local sequence represented by a flow's block arena.
+#[derive(Clone)]
+pub enum FlowKind {
+    Plain,
+    Preparation,
+    Stage { entry: Ident, self_output: bool },
 }
 
 impl Flow {
@@ -445,6 +477,7 @@ pub struct WireMerge {
 
 /// Verified serial lowering plan. Its joins are distinct from semantic
 /// [`ConvergenceGroup`] records.
+#[derive(Clone)]
 pub enum ExecutionPlan {
     Loop {
         index: usize,
@@ -504,11 +537,13 @@ pub struct JoinTarget {
 }
 
 /// One verified branch continuation.
+#[derive(Clone)]
 pub struct Branch {
     pub plan: Box<ExecutionPlan>,
 }
 
 /// Wire bindings and continuation shared by branches yielding into a lowering join.
+#[derive(Clone)]
 pub struct Join {
     /// Output positions yielding here, in authored order. The same position may
     /// also yield to an outer join; codegen must use each yield's target.

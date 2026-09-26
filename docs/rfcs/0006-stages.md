@@ -95,6 +95,11 @@ even when no inner block captures its value again. Stage declarations are
 permitted directly in the root flow body. Their order determines their diagram
 positions; transitions determine their execution order.
 
+The receiver `self` cannot name a stage entry. It remains available as common
+outer data under the ordinary receiver capture rules. To transfer an owned
+receiver, first produce a named preparation wire such as
+`let go = |self| self;`.
+
 Entry names are unique across the flow. Raw and ordinary spellings identify the
 same name. The names in these headers identify the flow's transition signals.
 Each such signal has a Rust type, with a `Copy` bound in a `const fn`. All
@@ -138,7 +143,7 @@ entry value, not the preparation signal from an earlier visit.
 Each stage body can use those outer data wires, its current entry, and its own
 earlier local outputs. Each computational block or transfer explicitly captures
 the wires it reads, using the existing `name`, `mut name`, `&name`, and
-`&mut name` forms. For example, an action inside `|partition|` may capture
+`&mut name` forms. For example, an action inside `|processing|` may capture
 `|&mut values|`, where `values` was declared during preparation. Mutation
 through a permitted mutable capture updates the shared wire for subsequent work
 and subsequent stage visits.
@@ -618,13 +623,24 @@ have a conforming local diagram.
 
 ### 6.2 Rust lowering
 
-Keep the parameter prologue and preparation's shared wire storage in the scope
-surrounding the dispatcher. Generate an enum with one variant and one type
-parameter per stage. Each variant carries its entry value. In a `const fn`,
-every parameter has a `core::marker::Copy` bound; ordinary functions need no
-such bound. Rust infers those types from the incoming values; all constructors
-for one destination must agree on its type. The macro need not name the concrete
-or enclosing generic types in the enum declaration.
+Keep the parameter prologue and preparation's outer wire storage in the scope
+surrounding the dispatcher, in original declaration order. Preserve owners from
+the outer scope of the preparation plan even when stages only capture a derived
+reference or do not capture the owner at all. Owners in branches and cycle
+bodies retain those local scopes; only their exported or merged values survive.
+Moving a value into an explicit capture still transfers its ownership normally.
+
+Represent the state as a sum of stage entry types using fully qualified
+`core::result::Result` variants. Split the stages into consecutive halves
+recursively, with `Ok` selecting the left half and `Err` the right; one stage
+needs only its payload. This keeps type depth logarithmic and introduces no type
+name into authored scopes, including names resolved by authored macros. Rust
+infers the payload types from incoming values, and all constructors for one
+destination must agree on its type. In a `const fn`, each transition checks its
+payload through a `const` identity function with a `core::marker::Copy` bound.
+That helper lives only inside the generated boundary expression, after the
+payload has been evaluated, so it cannot shadow authored code. Ordinary
+functions need no such bound.
 
 A mutable state binding records the selected stage and its value. Each match arm
 binds that entry immutably and executes the stage's local plan. Captures of that
@@ -634,7 +650,7 @@ distinction from the incoming wire. Common outer wires remain available through
 ordinary generated capture aliases.
 
 At a completed transition boundary, construct the destination variant with the
-selected value and finish the current arm's local scopes. Its constructor checks
+selected value and finish the current arm's local scopes. Construction checks
 the destination type and, in a `const fn`, the value's `Copy` bound. The
 constructor and its value argument retain the source location of the authored
 output binding, or the function parameter when it supplies the initial signal,
@@ -655,48 +671,44 @@ capture is shown explicitly:
 
 ```rust
 fn count_to(limit: usize) -> usize {
-    enum Stage<C, F> {
-        Count(C),
-        Finish(F),
-    }
-
     let mut wire_counter = 0usize;
-    let mut stage = Stage::Count(());
+    let mut stage = Ok(());
     loop {
         stage = match stage {
-            Stage::Count(()) => {
+            Ok(()) => {
                 if wire_counter >= limit {
                     let wire_finish = ();
-                    Stage::Finish(wire_finish)
+                    Err(wire_finish)
                 } else {
                     let wire_count = {
                         let counter = &mut wire_counter;
                         *counter += 1;
                     };
-                    Stage::Count(wire_count)
+                    Ok(wire_count)
                 }
             }
-            Stage::Finish(()) => return wire_counter,
+            Err(()) => return wire_counter,
         };
     }
 }
 ```
 
-For a `const fn`, the lowering adds `Copy` bounds to the enum's parameters. Here
-two alternative producers merge into one outgoing `finish` value. The ordinary
-merge closes their branches before constructing the next state:
+For a `const fn`, the lowering checks `Copy` at each transition. Here two
+alternative producers merge into one outgoing `finish` value. The ordinary merge
+closes their branches before constructing the next state. The example shows the
+identity helper once for readability; generated boundary expressions each keep
+it in their own scope:
 
 ```rust
 const fn select_value<T: Copy>(take_left: bool, left: T, right: T) -> T {
-    enum Stage<C: Copy, F: Copy> {
-        Choose(C),
-        Finish(F),
+    const fn copy_entry<T: Copy>(value: T) -> T {
+        value
     }
 
-    let mut stage = Stage::Choose(());
+    let mut stage = Ok(copy_entry(()));
     loop {
         stage = match stage {
-            Stage::Choose(()) => {
+            Ok(()) => {
                 let wire_finish = 'merge_finish: {
                     if take_left {
                         break 'merge_finish left;
@@ -704,9 +716,9 @@ const fn select_value<T: Copy>(take_left: bool, left: T, right: T) -> T {
                         break 'merge_finish right;
                     }
                 };
-                Stage::Finish(wire_finish)
+                Err(copy_entry(wire_finish))
             }
-            Stage::Finish(finish) => return finish,
+            Err(finish) => return finish,
         };
     }
 }
@@ -716,11 +728,11 @@ In a `const fn`, `Copy` excludes destructors from the generated state, including
 for inferred generic payloads. This deliberately rejects even concrete
 non-`Copy` transition types without destructors. The bound applies only to
 transmitted entry values: common outer data may have arbitrary Rust types.
-Ordinary functions use the same dispatcher with unbounded enum parameters;
-matching the current variant moves its owned entry into the visit, and the next
-variant takes ownership of its outgoing value. Authored operations and escaping
-borrows retain ordinary Rust checks, including constant-evaluation restrictions
-in a `const fn`.
+Ordinary functions use the same dispatcher without payload bounds; matching the
+current variant moves its owned entry into the visit, and the next variant takes
+ownership of its outgoing value. Authored operations and escaping borrows retain
+ordinary Rust checks, including constant-evaluation restrictions in a
+`const fn`.
 
 Preserve each block's capture scope and all remaining route work before updating
 the state. Keep storage accessible only through generated capture aliases as RFC
@@ -809,49 +821,54 @@ completion rules without unfolding repeated iterations.
 
 ## 7. Visual representation
 
+Staged flows use the DRAKON silhouette: a common upper rail connects branch
+headers, transition addresses end their routes on a common lower row, and a
+lower rail returns along the left edge of the whole diagram to the upper rail.
+See the [DRAKON silhouette examples](https://drakon.tech/en/drakon-syntax).
+
 A **part** is the diagram area assigned to preparation or one stage, with its
-own horizontal range. Preparation occupies the leftmost part and starts at the
-existing flow start node. Stages occupy separate parts to its right in
-declaration order. Their entry nodes align on a common row one row below start.
-The parameter panel stays beside start on its row. Each part has its own
-horizontal range, sized for its local arrangement, labels, data panel, and cycle
-boundaries.
+own horizontal range. Preparation is the ordinary flow in the leftmost part: the
+start capsule and its parameter panel lead into the authored blocks, which
+compute the initial stage signal. It has no stage header. Stages occupy parts to
+its right from left to right in declaration order. Each part is sized for its
+local arrangement, labels, and cycle boundaries.
+
+The initial flow starts above the stage headers and runs directly into its
+authored blocks, without a synthetic preparation header. The common upper rail
+starts at the initial flow's axis below the start capsule and connects all stage
+headers, which share one row. Removing the preparation header leaves a straight
+vertical connection in its place. The rail is a symbolic link between addresses
+and stage entries; it does not execute preparation again or add an executable
+choice or entry to the middle of a stage.
 
 ### 7.1 Stage entry
 
 A stage begins with the same shape as a case node in RFC 0002: a rectangular
 text body ending in a lower triangular point. Reuse the case outline, text
 placement, and sizing rules. The downward control connection leaves the lower
-apex and enters the stage body.
+apex and enters the stage body. All stage entry and transition icons use a
+common height large enough for their measured descriptions, so their outlines
+align as well as their row centers.
 
 The stage's displayed name is its authored description, rendered using
-[RFC 0005](0005-markdown.md). It appears inside the entry node. The entry signal
-is shown separately as a literal caption beside the node; its authored spelling
-comes from the stage header. This caption identifies the stage when two stages
-have the same description.
+[RFC 0005](0005-markdown.md). It appears inside the entry node. Stage entry and
+transition nodes have no separate signal-name captions.
 
-A **data panel** lists the common outer wires used by a stage. It is
-non-executable and sits to the right of the entry, vertically centered beside
-it. Reuse the rectangular shape and one-item-per-row presentation of RFC 0002
-§4.1's parameter panel. List each used common outer wire once in order of first
-capture in the authored body, including nested cycles. Labels are literal wire
-names with their producer's `mut` permission, not capture modifiers or inferred
-types. The entry value has its own signal caption and is not repeated in the
-panel. Omit an empty panel. Reserve space so it overlaps no node, caption,
-connection, or other panel; it adds no control connection.
-
-The model records each listed wire's original producer in preparation or the
-function inputs. The entry represents those available sources and its received
-signal for local dependency routing. Actual capture forms remain labeled at
-their computational consumers. As in RFC 0002, data travels virtually along the
-reduced control connections; the panel adds no separate routes to consumers.
+Common outer wires appear in the capture labels of the blocks that use them,
+including their authored capture modifiers and the ordinary label-sharing rules.
+The model records each wire's original producer in preparation or the function
+inputs. The entry represents those available sources and its received signal for
+local dependency routing. As in RFC 0002, data travels virtually along the
+reduced control connections.
 
 ### 7.2 Transition node
 
 Each transition boundary ends its selected route with a **transition node**
-after all work on that route. The node is last on its route and occupies a row
-below every other vertex on that route. Transition nodes on alternative routes
-may share a row under RFC 0002 §8.
+after all work on that route. All transitions, including preparation's initial
+transitions, share one row below every part's body, including expanded cycle
+boundaries and indefinitely repeating routes. Within a part, transition columns
+follow local branch routing, independently of the order of names in an output
+declaration. Distinct addresses occupy distinct columns.
 
 The transition node mirrors the stage entry vertically: a rectangular text body
 with an upper triangular point. The incoming control connection meets that upper
@@ -859,10 +876,11 @@ apex. Execution continues at the target stage's entry through the symbolic link
 recorded by the model.
 
 Inside the transition node, repeat the destination stage's displayed name
-exactly, with the same description rendering. Its separate literal caption uses
-the destination header's entry signal. Both labels come from that resolved
-header, so changing a stage description updates its entry and all transitions
-targeting it together.
+exactly, with the same description rendering. The description comes from the
+resolved header, so changing it updates the entry and all transitions targeting
+it together. Stage signal names are omitted from producer hand-overs and merge
+labels, including initial signals in preparation. Ordinary captures inside a
+stage still name the data they use.
 
 A transition node is a synthetic projection of the transition boundary, like a
 merge or end node. Alternative local producers merge before a shared boundary
@@ -895,32 +913,73 @@ to a marked entry retains an unmarked tip. The classification depends on stage
 declaration order, including transitions to a terminal stage placed earlier in
 the section. It is the same in expanded and collapsed cycle views.
 
-For example, with stages `choose`, `partition`, and `finish` in that order:
+For example, with stages `check`, `update`, and `finish` in that order:
 
-| Transition             | Transition tip | Destination entry tip                           |
-| ---------------------- | -------------- | ----------------------------------------------- |
-| Preparation → `choose` | Unmarked       | Marked because of the backward transition below |
-| `choose` → `partition` | Unmarked       | Unmarked                                        |
-| `partition` → `choose` | Marked         | Marked                                          |
-| `choose` → `finish`    | Unmarked       | Unmarked                                        |
+| Transition            | Transition tip | Destination entry tip                           |
+| --------------------- | -------------- | ----------------------------------------------- |
+| Preparation → `check` | Unmarked       | Marked because of the backward transition below |
+| `check` → `update`    | Unmarked       | Unmarked                                        |
+| `update` → `check`    | Marked         | Marked                                          |
+| `check` → `finish`    | Unmarked       | Unmarked                                        |
 
 A self-transition marks both its own outgoing node and its stage's entry.
 
 ### 7.4 Composition and completion
 
-The entry signal links each transition node to its unique destination. Data
-panels identify the listed wires' original producers by wire identity. The model
-records that provenance and the derived back-transition markers. Within a part,
-branch order, wire routing, and merges follow the ordinary visual language;
-cycles use the projection in §7.5.
+The entry signal links each transition node to its unique destination. The model
+records outer-wire provenance and the derived back-transition markers. Within a
+part, branch order, wire routing, and merges follow the ordinary visual
+language; cycles use the projection in §7.5.
+
+Each address's flat bottom connects vertically to a common lower rail, including
+the initial addresses in preparation. A return line rises from that rail outside
+the leftmost part, reaches the upper rail, and ends with a right-pointing arrow
+at the initial flow's axis. The target name on the address selects the receiving
+stage. These contour segments carry no wire captions and create no new data
+dependencies.
 
 Check and arrange preparation and stages locally, then compose their verified
-arrangements in declaration order. Inter-part links establish reachability and
-data provenance; local arrangements supply the drawn routes. The shared model
-owns these decisions, and rendering consumes the same stage graph as lowering.
+arrangements with preparation on the left and stages to its right in declaration
+order. Inter-part links establish reachability and data provenance; local
+arrangements supply the drawn routes. The shared model owns these decisions, and
+rendering consumes the same stage graph as lowering.
 
-There is one end node in the terminal stage, below all other vertices as RFC
-0002 requires. That stage keeps its authored horizontal position. A fully
+The upper rail clears the measured start node, parameter panel, and outgoing
+wire labels, including their text halo. Check the composed rails against each
+part's nodes, labels, parameter panel, and cycle boundaries after placement.
+
+The shared topology keeps preparation's ordinary start and projects only stage
+entries as branch headers. It orders all other local sinks before each
+transition. Construction places each part's transitions on one final rank, and
+the common arrangement verifier checks their row and distinct columns. The
+fallback construction treats the addresses as one row event, taking their
+horizontal order from the incoming routes. Compaction must preserve these
+constraints.
+
+Renderers measure the local verified arrangements with the common icon height,
+choose a transition row that clears every part's body, and enlarge the gap
+before each part's final rank to reach it, accounting for the part's vertical
+offset. Local routes and labels are recalculated and checked using those
+measured rows. No node is moved after verification.
+
+In every diagram, including flows without stages, nodes on the same local row
+share the height of its tallest measured node. Their upper and lower edges align
+while their centers and side ports remain on the recorded rank line. Measuring
+the row includes each shape's full height, including a case's triangular tip.
+
+Composition reserves preparation's start and parameter panel, both horizontal
+rails, and the return line outside the leftmost part when computing the canvas.
+Horizontal spacing between parts follows their body bounds. The parameter panel
+sits above the stage section and may extend over its horizontal range; it
+enlarges the canvas without reserving an extra column beside preparation. The
+contour stays outside the local bodies except at the header and address ports
+and the upper rail's junction below start. SVG serialization draws the measured
+geometry with one shared background; local part backgrounds must not hide the
+contour.
+
+There is one end node in the terminal stage, below all other vertices of that
+local part. It is not stretched down to the address row or connected to the
+return contour. That stage keeps its authored horizontal position. A fully
 diverging flow has no end node.
 
 ### 7.5 Cycles and continue
@@ -957,12 +1016,12 @@ produced inside this cycle, even when a nested cycle captures them. A gate also
 captured inside the body appears only once.
 
 This derived list is the collapsed node's input label, in the ordinary receiving
-label position; it needs no separate data panel. Show literal names with their
-producer's `mut` permission and no inferred types or aggregate borrow modifiers.
-Show `()` when the list is empty. Actual inner capture forms remain visible in
-the expanded view. The list records dependencies, not borrows held for the whole
-cycle. An expanded cycle retains its unlabeled structural entry and does not
-repeat the full input list on its boundary.
+label position. Show literal names with their producer's `mut` permission and no
+inferred types or aggregate borrow modifiers. Show `()` when the list is empty.
+Actual inner capture forms remain visible in the expanded view. The list records
+dependencies, not borrows held for the whole cycle. An expanded cycle retains
+its unlabeled structural entry and does not repeat the full input list on its
+boundary.
 
 Both projections preserve the same selected outputs and surrounding branch
 order. Check all result routes and the continue back edge in the expanded view,
@@ -973,9 +1032,7 @@ the cycle entry; they do not introduce paths that bypass preceding work.
 
 ## 8. Examples
 
-These definitions use the proposed syntax. The current compiler does not yet
-implement stages or the unified cycle contract. The `kaalang` attribute is
-assumed to be in scope in all examples.
+The `kaalang` attribute is assumed to be in scope in all examples.
 
 ### 8.1 Shared counter and a self-transition
 
@@ -1139,141 +1196,7 @@ fn wait_forever(go: ()) -> ! {
 The parameter supplies the initial signal. This stage has neither a transition
 node nor an end node; its nested cycle supplies the repeating route.
 
-### 8.5 Quicksort
-
-Preparation creates a shared stack of pending ranges. The stages select a range,
-send it to the partition stage, and eventually return the sorted values. Both
-pieces of work after a partition are recorded in the pending stack.
-
-```rust
-use core::cmp::Ordering;
-
-#[kaalang]
-fn quick_sort<T: Ord>(mut values: Vec<T>) -> Vec<T> {
-    #[action("Prepare the pending ranges.")]
-    let mut pending = |&values| {
-        let len = values.len();
-        if len > 1 {
-            vec![(0, len)]
-        } else {
-            Vec::new()
-        }
-    };
-
-    #[action("Begin selecting ranges.")]
-    let next_range = || ();
-
-    #[stage("Choose the next range.")]
-    let (partition, sorted) = |next_range| {
-        #[choice("Is another range waiting?")]
-        #[case("Partition the next range.")]
-        #[case("All ranges are sorted.")]
-        let (partition, sorted) = |&mut pending| match pending.pop() {
-            Some(range) => range,
-            None => (),
-        };
-    };
-
-    #[stage("Partition the range around its pivot.")]
-    let next_range = |partition| {
-        #[action("Move the middle value to the pivot position at the end.")]
-        let (start, end, pivot) = |partition, &mut values| {
-            let (start, end) = partition;
-            let pivot = end - 1;
-            values.swap(start + (end - start) / 2, pivot);
-            (start, end, pivot)
-        };
-
-        #[action("Start the lower, equal, and upper regions.")]
-        let (mut lower, mut cursor, mut upper) = |start, pivot| (start, start, pivot);
-
-        #[cycle("Scan the range.")]
-        let scanned = {
-            #[question("Has the cursor reached the upper region?")]
-            let (scanned, more) = |cursor, upper| cursor >= upper;
-
-            #[choice("How does the current value compare with the pivot?")]
-            #[case("Less: move it to the lower region.")]
-            #[case("Equal: leave it in place.")]
-            #[case("Greater: move it to the upper region.")]
-            let (less, equal, greater) =
-                |more, &values, cursor, pivot| match values[cursor].cmp(&values[pivot]) {
-                    Ordering::Less => (),
-                    Ordering::Equal => (),
-                    Ordering::Greater => (),
-                };
-
-            #[action("Swap it into the lower region and advance both bounds.")]
-            let stepped = |less, &mut values, &mut lower, &mut cursor| {
-                values.swap(*cursor, *lower);
-                *lower += 1;
-                *cursor += 1;
-            };
-
-            #[action("Advance the cursor.")]
-            let stepped = |equal, &mut cursor| {
-                *cursor += 1;
-            };
-
-            #[action("Extend the upper region and swap the value into it.")]
-            let stepped = |greater, &mut values, cursor, &mut upper| {
-                *upper -= 1;
-                values.swap(cursor, *upper);
-            };
-
-            |stepped| continue;
-        };
-
-        #[action("Place the pivot after the equal region.")]
-        |scanned, &mut values, upper, pivot| {
-            values.swap(upper, pivot);
-        };
-
-        #[action("Schedule both sides, larger first.")]
-        let next_range = |&mut pending, start, end, lower, upper| {
-            let (mut first, mut second) = ((start, lower), (upper + 1, end));
-            if first.1 - first.0 < second.1 - second.0 {
-                core::mem::swap(&mut first, &mut second);
-            }
-            for range in [first, second] {
-                if range.1 - range.0 > 1 {
-                    pending.push(range);
-                }
-            }
-        };
-    };
-
-    #[stage("Return the sorted values.")]
-    |sorted| {
-        |values| return values;
-    };
-}
-```
-
-`values` and `pending` remain in the common outer scope. The `partition` signal
-carries the selected `(usize, usize)` range into the stage. Pivot selection,
-region initialization, scanning, pivot placement, and scheduling appear as
-separate steps. The `next_range` and `sorted` signals carry unit.
-
-The stage creates `lower`, `cursor`, and `upper` before entering the cycle. Its
-inner actions update those same wires through mutable captures. The three
-alternative `stepped` producers merge before the single `continue`; the
-`scanned` route exports the cycle's result instead. Repetition follows the right
-branch of the cycle's first question, so RFC 0002 §8 prefers the right contour
-for the back edge. After the cycle, source order places the pivot before
-scheduling the remaining ranges.
-
-Ranges are half-open and contain at least two elements when partitioned. The
-pivot stays at `end - 1` during the scan. The intervals `[start, lower)`,
-`[lower, cursor)`, and `[upper, pivot)` hold values less than, equal to, and
-greater than the pivot; `[cursor, upper)` remains unclassified. A greater value
-extends the upper region without advancing the cursor, so the swapped-in value
-is examined next. Only the unequal regions need further sorting. Larger ranges
-are pushed first so the smaller range is processed next. Values stay in their
-original allocation, and `T` needs neither `Copy` nor `Clone`. The algorithm is
-not stable.
-
-### 8.6 One incoming wire through a nested cycle
+### 8.5 One incoming wire through a nested cycle
 
 ```rust
 #[kaalang]
@@ -1303,7 +1226,7 @@ carry the unconstrained type `T`; this ordinary function can forward a `String`
 or another non-`Copy` owner. Declaring this staged function `const` would
 require `T: Copy` for its stage entries; the cycle's gate itself adds no bound.
 
-### 8.7 A self-transition with a new entry value
+### 8.6 A self-transition with a new entry value
 
 ```rust
 #[kaalang]
@@ -1330,6 +1253,118 @@ The choice captures the incoming `count` before declaring its new local output
 of that name. The selected output either supplies the next visit's smaller count
 or enters `finish`. The incoming and outgoing `count` occurrences do not merge
 within one visit.
+
+### 8.7 Knuth–Morris–Pratt search
+
+KMP finds the first occurrence of a byte pattern in a byte slice. Its search
+naturally separates into stages for comparison, advancement, and fallback to a
+shorter matching prefix. Every transition finishes the current visit; no visit
+leaves a recursive call or a subproblem waiting to resume.
+
+Preparation calls `prefix_table(pattern)`, an ordinary flow with nested cycles.
+For each position `i`, `prefix[i]` is the length of the longest proper prefix of
+`pattern[..=i]` that is also its suffix. The table stays in the common outer
+data scope alongside the text position and the length already matched.
+
+```rust
+#[kaalang]
+fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
+    #[call("Build the pattern's prefix table.")]
+    let prefix = |pattern| prefix_table(pattern);
+
+    #[action("Start at the first byte with no matched prefix.")]
+    let (mut position, mut matched) = || (0usize, 0usize);
+
+    #[choice("Can comparison begin?")]
+    #[case("Both inputs contain bytes.")]
+    #[case("An input is empty.")]
+    let (compare, finish) = |text, pattern| match (text.is_empty(), pattern.is_empty()) {
+        (false, false) => (),
+        (_, empty_pattern) => empty_pattern.then_some(0usize),
+    };
+
+    #[stage("Compare the current bytes.")]
+    let (step, retry) = |compare| {
+        #[choice("Do the bytes match?")]
+        #[case("Extend the matched prefix.")]
+        #[case("Try a shorter prefix.")]
+        let (step, retry) =
+            |text, pattern, position, matched| match text[position] == pattern[matched] {
+                true => matched + 1,
+                false => (),
+            };
+    };
+
+    #[stage("Advance through the text.")]
+    let (compare, finish) = |step| {
+        #[action("Consume one byte and record the matched length.")]
+        |step, &mut position, &mut matched| {
+            *position += 1;
+            *matched = step;
+        };
+
+        #[choice("Can the search continue?")]
+        #[case("Compare the next byte.")]
+        #[case("Return the match or exhaustion.")]
+        let (compare, finish) = |text, pattern, position, matched| match (
+            matched == pattern.len(),
+            position == text.len(),
+        ) {
+            (false, false) => (),
+            (found, _) => found.then_some(position - matched),
+        };
+    };
+
+    #[stage("Fall back to a shorter prefix.")]
+    let (compare, step) = |retry| {
+        #[choice("Is any prefix still matched?")]
+        #[case("Follow the prefix table.")]
+        #[case("Skip the unmatched text byte.")]
+        let (shorten, step) = |matched| match matched {
+            length if length > 0 => (),
+            _ => 0usize,
+        };
+
+        #[action("Shorten the prefix; keep the text position.")]
+        let compare = |shorten, &prefix, &mut matched| {
+            *matched = prefix[*matched - 1];
+        };
+    };
+
+    #[stage("Return the first match.")]
+    |finish| {
+        |finish| return finish;
+    };
+}
+```
+
+[Executable search and tests](../../crates/kaalang/tests/gallery/kmp_search/mod.rs)
+and
+[prefix-table diagram](../../crates/kaalang/tests/gallery/kmp_search/prefix_table.svg).
+
+[![KMP search silhouette](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)
+
+The `compare` and `retry` entries carry unit signals. `step` carries the new
+matched length: comparison supplies `matched + 1`, while fallback at zero
+supplies `0` to skip an unmatched text byte. `finish` carries `Option<usize>`.
+An empty pattern selects it immediately with `Some(0)`; an empty text with a
+nonempty pattern selects `None`. A successful search returns the first match's
+byte offset.
+
+Before each comparison, `position < text.len()` and `matched < pattern.len()`.
+The `matched` bytes immediately before `position` equal `pattern[..matched]`. A
+successful comparison advances both positions; a mismatch with a nonempty
+matched prefix follows `prefix[matched - 1]` without advancing through the text.
+That fallback strictly shortens the prefix and returns to comparison of the same
+text byte. A mismatch at zero advances only the text position. Advancement
+checks completion before requesting the next comparison, keeping every indexed
+read in bounds.
+
+The text position never decreases, and each fallback decreases a matched length
+that can grow only when a byte is consumed. Together with linear prefix-table
+construction, this gives `O(text.len() + pattern.len())` time and
+`O(pattern.len())` table space. Stage visits use constant stack space under the
+lowering in §6.2.
 
 ## 9. Changes to earlier RFCs
 
@@ -1392,21 +1427,25 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
   scope, local merges, and convergence restrictions remain. Stage signal links
   can cross declaration order and form cycles between visits.
 - **RFC 0002 §§3–8:** use case-shaped stage entries and mirrored transition
-  nodes with destination labels and backward/self markers. Data panels record
-  provenance while existing control connections carry the dependency routes. A
-  terminal stage keeps its declaration position and its end stays below all
-  other vertices. Cycles have one result exit per declared alternative output;
-  their continue supplies the single iteration tail. Collapsed cycles retain
-  those alternative exits. In **§4.8 and §6**, replace the collapsed cycle's
-  authored capture list with the derived external-wire input list defined by
-  §7.5 here, including its gate and transitive inner uses. That list displays
-  producer mutability rather than per-block capture forms. The expanded cycle
-  retains the unlabeled structural entry and the boundary without a repeated
-  full input list; its alternative result interfaces replace the former
-  single-result interface. Stage data panels follow §7.1 here.
+  nodes with destination labels and backward/self markers. Draw them as one
+  silhouette beside the ordinary preparation flow, with aligned stage headers
+  and addresses, an upper entry rail, and a lower return contour. Outer wires
+  appear in their consumers' capture labels, while existing control connections
+  carry the dependency routes. A terminal stage keeps its declaration position
+  and its end stays below all other vertices of that local part. Cycles have one
+  result exit per declared alternative output; their continue supplies the
+  single iteration tail. Collapsed cycles retain those alternative exits. In
+  **§4.8 and §6**, replace the collapsed cycle's authored capture list with the
+  derived external-wire input list defined by §7.5 here, including its gate and
+  transitive inner uses. That list displays producer mutability rather than
+  per-block capture forms. The expanded cycle retains the unlabeled structural
+  entry and the boundary without a repeated full input list; its alternative
+  result interfaces replace the former single-result interface.
 - **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
-  symbolic stage links. Expanded and collapsed cycle checks include alternative
-  result exits and explicit continue routes in the same validated model.
+  symbolic stage links and the silhouette geometry defined in §7.4 here.
+  Expanded and collapsed cycle checks include alternative result exits and
+  explicit continue routes in the same validated model. In all diagrams, nodes
+  sharing a row use its maximum measured node height so their edges align.
 - **RFC 0003 §2.3:** an exit enclosed between repeating routes splits the merge
   before their one continue, so validation rejects it before construction. The
   generated domains therefore contain no topology refusals, and no shared-rail
@@ -1421,10 +1460,11 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0004 §§1–2 and §5:** retain shared data around the generated stage
   dispatcher, carry each selected entry in its enum variant, and emit the
   terminal return directly from its arm. Each arm binds its received entry
-  immutably. Variant fields use inferred generic types with `Copy` bounds only
-  in `const` functions. Ordinary functions transfer owned values without those
-  bounds. Constructor checks preserve the authored producer's source location
-  for diagnostics.
+  immutably. Standard enum variants carry inferred payload types without
+  introducing generated type names into authored scopes. Transition checks
+  require `Copy` only in `const` functions. Ordinary functions transfer owned
+  values without those bounds. Constructor checks preserve the authored
+  producer's source location for diagnostics.
 - **RFC 0004 §7:** remove persistent cycle-header data aliases and implicit
   repetition at body endings. Lower inner data captures against their original
   storage. Explicit continue targets the nearest generated cycle label.
@@ -1514,18 +1554,18 @@ These scenarios define required language behavior and visual representation.
 | Cycles in a flow without stages                                                                      | Apply the same unified scope, output, continue, and diagram rules.                                                                        |
 | Terminal stage in the middle of the declarations                                                     | Return from that stage and preserve diagram order.                                                                                        |
 | Stage entry and outgoing transition                                                                  | Use the case outline for entry and its vertical mirror for transition, with matching destination names.                                   |
-| Position of a transition node                                                                        | Place it last and below every other vertex on its route; alternative transition nodes may share a row.                                    |
+| Position of a transition node                                                                        | Align all addresses below the local bodies, including preparation; preserve branch order.                                                 |
 | Backward or self-transition                                                                          | Mark the transition tip and the destination entry tip.                                                                                    |
 | Forward transition to an entry also targeted backward                                                | Keep that transition unmarked and mark the shared destination entry once.                                                                 |
 | Transition to an earlier terminal stage                                                              | Apply the same backward marker rule.                                                                                                      |
-| Several stages with identical descriptions                                                           | Distinguish them through their entry-signal captions.                                                                                     |
-| Stage panels and collapsed-cycle inputs                                                              | Show stage data in the defined panel and cycle data in derived input labels, preserving control order.                                    |
+| Several stages with identical descriptions                                                           | Keep their authored descriptions; resolve destinations by signal identity without adding visible signal captions.                         |
+| Stage captures and collapsed-cycle inputs                                                            | Show outer stage wires at their capturing blocks and cycle data in derived input labels, preserving control order.                        |
 | Expanded and collapsed cycle views                                                                   | Preserve alternative output order, continue behavior, and surrounding stage links and markers.                                            |
 | Terminal stage declares an output, return in preparation, or multiple returns                        | Reject the invalid completion structure.                                                                                                  |
 | Stage route ending without a signal or return                                                        | Reject an empty stage or a route reaching its body end without a selected signal or return.                                               |
 | Divergence through stage transitions                                                                 | Accept with declared signal exits and no terminal stage.                                                                                  |
 | Unreachable stage                                                                                    | Reject using finite graph reachability.                                                                                                   |
-| Quicksort on empty, duplicate, sorted, reversed, and owned inputs                                    | Match standard sorting while retaining the input allocation and requiring only Ord.                                                       |
+| KMP search with a separate prefix-table flow                                                         | Match direct search on empty inputs, absent and repeated patterns, and overlapping prefixes; preserve the text position during fallback.  |
 | Copy values on stage transitions                                                                     | Carry unit, primitives, tuples, arrays, shared references, and user-defined Copy types under ordinary Rust lifetime rules.                |
 | Different entry types and several producers for one entry                                            | Infer each destination type independently; reject mismatched incoming types.                                                              |
 | &mut capture of a received stage entry or mut on a stage output binding                              | Reject; received entries are immutable, including through nested cycles, and stage output declarations carry no mut permission.           |
@@ -1549,6 +1589,6 @@ These scenarios define required language behavior and visual representation.
 | Continue after an action consumes a non-Copy branch output                                           | Capture the consuming action's unit output to preserve branch ancestry without cloning the consumed value.                                |
 | Braced continue with or without its inner semicolon                                                  | Accept both forms under the same transfer grammar.                                                                                        |
 | Stage whose every route diverges in a nested cycle                                                   | Accept with no declared outputs, transition node, or terminal return.                                                                     |
-| Stage entry row and data panel                                                                       | Place entries one row below start; keep the parameter panel at start and avoid panel overlap.                                             |
+| Stage entry row and silhouette contour                                                               | Keep preparation on the left without a stage header; return transitions to the stage entry rail without entering preparation again.       |
 | Derived input list of a collapsed cycle                                                              | Include its gate and all externally sourced inner captures once, including nested uses; omit its own locals.                              |
 | Multiple capture forms for one external cycle wire                                                   | Show one input name with producer mutability; keep actual borrow forms at expanded inner consumers.                                       |

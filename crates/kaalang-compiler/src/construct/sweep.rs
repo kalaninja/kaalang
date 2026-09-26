@@ -3,6 +3,7 @@
 //! envelopes supply the persistent horizontal constraints. See RFC 0003 §2.1 for the finite space,
 //! the strip-routing construction, and the state-equivalence argument.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Flow, WireMerge};
@@ -532,9 +533,11 @@ impl<'a> Sweep<'a> {
                     .max(),
             )
         });
+        let mut events = super::choice::events(topology);
+        super::stage::events(topology, &mut events);
         Some(Self {
             visit_order,
-            events: super::choice::events(topology),
+            events,
             flow,
             topology,
             checks: super::ArrangementChecks::new(flow, topology),
@@ -587,8 +590,37 @@ impl<'a> Sweep<'a> {
             && state.frontier[position..end]
                 .iter()
                 .all(|item| wanted.contains(item))
-            && (self.events[vertex].len() == 1 || state.frontier[position..end] == incoming))
+            && (self.events[vertex].len() == 1
+                || self.transition_event(vertex)
+                || state.frontier[position..end] == incoming))
             .then_some((position, wanted.len()))
+    }
+
+    fn transition_event(&self, vertex: usize) -> bool {
+        matches!(self.topology.vertices[vertex], Vertex::Node(NodeId::Block(block))
+            if self.flow.blocks[block].transition_target.is_some())
+    }
+
+    /// Address order follows the live routes, not the declaration of stage outputs.
+    fn event_vertices(&self, step: &Step) -> Cow<'_, [usize]> {
+        let vertex = step.vertex.expect("a vertex event");
+        if !self.transition_event(vertex) {
+            return Cow::Borrowed(&self.events[vertex]);
+        }
+        let mut vertices = step
+            .consumed
+            .iter()
+            .map(|item| {
+                let Lifeline::Wire(wire) = *item else {
+                    unreachable!("stage transitions have only forward arrivals")
+                };
+                index_of(self.topology, self.topology.connections[wire].destination)
+            })
+            .collect::<Vec<_>>();
+        // Interleaved arrivals cannot meet one final-row address without crossing
+        // another. Retain such repetitions so the strict anchor order rejects them.
+        vertices.dedup();
+        Cow::Owned(vertices)
     }
 
     fn emissions(&self, vertex: usize) -> Vec<Lifeline> {
@@ -679,7 +711,7 @@ impl<'a> Sweep<'a> {
             return take(frontier);
         };
         let mut event = Vec::new();
-        for &v in &self.events[vertex] {
+        for &v in self.event_vertices(step).iter() {
             event.push(Anchor::fixed(self.columns.vertex[v]));
             if let Vertex::Node(node) = self.topology.vertices[v] {
                 event.extend(

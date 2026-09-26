@@ -16,6 +16,7 @@ mod choice;
 mod join;
 mod loop_block;
 mod question;
+mod stage;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -25,6 +26,10 @@ pub(crate) struct Bindings {
     /// The type gate of each logical wire whose alternative producers no
     /// common binding unifies.
     gates: HashMap<Ident, Ident>,
+    hoisted: HashSet<Ident>,
+    merged: HashSet<Ident>,
+    stages: usize,
+    const_stages: bool,
 }
 
 impl Bindings {
@@ -75,6 +80,14 @@ impl Bindings {
             wires,
             mutable,
             gates,
+            hoisted: analysis.common_wires.iter().cloned().collect(),
+            merged: analysis
+                .merges
+                .iter()
+                .map(|merge| merge.wire.clone())
+                .collect(),
+            stages: analysis.stages.len(),
+            const_stages: false,
         }
     }
 
@@ -175,13 +188,47 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
     let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let pattern = output_pattern(block, bindings);
+    let value = quote_spanned!(block.span=> { #input_bindings #body });
+    let assignment = if block
+        .outputs
+        .iter()
+        .any(|wire| bindings.hoisted.contains(wire))
+    {
+        let temporaries = (0..block.outputs.len())
+            .map(|output| {
+                Ident::new(
+                    &format!("__kaalang_prepared_{index}_{output}"),
+                    Span::mixed_site(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let temporary_pattern =
+            if temporaries.len() == 1 && matches!(block.output_pattern, Pat::Tuple(_)) {
+                quote!((#(#temporaries,)*))
+            } else {
+                tuple(block.output_span, &temporaries)
+            };
+        let outputs = block
+            .outputs
+            .iter()
+            .zip(&temporaries)
+            .map(|(wire, temporary)| {
+                let binding = bindings.wire_at(wire);
+                if bindings.hoisted.contains(wire) && !bindings.merged.contains(wire) {
+                    quote!(#binding = #temporary;)
+                } else {
+                    let mutable = bindings.mutability(wire);
+                    quote!(let #mutable #binding = #temporary;)
+                }
+            });
+        quote!(let #temporary_pattern = #value; #(#outputs)*)
+    } else {
+        quote!(let #pattern = #value;)
+    };
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
 
     quote_spanned! {block.span=>
-        let #pattern = {
-            #input_bindings
-            #body
-        };
+        #assignment
         #(#gates)*
         #continuation
     }
@@ -224,6 +271,9 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             transfer(flow, bindings, *index, &quote_spanned!(span=> break #label))
         }
         ExecutionPlan::Return { index } => {
+            if flow.blocks[*index].transition_target.is_some() {
+                return stage::transition(flow, bindings, *index);
+            }
             let span = flow.blocks[*index].span;
             transfer(flow, bindings, *index, &quote_spanned!(span=> return))
         }
@@ -318,7 +368,7 @@ fn transfer_value(body: &Expr) -> Option<TokenStream2> {
 pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
     let bindings = inputs
         .iter()
-        .filter(|input| input.ident != "self")
+        .filter(|input| input.ident != "self" && !input.derived)
         .map(|input| {
             // The alias keeps the authored spelling, so a wire named `r#type` binds.
             let alias = &input.alias;
@@ -346,6 +396,9 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
 /// Returns the same errors as [`crate::build`].
 pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
+    if !analysis.stages.is_empty() {
+        return stage::expand(function, &analysis);
+    }
     // Diagram realizability is required even when compilation discards the arrangement.
     let topology = crate::project(&analysis, false);
     crate::construct(&analysis, &topology)?;

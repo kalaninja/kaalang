@@ -153,8 +153,8 @@ To resume a partial release, publish one crate at a time with
 `kaalang-cli`. `kaalang-testing` is a repository-only fixture harness and
 remains unpublished.
 
-Gallery examples may group related flows in one `mod.rs` and share a test. Each
-flow still gets its own `<flow>.svg` beside that module.
+Gallery examples may group related flows in one source file and share a test.
+Each flow still gets its own `<flow>.svg` beside that file.
 
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated

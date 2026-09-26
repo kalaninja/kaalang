@@ -59,47 +59,47 @@
       M 220 742 L 220 814
       M 220 886 L 220 958
       M 348 850 L 4180 850 L 4180 958
-      M 220 1028 L 220 1101
+      M 220 1028 L 220 1100
       M 4180 1028 L 4180 1100
       M 4180 1166 L 4180 4811
-      M 220 1165 L 220 1238
-      M 220 1310 L 220 1388
-      M 348 1274 L 580 1274 L 580 1388
+      M 220 1166 L 220 1238
+      M 220 1310 L 220 1382
+      M 348 1274 L 580 1274 L 580 1382
       M 348 1274 L 940 1274 L 940 1382
-      M 348 1274 L 3460 1274 L 3460 1388
-      M 348 1274 L 3820 1274 L 3820 1388
-      M 220 1458 L 220 1536
-      M 580 1458 L 580 1536
+      M 348 1274 L 3460 1274 L 3460 1382
+      M 348 1274 L 3820 1274 L 3820 1382
+      M 220 1464 L 220 1536
+      M 580 1464 L 580 1536
       M 940 1464 L 940 1536
-      M 3460 1458 L 3460 1537
-      M 3820 1458 L 3820 1537
+      M 3460 1464 L 3460 1536
+      M 3820 1464 L 3820 1536
       M 220 1602 L 220 1862
       M 580 1602 L 580 1681
       M 580 1747 L 580 1862 L 220 1862
       M 220 2071 L 220 4361
       M 940 1602 L 940 1714
       M 940 1898 L 940 2005
-      M 1080 1862 L 3100 1862 L 3100 2006
-      M 3100 2070 L 3100 4143 L 1660 4143
+      M 1080 1862 L 3100 1862 L 3100 2005
+      M 3100 2071 L 3100 4143 L 1660 4143
       M 940 2071 L 940 2143
       M 940 2207 L 940 2279
       M 940 2351 L 940 2423
-      M 1068 2315 L 1300 2315 L 1300 2429
-      M 1068 2315 L 2380 2315 L 2380 2429
-      M 1068 2315 L 2740 2315 L 2740 2429
+      M 1068 2315 L 1300 2315 L 1300 2423
+      M 1068 2315 L 2380 2315 L 2380 2423
+      M 1068 2315 L 2740 2315 L 2740 2423
       M 940 2505 L 940 2577
-      M 1300 2499 L 1300 2577
-      M 2380 2499 L 2380 2577
-      M 2740 2499 L 2740 2577
+      M 1300 2505 L 1300 2577
+      M 2380 2505 L 2380 2577
+      M 2740 2505 L 2740 2577
       M 940 2643 L 940 2722
       M 1300 2643 L 1300 2722
       M 1300 2858 L 1300 2930
       M 1300 3002 L 1300 3074
       M 1428 2966 L 2020 2966 L 2020 3074
-      M 1300 3144 L 1300 3217
+      M 1300 3144 L 1300 3216
       M 2020 3144 L 2020 3216
       M 2020 3282 L 2020 3925 L 1660 3925
-      M 1300 3281 L 1300 3354
+      M 1300 3282 L 1300 3354
       M 1300 3418 L 1300 3490
       M 1300 3562 L 1300 3634
       M 1428 3526 L 1660 3526 L 1660 3634
@@ -112,9 +112,9 @@
       M 2740 2643 L 2740 4143 L 1660 4143
       M 1660 4285 L 1660 4361 L 220 4361
       M 220 4510 L 220 4586
-      M 3460 1601 L 3460 1714
-      M 3820 1601 L 3820 1714 L 3460 1714
-      M 3460 1895 L 3460 4586 L 220 4586
+      M 3460 1602 L 3460 1714
+      M 3820 1602 L 3820 1714 L 3460 1714
+      M 3460 1898 L 3460 4586 L 220 4586
       M 220 4735 L 220 4811
       M 4180 4953 L 4180 5025
       M 4180 5089 L 4180 5161
@@ -131,7 +131,7 @@
       M 1660 4143 L 1660 4219
       M 1660 3925 L 1660 4001
       M 220 4586 L 220 4669
-      M 3460 1714 L 3460 1829
+      M 3460 1714 L 3460 1826
       M 220 462 L 220 534
       M 940 1714 L 940 1826
       M 1300 2722 L 1300 2794
@@ -161,10 +161,10 @@
     <text class="connection-label" x="233" y="1525" xml:space="preserve"><tspan x="233" dy="0">cached</tspan></text>
     <text class="connection-label" x="593" y="1525" xml:space="preserve"><tspan x="593" dy="0">local</tspan></text>
     <text class="connection-label" x="953" y="1525" xml:space="preserve"><tspan x="953" dy="0">remote</tspan></text>
-    <text class="connection-label" x="3473" y="1526" xml:space="preserve"><tspan x="3473" dy="0">skipped</tspan></text>
-    <text class="connection-label" x="3833" y="1526" xml:space="preserve"><tspan x="3833" dy="0">rejected</tspan></text>
+    <text class="connection-label" x="3473" y="1525" xml:space="preserve"><tspan x="3473" dy="0">skipped</tspan></text>
+    <text class="connection-label" x="3833" y="1525" xml:space="preserve"><tspan x="3833" dy="0">rejected</tspan></text>
     <text class="connection-label" x="593" y="1670" xml:space="preserve"><tspan x="593" dy="0">local_total</tspan></text>
-    <text class="connection-label" x="3113" y="1995" xml:space="preserve"><tspan x="3113" dy="0">exhausted</tspan></text>
+    <text class="connection-label" x="3113" y="1994" xml:space="preserve"><tspan x="3113" dy="0">exhausted</tspan></text>
     <text class="connection-label" x="1313" y="2566" xml:space="preserve"><tspan x="1313" dy="0">payload</tspan></text>
     <text class="connection-label" x="2393" y="2566" xml:space="preserve"><tspan x="2393" dy="0">fatal</tspan></text>
     <text class="connection-label" x="2753" y="2566" xml:space="preserve"><tspan x="2753" dy="0">last_failure</tspan></text>
@@ -178,7 +178,7 @@
     <text class="connection-label branch-label" style="font-size: 14px" x="233" y="626" xml:space="preserve"><tspan x="233" dy="0">Take another task.</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="373" y="558" xml:space="preserve"><tspan x="373" dy="0">Cancel the batch.</tspan></text>
     <text class="connection-label" x="233" y="1046" xml:space="preserve"><tspan x="233" dy="0">job</tspan></text>
-    <text class="connection-label" x="233" y="1183" xml:space="preserve"><tspan x="233" dy="0">index</tspan></text>
+    <text class="connection-label" x="233" y="1184" xml:space="preserve"><tspan x="233" dy="0">index</tspan></text>
     <text class="connection-label" x="953" y="1620" xml:space="preserve"><tspan x="953" dy="0">mut responses, mut </tspan><tspan x="953" dy="14">attempt_number</tspan></text>
     <text class="connection-label" x="953" y="1916" xml:space="preserve"><tspan x="953" dy="0">try_next</tspan></text>
     <text class="connection-label" x="953" y="2089" xml:space="preserve"><tspan x="953" dy="0">_lease</tspan></text>
@@ -199,7 +199,7 @@
     <text class="connection-label" x="233" y="313" xml:space="preserve"><tspan x="233" dy="0">jobs</tspan></text>
     <text class="connection-label" x="233" y="523" xml:space="preserve"><tspan x="233" dy="0">policy, &amp;report</tspan></text>
     <text class="connection-label" x="233" y="667" xml:space="preserve"><tspan x="233" dy="0">poll, &amp;mut pending</tspan></text>
-    <text class="connection-label" x="233" y="1090" xml:space="preserve"><tspan x="233" dy="0">&amp;job, &amp;report, &amp;mut self</tspan></text>
+    <text class="connection-label" x="233" y="1089" xml:space="preserve"><tspan x="233" dy="0">&amp;job, &amp;report, &amp;mut self</tspan></text>
     <text class="connection-label" x="233" y="1227" xml:space="preserve"><tspan x="233" dy="0">job</tspan></text>
     <text class="connection-label" x="233" y="1980" xml:space="preserve"><tspan x="233" dy="0">prepared, origin, index, &amp;mut </tspan><tspan x="233" dy="14">self</tspan></text>
     <text class="connection-label" x="953" y="1815" xml:space="preserve"><tspan x="953" dy="0">&amp;responses</tspan></text>
@@ -209,13 +209,13 @@
     <text class="connection-label" x="953" y="2566" xml:space="preserve"><tspan x="953" dy="0">retry, index, &amp;mut self</tspan></text>
     <text class="connection-label" x="1313" y="2783" xml:space="preserve"><tspan x="1313" dy="0">&amp;mut parts</tspan></text>
     <text class="connection-label" x="2033" y="3205" xml:space="preserve"><tspan x="2033" dy="0">complete, subtotal</tspan></text>
-    <text class="connection-label" x="1313" y="3206" xml:space="preserve"><tspan x="1313" dy="0">&amp;text</tspan></text>
+    <text class="connection-label" x="1313" y="3205" xml:space="preserve"><tspan x="1313" dy="0">&amp;text</tspan></text>
     <text class="connection-label" x="1313" y="3758" xml:space="preserve"><tspan x="1313" dy="0">number, &amp;mut subtotal, &amp;mut </tspan><tspan x="1313" dy="14">part_index, index, &amp;mut self</tspan></text>
     <text class="connection-label" x="1673" y="3772" xml:space="preserve"><tspan x="1673" dy="0">invalid, text, part_index</tspan></text>
     <text class="connection-label" x="1673" y="3990" xml:space="preserve"><tspan x="1673" dy="0">checked, index, &amp;mut self</tspan></text>
     <text class="connection-label" x="1673" y="4208" xml:space="preserve"><tspan x="1673" dy="0">final_result, attempt_number</tspan></text>
     <text class="connection-label" x="233" y="4419" xml:space="preserve"><tspan x="233" dy="0">processed, attempts, index, </tspan><tspan x="233" dy="14">&amp;mut self</tspan></text>
-    <text class="connection-label" x="3473" y="1804" xml:space="preserve"><tspan x="3473" dy="0">bypassed, bypass_origin, index, </tspan><tspan x="3473" dy="14">&amp;mut self</tspan></text>
+    <text class="connection-label" x="3473" y="1801" xml:space="preserve"><tspan x="3473" dy="0">bypassed, bypass_origin, index, </tspan><tspan x="3473" dy="14">&amp;mut self</tspan></text>
     <text class="connection-label" x="233" y="4644" xml:space="preserve"><tspan x="233" dy="0">outcome, count, &amp;mut report, </tspan><tspan x="233" dy="14">&amp;mut self</tspan></text>
     <text class="connection-label" x="4193" y="4876" xml:space="preserve"><tspan x="4193" dy="0">reason, mut report</tspan></text>
     <text class="connection-label" x="4193" y="5014" xml:space="preserve"><tspan x="4193" dy="0">&amp;mut self</tspan></text>
@@ -310,7 +310,7 @@
     </g>
     <g class="node action" transform="translate(220 1133)">
       <title xml:space="preserve">Record entry into this task.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record entry into this task.</tspan></text>
     </g>
     <g class="node select" transform="translate(220 1274)">
@@ -320,12 +320,12 @@
     </g>
     <g class="node case" transform="translate(220 1423)">
       <title xml:space="preserve">Use the cached value.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the cached value.</tspan></text>
     </g>
     <g class="node case" transform="translate(580 1423)">
       <title xml:space="preserve">Sum local values.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Sum local values.</tspan></text>
     </g>
     <g class="node case" transform="translate(940 1423)">
@@ -335,12 +335,12 @@
     </g>
     <g class="node case" transform="translate(3460 1423)">
       <title xml:space="preserve">Skip this task.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Skip this task.</tspan></text>
     </g>
     <g class="node case" transform="translate(3820 1423)">
       <title xml:space="preserve">Reject this task.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Reject this task.</tspan></text>
     </g>
     <g class="node action" transform="translate(220 1569)">
@@ -376,7 +376,7 @@
     </g>
     <g class="node action" transform="translate(3100 2038)">
       <title xml:space="preserve">No attempt can provide a result.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">No attempt can provide a result.</tspan></text>
     </g>
     <g class="node action" transform="translate(940 2038)">
@@ -402,17 +402,17 @@
     </g>
     <g class="node case" transform="translate(1300 2464)">
       <title xml:space="preserve">Validate the response parts.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Validate the response parts.</tspan></text>
     </g>
     <g class="node case" transform="translate(2380 2464)">
       <title xml:space="preserve">A fatal error ends the task.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A fatal error ends the task.</tspan></text>
     </g>
     <g class="node case" transform="translate(2740 2464)">
       <title xml:space="preserve">The final attempt failed.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The final attempt failed.</tspan></text>
     </g>
     <g class="node action" transform="translate(940 2610)">
@@ -453,7 +453,7 @@
     </g>
     <g class="node action" transform="translate(1300 3249)">
       <title xml:space="preserve">Borrow the part for parsing.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the part for parsing.</tspan></text>
     </g>
     <g class="node call" transform="translate(1300 3386)">
@@ -514,17 +514,17 @@
     </g>
     <g class="node action" transform="translate(3460 1569)">
       <title xml:space="preserve">Prepare a skipped outcome.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare a skipped outcome.</tspan></text>
     </g>
     <g class="node action" transform="translate(3820 1569)">
       <title xml:space="preserve">Prepare a rejected outcome.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare a rejected outcome.</tspan></text>
     </g>
     <g class="node action" transform="translate(3460 1862)">
       <title xml:space="preserve">Join both bypass routes before recording the task.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Join both bypass routes before </tspan><tspan x="-124" dy="18">recording the task.</tspan></text>
     </g>
     <g class="node call" transform="translate(220 4702)">

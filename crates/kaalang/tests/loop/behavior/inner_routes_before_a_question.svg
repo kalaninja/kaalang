@@ -41,17 +41,17 @@
     <path class="connection" d="
       M 228 94 L 228 170
       M 228 314 L 228 386
-      M 368 278 L 1308 278 L 1308 390
+      M 368 278 L 1308 278 L 1308 386
       M 228 458 L 228 530
       M 368 422 L 588 422 L 588 530
       M 228 594 L 228 670
       M 588 594 L 588 670
-      M 1308 454 L 1308 670 L 588 670
-      M 228 815 L 228 1032
+      M 1308 458 L 1308 670 L 588 670
+      M 228 818 L 228 1032
       M 588 818 L 588 890
-      M 728 782 L 948 782 L 948 891
+      M 728 782 L 948 782 L 948 890
       M 588 956 L 588 1032 L 228 1032
-      M 948 955 L 948 1032
+      M 948 956 L 948 1032
       M 228 1172 L 228 1248
       M 948 1172 L 948 1248 L 228 1248
       M 588 670 L 588 746
@@ -59,23 +59,23 @@
       M 228 1248 L 228 1324
       M 228 170 L 228 242
       M 948 1032 L 948 1108
-      M 228 670 L 228 749
+      M 228 670 L 228 746
     "/>
     <text class="connection-label" x="601" y="688" xml:space="preserve"><tspan x="601" dy="0">larger</tspan></text>
     <text class="connection-label" x="241" y="1050" xml:space="preserve"><tspan x="241" dy="0">first</tspan></text>
     <text class="connection-label" x="241" y="1266" xml:space="preserve"><tspan x="241" dy="0">result</tspan></text>
-    <text class="connection-label" x="1321" y="379" xml:space="preserve"><tspan x="1321" dy="0">high</tspan></text>
+    <text class="connection-label" x="1321" y="375" xml:space="preserve"><tspan x="1321" dy="0">high</tspan></text>
     <text class="connection-label" x="241" y="519" xml:space="preserve"><tspan x="241" dy="0">below</tspan></text>
     <text class="connection-label" x="601" y="519" xml:space="preserve"><tspan x="601" dy="0">small</tspan></text>
     <text class="connection-label" x="601" y="879" xml:space="preserve"><tspan x="601" dy="0">even</tspan></text>
-    <text class="connection-label" x="961" y="880" xml:space="preserve"><tspan x="961" dy="0">odd</tspan></text>
+    <text class="connection-label" x="961" y="879" xml:space="preserve"><tspan x="961" dy="0">odd</tspan></text>
     <text class="connection-label" x="241" y="112" xml:space="preserve"><tspan x="241" dy="0">value, flag</tspan></text>
     <text class="connection-label" x="241" y="332" xml:space="preserve"><tspan x="241" dy="0">low</tspan></text>
     <text class="connection-label" x="241" y="612" xml:space="preserve"><tspan x="241" dy="0">tiny</tspan></text>
-    <text class="connection-label" x="961" y="973" xml:space="preserve"><tspan x="961" dy="0">second</tspan></text>
+    <text class="connection-label" x="961" y="974" xml:space="preserve"><tspan x="961" dy="0">second</tspan></text>
     <text class="connection-label" x="241" y="231" xml:space="preserve"><tspan x="241" dy="0">value</tspan></text>
     <text class="connection-label" x="241" y="375" xml:space="preserve"><tspan x="241" dy="0">low, value</tspan></text>
-    <text class="connection-label" x="241" y="738" xml:space="preserve"><tspan x="241" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="241" y="735" xml:space="preserve"><tspan x="241" dy="0">tiny</tspan></text>
     <text class="connection-label" x="601" y="735" xml:space="preserve"><tspan x="601" dy="0">larger, flag</tspan></text>
     <text class="connection-label" x="961" y="1097" xml:space="preserve"><tspan x="961" dy="0">second</tspan></text>
   </g>
@@ -123,12 +123,12 @@
     </g>
     <g class="node action" transform="translate(1308 422)">
       <title xml:space="preserve">Mark a high value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a high value.</tspan></text>
     </g>
     <g class="node action" transform="translate(228 782)">
       <title xml:space="preserve">Take the first class for a tiny value.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take the first class for a tiny </tspan><tspan x="-124" dy="18">value.</tspan></text>
     </g>
     <g class="node question" transform="translate(588 782)">
@@ -143,7 +143,7 @@
     </g>
     <g class="node action" transform="translate(948 923)">
       <title xml:space="preserve">Take the second class.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the second class.</tspan></text>
     </g>
     <g class="node action" transform="translate(228 1140)">

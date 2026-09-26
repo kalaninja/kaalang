@@ -47,8 +47,8 @@
       M 200 605 L 200 1544
       M 560 605 L 560 677
       M 560 821 L 560 900
-      M 700 785 L 1280 785 L 1280 904
-      M 1280 968 L 1280 1184 L 920 1184
+      M 700 785 L 1280 785 L 1280 900
+      M 1280 972 L 1280 1184 L 920 1184
       M 560 972 L 560 1044
       M 700 936 L 920 936 L 920 1044
       M 560 1108 L 560 1184
@@ -136,7 +136,7 @@
     </g>
     <g class="node action" transform="translate(1280 936)">
       <title xml:space="preserve">No match exists in this row.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">No match exists in this row.</tspan></text>
     </g>
     <g class="node question" transform="translate(560 936)">

@@ -270,6 +270,51 @@ mod tests {
 
     use kaalang_testing::corpus::flow_named as fixture;
 
+    #[test]
+    fn silhouette_addresses_keep_their_final_row_through_compaction() {
+        use kaalang_compiler::topology::NodeKind;
+
+        let function = fixture(
+            include_str!("../../kaalang/tests/gallery/sorting/quick_sort.rs"),
+            "quick_sort",
+        );
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let mut stages = std::mem::take(&mut model.stages);
+        for part in std::iter::once(&mut model).chain(stages.iter_mut()) {
+            compact_arrangement(part);
+            let addresses = part
+                .topology
+                .nodes
+                .iter()
+                .filter(|node| node.kind == NodeKind::Transition)
+                .map(|node| Vertex::Node(node.id))
+                .collect::<Vec<_>>();
+            let Some(first) = addresses.first() else {
+                continue;
+            };
+            let row = part.arrangement.rank[first];
+            assert!(
+                addresses
+                    .iter()
+                    .all(|address| part.arrangement.rank[address] == row)
+            );
+            assert!(
+                part.topology
+                    .vertices
+                    .iter()
+                    .filter(|vertex| !addresses.contains(vertex))
+                    .all(|vertex| part.arrangement.rank[vertex] < row)
+            );
+            let mut broken = part.arrangement.clone();
+            *broken.rank.get_mut(first).unwrap() -= 1;
+            assert!(
+                ArrangementVerifier::new(&part.analysis.flow, &part.topology)
+                    .normalize(broken)
+                    .is_err()
+            );
+        }
+    }
+
     /// The verifier decides this on its own: the boundary rule reads the
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]
@@ -302,7 +347,7 @@ mod tests {
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for (source, name) in [
             (
-                include_str!("../../kaalang/tests/gallery/bubble_sort/mod.rs"),
+                include_str!("../../kaalang/tests/gallery/sorting/bubble_sort.rs"),
                 "bubble_sort",
             ),
             (

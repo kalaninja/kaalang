@@ -461,6 +461,7 @@ mod tests {
             .collect();
         Scene {
             narrow: false,
+            stage_rows: None,
             reach: std::collections::BTreeMap::new(),
             slack: 0,
             bodies: Vec::new(),

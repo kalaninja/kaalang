@@ -36,27 +36,27 @@
     <path class="connection" d="
       M 200 94 L 200 170
       M 200 242 L 200 314
-      M 340 206 L 1280 206 L 1280 318
+      M 340 206 L 1280 206 L 1280 314
       M 200 386 L 200 458
       M 340 350 L 560 350 L 560 458
       M 200 522 L 200 598
       M 560 522 L 560 598
-      M 1280 382 L 1280 598 L 560 598
+      M 1280 386 L 1280 598 L 560 598
       M 560 746 L 560 818
       M 700 710 L 920 710 L 920 818
-      M 200 742 L 200 958
+      M 200 746 L 200 958
       M 560 882 L 560 958 L 200 958
       M 200 1098 L 200 1174
       M 920 882 L 920 1174 L 200 1174
       M 560 598 L 560 674
       M 200 958 L 200 1034
       M 200 1174 L 200 1250
-      M 200 598 L 200 678
+      M 200 598 L 200 674
     "/>
     <text class="connection-label" x="573" y="616" xml:space="preserve"><tspan x="573" dy="0">larger</tspan></text>
     <text class="connection-label" x="213" y="976" xml:space="preserve"><tspan x="213" dy="0">score</tspan></text>
     <text class="connection-label" x="213" y="1192" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label" x="1293" y="307" xml:space="preserve"><tspan x="1293" dy="0">high</tspan></text>
+    <text class="connection-label" x="1293" y="303" xml:space="preserve"><tspan x="1293" dy="0">high</tspan></text>
     <text class="connection-label" x="213" y="447" xml:space="preserve"><tspan x="213" dy="0">below</tspan></text>
     <text class="connection-label" x="573" y="447" xml:space="preserve"><tspan x="573" dy="0">small</tspan></text>
     <text class="connection-label" x="573" y="807" xml:space="preserve"><tspan x="573" dy="0">even</tspan></text>
@@ -67,7 +67,7 @@
     <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
     <text class="connection-label" x="213" y="303" xml:space="preserve"><tspan x="213" dy="0">low, value</tspan></text>
     <text class="connection-label" x="573" y="663" xml:space="preserve"><tspan x="573" dy="0">larger, flag</tspan></text>
-    <text class="connection-label" x="213" y="667" xml:space="preserve"><tspan x="213" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="213" y="663" xml:space="preserve"><tspan x="213" dy="0">tiny</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -113,7 +113,7 @@
     </g>
     <g class="node action" transform="translate(1280 350)">
       <title xml:space="preserve">Mark a high value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Mark a high value.</tspan></text>
     </g>
     <g class="node question" transform="translate(560 710)">
@@ -123,7 +123,7 @@
     </g>
     <g class="node action" transform="translate(200 710)">
       <title xml:space="preserve">Score the tiny value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the tiny value.</tspan></text>
     </g>
     <g class="node action" transform="translate(560 850)">

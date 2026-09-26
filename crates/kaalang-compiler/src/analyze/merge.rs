@@ -1152,36 +1152,46 @@ mod tests {
     /// reference, the index against the pairwise scan on the same executions
     /// whatever their number, and that no merge waits for the implicit end.
     fn agrees(name: &str, function: &ItemFn) {
-        let Some((flow, executions)) = crate::analyze::walked(function) else {
-            panic!("{name}: the flow parses and resolves")
+        let parts = if let Some(part) = crate::analyze::walked(function) {
+            vec![part]
+        } else {
+            let analysis = crate::analyze(function).expect("the staged flow analyzes");
+            let mut parts = vec![(analysis.flow, analysis.executions)];
+            parts.extend(analysis.stages.into_iter().map(|stage| {
+                let local = *stage.analysis;
+                (local.flow, local.executions)
+            }));
+            parts
         };
-        let end = flow.blocks.len() - 1;
-        let mut merges = collect(&flow);
-        let expected = merges
-            .iter()
-            .map(|merge| reference(&flow, &executions, merge))
-            .collect::<Vec<_>>();
-        let owners = completion_at(&flow, &executions, &mut merges);
+        for (flow, executions) in parts {
+            let end = flow.blocks.len() - 1;
+            let mut merges = collect(&flow);
+            let expected = merges
+                .iter()
+                .map(|merge| reference(&flow, &executions, merge))
+                .collect::<Vec<_>>();
+            let owners = completion_at(&flow, &executions, &mut merges);
 
-        for ((merge, owners), (before, groups)) in merges.iter().zip(owners).zip(expected) {
-            let wire = &merge.wire;
-            assert_eq!(merge.before, before, "{name}: the `{wire}` merge's order");
-            assert_eq!(owners, groups, "{name}: the `{wire}` merge's owners");
-            assert!(
-                !merge.before.contains(&end),
-                "{name}: the `{wire}` merge waits for the implicit end"
+            for ((merge, owners), (before, groups)) in merges.iter().zip(owners).zip(expected) {
+                let wire = &merge.wire;
+                assert_eq!(merge.before, before, "{name}: the `{wire}` merge's order");
+                assert_eq!(owners, groups, "{name}: the `{wire}` merge's owners");
+                assert!(
+                    !merge.before.contains(&end),
+                    "{name}: the `{wire}` merge waits for the implicit end"
+                );
+            }
+
+            let (producing, context) = context(&flow, &executions, &merges);
+            let mut pairwise = vec![Completion::default(); merges.len()];
+            compare_every_pair(&producing, &context, &mut pairwise, end);
+            let mut indexed = vec![Completion::default(); merges.len()];
+            compare_compatible(&producing, &context, &mut indexed, end);
+            assert_eq!(
+                pairwise, indexed,
+                "{name}: the index and the pairwise scan disagree"
             );
         }
-
-        let (producing, context) = context(&flow, &executions, &merges);
-        let mut pairwise = vec![Completion::default(); merges.len()];
-        compare_every_pair(&producing, &context, &mut pairwise, end);
-        let mut indexed = vec![Completion::default(); merges.len()];
-        compare_compatible(&producing, &context, &mut indexed, end);
-        assert_eq!(
-            pairwise, indexed,
-            "{name}: the index and the pairwise scan disagree"
-        );
     }
 
     /// The opening of a flow over `parameters` whose first block is a choice

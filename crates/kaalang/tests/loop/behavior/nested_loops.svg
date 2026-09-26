@@ -43,9 +43,9 @@
       M 248 90 L 248 162
       M 248 226 L 248 298
       M 248 434 L 248 506
-      M 248 650 L 248 726
+      M 248 650 L 248 722
       M 388 614 L 608 614 L 608 722
-      M 248 790 L 248 898
+      M 248 794 L 248 898
       M 608 794 L 608 1074
       M 748 758 L 968 758 L 968 866
       M 968 930 L 968 1002
@@ -68,7 +68,7 @@
     <text class="connection-label" x="261" y="151" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
     <text class="connection-label" x="261" y="359" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
     <text class="connection-label" x="261" y="567" xml:space="preserve"><tspan x="261" dy="0">&amp;inner, &amp;outer</tspan></text>
-    <text class="connection-label" x="261" y="715" xml:space="preserve"><tspan x="261" dy="0">iterate_1, &amp;mut inner</tspan></text>
+    <text class="connection-label" x="261" y="711" xml:space="preserve"><tspan x="261" dy="0">iterate_1, &amp;mut inner</tspan></text>
     <text class="connection-label" x="621" y="711" xml:space="preserve"><tspan x="621" dy="0">leave_1, &amp;outer, &amp;limit</tspan></text>
     <text class="connection-label" x="981" y="855" xml:space="preserve"><tspan x="981" dy="0">again, &amp;mut outer</tspan></text>
     <text class="connection-label" x="621" y="1063" xml:space="preserve"><tspan x="621" dy="0">outer</tspan></text>
@@ -100,7 +100,7 @@
     </g>
     <g class="node action" transform="translate(248 758)">
       <title xml:space="preserve">Increment the iteration counter.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the iteration counter.</tspan></text>
     </g>
     <g class="node question" transform="translate(608 758)">

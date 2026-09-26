@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3308" height="948" viewBox="0 0 3308 948" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for kmp_search</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: kmp_search with parameters text: &amp;[u8]; pattern: &amp;[u8] handing over text, pattern; Call: Build the pattern&apos;s prefix table. capturing pattern handing over prefix; Action: Start at the first byte with no matched prefix. capturing nothing handing over mut position, mut matched; Select: Can comparison begin? capturing text, pattern; Case: Both inputs contain bytes.; Case: An input is empty.; Transition: Compare the current bytes.; Transition: Return the first match.. Connections: Start: kmp_search to Call: Build the pattern&apos;s prefix table.; Call: Build the pattern&apos;s prefix table. to Action: Start at the first byte with no matched prefix.; Action: Start at the first byte with no matched prefix. to Select: Can comparison begin?; Select: Can comparison begin? to Case: Both inputs contain bytes.; Select: Can comparison begin? to Case: An input is empty.; Case: Both inputs contain bytes. to Transition: Compare the current bytes.; Case: An input is empty. to Transition: Return the first match.. Transition to stage compare. Transition to stage finish. Stage compare. Nodes: Stage: Compare the current bytes.; Select: Do the bytes match? capturing text, pattern, position, matched; Case: Extend the matched prefix.; Case: Try a shorter prefix.; Transition: Advance through the text.; Transition: Fall back to a shorter prefix.. Connections: Stage: Compare the current bytes. to Select: Do the bytes match?; Select: Do the bytes match? to Case: Extend the matched prefix.; Select: Do the bytes match? to Case: Try a shorter prefix.; Case: Extend the matched prefix. to Transition: Advance through the text.; Case: Try a shorter prefix. to Transition: Fall back to a shorter prefix.. Transition to stage step. Transition to stage retry. Stage step. Nodes: Stage: Advance through the text.; Action: Consume one byte and record the matched length. capturing step, &amp;mut position, &amp;mut matched; Select: Can the search continue? capturing text, pattern, position, matched; Case: Compare the next byte.; Case: Return the match or exhaustion.; Transition: Compare the current bytes.; Transition: Return the first match.. Connections: Stage: Advance through the text. to Action: Consume one byte and record the matched length.; Action: Consume one byte and record the matched length. to Select: Can the search continue?; Select: Can the search continue? to Case: Compare the next byte.; Select: Can the search continue? to Case: Return the match or exhaustion.; Case: Compare the next byte. to Transition: Compare the current bytes.; Case: Return the match or exhaustion. to Transition: Return the first match.. Transition to stage compare. Transition to stage finish. Stage retry. Nodes: Stage: Fall back to a shorter prefix.; Select: Is any prefix still matched? capturing matched; Case: Follow the prefix table. handing over shorten; Case: Skip the unmatched text byte.; Action: Shorten the prefix; keep the text position. capturing shorten, &amp;prefix, &amp;mut matched; Transition: Compare the current bytes.; Transition: Advance through the text.. Connections: Stage: Fall back to a shorter prefix. to Select: Is any prefix still matched?; Select: Is any prefix still matched? to Case: Follow the prefix table.; Select: Is any prefix still matched? to Case: Skip the unmatched text byte.; Case: Follow the prefix table. to Action: Shorten the prefix; keep the text position.; Case: Skip the unmatched text byte. to Transition: Advance through the text.; Action: Shorten the prefix; keep the text position. to Transition: Compare the current bytes.. Transition to stage compare. Transition to stage step. Stage finish. Nodes: Stage: Return the first match.; End: Option&lt;usize&gt; capturing finish. Connections: Stage: Return the first match. to End: Option&lt;usize&gt;.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 856 L 232 924 "/>
+<path d="M 592 856 L 592 924 "/>
+<path d="M 952 158 L 952 194 "/>
+<path d="M 952 856 L 952 924 "/>
+<path d="M 1312 856 L 1312 924 "/>
+<path d="M 1672 158 L 1672 194 "/>
+<path d="M 1672 856 L 1672 924 "/>
+<path d="M 2032 856 L 2032 924 "/>
+<path d="M 2392 158 L 2392 194 "/>
+<path d="M 2392 856 L 2392 924 "/>
+<path d="M 2752 856 L 2752 924 "/>
+<path d="M 3112 158 L 3112 194 "/>
+<path d="M 232 158 L 3112 158 "/>
+<path d="M 2752 924 L 24 924 L 24 158 L 232 158 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="864" viewBox="0 0 684 864" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for kmp_search</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: kmp_search with parameters text: &amp;[u8]; pattern: &amp;[u8] handing over text, pattern; Call: Build the pattern&apos;s prefix table. capturing pattern handing over prefix; Action: Start at the first byte with no matched prefix. capturing nothing handing over mut position, mut matched; Select: Can comparison begin? capturing text, pattern; Case: Both inputs contain bytes.; Case: An input is empty.; Transition: Compare the current bytes.; Transition: Return the first match.. Connections: Start: kmp_search to Call: Build the pattern&apos;s prefix table.; Call: Build the pattern&apos;s prefix table. to Action: Start at the first byte with no matched prefix.; Action: Start at the first byte with no matched prefix. to Select: Can comparison begin?; Select: Can comparison begin? to Case: Both inputs contain bytes.; Select: Can comparison begin? to Case: An input is empty.; Case: Both inputs contain bytes. to Transition: Compare the current bytes.; Case: An input is empty. to Transition: Return the first match..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 236 L 172 308
+      M 172 374 L 172 446
+      M 172 518 L 172 590
+      M 300 482 L 532 482 L 532 590
+      M 172 660 L 172 762
+      M 532 660 L 532 762
+    "/>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">text, pattern</tspan></text>
+    <text class="connection-label" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">prefix</tspan></text>
+    <text class="connection-label" x="185" y="392" xml:space="preserve"><tspan x="185" dy="0">mut position, mut matched</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">pattern</tspan></text>
+    <text class="connection-label" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="435" xml:space="preserve"><tspan x="185" dy="0">text, pattern</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">text: &amp;[u8]</tspan><tspan x="-104" dy="18">pattern: &amp;[u8]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">kmp_search</tspan></text>
+    </g>
+    <g class="node call" transform="translate(172 203)">
+      <title xml:space="preserve">Build the pattern&apos;s prefix table.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-112" dy="0">Build the pattern&apos;s prefix </tspan><tspan x="-112" dy="18">table.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 341)">
+      <title xml:space="preserve">Start at the first byte with no matched prefix.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Start at the first byte with no </tspan><tspan x="-124" dy="18">matched prefix.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 482)">
+      <title xml:space="preserve">Can comparison begin?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Can comparison begin?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 625)">
+      <title xml:space="preserve">Both inputs contain bytes.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Both inputs contain bytes.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 625)">
+      <title xml:space="preserve">An input is empty.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">An input is empty.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 797)">
+      <title xml:space="preserve">Compare the current bytes.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Compare the current bytes.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(532 797)">
+      <title xml:space="preserve">Return the first match.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the first match.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(780 162)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="726" viewBox="0 0 684 726" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for kmp_search</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Compare the current bytes.; Select: Do the bytes match? capturing text, pattern, position, matched; Case: Extend the matched prefix.; Case: Try a shorter prefix.; Transition: Advance through the text.; Transition: Fall back to a shorter prefix.. Connections: Stage: Compare the current bytes. to Select: Do the bytes match?; Select: Do the bytes match? to Case: Extend the matched prefix.; Select: Do the bytes match? to Case: Try a shorter prefix.; Case: Extend the matched prefix. to Transition: Advance through the text.; Case: Try a shorter prefix. to Transition: Fall back to a shorter prefix..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 181
+      M 172 253 L 172 325
+      M 300 217 L 532 217 L 532 325
+      M 172 395 L 172 624
+      M 532 395 L 532 624
+    "/>
+    <text class="connection-label" x="185" y="156" xml:space="preserve"><tspan x="185" dy="0">text, pattern, position, </tspan><tspan x="185" dy="14">matched</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Compare the current bytes.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Compare the current bytes.</tspan></text>
+      <polygon class="stage-marker" points="0,35 -60,26 60,26"/>
+    </g>
+    <g class="node select" transform="translate(172 217)">
+      <title xml:space="preserve">Do the bytes match?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Do the bytes match?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 360)">
+      <title xml:space="preserve">Extend the matched prefix.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Extend the matched prefix.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 360)">
+      <title xml:space="preserve">Try a shorter prefix.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Try a shorter prefix.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 659)">
+      <title xml:space="preserve">Advance through the text.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Advance through the text.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(532 659)">
+      <title xml:space="preserve">Fall back to a shorter prefix.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Fall back to a shorter prefix.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1500 162)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="726" viewBox="0 0 684 726" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for kmp_search</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Advance through the text.; Action: Consume one byte and record the matched length. capturing step, &amp;mut position, &amp;mut matched; Select: Can the search continue? capturing text, pattern, position, matched; Case: Compare the next byte.; Case: Return the match or exhaustion.; Transition: Compare the current bytes.; Transition: Return the first match.. Connections: Stage: Advance through the text. to Action: Consume one byte and record the matched length.; Action: Consume one byte and record the matched length. to Select: Can the search continue?; Select: Can the search continue? to Case: Compare the next byte.; Select: Can the search continue? to Case: Return the match or exhaustion.; Case: Compare the next byte. to Transition: Compare the current bytes.; Case: Return the match or exhaustion. to Transition: Return the first match..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 181
+      M 172 247 L 172 326
+      M 172 398 L 172 470
+      M 300 362 L 532 362 L 532 470
+      M 172 552 L 172 624
+      M 532 552 L 532 624
+    "/>
+    <text class="connection-label" x="185" y="156" xml:space="preserve"><tspan x="185" dy="0">step, &amp;mut position, &amp;mut </tspan><tspan x="185" dy="14">matched</tspan></text>
+    <text class="connection-label" x="185" y="301" xml:space="preserve"><tspan x="185" dy="0">text, pattern, position, </tspan><tspan x="185" dy="14">matched</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Advance through the text.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance through the text.</tspan></text>
+      <polygon class="stage-marker" points="0,35 -60,26 60,26"/>
+    </g>
+    <g class="node action" transform="translate(172 214)">
+      <title xml:space="preserve">Consume one byte and record the matched length.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Consume one byte and record the </tspan><tspan x="-124" dy="18">matched length.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 362)">
+      <title xml:space="preserve">Can the search continue?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Can the search continue?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 511)">
+      <title xml:space="preserve">Compare the next byte.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Compare the next byte.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 511)">
+      <title xml:space="preserve">Return the match or exhaustion.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Return the match or </tspan><tspan x="0" dy="18">exhaustion.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 659)">
+      <title xml:space="preserve">Compare the current bytes.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Compare the current bytes.</tspan></text>
+      <polygon class="stage-marker" points="0,-35 -60,-26 60,-26"/>
+    </g>
+    <g class="node transition" transform="translate(532 659)">
+      <title xml:space="preserve">Return the first match.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the first match.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(2220 162)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="726" viewBox="0 0 684 726" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
+  <title id="kaalang-part-3-title">kaalang diagram for kmp_search</title>
+  <desc id="kaalang-part-3-description">Nodes: Stage: Fall back to a shorter prefix.; Select: Is any prefix still matched? capturing matched; Case: Follow the prefix table. handing over shorten; Case: Skip the unmatched text byte.; Action: Shorten the prefix; keep the text position. capturing shorten, &amp;prefix, &amp;mut matched; Transition: Compare the current bytes.; Transition: Advance through the text.. Connections: Stage: Fall back to a shorter prefix. to Select: Is any prefix still matched?; Select: Is any prefix still matched? to Case: Follow the prefix table.; Select: Is any prefix still matched? to Case: Skip the unmatched text byte.; Case: Follow the prefix table. to Action: Shorten the prefix; keep the text position.; Case: Skip the unmatched text byte. to Transition: Advance through the text.; Action: Shorten the prefix; keep the text position. to Transition: Compare the current bytes..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+      M 172 246 L 172 318
+      M 300 210 L 532 210 L 532 318
+      M 172 400 L 172 472
+      M 532 400 L 532 624
+      M 172 538 L 172 624
+    "/>
+    <text class="connection-label" x="185" y="418" xml:space="preserve"><tspan x="185" dy="0">shorten</tspan></text>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">matched</tspan></text>
+    <text class="connection-label" x="185" y="461" xml:space="preserve"><tspan x="185" dy="0">shorten, &amp;prefix, &amp;mut matched</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Fall back to a shorter prefix.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Fall back to a shorter prefix.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 210)">
+      <title xml:space="preserve">Is any prefix still matched?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is any prefix still matched?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 359)">
+      <title xml:space="preserve">Follow the prefix table.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Follow the prefix table.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 359)">
+      <title xml:space="preserve">Skip the unmatched text byte.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Skip the unmatched text </tspan><tspan x="0" dy="18">byte.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 505)">
+      <title xml:space="preserve">Shorten the prefix; keep the text position.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Shorten the prefix; keep the text </tspan><tspan x="-124" dy="18">position.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 659)">
+      <title xml:space="preserve">Compare the current bytes.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Compare the current bytes.</tspan></text>
+      <polygon class="stage-marker" points="0,-35 -60,-26 60,-26"/>
+    </g>
+    <g class="node transition" transform="translate(532 659)">
+      <title xml:space="preserve">Advance through the text.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Advance through the text.</tspan></text>
+      <polygon class="stage-marker" points="0,-35 -60,-26 60,-26"/>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(2940 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-4-title" aria-describedby="kaalang-part-4-description">
+  <title id="kaalang-part-4-title">kaalang diagram for kmp_search</title>
+  <desc id="kaalang-part-4-description">Nodes: Stage: Return the first match.; End: Option&lt;usize&gt; capturing finish. Connections: Stage: Return the first match. to End: Option&lt;usize&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the first match.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the first match.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;usize&gt;</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

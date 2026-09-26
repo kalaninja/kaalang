@@ -38,9 +38,9 @@
       M 200 107 L 200 188
       M 200 252 L 200 324
       M 200 468 L 200 540
-      M 340 432 L 560 432 L 560 541
+      M 340 432 L 560 432 L 560 540
       M 200 606 L 200 750
-      M 560 605 L 560 678
+      M 560 606 L 560 678
       M 200 816 L 200 888
       M 200 324 L 200 396
     "/>
@@ -56,7 +56,7 @@
     <text class="connection-label" x="213" y="177" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
     <text class="connection-label" x="213" y="385" xml:space="preserve"><tspan x="213" dy="0">&amp;count</tspan></text>
     <text class="connection-label" x="213" y="529" xml:space="preserve"><tspan x="213" dy="0">done, count, entry</tspan></text>
-    <text class="connection-label" x="573" y="530" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut count, &amp;entry</tspan></text>
+    <text class="connection-label" x="573" y="529" xml:space="preserve"><tspan x="573" dy="0">again, &amp;mut count, &amp;entry</tspan></text>
     <text class="connection-label" x="213" y="739" xml:space="preserve"><tspan x="213" dy="0">final_count, &amp;mut log</tspan></text>
   </g>
   <g class="nodes">
@@ -86,7 +86,7 @@
     </g>
     <g class="node action" transform="translate(560 573)">
       <title xml:space="preserve">Record and advance the counter.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record and advance the counter.</tspan></text>
     </g>
     <g class="node action" transform="translate(200 783)">

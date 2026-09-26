@@ -30,29 +30,29 @@
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
-      M 172 242 L 172 315
+      M 172 242 L 172 314
       M 312 206 L 892 206 L 892 314
-      M 172 379 L 172 452
-      M 172 524 L 172 597
+      M 172 380 L 172 452
+      M 172 524 L 172 596
       M 312 488 L 532 488 L 532 596
       M 532 662 L 532 738 L 172 738
-      M 172 661 L 172 738
+      M 172 662 L 172 738
       M 892 380 L 892 738 L 172 738
       M 172 738 L 172 814
     "/>
-    <text class="connection-label" x="185" y="304" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
     <text class="connection-label" x="905" y="303" xml:space="preserve"><tspan x="905" dy="0">right</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">outer, inner</tspan></text>
-    <text class="connection-label" x="185" y="397" xml:space="preserve"><tspan x="185" dy="0">probe, left_value</tspan></text>
+    <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">probe, left_value</tspan></text>
     <text class="connection-label" x="185" y="542" xml:space="preserve"><tspan x="185" dy="0">far</tspan></text>
     <text class="connection-label" x="325" y="506" xml:space="preserve"><tspan x="325" dy="0">near</tspan></text>
     <text class="connection-label" x="545" y="680" xml:space="preserve"><tspan x="545" dy="0">_unused, selected</tspan></text>
-    <text class="connection-label" x="185" y="679" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="680" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
     <text class="connection-label" x="905" y="398" xml:space="preserve"><tspan x="905" dy="0">_unused, selected</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">outer</tspan></text>
     <text class="connection-label" x="185" y="441" xml:space="preserve"><tspan x="185" dy="0">probe, inner</tspan></text>
     <text class="connection-label" x="545" y="585" xml:space="preserve"><tspan x="545" dy="0">near, &amp;left_value</tspan></text>
-    <text class="connection-label" x="185" y="586" xml:space="preserve"><tspan x="185" dy="0">far, &amp;left_value</tspan></text>
+    <text class="connection-label" x="185" y="585" xml:space="preserve"><tspan x="185" dy="0">far, &amp;left_value</tspan></text>
     <text class="connection-label" x="185" y="803" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
@@ -76,7 +76,7 @@
     </g>
     <g class="node action" transform="translate(172 347)">
       <title xml:space="preserve">Prepare the left branch.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the left branch.</tspan></text>
     </g>
     <g class="node question" transform="translate(172 488)">
@@ -91,7 +91,7 @@
     </g>
     <g class="node action" transform="translate(172 629)">
       <title xml:space="preserve">Produce the far left value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the far left value.</tspan></text>
     </g>
     <g class="node action" transform="translate(892 347)">

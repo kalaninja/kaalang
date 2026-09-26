@@ -164,6 +164,10 @@ becomes available after the cycle. In the diagram, `continue` routes meet at the
 cycle's back edge, completing routes leave through the cycle boundary, and
 `return` reaches the flow end.
 
+Flows with stages are defined in [RFC 0006](docs/rfcs/0006-stages.md) and drawn
+as [silhouettes](docs/rfcs/0006-stages.md#7-visual-representation). See the
+executable [KMP search example](crates/kaalang/tests/gallery/kmp_search/mod.rs).
+
 The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) defines each kind;
 the [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds)
 defines its representation.
@@ -246,9 +250,12 @@ The cycle's description and interface remain visible while its body is hidden.
 Both examples are [executable gallery tests](crates/kaalang/tests/gallery), with
 SVGs generated from their source. The gallery also includes
 [swap](crates/kaalang/tests/gallery/swap/mod.rs), a flow that returns its inputs
-without a computational block, and
-[bubble sort](crates/kaalang/tests/gallery/bubble_sort/mod.rs), with nested
-cycles.
+without a computational block,
+[bubble sort](crates/kaalang/tests/gallery/sorting/bubble_sort.rs), with nested
+cycles, [quicksort](crates/kaalang/tests/gallery/sorting/quick_sort.rs), with
+in-place partitioning and recursion, and
+[KMP search](crates/kaalang/tests/gallery/kmp_search/mod.rs), with stages for
+comparison, advancement, and prefix fallback.
 
 ## Try it
 

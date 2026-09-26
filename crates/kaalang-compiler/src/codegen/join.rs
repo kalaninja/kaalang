@@ -46,11 +46,37 @@ pub(crate) fn emit(
         // A match arm supplies a coercion context: a bare labeled initializer
         // otherwise fixes its type from the first break (e.g. an array reference
         // before a slice). This single unit arm does not dispatch at runtime.
-        dispatch = quote_spanned! {span=>
-            let #pattern = match () {
-                () => #label: { #dispatch },
-            };
-            #continuation
+        let value = quote_spanned!(span=> match () { () => #label: { #dispatch }, });
+        dispatch = if join
+            .wires
+            .iter()
+            .any(|wire| bindings.hoisted.contains(wire))
+        {
+            let temporaries = (0..join.wires.len())
+                .map(|position| {
+                    Ident::new(
+                        &format!("__kaalang_joined_{block}_{index}_{position}"),
+                        Span::mixed_site(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            let temporaries_pattern = super::tuple(span, &temporaries);
+            let assignments = join
+                .wires
+                .iter()
+                .zip(&temporaries)
+                .map(|(wire, temporary)| {
+                    let binding = bindings.wire_at(wire);
+                    if bindings.hoisted.contains(wire) {
+                        quote!(#binding = #temporary;)
+                    } else {
+                        let mutable = bindings.mutability(wire);
+                        quote!(let #mutable #binding = #temporary;)
+                    }
+                });
+            quote_spanned!(span=> let #temporaries_pattern = #value; #(#assignments)* #continuation)
+        } else {
+            quote_spanned!(span=> let #pattern = #value; #continuation)
         };
     }
     dispatch

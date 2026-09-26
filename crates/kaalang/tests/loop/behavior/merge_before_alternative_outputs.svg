@@ -41,8 +41,8 @@
       M 200 378 L 200 454
       M 560 378 L 560 454 L 200 454
       M 200 674 L 200 746
-      M 340 638 L 920 638 L 920 750
-      M 920 814 L 920 890
+      M 340 638 L 920 638 L 920 746
+      M 920 818 L 920 890
       M 200 818 L 200 890
       M 340 782 L 560 782 L 560 890
       M 200 1026 L 200 1102
@@ -63,12 +63,12 @@
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">fast, mut count</tspan></text>
     <text class="connection-label" x="213" y="692" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
     <text class="connection-label" x="353" y="656" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="933" y="832" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="933" y="836" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
     <text class="connection-label" x="213" y="836" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
     <text class="connection-label" x="353" y="800" xml:space="preserve"><tspan x="353" dy="0">odd</tspan></text>
     <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">fast</tspan></text>
     <text class="connection-label" x="213" y="591" xml:space="preserve"><tspan x="213" dy="0">&amp;count</tspan></text>
-    <text class="connection-label" x="933" y="739" xml:space="preserve"><tspan x="933" dy="0">again, step, &amp;mut count</tspan></text>
+    <text class="connection-label" x="933" y="735" xml:space="preserve"><tspan x="933" dy="0">again, step, &amp;mut count</tspan></text>
     <text class="connection-label" x="213" y="735" xml:space="preserve"><tspan x="213" dy="0">past, &amp;count</tspan></text>
     <text class="connection-label" x="213" y="951" xml:space="preserve"><tspan x="213" dy="0">even, count</tspan></text>
     <text class="connection-label" x="573" y="951" xml:space="preserve"><tspan x="573" dy="0">odd, count</tspan></text>
@@ -113,7 +113,7 @@
     </g>
     <g class="node action" transform="translate(920 782)">
       <title xml:space="preserve">Take a step.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take a step.</tspan></text>
     </g>
     <g class="node question" transform="translate(200 782)">

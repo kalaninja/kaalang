@@ -47,11 +47,11 @@
       M 720 908 L 940 908 L 940 1016
       M 580 1080 L 580 1156
       M 940 1080 L 940 1156 L 580 1156
-      M 1300 940 L 1300 1156 L 580 1156
+      M 1300 944 L 1300 1156 L 580 1156
       M 580 1156 L 580 1232
       M 220 162 L 220 234
       M 580 800 L 580 872
-      M 1300 800 L 1300 876
+      M 1300 800 L 1300 872
     "/>
     <path class="connection" d="
       M 220 696 L 60 696 L 60 162 L 220 162
@@ -71,7 +71,7 @@
     <text class="connection-label" x="593" y="861" xml:space="preserve"><tspan x="593" dy="0">&amp;positive</tspan></text>
     <text class="connection-label" x="593" y="1005" xml:space="preserve"><tspan x="593" dy="0">large, positive</tspan></text>
     <text class="connection-label" x="953" y="1005" xml:space="preserve"><tspan x="953" dy="0">small, positive</tspan></text>
-    <text class="connection-label" x="1313" y="865" xml:space="preserve"><tspan x="1313" dy="0">empty</tspan></text>
+    <text class="connection-label" x="1313" y="861" xml:space="preserve"><tspan x="1313" dy="0">empty</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 61 L 456 61"/>
@@ -129,7 +129,7 @@
     </g>
     <g class="node action" transform="translate(1300 908)">
       <title xml:space="preserve">Report nothing found.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report nothing found.</tspan></text>
     </g>
     <g class="node end" transform="translate(580 1261)">

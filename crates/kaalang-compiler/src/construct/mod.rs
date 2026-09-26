@@ -25,6 +25,7 @@ mod normalize;
 mod place;
 mod regions;
 mod route;
+mod stage;
 mod sweep;
 mod verify;
 
@@ -167,7 +168,7 @@ impl<'a> ArrangementChecks<'a> {
         verify::arrangement_with_shape(self.flow, self.topology, arrangement, &self.shape)
     }
 
-    /// Checks end placement, precedence and serial columns before normalization.
+    /// Checks terminal rows, precedence and serial columns before normalization.
     ///
     /// `allow_order_exception` is consulted only for placement-only edges in
     /// [`Topology::order`], never for drawn connections. This is a partial

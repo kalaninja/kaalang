@@ -31,19 +31,19 @@
     <path class="connection" d="
       M 172 103 L 172 188
       M 172 260 L 172 332
-      M 312 224 L 892 224 L 892 336
+      M 312 224 L 892 224 L 892 332
       M 172 404 L 172 476
       M 300 368 L 532 368 L 532 476
       M 172 546 L 172 618
       M 532 546 L 532 618
       M 172 684 L 172 760
       M 532 684 L 532 760 L 172 760
-      M 892 400 L 892 760 L 172 760
+      M 892 404 L 892 760 L 172 760
       M 172 902 L 172 974
       M 172 760 L 172 836
     "/>
     <text class="connection-label" x="185" y="778" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="905" y="325" xml:space="preserve"><tspan x="905" dy="0">no</tspan></text>
+    <text class="connection-label" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="963" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">mut text, count, mode</tspan></text>
     <text class="connection-label" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
@@ -101,7 +101,7 @@
     </g>
     <g class="node action" transform="translate(892 368)">
       <title xml:space="preserve">Skip the choice.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Skip the choice.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 869)">

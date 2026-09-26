@@ -36,9 +36,9 @@
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 220 103 L 220 188
-      M 220 332 L 220 408
+      M 220 332 L 220 404
       M 360 296 L 580 296 L 580 404
-      M 220 472 L 220 580
+      M 220 476 L 220 580
       M 580 476 L 580 548
       M 720 440 L 940 440 L 940 548
       M 580 612 L 580 684
@@ -57,13 +57,13 @@
     <text class="connection-label" x="233" y="121" xml:space="preserve"><tspan x="233" dy="0">value, mut remaining, take_left</tspan></text>
     <text class="connection-label" x="233" y="350" xml:space="preserve"><tspan x="233" dy="0">again</tspan></text>
     <text class="connection-label" x="373" y="314" xml:space="preserve"><tspan x="373" dy="0">decide</tspan></text>
-    <text class="connection-label" x="233" y="490" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="233" y="494" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
     <text class="connection-label" x="593" y="494" xml:space="preserve"><tspan x="593" dy="0">take</tspan></text>
     <text class="connection-label" x="733" y="458" xml:space="preserve"><tspan x="733" dy="0">skip</tspan></text>
     <text class="connection-label" x="593" y="630" xml:space="preserve"><tspan x="593" dy="0">left</tspan></text>
     <text class="connection-label" x="953" y="630" xml:space="preserve"><tspan x="953" dy="0">right</tspan></text>
     <text class="connection-label" x="233" y="249" xml:space="preserve"><tspan x="233" dy="0">&amp;remaining</tspan></text>
-    <text class="connection-label" x="233" y="397" xml:space="preserve"><tspan x="233" dy="0">again, &amp;mut remaining</tspan></text>
+    <text class="connection-label" x="233" y="393" xml:space="preserve"><tspan x="233" dy="0">again, &amp;mut remaining</tspan></text>
     <text class="connection-label" x="593" y="393" xml:space="preserve"><tspan x="593" dy="0">decide, take_left</tspan></text>
     <text class="connection-label" x="593" y="537" xml:space="preserve"><tspan x="593" dy="0">take, value</tspan></text>
     <text class="connection-label" x="953" y="537" xml:space="preserve"><tspan x="953" dy="0">skip, value</tspan></text>
@@ -91,7 +91,7 @@
     </g>
     <g class="node action" transform="translate(220 440)">
       <title xml:space="preserve">Count down.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down.</tspan></text>
     </g>
     <g class="node question" transform="translate(580 440)">

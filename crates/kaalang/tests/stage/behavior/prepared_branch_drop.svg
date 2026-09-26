@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1168" height="882" viewBox="0 0 1168 882" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_branch_drop</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_branch_drop with parameters choose: bool; events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over choose, events; Question: Choose a preparation branch. capturing choose handing over yes / no; Action: Create the left branch guard. capturing yes, events handing over left_guard; Action: Finish the left branch. capturing &amp;left_guard; Action: Create the right branch guard. capturing no, events handing over right_guard; Action: Finish the right branch. capturing &amp;right_guard; Transition: Visit after the preparation branches merge.; Merge: . Connections: Start: prepared_branch_drop to Question: Choose a preparation branch.; Question: Choose a preparation branch. branch 1 to Action: Create the left branch guard.; Question: Choose a preparation branch. branch 2 to Action: Create the right branch guard.; Action: Create the left branch guard. to Action: Finish the left branch.; Action: Finish the left branch. to a structural junction; Action: Create the right branch guard. to Action: Finish the right branch.; Action: Finish the right branch. to a structural junction; a structural junction to Transition: Visit after the preparation branches merge.. Transition to stage go. Stage go. Nodes: Stage: Visit after the preparation branches merge.; Action: Record the stage visit. capturing events; End: () capturing nothing. Connections: Stage: Visit after the preparation branches merge. to Action: Record the stage visit.; Action: Record the stage visit. to End: ().</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 790 L 232 858 "/>
+<path d="M 972 176 L 972 212 "/>
+<path d="M 232 176 L 972 176 "/>
+<path d="M 232 858 L 24 858 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="704" height="798" viewBox="0 0 704 798" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for prepared_branch_drop</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: prepared_branch_drop with parameters choose: bool; events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over choose, events; Question: Choose a preparation branch. capturing choose handing over yes / no; Action: Create the left branch guard. capturing yes, events handing over left_guard; Action: Finish the left branch. capturing &amp;left_guard; Action: Create the right branch guard. capturing no, events handing over right_guard; Action: Finish the right branch. capturing &amp;right_guard; Transition: Visit after the preparation branches merge.; Merge: . Connections: Start: prepared_branch_drop to Question: Choose a preparation branch.; Question: Choose a preparation branch. branch 1 to Action: Create the left branch guard.; Question: Choose a preparation branch. branch 2 to Action: Create the right branch guard.; Action: Create the left branch guard. to Action: Finish the left branch.; Action: Finish the left branch. to a structural junction; Action: Create the right branch guard. to Action: Finish the right branch.; Action: Finish the right branch. to a structural junction; a structural junction to Transition: Visit after the preparation branches merge..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 532 224 L 532 332
+      M 172 396 L 172 468
+      M 172 532 L 172 608
+      M 532 396 L 532 468
+      M 532 532 L 532 608 L 172 608
+      M 172 608 L 172 684
+    "/>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">choose, events</tspan></text>
+    <text class="connection-label" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="325" y="242" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="414" xml:space="preserve"><tspan x="185" dy="0">left_guard</tspan></text>
+    <text class="connection-label" x="545" y="414" xml:space="preserve"><tspan x="545" dy="0">right_guard</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">choose</tspan></text>
+    <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">yes, events</tspan></text>
+    <text class="connection-label" x="185" y="457" xml:space="preserve"><tspan x="185" dy="0">&amp;left_guard</tspan></text>
+    <text class="connection-label" x="545" y="321" xml:space="preserve"><tspan x="545" dy="0">no, events</tspan></text>
+    <text class="connection-label" x="545" y="457" xml:space="preserve"><tspan x="545" dy="0">&amp;right_guard</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">choose: bool</tspan><tspan x="-104" dy="18">events: </tspan><tspan x="-104" dy="18">&amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 608)">
+      <title xml:space="preserve">a structural junction</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_branch_drop</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
+      <title xml:space="preserve">Choose a preparation branch.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Choose a preparation </tspan><tspan x="0" dy="18">branch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 364)">
+      <title xml:space="preserve">Create the left branch guard.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Create the left branch guard.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 500)">
+      <title xml:space="preserve">Finish the left branch.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the left branch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 364)">
+      <title xml:space="preserve">Create the right branch guard.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Create the right branch guard.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 500)">
+      <title xml:space="preserve">Finish the right branch.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish the right branch.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 725)">
+      <title xml:space="preserve">Visit after the preparation branches merge.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Visit after the preparation </tspan><tspan x="0" dy="18">branches merge.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(800 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for prepared_branch_drop</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Visit after the preparation branches merge.; Action: Record the stage visit. capturing events; End: () capturing nothing. Connections: Stage: Visit after the preparation branches merge. to Action: Record the stage visit.; Action: Record the stage visit. to End: ().</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 114 L 172 186
+      M 172 250 L 172 322
+    "/>
+    <text class="connection-label" x="185" y="175" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
+    <text class="connection-label" x="185" y="311" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 73)">
+      <title xml:space="preserve">Visit after the preparation branches merge.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Visit after the preparation </tspan><tspan x="0" dy="18">branches merge.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 218)">
+      <title xml:space="preserve">Record the stage visit.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record the stage visit.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 351)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

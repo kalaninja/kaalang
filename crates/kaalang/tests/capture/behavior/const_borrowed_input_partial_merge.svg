@@ -33,26 +33,26 @@
       M 172 260 L 172 332
       M 300 224 L 532 224 L 532 332
       M 300 224 L 892 224 L 892 332
-      M 172 402 L 172 475
+      M 172 402 L 172 474
       M 532 402 L 532 474
-      M 892 402 L 892 475
-      M 172 539 L 172 616
+      M 892 402 L 892 474
+      M 172 540 L 172 616
       M 532 540 L 532 616 L 172 616
       M 172 758 L 172 834
-      M 892 539 L 892 834 L 172 834
+      M 892 540 L 892 834 L 172 834
       M 172 974 L 172 1046
       M 172 616 L 172 692
       M 172 834 L 172 910
     "/>
     <text class="connection-label" x="185" y="634" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
     <text class="connection-label" x="185" y="852" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
-    <text class="connection-label" x="905" y="464" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label" x="905" y="463" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
     <text class="connection-label" x="185" y="1035" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">source, bytes</tspan></text>
     <text class="connection-label" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
     <text class="connection-label" x="545" y="420" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
-    <text class="connection-label" x="185" y="464" xml:space="preserve"><tspan x="185" dy="0">first, bytes</tspan></text>
+    <text class="connection-label" x="185" y="463" xml:space="preserve"><tspan x="185" dy="0">first, bytes</tspan></text>
     <text class="connection-label" x="545" y="463" xml:space="preserve"><tspan x="545" dy="0">second, bytes</tspan></text>
   </g>
   <g class="nodes">
@@ -95,7 +95,7 @@
     </g>
     <g class="node action" transform="translate(172 507)">
       <title xml:space="preserve">Use the input on the first branch.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the input on the first branch.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 507)">
@@ -110,7 +110,7 @@
     </g>
     <g class="node action" transform="translate(892 507)">
       <title xml:space="preserve">Use the fallback slice.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the fallback slice.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 942)">

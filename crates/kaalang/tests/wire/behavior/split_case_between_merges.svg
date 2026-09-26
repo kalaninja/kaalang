@@ -33,15 +33,15 @@
       M 172 242 L 172 314
       M 300 206 L 532 206 L 532 314
       M 300 206 L 1252 206 L 1252 314
-      M 172 384 L 172 459
+      M 172 384 L 172 456
       M 532 384 L 532 456
-      M 1252 384 L 1252 459
+      M 1252 384 L 1252 456
       M 532 528 L 532 600
       M 672 492 L 892 492 L 892 600
-      M 172 525 L 172 742
+      M 172 528 L 172 742
       M 532 666 L 532 742 L 172 742
       M 892 666 L 892 742
-      M 1252 525 L 1252 742 L 892 742
+      M 1252 528 L 1252 742 L 892 742
       M 172 882 L 172 958
       M 892 882 L 892 958 L 172 958
       M 172 742 L 172 818
@@ -51,8 +51,8 @@
     <text class="connection-label" x="185" y="760" xml:space="preserve"><tspan x="185" dy="0">low_value</tspan></text>
     <text class="connection-label" x="905" y="760" xml:space="preserve"><tspan x="905" dy="0">high_value</tspan></text>
     <text class="connection-label" x="185" y="976" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="448" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="1265" y="448" xml:space="preserve"><tspan x="1265" dy="0">last</tspan></text>
+    <text class="connection-label" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="1265" y="445" xml:space="preserve"><tspan x="1265" dy="0">last</tspan></text>
     <text class="connection-label" x="545" y="589" xml:space="preserve"><tspan x="545" dy="0">lower</tspan></text>
     <text class="connection-label" x="905" y="589" xml:space="preserve"><tspan x="905" dy="0">upper</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">value, low</tspan></text>
@@ -109,7 +109,7 @@
     </g>
     <g class="node action" transform="translate(172 492)">
       <title xml:space="preserve">Build the low value from the first source.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the low value from the first </tspan><tspan x="-124" dy="18">source.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 633)">
@@ -124,7 +124,7 @@
     </g>
     <g class="node action" transform="translate(1252 492)">
       <title xml:space="preserve">Build the high value from the last source.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Build the high value from the last </tspan><tspan x="-124" dy="18">source.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 850)">

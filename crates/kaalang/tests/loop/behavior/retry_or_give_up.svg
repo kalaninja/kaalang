@@ -39,14 +39,14 @@
       M 200 314 L 200 386
       M 328 278 L 560 278 L 560 386
       M 328 278 L 1280 278 L 1280 386
-      M 200 456 L 200 532
+      M 200 456 L 200 528
       M 560 456 L 560 528
-      M 1280 456 L 1280 532
+      M 1280 456 L 1280 528
       M 560 600 L 560 672
       M 700 564 L 920 564 L 920 672
-      M 200 596 L 200 812
+      M 200 600 L 200 812
       M 560 736 L 560 812 L 200 812
-      M 1280 596 L 1280 812
+      M 1280 600 L 1280 812
       M 920 736 L 920 812 L 1280 812
       M 200 812 L 200 888
       M 200 170 L 200 242
@@ -56,7 +56,7 @@
     " marker-end="url(#loop-arrow)"/>
     <text class="connection-label" x="213" y="830" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
     <text class="connection-label" x="1293" y="830" xml:space="preserve"><tspan x="1293" dy="0">again</tspan></text>
-    <text class="connection-label" x="213" y="521" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
+    <text class="connection-label" x="213" y="517" xml:space="preserve"><tspan x="213" dy="0">value</tspan></text>
     <text class="connection-label" x="573" y="661" xml:space="preserve"><tspan x="573" dy="0">exhausted</tspan></text>
     <text class="connection-label" x="933" y="661" xml:space="preserve"><tspan x="933" dy="0">retry</tspan></text>
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut attempts, mut state</tspan></text>
@@ -64,7 +64,7 @@
     <text class="connection-label" x="1293" y="474" xml:space="preserve"><tspan x="1293" dy="0">busy</tspan></text>
     <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;state</tspan></text>
     <text class="connection-label" x="573" y="517" xml:space="preserve"><tspan x="573" dy="0">timeout, &amp;mut attempts</tspan></text>
-    <text class="connection-label" x="1293" y="521" xml:space="preserve"><tspan x="1293" dy="0">busy, &amp;mut state</tspan></text>
+    <text class="connection-label" x="1293" y="517" xml:space="preserve"><tspan x="1293" dy="0">busy, &amp;mut state</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -111,7 +111,7 @@
     </g>
     <g class="node action" transform="translate(200 564)">
       <title xml:space="preserve">Keep the response.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the response.</tspan></text>
     </g>
     <g class="node action" transform="translate(560 704)">
@@ -121,7 +121,7 @@
     </g>
     <g class="node action" transform="translate(1280 564)">
       <title xml:space="preserve">Wait until the server is free.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait until the server is free.</tspan></text>
     </g>
     <g class="node action" transform="translate(920 704)">

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="752" height="1389" viewBox="0 0 752 1389" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for quick_sort</title>
+  <desc id="kaalang-description">Cycles: Sort the remaining range. with inputs mut start, mut end, mut values and outputs sorted. Nodes: Start: quick_sort&lt;T: Ord&gt; with parameters mut values: &amp;mut [T] handing over mut values; Action: Start with the whole slice. capturing &amp;values handing over mut start, mut end; Question: Does the range contain at least two values? capturing start, end handing over split / sorted; Action: Take the current range of the original slice. capturing split, start, end, &amp;mut values handing over mut range; Call: Partition into values below, equal to, and above the pivot. capturing &amp;mut range handing over lower, upper; Action: Take the smaller side for recursion; keep the larger range for later. capturing range, start, end, lower, upper handing over smaller, remaining; Call: Recursively sort the smaller range. capturing smaller handing over sorted_part; Action: Continue with the larger range. capturing sorted_part, remaining, &amp;mut start, &amp;mut end; End: () capturing nothing. Connections: Start: quick_sort&lt;T: Ord&gt; to Action: Start with the whole slice.; Action: Start with the whole slice. to the entry of the cycle; Question: Does the range contain at least two values? branch 1 to Action: Take the current range of the original slice.; Question: Does the range contain at least two values? branch 2 to End: (); Action: Take the current range of the original slice. to Call: Partition into values below, equal to, and above the pivot.; Call: Partition into values below, equal to, and above the pivot. to Action: Take the smaller side for recursion; keep the larger range for later.; Action: Take the smaller side for recursion; keep the larger range for later. to Call: Recursively sort the smaller range.; Call: Recursively sort the smaller range. to Action: Continue with the larger range.; Action: Continue with the larger range. to the iteration tail of the cycle; the entry of the cycle to Question: Does the range contain at least two values?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Sort the remaining range.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="420" height="999" rx="12"/>
+    <text class="cycle-caption" x="440" y="277" text-anchor="end" xml:space="preserve"><tspan x="440" dy="0">Sort the remaining range.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 226 L 220 298
+      M 220 442 L 220 514
+      M 360 406 L 580 406 L 580 1299
+      M 220 580 L 220 652
+      M 220 718 L 220 790
+      M 220 874 L 220 946
+      M 220 1012 L 220 1091
+      M 220 1155 L 220 1227
+      M 220 298 L 220 370
+    "/>
+    <path class="connection" d="
+      M 220 1227 L 60 1227 L 60 298 L 220 298
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut values</tspan></text>
+    <text class="connection-label" x="233" y="244" xml:space="preserve"><tspan x="233" dy="0">mut start, mut end</tspan></text>
+    <text class="connection-label" x="233" y="460" xml:space="preserve"><tspan x="233" dy="0">split</tspan></text>
+    <text class="connection-label" x="373" y="424" xml:space="preserve"><tspan x="373" dy="0">sorted</tspan></text>
+    <text class="connection-label" x="233" y="598" xml:space="preserve"><tspan x="233" dy="0">mut range</tspan></text>
+    <text class="connection-label" x="233" y="736" xml:space="preserve"><tspan x="233" dy="0">lower, upper</tspan></text>
+    <text class="connection-label" x="233" y="892" xml:space="preserve"><tspan x="233" dy="0">smaller, remaining</tspan></text>
+    <text class="connection-label" x="233" y="1030" xml:space="preserve"><tspan x="233" dy="0">sorted_part</tspan></text>
+    <text class="connection-label" x="233" y="151" xml:space="preserve"><tspan x="233" dy="0">&amp;values</tspan></text>
+    <text class="connection-label" x="233" y="359" xml:space="preserve"><tspan x="233" dy="0">start, end</tspan></text>
+    <text class="connection-label" x="233" y="503" xml:space="preserve"><tspan x="233" dy="0">split, start, end, &amp;mut values</tspan></text>
+    <text class="connection-label" x="233" y="641" xml:space="preserve"><tspan x="233" dy="0">&amp;mut range</tspan></text>
+    <text class="connection-label" x="233" y="779" xml:space="preserve"><tspan x="233" dy="0">range, start, end, lower, upper</tspan></text>
+    <text class="connection-label" x="233" y="935" xml:space="preserve"><tspan x="233" dy="0">smaller</tspan></text>
+    <text class="connection-label" x="233" y="1066" xml:space="preserve"><tspan x="233" dy="0">sorted_part, remaining, &amp;mut </tspan><tspan x="233" dy="14">start, &amp;mut end</tspan></text>
+    <text class="connection-label" x="593" y="1288" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: &amp;mut [T]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">quick_sort&lt;T: Ord&gt;</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 194)">
+      <title xml:space="preserve">Start with the whole slice.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with the whole slice.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 406)">
+      <title xml:space="preserve">Does the range contain at least two values?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the range contain at </tspan><tspan x="0" dy="18">least two values?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 547)">
+      <title xml:space="preserve">Take the current range of the original slice.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Take the current range of the </tspan><tspan x="-124" dy="18">original slice.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(220 685)">
+      <title xml:space="preserve">Partition into values below, equal to, and above the pivot.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-112" dy="0">Partition into values below, </tspan><tspan x="-112" dy="18">equal to, and above the pivot.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 832)">
+      <title xml:space="preserve">Take the smaller side for recursion; keep the larger range for later.</title>
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">Take the smaller side for </tspan><tspan x="-124" dy="18">recursion; keep the larger range </tspan><tspan x="-124" dy="18">for later.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(220 979)">
+      <title xml:space="preserve">Recursively sort the smaller range.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-112" dy="0">Recursively sort the smaller </tspan><tspan x="-112" dy="18">range.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 1123)">
+      <title xml:space="preserve">Continue with the larger range.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue with the larger range.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 1328)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

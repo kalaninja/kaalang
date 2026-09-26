@@ -354,6 +354,7 @@ pub(super) fn placement(
     allow_order_exception: impl FnMut(&Connection) -> bool,
 ) -> Result<(), String> {
     super::end::verify(topology, arrangement)?;
+    super::stage::verify(topology, arrangement)?;
     order(topology, arrangement, allow_order_exception)?;
     serial_columns(topology, arrangement)?;
     result_order(topology, arrangement)

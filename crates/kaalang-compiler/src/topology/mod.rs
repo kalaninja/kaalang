@@ -20,6 +20,7 @@ mod end;
 mod export;
 mod loop_block;
 mod question;
+mod stage;
 
 /// One drawn unit: the synthetic start node, one block of the flow, or one case
 /// derived from a choice. `Flow::blocks` carries the implicit end block last, so
@@ -59,6 +60,7 @@ impl PartialOrd for NodeId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NodeKind {
     Start,
+    StageEntry,
     Action,
     Call,
     Loop,
@@ -66,6 +68,7 @@ pub enum NodeKind {
     Select,
     Case,
     End,
+    Transition,
 }
 
 /// One outgoing attachment point. A question is the only node with more than one
@@ -300,7 +303,11 @@ pub(crate) struct Analyzed<'a> {
 pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     let mut nodes = vec![Node {
         id: NodeId::Start,
-        kind: NodeKind::Start,
+        kind: if matches!(model.flow.kind, crate::FlowKind::Stage { .. }) {
+            NodeKind::StageEntry
+        } else {
+            NodeKind::Start
+        },
     }];
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
@@ -325,9 +332,12 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
             }
             BlockKind::Question => question::project(index, block, &mut nodes, &mut exits),
             BlockKind::Choice => choice::project(index, block, &mut nodes, &mut exits),
+            BlockKind::Return if block.transition_target.is_some() && model.executions.iter().any(|execution| execution.participates(index)) => {
+                nodes.push(block_node(index, NodeKind::Transition));
+            }
             BlockKind::End
                 if model.executions.iter().any(|execution| {
-                    matches!(execution.outcome, ExecutionOutcome::Return { .. })
+                    matches!(execution.outcome, ExecutionOutcome::Return { block_index } if model.flow.blocks[block_index].transition_target.is_none())
                 }) =>
             {
                 end::project(index, &mut nodes);
@@ -420,6 +430,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
         loop_block::coalesce_boundaries(&mut topology);
     }
     end::order(&mut topology);
+    stage::order(&mut topology);
     topology
 }
 
@@ -618,7 +629,12 @@ fn connections(
                 |header| Source::Junction(structural[&header]),
             );
             let consumer = if returns {
-                end::destination(model.flow)
+                model.flow.blocks[capture.block]
+                    .transition_target
+                    .map_or_else(
+                        || end::destination(model.flow),
+                        |_| Destination::Node(NodeId::Block(capture.block)),
+                    )
             } else {
                 destination(structural, capture.block)
             };
@@ -677,7 +693,8 @@ fn connections(
                                 || (model.flow.blocks[block].kind == BlockKind::End
                                     && matches!(
                                         execution.outcome,
-                                        ExecutionOutcome::Return { .. }
+                                        ExecutionOutcome::Return { block_index }
+                                            if model.flow.blocks[block_index].transition_target.is_none()
                                     )))
                             .then_some(Connection {
                                 source: Source::Junction(junction),
@@ -737,7 +754,8 @@ fn serial_connections(
         .filter(|&block| {
             execution.participates(block)
                 || (model.flow.blocks[block].kind == BlockKind::End
-                    && matches!(execution.outcome, ExecutionOutcome::Return { .. }))
+                    && matches!(execution.outcome, ExecutionOutcome::Return { block_index }
+                        if model.flow.blocks[block_index].transition_target.is_none()))
         })
         .peekable();
     while let Some(block) = steps.next() {
@@ -759,7 +777,9 @@ fn serial_connections(
             previous = Source::Junction(junction);
             continue;
         }
-        if model.flow.blocks[block].kind == BlockKind::End {
+        if model.flow.blocks[block].kind == BlockKind::End
+            || model.flow.blocks[block].transition_target.is_some()
+        {
             continue;
         }
         let exit = departure(model, execution, boundaries, structural, block);
@@ -830,6 +850,17 @@ fn junction_after(
 /// Captured transfers use junctions instead of computational nodes. A
 /// capture-free transfer is redirected directly to its boundary.
 fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
+    if model.flow.blocks[block].kind == BlockKind::End
+        && !model.executions.iter().any(|execution| {
+            matches!(execution.outcome, ExecutionOutcome::Return { block_index }
+                if model.flow.blocks[block_index].transition_target.is_none())
+        })
+    {
+        return false;
+    }
+    if model.flow.blocks[block].transition_target.is_some() {
+        return represented_block(model, block);
+    }
     represented_block(model, block)
         && (!matches!(
             model.flow.blocks[block].kind,

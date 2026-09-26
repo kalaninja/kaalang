@@ -453,6 +453,7 @@ mod tests {
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
             narrow: false,
+            stage_rows: None,
             reach: std::collections::BTreeMap::new(),
             slack: 0,
             bodies: Vec::new(),

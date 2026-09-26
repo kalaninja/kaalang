@@ -31,17 +31,17 @@
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 226 L 172 298
-      M 312 194 L 892 194 L 892 302
+      M 312 194 L 892 194 L 892 298
       M 172 370 L 172 442
       M 312 334 L 532 334 L 532 442
       M 172 506 L 172 582
       M 532 506 L 532 582 L 172 582
-      M 892 366 L 892 582 L 172 582
+      M 892 370 L 892 582 L 172 582
       M 172 582 L 172 658
     "/>
     <text class="connection-label" x="185" y="600" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut values</tspan></text>
-    <text class="connection-label" x="905" y="291" xml:space="preserve"><tspan x="905" dy="0">empty</tspan></text>
+    <text class="connection-label" x="905" y="287" xml:space="preserve"><tspan x="905" dy="0">empty</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">positive</tspan></text>
     <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">large</tspan></text>
     <text class="connection-label" x="325" y="352" xml:space="preserve"><tspan x="325" dy="0">small</tspan></text>
@@ -86,7 +86,7 @@
     </g>
     <g class="node action" transform="translate(892 334)">
       <title xml:space="preserve">Report nothing found.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report nothing found.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 687)">

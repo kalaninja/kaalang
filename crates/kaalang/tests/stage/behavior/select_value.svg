@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1553" height="876" viewBox="0 0 1553 876" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for select_value</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Transition: Select one value.. Transition to stage choose. Stage choose. Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Transition: Return the selected value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 784 L 232 852 "/>
+<path d="M 617 176 L 617 212 "/>
+<path d="M 617 784 L 617 852 "/>
+<path d="M 1357 176 L 1357 212 "/>
+<path d="M 232 176 L 1357 176 "/>
+<path d="M 617 852 L 24 852 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="792" viewBox="0 0 680 792" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for select_value</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Transition: Select one value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 252 L 172 690
+    "/>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">take_left, left, right</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">take_left: bool</tspan><tspan x="-104" dy="18">left: T</tspan><tspan x="-104" dy="18">right: T</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const select_value&lt;T: Copy&gt;</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 220)">
+      <title xml:space="preserve">Begin selection.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Begin selection.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 725)">
+      <title xml:space="preserve">Select one value.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Select one value.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(445 180)"><svg xmlns="http://www.w3.org/2000/svg" width="704" height="636" viewBox="0 0 704 636" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for select_value</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Transition: Return the selected value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+      M 172 246 L 172 318
+      M 312 210 L 532 210 L 532 318
+      M 172 382 L 172 458
+      M 532 382 L 532 458 L 172 458
+      M 172 458 L 172 534
+    "/>
+    <text class="connection-label" x="185" y="264" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="325" y="228" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">take_left</tspan></text>
+    <text class="connection-label" x="185" y="307" xml:space="preserve"><tspan x="185" dy="0">yes, left</tspan></text>
+    <text class="connection-label" x="545" y="307" xml:space="preserve"><tspan x="545" dy="0">no, right</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node merge" transform="translate(172 458)">
+      <title xml:space="preserve">a structural junction</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Select one value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Select one value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 210)">
+      <title xml:space="preserve">Take the left value?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the left value?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 350)">
+      <title xml:space="preserve">Select left.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Select left.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 350)">
+      <title xml:space="preserve">Select right.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Select right.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 569)">
+      <title xml:space="preserve">Return the selected value.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the selected value.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1185 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for select_value</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the selected value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the selected value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

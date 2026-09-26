@@ -46,12 +46,12 @@
       M 420 406 L 1360 406 L 1360 1506
       M 280 578 L 280 650
       M 280 794 L 280 866
-      M 420 758 L 1000 758 L 1000 870
+      M 420 758 L 1000 758 L 1000 866
       M 280 938 L 280 1010
       M 420 902 L 640 902 L 640 1150 L 280 1150
       M 280 1074 L 280 1150
       M 280 1290 L 280 1362
-      M 1000 934 L 1000 1434
+      M 1000 938 L 1000 1434
       M 280 1150 L 280 1226
       M 280 298 L 280 370
       M 280 650 L 280 722
@@ -78,7 +78,7 @@
     <text class="connection-label" x="293" y="855" xml:space="preserve"><tspan x="293" dy="0">compare, &amp;values, index</tspan></text>
     <text class="connection-label" x="293" y="999" xml:space="preserve"><tspan x="293" dy="0">greater, &amp;mut values, index</tspan></text>
     <text class="connection-label" x="293" y="1215" xml:space="preserve"><tspan x="293" dy="0">stepped, &amp;mut index</tspan></text>
-    <text class="connection-label" x="1013" y="859" xml:space="preserve"><tspan x="1013" dy="0">compared, &amp;mut unsorted</tspan></text>
+    <text class="connection-label" x="1013" y="855" xml:space="preserve"><tspan x="1013" dy="0">compared, &amp;mut unsorted</tspan></text>
     <text class="connection-label" x="1373" y="1495" xml:space="preserve"><tspan x="1373" dy="0">sorted</tspan></text>
   </g>
   <g class="nodes">
@@ -132,7 +132,7 @@
     </g>
     <g class="node action" transform="translate(1000 902)">
       <title xml:space="preserve">🔻 One more value is in its place.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔻 One more value is in its place.</tspan></text>
     </g>
     <g class="node end" transform="translate(1360 1535)">

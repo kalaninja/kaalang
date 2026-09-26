@@ -4,6 +4,50 @@ use std::rc::Rc;
 use crate::captions::Captions;
 use crate::text::joined;
 
+#[test]
+fn actions_and_cases_in_one_row_share_their_upper_edge() {
+    let scene = drawn((
+        r#"
+        #[kaalang]
+        fn example(choose: bool) {
+            #[question("Choose a route.")]
+            let (take, skip) = |choose| choose;
+            #[choice("Choose a case.")]
+            #[case("First case.")]
+            #[case("Second case.")]
+            let (first, second) = |take| match take {
+                () if false => (),
+                _ => (),
+            };
+            #[action("Prepare the other route.")]
+            let ready = |skip| ();
+            #[action("Complete the other route with a description that wraps across several lines and needs more space than a short case caption.")]
+            let end = |ready| ();
+            #[action("Complete the first case.")]
+            let end = |first| ();
+            #[action("Complete the second case.")]
+            let end = |second| ();
+            |end| return;
+        }
+        "#,
+        "example",
+    ));
+    let case = named_node(&scene, "First case.");
+    let action = scene
+        .nodes
+        .iter()
+        .find(|node| {
+            scene.topology.node(node.id).kind == NodeKind::Action
+                && scene.rank(Vertex::Node(node.id)) == scene.rank(Vertex::Node(case.id))
+        })
+        .expect("the ordinary flow places an action beside the case row");
+    assert_ne!(
+        node_dimensions(NodeKind::Action, scene.captions.label(action.id)).1,
+        node_dimensions(NodeKind::Case, scene.captions.label(case.id)).1
+    );
+    assert_eq!(Scene::bounds(action).1, Scene::bounds(case).1);
+}
+
 /// The source of `crates/kaalang/tests/<dir>/<stem>.rs` and the flow named after it.
 macro_rules! fixture {
     ($dir:literal, $stem:literal) => {

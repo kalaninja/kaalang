@@ -31,9 +31,9 @@
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 234 L 172 306
-      M 312 198 L 532 198 L 532 307
+      M 312 198 L 532 198 L 532 306
       M 172 372 L 172 448
-      M 532 371 L 532 448 L 172 448
+      M 532 372 L 532 448 L 172 448
       M 172 448 L 172 524
     "/>
     <text class="connection-label" x="185" y="466" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
@@ -42,7 +42,7 @@
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="186" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">&amp;value</tspan></text>
     <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">positive, value</tspan></text>
-    <text class="connection-label" x="545" y="296" xml:space="preserve"><tspan x="545" dy="0">negative, value</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">negative, value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -71,8 +71,8 @@
     </g>
     <g class="node call" transform="translate(532 339)">
       <title xml:space="preserve">negate</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <path class="call-bars" d="M -128 -33 V 33 M 128 -33 V 33"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">negate</tspan></text>
     </g>
     <g class="node end" transform="translate(172 553)">

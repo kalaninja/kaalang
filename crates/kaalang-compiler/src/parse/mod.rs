@@ -13,7 +13,7 @@ use syn::{
     visit::{self, Visit},
 };
 
-use crate::model::{Block, BlockKind, Flow, Input};
+use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
 
 mod action;
 mod call;
@@ -23,6 +23,9 @@ mod end;
 mod loop_block;
 mod question;
 mod return_block;
+mod stage;
+
+pub(crate) use stage::{ParsedStaged, staged};
 
 /// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
@@ -35,6 +38,7 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     let flow = Flow {
         flow_inputs: flow_inputs(function)?,
         blocks: blocks(function)?,
+        kind: FlowKind::Plain,
     };
     receiver_captures(&flow, receiver(function))?;
 
@@ -79,7 +83,7 @@ fn receiver(function: &ItemFn) -> Option<&Receiver> {
 /// receiver's own spelling. A receiver taken by reference borrows, however it
 /// is spelled; every other receiver, including `mut self` and `self: Box<Self>`,
 /// is a value like `mut name: T` is.
-fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
+pub(crate) fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
     let borrows = match &receiver.kind {
         ReceiverKind::Reference(_, _, mutability) => Some(mutability.is_some()),
         ReceiverKind::Typed(_, ty) => match ty.as_ref() {
@@ -185,6 +189,12 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
 /// Flattens lexical cycle regions without changing their authored order.
 fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
     for statement in statements {
+        if stage::is_stage(statement) {
+            return Err(Error::new_spanned(
+                statement,
+                "a kaalang stage declaration belongs only in the root stage section",
+            ));
+        }
         let mut inputs = Vec::new();
         let mut normalized = None;
         let expression = if let Stmt::Expr(expression, _) = statement {
@@ -300,6 +310,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         parent: None,
         loop_end: None,
         export_target: None,
+        transition_target: None,
     }
 }
 
@@ -410,6 +421,7 @@ impl<'a> BlockSyntax<'a> {
             parent: None,
             loop_end: None,
             export_target: None,
+            transition_target: None,
         }
     }
 }

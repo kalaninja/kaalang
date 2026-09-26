@@ -31,9 +31,9 @@
     <path class="connection" d="
       M 172 107 L 172 188
       M 172 252 L 172 331
-      M 172 403 L 172 481
+      M 172 403 L 172 475
       M 300 367 L 532 367 L 532 475
-      M 172 551 L 172 629
+      M 172 557 L 172 629
       M 532 557 L 532 629
       M 172 695 L 172 771
       M 532 695 L 532 771 L 172 771
@@ -42,7 +42,7 @@
     <text class="connection-label" x="185" y="789" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">condition, cell, evaluations</tspan></text>
     <text class="connection-label" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">input_guard</tspan></text>
-    <text class="connection-label" x="185" y="569" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
+    <text class="connection-label" x="185" y="575" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
     <text class="connection-label" x="545" y="575" xml:space="preserve"><tspan x="545" dy="0">text</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">cell</tspan></text>
     <text class="connection-label" x="185" y="306" xml:space="preserve"><tspan x="185" dy="0">condition, input_guard, cell, </tspan><tspan x="185" dy="14">evaluations</tspan></text>
@@ -75,7 +75,7 @@
     </g>
     <g class="node case" transform="translate(172 516)">
       <title xml:space="preserve">Use the next value.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the next value.</tspan></text>
     </g>
     <g class="node case" transform="translate(532 516)">

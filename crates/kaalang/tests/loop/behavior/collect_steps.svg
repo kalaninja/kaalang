@@ -46,11 +46,11 @@
       M 220 378 L 220 450
       M 220 594 L 220 666
       M 360 558 L 633 558 L 633 698
-      M 220 730 L 220 806
-      M 220 870 L 220 982
+      M 220 730 L 220 802
+      M 220 874 L 220 982
       M 633 874 L 633 946
-      M 773 838 L 1459 838 L 1459 950
-      M 1459 1014 L 1459 1518
+      M 773 838 L 1459 838 L 1459 946
+      M 1459 1018 L 1459 1518
       M 633 1018 L 633 1090
       M 773 982 L 1046 982 L 1046 1090
       M 633 1154 L 633 1230
@@ -83,9 +83,9 @@
     <text class="connection-label branch-label" style="font-size: 14px" x="786" y="826" xml:space="preserve"><tspan x="786" dy="0">NO</tspan></text>
     <text class="connection-label" x="233" y="159" xml:space="preserve"><tspan x="233" dy="0">enabled</tspan></text>
     <text class="connection-label" x="233" y="511" xml:space="preserve"><tspan x="233" dy="0">&amp;initial_log, &amp;limit</tspan></text>
-    <text class="connection-label" x="233" y="795" xml:space="preserve"><tspan x="233" dy="0">&amp;mut initial_log, step</tspan></text>
+    <text class="connection-label" x="233" y="791" xml:space="preserve"><tspan x="233" dy="0">&amp;mut initial_log, step</tspan></text>
     <text class="connection-label" x="646" y="791" xml:space="preserve"><tspan x="646" dy="0">&amp;initial_log, &amp;limit</tspan></text>
-    <text class="connection-label" x="1472" y="939" xml:space="preserve"><tspan x="1472" dy="0">leave_2, initial_log</tspan></text>
+    <text class="connection-label" x="1472" y="935" xml:space="preserve"><tspan x="1472" dy="0">leave_2, initial_log</tspan></text>
     <text class="connection-label" x="646" y="935" xml:space="preserve"><tspan x="646" dy="0">iterate_2, &amp;initial_log</tspan></text>
     <text class="connection-label" x="646" y="1295" xml:space="preserve"><tspan x="646" dy="0">&amp;mut initial_log, step</tspan></text>
   </g>
@@ -129,7 +129,7 @@
     </g>
     <g class="node action" transform="translate(220 838)">
       <title xml:space="preserve">Record the first step.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record the first step.</tspan></text>
     </g>
     <g class="node question" transform="translate(633 838)">
@@ -139,7 +139,7 @@
     </g>
     <g class="node action" transform="translate(1459 982)">
       <title xml:space="preserve">Hand over the collected log.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Hand over the collected log.</tspan></text>
     </g>
     <g class="node question" transform="translate(633 982)">

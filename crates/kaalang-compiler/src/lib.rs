@@ -12,6 +12,7 @@ mod parse;
 mod plan;
 mod resolve;
 mod scope;
+mod stage;
 pub mod topology;
 
 pub(crate) use choice::{choice_match, is_todo_body};
@@ -21,8 +22,8 @@ pub use construct::{
 };
 pub use model::{
     Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
-    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget,
-    ProducerId, QuestionBranch, SemanticModel, WireMerge,
+    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
+    JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
 };
 
 /// Builds the validated semantic model for one kaalang flow function.
@@ -42,6 +43,17 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
 /// Returns the same parsing, validation, and topology errors as [`build`].
 pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<SemanticModel> {
     let analysis = analyze(function)?;
+    let stages = analysis
+        .stages
+        .iter()
+        .map(|stage| build_analysis((*stage.analysis).clone(), collapse_loops))
+        .collect::<Result<Vec<_>>>()?;
+    let mut model = build_analysis(analysis, collapse_loops)?;
+    model.stages = stages;
+    Ok(model)
+}
+
+fn build_analysis(analysis: Analysis, collapse_loops: bool) -> Result<SemanticModel> {
     let expanded = project(&analysis, false);
     let expanded_arrangement = construct(&analysis, &expanded)?;
     let (topology, arrangement) = if collapse_loops {
@@ -56,6 +68,7 @@ pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<Sem
         analysis,
         topology,
         arrangement,
+        stages: Vec::new(),
     })
 }
 
@@ -114,6 +127,9 @@ fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
 /// Returns the first syntax, wire, execution, or convergence error at its
 /// source span.
 pub fn analyze(function: &ItemFn) -> Result<Analysis> {
+    if let Some(parsed) = parse::staged(function)? {
+        return stage::analyze(function, parsed);
+    }
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
@@ -129,6 +145,8 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
         executions,
         convergence_groups,
         merges,
+        stages: Vec::new(),
+        common_wires: Vec::new(),
     })
 }
 

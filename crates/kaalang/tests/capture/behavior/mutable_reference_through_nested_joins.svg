@@ -31,13 +31,13 @@
     <path class="connection" d="
       M 172 107 L 172 188
       M 172 260 L 172 332
-      M 312 224 L 892 224 L 892 336
+      M 312 224 L 892 224 L 892 332
       M 172 404 L 172 476
       M 312 368 L 532 368 L 532 476
       M 172 542 L 172 618
       M 532 542 L 532 618 L 172 618
       M 172 758 L 172 834
-      M 892 400 L 892 834 L 172 834
+      M 892 404 L 892 834 L 172 834
       M 172 976 L 172 1048
       M 172 618 L 172 694
       M 172 834 L 172 910
@@ -54,7 +54,7 @@
     <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">nested, inner</tspan></text>
     <text class="connection-label" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">first, &amp;mut text</tspan></text>
     <text class="connection-label" x="545" y="465" xml:space="preserve"><tspan x="545" dy="0">second, &amp;mut text</tspan></text>
-    <text class="connection-label" x="905" y="325" xml:space="preserve"><tspan x="905" dy="0">fallback, &amp;mut text</tspan></text>
+    <text class="connection-label" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">fallback, &amp;mut text</tspan></text>
     <text class="connection-label" x="185" y="1037" xml:space="preserve"><tspan x="185" dy="0">text, length</tspan></text>
   </g>
   <g class="nodes">
@@ -102,7 +102,7 @@
     </g>
     <g class="node action" transform="translate(892 368)">
       <title xml:space="preserve">Borrow on the fallback branch.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow on the fallback branch.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 943)">

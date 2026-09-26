@@ -1,0 +1,5 @@
+error: a kaalang stage entry cannot be the receiver `self`; produce a named wire in preparation
+ --> tests/stage/compile_fail/receiver_entry.rs:9:10
+  |
+9 |         |self| {
+  |          ^^^^

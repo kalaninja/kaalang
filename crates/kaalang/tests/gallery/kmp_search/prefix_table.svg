@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="1081" viewBox="0 0 1260 1081" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for prefix_table</title>
+  <desc id="kaalang-description">Cycles: Compute the prefix table from left to right. with inputs mut position, pattern, mut matched, mut prefix and outputs finished; Find a prefix that the next byte can extend. with inputs next, pattern, mut position, mut matched, mut prefix and outputs settled. Nodes: Start: prefix_table with parameters pattern: &amp;[u8] handing over pattern; Action: Initialize prefix lengths; the first byte has no proper prefix. capturing pattern handing over mut prefix, mut position, mut matched; Question: Is the table complete? capturing position, pattern handing over finished / next; Question: Must the prefix shrink? capturing pattern, position, matched handing over shrink / settled; Action: Follow the previous prefix length. capturing shrink, &amp;prefix, &amp;mut matched; Action: Extend a matching prefix, save its length, and advance. capturing settled, pattern, &amp;mut prefix, &amp;mut position, &amp;mut matched; End: Vec&lt;usize&gt; capturing prefix. Connections: Start: prefix_table to Action: Initialize prefix lengths; the first byte has no proper prefix.; Action: Initialize prefix lengths; the first byte has no proper prefix. to the entry of the cycle; Question: Is the table complete? branch 1 to End: Vec&lt;usize&gt;; Question: Is the table complete? branch 2 to the entry of the cycle; Question: Must the prefix shrink? branch 1 to Action: Follow the previous prefix length.; Question: Must the prefix shrink? branch 2 to Action: Extend a matching prefix, save its length, and advance.; Action: Follow the previous prefix length. to the iteration tail of the cycle; Action: Extend a matching prefix, save its length, and advance. to the iteration tail of the cycle; the entry of the cycle to Question: Is the table complete?; the entry of the cycle to Question: Must the prefix shrink?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Compute the prefix table from left to right.</title>
+    <rect class="cycle-boundary" x="32" y="272" width="1196" height="682" rx="12"/>
+    <text class="cycle-caption" x="1216" y="286" text-anchor="end" xml:space="preserve"><tspan x="1216" dy="0">Compute the prefix table from left to right.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Find a prefix that the next byte can extend.</title>
+    <rect class="cycle-boundary" x="402" y="488" width="418" height="431" rx="12"/>
+    <text class="cycle-caption" x="808" y="502" text-anchor="end" xml:space="preserve"><tspan x="808" dy="0">Find a prefix that the next byte </tspan><tspan x="808" dy="14">can extend.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 228 L 200 307
+      M 200 451 L 200 991
+      M 340 415 L 590 415 L 590 523
+      M 590 667 L 590 746
+      M 730 631 L 980 631 L 980 746
+      M 590 812 L 590 884
+      M 980 812 L 980 884
+      M 200 307 L 200 379
+      M 590 523 L 590 595
+    "/>
+    <path class="connection" d="
+      M 590 884 L 430 884 L 430 523 L 590 523
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 980 884 L 1200 884 L 1200 307 L 200 307
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">pattern</tspan></text>
+    <text class="connection-label" x="213" y="246" xml:space="preserve"><tspan x="213" dy="0">mut prefix, mut position, mut </tspan><tspan x="213" dy="14">matched</tspan></text>
+    <text class="connection-label" x="213" y="469" xml:space="preserve"><tspan x="213" dy="0">finished</tspan></text>
+    <text class="connection-label" x="353" y="433" xml:space="preserve"><tspan x="353" dy="0">next</tspan></text>
+    <text class="connection-label" x="603" y="685" xml:space="preserve"><tspan x="603" dy="0">shrink</tspan></text>
+    <text class="connection-label" x="743" y="649" xml:space="preserve"><tspan x="743" dy="0">settled</tspan></text>
+    <text class="connection-label" x="213" y="368" xml:space="preserve"><tspan x="213" dy="0">position, pattern</tspan></text>
+    <text class="connection-label" x="603" y="584" xml:space="preserve"><tspan x="603" dy="0">pattern, position, matched</tspan></text>
+    <text class="connection-label" x="603" y="735" xml:space="preserve"><tspan x="603" dy="0">shrink, &amp;prefix, &amp;mut matched</tspan></text>
+    <text class="connection-label" x="993" y="721" xml:space="preserve"><tspan x="993" dy="0">settled, pattern, &amp;mut prefix, </tspan><tspan x="993" dy="14">&amp;mut position, &amp;mut matched</tspan></text>
+    <text class="connection-label" x="213" y="980" xml:space="preserve"><tspan x="213" dy="0">prefix</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">pattern: &amp;[u8]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prefix_table</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 195)">
+      <title xml:space="preserve">Initialize prefix lengths; the first byte has no proper prefix.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Initialize prefix lengths; the first </tspan><tspan x="-124" dy="18">byte has no proper prefix.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 415)">
+      <title xml:space="preserve">Is the table complete?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the table complete?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(590 631)">
+      <title xml:space="preserve">Must the prefix shrink?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Must the prefix shrink?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(590 779)">
+      <title xml:space="preserve">Follow the previous prefix length.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Follow the previous prefix length.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(980 779)">
+      <title xml:space="preserve">Extend a matching prefix, save its length, and advance.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Extend a matching prefix, save its </tspan><tspan x="-124" dy="18">length, and advance.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1020)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

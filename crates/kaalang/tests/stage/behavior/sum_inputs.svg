@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="877" viewBox="0 0 808 877" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for sum_inputs</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: sum_inputs with parameters first_input_value: u32; second_input_value: u32; third_input_value: u32; fourth_input_value: u32 handing over first_input_value, second_input_value, third_input_value, fourth_input_value; Action: Begin. capturing nothing; Transition: Return the sum.. Connections: Start: sum_inputs to Action: Begin.; Action: Begin. to Transition: Return the sum.. Transition to stage go. Stage go. Nodes: Stage: Return the sum.; Action: Add the inputs. capturing first_input_value, second_input_value, third_input_value, fourth_input_value handing over sum; End: u32 capturing sum. Connections: Stage: Return the sum. to Action: Add the inputs.; Action: Add the inputs. to End: u32.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 785 L 232 853 "/>
+<path d="M 612 212 L 612 248 "/>
+<path d="M 232 212 L 612 212 "/>
+<path d="M 232 853 L 24 853 L 24 212 L 232 212 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="793" viewBox="0 0 680 793" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for sum_inputs</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: sum_inputs with parameters first_input_value: u32; second_input_value: u32; third_input_value: u32; fourth_input_value: u32 handing over first_input_value, second_input_value, third_input_value, fourth_input_value; Action: Begin. capturing nothing; Transition: Return the sum.. Connections: Start: sum_inputs to Action: Begin.; Action: Begin. to Transition: Return the sum..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 112 L 172 269
+      M 172 333 L 172 691
+    "/>
+    <text class="connection-label" x="185" y="130" xml:space="preserve"><tspan x="185" dy="0">first_input_value, </tspan><tspan x="185" dy="14">second_input_value, </tspan><tspan x="185" dy="14">third_input_value, </tspan><tspan x="185" dy="14">fourth_input_value</tspan></text>
+    <text class="connection-label" x="185" y="258" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 83 L 408 83"/>
+    <g class="parameter-panel" transform="translate(528 83)">
+      <rect class="node-shape" x="-120" y="-51" width="240" height="102"/>
+      <text class="label" x="-104" y="-21" xml:space="preserve"><tspan x="-104" dy="0">first_input_value: u32</tspan><tspan x="-104" dy="18">second_input_value: u32</tspan><tspan x="-104" dy="18">third_input_value: u32</tspan><tspan x="-104" dy="18">fourth_input_value: u32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 83)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">sum_inputs</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 301)">
+      <title xml:space="preserve">Begin.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Begin.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 726)">
+      <title xml:space="preserve">Return the sum.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the sum.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(440 216)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="463" viewBox="0 0 344 463" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for sum_inputs</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Return the sum.; Action: Add the inputs. capturing first_input_value, second_input_value, third_input_value, fourth_input_value handing over sum; End: u32 capturing sum. Connections: Stage: Return the sum. to Action: Add the inputs.; Action: Add the inputs. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 237
+      M 172 301 L 172 373
+    "/>
+    <text class="connection-label" x="185" y="362" xml:space="preserve"><tspan x="185" dy="0">sum</tspan></text>
+    <text class="connection-label" x="185" y="184" xml:space="preserve"><tspan x="185" dy="0">first_input_value, </tspan><tspan x="185" dy="14">second_input_value, </tspan><tspan x="185" dy="14">third_input_value, </tspan><tspan x="185" dy="14">fourth_input_value</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the sum.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the sum.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 269)">
+      <title xml:space="preserve">Add the inputs.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the inputs.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 402)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

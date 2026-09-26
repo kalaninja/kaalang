@@ -11,7 +11,7 @@ use syn::{Error, Result};
 
 use crate::model::{
     BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
-    ExecutionOutcome, Flow, ProducerId, WireMerge,
+    ExecutionOutcome, Flow, FlowKind, ProducerId, WireMerge,
 };
 
 mod action;
@@ -35,6 +35,20 @@ mod tests;
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
 pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+    flow_with_usage(flow, true)
+}
+
+/// Preparation first needs route summaries before stage captures are known.
+pub(crate) fn flow_without_usage(
+    flow: &Flow,
+) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+    flow_with_usage(flow, false)
+}
+
+fn flow_with_usage(
+    flow: &Flow,
+    check_usage: bool,
+) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
     let walk = walk(flow);
     if let Some((_, error)) = walk.error {
         return Err(error);
@@ -50,7 +64,9 @@ pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>
         return Err(error);
     }
     reachable(flow, &executions)?;
-    captured(flow, &executions)?;
+    if check_usage {
+        captured(flow, &executions)?;
+    }
     branch_outputs(flow, &executions, &merges)?;
     let captures = executions
         .iter()
@@ -306,6 +322,40 @@ impl Walk<'_> {
             return;
         }
         let block = &self.flow.blocks[index];
+        if block.transition_target.is_some() {
+            let selected = self
+                .flow
+                .blocks
+                .iter()
+                .enumerate()
+                .filter(|(_, candidate)| {
+                    candidate.transition_target.is_some()
+                        && state.available.contains_key(&candidate.inputs[0].ident)
+                })
+                .collect::<Vec<_>>();
+            if selected.len() > 1 {
+                self.report(
+                    (index, 0),
+                    Error::new(
+                        self.flow.blocks[selected[1].0].span,
+                        "a kaalang transition boundary selects more than one stage signal",
+                    ),
+                );
+                return;
+            }
+            if let Some(input) = block
+                .inputs
+                .iter()
+                .skip(1)
+                .find(|input| !state.available.contains_key(&input.ident))
+            {
+                self.report(
+                    (index, 0),
+                    Error::new(input.alias.span(), "a common outer wire used by a kaalang stage must be available on every preparation route"),
+                );
+                return;
+            }
+        }
         if !block
             .inputs
             .iter()
@@ -453,6 +503,11 @@ fn exported_name(flow: &Flow, consumer: usize) -> &Ident {
 fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let end = flow.blocks.len() - 1;
     match (0..end).find(|&block| {
+        if matches!(flow.kind, FlowKind::Preparation)
+            && flow.blocks[block].transition_target.is_some()
+        {
+            return false;
+        }
         !executions
             .iter()
             .any(|execution| execution.participates(block))
@@ -485,6 +540,9 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     };
 
     for (index, input) in flow.flow_inputs.iter().enumerate() {
+        if matches!(flow.kind, FlowKind::Stage { .. }) {
+            continue;
+        }
         if !ignored(input) && !captured(ProducerId::FlowInput(index)) {
             return Err(Error::new(
                 input.span(),

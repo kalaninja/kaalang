@@ -36,11 +36,11 @@
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 220 90 L 220 162
-      M 220 306 L 220 384
-      M 348 270 L 580 270 L 580 384
+      M 220 306 L 220 378
+      M 348 270 L 580 270 L 580 378
       M 348 270 L 940 270 L 940 378
-      M 220 454 L 220 532
-      M 580 454 L 580 532
+      M 220 460 L 220 532
+      M 580 460 L 580 532
       M 940 460 L 940 532
       M 940 596 L 940 748
       M 220 596 L 220 672
@@ -53,8 +53,8 @@
     <text class="connection-label" x="233" y="690" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
     <text class="connection-label" x="953" y="521" xml:space="preserve"><tspan x="953" dy="0">finish</tspan></text>
     <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
-    <text class="connection-label" x="233" y="472" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
-    <text class="connection-label" x="593" y="472" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
+    <text class="connection-label" x="233" y="478" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label" x="593" y="478" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
     <text class="connection-label" x="953" y="614" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
     <text class="connection-label" x="233" y="521" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
@@ -82,12 +82,12 @@
     </g>
     <g class="node case" transform="translate(220 419)">
       <title xml:space="preserve">Advance on the left.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the left.</tspan></text>
     </g>
     <g class="node case" transform="translate(580 419)">
       <title xml:space="preserve">Advance on the right.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the right.</tspan></text>
     </g>
     <g class="node case" transform="translate(940 419)">

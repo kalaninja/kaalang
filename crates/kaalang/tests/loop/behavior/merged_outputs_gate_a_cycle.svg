@@ -42,15 +42,15 @@
     <path class="connection" d="
       M 200 94 L 200 170
       M 200 314 L 200 386
-      M 340 278 L 920 278 L 920 390
-      M 920 454 L 920 530
+      M 340 278 L 920 278 L 920 386
+      M 920 458 L 920 530
       M 200 458 L 200 530
       M 340 422 L 560 422 L 560 530
       M 200 666 L 200 742
       M 560 666 L 560 742 L 200 742
       M 200 962 L 200 1034
-      M 340 926 L 920 926 L 920 1038
-      M 920 1102 L 920 1178
+      M 340 926 L 920 926 L 920 1034
+      M 920 1106 L 920 1178
       M 200 1106 L 200 1178
       M 340 1070 L 560 1070 L 560 1178
       M 200 1314 L 200 1390
@@ -75,21 +75,21 @@
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut first, mut second</tspan></text>
     <text class="connection-label" x="213" y="332" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
     <text class="connection-label" x="353" y="296" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="933" y="472" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="933" y="476" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
     <text class="connection-label" x="213" y="476" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
     <text class="connection-label" x="353" y="440" xml:space="preserve"><tspan x="353" dy="0">odd</tspan></text>
     <text class="connection-label" x="213" y="980" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
     <text class="connection-label" x="353" y="944" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="933" y="1120" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="933" y="1124" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
     <text class="connection-label" x="213" y="1124" xml:space="preserve"><tspan x="213" dy="0">large</tspan></text>
     <text class="connection-label" x="353" y="1088" xml:space="preserve"><tspan x="353" dy="0">small</tspan></text>
     <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;first</tspan></text>
-    <text class="connection-label" x="933" y="379" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut first</tspan></text>
+    <text class="connection-label" x="933" y="375" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut first</tspan></text>
     <text class="connection-label" x="213" y="375" xml:space="preserve"><tspan x="213" dy="0">past, &amp;first</tspan></text>
     <text class="connection-label" x="213" y="591" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
     <text class="connection-label" x="573" y="591" xml:space="preserve"><tspan x="573" dy="0">odd</tspan></text>
     <text class="connection-label" x="213" y="879" xml:space="preserve"><tspan x="213" dy="0">&amp;second</tspan></text>
-    <text class="connection-label" x="933" y="1027" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut second</tspan></text>
+    <text class="connection-label" x="933" y="1023" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut second</tspan></text>
     <text class="connection-label" x="213" y="1023" xml:space="preserve"><tspan x="213" dy="0">past, &amp;second</tspan></text>
     <text class="connection-label" x="213" y="1239" xml:space="preserve"><tspan x="213" dy="0">large, base</tspan></text>
     <text class="connection-label" x="573" y="1239" xml:space="preserve"><tspan x="573" dy="0">small, base</tspan></text>
@@ -119,7 +119,7 @@
     </g>
     <g class="node action" transform="translate(920 422)">
       <title xml:space="preserve">Count the first number up.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the first number up.</tspan></text>
     </g>
     <g class="node question" transform="translate(200 422)">
@@ -144,7 +144,7 @@
     </g>
     <g class="node action" transform="translate(920 1070)">
       <title xml:space="preserve">Count the second number up.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the second number up.</tspan></text>
     </g>
     <g class="node question" transform="translate(200 1070)">
