@@ -1,70 +1,71 @@
+//! Linear-time byte search using a prefix table and three repeating stages.
+
 use kaalang::kaalang;
 
 #[kaalang]
 fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
-    #[call("Build the pattern's prefix table.")]
+    #[call("Build the prefix table.")]
     let prefix = |pattern| prefix_table(pattern);
 
-    #[action("Start at the first byte with no matched prefix.")]
+    #[action("Start with no matched bytes.")]
     let (mut position, mut matched) = || (0usize, 0usize);
 
-    #[choice("Can comparison begin?")]
-    #[case("Both inputs contain bytes.")]
-    #[case("An input is empty.")]
-    let (compare, finish) = |text, pattern| match (text.is_empty(), pattern.is_empty()) {
-        (false, false) => (),
-        (_, empty_pattern) => empty_pattern.then_some(0usize),
-    };
+    #[question("Does a nonempty pattern fit?")]
+    #[yes("YES")]
+    #[no("NO")]
+    let (compare, trivial) = |text, pattern| !pattern.is_empty() && pattern.len() <= text.len();
 
-    #[stage("Compare the current bytes.")]
+    #[action("Resolve the empty or oversized pattern.")]
+    let finish = |trivial, pattern| pattern.is_empty().then_some(0usize);
+
+    #[stage("Compare bytes.")]
     let (step, retry) = |compare| {
-        #[choice("Do the bytes match?")]
-        #[case("Extend the matched prefix.")]
-        #[case("Try a shorter prefix.")]
-        let (step, retry) =
-            |text, pattern, position, matched| match text[position] == pattern[matched] {
-                true => matched + 1,
-                false => (),
-            };
+        #[question("Do the bytes match?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (extend, retry) = |text, pattern, position, matched| text[position] == pattern[matched];
+
+        #[action("Extend the matched prefix.")]
+        let step = |extend, matched| matched + 1;
     };
 
-    #[stage("Advance through the text.")]
+    #[stage("Advance one byte.")]
     let (compare, finish) = |step| {
-        #[action("Consume one byte and record the matched length.")]
+        #[action("Advance and save the matched length.")]
         |step, &mut position, &mut matched| {
             *position += 1;
             *matched = step;
         };
 
-        #[choice("Can the search continue?")]
-        #[case("Compare the next byte.")]
-        #[case("Return the match or exhaustion.")]
-        let (compare, finish) = |text, pattern, position, matched| match (
-            matched == pattern.len(),
-            position == text.len(),
-        ) {
-            (false, false) => (),
-            (found, _) => found.then_some(position - matched),
+        #[question("Can the search continue?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (compare, stopped) =
+            |text, pattern, position, matched| matched < pattern.len() && position < text.len();
+
+        #[action("Report the match or exhaustion.")]
+        let finish = |stopped, pattern, position, matched| {
+            (matched == pattern.len()).then_some(position - matched)
         };
     };
 
-    #[stage("Fall back to a shorter prefix.")]
+    #[stage("Try a shorter prefix.")]
     let (compare, step) = |retry| {
-        #[choice("Is any prefix still matched?")]
-        #[case("Follow the prefix table.")]
-        #[case("Skip the unmatched text byte.")]
-        let (shorten, step) = |matched| match matched {
-            length if length > 0 => (),
-            _ => 0usize,
-        };
+        #[question("Is any prefix still matched?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (shorten, skip) = |matched| matched > 0;
 
-        #[action("Shorten the prefix; keep the text position.")]
+        #[action("Follow the previous prefix length.")]
         let compare = |shorten, &prefix, &mut matched| {
             *matched = prefix[*matched - 1];
         };
+
+        #[action("Skip the unmatched byte.")]
+        let step = |skip| 0usize;
     };
 
-    #[stage("Return the first match.")]
+    #[stage("Return the result.")]
     |finish| {
         |finish| return finish;
     };
@@ -131,18 +132,22 @@ fn agrees_with_direct_search_for_all_short_binary_inputs() {
 
 #[kaalang]
 fn prefix_table(pattern: &[u8]) -> Vec<usize> {
-    #[action("Initialize prefix lengths; the first byte has no proper prefix.")]
+    #[action("Start with zero prefix lengths.")]
     let (mut prefix, mut position, mut matched) =
         |pattern| (vec![0usize; pattern.len()], 1usize, 0usize);
 
-    #[cycle("Compute the prefix table from left to right.")]
+    #[cycle("Build prefixes from left to right.")]
     let finished = {
         #[question("Is the table complete?")]
+        #[yes("YES")]
+        #[no("NO")]
         let (finished, next) = |position, pattern| position >= pattern.len();
 
-        #[cycle("Find a prefix that the next byte can extend.")]
+        #[cycle("Find an extendable prefix.")]
         let settled = |next| {
             #[question("Must the prefix shrink?")]
+            #[yes("YES")]
+            #[no("NO")]
             let (shrink, settled) =
                 |pattern, position, matched| matched > 0 && pattern[position] != pattern[matched];
 
@@ -154,7 +159,7 @@ fn prefix_table(pattern: &[u8]) -> Vec<usize> {
             |shrink| continue;
         };
 
-        #[action("Extend a matching prefix, save its length, and advance.")]
+        #[action("Extend if matched; save and advance.")]
         |settled, pattern, &mut prefix, &mut position, &mut matched| {
             if pattern[*position] == pattern[*matched] {
                 *matched += 1;

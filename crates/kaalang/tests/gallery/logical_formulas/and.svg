@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="704" height="926" viewBox="0 0 704 926" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for and</title>
-  <desc id="kaalang-description">Nodes: Start: and with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: Yes / branch 2: No; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: Yes / branch 2: No; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: Yes / branch 2: No; Action: ✅ Return true. capturing true_result handing over result; Action: ❌ Return false. capturing false_result handing over result; End: bool capturing result; Merge: false_result; Merge: result. Connections: Start: and to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: ✅ Return true.; Question: c branch 2 to the false_result merge; Action: ✅ Return true. to the result merge; Action: ❌ Return false. to the result merge; the false_result merge to Action: ❌ Return false.; the result merge to End: bool.</desc>
+  <desc id="kaalang-description">Nodes: Start: and with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over check_b / false_result described as branch 1: YES / branch 2: NO; Question: b capturing check_b, b handing over check_c / false_result described as branch 1: YES / branch 2: NO; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: YES / branch 2: NO; Action: ✅ True. capturing true_result handing over result; Action: ❌ False. capturing false_result handing over result; End: bool capturing result; Merge: false_result; Merge: result. Connections: Start: and to Question: a; Question: a branch 1 to Question: b; Question: a branch 2 to the false_result merge; Question: b branch 1 to Question: c; Question: b branch 2 to the false_result merge; Question: c branch 1 to Action: ✅ True.; Question: c branch 2 to the false_result merge; Action: ✅ True. to the result merge; Action: ❌ False. to the result merge; the false_result merge to Action: ❌ False.; the result merge to End: bool.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -44,12 +44,12 @@
     <text class="connection-label" x="545" y="530" xml:space="preserve"><tspan x="545" dy="0">false_result</tspan></text>
     <text class="connection-label" x="185" y="778" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="424" xml:space="preserve"><tspan x="185" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="356" xml:space="preserve"><tspan x="325" dy="0">No</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="568" xml:space="preserve"><tspan x="185" dy="0">Yes</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="500" xml:space="preserve"><tspan x="325" dy="0">No</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="424" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="356" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="568" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="500" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
     <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
     <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">check_b, b</tspan></text>
     <text class="connection-label" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">check_c, c</tspan></text>
@@ -88,14 +88,14 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">c</tspan></text>
     </g>
     <g class="node action" transform="translate(172 652)">
-      <title xml:space="preserve">✅ Return true.</title>
+      <title xml:space="preserve">✅ True.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">✅ Return true.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">✅ True.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 652)">
-      <title xml:space="preserve">❌ Return false.</title>
+      <title xml:space="preserve">❌ False.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">❌ Return false.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">❌ False.</tspan></text>
     </g>
     <g class="node end" transform="translate(172 865)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

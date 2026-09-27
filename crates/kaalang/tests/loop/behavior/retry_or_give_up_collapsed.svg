@@ -32,9 +32,8 @@
       M 172 94 L 172 170
       M 172 234 L 172 306
     "/>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut attempts, mut state</tspan></text>
     <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">mut attempts, mut state</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut state, mut attempts</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>

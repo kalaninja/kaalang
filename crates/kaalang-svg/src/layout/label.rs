@@ -66,11 +66,14 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
 
     for connection in &shared {
         if let Source::Exit(exit) = connection.source
-            && captions.branch_description(exit).is_some()
+            && captions.branch_description(exit).is_none()
         {
-            continue;
+            labels.extend(capture_label(
+                scene,
+                node_of(connection.destination),
+                captions.handover(exit),
+            ));
         }
-        labels.extend(capture_label(scene, node_of(connection.destination)));
     }
 
     for exit in &topology.exits {
@@ -96,19 +99,23 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
         {
             continue;
         }
-        labels.extend(capture_label(scene, node.id));
+        labels.extend(capture_label(
+            scene,
+            node.id,
+            captions.capture_label(node.id),
+        ));
     }
 
     labels
 }
 
 /// Captures stay above the receiving node, including labels that also represent
-/// the preceding hand-over.
-fn capture_label(scene: &Scene, node: NodeId) -> Option<Label> {
+/// the preceding hand-over. Shared labels retain that hand-over's order.
+fn capture_label(scene: &Scene, node: NodeId, names: &[String]) -> Option<Label> {
     let anchor = scene.top_anchor(node);
     wire_label(
         Vertex::Node(node),
-        scene.captions.capture_label(node),
+        names,
         Point {
             x: anchor.x,
             y: anchor.y - RISE,
@@ -155,7 +162,7 @@ fn place_merge_label(
     if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
         && outgoing.next().is_none()
         && topology.single_arrival(node)
-        && captions.capture(node) == wires
+        && captions.matches_capture(topology.node(node), wires)
     {
         merged_captures.insert(node);
     }

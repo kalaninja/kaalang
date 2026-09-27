@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::topology::{
-    Connection, Destination, ExitId, NodeId, NodeKind, Source, Topology,
+    Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology,
 };
 use kaalang_compiler::{Analysis, BlockKind, FlowKind, Input, ProducerId, SemanticModel};
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
@@ -46,6 +46,15 @@ impl Captions {
     /// computational node; it is neither a wire name nor a synthetic capture.
     pub(crate) fn capture_label(&self, node: NodeId) -> &[String] {
         self.capture_label.get(&node).map_or(&[], Vec::as_slice)
+    }
+
+    /// Derived cycle inputs may share a hand-over regardless of order (RFC 0006 §7.5).
+    pub(crate) fn matches_capture(&self, node: &Node, handover: &[String]) -> bool {
+        let capture = self.capture(node.id);
+        capture == handover
+            || (node.kind == NodeKind::Loop
+                && capture.len() == handover.len()
+                && capture.iter().collect::<BTreeSet<_>>() == handover.iter().collect())
     }
 
     /// The wires newly provided at this exit, labeled whether or not any
@@ -397,7 +406,7 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
             .loop_boundaries
             .iter()
             .any(|boundary| boundary.results.contains(&connection.source))
-        && captions.handover(exit) == captions.capture_label(node)
+        && captions.matches_capture(topology.node(node), captions.handover(exit))
         && topology.leaving(exit).count() == 1
         && topology.single_arrival(node)
 }

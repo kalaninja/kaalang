@@ -2,11 +2,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn fizzbuzz(number: u32) -> String {
-    #[choice("Which of three and five divide the number?")]
-    #[case("Both three and five divide it.")]
-    #[case("Only three divides it.")]
-    #[case("Only five divides it.")]
-    #[case("Neither divides it.")]
+    #[choice("Which of 3 and 5 divide the number?")]
+    #[case("Both.")]
+    #[case("Only 3.")]
+    #[case("Only 5.")]
+    #[case("Neither.")]
     let (fizz_buzz, fizz, buzz, plain) = |number| match (number % 3, number % 5) {
         (0, 0) => (),
         (0, _) => (),
@@ -23,7 +23,7 @@ fn fizzbuzz(number: u32) -> String {
     #[action("🐝 Say Buzz.")]
     let end = |buzz| String::from("Buzz");
 
-    #[action("🔢 Say the number itself.")]
+    #[action("🔢 Say the number.")]
     let end = |plain| plain.to_string();
 
     |end| return end;

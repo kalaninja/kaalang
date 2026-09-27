@@ -6,7 +6,7 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn while_loop(mut a: u64, mut b: u64) -> u64 {
-    #[cycle("Replace the pair with a smaller equivalent one.")]
+    #[cycle("Reduce the pair to its greatest common divisor.")]
     let divisor = {
         #[question("Is the second number zero?")]
         #[yes("YES")]
@@ -18,9 +18,7 @@ fn while_loop(mut a: u64, mut b: u64) -> u64 {
 
         #[action("➗ Divide and keep the remainder.")]
         |again, &mut a, &mut b| {
-            let remainder = *a % *b;
-            *a = *b;
-            *b = remainder;
+            (*a, *b) = (*b, *a % *b);
         };
 
         |again| continue;

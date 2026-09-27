@@ -50,7 +50,13 @@ fn write_route(svg: &mut String, points: &[Point], arrow: bool) {
 }
 
 fn staged_description(scene: &StagedScene, root: &Analysis) -> String {
-    let mut description = "The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. ".to_owned();
+    let mut description = scene.direct_entry.map_or_else(
+        || "The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. ".to_owned(),
+        |entry| format!(
+            "The flow starts directly at stage {}. Transitions return to the stage entry rail. ",
+            root.stages[entry].entry_alias,
+        ),
+    );
     for (part, (local, _)) in scene.parts.iter().enumerate() {
         if part > 0 {
             let stage = &root.stages[part - 1];

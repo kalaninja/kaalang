@@ -1,47 +1,100 @@
-//! In-place quicksort. Recurse on the smaller partition and iterate over the
-//! larger one, keeping the call stack logarithmic without an explicit stack of ranges.
+//! In-place three-way quicksort. Recursing on the smaller side and iterating
+//! over the larger one keeps the call stack logarithmic.
 
 use core::cmp::Ordering;
 
 use kaalang::kaalang;
 
 #[kaalang]
-fn quick_sort<T: Ord>(mut values: &mut [T]) {
-    #[action("Start with the whole slice.")]
-    let (mut start, mut end) = |&values| (0, values.len());
+pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
+    #[stage("Check the range.")]
+    let (partition, finish) = |values| {
+        #[question("Are there at least two values?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (split, finish) = |&values| values.len() > 1;
 
-    #[cycle("Sort the remaining range.")]
-    let sorted = {
-        #[question("Does the range contain at least two values?")]
-        let (split, sorted) = |start, end| end - start > 1;
-
-        #[action("Take the current range of the original slice.")]
-        let mut range = |split, start, end, &mut values| &mut values[start..end];
-
-        #[call("Partition into values below, equal to, and above the pivot.")]
-        let (lower, upper) = |&mut range| partition(range);
-
-        #[action("Take the smaller side for recursion; keep the larger range for later.")]
-        let (smaller, remaining) = |range, start, end, lower, upper| {
-            if lower <= range.len() - upper {
-                (&mut range[..lower], (start + upper, end))
-            } else {
-                (&mut range[upper..], (start, start + lower))
-            }
-        };
-
-        #[call("Recursively sort the smaller range.")]
-        let sorted_part = |smaller| quick_sort(smaller);
-
-        #[action("Continue with the larger range.")]
-        |sorted_part, remaining, &mut start, &mut end| {
-            (*start, *end) = remaining;
-        };
-
-        |sorted_part| continue;
+        #[action("Take the unsorted range.")]
+        let partition = |split, values| values;
     };
 
-    |sorted| return;
+    #[stage("Partition the range.")]
+    let recur = |partition| {
+        #[action("Choose the middle value as the pivot; set it aside at the end.")]
+        let (mut range, mut lower, mut cursor, mut upper, pivot) = |partition| {
+            let pivot = partition.len() - 1;
+            partition.swap(partition.len() / 2, pivot);
+            (partition, 0, 0, pivot, pivot)
+        };
+
+        #[cycle("Group the other values around the pivot.")]
+        let classified = {
+            #[question("Are any values unclassified?")]
+            #[yes("YES")]
+            #[no("NO")]
+            let (select, classified) = |cursor, upper| cursor < upper;
+
+            #[action("Select the first unclassified value.")]
+            let value = |select, &range, cursor| &range[cursor];
+
+            #[choice("How does this value compare with the pivot?")]
+            #[case("Less than the pivot.")]
+            #[case("Equal to the pivot.")]
+            #[case("Greater than the pivot.")]
+            let (less, equal, greater) = |value, &range, pivot| match value.cmp(&range[pivot]) {
+                Ordering::Less => (),
+                Ordering::Equal => (),
+                Ordering::Greater => (),
+            };
+
+            #[action("Put this value in the left group.")]
+            let stepped = |less, &mut range, &mut lower, &mut cursor| {
+                range.swap(*cursor, *lower);
+                *lower += 1;
+                *cursor += 1;
+            };
+
+            #[action("Keep this value in the middle group.")]
+            let stepped = |equal, &mut cursor| *cursor += 1;
+
+            #[action("Swap this value into the right group; check its replacement next.")]
+            let stepped = |greater, &mut range, cursor, &mut upper| {
+                *upper -= 1;
+                range.swap(cursor, *upper);
+            };
+
+            |stepped| continue;
+        };
+
+        #[action("Place the pivot with its equals; separate the left and right groups.")]
+        let recur = |classified, range, lower, upper, pivot| {
+            range.swap(upper, pivot);
+            let (left, rest) = range.split_at_mut(lower);
+            let (_, right) = rest.split_at_mut(upper + 1 - lower);
+            if left.len() <= right.len() {
+                (left, right)
+            } else {
+                (right, left)
+            }
+        };
+    };
+
+    #[stage("Sort the smaller group.")]
+    let values = |recur| {
+        #[action("Take the smaller and larger outer groups.")]
+        let (smaller, larger) = |recur| recur;
+
+        #[call("Sort the smaller group recursively.")]
+        let sorted_part = |smaller| quick_sort(smaller);
+
+        #[action("Continue sorting the larger group.")]
+        let values = |sorted_part, larger| larger;
+    };
+
+    #[stage("Finish sorting.")]
+    |finish| {
+        return;
+    };
 }
 
 #[test]
@@ -88,82 +141,5 @@ fn sorts_all_short_ternary_sequences() {
             quick_sort(&mut input);
             assert_eq!(input, expected);
         }
-    }
-}
-
-/// Returns the half-open bounds of the equal region in a nonempty slice.
-#[kaalang]
-fn partition<T: Ord>(mut values: &mut [T]) -> (usize, usize) {
-    #[action("Move the middle pivot to the end; start the three regions.")]
-    let (mut lower, mut cursor, mut upper, pivot) = |&mut values| {
-        assert!(!values.is_empty());
-        let pivot = values.len() - 1;
-        values.swap(values.len() / 2, pivot);
-        (0, 0, pivot, pivot)
-    };
-
-    #[cycle("Classify every value around the pivot.")]
-    let classified = {
-        #[question("Does an unclassified value remain?")]
-        let (compare, classified) = |cursor, upper| cursor < upper;
-
-        #[choice("Where does this value belong?")]
-        #[case("Less than the pivot.")]
-        #[case("Equal to the pivot.")]
-        #[case("Greater than the pivot.")]
-        let (less, equal, greater) =
-            |compare, &values, cursor, pivot| match values[cursor].cmp(&values[pivot]) {
-                Ordering::Less => (),
-                Ordering::Equal => (),
-                Ordering::Greater => (),
-            };
-
-        #[action("Move the value left; advance lower and cursor.")]
-        let stepped = |less, &mut values, &mut lower, &mut cursor| {
-            values.swap(*cursor, *lower);
-            *lower += 1;
-            *cursor += 1;
-        };
-
-        #[action("Keep the equal value; advance cursor.")]
-        let stepped = |equal, &mut cursor| *cursor += 1;
-
-        #[action("Move the value right; inspect its replacement next.")]
-        let stepped = |greater, &mut values, cursor, &mut upper| {
-            *upper -= 1;
-            values.swap(cursor, *upper);
-        };
-
-        |stepped| continue;
-    };
-
-    #[action("Place the pivot between the equal and greater regions.")]
-    let bounds = |classified, &mut values, lower, upper, pivot| {
-        values.swap(upper, pivot);
-        (lower, upper + 1)
-    };
-
-    |bounds| return bounds;
-}
-
-#[test]
-fn separates_three_regions_without_losing_values() {
-    for mut input in [
-        vec![4],
-        vec![3, 1, 3, 2, 1],
-        vec![1, 2, 3],
-        vec![3, 2, 1],
-        vec![7; 256],
-    ] {
-        let pivot = input[input.len() / 2];
-        let mut expected = input.clone();
-        expected.sort_unstable();
-        let (lower, upper) = partition(&mut input);
-        assert!(lower < upper);
-        assert!(input[..lower].iter().all(|value| *value < pivot));
-        assert!(input[lower..upper].iter().all(|value| *value == pivot));
-        assert!(input[upper..].iter().all(|value| *value > pivot));
-        input.sort_unstable();
-        assert_eq!(input, expected);
     }
 }

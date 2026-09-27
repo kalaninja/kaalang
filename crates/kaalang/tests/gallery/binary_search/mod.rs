@@ -1,15 +1,17 @@
+//! Binary search over a sorted slice, shown with two branch orders.
+
 use std::cmp::Ordering;
 
 use kaalang::kaalang;
 
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
+    #[action("📏 Search the whole slice.")]
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
     let result = {
-        #[question("Does the search range contain any elements?")]
+        #[question("Are any candidates left?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
@@ -17,13 +19,13 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         #[action("🚫 The target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
+        #[action("📍 Find the midpoint.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
 
-        #[choice("Compare the middle element with the target.")]
-        #[case("Less than the target.")]
-        #[case("Greater than the target.")]
-        #[case("Equal to the target.")]
+        #[choice("Compare with the target.")]
+        #[case("Below target.")]
+        #[case("Above target.")]
+        #[case("Equal to target.")]
         let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
@@ -47,12 +49,12 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 
 #[kaalang]
 fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
+    #[action("📏 Search the whole slice.")]
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
     let result = {
-        #[question("Does the search range contain any elements?")]
+        #[question("Are any candidates left?")]
         #[no("NO")]
         #[yes("YES")]
         let (leave, iterate) = |left, right| left < right;
@@ -60,13 +62,13 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         #[action("🚫 The target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
+        #[action("📍 Find the midpoint.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
 
-        #[choice("Compare the middle element with the target.")]
-        #[case("Equal to the target.")]
-        #[case("Less than the target.")]
-        #[case("Greater than the target.")]
+        #[choice("Compare with the target.")]
+        #[case("Equal to target.")]
+        #[case("Below target.")]
+        #[case("Above target.")]
         let (equal, less, greater) = |values, target, mid| match values[mid].cmp(&target) {
             Ordering::Equal => (),
             Ordering::Less => (),

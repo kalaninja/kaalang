@@ -2,8 +2,8 @@
 
 use std::rc::Rc;
 
-use kaalang_compiler::SemanticModel;
-use kaalang_compiler::topology::{NodeId, NodeKind, Vertex};
+use kaalang_compiler::topology::{ExitId, NodeId, NodeKind, Topology, Vertex};
+use kaalang_compiler::{Arrangement, BlockKind, SemanticModel};
 
 use crate::captions;
 
@@ -20,6 +20,7 @@ pub(super) struct StageRows {
 }
 
 pub(crate) struct StagedScene {
+    pub(crate) direct_entry: Option<usize>,
     pub(crate) parts: Vec<(Scene, PartPlacement)>,
     pub(crate) connections: Vec<[Point; 2]>,
     pub(crate) return_route: Option<[Point; 4]>,
@@ -38,6 +39,10 @@ pub(crate) fn layout_staged(
     parameters: &[String],
     return_type: &str,
 ) -> Result<StagedScene, String> {
+    let direct_entry = match model.analysis.flow.blocks.as_slice() {
+        [transition, end] if end.kind == BlockKind::End => transition.transition_target,
+        _ => None,
+    };
     let models = std::iter::once(model)
         .chain(&model.stages)
         .collect::<Vec<_>>();
@@ -80,7 +85,10 @@ pub(crate) fn layout_staged(
             layout_with_stage_rows(model, captions, parameters, Some(rows))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let placements = place(&parts);
+    if direct_entry.is_some() {
+        keep_header(&mut parts[0]);
+    }
+    let placements = place(&parts, direct_entry);
     let transition_y = parts
         .iter()
         .zip(&placements)
@@ -116,10 +124,35 @@ pub(crate) fn layout_staged(
             )?;
         }
     }
-    let placements = place(&parts);
-    let diagram = compose(parts, placements);
+    let placements = place(&parts, direct_entry);
+    let diagram = compose(parts, placements, direct_entry);
     verify(&diagram)?;
     Ok(diagram)
+}
+
+/// Empty preparation contributes only the function header. Composition connects
+/// it directly to the entry selected by the input instead of drawing an address.
+fn keep_header(scene: &mut Scene) {
+    let start = Vertex::Node(NodeId::Start);
+    let exit = ExitId::of(NodeId::Start);
+    let mut topology = Topology::default();
+    topology
+        .nodes
+        .push(scene.topology.node(NodeId::Start).clone());
+    topology.exits.push(scene.topology.exit(exit).clone());
+    topology.vertices.push(start);
+    scene.topology = topology;
+    scene.arrangement = Arrangement {
+        rank: [(start, 0)].into(),
+        ranks: 1,
+        column: [(start, scene.arrangement.column[&start])].into(),
+        exit_offset: [(exit, 0)].into(),
+        ..Arrangement::default()
+    };
+    scene.nodes.retain(|node| node.id == NodeId::Start);
+    scene.labels.retain(|label| label.owner == start);
+    scene.connections.clear();
+    scene.fit();
 }
 
 fn verify(diagram: &StagedScene) -> Result<(), String> {
@@ -152,8 +185,13 @@ fn verify(diagram: &StagedScene) -> Result<(), String> {
     Ok(())
 }
 
-fn compose(parts: Vec<Scene>, placements: Vec<PartPlacement>) -> StagedScene {
-    let first_x = placements[0].x + parts[0].node(NodeId::Start).x;
+fn compose(
+    parts: Vec<Scene>,
+    placements: Vec<PartPlacement>,
+    direct_entry: Option<usize>,
+) -> StagedScene {
+    let first = usize::from(direct_entry.is_some());
+    let first_x = placements[first].x + parts[first].node(NodeId::Start).x;
     let top = placements[1].y + Scene::bounds(parts[1].node(NodeId::Start)).1 - RAIL_GAP;
     let bottom = placements
         .iter()
@@ -166,6 +204,14 @@ fn compose(parts: Vec<Scene>, placements: Vec<PartPlacement>) -> StagedScene {
     let rail_right = placements[last].x + parts[last].node(NodeId::Start).x;
     let point = |x, y| Point { x, y };
     let mut connections = Vec::new();
+    if direct_entry.is_some() {
+        let start = parts[0].node(NodeId::Start);
+        let x = placements[0].x + start.x;
+        connections.push([
+            point(x, placements[0].y + start.y + start.height / 2),
+            point(x, top),
+        ]);
+    }
     let mut last_transition = None;
     for (index, (scene, part)) in parts.iter().zip(&placements).enumerate() {
         if index > 0 {
@@ -185,7 +231,9 @@ fn compose(parts: Vec<Scene>, placements: Vec<PartPlacement>) -> StagedScene {
             }
         }
     }
-    connections.push([point(first_x, top), point(rail_right, top)]);
+    if first_x != rail_right {
+        connections.push([point(first_x, top), point(rail_right, top)]);
+    }
     let return_route = last_transition.map(|x| {
         [
             point(x, bottom),
@@ -202,6 +250,7 @@ fn compose(parts: Vec<Scene>, placements: Vec<PartPlacement>) -> StagedScene {
         .expect("a staged diagram contains preparation")
         + MARGIN;
     StagedScene {
+        direct_entry,
         parts: parts.into_iter().zip(placements).collect(),
         connections,
         return_route,
@@ -210,7 +259,7 @@ fn compose(parts: Vec<Scene>, placements: Vec<PartPlacement>) -> StagedScene {
     }
 }
 
-fn place(parts: &[Scene]) -> Vec<PartPlacement> {
+fn place(parts: &[Scene], direct_entry: Option<usize>) -> Vec<PartPlacement> {
     let mut placements = Vec::with_capacity(parts.len());
     let mut x = MARGIN + RAIL_GAP;
     let start = parts[0].node(NodeId::Start);
@@ -234,7 +283,13 @@ fn place(parts: &[Scene]) -> Vec<PartPlacement> {
                 stage_y - Scene::bounds(scene.node(NodeId::Start)).1
             },
         });
-        x += scene.body_size().0 + PART_GAP;
+        if part > 0 || direct_entry.is_none() {
+            x += scene.body_size().0 + PART_GAP;
+        }
+    }
+    if let Some(entry) = direct_entry {
+        placements[0].x =
+            placements[entry + 1].x + parts[entry + 1].node(NodeId::Start).x - start.x;
     }
     placements
 }
@@ -248,6 +303,109 @@ mod tests {
         let function = syn::parse_str(source).unwrap();
         let model = kaalang_compiler::build(&function).unwrap();
         layout_staged(&model, name, &[], return_type).unwrap()
+    }
+
+    #[test]
+    fn direct_inputs_share_the_receiving_stage_column() {
+        for (source, entry) in [
+            (
+                include_str!("../../../kaalang/tests/gallery/sorting/quick_sort.rs"),
+                0,
+            ),
+            (
+                r#"
+                    #[kaalang]
+                    fn example(go: u8) -> u8 {
+                        #[stage("Finish.")]
+                        |finish| { |finish| return finish; };
+                        #[stage("Begin.")]
+                        let finish = |go| {
+                            #[action("Use the input.")]
+                            let finish = |go| go;
+                        };
+                    }
+                "#,
+                1,
+            ),
+            (
+                r#"
+                    #[kaalang]
+                    fn example(go: (), a_very_long_parameter_name: u8,
+                        another_very_long_parameter_name: u8,
+                        one_more_very_long_parameter_name: u8) -> u8 {
+                        #[stage("Finish.")]
+                        |go| {
+                            #[action("Add the inputs.")]
+                            let sum = |a_very_long_parameter_name,
+                                another_very_long_parameter_name,
+                                one_more_very_long_parameter_name|
+                                a_very_long_parameter_name + another_very_long_parameter_name
+                                    + one_more_very_long_parameter_name;
+                            |sum| return sum;
+                        };
+                    }
+                "#,
+                0,
+            ),
+            (
+                r#"
+                    #[kaalang]
+                    fn example(go: ()) -> ! {
+                        #[stage("Repeat forever.")]
+                        |go| { #[cycle("Repeat.")] { continue; }; };
+                    }
+                "#,
+                0,
+            ),
+        ] {
+            let file = syn::parse_file(source).unwrap();
+            let function = kaalang_compiler::flows(&file.items).remove(0);
+            let parameters = super::super::parameter_text(source, &function.sig);
+            for collapsed in [false, true] {
+                let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
+                kaalang_render::compact_arrangement(&mut model);
+                for stage in &mut model.stages {
+                    kaalang_render::compact_arrangement(stage);
+                }
+                let diagram = layout_staged(&model, "example", &parameters, "u8").unwrap();
+                assert_eq!(diagram.direct_entry, Some(entry));
+                assert_eq!(diagram.parts[1].1.x, MARGIN + RAIL_GAP);
+                let (header, placement) = &diagram.parts[0];
+                let (stage, stage_placement) = &diagram.parts[entry + 1];
+                assert_eq!(header.nodes.len(), 1);
+                assert_eq!(
+                    placement.x + header.node(NodeId::Start).x,
+                    stage_placement.x + stage.node(NodeId::Start).x
+                );
+                let panel = header.parameters.as_ref().unwrap();
+                assert!(
+                    placement.y + Scene::parameter_bounds(panel).3
+                        < stage_placement.y + Scene::bounds(stage.node(NodeId::Start)).1 - RAIL_GAP
+                );
+                assert!(placement.x + Scene::parameter_bounds(panel).2 < diagram.width);
+                assert!(
+                    diagram.parts[1..]
+                        .windows(2)
+                        .all(|pair| pair[0].1.x < pair[1].1.x)
+                );
+                for (local, _) in &diagram.parts {
+                    assert_eq!(super::super::correspondence(local), None);
+                }
+                assert_eq!(
+                    diagram.return_route.is_some(),
+                    diagram.parts[1..].iter().any(|(part, _)| part
+                        .topology
+                        .nodes
+                        .iter()
+                        .any(|node| node.kind == NodeKind::Transition))
+                );
+                let svg = crate::svg::serialize_staged(&diagram, &model.analysis, "example");
+                assert!(svg.contains(&format!(
+                    "The flow starts directly at stage {}.",
+                    model.analysis.stages[entry].entry_alias
+                )));
+            }
+        }
     }
 
     #[test]

@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1528" height="776" viewBox="0 0 1528 776" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for count_down</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: const count_down with parameters count: usize; Transition: Count down to zero.. Connections: Start: const count_down to Transition: Count down to zero.. Transition to stage count. Stage count. Nodes: Stage: Count down to zero.; Select: Is another step needed? capturing count; Case: Take the next step.; Case: The count is zero.; Transition: Count down to zero.; Transition: Return zero.. Connections: Stage: Count down to zero. to Select: Is another step needed?; Select: Is another step needed? to Case: Take the next step.; Select: Is another step needed? to Case: The count is zero.; Case: Take the next step. to Transition: Count down to zero.; Case: The count is zero. to Transition: Return zero.. Transition to stage count. Transition to stage finish. Stage finish. Nodes: Stage: Return zero.; End: usize capturing finish. Connections: Stage: Return zero. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1148" height="776" viewBox="0 0 1148 776" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for count_down</title><desc id="kaalang-description">The flow starts directly at stage count. Transitions return to the stage entry rail. Nodes: Start: const count_down with parameters count: usize. Stage count. Nodes: Stage: Count down to zero.; Select: Is another step needed? capturing count; Case: Take the next step.; Case: The count is zero.; Transition: Count down to zero.; Transition: Return zero.. Connections: Stage: Count down to zero. to Select: Is another step needed?; Select: Is another step needed? to Case: Take the next step.; Select: Is another step needed? to Case: The count is zero.; Case: Take the next step. to Transition: Count down to zero.; Case: The count is zero. to Transition: Return zero.. Transition to stage count. Transition to stage finish. Stage finish. Nodes: Stage: Return zero.; End: usize capturing finish. Connections: Stage: Return zero. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 114 L 232 150 "/>
+<path d="M 232 150 L 232 186 "/>
 <path d="M 232 684 L 232 752 "/>
-<path d="M 612 150 L 612 186 "/>
-<path d="M 612 684 L 612 752 "/>
-<path d="M 972 684 L 972 752 "/>
-<path d="M 1332 150 L 1332 186 "/>
-<path d="M 232 150 L 1332 150 "/>
-<path d="M 972 752 L 24 752 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 592 684 L 592 752 "/>
+<path d="M 952 150 L 952 186 "/>
+<path d="M 232 150 L 952 150 "/>
+<path d="M 592 752 L 24 752 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="692" viewBox="0 0 680 692" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for count_down</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: const count_down with parameters count: usize; Transition: Count down to zero.. Connections: Start: const count_down to Transition: Count down to zero..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: const count_down with parameters count: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -33,16 +33,12 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
-      .stage-marker { fill: currentColor; }
     </style>
   </defs>
   <g class="cycle-regions">
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 590
     "/>
   </g>
   <g class="nodes">
@@ -55,15 +51,10 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const count_down</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 625)">
-      <title xml:space="preserve">Count down to zero.</title>
-      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
-      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Count down to zero.</tspan></text>
-    </g>
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="562" viewBox="0 0 684 562" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="684" height="562" viewBox="0 0 684 562" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for count_down</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Count down to zero.; Select: Is another step needed? capturing count; Case: Take the next step.; Case: The count is zero.; Transition: Count down to zero.; Transition: Return zero.. Connections: Stage: Count down to zero. to Select: Is another step needed?; Select: Is another step needed? to Case: Take the next step.; Select: Is another step needed? to Case: The count is zero.; Case: Take the next step. to Transition: Count down to zero.; Case: The count is zero. to Transition: Return zero..</desc>
   <defs>
@@ -140,7 +131,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(1160 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(780 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for count_down</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return zero.; End: usize capturing finish. Connections: Stage: Return zero. to End: usize.</desc>
   <defs>

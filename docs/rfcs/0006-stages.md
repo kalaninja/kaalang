@@ -854,6 +854,13 @@ vertical connection in its place. The rail is a symbolic link between addresses
 and stage entries; it does not execute preparation again or add an executable
 choice or entry to the middle of a stage.
 
+When preparation contains no authored blocks, the input selects one stage
+directly. Omit the preparation part and its synthetic transition address. Place
+the start capsule and parameter panel above the receiving stage, with a straight
+connection through the upper rail to that stage's entry. Stages retain their
+declaration order even when the input selects a later stage. The first declared
+stage occupies the leftmost part; the empty preparation reserves no width.
+
 ### 7.1 Stage entry
 
 A stage begins with the same shape as a case node in RFC 0002: a rectangular
@@ -877,11 +884,11 @@ reduced control connections.
 ### 7.2 Transition node
 
 Each transition boundary ends its selected route with a **transition node**
-after all work on that route. All transitions, including preparation's initial
-transitions, share one row below every part's body, including expanded cycle
-boundaries and indefinitely repeating routes. Within a part, transition columns
-follow local branch routing, independently of the order of names in an output
-declaration. Distinct addresses occupy distinct columns.
+after all work on that route. All visible transitions, including nonempty
+preparation's initial transitions, share one row below every part's body,
+including expanded cycle boundaries and indefinitely repeating routes. Within a
+part, transition columns follow local branch routing, independently of the order
+of names in an output declaration. Distinct addresses occupy distinct columns.
 
 The transition node mirrors the stage entry vertically: a rectangular text body
 with an upper triangular point. The incoming control connection meets that upper
@@ -947,15 +954,16 @@ language; cycles use the projection in §7.5.
 Each address's flat bottom connects vertically to a common lower rail, including
 the initial addresses in preparation. A return line rises from that rail outside
 the leftmost part, reaches the upper rail, and ends with a right-pointing arrow
-at the initial flow's axis. The target name on the address selects the receiving
-stage. These contour segments carry no wire captions and create no new data
-dependencies.
+at the leftmost part's entry axis. The target name on the address selects the
+receiving stage. These contour segments carry no wire captions and create no new
+data dependencies.
 
 Check and arrange preparation and stages locally, then compose their verified
 arrangements with preparation on the left and stages to its right in declaration
-order. Inter-part links establish reachability and data provenance; local
-arrangements supply the drawn routes. The shared model owns these decisions, and
-rendering consumes the same stage graph as lowering.
+order. Empty preparation contributes only its measured function header above the
+receiving stage. Inter-part links establish reachability and data provenance;
+local arrangements supply the drawn routes. The shared model owns these
+decisions, and rendering consumes the same stage graph as lowering.
 
 The upper rail clears the measured start node, parameter panel, and outgoing
 wire labels, including their text halo. Check the composed rails against each
@@ -974,6 +982,13 @@ choose a transition row that clears every part's body, and enlarge the gap
 before each part's final rank to reach it, accounting for the part's vertical
 offset. Local routes and labels are recalculated and checked using those
 measured rows. No node is moved after verification.
+
+For empty preparation, retain the verified start geometry and parameter panel as
+a header-only projection. Its sole transition is represented by the direct
+connection to the receiving stage. Place that header above the stages and check
+the composed rails and bounds normally. This presentation does not change the
+shared stage graph or its local stage arrangements. If no stage has a transition
+address, omit the lower return rail.
 
 In every diagram, including flows without stages, nodes on the same local row
 share the height of its tallest measured node. Their upper and lower edges align
@@ -1035,6 +1050,15 @@ Actual inner capture forms remain visible in the expanded view. The list records
 dependencies, not borrows held for the whole cycle. An expanded cycle retains
 its unlabeled structural entry and does not repeat the full input list on its
 boundary.
+
+For label sharing, this derived input list is unordered: an adjacent hand-over
+with the same nonempty set of displayed names, including producer `mut`
+permissions, shares one label with the collapsed cycle even when the lists are
+in different orders. The shared label uses the preceding hand-over's order. The
+same applies to a shared hand-over at a merge whose sole consumer is the
+collapsed cycle. All other adjacency and uniqueness conditions of RFC 0002 §6
+still apply. Ordinary authored capture lists and hand-overs from alternative
+exits still require matching order.
 
 Both projections preserve the same selected outputs and surrounding branch
 order. Check all result routes and the continue back edge in the expanded view,
@@ -1282,69 +1306,68 @@ data scope alongside the text position and the length already matched.
 ```rust
 #[kaalang]
 fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
-    #[call("Build the pattern's prefix table.")]
+    #[call("Build the prefix table.")]
     let prefix = |pattern| prefix_table(pattern);
 
-    #[action("Start at the first byte with no matched prefix.")]
+    #[action("Start with no matched bytes.")]
     let (mut position, mut matched) = || (0usize, 0usize);
 
-    #[choice("Can comparison begin?")]
-    #[case("Both inputs contain bytes.")]
-    #[case("An input is empty.")]
-    let (compare, finish) = |text, pattern| match (text.is_empty(), pattern.is_empty()) {
-        (false, false) => (),
-        (_, empty_pattern) => empty_pattern.then_some(0usize),
-    };
+    #[question("Does a nonempty pattern fit?")]
+    #[yes("YES")]
+    #[no("NO")]
+    let (compare, trivial) = |text, pattern| !pattern.is_empty() && pattern.len() <= text.len();
 
-    #[stage("Compare the current bytes.")]
+    #[action("Resolve the empty or oversized pattern.")]
+    let finish = |trivial, pattern| pattern.is_empty().then_some(0usize);
+
+    #[stage("Compare bytes.")]
     let (step, retry) = |compare| {
-        #[choice("Do the bytes match?")]
-        #[case("Extend the matched prefix.")]
-        #[case("Try a shorter prefix.")]
-        let (step, retry) =
-            |text, pattern, position, matched| match text[position] == pattern[matched] {
-                true => matched + 1,
-                false => (),
-            };
+        #[question("Do the bytes match?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (extend, retry) = |text, pattern, position, matched| text[position] == pattern[matched];
+
+        #[action("Extend the matched prefix.")]
+        let step = |extend, matched| matched + 1;
     };
 
-    #[stage("Advance through the text.")]
+    #[stage("Advance one byte.")]
     let (compare, finish) = |step| {
-        #[action("Consume one byte and record the matched length.")]
+        #[action("Advance and save the matched length.")]
         |step, &mut position, &mut matched| {
             *position += 1;
             *matched = step;
         };
 
-        #[choice("Can the search continue?")]
-        #[case("Compare the next byte.")]
-        #[case("Return the match or exhaustion.")]
-        let (compare, finish) = |text, pattern, position, matched| match (
-            matched == pattern.len(),
-            position == text.len(),
-        ) {
-            (false, false) => (),
-            (found, _) => found.then_some(position - matched),
+        #[question("Can the search continue?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (compare, stopped) =
+            |text, pattern, position, matched| matched < pattern.len() && position < text.len();
+
+        #[action("Report the match or exhaustion.")]
+        let finish = |stopped, pattern, position, matched| {
+            (matched == pattern.len()).then_some(position - matched)
         };
     };
 
-    #[stage("Fall back to a shorter prefix.")]
+    #[stage("Try a shorter prefix.")]
     let (compare, step) = |retry| {
-        #[choice("Is any prefix still matched?")]
-        #[case("Follow the prefix table.")]
-        #[case("Skip the unmatched text byte.")]
-        let (shorten, step) = |matched| match matched {
-            length if length > 0 => (),
-            _ => 0usize,
-        };
+        #[question("Is any prefix still matched?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (shorten, skip) = |matched| matched > 0;
 
-        #[action("Shorten the prefix; keep the text position.")]
+        #[action("Follow the previous prefix length.")]
         let compare = |shorten, &prefix, &mut matched| {
             *matched = prefix[*matched - 1];
         };
+
+        #[action("Skip the unmatched byte.")]
+        let step = |skip| 0usize;
     };
 
-    #[stage("Return the first match.")]
+    #[stage("Return the result.")]
     |finish| {
         |finish| return finish;
     };
@@ -1360,9 +1383,9 @@ and
 The `compare` and `retry` entries carry unit signals. `step` carries the new
 matched length: comparison supplies `matched + 1`, while fallback at zero
 supplies `0` to skip an unmatched text byte. `finish` carries `Option<usize>`.
-An empty pattern selects it immediately with `Some(0)`; an empty text with a
-nonempty pattern selects `None`. A successful search returns the first match's
-byte offset.
+An empty pattern selects it immediately with `Some(0)`; a pattern longer than
+the text selects `None`. A successful search returns the first match's byte
+offset.
 
 Before each comparison, `position < text.len()` and `matched < pattern.len()`.
 The `matched` bytes immediately before `position` equal `pattern[..matched]`. A
@@ -1451,9 +1474,11 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
   **§4.8 and §6**, replace the collapsed cycle's authored capture list with the
   derived external-wire input list defined by §7.5 here, including its gate and
   transitive inner uses. That list displays producer mutability rather than
-  per-block capture forms. The expanded cycle retains the unlabeled structural
-  entry and the boundary without a repeated full input list; its alternative
-  result interfaces replace the former single-result interface.
+  per-block capture forms and shares an adjacent hand-over or shared merge label
+  when the displayed names match regardless of order. The expanded cycle retains
+  the unlabeled structural entry and the boundary without a repeated full input
+  list; its alternative result interfaces replace the former single-result
+  interface.
 - **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
   symbolic stage links and the silhouette geometry defined in §7.4 here.
   Expanded and collapsed cycle checks include alternative result exits and
@@ -1603,5 +1628,6 @@ These scenarios define required language behavior and visual representation.
 | Braced continue with or without its inner semicolon                                                  | Accept both forms under the same transfer grammar.                                                                                        |
 | Stage whose every route diverges in a nested cycle                                                   | Accept with no declared outputs, transition node, or terminal return.                                                                     |
 | Stage entry row and silhouette contour                                                               | Keep preparation on the left without a stage header; return transitions to the stage entry rail without entering preparation again.       |
+| Empty preparation                                                                                    | Omit its column and initial address; place the function header above the receiving stage without reordering stages.                       |
 | Derived input list of a collapsed cycle                                                              | Include its gate and all externally sourced inner captures once, including nested uses; omit its own locals.                              |
 | Multiple capture forms for one external cycle wire                                                   | Show one input name with producer mutability; keep actual borrow forms at expanded inner consumers.                                       |

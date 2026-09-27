@@ -603,6 +603,67 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
 }
 
 #[test]
+fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() {
+    for (outputs, values, expected) in [
+        ("mut first, second", "1, 2", [1, 1]),
+        ("mut first, second, _spare", "1, 2, 3", [2, 3]),
+    ] {
+        for (preparation, expected) in [
+            format!(
+                r#"#[action("Prepare values.")]
+                let ({outputs}) = || ({values});"#
+            ),
+            format!(
+                r#"#[question("Choose values?")]
+                let (yes, no) = |_choose| _choose;
+                #[action("Prepare the first alternative.")]
+                let ({outputs}) = |yes| ({values});
+                #[action("Prepare the second alternative.")]
+                let ({outputs}) = |no| ({values});"#
+            ),
+        ]
+        .into_iter()
+        .zip(expected)
+        {
+            let source = format!(
+                r#"#[kaalang]
+                fn example(_choose: bool) -> u8 {{
+                    {preparation}
+                    #[cycle("Use the values.")]
+                    let done = {{
+                        #[action("Add to the first value.")]
+                        let done = |second, &mut first| {{
+                            *first += second;
+                            *first
+                        }};
+                    }};
+                    |done| return done;
+                }}"#
+            );
+            let svg = render_source_with_options(
+                &source,
+                "example",
+                RenderOptions {
+                    collapse_loops: true,
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                svg.lines()
+                    .filter(|line| line.contains(r#"class="connection-label""#))
+                    .filter(|line| line.contains("mut first"))
+                    .count(),
+                expected,
+                "{source}"
+            );
+            if expected == 1 {
+                assert!(svg.contains(">mut first, second</tspan>"), "{source}");
+            }
+        }
+    }
+}
+
+#[test]
 fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
     let description = "Collect <the results> & keep processing until there are enough items to complete the current request. ".repeat(3);
     let source = CYCLE_SOURCE.replace("Count to the limit.", &description);

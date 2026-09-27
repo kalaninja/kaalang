@@ -33,11 +33,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn fizzbuzz(number: u32) -> String {
-    #[choice("Which of three and five divide the number?")]
-    #[case("Both three and five divide it.")]
-    #[case("Only three divides it.")]
-    #[case("Only five divides it.")]
-    #[case("Neither divides it.")]
+    #[choice("Which of 3 and 5 divide the number?")]
+    #[case("Both.")]
+    #[case("Only 3.")]
+    #[case("Only 5.")]
+    #[case("Neither.")]
     let (fizz_buzz, fizz, buzz, plain) = |number| match (number % 3, number % 5) {
         (0, 0) => (),
         (0, _) => (),
@@ -54,7 +54,7 @@ fn fizzbuzz(number: u32) -> String {
     #[action("🐝 Say Buzz.")]
     let end = |buzz| String::from("Buzz");
 
-    #[action("🔢 Say the number itself.")]
+    #[action("🔢 Say the number.")]
     let end = |plain| plain.to_string();
 
     |end| return end;
@@ -185,12 +185,12 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
+    #[action("📏 Search the whole slice.")]
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Search the remaining range.")]
     let result = {
-        #[question("Does the search range contain any elements?")]
+        #[question("Are any candidates left?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
@@ -198,13 +198,13 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         #[action("🚫 The target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
+        #[action("📍 Find the midpoint.")]
         let mid = |iterate, left, right| left + (right - left) / 2;
 
-        #[choice("Compare the middle element with the target.")]
-        #[case("Less than the target.")]
-        #[case("Greater than the target.")]
-        #[case("Equal to the target.")]
+        #[choice("Compare with the target.")]
+        #[case("Below target.")]
+        #[case("Above target.")]
+        #[case("Equal to target.")]
         let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
@@ -253,7 +253,7 @@ SVGs generated from their source. The gallery also includes
 without a computational block,
 [bubble sort](crates/kaalang/tests/gallery/sorting/bubble_sort.rs), with nested
 cycles, [quicksort](crates/kaalang/tests/gallery/sorting/quick_sort.rs), with
-in-place partitioning and recursion, and
+stages for in-place partitioning and recursion, and
 [KMP search](crates/kaalang/tests/gallery/kmp_search/mod.rs), with stages for
 comparison, advancement, and prefix fallback.
 

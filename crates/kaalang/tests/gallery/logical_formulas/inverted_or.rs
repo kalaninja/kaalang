@@ -3,24 +3,24 @@ use kaalang::kaalang;
 #[kaalang]
 fn inverted_or(a: bool, b: bool, c: bool) -> bool {
     #[question("a")]
-    #[no("No")]
-    #[yes("Yes")]
+    #[no("NO")]
+    #[yes("YES")]
     let (check_b, false_result) = |a| a;
 
     #[question("b")]
-    #[no("No")]
-    #[yes("Yes")]
+    #[no("NO")]
+    #[yes("YES")]
     let (check_c, false_result) = |check_b, b| b;
 
     #[question("c")]
-    #[no("No")]
-    #[yes("Yes")]
+    #[no("NO")]
+    #[yes("YES")]
     let (true_result, false_result) = |check_c, c| c;
 
-    #[action("✅ Return true.")]
+    #[action("✅ True.")]
     let result = |true_result| true;
 
-    #[action("❌ Return false.")]
+    #[action("❌ False.")]
     let result = |false_result| false;
 
     |result| return result;

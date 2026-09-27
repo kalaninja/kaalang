@@ -1,5 +1,4 @@
-//! An endless cycle: no route completes it, so the flow never finishes
-//! and the function returns `!`. A traffic light has no reason to stop.
+//! Traffic-light states in an endless cycle. No route completes the flow.
 
 use kaalang::kaalang;
 
@@ -25,13 +24,13 @@ fn endless(mut showing: Light) -> ! {
             Light::Green => (),
         };
 
-        #[action("🚗 Let the waiting traffic go.")]
+        #[action("🚗 Let traffic go.")]
         let changed = |red, &mut showing| *showing = Light::Green;
 
         #[action("🛑 Stop the traffic.")]
         let changed = |amber, &mut showing| *showing = Light::Red;
 
-        #[action("⚠️ Warn that the light is about to change.")]
+        #[action("⚠️ Prepare to stop.")]
         let changed = |green, &mut showing| *showing = Light::Amber;
 
         |changed| continue;

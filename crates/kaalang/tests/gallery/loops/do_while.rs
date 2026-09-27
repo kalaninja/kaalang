@@ -8,15 +8,15 @@ fn do_while(mut number: u64) -> Vec<u8> {
     #[action("📭 Start with no digits.")]
     let mut digits = || Vec::new();
 
-    #[cycle("Take one digit off the end.")]
+    #[cycle("Collect decimal digits.")]
     let collected = {
-        #[action("✂️ Record the last digit and drop it.")]
+        #[action("✂️ Take the last digit.")]
         |&mut number, &mut digits| {
             digits.push((*number % 10) as u8);
             *number /= 10;
         };
 
-        #[question("Is the number gone?")]
+        #[question("Is the number zero?")]
         #[yes("YES")]
         #[no("NO")]
         let (collected, again) = |number| number == 0;
@@ -24,7 +24,7 @@ fn do_while(mut number: u64) -> Vec<u8> {
         |again| continue;
     };
 
-    #[action("🔄 Put the digits back in reading order.")]
+    #[action("🔄 Restore reading order.")]
     let result = |collected, mut digits| {
         digits.reverse();
         digits

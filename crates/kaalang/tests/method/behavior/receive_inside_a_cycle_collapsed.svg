@@ -32,9 +32,8 @@
       M 172 94 L 172 170
       M 172 234 L 172 306
     "/>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">self, mut start</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">self, mut start</tspan></text>
     <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">arrived</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut start, self</tspan></text>
     <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">start</tspan></text>
   </g>
   <g class="nodes">

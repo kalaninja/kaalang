@@ -37,10 +37,9 @@
       M 172 464 L 172 540
     "/>
     <text class="connection-label" x="185" y="482" xml:space="preserve"><tspan x="185" dy="0">chosen</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">value, mut remaining, take_left</tspan></text>
     <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
     <text class="connection-label" x="545" y="313" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">value, mut remaining, take_left</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">mut remaining, take_left, value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>

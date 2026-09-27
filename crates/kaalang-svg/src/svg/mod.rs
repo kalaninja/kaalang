@@ -643,7 +643,9 @@ fn describe(scene: &Scene) -> String {
         .collect::<Vec<_>>()
         .join("; ");
 
-    if cycles.is_empty() {
+    if cycles.is_empty() && connections.is_empty() {
+        format!("Nodes: {nodes}.")
+    } else if cycles.is_empty() {
         format!("Nodes: {nodes}. Connections: {connections}.")
     } else {
         format!("Cycles: {cycles}. Nodes: {nodes}. Connections: {connections}.")

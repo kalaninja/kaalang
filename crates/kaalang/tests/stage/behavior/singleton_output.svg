@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="626" viewBox="0 0 1188 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for singleton_output</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: singleton_output with parameters start: (u8, u8); Transition: Increment the first field.. Connections: Start: singleton_output to Transition: Increment the first field.. Transition to stage start. Stage start. Nodes: Stage: Increment the first field.; Action: Keep the tuple intact. capturing start; Transition: Return the tuple.. Connections: Stage: Increment the first field. to Action: Keep the tuple intact.; Action: Keep the tuple intact. to Transition: Return the tuple.. Transition to stage done. Stage done. Nodes: Stage: Return the tuple.; End: (u8, u8) capturing done. Connections: Stage: Return the tuple. to End: (u8, u8).</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="626" viewBox="0 0 808 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for singleton_output</title><desc id="kaalang-description">The flow starts directly at stage start. Transitions return to the stage entry rail. Nodes: Start: singleton_output with parameters start: (u8, u8). Stage start. Nodes: Stage: Increment the first field.; Action: Keep the tuple intact. capturing start; Transition: Return the tuple.. Connections: Stage: Increment the first field. to Action: Keep the tuple intact.; Action: Keep the tuple intact. to Transition: Return the tuple.. Transition to stage done. Stage done. Nodes: Stage: Return the tuple.; End: (u8, u8) capturing done. Connections: Stage: Return the tuple. to End: (u8, u8).</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 114 L 232 150 "/>
+<path d="M 232 150 L 232 186 "/>
 <path d="M 232 534 L 232 602 "/>
 <path d="M 612 150 L 612 186 "/>
-<path d="M 612 534 L 612 602 "/>
-<path d="M 992 150 L 992 186 "/>
-<path d="M 232 150 L 992 150 "/>
-<path d="M 612 602 L 24 602 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 150 L 612 150 "/>
+<path d="M 232 602 L 24 602 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="542" viewBox="0 0 680 542" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for singleton_output</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: singleton_output with parameters start: (u8, u8); Transition: Increment the first field.. Connections: Start: singleton_output to Transition: Increment the first field..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: singleton_output with parameters start: (u8, u8).</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -32,16 +32,12 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
-      .stage-marker { fill: currentColor; }
     </style>
   </defs>
   <g class="cycle-regions">
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 440
     "/>
   </g>
   <g class="nodes">
@@ -54,15 +50,10 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">singleton_output</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 475)">
-      <title xml:space="preserve">Increment the first field.</title>
-      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
-      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Increment the first field.</tspan></text>
-    </g>
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for singleton_output</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Increment the first field.; Action: Keep the tuple intact. capturing start; Transition: Return the tuple.. Connections: Stage: Increment the first field. to Action: Keep the tuple intact.; Action: Keep the tuple intact. to Transition: Return the tuple..</desc>
   <defs>
@@ -119,7 +110,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(820 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for singleton_output</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return the tuple.; End: (u8, u8) capturing done. Connections: Stage: Return the tuple. to End: (u8, u8).</desc>
   <defs>
