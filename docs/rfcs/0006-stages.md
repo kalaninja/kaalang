@@ -591,6 +591,11 @@ Stage and cycle bodies receive their available outer data scope. Inner blocks
 establish explicit capture dependencies to those original producers; a cycle's
 entry gate and its derived outer-data dependencies have distinct roles.
 
+Determine preparation's common data from the bindings in its outer plan scope
+that are available on every completing route. Follow shared continuations and
+the values their merges carry into that scope. A branch-local producer remains
+local even when all other preparation branches diverge.
+
 Insert a boundary consumer for each declared output and each possible initial
 signal from preparation. Validate its producer, scope, type, and merge order.
 Preserve separately declared mutability for cycle output bindings. Stage output
@@ -629,6 +634,14 @@ the outer scope of the preparation plan even when stages only capture a derived
 reference or do not capture the owner at all. Owners in branches and cycle
 bodies retain those local scopes; only their exported or merged values survive.
 Moving a value into an explicit capture still transfers its ownership normally.
+
+Emit preparation's outer sequence with ordinary `let` initializers in that
+surrounding scope, preserving Rust's temporary lifetime extension and drop
+order. Only the remaining region that selects the initial transition is
+evaluated in a labeled state initializer, followed by the dispatcher. The outer
+sequence ends before a selection whose branches can transition without reaching
+its shared continuation. Branch and iteration temporaries keep their own lexical
+lifetimes.
 
 Represent the state as a sum of stage entry types using fully qualified
 `core::result::Result` variants. Split the stages into consecutive halves

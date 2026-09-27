@@ -1,7 +1,5 @@
 //! Lowers locally verified stage plans into a bounded Rust dispatcher.
 
-use std::collections::HashSet;
-
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::{ItemFn, Lifetime, Result};
@@ -105,37 +103,31 @@ fn bindings(analysis: &Analysis, preparation: &Bindings, index: usize) -> Bindin
     bindings
 }
 
-/// Keep preparation's outer owners alive, including those only borrowed by
-/// another prepared wire. Branch and iteration locals retain their own scopes.
-fn outer_wires(flow: &Flow, mut plan: &ExecutionPlan, wires: &mut HashSet<Ident>) {
-    loop {
-        match plan {
-            ExecutionPlan::End { body, .. } => plan = body,
-            ExecutionPlan::Action { index, next } | ExecutionPlan::Call { index, next } => {
-                wires.extend(flow.blocks[*index].outputs.iter().cloned());
-                plan = next;
-            }
-            ExecutionPlan::Loop {
-                index, branches, ..
-            } if flow.blocks[*index].branch_count() == 0 => {
-                wires.extend(flow.blocks[*index].outputs.iter().cloned());
-                let Some(branch) = branches.first() else {
-                    return;
-                };
-                plan = &branch.plan;
-            }
-            ExecutionPlan::Question { joins, .. }
-            | ExecutionPlan::Choice { joins, .. }
-            | ExecutionPlan::Loop { joins, .. } => {
-                let Some(join) = joins.last() else { return };
-                wires.extend(join.wires.iter().cloned());
-                plan = &join.next;
-            }
-            ExecutionPlan::Return { .. }
-            | ExecutionPlan::Yield { .. }
-            | ExecutionPlan::Continue { .. }
-            | ExecutionPlan::Export { .. } => return,
-        }
+/// Only the final selection leaves a preparation scope. Earlier initializers
+/// share the dispatcher's scope, preserving owners and temporary lifetimes.
+pub(super) fn prepare(
+    bindings: &Bindings,
+    plan: &ExecutionPlan,
+    body: TokenStream2,
+) -> TokenStream2 {
+    let index = match plan {
+        ExecutionPlan::Question { index, .. }
+        | ExecutionPlan::Choice { index, .. }
+        | ExecutionPlan::Loop { index, .. }
+        | ExecutionPlan::Return { index } => *index,
+        _ => return body,
+    };
+    let Some((boundary, dispatcher)) = &bindings.initial_dispatch else {
+        return body;
+    };
+    if index != *boundary {
+        return body;
+    }
+    let state = state_name();
+    let label = prepare_label();
+    quote! {
+        let mut #state = #label: { #body };
+        #dispatcher
     }
 }
 
@@ -149,11 +141,6 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
 
     let mut prepared = Bindings::new(analysis);
     prepared.const_stages = function.sig.constness.is_some();
-    outer_wires(
-        &analysis.flow,
-        &analysis.execution_plan,
-        &mut prepared.hoisted,
-    );
     for stage in &analysis.stages {
         prepared.mutable.extend(
             stage
@@ -168,23 +155,7 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
         );
     }
     let prologue = parameters::emit(&function, &prepared);
-    // Declaration order determines Rust's drop order, even when initialization
-    // happens later inside the preparation block.
-    let mut declared = HashSet::new();
-    let declarations = analysis
-        .flow
-        .blocks
-        .iter()
-        .flat_map(|block| &block.outputs)
-        .filter(|wire| prepared.hoisted.contains(*wire) && declared.insert(*wire))
-        .map(|wire| {
-            let binding = prepared.wire(wire);
-            let mutable = prepared.mutability(wire);
-            quote!(let #mutable #binding;)
-        });
-    let preparation = super::flow(&analysis.flow, &analysis.execution_plan, &prepared);
     let state = state_name();
-    let prep_label = prepare_label();
     let dispatch_label = dispatch_label();
     let arms = analysis.stages.iter().enumerate().map(|(index, stage)| {
         let entry = &stage.entry;
@@ -198,15 +169,19 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
         );
         quote!(#pattern => { #body })
     });
+    let dispatcher = quote! {
+        #dispatch_label: loop {
+            match #state { #(#arms,)* }
+        }
+    };
+    let (_, boundary) = crate::stage::preparation_scope(&analysis.flow, &analysis.execution_plan);
+    prepared.initial_dispatch = Some((boundary, dispatcher));
+    let preparation = super::flow(&analysis.flow, &analysis.execution_plan, &prepared);
     *function.block = syn::parse2(quote!({
         #[allow(clippy::used_underscore_binding, unused_mut)]
         {
             #prologue
-            #(#declarations)*
-            let mut #state = #prep_label: { #preparation };
-            #dispatch_label: loop {
-                match #state { #(#arms,)* }
-            }
+            #preparation
         }
     }))?;
     Ok(function)

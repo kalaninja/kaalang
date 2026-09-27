@@ -1,0 +1,5 @@
+error: a branch-local preparation wire must be merged before a kaalang stage can capture it
+  --> tests/stage/compile_fail/nested_merge_in_stage.rs:27:10
+   |
+27 |         |shared| return shared;
+   |          ^^^^^^

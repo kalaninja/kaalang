@@ -105,7 +105,29 @@ pub(crate) fn derive_stage(
     start: &str,
     return_type: &str,
 ) -> Captions {
-    let mut captions = derive(model, start, return_type);
+    let mut parameters = named_parameters(root);
+    if let Some(index) = part {
+        parameters = model
+            .analysis
+            .flow
+            .flow_inputs
+            .iter()
+            .map(|wire| {
+                if wire == &root.stages[index].entry {
+                    wire.to_string()
+                } else {
+                    provided(
+                        root,
+                        &parameters,
+                        root.flow
+                            .producer(wire)
+                            .expect("a stage's outer wire has a preparation producer"),
+                    )
+                }
+            })
+            .collect();
+    }
+    let mut captions = derive_with_parameters(model, start, return_type, &parameters);
     if let Some(index) = part {
         captions.label.insert(
             NodeId::Start,
@@ -181,10 +203,23 @@ pub(crate) fn derive_stage(
 
 /// Reads every caption of one flow's topology. `start` labels the start node and
 /// `return_type` captions end, both taken from the authored source text.
-#[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
 pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> Captions {
+    derive_with_parameters(
+        model,
+        start,
+        return_type,
+        &named_parameters(&model.analysis),
+    )
+}
+
+#[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
+fn derive_with_parameters(
+    model: &SemanticModel,
+    start: &str,
+    return_type: &str,
+    parameters: &[String],
+) -> Captions {
     let topology = &model.topology;
-    let parameters = named_parameters(model);
     let end_input = end_input(model);
     let mut captions = Captions::default();
 
@@ -211,7 +246,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
             NodeId::Block(block) if node.kind == NodeKind::Loop => {
-                cycle_inputs(model, &parameters, block)
+                cycle_inputs(model, parameters, block)
             }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
@@ -244,7 +279,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .as_deref()
                 .map_or_else(RichText::default, RichText::markdown),
         );
-        let inputs = cycle_inputs(model, &parameters, boundary.header);
+        let inputs = cycle_inputs(model, parameters, boundary.header);
         captions.loop_inputs.insert(
             boundary.header,
             if inputs.is_empty() {
@@ -275,7 +310,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
             exit.id,
             exit.provides
                 .iter()
-                .map(|&producer| provided(model, &parameters, producer))
+                .map(|&producer| provided(&model.analysis, parameters, producer))
                 .collect(),
         );
         if let (NodeId::Block(block), Some(branch)) = (exit.id.node, exit.id.branch)
@@ -299,8 +334,8 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .iter()
                 .map(|&merge| {
                     provided(
-                        model,
-                        &parameters,
+                        &model.analysis,
+                        parameters,
                         model.analysis.merges[merge].producers[0],
                     )
                 })
@@ -370,18 +405,16 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
 /// The named flow parameters, in flow-input order, as the start node's
 /// hand-over addresses them. A receiver is one of them, under the one name
 /// Rust gives it.
-fn named_parameters(model: &SemanticModel) -> Vec<String> {
-    if matches!(model.analysis.flow.kind, FlowKind::Stage { .. }) {
-        return model
-            .analysis
+fn named_parameters(analysis: &Analysis) -> Vec<String> {
+    if matches!(analysis.flow.kind, FlowKind::Stage { .. }) {
+        return analysis
             .flow
             .flow_inputs
             .iter()
             .map(ToString::to_string)
             .collect();
     }
-    model
-        .analysis
+    analysis
         .parameters
         .iter()
         .filter_map(|parameter| match parameter {
@@ -405,14 +438,14 @@ fn binding_label(binding: &PatIdent) -> String {
 }
 
 /// The label one producer occurrence carries at the exit providing it.
-fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) -> String {
+fn provided(analysis: &Analysis, parameters: &[String], producer: ProducerId) -> String {
     match producer {
         ProducerId::FlowInput(input) => parameters
             .get(input)
             .expect("a flow input caption names a declared parameter")
             .clone(),
         ProducerId::BlockOutput { block, output } => {
-            binding_label(model.analysis.flow.blocks[block].output_binding(output))
+            binding_label(analysis.flow.blocks[block].output_binding(output))
         }
     }
 }
@@ -428,7 +461,7 @@ fn cycle_inputs(model: &SemanticModel, parameters: &[String], block: usize) -> V
             let producer = flow
                 .producer(&input.ident)
                 .expect("a cycle input names a produced wire");
-            provided(model, parameters, producer)
+            provided(&model.analysis, parameters, producer)
         })
         .collect()
 }

@@ -34,21 +34,12 @@ pub(super) fn emit(
     }
     // A declared output binds the whole value; `(found,)` is `found`.
     let pattern = bindings.pattern(block.output_span, &block.outputs);
-    let assignment = if block.outputs.len() == 1
-        && bindings.hoisted.contains(&block.outputs[0])
-        && !bindings.merged.contains(&block.outputs[0])
-    {
-        let wire = bindings.wire_at(&block.outputs[0]);
-        quote_spanned!(block.span=> #wire = { #looped };)
-    } else {
-        quote_spanned!(block.span=> let #pattern = { #looped };)
-    };
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
     let next = branches
         .first()
         .map(|branch| super::flow(flow, &branch.plan, bindings));
     quote_spanned! {block.span=>
-        #assignment
+        let #pattern = { #looped };
         #(#gates)*
         #next
     }

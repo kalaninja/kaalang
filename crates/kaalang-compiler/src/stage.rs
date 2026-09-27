@@ -5,7 +5,9 @@ use std::collections::{BTreeSet, VecDeque};
 use proc_macro2::Ident;
 use syn::{Error, FnArg, ItemFn, Pat, Result};
 
-use crate::model::{Analysis, Execution, ExecutionOutcome, Flow, ProducerId, StageAnalysis};
+use crate::model::{
+    Analysis, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, StageAnalysis,
+};
 use crate::parse::ParsedStaged;
 use crate::{analyze as local_analysis, plan, resolve, scope};
 
@@ -46,6 +48,72 @@ fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
         })
 }
 
+/// Wires retained by preparation's outer scope, and the block where initial
+/// transitions begin. A transition bypassing a join keeps that join's locals
+/// inside preparation; only the common prefix can surround the dispatcher.
+pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTreeSet<Ident>, usize) {
+    let mut wires = flow.flow_inputs.iter().cloned().collect::<BTreeSet<_>>();
+    loop {
+        match plan {
+            ExecutionPlan::End { body, .. } => plan = body,
+            ExecutionPlan::Action { index, next } | ExecutionPlan::Call { index, next } => {
+                wires.extend(flow.blocks[*index].outputs.iter().cloned());
+                plan = next;
+            }
+            ExecutionPlan::Loop {
+                index, branches, ..
+            } if flow.blocks[*index].branch_count() == 0 => {
+                wires.extend(flow.blocks[*index].outputs.iter().cloned());
+                let Some(branch) = branches.first() else {
+                    return (wires, *index);
+                };
+                plan = &branch.plan;
+            }
+            ExecutionPlan::Question {
+                index,
+                branches,
+                joins,
+            }
+            | ExecutionPlan::Choice {
+                index,
+                branches,
+                joins,
+            }
+            | ExecutionPlan::Loop {
+                index,
+                branches,
+                joins,
+                ..
+            } => {
+                let Some((join, earlier)) = joins.split_last() else {
+                    return (wires, *index);
+                };
+                let mut before_join = Vec::new();
+                for branch in branches {
+                    plan::serial_order(&branch.plan, &mut before_join);
+                }
+                for join in earlier {
+                    plan::serial_order(&join.next, &mut before_join);
+                }
+                if before_join
+                    .iter()
+                    .any(|&block| flow.blocks[block].transition_target.is_some())
+                {
+                    return (wires, *index);
+                }
+                wires.extend(join.wires.iter().cloned());
+                plan = &join.next;
+            }
+            ExecutionPlan::Return { index }
+            | ExecutionPlan::Continue { index }
+            | ExecutionPlan::Export { index, .. } => return (wires, *index),
+            ExecutionPlan::Yield { .. } => {
+                unreachable!("preparation's outer scope does not yield to another join")
+            }
+        }
+    }
+}
+
 fn targets(analysis: &Analysis) -> impl Iterator<Item = usize> + '_ {
     analysis.executions.iter().filter_map(|route| {
         let ExecutionOutcome::Return { block_index } = route.outcome else {
@@ -75,6 +143,7 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
     scope::resolve(&mut parsed.preparation)?;
     resolve::flow(&parsed.preparation)?;
     let preliminary = local(function, parsed.preparation, false)?;
+    let (outer, _) = preparation_scope(&preliminary.flow, &preliminary.execution_plan);
     let mut preparation = preliminary.flow;
     let completed = preliminary
         .executions
@@ -98,7 +167,7 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
         .iter()
         .map(|stage| stage.entry.clone())
         .collect::<BTreeSet<_>>();
-    let common = candidates
+    let provided = candidates
         .iter()
         .filter(|name| {
             !entry_names.contains(*name)
@@ -106,6 +175,10 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
                     .iter()
                     .all(|route| available(&preparation, route, name))
         })
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let common = provided
+        .intersection(&outer)
         .cloned()
         .collect::<BTreeSet<_>>();
 
@@ -126,7 +199,11 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
             {
                 return Err(Error::new(
                     input.alias.span(),
-                    "a common outer wire used by a kaalang stage must be available on every preparation route",
+                    if provided.contains(&input.ident) {
+                        "a branch-local preparation wire must be merged before a kaalang stage can capture it"
+                    } else {
+                        "a common outer wire used by a kaalang stage must be available on every preparation route"
+                    },
                 ));
             }
             if input.borrowed

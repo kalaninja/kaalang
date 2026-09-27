@@ -35,6 +35,17 @@ fn preserves_the_authored_function_signature() {
 }
 
 #[test]
+fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
+    let function = fixture(
+        include_str!("../../../kaalang/tests/stage/behavior/prepared_initial_selection.rs"),
+        "prepared_initial_selection",
+    );
+    let lowered = expand(function).expect("the flow expands");
+    // The authored choice and the dispatcher each select once.
+    assert_eq!(branching_matches(&lowered), 2);
+}
+
+#[test]
 fn a_nested_early_return_needs_no_join_dispatch() {
     let function = fixture(
         include_str!(

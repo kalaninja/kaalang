@@ -26,8 +26,8 @@ pub(crate) struct Bindings {
     /// The type gate of each logical wire whose alternative producers no
     /// common binding unifies.
     gates: HashMap<Ident, Ident>,
-    hoisted: HashSet<Ident>,
-    merged: HashSet<Ident>,
+    /// The final preparation region followed by the stage dispatcher.
+    initial_dispatch: Option<(usize, TokenStream2)>,
     stages: usize,
     const_stages: bool,
 }
@@ -80,12 +80,7 @@ impl Bindings {
             wires,
             mutable,
             gates,
-            hoisted: analysis.common_wires.iter().cloned().collect(),
-            merged: analysis
-                .merges
-                .iter()
-                .map(|merge| merge.wire.clone())
-                .collect(),
+            initial_dispatch: None,
             stages: analysis.stages.len(),
             const_stages: false,
         }
@@ -189,46 +184,10 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
     let body = block_body(&block.body);
     let pattern = output_pattern(block, bindings);
     let value = quote_spanned!(block.span=> { #input_bindings #body });
-    let assignment = if block
-        .outputs
-        .iter()
-        .any(|wire| bindings.hoisted.contains(wire))
-    {
-        let temporaries = (0..block.outputs.len())
-            .map(|output| {
-                Ident::new(
-                    &format!("__kaalang_prepared_{index}_{output}"),
-                    Span::mixed_site(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let temporary_pattern =
-            if temporaries.len() == 1 && matches!(block.output_pattern, Pat::Tuple(_)) {
-                quote!((#(#temporaries,)*))
-            } else {
-                tuple(block.output_span, &temporaries)
-            };
-        let outputs = block
-            .outputs
-            .iter()
-            .zip(&temporaries)
-            .map(|(wire, temporary)| {
-                let binding = bindings.wire_at(wire);
-                if bindings.hoisted.contains(wire) && !bindings.merged.contains(wire) {
-                    quote!(#binding = #temporary;)
-                } else {
-                    let mutable = bindings.mutability(wire);
-                    quote!(let #mutable #binding = #temporary;)
-                }
-            });
-        quote!(let #temporary_pattern = #value; #(#outputs)*)
-    } else {
-        quote!(let #pattern = #value;)
-    };
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
 
     quote_spanned! {block.span=>
-        #assignment
+        let #pattern = #value;
         #(#gates)*
         #continuation
     }
@@ -252,7 +211,7 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
 
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
-    match plan {
+    let body = match plan {
         ExecutionPlan::Loop {
             index,
             body,
@@ -272,10 +231,11 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         }
         ExecutionPlan::Return { index } => {
             if flow.blocks[*index].transition_target.is_some() {
-                return stage::transition(flow, bindings, *index);
+                stage::transition(flow, bindings, *index)
+            } else {
+                let span = flow.blocks[*index].span;
+                transfer(flow, bindings, *index, &quote_spanned!(span=> return))
             }
-            let span = flow.blocks[*index].span;
-            transfer(flow, bindings, *index, &quote_spanned!(span=> return))
         }
         ExecutionPlan::Continue { index } => {
             let span = flow.blocks[*index].span;
@@ -311,6 +271,11 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             quote!(#gates #body)
         }
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
+    };
+    if bindings.initial_dispatch.is_some() {
+        stage::prepare(bindings, plan, body)
+    } else {
+        body
     }
 }
 
