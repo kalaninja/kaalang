@@ -250,30 +250,14 @@ comparison, advancement, and prefix fallback.
 
 ## Stages
 
-A **stage** groups kaalang blocks into a named step. The flow enters one stage
-at a time through its incoming signal. When a stage completes, its selected
-output names the next stage and carries that stage's input value; a terminal
-stage returns from the flow. A stage may also diverge in a cycle. When present,
-preparation runs once, and its data can be shared across stage visits.
-
-Stage declarations follow any preparation blocks. Without preparation, a
-function input enters the first declared stage; preparation can enter any
-declared stage. Stage descriptions must be unique. If there is no preparation
-and the only stage has no outgoing transitions, write an ordinary flow.
-
-Stages are syntactic and graphical sugar for a state machine written with a
-cycle, a choice, and explicit state. The compiler generates the state and
-dispatch loop. The diagram gives each stage its own area and labels transitions
-with their destinations.
+Stages make the steps of a state machine explicit. The compiler generates the
+dispatch loop, and the diagram labels transitions between stages.
 
 This empty state machine only follows `First → Second → Finish`. With stages:
 
 [![State machine with stages](crates/kaalang/tests/stage/behavior/state_machine.svg)](crates/kaalang/tests/stage/behavior/state_machine.svg)
 
 [Source](crates/kaalang/tests/stage/behavior/state_machine.rs)
-
-Each stage passes control to the next through a named transition. The final
-stage returns from the flow.
 
 Without stages, the diagram shows the cycle and the choice that selects the
 current state:
