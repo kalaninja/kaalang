@@ -159,18 +159,19 @@ Actions, calls, and cycles can have no outputs. Questions and choices always
 declare their branch outputs. A cycle contains kaalang blocks; each route
 through it either repeats at its one `continue` or reaches the end of the body
 with one of the cycle's
-[declared outputs](docs/rfcs/0006-stages.md#52-alternative-outputs), which then
-becomes available after the cycle. In the diagram, `continue` routes meet at the
-cycle's back edge, completing routes leave through the cycle boundary, and
-`return` reaches the flow end.
+[declared outputs](docs/rfcs/0007-language-refinements.md#22-alternative-outputs),
+which then becomes available after the cycle. In the diagram, `continue` routes
+meet at the cycle's back edge, completing routes leave through the cycle
+boundary, and `return` reaches the flow end.
 
 Flows with stages are defined in [RFC 0006](docs/rfcs/0006-stages.md) and drawn
 as [silhouettes](docs/rfcs/0006-stages.md#7-visual-representation). See the
 executable [KMP search example](crates/kaalang/tests/gallery/kmp_search/mod.rs).
 
-The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) defines each kind;
-the [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds)
-defines its representation.
+The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) and its proposed
+[refinements](docs/rfcs/0007-language-refinements.md) define each kind; the
+[visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds) defines
+its representation.
 
 ## Putting it together: binary search
 
