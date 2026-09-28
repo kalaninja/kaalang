@@ -17,4 +17,6 @@ mod preserve_type_names;
 mod raw_entry;
 mod select_value;
 mod singleton_output;
+mod state_machine;
+mod state_machine_without_stages;
 mod sum_inputs;
