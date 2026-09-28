@@ -54,6 +54,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
     }
     let mut declared = Vec::new();
     let mut names = BTreeSet::new();
+    let mut descriptions = BTreeSet::new();
     for statement in &function.block.stmts[first..] {
         if !is_stage(statement) {
             return Err(Error::new_spanned(
@@ -68,6 +69,12 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
                 "duplicate kaalang stage entry",
             ));
         }
+        if !descriptions.insert(stage.description.clone()) {
+            return Err(Error::new(
+                stage.span,
+                "duplicate kaalang stage description",
+            ));
+        }
         declared.push(stage);
     }
     let targets = declared
@@ -78,6 +85,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
 
     let mut preparation = Vec::new();
     statements(&function.block.stmts[..first], None, &mut preparation)?;
+    let empty_preparation = preparation.is_empty();
     if let Some(block) = preparation
         .iter()
         .find(|block| block.kind == BlockKind::Return)
@@ -108,6 +116,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             let alias = preparation
                 .iter()
                 .rev()
+                .filter(|block| block.parent.is_none())
                 .find_map(|block| {
                     block
                         .outputs
@@ -219,6 +228,23 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             flow,
             span: declaration.span,
         });
+    }
+    if empty_preparation && stages.len() == 1 && stages[0].outputs.is_empty() {
+        return Err(Error::new(
+            stages[0].span,
+            "a sole kaalang stage with no preparation or transitions must be an ordinary flow",
+        ));
+    }
+    if empty_preparation
+        && let Some(stage) = stages
+            .iter()
+            .skip(1)
+            .find(|stage| preparation.flow_inputs.contains(&stage.entry))
+    {
+        return Err(Error::new(
+            stage.entry.span(),
+            "a kaalang flow without preparation must enter its first declared stage",
+        ));
     }
     Ok(Some(ParsedStaged {
         preparation,

@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="962" viewBox="0 0 1064 962" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for case_waits_after_the_merge</title>
+  <desc id="kaalang-description">Cycles: Wait forever. with inputs wait and outputs (). Nodes: Start: case_waits_after_the_merge with parameters value: u8 handing over value; Select: Select a branch. capturing value; Case: Take the first branch. handing over first; Case: Wait forever. handing over wait; Case: Take the second branch. handing over second; Action: Build the first value. capturing first handing over selected; Action: Build the second value. capturing second handing over selected; Action: Use the selected value. capturing selected handing over result; End: u8 capturing result; Merge: selected. Connections: Start: case_waits_after_the_merge to Select: Select a branch.; Select: Select a branch. to Case: Take the first branch.; Select: Select a branch. to Case: Wait forever.; Select: Select a branch. to Case: Take the second branch.; Case: Take the first branch. to Action: Build the first value.; Case: Wait forever. to the entry of the cycle; Case: Take the second branch. to Action: Build the second value.; Action: Build the first value. to the selected merge; Action: Build the second value. to the selected merge; Action: Use the selected value. to End: u8; the selected merge to Action: Use the selected value.; the entry of the cycle to the iteration tail of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Wait forever.</title>
+    <rect class="cycle-boundary" x="484" y="445" width="76" height="174" rx="12"/>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 234 L 172 306
+      M 300 198 L 532 198 L 532 306
+      M 300 198 L 892 198 L 892 306
+      M 172 376 L 172 448
+      M 532 376 L 532 480
+      M 892 376 L 892 448
+      M 172 512 L 172 660
+      M 892 512 L 892 660 L 172 660
+      M 172 800 L 172 872
+      M 172 660 L 172 736
+      M 532 480 L 532 584
+    "/>
+    <path class="connection" d="
+      M 532 584 L 512 584 L 512 480 L 532 480
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="185" y="678" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label" x="905" y="437" xml:space="preserve"><tspan x="905" dy="0">second</tspan></text>
+    <text class="connection-label" x="185" y="861" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="545" y="394" xml:space="preserve"><tspan x="545" dy="0">wait</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 660)">
+      <title xml:space="preserve">the selected merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">case_waits_after_the_merge</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 198)">
+      <title xml:space="preserve">Select a branch.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Select a branch.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 341)">
+      <title xml:space="preserve">Take the first branch.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the first branch.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 341)">
+      <title xml:space="preserve">Wait forever.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Wait forever.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 341)">
+      <title xml:space="preserve">Take the second branch.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the second branch.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 480)">
+      <title xml:space="preserve">Build the first value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 480)">
+      <title xml:space="preserve">Build the second value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 768)">
+      <title xml:space="preserve">Use the selected value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 901)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

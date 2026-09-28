@@ -14,11 +14,14 @@ macro_rules! authored_variant {
 #[kaalang]
 fn preserve_type_names(go: ()) -> bool {
     #[stage("Use the authored type.")]
-    |go| {
+    let finish = |go| {
         #[action("Resolve type names inside a macro.")]
-        let found = || authored_variant!();
+        let finish = |go| authored_variant!();
+    };
 
-        |found| return found;
+    #[stage("Return the result.")]
+    |finish| {
+        |finish| return finish;
     };
 }
 

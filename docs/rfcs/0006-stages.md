@@ -1,6 +1,6 @@
 # RFC 0006: Stages
 
-- Status: proposed
+- Status: accepted
 - Language: [RFC 0001: kaalang Language](0001-language.md)
 - Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
 - Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
@@ -22,7 +22,7 @@ with its structural return. A stage may instead diverge in a nested cycle.
 Stages share the outer data scope established by preparation; their internal
 blocks capture the entry value and other data they use.
 
-This proposal defines stage syntax, execution, validation, Rust lowering, and
+This RFC defines stage syntax, execution, validation, Rust lowering, and
 diagrams for staged flows. It builds on the cycle, capture, and convergence
 rules in [RFC 0007](0007-language-refinements.md). Those language refinements
 apply independently of stages; this RFC defines how stages use them.
@@ -80,10 +80,12 @@ section must supply exactly one entry signal.
 
 A declaration has exactly one `#[stage("description")]` attribute containing a
 nonempty Rust string literal, a header `|entry|` with one plain identifier, a
-braced kaalang sequence, and a trailing semicolon. A stage with completing
-transitions declares its possible outputs before the header, for example
-`let (count, finish) = |count| { ... };`. These are alternative outputs: a
-completed visit provides exactly one. A terminal stage or a stage whose every
+braced kaalang sequence, and a trailing semicolon. Stage descriptions must be
+distinct within a flow, comparing decoded Rust string values before Markdown
+interpretation; raw and ordinary literals with the same value collide. A stage
+with completing transitions declares its possible outputs before the header, for
+example `let (count, finish) = |count| { ... };`. These are alternative outputs:
+a completed visit provides exactly one. A terminal stage or a stage whose every
 route diverges omits the output declaration or uses `let ()`.
 
 The header receives the stage's entry signal and activates its whole body. Its
@@ -92,7 +94,11 @@ inner captures for that visit. Entering the body counts as use of the signal
 even when no inner block captures its value again. Stage declarations are
 permitted directly in the root flow body. Their order determines their diagram
 positions; transitions determine their execution order. The terminal stage, when
-present, must be declared last.
+present, must be declared last. Without authored preparation, a function input
+may enter only the first declared stage. A sole stage with no outgoing
+transitions and no authored preparation is rejected; write an ordinary kaalang
+flow instead. A sole stage with a self-transition remains valid. Preparation may
+select any declared stage.
 
 The receiver `self` cannot name a stage entry. It remains available as common
 outer data under the ordinary receiver capture rules. To transfer an owned
@@ -582,12 +588,12 @@ vertical connection in its place. The rail is a symbolic link between transition
 nodes and stage entries; it does not execute preparation again or add an
 executable choice or entry to the middle of a stage.
 
-When preparation contains no authored blocks, the input selects one stage
-directly. Omit the preparation part and its synthetic transition node. Place the
-start capsule and parameter panel above the receiving stage, with a straight
-connection through the upper rail to that stage's entry. Stages retain their
-declaration order even when the input selects a later stage. The first declared
-stage occupies the leftmost part; the empty preparation reserves no width.
+When preparation contains no authored blocks, the input selects the first
+declared stage directly. Omit the preparation part and its synthetic transition
+node. Place the start capsule and parameter panel above that stage, with a
+straight connection through the upper rail to its entry. Stages retain their
+declaration order; the first occupies the leftmost part. Empty preparation
+reserves no width.
 
 ### 7.1 Stage entry
 
@@ -888,24 +894,6 @@ fn spin() -> ! {
 Each visit produces a fresh signal to select the next visit. The stage has one
 exit and the flow is fully diverging.
 
-A stage can also diverge entirely inside a nested cycle and declare no outputs:
-
-```rust
-#[kaalang]
-fn wait_forever(go: ()) -> ! {
-    #[stage("Wait indefinitely.")]
-    |go| {
-        #[cycle("Keep waiting.")]
-        {
-            continue;
-        };
-    };
-}
-```
-
-The parameter supplies the initial signal. This stage has neither a transition
-node nor an end node; its nested cycle supplies the repeating route.
-
 ### 8.5 One incoming wire through a nested cycle
 
 ```rust
@@ -1094,9 +1082,9 @@ lowering in §6.2.
 
 ## 9. Changes to earlier RFCs
 
-If accepted, this RFC supersedes the provisions below for flows declaring
-stages. Earlier accepted RFC texts remain unchanged. General language and cycle
-refinements are specified separately in
+This RFC supersedes the provisions below for flows declaring stages. Earlier
+accepted RFC texts remain unchanged. General language and cycle refinements are
+specified separately in
 [RFC 0007 §7](0007-language-refinements.md#7-changes-to-earlier-rfcs).
 
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A
@@ -1178,7 +1166,7 @@ and general language scenarios are listed in
 | Backward or self-transition                                                      | Mark the transition tip and the destination entry tip.                                                                                    |
 | Forward transition to an entry also targeted backward                            | Keep that transition unmarked and mark the shared destination entry once.                                                                 |
 | Transition to the terminal stage                                                 | Draw it as a forward transition to the last declared stage, without a backward marker.                                                    |
-| Several stages with identical descriptions                                       | Keep their authored descriptions; resolve destinations by signal identity without adding visible signal captions.                         |
+| Several stages with identical descriptions                                       | Reject the repeated decoded description; visible destination names must be distinct within the flow.                                      |
 | Stage captures and collapsed-cycle inputs                                        | Show outer stage wires at their capturing blocks and cycle data in derived input labels, preserving control order.                        |
 | Expanded and collapsed cycle views                                               | Preserve alternative output order, continue behavior, and surrounding stage links and markers.                                            |
 | Terminal stage declares an output, return in preparation, or multiple returns    | Reject the invalid completion structure.                                                                                                  |
@@ -1199,6 +1187,7 @@ and general language scenarios are listed in
 | Local self-transition output sharing the stage entry name                        | Captures through its first declaration read the entry; subsequent captures read the new local wire.                                       |
 | Mutable local self-transition producer                                           | Allow mutable captures of the new local wire; exporting it creates an immutable entry for the next visit.                                 |
 | Same-named local alternatives after entry shadowing                              | Apply normal merge ordering to the local producers; never fall back to the incoming entry on a sibling branch.                            |
-| Stage whose every route diverges in a nested cycle                               | Accept with no declared outputs, transition node, or terminal return.                                                                     |
+| Stage whose every route diverges in a nested cycle                               | Accept when reached from preparation or another stage, with no declared outputs, transition node, or terminal return.                     |
 | Stage entry row and stage return contour                                         | Keep preparation on the left without a stage header; return transitions to the stage entry rail without entering preparation again.       |
-| Empty preparation                                                                | Omit its column and initial transition node; place the function header above the receiving stage without reordering stages.               |
+| Empty preparation                                                                | Omit its column and initial transition node; place the function header above the first declared stage.                                    |
+| Sole stage without preparation or outgoing transitions                           | Reject; use an ordinary flow.                                                                                                             |

@@ -1,0 +1,5 @@
+error: a kaalang flow without preparation must enter its first declared stage
+  --> tests/stage/compile_fail/measure_chosen_text.rs:12:17
+   |
+12 |     let text = |go| {
+   |                 ^^

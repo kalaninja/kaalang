@@ -1,0 +1,5 @@
+error: a kaalang wire must not be produced more than once in one execution
+  --> tests/stage/compile_fail/nonexclusive_stage_producers.rs:10:13
+   |
+10 |         let finish = || 2u8;
+   |             ^^^^^^

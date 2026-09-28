@@ -315,6 +315,37 @@ mod tests {
         }
     }
 
+    #[test]
+    fn a_stage_with_a_cycle_compacts_both_transition_routes() {
+        use kaalang_compiler::topology::NodeKind;
+
+        let function = fixture(
+            include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs"),
+            "stage_cycle_alternative_outputs",
+        );
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let stage = &mut model.stages[0];
+        assert!(!stage.topology.loops.is_empty());
+        let transitions = stage
+            .topology
+            .nodes
+            .iter()
+            .filter(|node| node.kind == NodeKind::Transition)
+            .map(|node| Vertex::Node(node.id))
+            .collect::<Vec<_>>();
+        assert!(transitions.len() >= 2);
+        compact_arrangement(stage);
+        ArrangementVerifier::new(&stage.analysis.flow, &stage.topology)
+            .normalize(stage.arrangement.clone())
+            .unwrap();
+        let row = stage.arrangement.rank[&transitions[0]];
+        assert!(
+            transitions
+                .iter()
+                .all(|node| stage.arrangement.rank[node] == row)
+        );
+    }
+
     /// The verifier decides this on its own: the boundary rule reads the
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]

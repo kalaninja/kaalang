@@ -1,0 +1,5 @@
+error: a staged kaalang flow returns only from its terminal stage
+ --> tests/stage/compile_fail/return_in_preparation.rs:5:5
+  |
+5 |     return;
+  |     ^^^^^^

@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1252" height="1122" viewBox="0 0 1252 1122" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for nested_stage_alternative_outputs</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: nested_stage_alternative_outputs with parameters go: u8. Stage go. Cycles: Select an outer result. with inputs current and outputs finish or go; Select an inner result. with inputs current and outputs inner_finish or inner_again. Nodes: Stage: Choose a nested result.; Action: Read the current entry. capturing go handing over current; Question: Is the value zero? capturing current handing over inner_finish / inner_again; Action: Forward the finished value. capturing inner_finish handing over finish; Action: Count down before revisiting. capturing inner_again, current handing over go; Transition: Return the value.; Transition: Choose a nested result.. Connections: Stage: Choose a nested result. to Action: Read the current entry.; Action: Read the current entry. to the cycle entry; Question: Is the value zero? branch 1 to the inner_finish result of the cycle; Question: Is the value zero? branch 2 to the inner_again result of the cycle; Action: Forward the finished value. to the finish result of the cycle; Action: Count down before revisiting. to the go result of the cycle; the cycle entry to Question: Is the value zero?; the finish result of the cycle to Transition: Return the value.; the go result of the cycle to Transition: Choose a nested result.; the inner_finish result of the cycle to Action: Forward the finished value.; the inner_again result of the cycle to Action: Count down before revisiting.. Transition to stage finish. Transition to stage go. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 288 114 L 288 150 "/>
+<path d="M 288 150 L 288 186 "/>
+<path d="M 288 1030 L 288 1098 "/>
+<path d="M 648 1030 L 648 1098 "/>
+<path d="M 1056 150 L 1056 186 "/>
+<path d="M 288 150 L 1056 150 "/>
+<path d="M 648 1098 L 24 1098 L 24 150 L 288 150 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(116 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for nested_stage_alternative_outputs</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: nested_stage_alternative_outputs with parameters go: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+    "/>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: u8</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_stage_alternative_outputs</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="788" height="908" viewBox="0 0 788 908" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for nested_stage_alternative_outputs</title>
+  <desc id="kaalang-part-1-description">Cycles: Select an outer result. with inputs current and outputs finish or go; Select an inner result. with inputs current and outputs inner_finish or inner_again. Nodes: Stage: Choose a nested result.; Action: Read the current entry. capturing go handing over current; Question: Is the value zero? capturing current handing over inner_finish / inner_again; Action: Forward the finished value. capturing inner_finish handing over finish; Action: Count down before revisiting. capturing inner_again, current handing over go; Transition: Return the value.; Transition: Choose a nested result.. Connections: Stage: Choose a nested result. to Action: Read the current entry.; Action: Read the current entry. to the cycle entry; Question: Is the value zero? branch 1 to the inner_finish result of the cycle; Question: Is the value zero? branch 2 to the inner_again result of the cycle; Action: Forward the finished value. to the finish result of the cycle; Action: Count down before revisiting. to the go result of the cycle; the cycle entry to Question: Is the value zero?; the finish result of the cycle to Transition: Return the value.; the go result of the cycle to Transition: Choose a nested result.; the inner_finish result of the cycle to Action: Forward the finished value.; the inner_again result of the cycle to Action: Count down before revisiting..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Select an outer result.</title>
+    <rect class="cycle-boundary" x="32" y="275" width="724" height="494" rx="12"/>
+    <text class="cycle-caption" x="744" y="289" text-anchor="end" xml:space="preserve"><tspan x="744" dy="0">Select an outer result.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Select an inner result.</title>
+    <rect class="cycle-boundary" x="60" y="347" width="556" height="214" rx="12"/>
+    <text class="cycle-caption" x="604" y="361" text-anchor="end" xml:space="preserve"><tspan x="604" dy="0">Select an inner result.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 228 102 L 228 174
+      M 228 238 L 228 310
+      M 228 454 L 228 526
+      M 368 418 L 588 418 L 588 526
+      M 228 662 L 228 734
+      M 588 662 L 588 734
+      M 228 310 L 228 382
+      M 228 734 L 228 806
+      M 588 734 L 588 806
+      M 228 526 L 228 598
+      M 588 526 L 588 598
+    "/>
+    <text class="connection-label" x="241" y="256" xml:space="preserve"><tspan x="241" dy="0">current</tspan></text>
+    <text class="connection-label" x="241" y="472" xml:space="preserve"><tspan x="241" dy="0">inner_finish</tspan></text>
+    <text class="connection-label" x="381" y="436" xml:space="preserve"><tspan x="381" dy="0">inner_again</tspan></text>
+    <text class="connection-label" x="241" y="680" xml:space="preserve"><tspan x="241" dy="0">finish</tspan></text>
+    <text class="connection-label" x="601" y="680" xml:space="preserve"><tspan x="601" dy="0">go</tspan></text>
+    <text class="connection-label" x="241" y="163" xml:space="preserve"><tspan x="241" dy="0">go</tspan></text>
+    <text class="connection-label" x="241" y="371" xml:space="preserve"><tspan x="241" dy="0">current</tspan></text>
+    <text class="connection-label" x="241" y="587" xml:space="preserve"><tspan x="241" dy="0">inner_finish</tspan></text>
+    <text class="connection-label" x="601" y="587" xml:space="preserve"><tspan x="601" dy="0">inner_again, current</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(228 67)">
+      <title xml:space="preserve">Choose a nested result.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Choose a nested result.</tspan></text>
+      <polygon class="stage-marker" points="0,35 -60,26 60,26"/>
+    </g>
+    <g class="node action" transform="translate(228 206)">
+      <title xml:space="preserve">Read the current entry.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Read the current entry.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(228 418)">
+      <title xml:space="preserve">Is the value zero?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the value zero?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(228 630)">
+      <title xml:space="preserve">Forward the finished value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Forward the finished value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(588 630)">
+      <title xml:space="preserve">Count down before revisiting.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down before revisiting.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(228 841)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(588 841)">
+      <title xml:space="preserve">Choose a nested result.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Choose a nested result.</tspan></text>
+      <polygon class="stage-marker" points="0,-35 -60,-26 60,-26"/>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(884 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for nested_stage_alternative_outputs</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

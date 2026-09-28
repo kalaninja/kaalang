@@ -2,9 +2,15 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn raw_entry(r#go: u8) -> u8 {
-    #[stage("Return the entry.")]
-    |go| {
-        |go| return go;
+    #[stage("Forward the entry.")]
+    let finish = |go| {
+        #[action("Forward the value.")]
+        let finish = |go| go;
+    };
+
+    #[stage("Return the value.")]
+    |finish| {
+        |finish| return finish;
     };
 }
 

@@ -33,9 +33,14 @@ pub fn accepted() -> Vec<(String, String, &'static str)> {
         })
         .into_iter()
         .chain(std::iter::once((
-            "eight branching stages".to_owned(),
+            "eight branching levels".to_owned(),
             branching(8),
             "branching",
+        )))
+        .chain(std::iter::once((
+            "staged flow with a cycle".to_owned(),
+            include_str!("../../kaalang/tests/stage/behavior/digital_root.rs").to_owned(),
+            "digital_root",
         )))
         .collect()
 }
@@ -104,33 +109,33 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
     format!("#[kaalang]\nfn nested_cycles(step: usize) -> usize {{\n{body}}}\n")
 }
 
-/// A chain of `stages` questions, each selecting between two actions that
+/// A chain of `levels` questions, each selecting between two actions that
 /// produce the same wire for the next one.
 ///
-/// Every stage doubles the finite execution summaries, so this is the shape
+/// Every level doubles the finite execution summaries, so this is the shape
 /// that reaches the highest summary counts; the loop shapes above stay in the
 /// tens however many blocks they hold.
 #[must_use]
-pub fn branching(stages: usize) -> String {
+pub fn branching(levels: usize) -> String {
     let mut body = String::new();
     let mut wire = "seed".to_owned();
-    for stage in 0..stages {
-        let _ = writeln!(body, "    #[question(\"Take branch {stage}?\")]");
+    for level in 0..levels {
+        let _ = writeln!(body, "    #[question(\"Take branch {level}?\")]");
         let _ = writeln!(
             body,
-            "    let (yes_{stage}, no_{stage}) = |{wire}| {wire} > {stage};"
+            "    let (yes_{level}, no_{level}) = |{wire}| {wire} > {level};"
         );
         let _ = writeln!(
             body,
-            "    #[action(\"Build the yes value of {stage}.\")]
-    let step_{stage} = |yes_{stage}| {stage}usize;"
+            "    #[action(\"Build the yes value of {level}.\")]
+    let step_{level} = |yes_{level}| {level}usize;"
         );
         let _ = writeln!(
             body,
-            "    #[action(\"Build the no value of {stage}.\")]
-    let step_{stage} = |no_{stage}| {stage}usize + 1;"
+            "    #[action(\"Build the no value of {level}.\")]
+    let step_{level} = |no_{level}| {level}usize + 1;"
         );
-        wire = format!("step_{stage}");
+        wire = format!("step_{level}");
     }
     let _ = writeln!(body, "    |{wire}| return {wire};");
     format!("#[kaalang]\nfn branching(seed: usize) -> usize {{\n{body}}}\n")

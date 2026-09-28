@@ -1,0 +1,17 @@
+error[E0716]: temporary value dropped while borrowed
+  --> tests/stage/compile_fail/escaping_stage_reference.rs:8:13
+   |
+ 3 | #[kaalang]
+   | ----------
+   | |        |
+   | |        temporary value is freed at the end of this statement
+   | in this attribute macro expansion
+...
+ 8 |         let local = |go| 7u8;
+   |             ^^^^^ creates a temporary value which is freed while still in use
+...
+11 |         |&mut slot, &local| **slot = Some(local);
+   |               ---- borrow later used here
+   |
+   = note: consider using a `let` binding to create a longer lived value
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

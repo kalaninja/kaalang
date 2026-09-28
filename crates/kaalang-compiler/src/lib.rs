@@ -133,8 +133,8 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
-    let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
-    let execution_plan = plan::flow(&flow, &executions, &merges);
+    let (executions, convergence_groups, merges, passes) = analyze::flow(&flow)?;
+    let execution_plan = plan::flow(&flow, &executions, &merges, passes);
 
     Ok(Analysis {
         name: function.sig.ident.clone(),

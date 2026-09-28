@@ -50,9 +50,8 @@ pub(super) struct Group {
     pub(super) cases: Vec<usize>,
     /// The routes this group takes, by id, each with its case.
     pub(super) routes: BTreeMap<usize, usize>,
-    /// The routes that reach the level where this group joins, taken or not,
-    /// each with its case. A repeat of a cycle not enclosing the group stops at
-    /// that cycle's tail and never reaches it.
+    /// The routes that reach the position where this group joins, taken or not,
+    /// each with its case. A repeating route may pass the join before its tail.
     pub(super) reaching: BTreeMap<usize, usize>,
 }
 

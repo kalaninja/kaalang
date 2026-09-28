@@ -1,0 +1,5 @@
+error: duplicate kaalang stage description
+  --> tests/stage/compile_fail/identical_stage_descriptions.rs:11:5
+   |
+11 |     #[stage(r"Same description.")]
+   |     ^

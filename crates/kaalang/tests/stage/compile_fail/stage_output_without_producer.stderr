@@ -1,0 +1,5 @@
+error: a declared kaalang stage output needs a producer named `go` in its body
+ --> tests/stage/compile_fail/stage_output_without_producer.rs:8:9
+  |
+8 |     let go = |go| {};
+  |         ^^

@@ -248,7 +248,12 @@ pub(super) fn flow(
         .as_deref()
         .expect("every selection is authored with a description");
     // A boundary consumer is not authored: it exports at the end of the body.
-    let message = if flow.blocks[block].kind == BlockKind::Export {
+    let message = if flow.blocks[block].transition_target.is_some() {
+        let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+        format!(
+            "this kaalang stage transition exports `{signal}` while the branches of the {kind} `{described}` are still separate; merge those branches before the transition"
+        )
+    } else if flow.blocks[block].kind == BlockKind::Export {
         format!(
             "this kaalang cycle exports `{}` while the branches of the {kind} `{described}` are still separate; merge those branches before the end of its body",
             super::exported_name(flow, block)

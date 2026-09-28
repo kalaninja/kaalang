@@ -1,0 +1,5 @@
+error: a common outer wire used by a kaalang stage must be available on every preparation route
+  --> tests/stage/compile_fail/preparation_wire_missing_on_a_route.rs:15:10
+   |
+15 |         |shared| return;
+   |          ^^^^^^

@@ -136,10 +136,6 @@ Captures express how an action accesses a wire:
 | `&name`     | Borrow the value.                          |
 | `&mut name` | Mutably borrow a wire declared mutable.    |
 
-See the
-[capture rules](docs/rfcs/0001-language.md#6-wires-producers-and-captures) for
-the details.
-
 ## Block kinds
 
 FizzBuzz uses `choice` and `action`. The other kinds let a flow ask a yes/no
@@ -158,19 +154,11 @@ named stages:
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
-declare their branch outputs. A cycle contains kaalang blocks; each route
-through it either repeats at its one `continue` or reaches the end of the body
-with one of the cycle's
-[declared outputs](docs/rfcs/0007-language-refinements.md#22-alternative-outputs),
-which then becomes available after the cycle. In the diagram, `continue` routes
-meet at the cycle's back edge, completing routes leave through the cycle
-boundary, and `return` reaches the flow end.
-
-The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) and its proposed
-[refinements](docs/rfcs/0007-language-refinements.md) define the ordinary
-blocks; the
-[visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds) defines
-their representation. [Stages](#stages) add named transitions between sequences.
+declare their branch outputs. A cycle contains kaalang blocks. A route through
+it can repeat at its one `continue`, complete with one declared output, or
+diverge in a nested cycle. A completed output becomes available after the cycle.
+In the diagram, `continue` routes meet at the cycle's back edge, completing
+routes leave through the cycle boundary, and `return` reaches the flow end.
 
 ### Putting it together: binary search
 
@@ -265,8 +253,13 @@ comparison, advancement, and prefix fallback.
 A **stage** groups kaalang blocks into a named step. The flow enters one stage
 at a time through its incoming signal. When a stage completes, its selected
 output names the next stage and carries that stage's input value; a terminal
-stage returns from the flow. Preparation runs once, and its data can be shared
-across stage visits.
+stage returns from the flow. A stage may also diverge in a cycle. When present,
+preparation runs once, and its data can be shared across stage visits.
+
+Stage declarations follow any preparation blocks. Without preparation, a
+function input enters the first declared stage; preparation can enter any
+declared stage. Stage descriptions must be unique. If there is no preparation
+and the only stage has no outgoing transitions, write an ordinary flow.
 
 Stages are syntactic and graphical sugar for a state machine written with a
 cycle, a choice, and explicit state. The compiler generates the state and
@@ -291,9 +284,6 @@ current state:
 
 After each state update, control returns to the choice. Selecting `Finish`
 leaves the cycle and reaches the return. Both versions follow the same path.
-
-Both examples are executable fixtures. See [RFC 0006](docs/rfcs/0006-stages.md)
-for the stage rules and visual representation.
 
 ### Stages in practice: quicksort
 

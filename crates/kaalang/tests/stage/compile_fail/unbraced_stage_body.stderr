@@ -1,0 +1,6 @@
+error: a kaalang stage requires a header and braced body
+ --> tests/stage/compile_fail/unbraced_stage_body.rs:5:5
+  |
+5 | /     #[stage("Finish.")]
+6 | |     |go| return;
+  | |________________^

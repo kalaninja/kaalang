@@ -1,0 +1,5 @@
+error: this kaalang stage transition exports `go` while the branches of the question `Select a branch.` are still separate; merge those branches before the transition
+ --> tests/stage/compile_fail/transition_before_branch_merge.rs:4:35
+  |
+4 | fn transition_before_branch_merge(go: (), flag: bool) {
+  |                                   ^^

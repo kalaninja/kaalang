@@ -2,9 +2,15 @@ use kaalang::kaalang;
 
 #[kaalang]
 const fn copy_entry<T: Copy>(go: T) -> T {
+    #[stage("Forward the copied entry.")]
+    let finish = |go| {
+        #[action("Forward the value.")]
+        let finish = |go| go;
+    };
+
     #[stage("Return the copied entry.")]
-    |go| {
-        |go| return go;
+    |finish| {
+        |finish| return finish;
     };
 }
 

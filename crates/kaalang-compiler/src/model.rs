@@ -315,19 +315,37 @@ impl Flow {
         }
     }
 
-    /// Whether an execution reaches `block`: it finishes the flow, or repeats
-    /// the level of `block` or a cycle enclosing it. A repeat of any other
-    /// cycle stops at that cycle's tail, so blocks at one level are reached
-    /// alike.
-    #[must_use]
-    pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
-        match execution.outcome {
-            ExecutionOutcome::Return { .. } => true,
-            ExecutionOutcome::Repeat { loop_index } => {
-                std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
-                    .any(|header| header == loop_index)
-            }
+    /// The repeat relation depends on where two blocks sit, not on which
+    /// execution repeats. [`Passes::of`] computes it once per cycle and block.
+    fn repeat_reaches(&self, runs: &[Vec<u64>], loop_index: usize, block: usize) -> bool {
+        if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
+            .any(|header| header == loop_index)
+        {
+            return true;
         }
+        let sequence = std::iter::successors(Some(self.blocks[block].parent), |&sequence| {
+            sequence.map(|header| self.blocks[header].parent)
+        })
+        .find(|&sequence| {
+            std::iter::successors(Some(loop_index), |&header| self.blocks[header].parent)
+                .any(|header| self.blocks[header].parent == sequence)
+        })
+        .expect("the root contains every block");
+        let part = |mut block: usize| {
+            while self.blocks[block].parent != sequence {
+                block = self.blocks[block]
+                    .parent
+                    .expect("the sequence encloses the block");
+            }
+            block
+        };
+        let (block_part, repeat_part) = (part(block), part(loop_index));
+        block_part == repeat_part
+            || (block_part < repeat_part
+                && runs[block_part]
+                    .iter()
+                    .zip(&runs[repeat_part])
+                    .any(|(first, second)| first & second != 0))
     }
 
     /// A cycle completes only when the execution exports one of its outputs.
@@ -423,6 +441,50 @@ pub struct Execution {
     pub dependencies: Vec<CaptureDependency>,
     /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
+}
+
+/// Whether a repeated cycle reaches each block, computed from the finite
+/// executions once per analysis. Blocks of one sequence run in source order.
+pub(crate) struct Passes {
+    /// Indexed by repeating cycle, then queried block. Non-cycle rows are empty.
+    reaching: Vec<Vec<bool>>,
+}
+
+impl Passes {
+    /// Whether an execution reaches `block`: it finishes the flow, repeats a
+    /// cycle enclosing `block`, or passes `block` before its repetition.
+    #[must_use]
+    pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
+        let ExecutionOutcome::Repeat { loop_index } = execution.outcome else {
+            return true;
+        };
+        self.reaching[loop_index][block]
+    }
+
+    #[must_use]
+    pub(crate) fn of(flow: &Flow, executions: &[Execution]) -> Self {
+        let mut runs = vec![vec![0; executions.len().div_ceil(64)]; flow.blocks.len()];
+        for (index, execution) in executions.iter().enumerate() {
+            for &block in &execution.blocks {
+                runs[block][index / 64] |= 1 << (index % 64);
+            }
+        }
+        let reaching = flow
+            .blocks
+            .iter()
+            .enumerate()
+            .map(|(loop_index, block)| {
+                if block.kind == BlockKind::Loop {
+                    (0..flow.blocks.len())
+                        .map(|block| flow.repeat_reaches(&runs, loop_index, block))
+                        .collect()
+                } else {
+                    Vec::new()
+                }
+            })
+            .collect();
+        Self { reaching }
+    }
 }
 
 /// The boundary reached by one finite structural execution summary.

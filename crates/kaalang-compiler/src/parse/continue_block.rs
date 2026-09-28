@@ -47,23 +47,35 @@ pub(super) fn parse(
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn a_cycle_rejects_a_second_continue_in_every_spelling() {
-        for transfer in ["continue;", "|| continue;", "|| { continue; };"] {
-            let source =
-                format!("fn example() {{ #[cycle(\"Repeat.\")] {{ {transfer} {transfer} }}; }}");
-            let error = crate::parse::flow(&syn::parse_str(&source).unwrap())
-                .err()
-                .expect("a second structural continue is rejected before reachability");
-            assert_eq!(
-                error.to_string(),
-                "a kaalang cycle may declare at most one structural `continue`; merge its repeating routes before that continue",
-            );
-        }
+    fn second_continue(transfer: &str) {
+        let source =
+            format!("fn example() {{ #[cycle(\"Repeat.\")] {{ {transfer} {transfer} }}; }}");
+        let error = crate::parse::flow(&syn::parse_str(&source).unwrap())
+            .err()
+            .expect("a second structural continue is rejected before reachability");
+        assert_eq!(
+            error.to_string(),
+            "a kaalang cycle may declare at most one structural `continue`; merge its repeating routes before that continue",
+        );
     }
 
     #[test]
-    fn nested_and_native_cycles_do_not_share_the_continue_limit() {
+    fn a_cycle_rejects_a_second_bare_continue() {
+        second_continue("continue;");
+    }
+
+    #[test]
+    fn a_cycle_rejects_a_second_closure_continue() {
+        second_continue("|| continue;");
+    }
+
+    #[test]
+    fn a_cycle_rejects_a_second_braced_closure_continue() {
+        second_continue("|| { continue; };");
+    }
+
+    #[test]
+    fn nested_cycles_count_their_continues_separately() {
         let function = syn::parse_quote! {
             fn example() {
                 #[cycle("Repeat the outer cycle.")]
@@ -72,6 +84,19 @@ mod tests {
                     {
                         continue;
                     };
+                    continue;
+                };
+            }
+        };
+        assert!(crate::parse::flow(&function).is_ok());
+    }
+
+    #[test]
+    fn native_continues_do_not_count_as_structural_continues() {
+        let function = syn::parse_quote! {
+            fn example() {
+                #[cycle("Repeat.")]
+                {
                     #[action("Use native Rust control flow.")]
                     {
                         for _ in 0..2 {

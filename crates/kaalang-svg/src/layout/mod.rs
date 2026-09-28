@@ -778,6 +778,11 @@ impl Scene {
                 gap + (count - 1) * LANE + capture_space[row + 1]
             };
             next += own + (gap + bottom_padding[row]).max(routing);
+            if row == 0
+                && let Some(stage_rows) = self.stage_rows
+            {
+                next = next.max(stage_rows.first_body_y);
+            }
         }
         top.push(next);
 

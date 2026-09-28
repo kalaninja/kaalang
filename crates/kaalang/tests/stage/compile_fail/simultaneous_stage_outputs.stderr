@@ -1,0 +1,5 @@
+error: a kaalang transition boundary selects more than one stage signal
+ --> tests/stage/compile_fail/simultaneous_stage_outputs.rs:6:16
+  |
+6 |     let (next, finish) = |go| {
+  |                ^^^^^^

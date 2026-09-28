@@ -11,7 +11,7 @@ use syn::{Error, Result};
 
 use crate::model::{
     BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
-    ExecutionOutcome, Flow, FlowKind, ProducerId, WireMerge,
+    ExecutionOutcome, Flow, FlowKind, Passes, ProducerId, WireMerge,
 };
 
 mod action;
@@ -32,23 +32,25 @@ mod return_block;
 #[cfg(test)]
 mod tests;
 
+type FlowResult = (
+    Vec<Execution>,
+    Vec<ConvergenceGroup>,
+    Vec<WireMerge>,
+    Passes,
+);
+
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
-pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+pub(crate) fn flow(flow: &Flow) -> Result<FlowResult> {
     flow_with_usage(flow, true)
 }
 
 /// Preparation first needs route summaries before stage captures are known.
-pub(crate) fn flow_without_usage(
-    flow: &Flow,
-) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+pub(crate) fn flow_without_usage(flow: &Flow) -> Result<FlowResult> {
     flow_with_usage(flow, false)
 }
 
-fn flow_with_usage(
-    flow: &Flow,
-    check_usage: bool,
-) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+fn flow_with_usage(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
     let walk = walk(flow);
     if let Some((_, error)) = walk.error {
         return Err(error);
@@ -80,7 +82,8 @@ fn flow_with_usage(
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
     let convergence_groups = convergence::flow(flow, &frames, &precedence, &ancestry)?;
-    Ok((executions, convergence_groups, merges))
+    let passes = frames.into_passes();
+    Ok((executions, convergence_groups, merges, passes))
 }
 
 /// Enumerates every finite execution summary of a flow in source order,

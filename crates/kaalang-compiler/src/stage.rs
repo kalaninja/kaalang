@@ -12,12 +12,12 @@ use crate::parse::ParsedStaged;
 use crate::{analyze as local_analysis, plan, resolve, scope};
 
 fn local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Analysis> {
-    let (executions, convergence_groups, merges) = if check_usage {
+    let (executions, convergence_groups, merges, passes) = if check_usage {
         local_analysis::flow(&flow)?
     } else {
         local_analysis::flow_without_usage(&flow)?
     };
-    let execution_plan = plan::flow(&flow, &executions, &merges);
+    let execution_plan = plan::flow(&flow, &executions, &merges, passes);
     Ok(Analysis {
         name: function.sig.ident.clone(),
         parameters: function.sig.inputs.iter().cloned().collect(),
@@ -121,6 +121,24 @@ fn targets(analysis: &Analysis) -> impl Iterator<Item = usize> + '_ {
         };
         analysis.flow.blocks[block_index].transition_target
     })
+}
+
+/// Stages in the order preparation's transitions first visit them; a stage
+/// missing from it is unreachable. Rust infers an entry's type from the first
+/// constructor it checks, and a stage's first constructor is in preparation or
+/// an earlier visited stage, so the dispatcher emits its arms in this order.
+pub(crate) fn visit_order(preparation: &Analysis, stages: &[StageAnalysis]) -> Vec<usize> {
+    let mut visited = vec![false; stages.len()];
+    let mut order = Vec::new();
+    let mut queue = targets(preparation).collect::<VecDeque<_>>();
+    while let Some(stage) = queue.pop_front() {
+        if std::mem::replace(&mut visited[stage], true) {
+            continue;
+        }
+        order.push(stage);
+        queue.extend(targets(&stages[stage].analysis));
+    }
+    order
 }
 
 fn mutable_outer(function: &ItemFn, preparation: &Flow, name: &Ident) -> bool {
@@ -256,16 +274,8 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
     }
     resolve::flow(&preparation)?;
     let mut preparation = local(function, preparation, true)?;
-    let mut reachable = vec![false; stages.len()];
-    let mut queue = targets(&preparation).collect::<VecDeque<_>>();
-    while let Some(stage) = queue.pop_front() {
-        if reachable[stage] {
-            continue;
-        }
-        reachable[stage] = true;
-        queue.extend(targets(&stages[stage].analysis));
-    }
-    if let Some((index, _)) = reachable.iter().enumerate().find(|(_, reached)| !**reached) {
+    let order = visit_order(&preparation, &stages);
+    if let Some(index) = (0..stages.len()).find(|stage| !order.contains(stage)) {
         return Err(Error::new(
             stage_spans[index],
             "this kaalang stage is unreachable from preparation",
@@ -331,69 +341,6 @@ mod tests {
             } else {
                 result.expect("a final terminal stage is valid");
             }
-        }
-    }
-
-    #[test]
-    fn rejects_invalid_stage_interfaces_and_routes() {
-        let cases = [
-            (
-                "async fn f(go: ()) { #[stage(\"Finish.\")] |go| { return; }; }",
-                "does not support async flows",
-            ),
-            (
-                "fn f() { #[stage(\"Finish.\")] |finish| { return; }; }",
-                "without selecting a stage signal",
-            ),
-            (
-                "fn f() { #[action(\"A.\")] let go = || (); #[action(\"B.\")] let stop = || (); #[stage(\"Go.\")] let go = |go| { #[action(\"Again.\")] let go = |go| go; }; #[stage(\"Stop.\")] |stop| { return; }; }",
-                "more than one stage signal",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Lost.\")] let lost = |lost| { #[action(\"Again.\")] let lost = |lost| lost; }; #[stage(\"Go.\")] |go| { return; }; }",
-                "unreachable",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] let nowhere = |go| { #[action(\"Nowhere.\")] let nowhere = || (); }; }",
-                "no matching stage entry",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] let go = |go| { }; }",
-                "needs a producer",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] |go| { #[action(\"Again.\")] let local = || (); }; }",
-                "without a transition or `return`",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] |go| { #[action(\"Bad.\")] let go = || (); return; }; }",
-                "shadow a visible outer wire",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] |go| { |&mut go| return; }; }",
-                "cannot be captured through `&mut`",
-            ),
-            (
-                "fn f() { #[action(\"Outer.\")] let shared = || 1; #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] |go| { |&mut shared| return; }; }",
-                "outer wire to be declared with `mut`",
-            ),
-            (
-                "fn f(choice: bool) { #[question(\"Choose.\")] let (yes, no) = |choice| choice; #[action(\"Left data.\")] let shared = |yes| 1; #[action(\"Left signal.\")] let go = |yes| (); #[action(\"Right signal.\")] let go = |no| (); #[stage(\"Go.\")] |go| { |shared| return; }; }",
-                "available on every preparation route",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] let mut go = |go| { #[action(\"Again.\")] let go = || (); }; }",
-                "cannot declare `mut`",
-            ),
-            (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] let go = |go| { return; }; }",
-                "declares no transition outputs",
-            ),
-        ];
-        for (source, expected) in cases {
-            let function: ItemFn = syn::parse_str(source).expect("valid Rust syntax");
-            let error = crate::build(&function).err().expect("the flow is rejected");
-            assert!(error.to_string().contains(expected), "{source}: {error}");
         }
     }
 

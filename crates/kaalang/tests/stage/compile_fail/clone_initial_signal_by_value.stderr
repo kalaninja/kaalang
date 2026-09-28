@@ -1,0 +1,19 @@
+error[E0382]: use of moved value
+ --> tests/stage/compile_fail/clone_initial_signal_by_value.rs:4:34
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+4 | fn clone_initial_signal_by_value(go: String) -> String {
+  |                                  ^^
+  |                                  |
+  |                                  value used here after move
+  |                                  move occurs because value has type `String`, which does not implement the `Copy` trait
+5 |     #[action("Clone by value.")]
+6 |     let copy = |go| go.clone();
+  |                 -- value moved here
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+  |
+6 |     let copy = |go.clone()| go.clone();
+  |                   ++++++++

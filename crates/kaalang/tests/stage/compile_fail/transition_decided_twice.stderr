@@ -1,0 +1,5 @@
+error: this kaalang stage transition exports `found` on routes decided by two independent questions, choices, or cycles
+ --> tests/stage/compile_fail/transition_decided_twice.rs:9:14
+  |
+9 |     let (go, found, other) = |go| {
+  |              ^^^^^

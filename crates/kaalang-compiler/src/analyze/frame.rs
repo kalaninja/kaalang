@@ -7,7 +7,7 @@
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 
-use crate::model::{BranchSelection, Execution, Flow, ProducerId, WireMerge};
+use crate::model::{BranchSelection, Execution, Flow, Passes, ProducerId, WireMerge};
 
 /// The executions as each frame of the flow sees them. A frame is the
 /// innermost cycle with several outputs around a block, or the root.
@@ -18,6 +18,9 @@ pub(super) struct Frames<'a> {
     /// removed, in the original order. Only the root exists, borrowed, when no
     /// cycle has several outputs.
     views: BTreeMap<Option<usize>, Cow<'a, [Execution]>>,
+    /// Which blocks repeating routes reach. The views keep every execution's
+    /// blocks, so one table serves them all.
+    passes: Passes,
 }
 
 impl<'a> Frames<'a> {
@@ -55,7 +58,20 @@ impl<'a> Frames<'a> {
                 })
                 .collect()
         };
-        Self { inner, views }
+        Self {
+            inner,
+            views,
+            passes: Passes::of(flow, executions),
+        }
+    }
+
+    /// Which blocks repeating executions reach, for [`Passes::reaches`].
+    pub(super) fn passes(&self) -> &Passes {
+        &self.passes
+    }
+
+    pub(super) fn into_passes(self) -> Passes {
+        self.passes
     }
 
     /// Whether every block sees every selection: no cycle has several outputs.

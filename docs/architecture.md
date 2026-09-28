@@ -20,9 +20,9 @@ flowchart TD
     V --> S[Serialization]
 ```
 
-## Compiler stages
+## Compiler steps
 
-| Stage   | Implementation                                                  | Algorithm                                                                                                                                                           | Artifact                                                                                         |
+| Step    | Implementation                                                  | Algorithm                                                                                                                                                           | Artifact                                                                                         |
 | ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Parse   | [`parse/`](../crates/kaalang-compiler/src/parse/mod.rs)         | Validate each statement locally, flatten cycle bodies in source order, append the implicit end block.                                                               | Parsed `Flow`.                                                                                   |
 | Scope   | [`scope.rs`](../crates/kaalang-compiler/src/scope.rs)           | Give cycle-local wires unique internal keys while retaining authored spellings; record the outer wires each cycle body captures.                                    | Scoped `Flow`.                                                                                   |
@@ -37,6 +37,19 @@ flowchart TD
 collapsed SVG request constructs a second, collapsed projection only after the
 expanded one succeeds.
 
+## Staged flows
+
+A flow that declares stages runs the same steps once per part: its preparation
+and each stage are separate local flows that share one stage graph.
+
+| Step    | Implementation                                                                                                                                     | Algorithm                                                                                                                                                                                                    |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Split   | [`parse/stage.rs`](../crates/kaalang-compiler/src/parse/stage.rs)                                                                                  | Split preparation from the stage declarations, resolve every entry and declared output, and append one transition block per possible signal.                                                                 |
+| Analyze | [`stage.rs`](../crates/kaalang-compiler/src/stage.rs)                                                                                              | Derive the common outer data from preparation's outer plan scope, analyze each part locally, and order the stages by their visits from preparation's transitions; an unvisited stage is rejected.            |
+| Arrange | [`topology/stage.rs`](../crates/kaalang-compiler/src/topology/stage.rs), [`construct/stage.rs`](../crates/kaalang-compiler/src/construct/stage.rs) | Order every other local sink before each transition, place a part's transitions on one final rank, and verify their row and distinct columns.                                                                |
+| Lower   | [`codegen/stage.rs`](../crates/kaalang-compiler/src/codegen/stage.rs)                                                                              | Keep preparation's outer scope around a labeled dispatcher loop whose state is a balanced `Result` sum of the stage entries; each arm runs one stage's local plan, in visit order.                           |
+| Compose | [`layout/staged.rs`](../crates/kaalang-svg/src/layout/staged.rs)                                                                                   | Lay out each part with the common entry and transition height, align every transition on one row, place preparation left of the stages, and verify the rails and return contour against every part's bounds. |
+
 ## Arrangement algorithms
 
 | Order      | Algorithm                               | What it does                                                                                                                                                                                                                         |
@@ -50,9 +63,9 @@ can reject a topology. The separate exhaustive procedure under
 [`construct/tests/reference.rs`](../crates/kaalang-compiler/src/construct/tests/reference.rs)
 is a test oracle, not a runtime fallback.
 
-## SVG stages and fallbacks
+## SVG steps and fallbacks
 
-| Stage         | Primary path                                                                                                                                              | Artifact                    | Fallback                                                                                                                                                                            |
+| Step          | Primary path                                                                                                                                              | Artifact                    | Fallback                                                                                                                                                                            |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Compaction    | Iterate verified local simplifications: pull contours inward, shorten routes, merge lanes and columns, lift vertices, fold rows.                          | Compacted `Arrangement`.    | Keep the previous verified arrangement whenever a candidate fails. The process finds a deterministic local fixed point, not a global minimum.                                       |
 | Captions      | Derive labels from the semantic model, normalize exact source fragments, and interpret descriptions as restricted Markdown.                               | `Captions` and source text. | None.                                                                                                                                                                               |

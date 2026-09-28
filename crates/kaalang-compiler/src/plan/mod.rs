@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 
 use crate::model::{
-    BlockKind, Branch, BranchSelection, Execution, ExecutionPlan, Flow, Join, JoinTarget,
+    BlockKind, Branch, BranchSelection, Execution, ExecutionPlan, Flow, Join, JoinTarget, Passes,
     ProducerId, WireMerge,
 };
 
@@ -25,10 +25,16 @@ pub(crate) mod verify;
 /// Builds the nested branch tree the validated flow lowers to. Every accepted
 /// flow has one, so a failure here is a compiler bug rather than a rejected
 /// program.
-pub(crate) fn flow(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> ExecutionPlan {
+pub(crate) fn flow(
+    flow: &Flow,
+    executions: &[Execution],
+    merges: &[WireMerge],
+    passes: Passes,
+) -> ExecutionPlan {
     let end = flow.blocks.len() - 1;
     let mut builder = Builder {
         flow,
+        passes,
         end,
         merges,
         classes: Vec::new(),
@@ -65,6 +71,7 @@ type Group = (Vec<usize>, BTreeSet<usize>);
 
 struct Builder<'a> {
     flow: &'a Flow,
+    passes: Passes,
     end: usize,
     merges: &'a [WireMerge],
     /// Producer occurrences that one Rust binding unifies: the alternative
@@ -408,7 +415,7 @@ impl Builder<'_> {
                         .filter(|(_, execution)| {
                             blocks
                                 .iter()
-                                .any(|&block| self.flow.reaches(execution, block))
+                                .any(|&block| self.passes.reaches(execution, block))
                         })
                         .map(|(execution, _)| execution)
                         .collect();

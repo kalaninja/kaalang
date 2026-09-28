@@ -8,6 +8,7 @@ mod branch_output_captured_twice;
 mod builds_before_a_second_choice;
 mod captured_in_one_branch;
 mod capturing_closure_after_convergence;
+mod case_waits_after_the_merge;
 mod choice_value;
 mod closure_before_a_branch;
 mod const_alternative_producers;

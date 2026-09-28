@@ -1,6 +1,6 @@
 # RFC 0007: Language refinements
 
-- Status: proposed
+- Status: accepted
 - Language: [RFC 0001: kaalang Language](0001-language.md)
 - Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
 - Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
@@ -9,7 +9,7 @@
 ## 1. Motivation and scope
 
 Cycles need explicit completion and repetition boundaries while their inner
-blocks retain ordinary capture and ownership rules. This proposal replaces
+blocks retain ordinary capture and ownership rules. This RFC replaces
 cycle-header data aliases, structural `break`, and implicit repetition with an
 optional entry gate, inherited outer data, named alternative outputs, and an
 explicit structural `continue`.
@@ -473,8 +473,8 @@ full height, including a case's triangular tip.
 
 ## 7. Changes to earlier RFCs
 
-If accepted, this RFC supersedes the provisions below in every flow, whether or
-not it declares stages. Earlier accepted RFC texts remain unchanged.
+This RFC supersedes the provisions below in every flow, whether or not it
+declares stages. Earlier accepted RFC texts remain unchanged.
 
 - **RFC 0001 §§4.5–4.6 and §8:** replace the cycle's complete data-capture
   header with an optional single gate and inherited outer data scope. The gate

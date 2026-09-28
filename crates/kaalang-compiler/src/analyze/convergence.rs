@@ -71,9 +71,9 @@ pub(super) fn flow(
             // projection must still preserve adjacency and nesting. Unions alone
             // do not: {A, B} union {D} skips C. Generated searches are not a proof.
             //
-            // Blocks continuing the same routes form one group. A repeat of a
-            // cycle not enclosing a block stops short of it, so the routes
-            // reaching a block depend only on its level.
+            // Blocks continuing the same routes form one group. A repeat may
+            // pass a block before reaching its cycle, so each block has its
+            // own set of reaching routes.
             let mut continued = BTreeSet::new();
             let mut reaching = BTreeMap::new();
             for (block, (branches, routes)) in branch_sets.iter().zip(routes).enumerate() {
@@ -81,11 +81,11 @@ pub(super) fn flow(
                     continue;
                 }
                 let reaching = reaching
-                    .entry(flow.level(block))
+                    .entry(block)
                     .or_insert_with(|| {
                         selected
                             .iter()
-                            .filter(|(execution, _)| flow.reaches(execution, block))
+                            .filter(|(execution, _)| frames.passes().reaches(execution, block))
                             .map(|&(_, route)| route)
                             .collect::<BTreeMap<_, _>>()
                     })

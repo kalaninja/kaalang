@@ -1,0 +1,5 @@
+error: a stage-local output must not shadow a visible outer wire
+  --> tests/stage/compile_fail/nested_cycle_shadows_stage_entry.rs:10:17
+   |
+10 |             let go = || ();
+   |                 ^^

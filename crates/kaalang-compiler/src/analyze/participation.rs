@@ -19,9 +19,9 @@ use super::only_difference;
 /// branches of it, agree at every other question or choice they both run, and
 /// differ in whether the block participates. A question or choice on a path
 /// that one execution cut short runs in only one of the two and takes no part
-/// in the comparison. An execution that repeats a cycle not enclosing the block
-/// never reaches it, so it does not skip the block either. Each block compares
-/// the selections its frame sees.
+/// in the comparison. A repeating execution skips a block only when it neither
+/// encloses nor passes that block before its tail. Each block compares the
+/// selections its frame sees.
 pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>> {
     (0..flow.blocks.len() - 1)
         .map(|block| {
@@ -34,7 +34,7 @@ pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>>
                 .flat_map(|run| {
                     skipping
                         .iter()
-                        .filter(|skip| flow.reaches(skip, block))
+                        .filter(|skip| frames.passes().reaches(skip, block))
                         .filter_map(|skip| only_difference(run, skip))
                 })
                 .collect()
@@ -76,7 +76,12 @@ pub(super) fn flow(
         });
         if independent {
             // A boundary consumer is not authored: it carries its output's span.
-            let message = if flow.blocks[block].kind == BlockKind::Export {
+            let message = if flow.blocks[block].transition_target.is_some() {
+                let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+                format!(
+                    "this kaalang stage transition exports `{signal}` on routes decided by two independent questions, choices, or cycles"
+                )
+            } else if flow.blocks[block].kind == BlockKind::Export {
                 format!(
                     "this kaalang cycle exports `{}` on routes decided by two independent questions, choices, or cycles",
                     super::exported_name(flow, block)

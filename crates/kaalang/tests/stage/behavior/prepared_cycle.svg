@@ -38,19 +38,19 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Produce shared data.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="336" height="134" rx="12"/>
-    <text class="cycle-caption" x="356" y="141" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Produce shared </tspan><tspan x="356" dy="14">data.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="131" width="336" height="134" rx="12"/>
+    <text class="cycle-caption" x="356" y="145" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Produce shared </tspan><tspan x="356" dy="14">data.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 200 90 L 200 162
-      M 200 226 L 200 298
-      M 200 362 L 200 566
+      M 200 90 L 200 166
+      M 200 230 L 200 302
+      M 200 366 L 200 566
     "/>
-    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">seed</tspan></text>
-    <text class="connection-label" x="213" y="244" xml:space="preserve"><tspan x="213" dy="0">shared</tspan></text>
-    <text class="connection-label" x="213" y="287" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="155" xml:space="preserve"><tspan x="213" dy="0">seed</tspan></text>
+    <text class="connection-label" x="213" y="248" xml:space="preserve"><tspan x="213" dy="0">shared</tspan></text>
+    <text class="connection-label" x="213" y="291" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -62,12 +62,12 @@
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_cycle</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 194)">
+    <g class="node action" transform="translate(200 198)">
       <title xml:space="preserve">Compute the result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Compute the result.</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 330)">
+    <g class="node action" transform="translate(200 334)">
       <title xml:space="preserve">Enter the stage.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Enter the stage.</tspan></text>

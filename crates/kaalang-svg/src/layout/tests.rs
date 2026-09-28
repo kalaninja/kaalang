@@ -1770,6 +1770,29 @@ fn every_accepted_alternative_output_shape_renders_in_both_views() {
     assert_eq!(drawn, 28);
 }
 
+#[test]
+fn every_accepted_staged_shape_renders_in_both_views() {
+    let mut rendered = 0;
+    for source in kaalang_testing::shapes::staged_shapes() {
+        let file = crate::parse_file(&source).expect("the staged shape parses");
+        let function = kaalang_compiler::flows(&file.items).remove(0);
+        let name = function.sig.ident.to_string();
+        if kaalang_compiler::build(&function).is_err() {
+            continue;
+        }
+        for collapse_loops in [false, true] {
+            crate::render_source_with_options(
+                &source,
+                &name,
+                crate::RenderOptions { collapse_loops },
+            )
+            .unwrap_or_else(|error| panic!("{source}\n{error}"));
+            rendered += 1;
+        }
+    }
+    assert_eq!(rendered, 10);
+}
+
 /// Moving the climb alone can keep the route connected while violating the
 /// contour chosen by the arrangement.
 #[test]

@@ -97,14 +97,25 @@ pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn moving_the_repeating_case_to_either_edge_is_valid() {
+    fn repeating_case_at(output: &str) {
         let source = include_str!("../../../kaalang/tests/loop/compile_fail/enclosed_repeat.rs");
-        for outputs in ["(advance, first, last)", "(first, last, advance)"] {
-            let source = source.replace("(first, advance, last)", outputs);
-            crate::build(&crate::tests::fixture(&source, "invalid"))
-                .expect("adjacent exits leave the return an outer contour");
-        }
+        let source = source.replace("(first, advance, last)", output);
+        crate::build(&crate::tests::fixture(&source, "invalid"))
+            .expect("adjacent exits leave the return an outer contour");
+    }
+
+    #[test]
+    fn a_repeating_case_at_the_first_edge_is_valid() {
+        repeating_case_at("(advance, first, last)");
+    }
+
+    #[test]
+    fn a_repeating_case_at_the_last_edge_is_valid() {
+        repeating_case_at("(first, last, advance)");
+    }
+
+    #[test]
+    fn nested_questions_keep_their_exits_adjacent() {
         let source = r#"
             #[kaalang]
             fn invalid(mut mode: u8) -> u8 {

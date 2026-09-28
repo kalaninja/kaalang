@@ -17,6 +17,7 @@ const RAIL_GAP: i32 = 36;
 pub(super) struct StageRows {
     pub(super) height: i32,
     pub(super) transition_y: i32,
+    pub(super) first_body_y: i32,
 }
 
 pub(crate) struct StagedScene {
@@ -33,6 +34,7 @@ pub(crate) struct PartPlacement {
     pub(crate) y: i32,
 }
 
+#[allow(clippy::too_many_lines)] // Measures each part, reserves the entry rail, then aligns transitions.
 pub(crate) fn layout_staged(
     model: &SemanticModel,
     start: &str,
@@ -75,6 +77,7 @@ pub(crate) fn layout_staged(
     let rows = StageRows {
         height,
         transition_y: 0,
+        first_body_y: 0,
     };
     let mut parts = models
         .iter()
@@ -85,6 +88,18 @@ pub(crate) fn layout_staged(
             layout_with_stage_rows(model, captions, parameters, Some(rows))
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let first_body_y = first_body_y(&parts, direct_entry);
+    if first_body_y > 0 {
+        parts[0] = layout_with_stage_rows(
+            models[0],
+            &captions[0],
+            parameters,
+            Some(StageRows {
+                first_body_y,
+                ..rows
+            }),
+        )?;
+    }
     if direct_entry.is_some() {
         keep_header(&mut parts[0]);
     }
@@ -120,6 +135,7 @@ pub(crate) fn layout_staged(
                 Some(StageRows {
                     height,
                     transition_y: transition_y - placements[index].y,
+                    first_body_y: if index == 0 { first_body_y } else { 0 },
                 }),
             )?;
         }
@@ -130,8 +146,79 @@ pub(crate) fn layout_staged(
     Ok(diagram)
 }
 
+/// Make room for the entry rail between preparation's start content and its
+/// first body. Capture labels and expanded cycle boundaries move with that body.
+fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
+    if direct_entry.is_some() {
+        return 0;
+    }
+    let scene = &parts[0];
+    let placements = place(parts, direct_entry);
+    let line = [
+        Point {
+            x: MARGIN - placements[0].x,
+            y: rail_y(scene),
+        },
+        Point {
+            x: placements[parts.len() - 1].x + parts[parts.len() - 1].node(NodeId::Start).x
+                - placements[0].x,
+            y: rail_y(scene),
+        },
+    ];
+    let bounds = scene
+        .nodes
+        .iter()
+        .filter(|node| node.id != NodeId::Start)
+        .map(Scene::bounds)
+        .chain(
+            scene
+                .labels
+                .iter()
+                .filter(|label| label.owner != Vertex::Node(NodeId::Start))
+                .map(label_rect),
+        )
+        .chain(scene.loop_regions.iter().map(super::LoopRegion::bounds))
+        .collect::<Vec<_>>();
+    let mut shift = 0;
+    loop {
+        let next = bounds
+            .iter()
+            .filter(|&&(left, top, right, bottom)| {
+                left < line[1].x
+                    && right > line[0].x
+                    && top + shift < line[0].y + CONNECTION_LABEL_HALO
+                    && bottom + shift > line[0].y
+            })
+            .map(|&(_, top, _, _)| rail_y(scene) + CONNECTION_LABEL_HALO - top)
+            .max()
+            .unwrap_or(shift);
+        if next <= shift {
+            break;
+        }
+        shift = next;
+    }
+    if shift == 0 {
+        return 0;
+    }
+    scene.rows(&super::vertical_gaps(scene)).top[1] + shift
+}
+
+fn rail_y(scene: &Scene) -> i32 {
+    let start = scene.node(NodeId::Start);
+    let start_height = scene
+        .parameters
+        .as_ref()
+        .map_or(start.height, |panel| panel.height.max(start.height));
+    scene
+        .labels
+        .iter()
+        .filter(|label| label.owner == Vertex::Node(NodeId::Start))
+        .map(|label| label_rect(label).3 + CONNECTION_LABEL_HALO)
+        .fold(start.y + start_height / 2 + RAIL_GAP, i32::max)
+}
+
 /// Empty preparation contributes only the function header. Composition connects
-/// it directly to the entry selected by the input, omitting the transition node.
+/// it directly to the first stage's entry, omitting the transition node.
 fn keep_header(scene: &mut Scene) {
     let start = Vertex::Node(NodeId::Start);
     let exit = ExitId::of(NodeId::Start);
@@ -263,17 +350,7 @@ fn place(parts: &[Scene], direct_entry: Option<usize>) -> Vec<PartPlacement> {
     let mut placements = Vec::with_capacity(parts.len());
     let mut x = MARGIN + RAIL_GAP;
     let start = parts[0].node(NodeId::Start);
-    let start_height = parts[0]
-        .parameters
-        .as_ref()
-        .map_or(start.height, |panel| panel.height.max(start.height));
-    let rail_y = parts[0]
-        .labels
-        .iter()
-        .filter(|label| label.owner == Vertex::Node(NodeId::Start))
-        .map(|label| label_rect(label).3 + CONNECTION_LABEL_HALO)
-        .fold(start.y + start_height / 2 + RAIL_GAP, i32::max);
-    let stage_y = MARGIN + rail_y + RAIL_GAP;
+    let stage_y = MARGIN + rail_y(&parts[0]) + RAIL_GAP;
     for (part, scene) in parts.iter().enumerate() {
         placements.push(PartPlacement {
             x,
@@ -306,58 +383,42 @@ mod tests {
     }
 
     #[test]
-    fn direct_inputs_share_the_receiving_stage_column() {
-        for (source, entry) in [
-            (
-                include_str!("../../../kaalang/tests/gallery/sorting/quick_sort.rs"),
-                0,
-            ),
-            (
-                r#"
-                    #[kaalang]
-                    fn example(go: u8) -> u8 {
-                        #[stage("Forward the value.")]
-                        let finish = |forward| { #[action("Use the value.")] let finish = |forward| forward; };
-                        #[stage("Begin.")]
-                        let forward = |go| {
-                            #[action("Use the input.")] let forward = |go| go;
-                        };
-                        #[stage("Finish.")]
-                        |finish| { |finish| return finish; };
-                    }
-                "#,
-                1,
-            ),
-            (
-                r#"
+    #[allow(clippy::too_many_lines)] // Checks several direct-entry layouts against the same geometry.
+    fn direct_inputs_share_the_first_stage_column() {
+        for source in [
+            include_str!("../../../kaalang/tests/gallery/sorting/quick_sort.rs"),
+            r#"
                     #[kaalang]
                     fn example(go: (), a_very_long_parameter_name: u8,
                         another_very_long_parameter_name: u8,
                         one_more_very_long_parameter_name: u8) -> u8 {
-                        #[stage("Finish.")]
-                        |go| {
+                        #[stage("Add the inputs.")]
+                        let finish = |go| {
                             #[action("Add the inputs.")]
-                            let sum = |a_very_long_parameter_name,
+                            let finish = |a_very_long_parameter_name,
                                 another_very_long_parameter_name,
                                 one_more_very_long_parameter_name|
                                 a_very_long_parameter_name + another_very_long_parameter_name
                                     + one_more_very_long_parameter_name;
-                            |sum| return sum;
+                        };
+                        #[stage("Finish.")]
+                        |finish| {
+                            |finish| return finish;
                         };
                     }
                 "#,
-                0,
-            ),
-            (
-                r#"
+            r#"
                     #[kaalang]
                     fn example(go: ()) -> ! {
+                        #[stage("Enter the repeating stage.")]
+                        let repeat = |go| {
+                            #[action("Select the repeating stage.")]
+                            let repeat = |go| {};
+                        };
                         #[stage("Repeat forever.")]
-                        |go| { #[cycle("Repeat.")] { continue; }; };
+                        |repeat| { #[cycle("Repeat.")] { continue; }; };
                     }
                 "#,
-                0,
-            ),
         ] {
             let file = syn::parse_file(source).unwrap();
             let function = kaalang_compiler::flows(&file.items).remove(0);
@@ -369,10 +430,10 @@ mod tests {
                     kaalang_render::compact_arrangement(stage);
                 }
                 let diagram = layout_staged(&model, "example", &parameters, "u8").unwrap();
-                assert_eq!(diagram.direct_entry, Some(entry));
+                assert_eq!(diagram.direct_entry, Some(0));
                 assert_eq!(diagram.parts[1].1.x, MARGIN + RAIL_GAP);
                 let (header, placement) = &diagram.parts[0];
-                let (stage, stage_placement) = &diagram.parts[entry + 1];
+                let (stage, stage_placement) = &diagram.parts[1];
                 assert_eq!(header.nodes.len(), 1);
                 assert_eq!(
                     placement.x + header.node(NodeId::Start).x,
@@ -403,7 +464,7 @@ mod tests {
                 let svg = crate::svg::serialize_staged(&diagram, &model.analysis, "example");
                 assert!(svg.contains(&format!(
                     "The flow starts directly at stage {}.",
-                    model.analysis.stages[entry].entry_alias
+                    model.analysis.stages[0].entry_alias
                 )));
             }
         }
@@ -430,6 +491,75 @@ mod tests {
             .unwrap();
         assert!(handover.lines.len() >= 4);
         assert!(placement.y + super::super::label_rect(handover).3 < rail_y);
+    }
+
+    #[test]
+    fn stage_rail_clears_preparation_captures_and_cycle_boundaries() {
+        for (name, source) in [
+            (
+                "prepared_two_line_capture",
+                include_str!("../../../kaalang/tests/stage/behavior/prepared_two_line_capture.rs"),
+            ),
+            (
+                "prepared_cycle",
+                include_str!("../../../kaalang/tests/stage/behavior/prepared_cycle.rs"),
+            ),
+        ] {
+            let file = syn::parse_file(source).unwrap();
+            let function = kaalang_compiler::flows(&file.items).remove(0);
+            let model = kaalang_compiler::build(&function).unwrap();
+            let parameters = super::super::parameter_text(source, &function.sig);
+            let diagram = layout_staged(&model, name, &parameters, "u32").unwrap();
+            let rail = diagram.return_route.as_ref().unwrap()[3].y;
+            let (preparation, placement) = &diagram.parts[0];
+            let bounds = preparation
+                .nodes
+                .iter()
+                .filter(|node| node.id != NodeId::Start)
+                .map(Scene::bounds)
+                .chain(
+                    preparation
+                        .labels
+                        .iter()
+                        .filter(|label| label.owner != Vertex::Node(NodeId::Start))
+                        .map(label_rect),
+                )
+                .chain(
+                    preparation
+                        .loop_regions
+                        .iter()
+                        .map(super::super::LoopRegion::bounds),
+                );
+            let line = [
+                Point {
+                    x: MARGIN - placement.x,
+                    y: rail - placement.y,
+                },
+                Point {
+                    x: diagram.parts.last().unwrap().1.x
+                        + diagram.parts.last().unwrap().0.node(NodeId::Start).x
+                        - placement.x,
+                    y: rail - placement.y,
+                },
+            ];
+            assert!(
+                bounds.into_iter().all(|(left, top, right, bottom)| {
+                    !route::crosses(&line, (left, top, right, bottom))
+                        && (left >= line[1].x
+                            || right <= line[0].x
+                            || bottom <= line[0].y
+                            || top >= line[0].y + CONNECTION_LABEL_HALO)
+                }),
+                "{name}"
+            );
+            if name == "prepared_two_line_capture" {
+                assert!(preparation.labels.iter().any(|label| {
+                    label.owner != Vertex::Node(NodeId::Start) && label.lines.len() >= 2
+                }));
+            } else {
+                assert!(!preparation.loop_regions.is_empty());
+            }
+        }
     }
 
     #[test]
@@ -509,10 +639,7 @@ mod tests {
                 .unwrap();
             let body_top = prefix_placement.y + Scene::bounds(first_computation).1;
             for (stage, placement) in &diagram.parts[1..] {
-                assert_eq!(
-                    placement.y + Scene::bounds(stage.node(NodeId::Start)).1,
-                    body_top
-                );
+                assert!(placement.y + Scene::bounds(stage.node(NodeId::Start)).1 <= body_top);
             }
             assert_eq!(prefix.topology.node(NodeId::Start).kind, NodeKind::Start);
             assert_eq!(prefix.captions.label(NodeId::Start).as_ref(), "kmp_search");

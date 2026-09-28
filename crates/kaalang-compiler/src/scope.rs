@@ -104,7 +104,12 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
             let permitted_self_output = shadows_entry
                 && block.parent.is_none()
                 && stage_entry.as_ref().is_some_and(|(_, allowed)| *allowed);
-            if (scope.inherited.contains_key(output) || (shadows_entry && block.parent.is_some()))
+            // Inside a cycle declaring the entry's name as its output, that
+            // name is the cycle's own output, which a root cycle may export
+            // as the stage's self-transition.
+            let nested_shadow =
+                shadows_entry && block.parent.is_some() && !scope.hidden.contains(output);
+            if (scope.inherited.contains_key(output) || nested_shadow)
                 && (block.parent.is_some() || stage_entry.is_some())
                 && !permitted_self_output
             {

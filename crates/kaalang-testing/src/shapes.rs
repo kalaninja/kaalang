@@ -325,3 +325,97 @@ pub fn question_shapes() -> Vec<String> {
         .map(|routes| looping_with(routes, QUESTIONS))
         .collect()
 }
+
+/// Staged graphs with self, forward, backward, terminal, and diverging routes.
+/// The variants put a cycle in preparation, in a stage, or neither; the last
+/// two shapes exercise alternative outputs from single and nested stage cycles.
+#[must_use]
+pub fn staged_shapes() -> Vec<String> {
+    const GRAPH: &str = r#"
+        #[kaalang]
+        fn probe(INPUT: u8) -> u8 {
+            PREPARATION
+
+            #[stage("First.")]
+            let (first, second, finish) = |first| {
+                FIRST_VALUE
+                #[choice("Choose the first route.")]
+                #[case("Stay.")]
+                #[case("Advance.")]
+                #[case("Finish.")]
+                let (stay, advance, done) = |current| match current % 3 {
+                    0 => (),
+                    1 => (),
+                    _ => (),
+                };
+                #[action("Stay at first.")]
+                let first = |stay, current| current;
+                #[action("Advance to second.")]
+                let second = |advance, current| current;
+                #[action("Finish from first.")]
+                let finish = |done, current| current;
+            };
+
+            #[stage("Second.")]
+            let (first, second, finish) = |second| {
+                #[action("Read the second entry.")]
+                let current = |second| second;
+                #[choice("Choose the second route.")]
+                #[case("Go back.")]
+                #[case("Stay.")]
+                #[case("Finish.")]
+                #[case("Diverge.")]
+                let (back, stay, done, diverge) = |current| match current % 4 {
+                    0 => (),
+                    1 => (),
+                    2 => (),
+                    _ => (),
+                };
+                #[action("Return to first.")]
+                let first = |back, current| current;
+                #[action("Stay at second.")]
+                let second = |stay, current| current;
+                #[action("Finish from second.")]
+                let finish = |done, current| current;
+                #[cycle("Diverge in second.")]
+                |diverge| { continue; };
+            };
+
+            #[stage("Return.")]
+            |finish| { |finish| return finish; };
+        }
+    "#;
+    let direct = GRAPH
+        .replace("INPUT", "first")
+        .replace("PREPARATION", "")
+        .replace(
+            "FIRST_VALUE",
+            "#[action(\"Read the first entry.\")] let current = |first| first;",
+        );
+    let prepared = GRAPH
+        .replace("INPUT", "seed")
+        .replace(
+            "PREPARATION",
+            "#[cycle(\"Prepare without a gate.\")] let first = { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
+        )
+        .replace(
+            "FIRST_VALUE",
+            "#[action(\"Read the first entry.\")] let current = |first| first;",
+        );
+    let nested = GRAPH
+        .replace("INPUT", "first")
+        .replace("PREPARATION", "")
+        .replace(
+            "FIRST_VALUE",
+            "#[cycle(\"Read or repeat.\")] let current = |first| { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
+        );
+    vec![
+        direct,
+        prepared,
+        nested,
+        include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
+            .to_owned(),
+        include_str!("../../kaalang/tests/stage/behavior/nested_stage_alternative_outputs.rs")
+            .to_owned(),
+    ]
+}

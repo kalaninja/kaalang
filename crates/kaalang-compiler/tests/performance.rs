@@ -17,7 +17,7 @@ struct Cost {
     /// a potential worst case: it exhausts the conflict-guided search.
     accepted: bool,
     /// Projection, construction and its check: the diagram decision alone. The
-    /// generated-probe bounds are stated over it, since each branching stage
+    /// generated-probe bounds are stated over it, since each branching level
     /// doubles the executions analysis enumerates, which would otherwise
     /// dominate a shape built to stress the decision.
     diagram: Duration,
@@ -27,18 +27,20 @@ fn cost(function: &ItemFn) -> Option<Cost> {
     let analyzed = kaalang_compiler::analyze(function).ok()?;
 
     let started = Instant::now();
-    let topology = kaalang_compiler::project(&analyzed, false);
-    let built = kaalang_compiler::construct(&analyzed, &topology);
+    let mut accepted = true;
+    for part in
+        std::iter::once(&analyzed).chain(analyzed.stages.iter().map(|stage| &*stage.analysis))
+    {
+        let topology = kaalang_compiler::project(part, false);
+        let built = kaalang_compiler::construct(part, &topology);
+        if let Err(error) = &built {
+            assert!(!error.to_string().contains("internal kaalang"), "{error}");
+        }
+        accepted &= built.is_ok();
+    }
     let diagram = started.elapsed();
 
-    if let Err(error) = &built {
-        assert!(!error.to_string().contains("internal kaalang"), "{error}");
-    }
-
-    Some(Cost {
-        accepted: built.is_ok(),
-        diagram,
-    })
+    Some(Cost { accepted, diagram })
 }
 
 // The corpus budgets include flows from ordinary and stress fixtures. Each flow
@@ -64,9 +66,9 @@ const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(25);
 /// about 64 ms, rounded up.
 const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
 
-// Generated probes sit outside the fixture corpus and exercise selected stages.
+// Generated probes sit outside the fixture corpus and exercise selected steps.
 /// The bound on analysis alone for a generated probe, against a measured median
-/// of about 380 ms for nine branching stages.
+/// of about 380 ms for nine branching levels.
 const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
 /// The bound on the diagram decision for a generated probe, against a worst
 /// measured figure of about 290 ms.
@@ -118,7 +120,7 @@ fn the_fixture_corpus_model_stays_inside_its_budgets() {
     );
 }
 
-/// What `#[kaalang]` pays at every call site, and the only stage a user waits
+/// What `#[kaalang]` pays at every call site, and the only step a user waits
 /// on while compiling.
 #[test]
 fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
@@ -138,7 +140,7 @@ fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
 /// Eight nested loops, a few hundred blocks, a thousand finite executions.
 ///
 /// The loop shapes reach 259 blocks but stay in the tens of summaries;
-/// `branching` is what reaches the summary counts, and eight stages is as far as
+/// `branching` is what reaches the summary counts, and eight levels is as far as
 /// it goes here because `branching(n)` enumerates 2ⁿ executions.
 #[test]
 fn generated_accepted_probes_stay_inside_their_budget() {
@@ -162,11 +164,11 @@ fn generated_accepted_probes_stay_inside_their_budget() {
 }
 
 /// Analysis on its own, below the diagram decision. `branching` is what reaches
-/// the execution counts: one more stage doubles them, and the placement check
+/// the execution counts: one more level doubles them, and the placement check
 /// weighs every execution against every other.
 #[test]
 fn a_generated_branching_probe_analyzes_inside_its_budget() {
-    let probes = [("nine branching stages", flow(&branching(9)))];
+    let probes = [("nine branching levels", flow(&branching(9)))];
     assert_pass_budget(
         "analysis",
         "probes",

@@ -1,0 +1,5 @@
+error: a sole kaalang stage with no preparation or transitions must be an ordinary flow
+ --> tests/stage/compile_fail/single_terminal_stage_without_preparation.rs:5:5
+  |
+5 |     #[stage("Increment the value.")]
+  |     ^

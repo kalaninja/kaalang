@@ -17,9 +17,9 @@ pub(super) fn dispatch(index: usize, branches: Vec<Branch>, joins: Vec<Join>) ->
 /// and those that reach its level at all. Two joins are disjoint or one
 /// contains the other, counting only executions that could reach both: a later
 /// selection inside one case may send its routes to different joins, and a
-/// repeat of an inner cycle never reaches a join outside it. Every join wraps
-/// the whole dispatch, so case order does not constrain lowering. A false
-/// answer here marks a compiler bug.
+/// repeat of an inner cycle reaches only joins it passes before its tail.
+/// Every join wraps the whole dispatch, so case order does not constrain
+/// lowering. A false answer here marks a compiler bug.
 pub(super) fn joinable(joins: &[(BTreeSet<usize>, BTreeSet<usize>)]) -> bool {
     let apart = |(taken, _): &(BTreeSet<usize>, BTreeSet<usize>),
                  (other, reaching): &(BTreeSet<usize>, BTreeSet<usize>)| {

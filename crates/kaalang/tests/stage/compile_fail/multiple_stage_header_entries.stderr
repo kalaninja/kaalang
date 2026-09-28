@@ -1,0 +1,5 @@
+error: a kaalang stage header names exactly one entry
+ --> tests/stage/compile_fail/multiple_stage_header_entries.rs:6:6
+  |
+6 |     |go, other| {
+  |      ^^^^^^^^^

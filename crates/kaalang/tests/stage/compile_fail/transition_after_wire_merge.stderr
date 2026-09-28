@@ -1,0 +1,5 @@
+error: this kaalang stage transition exports `go` before the `selected` wire merge finishes; declare the signal above the blocks that capture the merged wire
+ --> tests/stage/compile_fail/transition_after_wire_merge.rs:9:20
+  |
+9 |     let (selected, go) = |yes| (1u8, ());
+  |                    ^^

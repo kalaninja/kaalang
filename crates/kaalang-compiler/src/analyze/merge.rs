@@ -8,7 +8,7 @@ use proc_macro2::Ident;
 use syn::{Error, Result};
 
 use crate::model::{
-    BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge,
+    BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, Passes, ProducerId, WireMerge,
 };
 
 use super::frame::Frames;
@@ -73,7 +73,7 @@ pub(super) fn flow(
             let reaching = seen
                 .iter()
                 .zip(owner_routes.iter())
-                .filter(|(execution, _)| reaches(flow, execution, merge))
+                .filter(|(execution, _)| reaches(frames.passes(), execution, merge))
                 .filter_map(|(_, &route)| route)
                 .collect();
             groups[owner].push(super::choice::Group {
@@ -102,7 +102,7 @@ pub(super) fn flow(
                     .find(|&producer| flow.produces(execution, producer))
             })
             .collect::<Vec<_>>();
-        validate_adjacency(flow, executions, merge, &producers)?;
+        validate_adjacency(flow, frames.passes(), executions, merge, &producers)?;
     }
     Ok(merges)
 }
@@ -612,21 +612,19 @@ impl Compatible<'_> {
     }
 }
 
-/// Whether an execution reaches the level where a merge completes. A repeating
-/// summary stops at its loop tail, so it cannot separate the routes of a merge
-/// outside that loop: it never reaches the merge.
-fn reaches(flow: &Flow, execution: &Execution, merge: &WireMerge) -> bool {
+/// Whether an execution reaches the position where a merge completes.
+fn reaches(passes: &Passes, execution: &Execution, merge: &WireMerge) -> bool {
     if !merge.after.is_empty() {
         return merge
             .after
             .iter()
-            .any(|&block| flow.reaches(execution, block));
+            .any(|&block| passes.reaches(execution, block));
     }
     // Without a consumer the merge completes where its producers run. A
     // repeating cycle never hands over its own result.
     merge.producers.iter().any(|producer| match *producer {
         ProducerId::BlockOutput { block, .. } => {
-            flow.reaches(execution, block)
+            passes.reaches(execution, block)
                 && execution.outcome != ExecutionOutcome::Repeat { loop_index: block }
         }
         ProducerId::FlowInput(_) => false,
@@ -636,6 +634,7 @@ fn reaches(flow: &Flow, execution: &Execution, merge: &WireMerge) -> bool {
 /// Producer routes occupy one interval in authored branch order.
 fn validate_adjacency(
     flow: &Flow,
+    passes: &Passes,
     executions: &[Execution],
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
@@ -643,7 +642,7 @@ fn validate_adjacency(
     let (executions, producers): (Vec<_>, Vec<_>) = executions
         .iter()
         .zip(producers)
-        .filter(|(execution, _)| reaches(flow, execution, merge))
+        .filter(|(execution, _)| reaches(passes, execution, merge))
         .map(|(execution, producer)| (execution, *producer))
         .unzip();
     let ordered = super::branch_order(&executions, &producers);
@@ -688,12 +687,17 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
             .find(|&node| successors[node].contains(&merge_node))
         {
             let wire = flow.wire_name(&merge.wire);
-            return Err(Error::new(
-                flow.blocks[block].span,
+            let message = if flow.blocks[block].transition_target.is_some() {
+                let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+                format!(
+                    "this kaalang stage transition exports `{signal}` before the `{wire}` wire merge finishes, but it waits for a value from after that merge"
+                )
+            } else {
                 format!(
                     "this kaalang block must finish before the `{wire}` wire merge, but it waits for a value from after that merge"
-                ),
-            ));
+                )
+            };
+            return Err(Error::new(flow.blocks[block].span, message));
         }
     }
     let late = merges
@@ -706,12 +710,17 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
         .min_by_key(|&(block, _)| block);
     if let Some((block, wire)) = late {
         let wire = flow.wire_name(wire);
-        return Err(Error::new(
-            flow.blocks[block].span,
+        let message = if flow.blocks[block].transition_target.is_some() {
+            let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+            format!(
+                "this kaalang stage transition exports `{signal}` before the `{wire}` wire merge finishes; declare the signal above the blocks that capture the merged wire"
+            )
+        } else {
             format!(
                 "this kaalang block must finish before the `{wire}` wire merge; declare it above the blocks that capture the merged wire"
-            ),
-        ));
+            )
+        };
+        return Err(Error::new(flow.blocks[block].span, message));
     }
     Ok(())
 }
@@ -832,6 +841,37 @@ mod tests {
 
     fn output(block: usize, output: usize) -> ProducerId {
         ProducerId::BlockOutput { block, output }
+    }
+
+    #[test]
+    fn a_transition_waiting_on_its_own_merge_names_the_signal() {
+        // Earlier stage scope checks prevent an authored flow from reaching
+        // this dependency cycle, so pin the defensive diagnostic directly.
+        let function: ItemFn = parse_quote! {
+            fn probe(go: ()) {
+                #[action("Forward the signal.")]
+                |go| {};
+            }
+        };
+        let mut flow = crate::parse::flow(&function).unwrap();
+        flow.blocks[0].transition_target = Some(0);
+        let merge = WireMerge {
+            wire: parse_quote!(shared),
+            producers: Vec::new(),
+            before: vec![0],
+            after: vec![0],
+        };
+        let merge_node = flow.blocks.len();
+        let mut successors = vec![BTreeSet::new(); merge_node + 1];
+        successors[0].insert(merge_node);
+        successors[merge_node].insert(0);
+
+        assert_eq!(
+            super::validate_order(&flow, &[merge], &successors)
+                .unwrap_err()
+                .to_string(),
+            "this kaalang stage transition exports `go` before the `shared` wire merge finishes, but it waits for a value from after that merge"
+        );
     }
 
     #[test]
@@ -1516,7 +1556,7 @@ mod tests {
     #[test]
     fn the_index_agrees_where_it_is_the_cheaper_strategy() {
         agrees(
-            "seven branching stages",
+            "seven branching levels",
             &kaalang_testing::probes::flow(&kaalang_testing::probes::branching(7)),
         );
         agrees("two chains under a shared prefix", &split_chains(2, 4));

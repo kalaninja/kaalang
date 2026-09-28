@@ -1,0 +1,5 @@
+error: this kaalang stage route reaches the end of its body without a transition or `return`
+ --> tests/stage/compile_fail/empty_outputless_stage.rs:4:4
+  |
+4 | fn empty_outputless_stage(start: ()) {
+  |    ^^^^^^^^^^^^^^^^^^^^^^

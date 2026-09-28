@@ -13,17 +13,17 @@ fn state_name() -> Ident {
 
 /// A balanced sum uses existing enum variants without introducing type names
 /// into authored scopes. The same path constructs and matches a stage payload.
-fn variant(index: usize, count: usize, value: TokenStream2) -> TokenStream2 {
+fn variant(index: usize, count: usize, value: TokenStream2, span: Span) -> TokenStream2 {
     if count == 1 {
         return value;
     }
     let left = count.div_ceil(2);
     if index < left {
-        let value = variant(index, left, value);
-        quote!(::core::result::Result::Ok(#value))
+        let value = variant(index, left, value, span);
+        quote_spanned!(span=> ::core::result::Result::Ok(#value))
     } else {
-        let value = variant(index - left, count - left, value);
-        quote!(::core::result::Result::Err(#value))
+        let value = variant(index - left, count - left, value, span);
+        quote_spanned!(span=> ::core::result::Result::Err(#value))
     }
 }
 
@@ -57,7 +57,7 @@ pub(super) fn transition(flow: &Flow, bindings: &Bindings, index: usize) -> Toke
     } else {
         value
     };
-    let destination = variant(target, bindings.stages, value);
+    let destination = variant(target, bindings.stages, value, block.span);
     let state = state_name();
     match &flow.kind {
         FlowKind::Preparation => {
@@ -157,17 +157,20 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
     let prologue = parameters::emit(&function, &prepared);
     let state = state_name();
     let dispatch_label = dispatch_label();
-    let arms = analysis.stages.iter().enumerate().map(|(index, stage)| {
-        let entry = &stage.entry;
-        let bindings = bindings(&stage.analysis, &prepared, index);
+    let order = crate::stage::visit_order(analysis, &analysis.stages);
+    let arms = order.into_iter().map(|index| {
+        let stage_analysis = &analysis.stages[index];
+        let entry = &stage_analysis.entry;
+        let bindings = bindings(&stage_analysis.analysis, &prepared, index);
         let value = bindings.wire(entry);
-        let pattern = variant(index, prepared.stages, quote!(#value));
+        let pattern = variant(index, prepared.stages, quote!(#value), entry.span());
         let body = super::flow(
-            &stage.analysis.flow,
-            &stage.analysis.execution_plan,
+            &stage_analysis.analysis.flow,
+            &stage_analysis.analysis.execution_plan,
             &bindings,
         );
-        quote!(#pattern => { #body })
+        let arm_label = Lifetime::new("'__kaalang_stage_body", Span::mixed_site());
+        quote!(#pattern => #arm_label: { #body })
     });
     let dispatcher = quote! {
         #dispatch_label: loop {
@@ -178,7 +181,7 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
     prepared.initial_dispatch = Some((boundary, dispatcher));
     let preparation = super::flow(&analysis.flow, &analysis.execution_plan, &prepared);
     *function.block = syn::parse2(quote!({
-        #[allow(clippy::used_underscore_binding, unused_mut)]
+        #[allow(clippy::used_underscore_binding, unused_labels, unused_mut)]
         {
             #prologue
             #preparation

@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 pub(super) use kaalang_testing::shapes::looping;
 use kaalang_testing::shapes::{
     alternative_bodies, declared_domain, flat_bodies, loop_shapes, nested, question_shapes,
+    staged_shapes,
 };
 
 use super::{Arrangement, Contour, Side, place, verify};
@@ -427,6 +428,30 @@ fn generated_alternative_outputs_draw_in_order_or_are_rejected_early() {
         }
     }
     assert_eq!((drawn, rejected_earlier), (14, 50));
+}
+
+#[test]
+fn every_accepted_staged_shape_constructs_each_part() {
+    let mut accepted = 0;
+    for source in staged_shapes() {
+        let file = syn::parse_file(&source).expect("the staged shape parses");
+        let function = crate::flows(&file.items).remove(0);
+        match crate::build(&function) {
+            Ok(model) => {
+                accepted += 1;
+                for part in std::iter::once(&model).chain(&model.stages) {
+                    verify::arrangement(&part.analysis.flow, &part.topology, &part.arrangement)
+                        .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
+                }
+            }
+            Err(error) => assert!(
+                !error.to_string().contains("internal kaalang")
+                    && !error.to_string().contains("could not construct"),
+                "{source}\n{error}"
+            ),
+        }
+    }
+    assert_eq!(accepted, 5);
 }
 
 #[test]
