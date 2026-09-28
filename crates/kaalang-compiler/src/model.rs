@@ -39,7 +39,6 @@ pub struct StageAnalysis {
     pub description: String,
     pub entry: Ident,
     pub entry_alias: Ident,
-    pub outputs: Vec<Ident>,
     pub analysis: Box<Analysis>,
 }
 

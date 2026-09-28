@@ -75,21 +75,15 @@ pub(super) fn flow(
             // pass a block before reaching its cycle, so each block has its
             // own set of reaching routes.
             let mut continued = BTreeSet::new();
-            let mut reaching = BTreeMap::new();
             for (block, (branches, routes)) in branch_sets.iter().zip(routes).enumerate() {
                 if branches.len() < 2 {
                     continue;
                 }
-                let reaching = reaching
-                    .entry(block)
-                    .or_insert_with(|| {
-                        selected
-                            .iter()
-                            .filter(|(execution, _)| frames.passes().reaches(execution, block))
-                            .map(|&(_, route)| route)
-                            .collect::<BTreeMap<_, _>>()
-                    })
-                    .clone();
+                let reaching = selected
+                    .iter()
+                    .filter(|(execution, _)| frames.passes().reaches(execution, block))
+                    .map(|&(_, route)| route)
+                    .collect::<BTreeMap<_, _>>();
                 continued.insert((
                     branches.iter().copied().collect::<Vec<_>>(),
                     routes,

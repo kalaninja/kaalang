@@ -40,7 +40,7 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
         blocks: blocks(function)?,
         kind: FlowKind::Plain,
     };
-    receiver_captures(&flow, receiver(function))?;
+    receiver_captures(&flow, function.sig.receiver())?;
 
     Ok(flow)
 }
@@ -65,18 +65,6 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
             FnArg::Receiver(receiver) => Some(Ok(Ident::new("self", receiver.self_token.span()))),
         })
         .collect()
-}
-
-/// The receiver this flow declares, if it declares one.
-fn receiver(function: &ItemFn) -> Option<&Receiver> {
-    function
-        .sig
-        .inputs
-        .iter()
-        .find_map(|argument| match argument {
-            FnArg::Receiver(receiver) => Some(receiver),
-            FnArg::Typed(_) => None,
-        })
 }
 
 /// How a capture of the receiver is spelled, and the wire it names: the

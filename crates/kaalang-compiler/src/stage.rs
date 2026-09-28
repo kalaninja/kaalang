@@ -9,28 +9,7 @@ use crate::model::{
     Analysis, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, StageAnalysis,
 };
 use crate::parse::ParsedStaged;
-use crate::{analyze as local_analysis, plan, resolve, scope};
-
-fn local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Analysis> {
-    let (executions, convergence_groups, merges, passes) = if check_usage {
-        local_analysis::flow(&flow)?
-    } else {
-        local_analysis::flow_without_usage(&flow)?
-    };
-    let execution_plan = plan::flow(&flow, &executions, &merges, passes);
-    Ok(Analysis {
-        name: function.sig.ident.clone(),
-        parameters: function.sig.inputs.iter().cloned().collect(),
-        return_type: function.sig.output.clone(),
-        flow,
-        execution_plan,
-        executions,
-        convergence_groups,
-        merges,
-        stages: Vec::new(),
-        common_wires: Vec::new(),
-    })
-}
+use crate::{analyze_local, plan, resolve, scope};
 
 fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
     flow.flow_inputs.contains(name)
@@ -160,7 +139,7 @@ fn mutable_outer(function: &ItemFn, preparation: &Flow, name: &Ident) -> bool {
 pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Analysis> {
     scope::resolve(&mut parsed.preparation)?;
     resolve::flow(&parsed.preparation)?;
-    let preliminary = local(function, parsed.preparation, false)?;
+    let preliminary = analyze_local(function, parsed.preparation, false)?;
     let (outer, _) = preparation_scope(&preliminary.flow, &preliminary.execution_plan);
     let mut preparation = preliminary.flow;
     let completed = preliminary
@@ -247,12 +226,11 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
                 .cloned(),
         );
         stage_spans.push(stage.span);
-        let analysis = local(function, stage.flow, true)?;
+        let analysis = analyze_local(function, stage.flow, true)?;
         stages.push(StageAnalysis {
             description: stage.description,
             entry: stage.entry,
             entry_alias: stage.entry_alias,
-            outputs: stage.outputs,
             analysis: Box::new(analysis),
         });
     }
@@ -273,7 +251,7 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
         }
     }
     resolve::flow(&preparation)?;
-    let mut preparation = local(function, preparation, true)?;
+    let mut preparation = analyze_local(function, preparation, true)?;
     let order = visit_order(&preparation, &stages);
     if let Some(index) = (0..stages.len()).find(|stage| !order.contains(stage)) {
         return Err(Error::new(

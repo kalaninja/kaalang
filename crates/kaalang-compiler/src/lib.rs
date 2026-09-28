@@ -133,7 +133,15 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
-    let (executions, convergence_groups, merges, passes) = analyze::flow(&flow)?;
+    analyze_local(function, flow, true)
+}
+
+fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Analysis> {
+    let (executions, convergence_groups, merges, passes) = if check_usage {
+        analyze::flow(&flow)?
+    } else {
+        analyze::flow_without_usage(&flow)?
+    };
     let execution_plan = plan::flow(&flow, &executions, &merges, passes);
 
     Ok(Analysis {

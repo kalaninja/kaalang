@@ -7,7 +7,7 @@ use syn::ext::IdentExt;
 use syn::{Error, Expr, FnArg, ItemFn, Pat, Result, Stmt, parse_quote_spanned, spanned::Spanned};
 
 use super::{
-    block_closure, block_outputs, block_statement, description, end, flow_inputs, receiver,
+    block_closure, block_outputs, block_statement, description, end, flow_inputs,
     receiver_captures, statements, structural_block, ungrouped,
 };
 use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
@@ -149,7 +149,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
         blocks: preparation,
         kind: FlowKind::Preparation,
     };
-    receiver_captures(&preparation, receiver(function))?;
+    receiver_captures(&preparation, function.sig.receiver())?;
 
     let mut returns = 0;
     let mut stages = Vec::new();
@@ -219,7 +219,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
                 self_output: declaration.outputs.contains(&declaration.entry),
             },
         };
-        receiver_captures(&flow, receiver(function))?;
+        receiver_captures(&flow, function.sig.receiver())?;
         stages.push(ParsedStage {
             description: declaration.description,
             entry: declaration.entry,
