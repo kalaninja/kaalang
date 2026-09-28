@@ -313,6 +313,28 @@ mod tests {
     }
 
     #[test]
+    fn terminal_stage_must_be_declared_last() {
+        let function = crate::tests::fixture(
+            include_str!("../../kaalang/tests/stage/behavior/is_even.rs"),
+            "is_even",
+        );
+        for position in 1..=3 {
+            let mut function = function.clone();
+            let terminal = function.block.stmts.remove(3);
+            function.block.stmts.insert(position, terminal);
+            let result = crate::analyze(&function);
+            if position < 3 {
+                assert_eq!(
+                    result.err().unwrap().to_string(),
+                    "a terminal kaalang stage must be declared last"
+                );
+            } else {
+                result.expect("a final terminal stage is valid");
+            }
+        }
+    }
+
+    #[test]
     fn rejects_invalid_stage_interfaces_and_routes() {
         let cases = [
             (
@@ -328,7 +350,7 @@ mod tests {
                 "more than one stage signal",
             ),
             (
-                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Go.\")] |go| { return; }; #[stage(\"Lost.\")] let lost = |lost| { #[action(\"Again.\")] let lost = |lost| lost; }; }",
+                "fn f() { #[action(\"Go.\")] let go = || (); #[stage(\"Lost.\")] let lost = |lost| { #[action(\"Again.\")] let lost = |lost| lost; }; #[stage(\"Go.\")] |go| { return; }; }",
                 "unreachable",
             ),
             (

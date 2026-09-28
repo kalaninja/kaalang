@@ -73,7 +73,7 @@ A flow containing stages has two consecutive sections:
 
 1. **Preparation:** ordinary kaalang blocks that execute once, establish shared
    data, perform initial work, and select the initial stage.
-2. **Stages:** the stage declarations, in their authored diagram order.
+2. **Stages:** the stage declarations, in authored order.
 
 The first stage declaration ends preparation. Every later root statement must
 also be a stage declaration. Preparation follows the ordinary source-order,
@@ -93,7 +93,8 @@ identifier names the received value as an immutable wire, available to explicit
 inner captures for that visit. Entering the body counts as use of the signal
 even when no inner block captures its value again. Stage declarations are
 permitted directly in the root flow body. Their order determines their diagram
-positions; transitions determine their execution order.
+positions; transitions determine their execution order. The terminal stage, when
+present, must be declared last.
 
 The receiver `self` cannot name a stage entry. It remains available as common
 outer data under the ordinary receiver capture rules. To transfer an owned
@@ -300,9 +301,10 @@ function, and Rust checks its value against the function's declared result type.
 
 In a staged flow the structural return belongs to this terminal stage.
 Completing preparation and nonterminal-stage routes hand control onward through
-signals. The terminal stage may appear anywhere in the stage section's
-declaration order. An empty stage is invalid. A flow that diverges through
-transitions or cycles may omit the terminal stage.
+signals. The author must declare the terminal stage last in the stage section.
+Declaring another stage after it is a compile-time error. An empty stage is
+invalid. A flow that diverges through transitions or cycles may omit the
+terminal stage.
 
 A structural return remains invalid inside a cycle. A cycle completes by
 exporting one of its declared outputs, after which the containing sequence
@@ -614,7 +616,8 @@ and unreachable executable blocks.
 
 Validate one entry per stage, one selected signal per completing nonterminal
 route, the terminal-stage rules, and producer usage across the reachable model.
-The header's position imposes diagram order; signal connections determine
+Reject a terminal stage that is not the last declaration. The header's position
+imposes diagram order and back-transition markers; signal connections determine
 inter-stage reachability. Reject `&mut` captures of a stage's received entry,
 including through nested cycles. Rust checks type agreement of all values
 targeting each stage, data operations and captures in generated scopes, and
@@ -843,8 +846,9 @@ A **part** is the diagram area assigned to preparation or one stage, with its
 own horizontal range. Preparation is the ordinary flow in the leftmost part: the
 start capsule and its parameter panel lead into the authored blocks, which
 compute the initial stage signal. It has no stage header. Stages occupy parts to
-its right from left to right in declaration order. Each part is sized for its
-local arrangement, labels, and cycle boundaries.
+its right from left to right in declaration order. The terminal stage is
+declared last, so its part is rightmost. Each part is sized for its local
+arrangement, labels, and cycle boundaries.
 
 The initial flow starts above the stage headers and runs directly into its
 authored blocks, without a synthetic preparation header. The common upper rail
@@ -930,8 +934,9 @@ Mark the two ends of every backward or self-transition:
 An entry receives one marker if at least one backward or self-transition targets
 it. Each outgoing transition is classified independently: a forward transition
 to a marked entry retains an unmarked tip. The classification depends on stage
-declaration order, including transitions to a terminal stage placed earlier in
-the section. It is the same in expanded and collapsed cycle views.
+declaration order. Transitions to the terminal stage are always forward because
+it is declared last. The classification is the same in expanded and collapsed
+cycle views.
 
 For example, with stages `check`, `update`, and `finish` in that order:
 
@@ -1105,7 +1110,7 @@ that same wire. The `count` output chooses another visit, while `finish` selects
 the terminal stage. The header's signal activates all blocks participating in
 that visit; each inner block captures its own data and branch dependencies.
 
-### 8.2 Mutual transitions and a terminal stage in the middle
+### 8.2 Mutual transitions followed by a terminal stage
 
 ```rust
 #[kaalang]
@@ -1129,11 +1134,6 @@ fn is_even(mut remaining: usize) -> bool {
         };
     };
 
-    #[stage("Return the parity.")]
-    |finish| {
-        |result| return result;
-    };
-
     #[stage("An odd number of steps has been taken.")]
     let (finish, even) = |odd| {
         #[question("Have all steps been taken?")]
@@ -1149,12 +1149,18 @@ fn is_even(mut remaining: usize) -> bool {
             *remaining -= 1;
         };
     };
+
+    #[stage("Return the parity.")]
+    |finish| {
+        |result| return result;
+    };
 }
 ```
 
 The `remaining` and `result` wires outlive the stage visits. Each producing
-stage selects `finish` on its own completing route. The terminal stage stays
-between `even` and `odd` in the diagram.
+stage selects `finish` on its own completing route. The declarations and diagram
+use the same order: `even`, `odd`, `finish`. Both transitions to `finish` are
+forward; the transition from `odd` to `even` is backward.
 
 ### 8.3 A cycle inside a stage
 
@@ -1428,11 +1434,11 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A
   stage has one entry and declared alternative outputs, which require `Copy`
   only in a `const fn`. A terminal stage contains the flow's sole return and
-  declares no outputs; a wholly diverging stage also declares none. Entry values
-  are visible to inner captures as immutable wires, and stage output bindings
-  reject `mut`. A declared local self-transition output may shadow only its own
-  stage entry, with the distinct producer identities and resolution order of
-  §3.2.
+  declares no outputs and must be declared last; a wholly diverging stage also
+  declares none. Entry values are visible to inner captures as immutable wires,
+  and stage output bindings reject `mut`. A declared local self-transition
+  output may shadow only its own stage entry, with the distinct producer
+  identities and resolution order of §3.2.
 - **RFC 0001 §§4.5–4.6 and §8:** replace the cycle's complete data-capture
   header with an optional single gate and inherited outer data scope. The gate
   imposes no trait bound or Rust value operation and remains available to inner
@@ -1484,18 +1490,18 @@ those in flows without stages. Earlier accepted RFC texts remain unchanged.
   silhouette beside the ordinary preparation flow, with aligned stage headers
   and addresses, an upper entry rail, and a lower return contour. Outer wires
   appear in their consumers' capture labels, while existing control connections
-  carry the dependency routes. A terminal stage keeps its declaration position
-  and its end stays below all other vertices of that local part. Cycles have one
-  result exit per declared alternative output; their continue supplies the
-  single iteration tail. Collapsed cycles retain those alternative exits. In
-  **§4.8 and §6**, replace the collapsed cycle's authored capture list with the
-  derived external-wire input list defined by §7.5 here, including its gate and
-  transitive inner uses. That list displays producer mutability rather than
-  per-block capture forms and shares an adjacent hand-over or shared merge label
-  when the displayed names match regardless of order. The expanded cycle retains
-  the unlabeled structural entry and the boundary without a repeated full input
-  list; its alternative result interfaces replace the former single-result
-  interface.
+  carry the dependency routes. The terminal stage is declared last and occupies
+  the rightmost part; its end stays below all other vertices of that local part.
+  Cycles have one result exit per declared alternative output; their continue
+  supplies the single iteration tail. Collapsed cycles retain those alternative
+  exits. In **§4.8 and §6**, replace the collapsed cycle's authored capture list
+  with the derived external-wire input list defined by §7.5 here, including its
+  gate and transitive inner uses. That list displays producer mutability rather
+  than per-block capture forms and shares an adjacent hand-over or shared merge
+  label when the displayed names match regardless of order. The expanded cycle
+  retains the unlabeled structural entry and the boundary without a repeated
+  full input list; its alternative result interfaces replace the former
+  single-result interface.
 - **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
   symbolic stage links and the silhouette geometry defined in §7.4 here.
   Expanded and collapsed cycle checks include alternative result exits and
@@ -1607,12 +1613,12 @@ These scenarios define required language behavior and visual representation.
 | Owned cycle-local value selected for export                                                          | Move that value out and drop unexported locals at their ordinary scope exits.                                                             |
 | Cycle output borrows a departing body-local owner                                                    | Let Rust reject the escaping reference.                                                                                                   |
 | Cycles in a flow without stages                                                                      | Apply the same unified scope, output, continue, and diagram rules.                                                                        |
-| Terminal stage in the middle of the declarations                                                     | Return from that stage and preserve diagram order.                                                                                        |
+| Terminal stage before another stage                                                                  | Reject; the author must declare the terminal stage last.                                                                                  |
 | Stage entry and outgoing transition                                                                  | Use the case outline for entry and its vertical mirror for transition, with matching destination names.                                   |
 | Position of a transition node                                                                        | Align all addresses below the local bodies, including preparation; preserve branch order.                                                 |
 | Backward or self-transition                                                                          | Mark the transition tip and the destination entry tip.                                                                                    |
 | Forward transition to an entry also targeted backward                                                | Keep that transition unmarked and mark the shared destination entry once.                                                                 |
-| Transition to an earlier terminal stage                                                              | Apply the same backward marker rule.                                                                                                      |
+| Transition to the terminal stage                                                                     | Draw it as a forward transition to the last declared stage, without a backward marker.                                                    |
 | Several stages with identical descriptions                                                           | Keep their authored descriptions; resolve destinations by signal identity without adding visible signal captions.                         |
 | Stage captures and collapsed-cycle inputs                                                            | Show outer stage wires at their capturing blocks and cycle data in derived input labels, preserving control order.                        |
 | Expanded and collapsed cycle views                                                                   | Preserve alternative output order, continue behavior, and surrounding stage links and markers.                                            |

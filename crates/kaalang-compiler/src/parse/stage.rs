@@ -172,6 +172,12 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
                 "a terminal kaalang stage declares no transition outputs",
             ));
         }
+        if authored_returns > 0 && stages.len() + 1 != targets.len() {
+            return Err(Error::new(
+                declaration.span,
+                "a terminal kaalang stage must be declared last",
+            ));
+        }
         if authored_returns == 0 {
             for (output, name) in declaration.outputs.iter().enumerate() {
                 if !blocks

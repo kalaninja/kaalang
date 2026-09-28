@@ -21,11 +21,6 @@ fn is_even(mut remaining: usize) -> bool {
         };
     };
 
-    #[stage("Return the parity.")]
-    |finish| {
-        |result| return result;
-    };
-
     #[stage("An odd number of steps has been taken.")]
     let (finish, even) = |odd| {
         #[question("Have all steps been taken?")]
@@ -41,10 +36,15 @@ fn is_even(mut remaining: usize) -> bool {
             *remaining -= 1;
         };
     };
+
+    #[stage("Return the parity.")]
+    |finish| {
+        |result| return result;
+    };
 }
 
 #[test]
-fn alternates_visits_with_a_terminal_stage_in_the_middle() {
+fn alternates_visits_before_the_terminal_stage() {
     for count in 0..8 {
         assert_eq!(is_even(count), count % 2 == 0);
     }

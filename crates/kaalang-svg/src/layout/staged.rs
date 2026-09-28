@@ -316,13 +316,14 @@ mod tests {
                 r#"
                     #[kaalang]
                     fn example(go: u8) -> u8 {
+                        #[stage("Forward the value.")]
+                        let finish = |forward| { #[action("Use the value.")] let finish = |forward| forward; };
+                        #[stage("Begin.")]
+                        let forward = |go| {
+                            #[action("Use the input.")] let forward = |go| go;
+                        };
                         #[stage("Finish.")]
                         |finish| { |finish| return finish; };
-                        #[stage("Begin.")]
-                        let finish = |go| {
-                            #[action("Use the input.")]
-                            let finish = |go| go;
-                        };
                     }
                 "#,
                 1,
