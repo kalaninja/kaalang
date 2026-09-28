@@ -1,4 +1,4 @@
-//! Keeps silhouette addresses below every local route, including divergent cycles.
+//! Keeps stage transitions below every local route, including divergent cycles.
 
 use std::collections::BTreeSet;
 

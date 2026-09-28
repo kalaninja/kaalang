@@ -19,7 +19,7 @@ pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: 
         escape(flow_name),
         escape(&staged_description(scene, root)),
     );
-    svg.push_str("<defs><marker id=\"stage-return-arrow\" viewBox=\"0 0 10 10\" refX=\"10\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"#1f2937\"/></marker></defs>\n<g class=\"silhouette-connections\" fill=\"none\" stroke=\"#1f2937\" stroke-width=\"1.75\">\n");
+    svg.push_str("<defs><marker id=\"stage-return-arrow\" viewBox=\"0 0 10 10\" refX=\"10\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"#1f2937\"/></marker></defs>\n<g class=\"stage-connections\" fill=\"none\" stroke=\"#1f2937\" stroke-width=\"1.75\">\n");
     for points in &scene.connections {
         write_route(&mut svg, points, false);
     }

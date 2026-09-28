@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="864" height="626" viewBox="0 0 864 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for forward</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: forward&lt;T&gt; with parameters go: T. Stage go. Cycles: Complete on the first iteration. with inputs go and outputs finish. Nodes: Stage: Forward the incoming value.; Action: Provide the incoming value. capturing go handing over finish; Transition: Return the value.. Connections: Stage: Forward the incoming value. to Action: Provide the incoming value.; Action: Provide the incoming value. to Transition: Return the value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the value.; End: T capturing finish. Connections: Stage: Return the value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
-<g class="silhouette-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 260 114 L 260 150 "/>
 <path d="M 260 150 L 260 186 "/>
 <path d="M 260 534 L 260 602 "/>

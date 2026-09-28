@@ -1,4 +1,4 @@
-//! A silhouette's addresses share one final row; branch routes decide their columns.
+//! Stage transitions share one final row; branch routes decide their columns.
 
 use std::collections::BTreeSet;
 
@@ -61,7 +61,7 @@ mod tests {
     use crate::topology::NodeId;
 
     #[test]
-    fn addresses_share_the_final_row_in_branch_order_in_both_constructions() {
+    fn transitions_share_the_final_row_in_branch_order_in_both_constructions() {
         let function = crate::tests::fixture(
             include_str!("../../../kaalang/tests/stage/behavior/count_to.rs"),
             "count_to",

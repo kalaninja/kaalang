@@ -23,9 +23,9 @@ Stages share the outer data scope established by preparation; their internal
 blocks capture the entry value and other data they use.
 
 This proposal defines stage syntax, execution, validation, Rust lowering, and
-silhouette diagrams. It builds on the cycle, capture, and convergence rules in
-[RFC 0007](0007-language-refinements.md). Those language refinements apply
-independently of stages; this RFC defines how stages use them.
+diagrams for staged flows. It builds on the cycle, capture, and convergence
+rules in [RFC 0007](0007-language-refinements.md). Those language refinements
+apply independently of stages; this RFC defines how stages use them.
 
 A transition's name selects its destination, and its value becomes that stage's
 input. Ordinary functions transfer these values under Rust's ownership and
@@ -562,10 +562,9 @@ local plans and transition graph.
 
 ## 7. Visual representation
 
-Staged flows use the DRAKON silhouette: a common upper rail connects branch
-headers, transition addresses end their routes on a common lower row, and a
-lower rail returns along the left edge of the whole diagram to the upper rail.
-See the [DRAKON silhouette examples](https://drakon.tech/en/drakon-syntax).
+In a staged flow's diagram, a common upper rail connects stage entries,
+transition nodes end their routes on a common lower row, and a lower rail
+returns along the left edge of the whole diagram to the upper rail.
 
 A **part** is the diagram area assigned to preparation or one stage, with its
 own horizontal range. Preparation is the ordinary flow in the leftmost part: the
@@ -579,13 +578,13 @@ The initial flow starts above the stage headers and runs directly into its
 authored blocks, without a synthetic preparation header. The common upper rail
 starts at the initial flow's axis below the start capsule and connects all stage
 headers, which share one row. Removing the preparation header leaves a straight
-vertical connection in its place. The rail is a symbolic link between addresses
-and stage entries; it does not execute preparation again or add an executable
-choice or entry to the middle of a stage.
+vertical connection in its place. The rail is a symbolic link between transition
+nodes and stage entries; it does not execute preparation again or add an
+executable choice or entry to the middle of a stage.
 
 When preparation contains no authored blocks, the input selects one stage
-directly. Omit the preparation part and its synthetic transition address. Place
-the start capsule and parameter panel above the receiving stage, with a straight
+directly. Omit the preparation part and its synthetic transition node. Place the
+start capsule and parameter panel above the receiving stage, with a straight
 connection through the upper rail to that stage's entry. Stages retain their
 declaration order even when the input selects a later stage. The first declared
 stage occupies the leftmost part; the empty preparation reserves no width.
@@ -617,7 +616,8 @@ after all work on that route. All visible transitions, including nonempty
 preparation's initial transitions, share one row below every part's body,
 including expanded cycle boundaries and indefinitely repeating routes. Within a
 part, transition columns follow local branch routing, independently of the order
-of names in an output declaration. Distinct addresses occupy distinct columns.
+of names in an output declaration. Distinct transition nodes occupy distinct
+columns.
 
 The transition node mirrors the stage entry vertically: a rectangular text body
 with an upper triangular point. The incoming control connection meets that upper
@@ -682,12 +682,12 @@ part, branch order, wire routing, and merges follow the ordinary visual
 language; cycles use the projection in
 [RFC 0007 §6.1](0007-language-refinements.md#61-cycles-and-continue).
 
-Each address's flat bottom connects vertically to a common lower rail, including
-the initial addresses in preparation. A return line rises from that rail outside
-the leftmost part, reaches the upper rail, and ends with a right-pointing arrow
-at the leftmost part's entry axis. The target name on the address selects the
-receiving stage. These contour segments carry no wire captions and create no new
-data dependencies.
+Each transition node's flat bottom connects vertically to a common lower rail,
+including the initial transitions in preparation. A return line rises from that
+rail outside the leftmost part, reaches the upper rail, and ends with a
+right-pointing arrow at the leftmost part's entry axis. The target name on the
+transition node selects the receiving stage. These contour segments carry no
+wire captions and create no new data dependencies.
 
 Check and arrange preparation and stages locally, then compose their verified
 arrangements with preparation on the left and stages to its right in declaration
@@ -700,11 +700,11 @@ The upper rail clears the measured start node, parameter panel, and outgoing
 wire labels, including their text halo. Check the composed rails against each
 part's nodes, labels, parameter panel, and cycle boundaries after placement.
 
-The shared topology keeps preparation's ordinary start and projects only stage
-entries as branch headers. It orders all other local sinks before each
-transition. Construction places each part's transitions on one final rank, and
-the common arrangement verifier checks their row and distinct columns. The
-fallback construction treats the addresses as one row event, taking their
+The shared topology keeps preparation's ordinary start; only stages receive
+entry nodes. It orders all other local sinks before each transition.
+Construction places each part's transitions on one final rank, and the common
+arrangement verifier checks their row and distinct columns. The fallback
+construction treats the transition nodes as one row event, taking their
 horizontal order from the incoming routes. Compaction must preserve these
 constraints.
 
@@ -719,7 +719,7 @@ a header-only projection. Its sole transition is represented by the direct
 connection to the receiving stage. Place that header above the stages and check
 the composed rails and bounds normally. This presentation does not change the
 shared stage graph or its local stage arrangements. If no stage has a transition
-address, omit the lower return rail.
+node, omit the lower return rail.
 
 Local rows use the common measured node height specified by
 [RFC 0007 §6.3](0007-language-refinements.md#63-aligning-node-heights).
@@ -729,13 +729,13 @@ rails, and the return line outside the leftmost part when computing the canvas.
 Horizontal spacing between parts follows their body bounds. The parameter panel
 sits above the stage section and may extend over its horizontal range; it
 enlarges the canvas without reserving an extra column beside preparation. The
-contour stays outside the local bodies except at the header and address ports
-and the upper rail's junction below start. SVG serialization draws the measured
-geometry with one shared background; local part backgrounds must not hide the
-contour.
+contour stays outside the local bodies except at the entry and transition node
+ports and the upper rail's junction below start. SVG serialization draws the
+measured geometry with one shared background; local part backgrounds must not
+hide the contour.
 
 There is one end node in the terminal stage, below all other vertices of that
-local part. It is not stretched down to the address row or connected to the
+local part. It is not stretched down to the transition row or connected to the
 return contour. That stage keeps its authored horizontal position. A fully
 diverging flow has no end node.
 
@@ -1068,7 +1068,7 @@ fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
 and
 [prefix-table diagram](../../crates/kaalang/tests/gallery/kmp_search/prefix_table.svg).
 
-[![KMP search silhouette](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)
+[![KMP search staged flow](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)
 
 The `compare` and `retry` entries carry unit signals. `step` carries the new
 matched length: comparison supplies `matched + 1`, while fallback at zero
@@ -1113,14 +1113,14 @@ refinements are specified separately in
   merges, and convergence restrictions remain. Stage signal links can cross
   declaration order and form cycles between visits.
 - **RFC 0002 §§3–8:** use case-shaped stage entries and mirrored transition
-  nodes with destination labels and backward/self markers. Draw them as one
-  silhouette beside the ordinary preparation flow, with aligned stage headers
-  and addresses, an upper entry rail, and a lower return contour. Outer wires
-  appear in their consumers' capture labels, while existing control connections
-  carry the dependency routes. The terminal stage is declared last and occupies
-  the rightmost part; its end stays below all other vertices of that local part.
+  nodes with destination labels and backward/self markers. Draw stages beside
+  the ordinary preparation flow, with aligned stage entries and transition
+  nodes, an upper entry rail, and a lower return contour. Outer wires appear in
+  their consumers' capture labels, while existing control connections carry the
+  dependency routes. The terminal stage is declared last and occupies the
+  rightmost part; its end stays below all other vertices of that local part.
 - **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
-  symbolic stage links and the silhouette geometry defined in §7.4 here.
+  symbolic stage links and the diagram geometry defined in §7.4 here.
 - **RFC 0004 §§1–2 and §5:** retain shared data around the generated stage
   dispatcher, carry each selected entry in its enum variant, and emit the
   terminal return directly from its arm. Each arm binds its received entry
@@ -1134,8 +1134,8 @@ Concrete compiler and renderer types remain implementation choices.
 
 ## 10. Acceptance scenarios
 
-These scenarios define required stage behavior and silhouette representation.
-Cycle and general language scenarios are listed in
+These scenarios define required stage behavior and visual representation. Cycle
+and general language scenarios are listed in
 [RFC 0007 §8](0007-language-refinements.md#8-acceptance-scenarios).
 
 | Scenario                                                                         | Required result                                                                                                                           |
@@ -1174,7 +1174,7 @@ Cycle and general language scenarios are listed in
 | Unit signal remains inside a cycle without export                                | Keep it local; it does not select a stage.                                                                                                |
 | Terminal stage before another stage                                              | Reject; the author must declare the terminal stage last.                                                                                  |
 | Stage entry and outgoing transition                                              | Use the case outline for entry and its vertical mirror for transition, with matching destination names.                                   |
-| Position of a transition node                                                    | Align all addresses below the local bodies, including preparation; preserve branch order.                                                 |
+| Position of a transition node                                                    | Align all transition nodes below the local bodies, including preparation; preserve branch order.                                          |
 | Backward or self-transition                                                      | Mark the transition tip and the destination entry tip.                                                                                    |
 | Forward transition to an entry also targeted backward                            | Keep that transition unmarked and mark the shared destination entry once.                                                                 |
 | Transition to the terminal stage                                                 | Draw it as a forward transition to the last declared stage, without a backward marker.                                                    |
@@ -1200,5 +1200,5 @@ Cycle and general language scenarios are listed in
 | Mutable local self-transition producer                                           | Allow mutable captures of the new local wire; exporting it creates an immutable entry for the next visit.                                 |
 | Same-named local alternatives after entry shadowing                              | Apply normal merge ordering to the local producers; never fall back to the incoming entry on a sibling branch.                            |
 | Stage whose every route diverges in a nested cycle                               | Accept with no declared outputs, transition node, or terminal return.                                                                     |
-| Stage entry row and silhouette contour                                           | Keep preparation on the left without a stage header; return transitions to the stage entry rail without entering preparation again.       |
-| Empty preparation                                                                | Omit its column and initial address; place the function header above the receiving stage without reordering stages.                       |
+| Stage entry row and stage return contour                                         | Keep preparation on the left without a stage header; return transitions to the stage entry rail without entering preparation again.       |
+| Empty preparation                                                                | Omit its column and initial transition node; place the function header above the receiving stage without reordering stages.               |

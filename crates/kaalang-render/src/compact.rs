@@ -271,7 +271,7 @@ mod tests {
     use kaalang_testing::corpus::flow_named as fixture;
 
     #[test]
-    fn silhouette_addresses_keep_their_final_row_through_compaction() {
+    fn stage_transitions_keep_their_final_row_through_compaction() {
         use kaalang_compiler::topology::NodeKind;
 
         let function = fixture(
@@ -282,27 +282,27 @@ mod tests {
         let mut stages = std::mem::take(&mut model.stages);
         for part in std::iter::once(&mut model).chain(stages.iter_mut()) {
             compact_arrangement(part);
-            let addresses = part
+            let transitions = part
                 .topology
                 .nodes
                 .iter()
                 .filter(|node| node.kind == NodeKind::Transition)
                 .map(|node| Vertex::Node(node.id))
                 .collect::<Vec<_>>();
-            let Some(first) = addresses.first() else {
+            let Some(first) = transitions.first() else {
                 continue;
             };
             let row = part.arrangement.rank[first];
             assert!(
-                addresses
+                transitions
                     .iter()
-                    .all(|address| part.arrangement.rank[address] == row)
+                    .all(|transition| part.arrangement.rank[transition] == row)
             );
             assert!(
                 part.topology
                     .vertices
                     .iter()
-                    .filter(|vertex| !addresses.contains(vertex))
+                    .filter(|vertex| !transitions.contains(vertex))
                     .all(|vertex| part.arrangement.rank[vertex] < row)
             );
             let mut broken = part.arrangement.clone();

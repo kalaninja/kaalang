@@ -143,7 +143,8 @@ the details.
 ## Block kinds
 
 FizzBuzz uses `choice` and `action`. The other kinds let a flow ask a yes/no
-question, call an existing function, or repeat a sequence:
+question, call an existing function, repeat a sequence, or organize work into
+named stages:
 
 | Kind       | Role in a flow                                                               |
 | ---------- | ---------------------------------------------------------------------------- |
@@ -152,6 +153,7 @@ question, call an existing function, or repeat a sequence:
 | `question` | Select one of two branch outputs using a boolean expression.                 |
 | `choice`   | Select one output per visit from the cases of a Rust `match`.                |
 | `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
+| `stage`    | Group blocks into a named step selected by an incoming signal.               |
 | `continue` | Start the next iteration of the directly containing cycle.                   |
 | `return`   | Complete the root flow and hand back its result.                             |
 
@@ -164,16 +166,13 @@ which then becomes available after the cycle. In the diagram, `continue` routes
 meet at the cycle's back edge, completing routes leave through the cycle
 boundary, and `return` reaches the flow end.
 
-Flows with stages are defined in [RFC 0006](docs/rfcs/0006-stages.md) and drawn
-as [silhouettes](docs/rfcs/0006-stages.md#7-visual-representation). See the
-executable [KMP search example](crates/kaalang/tests/gallery/kmp_search/mod.rs).
-
 The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) and its proposed
-[refinements](docs/rfcs/0007-language-refinements.md) define each kind; the
+[refinements](docs/rfcs/0007-language-refinements.md) define the ordinary
+blocks; the
 [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds) defines
-its representation.
+their representation. [Stages](#stages) add named transitions between sequences.
 
-## Putting it together: binary search
+### Putting it together: binary search
 
 Searching a sorted slice adds state and repetition. Each iteration checks
 whether any candidates remain, compares the middle value with the target, and
@@ -260,6 +259,157 @@ cycles, [quicksort](crates/kaalang/tests/gallery/sorting/quick_sort.rs), with
 stages for in-place partitioning and recursion, and
 [KMP search](crates/kaalang/tests/gallery/kmp_search/mod.rs), with stages for
 comparison, advancement, and prefix fallback.
+
+## Stages
+
+A **stage** groups kaalang blocks into a named step. The flow enters one stage
+at a time through its incoming signal. When a stage completes, its selected
+output names the next stage and carries that stage's input value; a terminal
+stage returns from the flow. Preparation runs once, and its data can be shared
+across stage visits.
+
+Stages are syntactic and graphical sugar for a state machine written with a
+cycle, a choice, and explicit state. The compiler generates the state and
+dispatch loop. The diagram gives each stage its own area and labels transitions
+with their destinations.
+
+This empty state machine only follows `First → Second → Finish`. With stages:
+
+[![State machine with stages](crates/kaalang/tests/stage/behavior/state_machine.svg)](crates/kaalang/tests/stage/behavior/state_machine.svg)
+
+[Source](crates/kaalang/tests/stage/behavior/state_machine.rs)
+
+Each stage passes control to the next through a named transition. The final
+stage returns from the flow.
+
+Without stages, the diagram shows the cycle and the choice that selects the
+current state:
+
+[![State machine with an explicit dispatcher](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)
+
+[Source](crates/kaalang/tests/stage/behavior/state_machine_without_stages.rs)
+
+After each state update, control returns to the choice. Selecting `Finish`
+leaves the cycle and reaches the return. Both versions follow the same path.
+
+Both examples are executable fixtures. See [RFC 0006](docs/rfcs/0006-stages.md)
+for the stage rules and visual representation.
+
+### Stages in practice: quicksort
+
+Quicksort sorts a slice in place. Its stages check whether work remains,
+partition the range around a pivot, sort the smaller group recursively, and
+finish:
+
+```rust
+use core::cmp::Ordering;
+
+use kaalang::kaalang;
+
+#[kaalang]
+pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
+    #[stage("Check the range.")]
+    let (partition, finish) = |values| {
+        #[question("Are there at least two values?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (split, finish) = |&values| values.len() > 1;
+
+        #[action("Take the unsorted range.")]
+        let partition = |split, values| values;
+    };
+
+    #[stage("Partition the range.")]
+    let recur = |partition| {
+        #[action("Choose the middle value as the pivot; set it aside at the end.")]
+        let (mut range, mut lower, mut cursor, mut upper, pivot) = |partition| {
+            let pivot = partition.len() - 1;
+            partition.swap(partition.len() / 2, pivot);
+            (partition, 0, 0, pivot, pivot)
+        };
+
+        #[cycle("Group the other values around the pivot.")]
+        let classified = {
+            #[question("Are any values unclassified?")]
+            #[yes("YES")]
+            #[no("NO")]
+            let (select, classified) = |cursor, upper| cursor < upper;
+
+            #[action("Select the first unclassified value.")]
+            let value = |select, &range, cursor| &range[cursor];
+
+            #[choice("How does this value compare with the pivot?")]
+            #[case("Less than the pivot.")]
+            #[case("Equal to the pivot.")]
+            #[case("Greater than the pivot.")]
+            let (less, equal, greater) = |value, &range, pivot| match value.cmp(&range[pivot]) {
+                Ordering::Less => (),
+                Ordering::Equal => (),
+                Ordering::Greater => (),
+            };
+
+            #[action("Put this value in the left group.")]
+            let stepped = |less, &mut range, &mut lower, &mut cursor| {
+                range.swap(*cursor, *lower);
+                *lower += 1;
+                *cursor += 1;
+            };
+
+            #[action("Keep this value in the middle group.")]
+            let stepped = |equal, &mut cursor| *cursor += 1;
+
+            #[action("Swap this value into the right group; check its replacement next.")]
+            let stepped = |greater, &mut range, cursor, &mut upper| {
+                *upper -= 1;
+                range.swap(cursor, *upper);
+            };
+
+            |stepped| continue;
+        };
+
+        #[action("Place the pivot with its equals; separate the left and right groups.")]
+        let recur = |classified, range, lower, upper, pivot| {
+            range.swap(upper, pivot);
+            let (left, rest) = range.split_at_mut(lower);
+            let (_, right) = rest.split_at_mut(upper + 1 - lower);
+            if left.len() <= right.len() {
+                (left, right)
+            } else {
+                (right, left)
+            }
+        };
+    };
+
+    #[stage("Sort the smaller group.")]
+    let values = |recur| {
+        #[action("Take the smaller and larger outer groups.")]
+        let (smaller, larger) = |recur| recur;
+
+        #[call("Sort the smaller group recursively.")]
+        let sorted_part = |smaller| quick_sort(smaller);
+
+        #[action("Continue sorting the larger group.")]
+        let values = |sorted_part, larger| larger;
+    };
+
+    #[stage("Finish sorting.")]
+    |finish| {
+        return;
+    };
+}
+```
+
+The partitioning cycle groups values below, equal to, and above the pivot. Only
+the smaller outer group is sorted recursively. The `values` signal sends the
+larger group back to the first stage, keeping the recursive call stack
+logarithmic.
+
+With the partitioning cycle collapsed, the four stages are easier to see:
+
+[![Quicksort with its partitioning cycle collapsed](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)
+
+[Source](crates/kaalang/tests/gallery/sorting/quick_sort.rs) ·
+[Expanded diagram](crates/kaalang/tests/gallery/sorting/quick_sort.svg)
 
 ## Try it
 

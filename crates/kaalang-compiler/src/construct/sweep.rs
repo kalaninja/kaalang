@@ -616,7 +616,7 @@ impl<'a> Sweep<'a> {
                 index_of(self.topology, self.topology.connections[wire].destination)
             })
             .collect::<Vec<_>>();
-        // Interleaved arrivals cannot meet one final-row address without crossing
+        // Interleaved arrivals cannot meet one final-row transition without crossing
         // another. Retain such repetitions so the strict anchor order rejects them.
         vertices.dedup();
         Cow::Owned(vertices)

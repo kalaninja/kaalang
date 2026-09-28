@@ -131,7 +131,7 @@ pub(crate) fn layout_staged(
 }
 
 /// Empty preparation contributes only the function header. Composition connects
-/// it directly to the entry selected by the input instead of drawing an address.
+/// it directly to the entry selected by the input, omitting the transition node.
 fn keep_header(scene: &mut Scene) {
     let start = Vertex::Node(NodeId::Start);
     let exit = ExitId::of(NodeId::Start);
@@ -178,7 +178,7 @@ fn verify(diagram: &StagedScene) -> Result<(), String> {
                 .chain(diagram.return_route.iter().map(<[Point; 4]>::as_slice))
                 .any(|rail| route::crosses(rail, bounds))
             {
-                return Err("a silhouette rail crosses local content".to_owned());
+                return Err("a stage rail crosses local content".to_owned());
             }
         }
     }
@@ -410,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn silhouette_rail_clears_multiline_start_handovers() {
+    fn stage_rail_clears_multiline_start_handovers() {
         let source = include_str!("../../../kaalang/tests/stage/behavior/sum_inputs.rs");
         let file = syn::parse_file(source).unwrap();
         let function = kaalang_compiler::flows(&file.items).remove(0);
@@ -433,7 +433,7 @@ mod tests {
     }
 
     #[test]
-    fn silhouette_aligns_entries_and_addresses_and_connects_the_outer_contour() {
+    fn staged_diagram_aligns_entries_and_transitions_and_connects_the_outer_contour() {
         let source = include_str!("../../../kaalang/tests/gallery/kmp_search/mod.rs");
         let file = syn::parse_file(source).unwrap();
         let function = kaalang_compiler::flows(&file.items).remove(0);
@@ -452,7 +452,7 @@ mod tests {
             .unwrap();
             let return_route = diagram.return_route.as_ref().unwrap();
             let mut entries = BTreeSet::new();
-            let mut addresses = BTreeSet::new();
+            let mut transitions = BTreeSet::new();
             let rails = diagram
                 .connections
                 .iter()
@@ -473,7 +473,7 @@ mod tests {
                                 y: y - node.height / 2
                             }));
                     } else if kind == NodeKind::Transition {
-                        addresses.insert(y);
+                        transitions.insert(y);
                         assert!(diagram.connections.iter().any(|line| line[0]
                             == Point {
                                 x,
@@ -495,7 +495,7 @@ mod tests {
                 }
             }
             assert_eq!(entries.len(), 1);
-            assert_eq!(addresses.len(), 1);
+            assert_eq!(transitions.len(), 1);
             let (prefix, prefix_placement) = &diagram.parts[0];
             let first_computation = prefix
                 .nodes
@@ -536,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    fn initial_addresses_join_the_contour_without_stretching_the_terminal_stage() {
+    fn initial_transitions_join_the_contour_without_stretching_the_terminal_stage() {
         let staged = drawn(
             r#"
                 #[kaalang]
@@ -562,12 +562,12 @@ mod tests {
             .unwrap()
             .id;
         let end = terminal.node(end_id);
-        let address = preparation
+        let transition = preparation
             .nodes
             .iter()
             .find(|node| preparation.topology.node(node.id).kind == NodeKind::Transition)
             .unwrap();
-        assert!(second.y + end.y + end.height / 2 < first.y + address.y);
+        assert!(second.y + end.y + end.height / 2 < first.y + transition.y);
         assert_eq!(super::super::correspondence(terminal), None);
     }
 }

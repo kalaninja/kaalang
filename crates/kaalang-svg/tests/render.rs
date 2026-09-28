@@ -105,7 +105,7 @@ fn staged_svg_preserves_authored_text_and_describes_stage_links() {
     );
     assert!(svg.contains(r#"id="kaalang-part-0-title""#));
     assert!(!svg.contains("kaalang-part-0-kaalang-title"));
-    assert!(svg.contains(r#"class="silhouette-connections""#));
+    assert!(svg.contains(r#"class="stage-connections""#));
     assert!(svg.contains(r#"marker-end="url(#stage-return-arrow)""#));
     assert!(!svg.contains(r#"<title xml:space="preserve">Preparation</title>"#));
     assert_eq!(svg.matches(r#"class="node stage-entry""#).count(), 1);

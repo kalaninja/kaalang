@@ -85,7 +85,7 @@ pub(crate) struct Scene {
     slack: i32,
     /// Routing-only columns need a lane rather than a full node width.
     narrow: bool,
-    /// Common header height and transition row of a composed silhouette.
+    /// Common header height and transition row of a staged diagram.
     stage_rows: Option<staged::StageRows>,
     /// Model-defined body vertices, one set per `topology.loops` entry.
     bodies: Vec<BTreeSet<Vertex>>,
