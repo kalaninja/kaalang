@@ -34,10 +34,10 @@ use kaalang::kaalang;
 #[kaalang]
 fn fizzbuzz(number: u32) -> String {
     #[choice("Which of 3 and 5 divide the number?")]
-    #[case("Both.")]
+    #[case("Both 3 and 5.")]
     #[case("Only 3.")]
     #[case("Only 5.")]
-    #[case("Neither.")]
+    #[case("Neither 3 nor 5.")]
     let (fizz_buzz, fizz, buzz, plain) = |number| match (number % 3, number % 5) {
         (0, 0) => (),
         (0, _) => (),
@@ -45,16 +45,16 @@ fn fizzbuzz(number: u32) -> String {
         _ => number,
     };
 
-    #[action("🎉 Say FizzBuzz.")]
+    #[action("🎉 Use `FizzBuzz` for this number.")]
     let end = |fizz_buzz| String::from("FizzBuzz");
 
-    #[action("🫧 Say Fizz.")]
+    #[action("🫧 Use `Fizz` for this number.")]
     let end = |fizz| String::from("Fizz");
 
-    #[action("🐝 Say Buzz.")]
+    #[action("🐝 Use `Buzz` for this number.")]
     let end = |buzz| String::from("Buzz");
 
-    #[action("🔢 Say the number.")]
+    #[action("🔢 Use the number itself, written as text.")]
     let end = |plain| plain.to_string();
 
     |end| return end;
@@ -78,9 +78,9 @@ between `|...|` and names the wires it produces after `let`.
 | Four declarations of `end`                 | The branches are mutually exclusive. Their results merge into one wire for the shared continuation.                              |
 | `\|end\| return end;`                      | The flow returns whichever branch supplied `end`.                                                                                |
 
-For `number = 9`, only `fizz` is selected, so only the “Say Fizz” action runs.
-The diagram's connections show execution paths; input and output names appear as
-labels along those paths.
+For `number = 9`, only `fizz` is selected, so only the “Use `Fizz` for this
+number” action runs. The diagram's connections show execution paths; input and
+output names appear as labels along those paths.
 
 The `#[kaalang]` macro translates the capture notation into ordinary Rust
 bindings and control flow. Blocks execute in source order along the selected
@@ -185,39 +185,42 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Search the whole slice.")]
+    #[action("📏 Start with the entire sorted list.")]
     let (mut left, mut right) = |values| (0, values.len());
 
-    #[cycle("🔍 Search the remaining range.")]
+    #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
     let result = {
-        #[question("Are any candidates left?")]
+        #[question("Are any values left in the search range?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
 
-        #[action("🚫 The target is absent.")]
+        #[action("🚫 Report that the target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Find the midpoint.")]
-        let mid = |iterate, left, right| left + (right - left) / 2;
+        #[action("📍 Select the middle value of this range.")]
+        let (mid, value) = |iterate, values, left, right| {
+            let mid = left + (right - left) / 2;
+            (mid, values[mid])
+        };
 
-        #[choice("Compare with the target.")]
-        #[case("Below target.")]
-        #[case("Above target.")]
-        #[case("Equal to target.")]
-        let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
+        #[choice("How does this value compare with the target?")]
+        #[case("Less than the target.")]
+        #[case("Greater than the target.")]
+        #[case("Equal to the target.")]
+        let (less, greater, equal) = |value, target| match value.cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
             Ordering::Equal => (),
         };
 
-        #[action("➡️ Search the right half.")]
+        #[action("➡️ Discard this value and everything to its left.")]
         let stepped = |less, mid, &mut left| *left = mid + 1;
 
-        #[action("⬅️ Search the left half.")]
+        #[action("⬅️ Discard this value and everything to its right.")]
         let stepped = |greater, mid, &mut right| *right = mid;
 
-        #[action("🎯 The target was found.")]
+        #[action("🎯 Report the position of this matching value.")]
         let result = |equal, mid| Some(mid);
 
         |stepped| continue;

@@ -2,25 +2,25 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn or(a: bool, b: bool, c: bool) -> bool {
-    #[question("a")]
+    #[question("Is condition `a` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (true_result, check_b) = |a| a;
 
-    #[question("b")]
+    #[question("Is condition `b` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (true_result, check_c) = |check_b, b| b;
 
-    #[question("c")]
+    #[question("Is condition `c` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (true_result, false_result) = |check_c, c| c;
 
-    #[action("✅ True.")]
+    #[action("✅ At least one condition is true; return `true`.")]
     let result = |true_result| true;
 
-    #[action("❌ False.")]
+    #[action("❌ All three conditions are false; return `false`.")]
     let result = |false_result| false;
 
     |result| return result;

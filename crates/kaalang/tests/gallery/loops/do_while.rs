@@ -5,18 +5,18 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn do_while(mut number: u64) -> Vec<u8> {
-    #[action("📭 Start with no digits.")]
+    #[action("📭 Start an empty list for the digits.")]
     let mut digits = || Vec::new();
 
-    #[cycle("Collect decimal digits.")]
+    #[cycle("Collect the number's decimal digits from right to left.")]
     let collected = {
-        #[action("✂️ Take the last digit.")]
+        #[action("✂️ Append the last digit to the list; remove it from the number.")]
         |&mut number, &mut digits| {
             digits.push((*number % 10) as u8);
             *number /= 10;
         };
 
-        #[question("Is the number zero?")]
+        #[question("Have all digits been removed from the number?")]
         #[yes("YES")]
         #[no("NO")]
         let (collected, again) = |number| number == 0;
@@ -24,7 +24,7 @@ fn do_while(mut number: u64) -> Vec<u8> {
         |again| continue;
     };
 
-    #[action("🔄 Restore reading order.")]
+    #[action("🔄 Reverse the collected digits to read from left to right.")]
     let result = |collected, mut digits| {
         digits.reverse();
         digits

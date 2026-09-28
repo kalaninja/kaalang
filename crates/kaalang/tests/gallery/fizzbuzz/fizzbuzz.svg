@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="754" viewBox="0 0 1424 754" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="756" viewBox="0 0 1424 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for fizzbuzz</title>
-  <desc id="kaalang-description">Nodes: Start: fizzbuzz with parameters number: u32 handing over number; Select: Which of 3 and 5 divide the number? capturing number; Case: Both. handing over fizz_buzz; Case: Only 3. handing over fizz; Case: Only 5. handing over buzz; Case: Neither. handing over plain; Action: 🎉 Say FizzBuzz. capturing fizz_buzz handing over end; Action: 🫧 Say Fizz. capturing fizz handing over end; Action: 🐝 Say Buzz. capturing buzz handing over end; Action: 🔢 Say the number. capturing plain handing over end; End: String capturing end; Merge: end. Connections: Start: fizzbuzz to Select: Which of 3 and 5 divide the number?; Select: Which of 3 and 5 divide the number? to Case: Both.; Select: Which of 3 and 5 divide the number? to Case: Only 3.; Select: Which of 3 and 5 divide the number? to Case: Only 5.; Select: Which of 3 and 5 divide the number? to Case: Neither.; Case: Both. to Action: 🎉 Say FizzBuzz.; Case: Only 3. to Action: 🫧 Say Fizz.; Case: Only 5. to Action: 🐝 Say Buzz.; Case: Neither. to Action: 🔢 Say the number.; Action: 🎉 Say FizzBuzz. to the end merge; Action: 🫧 Say Fizz. to the end merge; Action: 🐝 Say Buzz. to the end merge; Action: 🔢 Say the number. to the end merge; the end merge to End: String.</desc>
+  <desc id="kaalang-description">Nodes: Start: fizzbuzz with parameters number: u32 handing over number; Select: Which of 3 and 5 divide the number? capturing number; Case: Both 3 and 5. handing over fizz_buzz; Case: Only 3. handing over fizz; Case: Only 5. handing over buzz; Case: Neither 3 nor 5. handing over plain; Action: 🎉 Use FizzBuzz for this number. capturing fizz_buzz handing over end; Action: 🫧 Use Fizz for this number. capturing fizz handing over end; Action: 🐝 Use Buzz for this number. capturing buzz handing over end; Action: 🔢 Use the number itself, written as text. capturing plain handing over end; End: String capturing end; Merge: end. Connections: Start: fizzbuzz to Select: Which of 3 and 5 divide the number?; Select: Which of 3 and 5 divide the number? to Case: Both 3 and 5.; Select: Which of 3 and 5 divide the number? to Case: Only 3.; Select: Which of 3 and 5 divide the number? to Case: Only 5.; Select: Which of 3 and 5 divide the number? to Case: Neither 3 nor 5.; Case: Both 3 and 5. to Action: 🎉 Use FizzBuzz for this number.; Case: Only 3. to Action: 🫧 Use Fizz for this number.; Case: Only 5. to Action: 🐝 Use Buzz for this number.; Case: Neither 3 nor 5. to Action: 🔢 Use the number itself, written as text.; Action: 🎉 Use FizzBuzz for this number. to the end merge; Action: 🫧 Use Fizz for this number. to the end merge; Action: 🐝 Use Buzz for this number. to the end merge; Action: 🔢 Use the number itself, written as text. to the end merge; the end merge to End: String.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,6 +22,27 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -38,13 +59,13 @@
       M 532 376 L 532 448
       M 892 376 L 892 448
       M 1252 376 L 1252 448
-      M 172 512 L 172 588
-      M 532 512 L 532 588 L 172 588
-      M 892 512 L 892 588 L 172 588
-      M 1252 512 L 1252 588 L 172 588
-      M 172 588 L 172 664
+      M 172 514 L 172 590
+      M 532 514 L 532 590 L 172 590
+      M 892 514 L 892 590 L 172 590
+      M 1252 514 L 1252 590 L 172 590
+      M 172 590 L 172 666
     "/>
-    <text class="connection-label" x="185" y="606" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
     <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">fizz_buzz</tspan></text>
     <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">fizz</tspan></text>
@@ -57,7 +78,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">number: u32</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 588)">
+    <g class="node merge" transform="translate(172 590)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -71,9 +92,9 @@
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which of 3 and 5 divide the </tspan><tspan x="0" dy="18">number?</tspan></text>
     </g>
     <g class="node case" transform="translate(172 341)">
-      <title xml:space="preserve">Both.</title>
+      <title xml:space="preserve">Both 3 and 5.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Both.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Both 3 and 5.</tspan></text>
     </g>
     <g class="node case" transform="translate(532 341)">
       <title xml:space="preserve">Only 3.</title>
@@ -86,31 +107,31 @@
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Only 5.</tspan></text>
     </g>
     <g class="node case" transform="translate(1252 341)">
-      <title xml:space="preserve">Neither.</title>
+      <title xml:space="preserve">Neither 3 nor 5.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Neither.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Neither 3 nor 5.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 480)">
-      <title xml:space="preserve">🎉 Say FizzBuzz.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🎉 Say FizzBuzz.</tspan></text>
+    <g class="node action" transform="translate(172 481)">
+      <title xml:space="preserve">🎉 Use FizzBuzz for this number.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🎉 Use <tspan class="md-code">FizzBuzz</tspan> for this number.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 480)">
-      <title xml:space="preserve">🫧 Say Fizz.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🫧 Say Fizz.</tspan></text>
+    <g class="node action" transform="translate(532 481)">
+      <title xml:space="preserve">🫧 Use Fizz for this number.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🫧 Use <tspan class="md-code">Fizz</tspan> for this number.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 480)">
-      <title xml:space="preserve">🐝 Say Buzz.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🐝 Say Buzz.</tspan></text>
+    <g class="node action" transform="translate(892 481)">
+      <title xml:space="preserve">🐝 Use Buzz for this number.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🐝 Use <tspan class="md-code">Buzz</tspan> for this number.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 480)">
-      <title xml:space="preserve">🔢 Say the number.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🔢 Say the number.</tspan></text>
+    <g class="node action" transform="translate(1252 481)">
+      <title xml:space="preserve">🔢 Use the number itself, written as text.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🔢 Use the number itself, written </tspan><tspan x="-124" dy="18">as text.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 693)">
+    <g class="node end" transform="translate(172 695)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
     </g>

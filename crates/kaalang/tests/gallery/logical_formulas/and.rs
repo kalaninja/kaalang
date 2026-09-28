@@ -2,25 +2,25 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn and(a: bool, b: bool, c: bool) -> bool {
-    #[question("a")]
+    #[question("Is condition `a` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (check_b, false_result) = |a| a;
 
-    #[question("b")]
+    #[question("Is condition `b` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (check_c, false_result) = |check_b, b| b;
 
-    #[question("c")]
+    #[question("Is condition `c` true?")]
     #[yes("YES")]
     #[no("NO")]
     let (true_result, false_result) = |check_c, c| c;
 
-    #[action("✅ True.")]
+    #[action("✅ All three conditions are true; return `true`.")]
     let result = |true_result| true;
 
-    #[action("❌ False.")]
+    #[action("❌ At least one condition is false; return `false`.")]
     let result = |false_result| false;
 
     |result| return result;

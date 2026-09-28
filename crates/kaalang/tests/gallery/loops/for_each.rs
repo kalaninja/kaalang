@@ -5,20 +5,20 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn for_each(values: &[i32]) -> i64 {
-    #[action("🧮 Start the iterator and total.")]
+    #[action("🧮 Start before the first value with a total of zero.")]
     let (mut cursor, mut total) = |values| (values.iter(), 0);
 
-    #[cycle("Add every value to the total.")]
+    #[cycle("Add the list's values to the total one by one.")]
     let done = {
-        #[choice("Is there another value?")]
-        #[case("Next value.")]
-        #[case("No values left.")]
+        #[choice("What comes next in the list?")]
+        #[case("Another value.")]
+        #[case("The end of the list.")]
         let (value, done) = |&mut cursor| match cursor.next() {
             Some(next) => next,
             None => (),
         };
 
-        #[action("➕ Add it to the total.")]
+        #[action("➕ Add this value to the running total.")]
         |value, &mut total| *total += i64::from(*value);
 
         |value| continue;

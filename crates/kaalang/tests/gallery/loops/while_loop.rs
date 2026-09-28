@@ -13,12 +13,15 @@ fn while_loop(mut a: u64, mut b: u64) -> u64 {
         #[no("NO")]
         let (done, again) = |b| b == 0;
 
-        #[action("🟰 The first number is the divisor.")]
+        #[action("🟰 Use the first number as the greatest common divisor.")]
         let divisor = |done, a| a;
 
-        #[action("➗ Divide and keep the remainder.")]
-        |again, &mut a, &mut b| {
-            (*a, *b) = (*b, *a % *b);
+        #[action("➗ Divide the first number by the second; keep the remainder.")]
+        let remainder = |again, a, b| a % b;
+
+        #[action("Replace the pair with the second number and the remainder.")]
+        |remainder, &mut a, &mut b| {
+            (*a, *b) = (*b, remainder);
         };
 
         |again| continue;

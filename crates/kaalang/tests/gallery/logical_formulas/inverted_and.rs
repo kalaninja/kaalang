@@ -2,25 +2,25 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn inverted_and(a: bool, b: bool, c: bool) -> bool {
-    #[question("a")]
+    #[question("Is condition `a` true?")]
     #[no("NO")]
     #[yes("YES")]
     let (true_result, check_b) = |a| a;
 
-    #[question("b")]
+    #[question("Is condition `b` true?")]
     #[no("NO")]
     #[yes("YES")]
     let (true_result, check_c) = |check_b, b| b;
 
-    #[question("c")]
+    #[question("Is condition `c` true?")]
     #[no("NO")]
     #[yes("YES")]
     let (true_result, false_result) = |check_c, c| c;
 
-    #[action("✅ True.")]
+    #[action("✅ At least one condition is false; return `true`.")]
     let result = |true_result| true;
 
-    #[action("❌ False.")]
+    #[action("❌ All three conditions are true; return `false`.")]
     let result = |false_result| false;
 
     |result| return result;

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1062" viewBox="0 0 1424 1062" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1066" viewBox="0 0 1424 1066" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for inverted_and</title>
-  <desc id="kaalang-description">Nodes: Start: inverted_and with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: a capturing a handing over true_result / check_b described as branch 1: NO / branch 2: YES; Question: b capturing check_b, b handing over true_result / check_c described as branch 1: NO / branch 2: YES; Question: c capturing check_c, c handing over true_result / false_result described as branch 1: NO / branch 2: YES; Action: ✅ True. capturing true_result handing over result; Action: ❌ False. capturing false_result handing over result; End: bool capturing result; Merge: true_result; Merge: result. Connections: Start: inverted_and to Question: a; Question: a branch 1 to the true_result merge; Question: a branch 2 to Question: b; Question: b branch 1 to the true_result merge; Question: b branch 2 to Question: c; Question: c branch 1 to the true_result merge; Question: c branch 2 to Action: ❌ False.; Action: ✅ True. to the result merge; Action: ❌ False. to the result merge; the true_result merge to Action: ✅ True.; the result merge to End: bool.</desc>
+  <desc id="kaalang-description">Nodes: Start: inverted_and with parameters a: bool; b: bool; c: bool handing over a, b, c; Question: Is condition a true? capturing a handing over true_result / check_b described as branch 1: NO / branch 2: YES; Question: Is condition b true? capturing check_b, b handing over true_result / check_c described as branch 1: NO / branch 2: YES; Question: Is condition c true? capturing check_c, c handing over true_result / false_result described as branch 1: NO / branch 2: YES; Action: ✅ At least one condition is false; return true. capturing true_result handing over result; Action: ❌ All three conditions are true; return false. capturing false_result handing over result; End: bool capturing result; Merge: true_result; Merge: result. Connections: Start: inverted_and to Question: Is condition a true?; Question: Is condition a true? branch 1 to the true_result merge; Question: Is condition a true? branch 2 to Question: Is condition b true?; Question: Is condition b true? branch 1 to the true_result merge; Question: Is condition b true? branch 2 to Question: Is condition c true?; Question: Is condition c true? branch 1 to the true_result merge; Question: Is condition c true? branch 2 to Action: ❌ All three conditions are true; return false.; Action: ✅ At least one condition is false; return true. to the result merge; Action: ❌ All three conditions are true; return false. to the result merge; the true_result merge to Action: ✅ At least one condition is false; return true.; the result merge to End: bool.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,6 +22,27 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -30,19 +51,19 @@
   <g class="connections">
     <path class="connection" d="
       M 172 103 L 172 188
-      M 172 260 L 172 652
+      M 172 260 L 172 653
       M 312 224 L 532 224 L 532 332
-      M 532 404 L 532 652 L 172 652
+      M 532 404 L 532 653 L 172 653
       M 672 368 L 892 368 L 892 476
-      M 892 548 L 892 652 L 172 652
+      M 892 548 L 892 653 L 172 653
       M 1032 512 L 1252 512 L 1252 620
-      M 172 820 L 172 896
-      M 1252 684 L 1252 896 L 172 896
-      M 172 652 L 172 756
-      M 172 896 L 172 972
+      M 172 824 L 172 900
+      M 1252 686 L 1252 900 L 172 900
+      M 172 653 L 172 758
+      M 172 900 L 172 976
     "/>
-    <text class="connection-label" x="185" y="670" xml:space="preserve"><tspan x="185" dy="0">true_result</tspan></text>
-    <text class="connection-label" x="185" y="914" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="671" xml:space="preserve"><tspan x="185" dy="0">true_result</tspan></text>
+    <text class="connection-label" x="185" y="918" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
     <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">YES</tspan></text>
@@ -60,11 +81,11 @@
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
       <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 652)">
+    <g class="node merge" transform="translate(172 653)">
       <title xml:space="preserve">the true_result merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 896)">
+    <g class="node merge" transform="translate(172 900)">
       <title xml:space="preserve">the result merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -73,31 +94,31 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">inverted_and</tspan></text>
     </g>
     <g class="node question" transform="translate(172 224)">
-      <title xml:space="preserve">a</title>
+      <title xml:space="preserve">Is condition a true?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">a</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is condition <tspan class="md-code">a</tspan> true?</tspan></text>
     </g>
     <g class="node question" transform="translate(532 368)">
-      <title xml:space="preserve">b</title>
+      <title xml:space="preserve">Is condition b true?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">b</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is condition <tspan class="md-code">b</tspan> true?</tspan></text>
     </g>
     <g class="node question" transform="translate(892 512)">
-      <title xml:space="preserve">c</title>
+      <title xml:space="preserve">Is condition c true?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">c</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is condition <tspan class="md-code">c</tspan> true?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 788)">
-      <title xml:space="preserve">✅ True.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">✅ True.</tspan></text>
+    <g class="node action" transform="translate(172 791)">
+      <title xml:space="preserve">✅ At least one condition is false; return true.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">✅ At least one condition is false; </tspan><tspan x="-124" dy="18">return <tspan class="md-code">true</tspan>.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 652)">
-      <title xml:space="preserve">❌ False.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">❌ False.</tspan></text>
+    <g class="node action" transform="translate(1252 653)">
+      <title xml:space="preserve">❌ All three conditions are true; return false.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">❌ All three conditions are true; </tspan><tspan x="-124" dy="18">return <tspan class="md-code">false</tspan>.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1001)">
+    <g class="node end" transform="translate(172 1005)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bool</tspan></text>
     </g>

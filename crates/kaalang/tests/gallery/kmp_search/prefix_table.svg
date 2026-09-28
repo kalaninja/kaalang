@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1256" height="1079" viewBox="0 0 1256 1079" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="1576" viewBox="0 0 1540 1576" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for prefix_table</title>
-  <desc id="kaalang-description">Cycles: Build prefixes from left to right. with inputs mut position, pattern, mut matched, mut prefix and outputs finished; Find an extendable prefix. with inputs next, pattern, mut position, mut matched, mut prefix and outputs settled. Nodes: Start: prefix_table with parameters pattern: &amp;[u8] handing over pattern; Action: Start with zero prefix lengths. capturing pattern handing over mut prefix, mut position, mut matched; Question: Is the table complete? capturing position, pattern handing over finished / next described as branch 1: YES / branch 2: NO; Question: Must the prefix shrink? capturing pattern, position, matched handing over shrink / settled described as branch 1: YES / branch 2: NO; Action: Follow the previous prefix length. capturing shrink, &amp;prefix, &amp;mut matched; Action: Extend if matched; save and advance. capturing settled, pattern, &amp;mut prefix, &amp;mut position, &amp;mut matched; End: Vec&lt;usize&gt; capturing prefix. Connections: Start: prefix_table to Action: Start with zero prefix lengths.; Action: Start with zero prefix lengths. to the entry of the cycle; Question: Is the table complete? branch 1 to End: Vec&lt;usize&gt;; Question: Is the table complete? branch 2 to the entry of the cycle; Question: Must the prefix shrink? branch 1 to Action: Follow the previous prefix length.; Question: Must the prefix shrink? branch 2 to Action: Extend if matched; save and advance.; Action: Follow the previous prefix length. to the iteration tail of the cycle; Action: Extend if matched; save and advance. to the iteration tail of the cycle; the entry of the cycle to Question: Is the table complete?; the entry of the cycle to Question: Must the prefix shrink?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Find how much of the pattern&apos;s beginning repeats at each ending. with inputs mut position, pattern, mut matched, mut prefix and outputs finished; Extend the matched beginning or try a shorter one. with inputs byte, pattern, mut matched, mut prefix and outputs settled. Nodes: Start: prefix_table with parameters pattern: &amp;[u8] handing over pattern; Action: Set all prefix lengths to zero; start at the second pattern byte. capturing pattern handing over mut prefix, mut position, mut matched; Question: Have all pattern bytes been processed? capturing position, pattern handing over finished / next described as branch 1: YES / branch 2: NO; Action: Read the pattern byte at this position. capturing next, pattern, position handing over byte; Question: Does this byte match the next byte of the pattern&apos;s beginning? capturing byte, pattern, matched handing over mismatch / extend described as branch 1: NO / branch 2: YES; Action: Include this byte in the matched beginning. capturing extend, &amp;mut matched handing over settled; Question: Is there a matched beginning to shorten? capturing mismatch, matched handing over shrink / settled described as branch 1: YES / branch 2: NO; Action: Use the table to keep the next shorter matching beginning. capturing shrink, &amp;prefix, &amp;mut matched; Action: Save the matched length for this byte; move to the next pattern byte. capturing settled, &amp;mut prefix, &amp;mut position, matched; End: Vec&lt;usize&gt; capturing prefix; Merge: settled. Connections: Start: prefix_table to Action: Set all prefix lengths to zero; start at the second pattern byte.; Action: Set all prefix lengths to zero; start at the second pattern byte. to the entry of the cycle; Question: Have all pattern bytes been processed? branch 1 to End: Vec&lt;usize&gt;; Question: Have all pattern bytes been processed? branch 2 to Action: Read the pattern byte at this position.; Action: Read the pattern byte at this position. to the entry of the cycle; Question: Does this byte match the next byte of the pattern&apos;s beginning? branch 1 to Question: Is there a matched beginning to shorten?; Question: Does this byte match the next byte of the pattern&apos;s beginning? branch 2 to Action: Include this byte in the matched beginning.; Action: Include this byte in the matched beginning. to the settled merge at the cycle result; Question: Is there a matched beginning to shorten? branch 1 to Action: Use the table to keep the next shorter matching beginning.; Question: Is there a matched beginning to shorten? branch 2 to the settled merge at the cycle result; Action: Use the table to keep the next shorter matching beginning. to the iteration tail of the cycle; Action: Save the matched length for this byte; move to the next pattern byte. to the iteration tail of the cycle; the settled merge at the cycle result to Action: Save the matched length for this byte; move to the next pattern byte.; the entry of the cycle to Question: Have all pattern bytes been processed?; the entry of the cycle to Question: Does this byte match the next byte of the pattern&apos;s beginning?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,47 +27,59 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
-      <title xml:space="preserve">Build prefixes from left to right.</title>
-    <rect class="cycle-boundary" x="32" y="270" width="1192" height="682" rx="12"/>
-    <text class="cycle-caption" x="1212" y="284" text-anchor="end" xml:space="preserve"><tspan x="1212" dy="0">Build prefixes from left to right.</tspan></text>
+      <title xml:space="preserve">Find how much of the pattern&apos;s beginning repeats at each ending.</title>
+    <rect class="cycle-boundary" x="32" y="272" width="1476" height="1177" rx="12"/>
+    <text class="cycle-caption" x="1496" y="286" text-anchor="end" xml:space="preserve"><tspan x="1496" dy="0">Find how much of the pattern&apos;s beginning repeats at each ending.</tspan></text>
     </g>
     <g>
-      <title xml:space="preserve">Find an extendable prefix.</title>
-    <rect class="cycle-boundary" x="400" y="486" width="416" height="431" rx="12"/>
-    <text class="cycle-caption" x="804" y="500" text-anchor="end" xml:space="preserve"><tspan x="804" dy="0">Find an extendable prefix.</tspan></text>
+      <title xml:space="preserve">Extend the matched beginning or try a shorter one.</title>
+    <rect class="cycle-boundary" x="372" y="626" width="1087" height="584" rx="12"/>
+    <text class="cycle-caption" x="1447" y="640" text-anchor="end" xml:space="preserve"><tspan x="1447" dy="0">Extend the matched beginning or try a shorter one.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 200 90 L 200 162
-      M 200 226 L 200 305
-      M 200 449 L 200 989
-      M 340 413 L 588 413 L 588 521
-      M 588 665 L 588 744
-      M 728 629 L 976 629 L 976 744
-      M 588 810 L 588 882
-      M 976 810 L 976 882
-      M 200 305 L 200 377
-      M 588 521 L 588 593
+      M 200 228 L 200 307
+      M 200 451 L 200 1486
+      M 340 415 L 560 415 L 560 523
+      M 560 589 L 560 661
+      M 560 817 L 560 889
+      M 700 775 L 1280 775 L 1280 889
+      M 1280 961 L 1280 1175 L 920 1175
+      M 560 961 L 560 1033
+      M 700 925 L 920 925 L 920 1175
+      M 560 1099 L 560 1175
+      M 920 1342 L 920 1414
+      M 920 1175 L 920 1258
+      M 200 307 L 200 379
+      M 560 661 L 560 733
     "/>
     <path class="connection" d="
-      M 588 882 L 428 882 L 428 521 L 588 521
+      M 560 1175 L 400 1175 L 400 661 L 560 661
     " marker-end="url(#loop-arrow)"/>
     <path class="connection" d="
-      M 976 882 L 1196 882 L 1196 305 L 200 305
+      M 920 1414 L 1480 1414 L 1480 307 L 200 307
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="933" y="1193" xml:space="preserve"><tspan x="933" dy="0">settled</tspan></text>
     <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">pattern</tspan></text>
-    <text class="connection-label" x="213" y="244" xml:space="preserve"><tspan x="213" dy="0">mut prefix, mut position, mut </tspan><tspan x="213" dy="14">matched</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="469" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="401" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="601" y="685" xml:space="preserve"><tspan x="601" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="741" y="617" xml:space="preserve"><tspan x="741" dy="0">NO</tspan></text>
-    <text class="connection-label" x="213" y="366" xml:space="preserve"><tspan x="213" dy="0">position, pattern</tspan></text>
-    <text class="connection-label" x="601" y="582" xml:space="preserve"><tspan x="601" dy="0">pattern, position, matched</tspan></text>
-    <text class="connection-label" x="601" y="733" xml:space="preserve"><tspan x="601" dy="0">shrink, &amp;prefix, &amp;mut matched</tspan></text>
-    <text class="connection-label" x="989" y="719" xml:space="preserve"><tspan x="989" dy="0">settled, pattern, &amp;mut prefix, </tspan><tspan x="989" dy="14">&amp;mut position, &amp;mut matched</tspan></text>
-    <text class="connection-label" x="213" y="978" xml:space="preserve"><tspan x="213" dy="0">prefix</tspan></text>
+    <text class="connection-label" x="213" y="246" xml:space="preserve"><tspan x="213" dy="0">mut prefix, mut position, mut </tspan><tspan x="213" dy="14">matched</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="471" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="403" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label" x="573" y="607" xml:space="preserve"><tspan x="573" dy="0">byte</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="573" y="837" xml:space="preserve"><tspan x="573" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="713" y="763" xml:space="preserve"><tspan x="713" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="573" y="981" xml:space="preserve"><tspan x="573" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="713" y="913" xml:space="preserve"><tspan x="713" dy="0">NO</tspan></text>
+    <text class="connection-label" x="213" y="368" xml:space="preserve"><tspan x="213" dy="0">position, pattern</tspan></text>
+    <text class="connection-label" x="573" y="512" xml:space="preserve"><tspan x="573" dy="0">next, pattern, position</tspan></text>
+    <text class="connection-label" x="573" y="722" xml:space="preserve"><tspan x="573" dy="0">byte, pattern, matched</tspan></text>
+    <text class="connection-label" x="1293" y="878" xml:space="preserve"><tspan x="1293" dy="0">extend, &amp;mut matched</tspan></text>
+    <text class="connection-label" x="573" y="878" xml:space="preserve"><tspan x="573" dy="0">mismatch, matched</tspan></text>
+    <text class="connection-label" x="573" y="1022" xml:space="preserve"><tspan x="573" dy="0">shrink, &amp;prefix, &amp;mut matched</tspan></text>
+    <text class="connection-label" x="933" y="1233" xml:space="preserve"><tspan x="933" dy="0">settled, &amp;mut prefix, &amp;mut </tspan><tspan x="933" dy="14">position, matched</tspan></text>
+    <text class="connection-label" x="213" y="1475" xml:space="preserve"><tspan x="213" dy="0">prefix</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
@@ -75,36 +87,55 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">pattern: &amp;[u8]</tspan></text>
     </g>
+    <g class="node merge" transform="translate(920 1175)">
+      <title xml:space="preserve">the settled merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
     <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prefix_table</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 194)">
-      <title xml:space="preserve">Start with zero prefix lengths.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with zero prefix lengths.</tspan></text>
-    </g>
-    <g class="node question" transform="translate(200 413)">
-      <title xml:space="preserve">Is the table complete?</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the table complete?</tspan></text>
-    </g>
-    <g class="node question" transform="translate(588 629)">
-      <title xml:space="preserve">Must the prefix shrink?</title>
-      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Must the prefix shrink?</tspan></text>
-    </g>
-    <g class="node action" transform="translate(588 777)">
-      <title xml:space="preserve">Follow the previous prefix length.</title>
+    <g class="node action" transform="translate(200 195)">
+      <title xml:space="preserve">Set all prefix lengths to zero; start at the second pattern byte.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Follow the previous prefix length.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Set all prefix lengths to zero; </tspan><tspan x="-124" dy="18">start at the second pattern byte.</tspan></text>
     </g>
-    <g class="node action" transform="translate(976 777)">
-      <title xml:space="preserve">Extend if matched; save and advance.</title>
+    <g class="node question" transform="translate(200 415)">
+      <title xml:space="preserve">Have all pattern bytes been processed?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Have all pattern bytes been </tspan><tspan x="0" dy="18">processed?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 556)">
+      <title xml:space="preserve">Read the pattern byte at this position.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Extend if matched; save and </tspan><tspan x="-124" dy="18">advance.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Read the pattern byte at this </tspan><tspan x="-124" dy="18">position.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 1018)">
+    <g class="node question" transform="translate(560 775)">
+      <title xml:space="preserve">Does this byte match the next byte of the pattern&apos;s beginning?</title>
+      <polygon class="node-shape" points="-112,-42 112,-42 140,0 112,42 -112,42 -140,0"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Does this byte match the </tspan><tspan x="0" dy="18">next byte of the pattern&apos;s </tspan><tspan x="0" dy="18">beginning?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1280 925)">
+      <title xml:space="preserve">Include this byte in the matched beginning.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Include this byte in the matched </tspan><tspan x="-124" dy="18">beginning.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(560 925)">
+      <title xml:space="preserve">Is there a matched beginning to shorten?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is there a matched </tspan><tspan x="0" dy="18">beginning to shorten?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 1066)">
+      <title xml:space="preserve">Use the table to keep the next shorter matching beginning.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Use the table to keep the next </tspan><tspan x="-124" dy="18">shorter matching beginning.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 1300)">
+      <title xml:space="preserve">Save the matched length for this byte; move to the next pattern byte.</title>
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">Save the matched length for this </tspan><tspan x="-124" dy="18">byte; move to the next pattern </tspan><tspan x="-124" dy="18">byte.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1515)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
     </g>
