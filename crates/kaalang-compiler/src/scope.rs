@@ -15,7 +15,7 @@ struct Scope {
     inherited: BTreeMap<Ident, Ident>,
     local: BTreeMap<Ident, Ident>,
     /// Outputs of the enclosing cycles that no body has produced yet. Inside a
-    /// cycle its own outputs never name an outer wire (RFC 0006 §5.1).
+    /// cycle its own outputs never name an outer wire.
     hidden: BTreeSet<Ident>,
 }
 
@@ -136,7 +136,7 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
 }
 
 /// Appends to each cycle the outer wires its body captures, nested cycles
-/// included, after its gate and in source order (RFC 0006 §7.5).
+/// included, after its gate and in source order.
 fn derive_cycle_inputs(flow: &mut Flow) {
     let derived = flow
         .blocks

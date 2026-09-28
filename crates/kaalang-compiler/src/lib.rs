@@ -150,7 +150,7 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
     })
 }
 
-/// Projects an analyzed flow onto the topology defined by RFC 0002 §7.
+/// Projects an analyzed flow onto its structural topology.
 /// Projection is total; [`construct()`] checks whether the topology can be drawn.
 #[must_use]
 pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology {
@@ -168,7 +168,7 @@ pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology 
 ///
 /// # Errors
 ///
-/// Returns a source-spanned error if no RFC 0002 arrangement exists, or an
+/// Returns a source-spanned error if no valid arrangement exists, or an
 /// internal error for inconsistent projection or failed sweep verification.
 pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<Arrangement> {
     construct::construct(&analysis.flow, &analysis.merges, topology)

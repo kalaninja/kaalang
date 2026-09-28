@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
 /// A cycle cannot return from the flow. An `abort` output hands the decision
-/// to the containing sequence, which returns (RFC 0006 §4.1).
+/// to the containing sequence, which returns.
 #[kaalang]
 fn abort_output(mut count: u32, limit: u32) -> Result<u32, u32> {
     #[cycle("Count until done or aborted.")]

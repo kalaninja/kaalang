@@ -27,7 +27,7 @@ fn outer_repeat_contour(mut mode: u8) -> u8 {
 }
 
 /// The only completing case is the leftmost, so the iteration back edge climbs the
-/// right of the body even though RFC 0002 §8 prefers the left contour here.
+/// right of the body although the left contour is preferred here.
 #[test]
 fn the_back_edge_takes_the_flank_the_exit_leaves_clear() {
     assert_eq!(outer_repeat_contour(0), 0);

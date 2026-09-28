@@ -1,5 +1,5 @@
 //! Runs the body in a native loop against the outer storage and captures its
-//! result. The gate binds nothing (RFC 0006 §6.3).
+//! result. The gate binds nothing.
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
@@ -25,7 +25,7 @@ pub(super) fn emit(
     };
     if block.branch_count() > 0 {
         // Several outputs each leave through their own labeled result block,
-        // like the cases of a choice (RFC 0006 §6.3).
+        // like the cases of a choice.
         let labels = (0..block.outputs.len())
             .map(|output| exit_label(index, output))
             .collect::<Vec<_>>();

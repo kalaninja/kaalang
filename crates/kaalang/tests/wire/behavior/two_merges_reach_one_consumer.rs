@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-/// RFC 0001 §7: a consumer can capture several merged wires. Two independent
+/// A consumer can capture several merged wires. Two independent
 /// questions each converge their own wire, and one block captures both, so the
 /// two junctions land on the main line in turn rather than beside each other.
 #[kaalang]

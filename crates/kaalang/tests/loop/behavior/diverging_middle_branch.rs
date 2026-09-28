@@ -3,7 +3,7 @@ use kaalang::kaalang;
 /// The first and third routes meet at the iteration tail, the third and fourth
 /// at the declared output, and the second never leaves its own loop. A sibling that
 /// ends before either group's vertex is placed must not be held to a side of
-/// that vertex: only a later sibling is (RFC 0002 §8).
+/// that vertex: only a later sibling is.
 #[kaalang]
 fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle("Choose a repeating, diverging, or leaving route.")]

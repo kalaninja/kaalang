@@ -133,7 +133,7 @@ fn semantic_restrictions_keep_their_specific_diagnostics() {
     }
 }
 
-/// A blocked preferred contour never decides realizability: RFC 0002 §8 only
+/// A blocked preferred contour never decides realizability: the contour rule only
 /// prefers a side.
 #[test]
 fn a_cycle_takes_the_clear_contour_whatever_the_preference() {

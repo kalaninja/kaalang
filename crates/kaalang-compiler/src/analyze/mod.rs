@@ -1,5 +1,5 @@
 //! Walks every possible execution of a flow in source order, proving the
-//! execution invariants of RFC 0001 and recording the executions, capture
+//! execution invariants and recording the executions, capture
 //! dependencies, and convergence groups that the rest of the compiler relies on.
 
 use std::cmp::Ordering;

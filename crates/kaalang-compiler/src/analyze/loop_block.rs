@@ -26,7 +26,7 @@ pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool 
 }
 
 /// A cycle's outputs leave it left to right in declaration order, so the routes
-/// exporting them keep that order among the body's branches (RFC 0006 §7.5).
+/// exporting them keep that order among the body's branches.
 /// Its back edge climbs one flank, so no repeating route lies between two of
 /// them.
 pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {

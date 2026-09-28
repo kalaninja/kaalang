@@ -1,5 +1,5 @@
 //! Projects analyzed flows into nodes, exits, junctions, and connections.
-//! Connections combine each execution's direct precedence (RFC 0002 §7), using
+//! Connections combine each execution's direct precedence, using
 //! the verified plan's source order. Coordinates and captions belong to rendering.
 
 use std::cmp::Ordering;
@@ -98,7 +98,7 @@ pub enum Source {
 /// Every destination is a vertex of the precedence graph, so it is that type.
 pub type Destination = Vertex;
 
-/// RFC 0002 §7 identifies a connection by its source exit and its destination,
+/// A connection is identified by its source exit and destination,
 /// so connections leaving distinct exits of one node stay distinct even when
 /// they join the same pair of nodes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -311,7 +311,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     }];
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
-        // RFC 0002 §5 shows every named flow input as an output of start.
+        // Every named flow input appears as an output of start.
         provides: (0..model.flow.flow_inputs.len())
             .map(ProducerId::FlowInput)
             .collect(),
@@ -585,7 +585,7 @@ impl From<Source> for Vertex {
 
 /// The union of each execution's direct connections. Reducing every execution
 /// on its own preserves a connection that is direct in one and transitively
-/// redundant in another, as RFC 0002 §7 requires.
+/// redundant in another.
 #[allow(clippy::too_many_lines)] // Keeps one execution's connection union visibly in one pass.
 fn connections(
     model: &Analyzed<'_>,
@@ -975,7 +975,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
 
 /// The cycle an outer wire enters to reach this consumer: its innermost
 /// enclosing cycle, unless the wire is local to that same body. Outer data
-/// arrives through that cycle's entry (RFC 0006 §7.5).
+/// arrives through that cycle's entry.
 fn entered(model: &Analyzed<'_>, dependency: &CaptureDependency) -> Option<usize> {
     let parent = model.flow.blocks[dependency.capture.block].parent;
     parent.filter(|_| parent != model.flow.producer_cycle(dependency.producer))
@@ -1043,7 +1043,7 @@ pub struct Loop {
     pub header: usize,
     pub entry: usize,
     pub tail: usize,
-    /// The preferred contour, not a requirement: RFC 0002 §8 prefers the left
+    /// The preferred contour, not a requirement: choose the left
     /// side unless every repeating route takes the rightmost branch of the
     /// first selection in the body.
     pub(crate) prefer_left: bool,

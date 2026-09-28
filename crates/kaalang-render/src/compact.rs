@@ -342,7 +342,7 @@ mod tests {
         assert_eq!(model.arrangement, original);
     }
 
-    /// A completion outside the cycle boundary may share its body's rows (RFC 0002 §8).
+    /// A completion outside the cycle boundary may share its body's rows.
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for (source, name) in [

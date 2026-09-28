@@ -1,4 +1,4 @@
-//! RFC 0002 §8 geometry predicates shared by abstract-grid and pixel verification.
+//! Geometry predicates shared by abstract-grid and pixel verification.
 //! Coordinates use downward-growing `y`.
 
 /// One point of an orthogonal plane.
@@ -69,9 +69,9 @@ pub(crate) fn on_segment(point: Point, segment: &[Point]) -> bool {
         && point.y <= segment[0].y.max(segment[1].y)
 }
 
-/// Whether two routes may meet where they do. RFC 0002 §8 allows a common
-/// endpoint and a deliberately shared collinear segment, and only between
-/// connections leaving one exit or reaching one destination.
+/// Whether two routes may meet where they do. A common endpoint or a deliberately
+/// shared collinear segment is allowed only between connections leaving one exit
+/// or reaching one destination.
 #[must_use]
 pub fn compatible(left: &[Point], right: &[Point], shared: bool, meetings: &[Point]) -> bool {
     for a in left.windows(2) {
@@ -155,7 +155,7 @@ pub fn straighten(points: Vec<Point>) -> Vec<Point> {
 
 /// Whether a route turns sideways below its own start and then arrives other
 /// than horizontally. An incoming side route must not turn down over the
-/// continuation its junction's outgoing connection owns (RFC 0002 §8).
+/// continuation its junction's outgoing connection owns.
 ///
 /// Returns false for fewer than two points.
 #[must_use]

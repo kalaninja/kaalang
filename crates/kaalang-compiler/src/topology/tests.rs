@@ -348,7 +348,7 @@ fn every_node_and_exit_has_one_identity() {
         }
     "#,
     );
-    // RFC 0002 §5 shows every named flow input as an output of start; the
+    // Every named flow input is an output of start; the
     // wildcard provides nothing.
     assert_eq!(
         topology.exit(ExitId::of(NodeId::Start)).provides,
@@ -433,7 +433,7 @@ fn a_merge_written_above_a_question_reaches_it_first() {
     );
 }
 
-/// RFC 0002 §7 gives a question branch or a case exit at most one connection,
+/// A question branch or a case exit has at most one connection,
 /// however many blocks capture the merged wire: the alternatives meet at the
 /// junction and the common segment leaves it.
 #[test]
@@ -498,7 +498,7 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
 /// A branch output with no alternative producers keeps its exit's single
 /// connection however many blocks capture it. The first consumer is reached
 /// from the exit and the rest through that consumer, so nothing routes around
-/// the branch and RFC 0002 §7's reduction leaves one edge per exit.
+/// the branch, leaving one edge per exit after reduction.
 #[test]
 fn an_unmerged_branch_output_leaves_its_exit_once() {
     let topology = fixture(

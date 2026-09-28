@@ -25,7 +25,7 @@ pub(super) fn flow(
         }
         let executions = frames.at(brancher);
         // A cycle's continuation starts after its body, which only makes the
-        // selection (RFC 0006 §5.2).
+        // selection.
         let past_body = |block: usize| declaration.loop_end.is_none_or(|end| block >= end);
         // Choice-like branchers compare their groups by route: the routes
         // each block continues, with the case each selected.

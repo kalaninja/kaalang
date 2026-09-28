@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-/// RFC 0001 §3: macro token streams are opaque to the control-transfer check,
+/// Macro token streams are opaque to the control-transfer check,
 /// so a macro may mention `return` without transferring control.
 #[kaalang]
 fn keep_macro_tokens_opaque() -> &'static str {

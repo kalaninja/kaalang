@@ -38,7 +38,7 @@ pub(super) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
 }
 
 /// Appends one hidden boundary consumer per declared output to the body that
-/// ends at `blocks.len()`, in declaration order (RFC 0006 §5.2). A consumer
+/// ends at `blocks.len()`, in declaration order. A consumer
 /// captures its body-local output; the route that reaches it with that output
 /// exports it after all of its remaining work.
 pub(super) fn exports(blocks: &mut Vec<Block>, header: usize) -> Result<()> {

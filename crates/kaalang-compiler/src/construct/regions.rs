@@ -202,8 +202,8 @@ impl Regions {
             .collect()
     }
 
-    /// Group area excluding vertices shared with the later sibling (RFC 0002 §8).
-    /// Does not constrain earlier or enclosed siblings; see RFC 0003 §2.2.
+    /// Group area excluding vertices shared with the later sibling.
+    /// Does not constrain earlier or enclosed siblings.
     pub(super) fn reserved(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
         group
             .area
@@ -212,8 +212,8 @@ impl Regions {
             .collect()
     }
 
-    /// The siblings written after every member of one group: the branches RFC
-    /// 0002 §8 holds to the right of what the group draws.
+    /// The siblings written after every member of one group: the branches kept
+    /// to the right of what the group draws.
     pub(super) fn later_siblings(&self, group: &Group) -> std::ops::Range<usize> {
         let after = group
             .members

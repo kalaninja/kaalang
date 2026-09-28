@@ -1,7 +1,6 @@
 //! Complete sweep of vertex and shared-route exchange events. Connections and
 //! back edges may change columns between events; vertices, ports and back edge
-//! envelopes supply the persistent horizontal constraints. See RFC 0003 §2.1 for the finite space,
-//! the strip-routing construction, and the state-equivalence argument.
+//! envelopes supply the persistent horizontal constraints.
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
@@ -787,7 +786,7 @@ impl<'a> Sweep<'a> {
     /// sides, provided it cannot itself reach v. It cannot meet either path
     /// before v: such a meeting would make it an ancestor of v. Only the
     /// already live edges may escape through their common source; exclude
-    /// those from this obstruction. See RFC 0003 §2.1.
+    /// those from this obstruction.
     fn sealed(&self, state: &State) -> bool {
         let destination = |item: Lifeline| match item {
             Lifeline::Wire(w) => self.topology.connections[w].destination,

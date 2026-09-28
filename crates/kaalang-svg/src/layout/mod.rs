@@ -395,7 +395,7 @@ fn contour_reaches(model: &SemanticModel) -> BTreeMap<i32, (i32, i32)> {
 }
 
 /// Lays out one validated flow, or reports that this layout could not route its
-/// connections under RFC 0002 §8.
+/// connections.
 pub(crate) fn layout(
     model: &SemanticModel,
     captions: &Rc<Captions>,
@@ -933,8 +933,7 @@ impl Scene {
         let node = self.node(exit.node);
         match (self.topology.node(exit.node).kind, exit.branch) {
             // A question, or a collapsed cycle with several outputs, leaves by
-            // its first branch below and by the others from its right tip
-            // (RFC 0006 §7.5).
+            // its first branch below and by the others from its right tip.
             (NodeKind::Question | NodeKind::Loop, Some(branch)) if branch > 0 => Point {
                 x: node.x + node.width / 2,
                 y: node.y,

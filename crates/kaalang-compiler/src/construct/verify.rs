@@ -1,5 +1,5 @@
 //! Verifies a candidate independently of its search by rebuilding its routes
-//! on an abstract grid and checking RFC 0002. Rejecting a candidate says nothing
+//! on an abstract grid and checking diagram geometry. Rejecting a candidate says nothing
 //! about whether another arrangement exists.
 
 use crate::geometry::{
@@ -167,8 +167,7 @@ pub(super) fn polyline(
 }
 
 /// The iteration back edge of the cycle at `index` as an orthogonal polyline:
-/// out of the tail, up the contour, and horizontally into the entry (RFC 0002
-/// §8).
+/// out of the tail, up the contour, and horizontally into the entry.
 pub(super) fn back_edge_polyline(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -205,9 +204,9 @@ pub(super) fn back_edge_polyline(
 
 /// Where two routes are allowed to meet, and whether they may share a run.
 ///
-/// RFC 0002 §8 lets connections leaving one exit or reaching one destination
+/// Connections leaving one exit or reaching one destination may
 /// share a collinear segment and split or join where they touch. The side
-/// exits of one node fan out along one row the same way (RFC 0006 §7.5).
+/// exits of one node fan out along one row the same way.
 /// Otherwise only the incoming and outgoing routes of one junction may meet,
 /// and only at that junction's own point.
 pub(super) fn meetings(
@@ -361,7 +360,7 @@ pub(super) fn placement(
 }
 
 /// A cycle with several outputs draws its result exits left to right in
-/// declaration order (RFC 0006 §7.5).
+/// declaration order.
 pub(super) fn result_order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
     for boundary in &topology.loop_boundaries {
         let columns = boundary
@@ -485,7 +484,7 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
     // A corridor has to end at the vertices its connection joins, and leave by
     // a column that exit owns: either its own branch column, a case column its
     // select distributor reaches sideways, or the column of the merge a later
-    // question branch joins at once (RFC 0002 §8).
+    // question branch joins at once.
     for (index, wire) in topology.connections.iter().enumerate() {
         let route = &arrangement.routes[index];
         if route.arrival != arrangement.column[&wire.destination] {
@@ -615,7 +614,7 @@ fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), 
 
 /// A selection's branches leave it left to right in authored order, its shared
 /// continuations sit in the column their group's first branch reached, and
-/// each convergence group keeps the columns it reserves (RFC 0002 §8).
+/// each convergence group keeps the columns it reserves.
 fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Result<(), String> {
     for brancher in &shape.branchers {
         let block = brancher.block;
@@ -631,7 +630,7 @@ fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Resu
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        // RFC 0002 §8: the first answer or case continues the current column
+        // The first answer or case continues the current column
         // and the rest appear to its right, in authored order. A choice lives
         // in its case nodes' columns, a question in its exits' branch columns.
         if !starts.windows(2).all(|pair| pair[0] < pair[1]) {
@@ -673,7 +672,7 @@ fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Resu
 /// Checks later siblings against group reservations derived from topology,
 /// independently of the search's width arithmetic. Shared vertices are excluded
 /// on both sides. Earlier, enclosed, and nonconverging branches add no such
-/// constraint (RFC 0002 §8; RFC 0003 §2.2).
+/// constraint.
 fn reserved_columns(arrangement: &Arrangement, brancher: &Brancher) -> Result<(), String> {
     let column = |vertex: &Vertex| arrangement.column[vertex];
     for (group, branch, outside, reserved) in &brancher.reservations {
@@ -718,7 +717,7 @@ fn vertex_points(
 }
 
 /// One polyline is simple: right-angled, through no vertex it does not join,
-/// and never over itself (RFC 0002 §8). Direction is not checked here, because
+/// and never over itself. Direction is not checked here, because
 /// an iteration back edge is the one route that climbs.
 fn simple(
     points: &[Point],
@@ -766,7 +765,7 @@ fn routes(topology: &Topology, geometry: &ArrangementGeometry) -> Result<(), Str
                 return Err(format!("connection {} moves upward", index + 1));
             }
         }
-        // RFC 0002 §8: an incoming side route must not turn down over the
+        // An incoming side route must not turn down over the
         // continuation the junction's outgoing connection owns.
         if matches!(wire.destination, Destination::Junction(_)) && turns_downward(points) {
             return Err(format!(
@@ -814,7 +813,7 @@ pub(super) fn crossing(topology: &Topology, lines: &[Vec<Point>]) -> Option<(usi
 }
 
 /// Each iteration back edge climbs outside its body, on the side its contour names, and
-/// crosses nothing (RFC 0002 §8).
+/// crosses nothing.
 fn back_edges(
     flow: &Flow,
     topology: &Topology,

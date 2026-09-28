@@ -1,4 +1,4 @@
-//! Measures and places wire labels under RFC 0002 §6. Shared connection labels
+//! Measures and places wire labels. Shared connection labels
 //! use the capture position; identical alternatives share their merge's label.
 
 use std::collections::BTreeSet;
@@ -182,7 +182,7 @@ fn place_merge_label(
 
 /// Several side exits of one node leave along the same row until each turns
 /// down to its own destination, so their labels stand at those corners rather
-/// than together at the node's tip (RFC 0006 §7.5).
+/// than together at the node's tip.
 fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
     let anchor = scene.exit_anchor(exit);
     let several = exit.branch.is_some_and(|branch| branch > 0)

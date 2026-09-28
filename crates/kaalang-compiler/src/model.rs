@@ -47,7 +47,7 @@ pub struct StageAnalysis {
 pub struct SemanticModel {
     /// Everything the analysis established, before any diagram.
     pub analysis: Analysis,
-    /// Structural topology defined by RFC 0002 §7.
+    /// Structural topology of the flow.
     pub topology: Topology,
     /// Verified arrangement for the renderer to realize.
     pub arrangement: Arrangement,
@@ -63,7 +63,7 @@ pub enum BlockKind {
     Question,
     Loop,
     /// The boundary consumer of one declared cycle output, closing the body in
-    /// declaration order (RFC 0006 §5.2). It lowers to a Rust `break`.
+    /// declaration order. It lowers to a Rust `break`.
     Export,
     Continue,
     Return,
@@ -106,7 +106,7 @@ pub struct Block {
 impl Block {
     /// The number of alternative control exits: a question's two answers, a
     /// choice's cases, or a cycle's declared outputs when it has several. A
-    /// single cycle output is an ordinary completed result (RFC 0006 §5.2).
+    /// single cycle output is an ordinary completed result.
     #[must_use]
     pub fn branch_count(&self) -> usize {
         match self.kind {
@@ -228,7 +228,7 @@ pub struct Input {
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
     /// An outer wire a cycle's body captures, recorded on the cycle itself so
-    /// the dependency enters through the cycle (RFC 0006 §7.5). It binds
+    /// the dependency enters through the cycle. It binds
     /// nothing and does not decide whether the cycle runs.
     pub derived: bool,
 }

@@ -358,7 +358,7 @@ fn captions_of(model: &SemanticModel, start: &str, return_type: &str) -> Rc<Capt
     Rc::new(crate::captions::derive(model, start, return_type))
 }
 
-/// Lays out one flow and holds it to RFC 0002 §8 before returning it, so every
+/// Lays out one flow and checks its geometry before returning it, so every
 /// test built on this helper carries the whole spatial contract with it.
 fn drawn((source, flow): (&str, &str)) -> Scene {
     drawn_with((source, flow), |_| {})
@@ -446,7 +446,7 @@ const SHARED_INPUTS: &str = r#"
     }
 "#;
 
-/// RFC 0003 §2.5: disjoint convergence groups of one brancher receive disjoint
+/// Disjoint convergence groups of one brancher receive disjoint
 /// footprints in authored branch order. `two_convergence_groups` shares one
 /// continuation between its first two cases and another between its last two,
 /// so nothing of the late half may sit at or left of the early half.
@@ -880,7 +880,7 @@ fn branches_run_left_to_right_from_their_branchers_own_column() {
                 continue;
             }
 
-            // RFC 0002 §8: the first output continues down the brancher's own
+            // The first output continues down the brancher's own
             // column and the rest appear to its right, in authored order.
             let own = scene.node(node.id).x;
             assert!(

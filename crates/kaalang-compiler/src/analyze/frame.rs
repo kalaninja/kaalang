@@ -2,7 +2,7 @@
 //! several outputs is a branching block whose body is a black box: only the
 //! output it exported leaves that body, and the route taken inside it only
 //! tells executions apart at the cycle. Inside the body its own selection does not exist yet, since
-//! the body's routes are what make it (RFC 0006 §5.2).
+//! the body's routes are what make it.
 
 use std::borrow::Cow;
 use std::collections::BTreeMap;

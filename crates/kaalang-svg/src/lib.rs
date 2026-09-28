@@ -114,8 +114,7 @@ impl Error for RenderError {}
 /// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
 /// character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
-/// arrangement as geometry cannot route every connection and place every label
-/// under RFC 0002 §8.
+/// arrangement cannot route every connection or place every label.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     render_source_with_options(source, flow_name, RenderOptions::default())
 }
@@ -546,7 +545,7 @@ fn invalid(condition: bool) -> u32 {
     }
 
     /// A character reference decodes before the diagram is written, so the
-    /// character it names is validated too (RFC 0005 §4).
+    /// character it names is validated too.
     #[test]
     fn reports_an_invalid_character_a_reference_introduces() {
         let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";

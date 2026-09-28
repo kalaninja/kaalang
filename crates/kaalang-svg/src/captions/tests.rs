@@ -106,8 +106,8 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             if branch == 0 { "Near." } else { "Far." }
         );
         // The distributor is the fan-out this projection actually produces:
-        // both displayed lists are empty and therefore equal, and RFC 0002 §6
-        // still keeps the two ends apart because the exit has two connections.
+        // both displayed lists are empty and therefore equal, but the hand-over rules
+        // still keep the two ends apart because the exit has two connections.
         assert!(!captions.shares_label(&Connection {
             source: Source::Exit(distributor),
             destination: Destination::Node(case),

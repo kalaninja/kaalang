@@ -110,7 +110,7 @@ mod tests {
     }
 
     /// Outside a cycle with several outputs only its exported output decides:
-    /// the body's own selections stay inside it (RFC 0006 §5.2).
+    /// the body's own selections stay inside it.
     #[test]
     fn a_cycle_with_several_outputs_decides_the_blocks_after_it() {
         let source = include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs");

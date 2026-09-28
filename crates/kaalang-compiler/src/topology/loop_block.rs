@@ -20,7 +20,7 @@ pub(super) fn project_collapsed(
         return;
     }
     // Several outputs leave by branch exits in declaration order, the first
-    // down and the others to the right (RFC 0006 §7.5).
+    // down and the others to the right.
     if block.branch_count() > 0 {
         exits.extend(branch_exits(index, block, super::drawn_branch_exit));
     } else {
@@ -64,7 +64,7 @@ pub(super) fn order_exits(
 }
 
 /// Initially places each completing cycle's continuation below its body.
-/// Compaction may lift it beside the body if boundary checks pass (RFC 0002 §8).
+/// Compaction may lift it beside the body if boundary checks pass.
 /// Diverging cycles have no result to order.
 pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();

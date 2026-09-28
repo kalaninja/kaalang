@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-/// Two exits of different Rust types (RFC 0006 §5.5). Only the selected one
+/// Two exits of different Rust types. Only the selected one
 /// exists after the cycle; the outer continuations merge before the return.
 #[kaalang]
 fn alternative_outputs(mut items: Vec<String>) -> Option<String> {

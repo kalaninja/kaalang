@@ -1,5 +1,5 @@
 //! Derives captions and shared-label decisions from the authored flow.
-//! Exits own hand-overs; nodes own captures (RFC 0002 §6).
+//! Exits own hand-overs; nodes own captures.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -48,7 +48,7 @@ impl Captions {
         self.capture_label.get(&node).map_or(&[], Vec::as_slice)
     }
 
-    /// Derived cycle inputs may share a hand-over regardless of order (RFC 0006 §7.5).
+    /// Derived cycle inputs may share a hand-over regardless of order.
     pub(crate) fn matches_capture(&self, node: &Node, handover: &[String]) -> bool {
         let capture = self.capture(node.id);
         capture == handover
@@ -236,7 +236,7 @@ fn derive_with_parameters(
         let label = match node.id {
             NodeId::Start => RichText::literal(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
-            // Undescribed calls use the callee path (RFC 0002 §4.3).
+            // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
                 None if node.kind == NodeKind::Call => {
@@ -460,7 +460,7 @@ fn provided(analysis: &Analysis, parameters: &[String], producer: ProducerId) ->
 }
 
 /// A cycle's gate and the outer wires its body captures, each with its
-/// producer's `mut` rather than a capture form (RFC 0006 §7.5).
+/// producer's `mut` rather than a capture form.
 fn cycle_inputs(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
     let flow = &model.analysis.flow;
     flow.blocks[block]

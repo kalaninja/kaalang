@@ -13,7 +13,7 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: State) {
         state.loops.last_key_value().map(|(&index, _)| index),
         Some(header)
     );
-    // A route either completes with an output or repeats (RFC 0006 §5.3).
+    // A route either completes with an output or repeats.
     if let Some(output) = super::produced_outputs(walk.flow, &state, header).next() {
         walk.report(
             (block, 0),

@@ -1,4 +1,4 @@
-//! Constructs and independently verifies an arrangement under RFC 0002 §8.
+//! Constructs and independently verifies a diagram arrangement.
 //!
 //! `preferred` seeks readable diagrams by varying sunk tails, contour sides,
 //! and corridor shapes. Conflicts guide a finite search with no repeated states
@@ -6,7 +6,6 @@
 //! If it exhausts its candidates or verification fails, `sweep` decides
 //! realizability. Only sweep exhaustion proves the topology impossible.
 //!
-//! See RFC 0003 §2.1 for the complete search and §2.5 for presentation choices.
 //! `kaalang-render` may compact the verified arrangement; macro compilation skips it.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -101,7 +100,7 @@ fn close_paths(paths: &mut [Vec<bool>]) {
 /// reorder or re-route anything recorded here.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Arrangement {
-    /// Abstract row of every vertex, checked against RFC 0002 §8.
+    /// Abstract row of every vertex, checked against the diagram rules.
     pub rank: BTreeMap<Vertex, usize>,
     /// One past the deepest rank in use.
     pub ranks: usize,
@@ -155,7 +154,7 @@ impl<'a> ArrangementChecks<'a> {
         }
     }
 
-    /// Checks a complete construction result against RFC 0002.
+    /// Checks a complete construction result against the diagram rules.
     ///
     /// Missing or inconsistent arrangement references produce an error rather
     /// than being indexed. The flow and topology supplied to [`Self::new`] must
@@ -163,7 +162,7 @@ impl<'a> ArrangementChecks<'a> {
     ///
     /// # Errors
     ///
-    /// Returns the first RFC 0002 spatial rule the arrangement breaks.
+    /// Returns the first spatial rule the arrangement breaks.
     pub fn verify(&self, arrangement: &Arrangement) -> Result<(), String> {
         verify::arrangement_with_shape(self.flow, self.topology, arrangement, &self.shape)
     }
@@ -376,10 +375,7 @@ pub(crate) fn construct(
         Err(sweep::Refusal::Internal(reason)) => Err(internal(reason)),
         Err(sweep::Refusal::Impossible(blocked)) => Err(Error::new(
             blocked.span,
-            format!(
-                "could not construct a diagram under RFC 0002: {}",
-                blocked.message
-            ),
+            format!("could not construct a diagram: {}", blocked.message),
         )),
     }
 }
@@ -392,7 +388,7 @@ fn disagreed(reason: &str) {
     let _ = reason;
 }
 
-/// Conflict-guided search of the preferred shapes (RFC 0003 §2.5).
+/// Conflict-guided search of the preferred shapes.
 /// Exhaustion requires a sweep; inconsistency indicates a projection defect.
 fn preferred(
     flow: &Flow,
@@ -406,7 +402,7 @@ fn preferred(
         .iter()
         .map(|loop_| Vertex::Junction(loop_.tail))
         .collect::<Vec<_>>();
-    // Start with the contour preference from RFC 0002 §8.
+    // Start with the preferred contour.
     let sides = topology
         .loops
         .iter()
@@ -489,7 +485,7 @@ fn corridors(
     let placement =
         place::place(topology, footprints, sunk, sides).map_err(sweep::Refusal::Internal)?;
     // No corridor shape moves a column, so results placed out of declaration
-    // order leave nothing to try here (RFC 0006 §7.5).
+    // order leave nothing to try here.
     if let Some(boundary) = topology.loop_boundaries.iter().find(|boundary| {
         !boundary.results.windows(2).all(|pair| {
             placement.column[&Vertex::from(pair[0])] < placement.column[&Vertex::from(pair[1])]

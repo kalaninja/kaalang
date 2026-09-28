@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-/// RFC 0001 §3: a `return` expression or `?` operator inside a nested closure
+/// A `return` expression or `?` operator inside a nested closure
 /// or item definition belongs to that Rust construct, not to the kaalang block
 /// body around it.
 #[kaalang]

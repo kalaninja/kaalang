@@ -130,7 +130,7 @@ pub(super) fn nested_back_edges(
 }
 
 /// Whether one contour climbs outside everything its body occupies: every
-/// column of the body, and every back edge nested inside it (RFC 0002 §8).
+/// column of the body, and every back edge nested inside it.
 pub(super) fn outside(
     grid: &Grid,
     side: Side,

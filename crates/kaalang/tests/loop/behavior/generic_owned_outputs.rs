@@ -1,7 +1,7 @@
 use kaalang::kaalang;
 
-/// Owned alternative outputs of an unconstrained generic type in a `const fn`
-/// (RFC 0006 §6.3). Each output moves the same value into its own result block.
+/// Owned alternative outputs of an unconstrained generic type in a `const fn`.
+/// Each output moves the same value into its own result block.
 #[kaalang]
 const fn generic_owned_outputs<T>(value: T, mut remaining: usize, take_left: bool) -> T {
     #[cycle("Count down, then pick a side.")]

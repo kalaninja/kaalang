@@ -3,7 +3,7 @@
 //! values each join carries.
 //!
 //! Joins are lowering structure. Execution validation owns semantic convergence;
-//! the branch rule of RFC 0001 §7 is what guarantees a nested branch tree exists.
+//! the branch rules guarantee that a nested branch tree exists.
 
 use std::collections::{BTreeMap, BTreeSet};
 

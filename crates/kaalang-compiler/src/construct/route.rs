@@ -1,7 +1,7 @@
 //! Chooses corridors and orders their horizontal runs within rank gaps.
 //! A run crossing another route's descent must lie below it; crossing its arrival
 //! requires lying above it. Topological sorting assigns lanes. Cyclic constraints
-//! identify a route for the search to move. Bundling follows RFC 0002 §8.
+//! identify a route for the search to move. Shared routes form bundles.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -443,7 +443,7 @@ fn order(above: &[Vec<usize>], movable: &dyn Fn(usize) -> bool) -> Result<Vec<us
 }
 
 /// Whether the search may move this connection. A select's distributor fans out
-/// to its cases as one shared horizontal (RFC 0002 §4.5); sending one of those
+/// to its cases as one shared horizontal; sending one of those
 /// runs down a column of its own would take the case row apart.
 fn movable(topology: &Topology, connection: usize) -> bool {
     !matches!(
@@ -464,8 +464,7 @@ fn mover(topology: &Topology, blocked: usize, other: usize) -> usize {
 
 /// Departure column: select connections use their case's column. A later question
 /// branch can use its merge column only when it lies strictly between the node
-/// and the branch's own column; going farther right would cross another branch
-/// (RFC 0002 §8).
+/// and the branch's own column; going farther right would cross another branch.
 pub(super) fn departure_column(
     placement: &Placement,
     source: Source,
