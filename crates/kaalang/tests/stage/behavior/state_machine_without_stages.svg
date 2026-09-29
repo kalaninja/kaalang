@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="826" viewBox="0 0 1120 826" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for state_machine_without_stages</title>
+  <desc id="kaalang-description">Cycles: Follow state transitions until Finish. with inputs mut state and outputs done. Nodes: Start: state_machine_without_stages with parameters mut state: State handing over mut state; Select: Which state is selected? capturing &amp;state; Case: First handing over first; Case: Second handing over second; Case: Finish handing over done; Action: Continue to Second. capturing first, &amp;mut state handing over changed; Action: Continue to Finish. capturing second, &amp;mut state handing over changed; End: () capturing nothing; Merge: changed. Connections: Start: state_machine_without_stages to the entry of the cycle; Select: Which state is selected? to Case: First; Select: Which state is selected? to Case: Second; Select: Which state is selected? to Case: Finish; Case: First to Action: Continue to Second.; Case: Second to Action: Continue to Finish.; Case: Finish to End: (); Action: Continue to Second. to the changed merge at the iteration tail of the cycle; Action: Continue to Finish. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which state is selected?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Follow state transitions until Finish.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1056" height="568" rx="12"/>
+    <text class="cycle-caption" x="1076" y="141" text-anchor="end" xml:space="preserve"><tspan x="1076" dy="0">Follow state transitions until <tspan class="md-code">Finish</tspan>.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 306 L 220 378
+      M 348 270 L 580 270 L 580 378
+      M 348 270 L 940 270 L 940 378
+      M 220 448 L 220 520
+      M 580 448 L 580 520
+      M 940 448 L 940 736
+      M 220 584 L 220 660
+      M 580 584 L 580 660 L 220 660
+      M 220 162 L 220 234
+    "/>
+    <path class="connection" d="
+      M 220 660 L 60 660 L 60 162 L 220 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="678" xml:space="preserve"><tspan x="233" dy="0">changed</tspan></text>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut state</tspan></text>
+    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">first</tspan></text>
+    <text class="connection-label" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">second</tspan></text>
+    <text class="connection-label" x="953" y="466" xml:space="preserve"><tspan x="953" dy="0">done</tspan></text>
+    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;state</tspan></text>
+    <text class="connection-label" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">first, &amp;mut state</tspan></text>
+    <text class="connection-label" x="593" y="509" xml:space="preserve"><tspan x="593" dy="0">second, &amp;mut state</tspan></text>
+    <text class="connection-label" x="953" y="725" xml:space="preserve"><tspan x="953" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut state: State</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(220 660)">
+      <title xml:space="preserve">the changed merge at the iteration tail of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">state_machine_without_stages</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 270)">
+      <title xml:space="preserve">Which state is selected?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which state is selected?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 413)">
+      <title xml:space="preserve">First</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 413)">
+      <title xml:space="preserve">Second</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 413)">
+      <title xml:space="preserve">Finish</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 552)">
+      <title xml:space="preserve">Continue to Second.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to <tspan class="md-code">Second</tspan>.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 552)">
+      <title xml:space="preserve">Continue to Finish.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to <tspan class="md-code">Finish</tspan>.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(940 765)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

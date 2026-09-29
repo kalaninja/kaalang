@@ -1,9 +1,9 @@
-//! Emits one cycle body and the continuation reached by its breaks.
+//! Emits one cycle body and the continuations its declared outputs reach.
 
 use std::collections::BTreeSet;
 
 use super::{Builder, Lowered, Scope, Unstructured};
-use crate::model::{Execution, ExecutionPlan};
+use crate::model::{Branch, Execution, ExecutionPlan};
 
 pub(super) fn lower<'e>(
     builder: &mut Builder<'_>,
@@ -26,34 +26,37 @@ pub(super) fn lower<'e>(
         from: 0,
     });
     let body = builder.lower(executions, done, &inside_forbidden, &inside_scopes)?;
-    let normal = executions
+    let completing = executions
         .iter()
         .copied()
-        .filter(|execution| {
-            execution
-                .blocks
-                .iter()
-                .any(|&index| builder.flow.blocks[index].break_target == Some(block))
-        })
+        .filter(|execution| builder.flow.completes_loop(execution, block))
         .collect::<Vec<_>>();
     let mut emitted = body.emitted;
     emitted.insert(block);
-    let mut yielding = Vec::new();
-    let next = if normal.is_empty() {
-        None
+    let mut finished = done.clone();
+    finished.extend(block + 1..end);
+    let (branches, joins, yielding) = if completing.is_empty() {
+        (Vec::new(), Vec::new(), Vec::new())
+    } else if builder.flow.blocks[block].branch_count() > 0 {
+        // Several outputs continue like the cases of a choice.
+        let (branches, joins, yielding, continued) =
+            builder.continuations(block, &completing, &finished, forbidden, scopes)?;
+        emitted.extend(continued);
+        (branches, joins, yielding)
     } else {
-        let mut finished = done.clone();
-        finished.extend(block + 1..end);
-        let next = builder.lower(&normal, &finished, forbidden, scopes)?;
+        let next = builder.lower(&completing, &finished, forbidden, scopes)?;
         emitted.extend(next.emitted);
-        yielding = next.yielding;
-        Some(Box::new(next.plan))
+        let branch = Branch {
+            plan: Box::new(next.plan),
+        };
+        (vec![branch], Vec::new(), next.yielding)
     };
     Ok(Lowered {
         plan: ExecutionPlan::Loop {
             index: block,
             body: Box::new(body.plan),
-            next,
+            branches,
+            joins,
         },
         emitted,
         yielding,
@@ -64,18 +67,23 @@ pub(super) fn replay(
     replay: &mut super::verify::Replay<'_>,
     index: usize,
     body: &ExecutionPlan,
-    next: Option<&ExecutionPlan>,
+    branches: &[Branch],
+    joins: &[crate::model::Join],
 ) -> Option<super::verify::Exit> {
     use super::verify::Exit;
     replay.enter(index, crate::model::BlockKind::Loop)?;
-    let outside = std::mem::replace(&mut replay.available, replay.flow.cycle_bindings(index));
+    let outside = replay.available.clone();
     match replay.iteration(index, body)? {
-        Exit::Break(target) if target == index => {
+        Exit::Export(target) if target == index => {
             replay.available = outside;
             replay.produce(index);
-            replay.walk(next?)
+            if replay.flow.blocks[index].branch_count() > 0 {
+                replay.branch(index, branches, joins)
+            } else {
+                replay.walk(&branches.first()?.plan)
+            }
         }
-        exit @ (Exit::Return(_) | Exit::Repeat(_) | Exit::Break(_)) => Some(exit),
+        exit @ (Exit::Return(_) | Exit::Repeat(_) | Exit::Export(_)) => Some(exit),
         Exit::Yield(_) => None,
     }
 }

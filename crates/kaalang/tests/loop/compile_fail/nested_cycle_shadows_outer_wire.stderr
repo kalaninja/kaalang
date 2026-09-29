@@ -1,0 +1,5 @@
+error: a cycle-local output must not shadow a wire visible outside the cycle
+  --> tests/loop/compile_fail/nested_cycle_shadows_outer_wire.rs:10:17
+   |
+10 |             let value = || 1u8;
+   |                 ^^^^^

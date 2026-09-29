@@ -33,11 +33,11 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn fizzbuzz(number: u32) -> String {
-    #[choice("Which of three and five divide the number?")]
-    #[case("Both three and five divide it.")]
-    #[case("Only three divides it.")]
-    #[case("Only five divides it.")]
-    #[case("Neither divides it.")]
+    #[choice("Which of 3 and 5 divide the number?")]
+    #[case("Both 3 and 5.")]
+    #[case("Only 3.")]
+    #[case("Only 5.")]
+    #[case("Neither 3 nor 5.")]
     let (fizz_buzz, fizz, buzz, plain) = |number| match (number % 3, number % 5) {
         (0, 0) => (),
         (0, _) => (),
@@ -45,16 +45,16 @@ fn fizzbuzz(number: u32) -> String {
         _ => number,
     };
 
-    #[action("🎉 Say FizzBuzz.")]
+    #[action("🎉 Use `FizzBuzz` for this number.")]
     let end = |fizz_buzz| String::from("FizzBuzz");
 
-    #[action("🫧 Say Fizz.")]
+    #[action("🫧 Use `Fizz` for this number.")]
     let end = |fizz| String::from("Fizz");
 
-    #[action("🐝 Say Buzz.")]
+    #[action("🐝 Use `Buzz` for this number.")]
     let end = |buzz| String::from("Buzz");
 
-    #[action("🔢 Say the number itself.")]
+    #[action("🔢 Use the number itself, written as text.")]
     let end = |plain| plain.to_string();
 
     |end| return end;
@@ -78,9 +78,9 @@ between `|...|` and names the wires it produces after `let`.
 | Four declarations of `end`                 | The branches are mutually exclusive. Their results merge into one wire for the shared continuation.                              |
 | `\|end\| return end;`                      | The flow returns whichever branch supplied `end`.                                                                                |
 
-For `number = 9`, only `fizz` is selected, so only the “Say Fizz” action runs.
-The diagram's connections show execution paths; input and output names appear as
-labels along those paths.
+For `number = 9`, only `fizz` is selected, so only the “Use `Fizz` for this
+number” action runs. The diagram's connections show execution paths; input and
+output names appear as labels along those paths.
 
 The `#[kaalang]` macro translates the capture notation into ordinary Rust
 bindings and control flow. Blocks execute in source order along the selected
@@ -101,20 +101,20 @@ let end = |plain| {                     // output = |inputs|
 };
 ```
 
-| Part                 | In this action          | Variations                                                                            |
-| -------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
-| Kind and description | `#[action("...")]`      | Both are required for an action. The description labels its diagram node.             |
-| Outputs              | `let end =`             | Omit for an effect returning `()`. Use `let (left, right) =` to expose two outputs.   |
-| Inputs               | `\|plain\|`             | Use `\|\|` when there are no inputs. Every wire used by the body must be listed here. |
-| Body                 | `{ plain.to_string() }` | A Rust expression. An action may omit the braces, as in the full example.             |
+| Part                 | In this action          | Variations                                                                          |
+| -------------------- | ----------------------- | ----------------------------------------------------------------------------------- |
+| Kind and description | `#[action("...")]`      | Both are required for an action. The description labels its diagram node.           |
+| Outputs              | `let end =`             | Omit for an effect returning `()`. Use `let (left, right) =` to expose two outputs. |
+| Inputs               | `\|plain\|`             | Omit it when there are no inputs. Every wire used by the body must be listed here.  |
+| Body                 | `{ plain.to_string() }` | A Rust expression. An action may omit the braces, as in the full example.           |
 
 Actions can also create a value without inputs, consume inputs without producing
 outputs, or perform an effect with neither:
 
 ```rust
-// No inputs.
+// No inputs: the capture list can be omitted.
 #[action("Start with fifteen.")]
-let number = || { 15 };
+let number = 15;
 
 // No outputs.
 #[action("Print the result.")]
@@ -136,35 +136,31 @@ Captures express how an action accesses a wire:
 | `&name`     | Borrow the value.                          |
 | `&mut name` | Mutably borrow a wire declared mutable.    |
 
-See the
-[capture rules](docs/rfcs/0001-language.md#6-wires-producers-and-captures) for
-the details.
-
 ## Block kinds
 
 FizzBuzz uses `choice` and `action`. The other kinds let a flow ask a yes/no
-question, call an existing function, or repeat a sequence:
+question, call an existing function, repeat a sequence, or organize work into
+named stages:
 
-| Kind       | Role in a flow                                                                      |
-| ---------- | ----------------------------------------------------------------------------------- |
-| `action`   | Perform a computation or effect with a Rust expression.                             |
-| `call`     | Call one named Rust function. Its name supplies the description if omitted.         |
-| `question` | Select one of two branch outputs using a boolean expression.                        |
-| `choice`   | Select one output per visit from the cases of a Rust `match`.                       |
-| `cycle`    | Repeat a nested kaalang sequence, preserving its captured state between iterations. |
-| `break`    | Complete the directly containing cycle and hand back its result.                    |
-| `return`   | Complete the root flow and hand back its result.                                    |
+| Kind       | Role in a flow                                                               |
+| ---------- | ---------------------------------------------------------------------------- |
+| `action`   | Perform a computation or effect with a Rust expression.                      |
+| `call`     | Call one named Rust function. Its name supplies the description if omitted.  |
+| `question` | Select one of two branch outputs using a boolean expression.                 |
+| `choice`   | Select one output per visit from the cases of a Rust `match`.                |
+| `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
+| `stage`    | Group blocks into a named step selected by an incoming signal.               |
+| `continue` | Start the next iteration of the directly containing cycle.                   |
+| `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
-declare their branch outputs. A cycle contains kaalang blocks; its result
-becomes available when it reaches `break`. In the diagram, `break` and `return`
-appear as routes to the cycle boundary or flow end.
+declare their branch outputs. A cycle contains kaalang blocks. A route through
+it can repeat at its one `continue`, complete with one declared output, or
+diverge in a nested cycle. A completed output becomes available after the cycle.
+In the diagram, `continue` routes meet at the cycle's back edge, completing
+routes leave through the cycle boundary, and `return` reaches the flow end.
 
-The [language RFC](docs/rfcs/0001-language.md#4-block-kinds) defines each kind;
-the [visual language RFC](docs/rfcs/0002-visual-language.md#4-node-kinds)
-defines its representation.
-
-## Putting it together: binary search
+### Putting it together: binary search
 
 Searching a sorted slice adds state and repetition. Each iteration checks
 whether any candidates remain, compares the middle value with the target, and
@@ -177,42 +173,45 @@ use kaalang::kaalang;
 
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    #[action("📏 Start with the entire sorted list.")]
+    let (mut left, mut right) = |values| (0, values.len());
 
-    #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
-        #[question("Does the search range contain any elements?")]
+    #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
+    let result = {
+        #[question("Are any values left in the search range?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
 
-        #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        #[action("🚫 Report that the target is absent.")]
+        let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
-        let mid = |iterate, left, right| left + (right - left) / 2;
+        #[action("📍 Select the middle value of this range.")]
+        let (mid, value) = |iterate, values, left, right| {
+            let mid = left + (right - left) / 2;
+            (mid, values[mid])
+        };
 
-        #[choice("Compare the middle element with the target.")]
+        #[choice("How does this value compare with the target?")]
         #[case("Less than the target.")]
         #[case("Greater than the target.")]
         #[case("Equal to the target.")]
-        let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
+        let (less, greater, equal) = |value, target| match value.cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
             Ordering::Equal => (),
         };
 
-        #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        #[action("➡️ Discard this value and everything to its left.")]
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
-        #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        #[action("⬅️ Discard this value and everything to its right.")]
+        let stepped = |greater, mid, &mut right| *right = mid;
 
-        #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
+        #[action("🎯 Report the position of this matching value.")]
+        let result = |equal, mid| Some(mid);
 
-        |outcome| break outcome;
+        |stepped| continue;
     };
 
     |result| return result;
@@ -223,10 +222,12 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 
 [Source](crates/kaalang/tests/gallery/binary_search/mod.rs)
 
-The cycle captures `left` and `right` as mutable local state. The `less` and
-`greater` branches update that state and reach the next iteration. The `equal`
-and `leave` branches instead produce `outcome`, merging before the shared
-`break`. That value becomes the cycle's `result`, which the flow returns.
+The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
+the `less` and `greater` branches can update them. Both then produce `stepped`,
+merging before the shared `continue` that starts the next iteration. The `equal`
+and `leave` branches instead produce `result`, the cycle's declared output. They
+merge at the end of the body, and the cycle hands `result` to the flow, which
+returns it.
 
 <details>
 <summary>See the same flow with its cycle collapsed</summary>
@@ -240,9 +241,149 @@ The cycle's description and interface remain visible while its body is hidden.
 Both examples are [executable gallery tests](crates/kaalang/tests/gallery), with
 SVGs generated from their source. The gallery also includes
 [swap](crates/kaalang/tests/gallery/swap/mod.rs), a flow that returns its inputs
-without a computational block, and
-[bubble sort](crates/kaalang/tests/gallery/bubble_sort/mod.rs), with nested
-cycles.
+without a computational block,
+[bubble sort](crates/kaalang/tests/gallery/sorting/bubble_sort.rs), with nested
+cycles, [quicksort](crates/kaalang/tests/gallery/sorting/quick_sort.rs), with
+stages for in-place partitioning and recursion, and
+[KMP search](crates/kaalang/tests/gallery/kmp_search/mod.rs), with stages for
+comparison, advancement, and prefix fallback.
+
+## Stages
+
+Stages make the steps of a state machine explicit. The compiler generates the
+dispatch loop, and the diagram labels transitions between stages.
+
+This empty state machine only follows `First → Second → Finish`. With stages:
+
+[![State machine with stages](crates/kaalang/tests/stage/behavior/state_machine.svg)](crates/kaalang/tests/stage/behavior/state_machine.svg)
+
+[Source](crates/kaalang/tests/stage/behavior/state_machine.rs)
+
+Without stages, the diagram shows the cycle and the choice that selects the
+current state:
+
+[![State machine with an explicit dispatcher](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)
+
+[Source](crates/kaalang/tests/stage/behavior/state_machine_without_stages.rs)
+
+After each state update, control returns to the choice. Selecting `Finish`
+leaves the cycle and reaches the return. Both versions follow the same path.
+
+### Stages in practice: quicksort
+
+Quicksort sorts a slice in place. Its stages check whether work remains,
+partition the range around a pivot, sort the smaller group recursively, and
+finish:
+
+```rust
+use core::cmp::Ordering;
+
+use kaalang::kaalang;
+
+#[kaalang]
+pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
+    #[stage("Check the range.")]
+    let (partition, finish) = |values| {
+        #[question("Are there at least two values?")]
+        #[yes("YES")]
+        #[no("NO")]
+        let (split, finish) = |&values| values.len() > 1;
+
+        #[action("Take the unsorted range.")]
+        let partition = |split, values| values;
+    };
+
+    #[stage("Partition the range.")]
+    let recur = |partition| {
+        #[action("Choose the middle value as the pivot; set it aside at the end.")]
+        let (mut range, mut lower, mut cursor, mut upper, pivot) = |partition| {
+            let pivot = partition.len() - 1;
+            partition.swap(partition.len() / 2, pivot);
+            (partition, 0, 0, pivot, pivot)
+        };
+
+        #[cycle("Group the other values around the pivot.")]
+        let classified = {
+            #[question("Are any values unclassified?")]
+            #[yes("YES")]
+            #[no("NO")]
+            let (select, classified) = |cursor, upper| cursor < upper;
+
+            #[action("Select the first unclassified value.")]
+            let value = |select, &range, cursor| &range[cursor];
+
+            #[choice("How does this value compare with the pivot?")]
+            #[case("Less than the pivot.")]
+            #[case("Equal to the pivot.")]
+            #[case("Greater than the pivot.")]
+            let (less, equal, greater) = |value, &range, pivot| match value.cmp(&range[pivot]) {
+                Ordering::Less => (),
+                Ordering::Equal => (),
+                Ordering::Greater => (),
+            };
+
+            #[action("Put this value in the left group.")]
+            let stepped = |less, &mut range, &mut lower, &mut cursor| {
+                range.swap(*cursor, *lower);
+                *lower += 1;
+                *cursor += 1;
+            };
+
+            #[action("Keep this value in the middle group.")]
+            let stepped = |equal, &mut cursor| *cursor += 1;
+
+            #[action("Swap this value into the right group; check its replacement next.")]
+            let stepped = |greater, &mut range, cursor, &mut upper| {
+                *upper -= 1;
+                range.swap(cursor, *upper);
+            };
+
+            |stepped| continue;
+        };
+
+        #[action("Place the pivot with its equals; separate the left and right groups.")]
+        let recur = |classified, range, lower, upper, pivot| {
+            range.swap(upper, pivot);
+            let (left, rest) = range.split_at_mut(lower);
+            let (_, right) = rest.split_at_mut(upper + 1 - lower);
+            if left.len() <= right.len() {
+                (left, right)
+            } else {
+                (right, left)
+            }
+        };
+    };
+
+    #[stage("Sort the smaller group.")]
+    let values = |recur| {
+        #[action("Take the smaller and larger outer groups.")]
+        let (smaller, larger) = |recur| recur;
+
+        #[call("Sort the smaller group recursively.")]
+        let sorted_part = |smaller| quick_sort(smaller);
+
+        #[action("Continue sorting the larger group.")]
+        let values = |sorted_part, larger| larger;
+    };
+
+    #[stage("Finish sorting.")]
+    |finish| {
+        return;
+    };
+}
+```
+
+The partitioning cycle groups values below, equal to, and above the pivot. Only
+the smaller outer group is sorted recursively. The `values` signal sends the
+larger group back to the first stage, keeping the recursive call stack
+logarithmic.
+
+With the partitioning cycle collapsed, the four stages are easier to see:
+
+[![Quicksort with its partitioning cycle collapsed](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)
+
+[Source](crates/kaalang/tests/gallery/sorting/quick_sort.rs) ·
+[Expanded diagram](crates/kaalang/tests/gallery/sorting/quick_sort.svg)
 
 ## Try it
 

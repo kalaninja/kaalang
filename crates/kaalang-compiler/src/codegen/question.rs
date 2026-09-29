@@ -22,7 +22,7 @@ pub(crate) fn emit(
     let no = 1 - yes;
     let yes_path = super::flow(flow, &branches[yes].plan, bindings);
     let no_path = super::flow(flow, &branches[no].plan, bindings);
-    let inputs = input_bindings(&block.inputs, bindings, false);
+    let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let yes_wire = bindings.pattern(block.output_span, &block.outputs[yes..=yes]);
     let no_wire = bindings.pattern(block.output_span, &block.outputs[no..=no]);

@@ -1,0 +1,5 @@
+error: a kaalang stage entry cannot be captured through `&mut`
+ --> tests/stage/compile_fail/mutable_borrow_of_stage_entry.rs:9:15
+  |
+9 |         |&mut go| return;
+  |               ^^

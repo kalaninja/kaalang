@@ -1,4 +1,4 @@
-error: a block inside a kaalang cycle may capture only a cycle input or an earlier local output
+error: `result` is a declared output of the enclosing kaalang cycle; capture it after its producer in the cycle body
  --> tests/loop/compile_fail/cycle_result_inside_body.rs:8:10
   |
 8 |         |result| {};

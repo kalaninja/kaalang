@@ -8,13 +8,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::model::{BlockKind, Flow};
 use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
-/// Every question and choice of a flow, in authored order.
+/// Every drawn question, choice and collapsed cycle with several outputs, in
+/// authored order.
 pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
     flow.blocks
         .iter()
         .enumerate()
         .filter(|(index, block)| {
-            matches!(block.kind, BlockKind::Question | BlockKind::Choice)
+            block.branch_count() > 0
                 && topology
                     .nodes
                     .iter()
@@ -201,8 +202,8 @@ impl Regions {
             .collect()
     }
 
-    /// Group area excluding vertices shared with the later sibling (RFC 0002 §8).
-    /// Does not constrain earlier or enclosed siblings; see RFC 0003 §2.2.
+    /// Group area excluding vertices shared with the later sibling.
+    /// Does not constrain earlier or enclosed siblings.
     pub(super) fn reserved(&self, group: &Group, branch: usize) -> BTreeSet<Vertex> {
         group
             .area
@@ -211,8 +212,8 @@ impl Regions {
             .collect()
     }
 
-    /// The siblings written after every member of one group: the branches RFC
-    /// 0002 §8 holds to the right of what the group draws.
+    /// The siblings written after every member of one group: the branches kept
+    /// to the right of what the group draws.
     pub(super) fn later_siblings(&self, group: &Group) -> std::ops::Range<usize> {
         let after = group
             .members

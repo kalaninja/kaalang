@@ -114,8 +114,7 @@ impl Error for RenderError {}
 /// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
 /// character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
-/// arrangement as geometry cannot route every connection and place every label
-/// under RFC 0002 §8.
+/// arrangement cannot route every connection or place every label.
 pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
     render_source_with_options(source, flow_name, RenderOptions::default())
 }
@@ -136,9 +135,22 @@ pub fn render_source_with_options(
     let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
         .map_err(|error| invalid_flow(flow_name, &error))?;
     kaalang_render::compact_arrangement(&mut model);
+    for stage in &mut model.stages {
+        kaalang_render::compact_arrangement(stage);
+    }
     let start = layout::start_text(parser_source, &function.sig);
     let parameters = layout::parameter_text(parser_source, &function.sig);
     let return_type = layout::return_text(parser_source, &function.sig.output);
+    if !model.stages.is_empty() {
+        return render_staged(
+            &model,
+            &function,
+            flow_name,
+            &start,
+            &parameters,
+            &return_type,
+        );
+    }
     validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
     // Each formula is laid out once, here rather than per layout attempt.
     // Validation above has already parsed the same descriptions, without their
@@ -152,6 +164,32 @@ pub fn render_source_with_options(
     })?;
 
     Ok(svg::serialize(&scene, &model.analysis.name.to_string()))
+}
+
+fn render_staged(
+    model: &kaalang_compiler::SemanticModel,
+    function: &ItemFn,
+    flow_name: &str,
+    start: &str,
+    parameters: &[String],
+    return_type: &str,
+) -> Result<String, RenderError> {
+    validate_labels(model, &function.sig, start, parameters, return_type)?;
+    for (index, stage) in model.stages.iter().enumerate() {
+        validate_label(
+            &model.analysis.stages[index].description,
+            model.analysis.stages[index].entry.span(),
+            "stage description",
+        )?;
+        validate_labels(stage, &function.sig, start, &[], return_type)?;
+    }
+    let scene = layout::layout_staged(model, start, parameters, return_type).map_err(|reason| {
+        RenderError::UnroutableTopology {
+            name: flow_name.to_owned(),
+            reason,
+        }
+    })?;
+    Ok(svg::serialize_staged(&scene, &model.analysis, flow_name))
 }
 
 /// Names every `#[kaalang]` function in a UTF-8 Rust source file, free or
@@ -507,7 +545,7 @@ fn invalid(condition: bool) -> u32 {
     }
 
     /// A character reference decodes before the diagram is written, so the
-    /// character it names is validated too (RFC 0005 §4).
+    /// character it names is validated too.
     #[test]
     fn reports_an_invalid_character_a_reference_introduces() {
         let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";

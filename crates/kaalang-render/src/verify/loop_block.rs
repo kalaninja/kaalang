@@ -31,7 +31,8 @@ impl Bodies {
                     let owned = owned(flow, topology, boundary.header);
                     let inside = |vertex: Vertex| owned.contains(&vertex);
                     let interface = |edge: &Connection| {
-                        edge.destination == boundary.entry || boundary.result == Some(edge.source)
+                        edge.destination == boundary.entry
+                            || boundary.results.contains(&edge.source)
                     };
                     let (mut internal, mut foreign_routes) = (Vec::new(), Vec::new());
                     for (index, edge) in topology.connections.iter().enumerate() {
@@ -191,7 +192,7 @@ fn owned(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
             .loop_boundaries
             .iter()
             .filter(|boundary| boundary.header == header)
-            .filter_map(|boundary| boundary.result.map(Vertex::from)),
+            .flat_map(|boundary| boundary.results.iter().map(|&result| Vertex::from(result))),
     );
     body
 }

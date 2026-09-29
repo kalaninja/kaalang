@@ -34,24 +34,24 @@
       M 300 206 L 892 206 L 892 314
       M 300 206 L 1252 206 L 1252 314
       M 172 384 L 172 456
-      M 892 384 L 892 460
-      M 1252 384 L 1252 460
+      M 892 384 L 892 456
+      M 1252 384 L 1252 456
       M 172 528 L 172 600
       M 312 492 L 532 492 L 532 600
       M 172 664 L 172 740
       M 532 664 L 532 740 L 172 740
-      M 892 524 L 892 740 L 172 740
+      M 892 528 L 892 740 L 172 740
       M 172 880 L 172 952
       M 172 1018 L 172 1094
-      M 1252 524 L 1252 1094 L 172 1094
+      M 1252 528 L 1252 1094 L 172 1094
       M 172 1234 L 172 1306
       M 172 740 L 172 816
       M 172 1094 L 172 1170
     "/>
     <text class="connection-label" x="185" y="758" xml:space="preserve"><tspan x="185" dy="0">mut partial</tspan></text>
     <text class="connection-label" x="185" y="1112" xml:space="preserve"><tspan x="185" dy="0">mut shared</tspan></text>
-    <text class="connection-label" x="905" y="449" xml:space="preserve"><tspan x="905" dy="0">second</tspan></text>
-    <text class="connection-label" x="1265" y="449" xml:space="preserve"><tspan x="1265" dy="0">third</tspan></text>
+    <text class="connection-label" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">second</tspan></text>
+    <text class="connection-label" x="1265" y="445" xml:space="preserve"><tspan x="1265" dy="0">third</tspan></text>
     <text class="connection-label" x="185" y="589" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="545" y="589" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">source, refine</tspan></text>
@@ -118,7 +118,7 @@
     </g>
     <g class="node action" transform="translate(892 492)">
       <title xml:space="preserve">Build the second value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 848)">
@@ -133,7 +133,7 @@
     </g>
     <g class="node action" transform="translate(1252 492)">
       <title xml:space="preserve">Build the fallback value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the fallback value.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 1202)">

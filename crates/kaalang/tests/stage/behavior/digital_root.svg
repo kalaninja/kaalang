@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1556" height="1218" viewBox="0 0 1556 1218" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for digital_root</title><desc id="kaalang-description">The flow starts directly at stage n. Transitions return to the stage entry rail. Nodes: Start: digital_root with parameters n: u32. Stage n. Cycles: Add up the digits. with inputs mut rest, mut sum and outputs n. Nodes: Stage: Reduce the number to one digit.; Question: Does the number have one digit? capturing n handing over single / several described as branch 1: YES / branch 2: NO; Action: Keep the digit. capturing single, n; Action: Start summing the digits. capturing several, n handing over mut rest, mut sum; Question: Are any digits left? capturing rest handing over more / done described as branch 1: YES / branch 2: NO; Action: Move the last digit into the sum. capturing more, &amp;mut rest, &amp;mut sum handing over moved; Action: Reduce the digit sum next. capturing done, sum handing over n; Transition: Reduce the number to one digit.; Transition: Return the digit.. Connections: Stage: Reduce the number to one digit. to Question: Does the number have one digit?; Question: Does the number have one digit? branch 1 to Action: Keep the digit.; Question: Does the number have one digit? branch 2 to Action: Start summing the digits.; Action: Keep the digit. to Transition: Return the digit.; Action: Start summing the digits. to the entry of the cycle; Question: Are any digits left? branch 1 to Action: Move the last digit into the sum.; Question: Are any digits left? branch 2 to Action: Reduce the digit sum next.; Action: Move the last digit into the sum. to the iteration tail of the cycle; Action: Reduce the digit sum next. to Transition: Reduce the number to one digit.; the entry of the cycle to Question: Are any digits left?; Repeat from the iteration tail of the cycle to the entry of the cycle. Transition to stage n. Transition to stage finish. Stage finish. Nodes: Stage: Return the digit.; End: u32 capturing finish. Connections: Stage: Return the digit. to End: u32.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 114 L 232 150 "/>
+<path d="M 232 150 L 232 186 "/>
+<path d="M 952 1126 L 952 1194 "/>
+<path d="M 232 1126 L 232 1194 "/>
+<path d="M 1360 150 L 1360 186 "/>
+<path d="M 232 150 L 1360 150 "/>
+<path d="M 952 1194 L 24 1194 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for digital_root</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: digital_root with parameters n: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+    "/>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">n: u32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">digital_root</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="1092" height="1004" viewBox="0 0 1092 1004" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for digital_root</title>
+  <desc id="kaalang-part-1-description">Cycles: Add up the digits. with inputs mut rest, mut sum and outputs n. Nodes: Stage: Reduce the number to one digit.; Question: Does the number have one digit? capturing n handing over single / several described as branch 1: YES / branch 2: NO; Action: Keep the digit. capturing single, n; Action: Start summing the digits. capturing several, n handing over mut rest, mut sum; Question: Are any digits left? capturing rest handing over more / done described as branch 1: YES / branch 2: NO; Action: Move the last digit into the sum. capturing more, &amp;mut rest, &amp;mut sum handing over moved; Action: Reduce the digit sum next. capturing done, sum handing over n; Transition: Reduce the number to one digit.; Transition: Return the digit.. Connections: Stage: Reduce the number to one digit. to Question: Does the number have one digit?; Question: Does the number have one digit? branch 1 to Action: Keep the digit.; Question: Does the number have one digit? branch 2 to Action: Start summing the digits.; Action: Keep the digit. to Transition: Return the digit.; Action: Start summing the digits. to the entry of the cycle; Question: Are any digits left? branch 1 to Action: Move the last digit into the sum.; Question: Are any digits left? branch 2 to Action: Reduce the digit sum next.; Action: Move the last digit into the sum. to the iteration tail of the cycle; Action: Reduce the digit sum next. to Transition: Reduce the number to one digit.; the entry of the cycle to Question: Are any digits left?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Add up the digits.</title>
+    <rect class="cycle-boundary" x="344" y="431" width="716" height="422" rx="12"/>
+    <text class="cycle-caption" x="1048" y="445" text-anchor="end" xml:space="preserve"><tspan x="1048" dy="0">Add up the digits.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="kaalang-part-1-loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 114 L 172 186
+      M 172 258 L 172 330
+      M 312 222 L 532 222 L 532 330
+      M 172 394 L 172 890
+      M 532 394 L 532 466
+      M 532 610 L 532 682
+      M 672 574 L 892 574 L 892 682
+      M 532 746 L 532 818
+      M 892 746 L 892 890
+      M 532 466 L 532 538
+    "/>
+    <path class="connection" d="
+      M 532 818 L 372 818 L 372 466 L 532 466
+    " marker-end="url(#kaalang-part-1-loop-arrow)"/>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="210" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label" x="545" y="412" xml:space="preserve"><tspan x="545" dy="0">mut rest, mut sum</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="545" y="630" xml:space="preserve"><tspan x="545" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="685" y="562" xml:space="preserve"><tspan x="685" dy="0">NO</tspan></text>
+    <text class="connection-label" x="545" y="764" xml:space="preserve"><tspan x="545" dy="0">moved</tspan></text>
+    <text class="connection-label" x="905" y="764" xml:space="preserve"><tspan x="905" dy="0">n</tspan></text>
+    <text class="connection-label" x="185" y="175" xml:space="preserve"><tspan x="185" dy="0">n</tspan></text>
+    <text class="connection-label" x="185" y="319" xml:space="preserve"><tspan x="185" dy="0">single, n</tspan></text>
+    <text class="connection-label" x="545" y="319" xml:space="preserve"><tspan x="545" dy="0">several, n</tspan></text>
+    <text class="connection-label" x="545" y="527" xml:space="preserve"><tspan x="545" dy="0">rest</tspan></text>
+    <text class="connection-label" x="545" y="671" xml:space="preserve"><tspan x="545" dy="0">more, &amp;mut rest, &amp;mut sum</tspan></text>
+    <text class="connection-label" x="905" y="671" xml:space="preserve"><tspan x="905" dy="0">done, sum</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 73)">
+      <title xml:space="preserve">Reduce the number to one digit.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Reduce the number to one </tspan><tspan x="0" dy="18">digit.</tspan></text>
+      <polygon class="stage-marker" points="0,41 -60,32 60,32"/>
+    </g>
+    <g class="node question" transform="translate(172 222)">
+      <title xml:space="preserve">Does the number have one digit?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the number have one </tspan><tspan x="0" dy="18">digit?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 362)">
+      <title xml:space="preserve">Keep the digit.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the digit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 362)">
+      <title xml:space="preserve">Start summing the digits.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start summing the digits.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(532 574)">
+      <title xml:space="preserve">Are any digits left?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Are any digits left?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 714)">
+      <title xml:space="preserve">Move the last digit into the sum.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Move the last digit into the sum.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 714)">
+      <title xml:space="preserve">Reduce the digit sum next.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Reduce the digit sum next.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(892 931)">
+      <title xml:space="preserve">Reduce the number to one digit.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Reduce the number to one </tspan><tspan x="0" dy="18">digit.</tspan></text>
+      <polygon class="stage-marker" points="0,-41 -60,-32 60,-32"/>
+    </g>
+    <g class="node transition" transform="translate(172 931)">
+      <title xml:space="preserve">Return the digit.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the digit.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1188 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="276" viewBox="0 0 344 276" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for digital_root</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Return the digit.; End: u32 capturing finish. Connections: Stage: Return the digit. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 114 L 172 186
+    "/>
+    <text class="connection-label" x="185" y="175" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 73)">
+      <title xml:space="preserve">Return the digit.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the digit.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 215)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

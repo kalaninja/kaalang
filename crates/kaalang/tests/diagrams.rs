@@ -26,24 +26,31 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 continue;
             }
 
-            // A gallery mod.rs may group related flows and share their tests.
-            // Other fixtures keep one flow named for the file or its folder.
+            // Gallery files may group related flows, starting with the file's
+            // namesake. Other fixtures keep exactly one flow with that name.
             let stem = fixture.file_stem().unwrap();
-            if stem != "mod" || directory.parent() != Some(tests.join("gallery").as_path()) {
+            let gallery = directory.parent() == Some(tests.join("gallery").as_path());
+            if stem != "mod" || !gallery {
                 let named_after = if stem == "mod" {
                     directory.file_name().unwrap()
                 } else {
                     stem
                 };
-                assert_eq!(
-                    names,
-                    [named_after.to_str().unwrap()],
-                    "{}",
-                    fixture.display()
-                );
+                let expected = named_after.to_str().unwrap();
+                if gallery {
+                    assert_eq!(
+                        names.first().map(String::as_str),
+                        Some(expected),
+                        "{}",
+                        fixture.display()
+                    );
+                } else {
+                    assert_eq!(names, [expected], "{}", fixture.display());
+                }
             }
 
             for flow in names {
+                let mut expanded = None;
                 for (suffix, collapse_loops) in std::iter::once(("", false))
                     .chain(source.contains("#[cycle(").then_some(("_collapsed", true)))
                 {
@@ -53,6 +60,9 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                         kaalang_svg::RenderOptions { collapse_loops },
                     )
                     .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
+                    if collapse_loops && expanded.as_ref() == Some(&svg) {
+                        continue;
+                    }
                     let diagram = directory.join(format!("{flow}{suffix}.svg"));
                     assert!(
                         !current.contains(&diagram),
@@ -61,9 +71,12 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                     );
                     // Rewriting an unchanged diagram would spin file watchers on every run.
                     if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
-                        fs::write(&diagram, svg).unwrap();
+                        fs::write(&diagram, &svg).unwrap();
                     }
                     current.push(diagram);
+                    if !collapse_loops {
+                        expanded = Some(svg);
+                    }
                 }
                 drawn += 1;
             }

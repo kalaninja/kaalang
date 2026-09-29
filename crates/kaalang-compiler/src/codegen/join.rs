@@ -46,12 +46,8 @@ pub(crate) fn emit(
         // A match arm supplies a coercion context: a bare labeled initializer
         // otherwise fixes its type from the first break (e.g. an array reference
         // before a slice). This single unit arm does not dispatch at runtime.
-        dispatch = quote_spanned! {span=>
-            let #pattern = match () {
-                () => #label: { #dispatch },
-            };
-            #continuation
-        };
+        let value = quote_spanned!(span=> match () { () => #label: { #dispatch }, });
+        dispatch = quote_spanned!(span=> let #pattern = #value; #continuation);
     }
     dispatch
 }

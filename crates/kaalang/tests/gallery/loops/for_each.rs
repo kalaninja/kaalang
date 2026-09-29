@@ -1,34 +1,30 @@
-//! A `for` loop written without a `for`. kaalang has no iteration construct,
-//! so the cursor is an ordinary wire and the choice that asks it for the next
-//! value is an ordinary block. Everything a `for` would hide is drawn.
+//! Iterator traversal with an explicit choice between an item and exhaustion.
+//! A wider accumulator keeps sums of large i32 values representable.
 
 use kaalang::kaalang;
 
 #[kaalang]
-fn for_each(values: &[i32]) -> i32 {
-    #[action("🧮 Start the total at zero.")]
-    let running = || 0;
+fn for_each(values: &[i32]) -> i64 {
+    #[action("🧮 Start before the first value with a total of zero.")]
+    let (mut cursor, mut total) = |values| (values.iter(), 0);
 
-    #[action("⏮️ Start at the first value.")]
-    let cursor = |values| values.iter();
-
-    #[cycle("Add every value to the total.")]
-    let total = |mut cursor, mut running| {
-        #[choice("Is there another value?")]
-        #[case("There is one.")]
-        #[case("The values ran out.")]
+    #[cycle("Add the list's values to the total one by one.")]
+    let done = {
+        #[choice("What comes next in the list?")]
+        #[case("Another value.")]
+        #[case("The end of the list.")]
         let (value, done) = |&mut cursor| match cursor.next() {
             Some(next) => next,
             None => (),
         };
 
-        |done, running| break running;
+        #[action("➕ Add this value to the running total.")]
+        |value, &mut total| *total += i64::from(*value);
 
-        #[action("➕ Add it to the total.")]
-        |value, &mut running| *running += value;
+        |value| continue;
     };
 
-    |total| return total;
+    |done, total| return total;
 }
 
 #[test]
@@ -37,4 +33,6 @@ fn for_each_adds_up_every_value() {
     assert_eq!(for_each(&[7]), 7);
     assert_eq!(for_each(&[1, 2, 3, 4]), 10);
     assert_eq!(for_each(&[5, -5, 5]), 5);
+    assert_eq!(for_each(&[i32::MAX, i32::MAX]), 2 * i64::from(i32::MAX));
+    assert_eq!(for_each(&[i32::MIN, i32::MIN]), 2 * i64::from(i32::MIN));
 }

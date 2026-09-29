@@ -58,7 +58,9 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
         r#"
         fn example() -> usize {
             #[cycle("Repeat forever.")]
-            || {};
+            {
+                continue;
+            };
         }
     "#,
     );
@@ -94,7 +96,9 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
         r#"
         fn forever() -> ! {
             #[cycle("Never completes.")]
-            let _result = || {};
+            {
+                continue;
+            };
         }
         "#,
     );
@@ -123,36 +127,25 @@ fn a_collapsed_cycle_omits_its_internal_choice_connections() {
 }
 
 #[test]
-fn capture_free_transfers_redirect_without_structural_junctions() {
+fn a_capture_free_continue_redirects_without_a_structural_junction() {
     let topology = drawn(
         r#"
-        fn example() {
-            #[cycle("Complete immediately.")]
-            let () = || {
-                break;
+        fn example() -> ! {
+            #[cycle("Repeat immediately.")]
+            {
+                continue;
             };
-            return;
         }
         "#,
     );
-    let boundary = topology.loop_boundaries[0];
-    let result = boundary.result_junction().expect("the cycle completes");
-    let end = topology
-        .nodes
-        .iter()
-        .find(|node| node.kind == NodeKind::End)
-        .expect("the flow returns")
-        .id;
+    let boundary = &topology.loop_boundaries[0];
+    let tail = topology.loops[0].tail;
 
+    assert!(boundary.results.is_empty());
     assert_eq!(topology.junctions.len(), 2);
-    assert!(topology.junctions.iter().all(|junction| !junction.is_break));
     assert!(topology.connections.contains(&Connection {
         source: Source::Junction(boundary.entry_junction()),
-        destination: Destination::Junction(result),
-    }));
-    assert!(topology.connections.contains(&Connection {
-        source: Source::Junction(result),
-        destination: Destination::Node(end),
+        destination: Destination::Junction(tail),
     }));
 }
 
@@ -162,7 +155,7 @@ fn nested_completing_cycles_reach_the_root_return() {
         r#"
         fn example(flag: bool) -> usize {
             #[cycle("Choose the result.")]
-            let result = |flag| {
+            let selected = |flag| {
                 #[question("Flag?")]
                 let (iterate_1, leave_1) = |flag| flag;
                 #[action("Return two.")]
@@ -170,12 +163,10 @@ fn nested_completing_cycles_reach_the_root_return() {
                 #[cycle("Produce one.")]
                 let selected = |iterate_1| {
                     #[action("Return one.")]
-                    let one = || 1;
-                    |one| break one;
+                    let selected = || 1;
                 };
-                |selected| break selected;
             };
-            |result| return result;
+            |selected| return selected;
         }
         "#,
     );
@@ -186,33 +177,29 @@ fn nested_completing_cycles_reach_the_root_return() {
         .find(|node| node.kind == NodeKind::End)
         .expect("the returning flow has an end boundary")
         .id;
-    for break_ in topology
-        .junctions
+    for result in topology
+        .loop_boundaries
         .iter()
-        .enumerate()
-        .filter_map(|(index, junction)| junction.is_break.then_some(index))
+        .flat_map(|boundary| &boundary.results)
     {
-        assert!(reaches(
-            &topology,
-            Vertex::Junction(break_),
-            Vertex::Node(end)
-        ));
+        assert!(reaches(&topology, (*result).into(), Vertex::Node(end)));
     }
 }
 
 #[test]
-fn an_inner_break_reaches_the_outer_iteration_tail() {
+fn an_inner_cycle_output_reaches_the_outer_iteration_tail() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
             #[cycle("Repeat the outer cycle.")]
             |flag| {
                 #[cycle("Leave or repeat the inner cycle.")]
-                |flag| {
+                let leave_2 = |flag| {
                     #[question("Flag?")]
-                    let (_iterate_2, leave_2) = |flag| flag;
-                    |leave_2| break;
+                    let (iterate_2, leave_2) = |flag| flag;
+                    |iterate_2| continue;
                 };
+                |leave_2| continue;
             };
         }
         "#,
@@ -239,22 +226,23 @@ fn an_inner_break_reaches_the_outer_iteration_tail() {
 }
 
 #[test]
-fn a_merged_break_reaches_the_enclosing_iteration_tail() {
+fn a_merged_cycle_output_reaches_the_enclosing_iteration_tail() {
     let model = model(
         r#"
         fn example(first: bool, second: bool) {
             #[cycle("Repeat the outer cycle.")]
-            |first, second| {
+            {
                 #[cycle("Leave or repeat the inner cycle.")]
-                |first, second| {
+                let leave = {
                     #[question("Leave immediately?")]
                     let (leave, check) = |first| first;
 
                     #[question("Leave after checking?")]
-                    let (leave, _again) = |check, second| second;
+                    let (leave, again) = |check, second| second;
 
-                    |leave| break;
+                    |again| continue;
                 };
+                |leave| continue;
             };
         }
         "#,
@@ -262,12 +250,11 @@ fn a_merged_break_reaches_the_enclosing_iteration_tail() {
     let topology = &model.topology;
     let merge = (0..topology.junctions.len())
         .find(|&junction| merged(&model, junction) == ["leave"])
-        .expect("the question outputs merge before the break");
+        .expect("the question outputs merge before the cycle result");
     assert_eq!(
-        topology.loop_boundaries[1].result,
-        Some(Source::Junction(merge))
+        topology.loop_boundaries[1].results,
+        [Source::Junction(merge)]
     );
-    assert!(topology.junctions[merge].is_break);
     assert!(topology.junctions[merge].is_loop_result);
     assert!(reaches(
         topology,
@@ -282,16 +269,15 @@ fn work_after_a_merge_keeps_the_cycle_result_separate() {
         r#"
         fn example(flag: bool) {
             #[cycle("Choose, then finish.")]
-            |flag| {
+            let done = |flag| {
                 #[question("Which route?")]
                 let (done, other) = |flag| flag;
                 #[action("Finish the other route.")]
                 let done = |other| {};
                 #[action("Finish after the merge.")]
                 |done| {};
-                |done| break;
             };
-            return;
+            |done| return;
         }
         "#,
     );
@@ -299,7 +285,7 @@ fn work_after_a_merge_keeps_the_cycle_result_separate() {
     let merge = (0..topology.junctions.len())
         .find(|&junction| merged(&model, junction) == ["done"])
         .unwrap();
-    let result = topology.loop_boundaries[0].result.unwrap();
+    let result = topology.loop_boundaries[0].results[0];
     assert_eq!(result, Source::Exit(ExitId::of(NodeId::Block(3))));
     assert!(reaches(topology, Vertex::Junction(merge), result.into()));
 }
@@ -362,7 +348,7 @@ fn every_node_and_exit_has_one_identity() {
         }
     "#,
     );
-    // RFC 0002 §5 shows every named flow input as an output of start; the
+    // Every named flow input is an output of start; the
     // wildcard provides nothing.
     assert_eq!(
         topology.exit(ExitId::of(NodeId::Start)).provides,
@@ -447,7 +433,7 @@ fn a_merge_written_above_a_question_reaches_it_first() {
     );
 }
 
-/// RFC 0002 §7 gives a question branch or a case exit at most one connection,
+/// A question branch or a case exit has at most one connection,
 /// however many blocks capture the merged wire: the alternatives meet at the
 /// junction and the common segment leaves it.
 #[test]
@@ -512,7 +498,7 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
 /// A branch output with no alternative producers keeps its exit's single
 /// connection however many blocks capture it. The first consumer is reached
 /// from the exit and the rest through that consumer, so nothing routes around
-/// the branch and RFC 0002 §7's reduction leaves one edge per exit.
+/// the branch, leaving one edge per exit after reduction.
 #[test]
 fn an_unmerged_branch_output_leaves_its_exit_once() {
     let topology = fixture(

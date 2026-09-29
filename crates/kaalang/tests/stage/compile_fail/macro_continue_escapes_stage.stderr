@@ -1,0 +1,10 @@
+error[E0695]: unlabeled `continue` inside of a labeled block
+  --> tests/stage/compile_fail/macro_continue_escapes_stage.rs:5:20
+   |
+ 5 |         if false { continue }
+   |                    ^^^^^^^^ `continue` statements that would diverge to or through a labeled block need to bear a label
+...
+15 |             escape!();
+   |             --------- in this macro invocation
+   |
+   = note: this error originates in the macro `escape` (in Nightly builds, run with -Z macro-backtrace for more info)

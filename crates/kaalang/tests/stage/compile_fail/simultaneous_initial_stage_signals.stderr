@@ -1,0 +1,5 @@
+error: a kaalang transition boundary selects more than one stage signal
+ --> tests/stage/compile_fail/simultaneous_initial_stage_signals.rs:8:9
+  |
+8 |     let stop = || ();
+  |         ^^^^

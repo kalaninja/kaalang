@@ -1,0 +1,5 @@
+error: a kaalang stage entry is a plain wire name
+ --> tests/stage/compile_fail/borrowed_stage_header_entry.rs:6:7
+  |
+6 |     |&go| {
+  |       ^^

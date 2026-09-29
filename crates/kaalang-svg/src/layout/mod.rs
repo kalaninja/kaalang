@@ -17,12 +17,13 @@ mod choice;
 mod end;
 mod label;
 mod loop_block;
-mod question;
 mod route;
+mod staged;
 #[cfg(test)]
 mod tests;
 
 use label::{label_rect, vertical_gaps};
+pub(crate) use staged::{StagedScene, layout_staged};
 
 const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
@@ -84,6 +85,8 @@ pub(crate) struct Scene {
     slack: i32,
     /// Routing-only columns need a lane rather than a full node width.
     narrow: bool,
+    /// Common header height and transition row of a staged diagram.
+    stage_rows: Option<staged::StageRows>,
     /// Model-defined body vertices, one set per `topology.loops` entry.
     bodies: Vec<BTreeSet<Vertex>>,
     /// The owned vertices of every expanded cycle boundary, including cycles
@@ -392,20 +395,30 @@ fn contour_reaches(model: &SemanticModel) -> BTreeMap<i32, (i32, i32)> {
 }
 
 /// Lays out one validated flow, or reports that this layout could not route its
-/// connections under RFC 0002 §8.
+/// connections.
 pub(crate) fn layout(
     model: &SemanticModel,
     captions: &Rc<Captions>,
     parameters: &[String],
 ) -> Result<Scene, String> {
-    layout_spaced(model, captions, parameters, true)
-        .or_else(|_| layout_spaced(model, captions, parameters, false))
+    layout_with_stage_rows(model, captions, parameters, None)
+}
+
+fn layout_with_stage_rows(
+    model: &SemanticModel,
+    captions: &Rc<Captions>,
+    parameters: &[String],
+    stage_rows: Option<staged::StageRows>,
+) -> Result<Scene, String> {
+    layout_spaced(model, captions, parameters, stage_rows, true)
+        .or_else(|_| layout_spaced(model, captions, parameters, stage_rows, false))
 }
 
 fn layout_spaced(
     model: &SemanticModel,
     captions: &Rc<Captions>,
     parameters: &[String],
+    stage_rows: Option<staged::StageRows>,
     narrow: bool,
 ) -> Result<Scene, String> {
     // Labels and opposing rails may need a wider column gap. Node and label
@@ -420,7 +433,7 @@ fn layout_spaced(
     let bound = label::LABEL_WIDTH + left + right + LANE;
     let mut slack = 0;
     loop {
-        match attempt(model, captions, parameters, slack, narrow) {
+        match attempt(model, captions, parameters, stage_rows, slack, narrow) {
             Ok(scene) => return Ok(scene),
             Err(Blocked::Refused(reason)) => return Err(reason),
             Err(Blocked::Narrow(_)) if slack >= bound => {
@@ -570,6 +583,7 @@ fn attempt(
     model: &SemanticModel,
     captions: &Rc<Captions>,
     parameters: &[String],
+    stage_rows: Option<staged::StageRows>,
     slack: i32,
     narrow: bool,
 ) -> Result<Scene, Blocked> {
@@ -577,6 +591,7 @@ fn attempt(
     let mut scene = Scene {
         slack,
         narrow,
+        stage_rows,
         width: 0,
         height: 0,
         nodes: Vec::new(),
@@ -650,15 +665,21 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     Ok(scene)
 }
 
-/// Every node at its column, with its own dimensions. Rows are added once the
-/// row gaps are known, so the vertical position waits for the routing plan.
+/// Nodes share the height of their tallest row member. Rows are positioned once
+/// the row gaps are known, so the vertical position waits for the routing plan.
 fn nodes(scene: &Scene) -> Vec<Node> {
-    scene
+    let mut nodes = scene
         .topology
         .nodes
         .iter()
         .map(|node| {
-            let (width, height, lines) = node_dimensions(node.kind, scene.captions.label(node.id));
+            let (width, mut height, lines) =
+                node_dimensions(node.kind, scene.captions.label(node.id));
+            if let Some(rows) = scene.stage_rows
+                && matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition)
+            {
+                height = height.max(rows.height);
+            }
             Node {
                 id: node.id,
                 x: scene.column_x(scene.column(Vertex::Node(node.id))),
@@ -668,7 +689,16 @@ fn nodes(scene: &Scene) -> Vec<Node> {
                 lines,
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    let mut heights = vec![0; scene.arrangement.ranks];
+    for node in &nodes {
+        let height = &mut heights[scene.rank(Vertex::Node(node.id))];
+        *height = (*height).max(node.height);
+    }
+    for node in &mut nodes {
+        node.height = heights[scene.rank(Vertex::Node(node.id))];
+    }
+    nodes
 }
 
 /// Top edge and height of every row, in row order. A visible merge reserves its
@@ -732,6 +762,13 @@ impl Scene {
         let mut top = Vec::with_capacity(ranks + 1);
         let mut next = MARGIN;
         for (row, own) in height.iter().enumerate() {
+            if let Some(stage_rows) = self.stage_rows
+                && self.topology.nodes.iter().any(|node| {
+                    node.kind == NodeKind::Transition && self.rank(Vertex::Node(node.id)) == row
+                })
+            {
+                next = next.max(stage_rows.transition_y - own / 2);
+            }
             top.push(next);
             let gap = gaps[row];
             let count = lanes.get(row).copied().unwrap_or(0) as i32;
@@ -741,6 +778,11 @@ impl Scene {
                 gap + (count - 1) * LANE + capture_space[row + 1]
             };
             next += own + (gap + bottom_padding[row]).max(routing);
+            if row == 0
+                && let Some(stage_rows) = self.stage_rows
+            {
+                next = next.max(stage_rows.first_body_y);
+            }
         }
         top.push(next);
 
@@ -894,11 +936,13 @@ impl Scene {
     /// override it according to their destination branch.
     pub(super) fn exit_anchor(&self, exit: ExitId) -> Point {
         let node = self.node(exit.node);
-        match self.topology.node(exit.node).kind {
-            NodeKind::Question => question::exit_anchor(
-                node,
-                exit.branch.expect("a question exit belongs to a branch"),
-            ),
+        match (self.topology.node(exit.node).kind, exit.branch) {
+            // A question, or a collapsed cycle with several outputs, leaves by
+            // its first branch below and by the others from its right tip.
+            (NodeKind::Question | NodeKind::Loop, Some(branch)) if branch > 0 => Point {
+                x: node.x + node.width / 2,
+                y: node.y,
+            },
             _ => Point {
                 x: node.x,
                 y: node.y + node.height / 2,
@@ -949,7 +993,8 @@ impl Scene {
         }
     }
 
-    fn fit(&mut self) {
+    /// Body bounds including padding, without the parameter panel beside start.
+    pub(super) fn body_size(&self) -> (i32, i32) {
         let (mut right, mut bottom) = (0, 0);
         for node in &self.nodes {
             right = right.max(node.x + node.width / 2);
@@ -966,17 +1011,20 @@ impl Scene {
             right = right.max(label_right);
             bottom = bottom.max(label_bottom);
         }
-        if let Some(parameters) = &self.parameters {
-            let (.., parameters_right, parameters_bottom) = Self::parameter_bounds(parameters);
-            right = right.max(parameters_right);
-            bottom = bottom.max(parameters_bottom);
-        }
         for region in &self.loop_regions {
             right = right.max(region.right);
             bottom = bottom.max(region.bottom);
         }
-        self.width = right + MARGIN;
-        self.height = bottom + MARGIN;
+        (right + MARGIN, bottom + MARGIN)
+    }
+
+    fn fit(&mut self) {
+        (self.width, self.height) = self.body_size();
+        if let Some(parameters) = &self.parameters {
+            let (.., right, bottom) = Self::parameter_bounds(parameters);
+            self.width = self.width.max(right + MARGIN);
+            self.height = self.height.max(bottom + MARGIN);
+        }
     }
 }
 
@@ -1007,7 +1055,9 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
         NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
         }
-        NodeKind::Case => choice::case_dimensions(label),
+        NodeKind::Case | NodeKind::StageEntry | NodeKind::Transition => {
+            choice::case_dimensions(label)
+        }
     }
 }
 

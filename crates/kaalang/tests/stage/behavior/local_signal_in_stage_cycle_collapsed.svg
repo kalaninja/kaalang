@@ -1,0 +1,230 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="762" viewBox="0 0 1188 762" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for local_signal_in_stage_cycle</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: local_signal_in_stage_cycle with parameters go: (). Stage go. Nodes: Stage: Keep a local signal in a cycle.; Cycle: Produce a local value. capturing go handing over local; Action: Select the next stage. capturing local; Transition: Produce the final signal.. Connections: Stage: Keep a local signal in a cycle. to Cycle: Produce a local value.; Cycle: Produce a local value. to Action: Select the next stage.; Action: Select the next stage. to Transition: Produce the final signal.. Transition to stage next. Stage next. Nodes: Stage: Produce the final signal.; Action: Produce the declared signal. capturing next; Transition: Return the value.. Connections: Stage: Produce the final signal. to Action: Produce the declared signal.; Action: Produce the declared signal. to Transition: Return the value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 114 L 232 150 "/>
+<path d="M 232 150 L 232 186 "/>
+<path d="M 232 670 L 232 738 "/>
+<path d="M 612 150 L 612 186 "/>
+<path d="M 612 670 L 612 738 "/>
+<path d="M 992 150 L 992 186 "/>
+<path d="M 232 150 L 992 150 "/>
+<path d="M 612 738 L 24 738 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for local_signal_in_stage_cycle</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: local_signal_in_stage_cycle with parameters go: ().</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+    "/>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">local_signal_in_stage_cycle</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for local_signal_in_stage_cycle</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Keep a local signal in a cycle.; Cycle: Produce a local value. capturing go handing over local; Action: Select the next stage. capturing local; Transition: Produce the final signal.. Connections: Stage: Keep a local signal in a cycle. to Cycle: Produce a local value.; Cycle: Produce a local value. to Action: Select the next stage.; Action: Select the next stage. to Transition: Produce the final signal..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+      M 172 238 L 172 310
+      M 172 374 L 172 446
+    "/>
+    <text class="connection-label" x="185" y="299" xml:space="preserve"><tspan x="185" dy="0">local</tspan></text>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">go</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Keep a local signal in a cycle.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Keep a local signal in a cycle.</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 206)">
+      <title xml:space="preserve">Produce a local value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce a local value.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 342)">
+      <title xml:space="preserve">Select the next stage.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Select the next stage.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 481)">
+      <title xml:space="preserve">Produce the final signal.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Produce the final signal.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for local_signal_in_stage_cycle</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Produce the final signal.; Action: Produce the declared signal. capturing next; Transition: Return the value.. Connections: Stage: Produce the final signal. to Action: Produce the declared signal.; Action: Produce the declared signal. to Transition: Return the value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+      M 172 238 L 172 446
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">next</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Produce the final signal.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Produce the final signal.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 206)">
+      <title xml:space="preserve">Produce the declared signal.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the declared signal.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 481)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(820 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
+  <title id="kaalang-part-3-title">kaalang diagram for local_signal_in_stage_cycle</title>
+  <desc id="kaalang-part-3-description">Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

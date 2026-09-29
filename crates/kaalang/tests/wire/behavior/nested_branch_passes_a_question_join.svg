@@ -31,19 +31,19 @@
     <path class="connection" d="
       M 172 98 L 172 170
       M 172 242 L 172 314
-      M 312 206 L 892 206 L 892 318
+      M 312 206 L 892 206 L 892 314
       M 172 386 L 172 458
       M 312 350 L 532 350 L 532 458
       M 172 522 L 172 814
       M 532 522 L 532 598
-      M 892 382 L 892 598 L 532 598
+      M 892 386 L 892 598 L 532 598
       M 532 738 L 532 814 L 172 814
       M 172 814 L 172 890
       M 532 598 L 532 674
     "/>
     <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="545" y="616" xml:space="preserve"><tspan x="545" dy="0">shared</tspan></text>
-    <text class="connection-label" x="905" y="307" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label" x="905" y="303" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
     <text class="connection-label" x="185" y="447" xml:space="preserve"><tspan x="185" dy="0">skip</tspan></text>
     <text class="connection-label" x="545" y="447" xml:space="preserve"><tspan x="545" dy="0">join</tspan></text>
     <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">refine, finish_early</tspan></text>
@@ -91,7 +91,7 @@
     </g>
     <g class="node action" transform="translate(892 350)">
       <title xml:space="preserve">Build the direct value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 706)">

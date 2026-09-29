@@ -1,0 +1,9 @@
+error: a kaalang stage declares exactly one kind
+ --> tests/stage/compile_fail/stage_with_second_kind.rs:5:5
+  |
+5 | /     #[stage("Finish.")]
+6 | |     #[action("Other.")]
+7 | |     |go| {
+8 | |         return;
+9 | |     };
+  | |______^

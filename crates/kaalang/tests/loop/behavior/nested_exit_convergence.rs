@@ -1,43 +1,43 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn nested_exit_convergence(count: usize) -> usize {
+fn nested_exit_convergence(mut count: usize) -> usize {
     #[cycle("Count down to zero.")]
-    let result = |mut count| {
+    let done = {
         #[cycle("Converge the inner stopping routes.")]
-        |&mut count| {
+        let inner_done = {
             #[choice("Leave the inner loop?")]
             #[case("Leave at zero.")]
             #[case("Leave at one.")]
             #[case("Count down.")]
-            let (zero, one, again) = |&count| match **count {
+            let (zero, one, again) = |&count| match *count {
                 0 => (),
                 1 => (),
                 _ => (),
             };
 
             #[action("Finish at zero.")]
-            let done = |zero| {};
+            let inner_done = |zero| {};
 
             #[action("Finish at one.")]
-            let done = |one| {};
-
-            |done| break;
+            let inner_done = |one| {};
 
             #[action("Count down.")]
-            |again, &mut count| **count -= 1;
+            |again, &mut count| *count -= 1;
+
+            |again| continue;
         };
 
         #[question("Finish the outer loop?")]
-        let (done, again) = |&count| *count == 0;
-
-        |done, count| break count;
+        let (done, again) = |inner_done, &count| *count == 0;
 
         #[action("Count down once more.")]
         |again, &mut count| *count -= 1;
+
+        |again| continue;
     };
 
-    |result| return result;
+    |done, count| return count;
 }
 
 #[test]

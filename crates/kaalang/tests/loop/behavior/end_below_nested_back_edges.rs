@@ -1,9 +1,9 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn end_below_nested_back_edges(mode: u8) -> u8 {
+fn end_below_nested_back_edges(mut mode: u8) -> u8 {
     #[cycle("Choose an outer route until one produces a result.")]
-    let result = |mut mode| {
+    let selected = {
         #[choice("Which outer route?")]
         #[case("Enter the inner loop.")]
         #[case("Finish with seven.")]
@@ -15,31 +15,31 @@ fn end_below_nested_back_edges(mode: u8) -> u8 {
         };
 
         #[cycle("Choose an inner route until one completes.")]
-        let inner_result = |enter, &mut mode| {
+        let inner_result = |enter| {
             #[choice("Which inner route?")]
             #[case("Repeat the inner loop.")]
             #[case("Repeat the outer loop.")]
             #[case("Finish with eleven.")]
-            let (repeat, leave, eleven) = |&mode| match **mode {
+            let (repeat, leave, eleven) = |&mode| match *mode {
                 0 | 3 => (),
                 1 => (),
                 _ => (),
             };
 
             #[action("Advance to the next route.")]
-            |repeat, &mut mode| **mode += 1;
+            |repeat, &mut mode| *mode += 1;
 
             #[action("Continue with the outer cycle.")]
-            let outcome = |leave| None;
+            let inner_result = |leave| None;
 
             #[action("Produce eleven.")]
-            let outcome = |eleven| Some(11);
+            let inner_result = |eleven| Some(11);
 
-            |outcome| break outcome;
+            |repeat| continue;
         };
 
         #[question("Did the inner cycle produce a result?")]
-        let (_repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
+        let (repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
 
         #[action("Extract the inner result.")]
         let selected = |finish_inner, inner_result| {
@@ -52,10 +52,10 @@ fn end_below_nested_back_edges(mode: u8) -> u8 {
         #[action("Produce nine.")]
         let selected = |nine| 9;
 
-        |selected| break selected;
+        |repeat_outer| continue;
     };
 
-    |result| return result;
+    |selected| return selected;
 }
 
 #[test]

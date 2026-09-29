@@ -1,4 +1,4 @@
-//! A choice's cases occupy one row in authored order (RFC 0002 §4.6).
+//! A choice's cases occupy one row in authored order.
 
 use std::collections::BTreeMap;
 

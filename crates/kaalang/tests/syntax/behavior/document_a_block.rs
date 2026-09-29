@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-/// RFC 0001 §3: source comments remain ordinary Rust comments beside a block's
+/// Source comments remain ordinary Rust comments beside a block's
 /// kaalang attributes.
 #[kaalang]
 fn document_a_block(input: u32) -> u32 {

@@ -1,0 +1,5 @@
+error: a kaalang cycle gate is a plain wire name, without `mut` or `&`
+ --> tests/loop/compile_fail/modified_cycle_gate.rs:6:7
+  |
+6 |     |&flag| {};
+  |       ^^^^

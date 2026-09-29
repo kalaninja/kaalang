@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, ItemFn, Lifetime, Pat, Result, token::Mut};
 
-use crate::{Analysis, Block, ExecutionPlan, Flow, Input};
+use crate::{Analysis, Block, Branch, ExecutionPlan, Flow, Input};
 
 mod parameters;
 #[cfg(test)]
@@ -16,6 +16,7 @@ mod choice;
 mod join;
 mod loop_block;
 mod question;
+mod stage;
 
 /// Hygienic Rust bindings assigned locally for one lowering pass.
 pub(crate) struct Bindings {
@@ -25,6 +26,10 @@ pub(crate) struct Bindings {
     /// The type gate of each logical wire whose alternative producers no
     /// common binding unifies.
     gates: HashMap<Ident, Ident>,
+    /// The final preparation region followed by the stage dispatcher.
+    initial_dispatch: Option<(usize, TokenStream2)>,
+    stages: usize,
+    const_stages: bool,
 }
 
 impl Bindings {
@@ -35,12 +40,6 @@ impl Bindings {
             .flow_inputs
             .iter()
             .chain(analysis.flow.blocks.iter().flat_map(|block| &block.outputs))
-            .chain(analysis.flow.blocks.iter().flat_map(|block| {
-                block
-                    .inputs
-                    .iter()
-                    .filter_map(|input| input.binding.as_ref())
-            }))
             .enumerate()
             .map(|(index, wire)| {
                 (
@@ -81,6 +80,9 @@ impl Bindings {
             wires,
             mutable,
             gates,
+            initial_dispatch: None,
+            stages: analysis.stages.len(),
+            const_stages: false,
         }
     }
 
@@ -178,26 +180,25 @@ pub(crate) fn output_pattern(block: &Block, bindings: &Bindings) -> TokenStream2
 fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan) -> TokenStream2 {
     let continuation = self::flow(flow, next, bindings);
     let block = &flow.blocks[index];
-    let input_bindings = input_bindings(&block.inputs, bindings, false);
+    let input_bindings = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let pattern = output_pattern(block, bindings);
+    let value = quote_spanned!(block.span=> { #input_bindings #body });
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
 
     quote_spanned! {block.span=>
-        let #pattern = {
-            #input_bindings
-            #body
-        };
+        let #pattern = #value;
         #(#gates)*
         #continuation
     }
 }
 
-/// Captures a transfer's inputs and leaves through `exit`: `break` to the
-/// target native loop, or `return` from the root flow.
+/// Captures a transfer's inputs and leaves through `exit`: `break` to a
+/// cycle's loop or result block, `continue` to its loop, or `return` from the
+/// root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let captures = input_bindings(&block.inputs, bindings, false);
+    let captures = input_bindings(&block.inputs, bindings);
     let value = transfer_value(&block.body);
     quote_spanned! {block.span=>
         #[allow(unused_mut)]
@@ -210,22 +211,44 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
 
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
-    match plan {
-        ExecutionPlan::Loop { index, body, next } => {
-            loop_block::emit(flow, bindings, *index, body, next.as_deref())
-        }
-        ExecutionPlan::Break { index, target } => {
+    let body = match plan {
+        ExecutionPlan::Loop {
+            index,
+            body,
+            branches,
+            joins,
+        } => loop_block::emit(flow, bindings, *index, body, branches, joins),
+        ExecutionPlan::Export { index, target } => {
             let span = flow.blocks[*index].span;
-            let label = loop_label(*target, span);
+            // One output is the loop's own value; several leave by their own
+            // result blocks.
+            let label = if flow.blocks[*target].branch_count() > 0 {
+                loop_block::exit_label(*target, flow.exported_output(*index))
+            } else {
+                loop_label(*target, span)
+            };
             transfer(flow, bindings, *index, &quote_spanned!(span=> break #label))
         }
         ExecutionPlan::Return { index } => {
-            let span = flow.blocks[*index].span;
-            transfer(flow, bindings, *index, &quote_spanned!(span=> return))
+            if flow.blocks[*index].transition_target.is_some() {
+                stage::transition(flow, bindings, *index)
+            } else {
+                let span = flow.blocks[*index].span;
+                transfer(flow, bindings, *index, &quote_spanned!(span=> return))
+            }
         }
-        ExecutionPlan::Repeat { index } => {
-            let label = loop_label(*index, flow.blocks[*index].span);
-            quote_spanned!(flow.blocks[*index].span=> continue #label;)
+        ExecutionPlan::Continue { index } => {
+            let span = flow.blocks[*index].span;
+            let target = flow.blocks[*index]
+                .parent
+                .expect("a continue belongs to a cycle");
+            let label = loop_label(target, span);
+            transfer(
+                flow,
+                bindings,
+                *index,
+                &quote_spanned!(span=> continue #label),
+            )
         }
         // An action and a call both bind their outputs from their own body and
         // continue; only what the parser accepts as that body differs.
@@ -248,7 +271,39 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
             quote!(#gates #body)
         }
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
+    };
+    if bindings.initial_dispatch.is_some() {
+        stage::prepare(bindings, plan, body)
+    } else {
+        body
     }
+}
+
+/// Binds each branch output from its own labeled block around `dispatch`,
+/// innermost first, and follows it with that branch's continuation. Each
+/// continuation leaves for a join or returns the flow result, so it cannot
+/// fall through into the continuation of a different branch.
+pub(super) fn exits(
+    flow: &Flow,
+    bindings: &Bindings,
+    index: usize,
+    labels: &[Lifetime],
+    branches: &[Branch],
+    mut dispatch: TokenStream2,
+) -> TokenStream2 {
+    let block = &flow.blocks[index];
+    for (output, branch) in branches.iter().enumerate() {
+        let label = &labels[output];
+        let wire = bindings.pattern(block.output_span, &block.outputs[output..=output]);
+        let gate = bindings.gate(&block.outputs[output]);
+        let path = self::flow(flow, &branch.plan, bindings);
+        dispatch = quote! {
+            let #wire = #label: { #dispatch };
+            #gate
+            #path
+        };
+    }
+    dispatch
 }
 
 fn loop_label(index: usize, span: Span) -> Lifetime {
@@ -275,38 +330,24 @@ fn transfer_value(body: &Expr) -> Option<TokenStream2> {
 }
 
 /// Binds explicit captures at their own spans for Rust's move/borrow diagnostics.
-/// Persistent cycle captures bind once and retain storage across iterations.
-pub(crate) fn input_bindings(
-    inputs: &[Input],
-    bindings: &Bindings,
-    persistent: bool,
-) -> TokenStream2 {
+pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStream2 {
     let bindings = inputs
         .iter()
-        .filter(|input| input.ident != "self")
+        .filter(|input| input.ident != "self" && !input.derived)
         .map(|input| {
             // The alias keeps the authored spelling, so a wire named `r#type` binds.
             let alias = &input.alias;
             let wire = bindings.wire_at(&input.ident);
             let borrow = input.borrowed.then(|| quote_spanned!(alias.span()=> &));
             let mutable = input.mutable.then(|| quote_spanned!(alias.span()=> mut));
-            let (target, binding_mut, borrow_mut) = if persistent {
-                let name = input
-                    .binding
-                    .as_ref()
-                    .expect("a cycle capture declares a local binding");
-                let binding_mut = bindings.mutability(name).map(|mutable| quote!(#mutable));
-                let borrow_mut = if input.borrowed { mutable } else { None };
-                (bindings.wire_at(name), binding_mut, borrow_mut)
-            } else if input.borrowed {
-                (alias.clone(), None, mutable)
+            let (binding_mut, borrow_mut) = if input.borrowed {
+                (None, mutable)
             } else {
-                (alias.clone(), mutable, None)
+                (mutable, None)
             };
-            let unused_mut = persistent.then(|| quote!(unused_mut,));
             quote_spanned!(alias.span()=>
-                #[allow(#unused_mut unused_variables, clippy::let_unit_value)]
-                let #binding_mut #target = #borrow #borrow_mut #wire;
+                #[allow(unused_variables, clippy::let_unit_value)]
+                let #binding_mut #alias = #borrow #borrow_mut #wire;
             )
         });
 
@@ -320,6 +361,9 @@ pub(crate) fn input_bindings(
 /// Returns the same errors as [`crate::build`].
 pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
+    if !analysis.stages.is_empty() {
+        return stage::expand(function, &analysis);
+    }
     // Diagram realizability is required even when compilation discards the arrangement.
     let topology = crate::project(&analysis, false);
     crate::construct(&analysis, &topology)?;

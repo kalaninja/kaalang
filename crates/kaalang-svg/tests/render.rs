@@ -36,19 +36,19 @@ const SOURCE: &str = r#"
 
 const CYCLE_SOURCE: &str = r#"
     #[kaalang]
-    fn count_to(count: usize, limit: usize) -> usize {
+    fn count_to(mut count: usize, limit: usize) -> usize {
         #[cycle("Count to the limit.")]
-        let total = |mut count, limit| {
+        let done = {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 
-            |done, count| break count;
-
             #[action("Increment the counter.")]
             |again, &mut count| *count += 1;
+
+            |again| continue;
         };
 
-        |total| return total;
+        |done, count| return count;
     }
 "#;
 
@@ -81,6 +81,77 @@ fn renders_an_accessible_standalone_svg() {
     assert!(svg.contains(".question .node-shape { fill: #fffbeb; }"));
     assert!(svg.contains(".select .node-shape, .case .node-shape { fill: #f5f3ff; }"));
     assert!(svg.contains(".branch-label { fill: currentColor; font-weight: 500; }"));
+}
+
+#[test]
+fn staged_svg_preserves_authored_text_and_describes_stage_links() {
+    let source = r#"
+        #[kaalang]
+        fn suspicious() {
+            #[action("kaalang-title")]
+            let go = || {};
+            #[stage("loop-arrow and kaalang-description")]
+            |go| { return; };
+        }
+    "#;
+    let svg = render_source(source, "suspicious").unwrap();
+    assert!(svg.contains(
+        r#"role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description""#
+    ));
+    assert!(svg.contains("Transition to stage go. Stage go."));
+    assert!(svg.contains(r#"<title xml:space="preserve">kaalang-title</title>"#));
+    assert!(
+        svg.contains(r#"<title xml:space="preserve">loop-arrow and kaalang-description</title>"#)
+    );
+    assert!(svg.contains(r#"id="kaalang-part-0-title""#));
+    assert!(!svg.contains("kaalang-part-0-kaalang-title"));
+    assert!(svg.contains(r#"class="stage-connections""#));
+    assert!(svg.contains(r#"marker-end="url(#stage-return-arrow)""#));
+    assert!(!svg.contains(r#"<title xml:space="preserve">Preparation</title>"#));
+    assert_eq!(svg.matches(r#"class="node stage-entry""#).count(), 1);
+    assert_eq!(
+        svg.matches("<rect width=\"100%\" height=\"100%\"").count(),
+        1
+    );
+    assert_eq!(svg.matches("class=\"node start\"").count(), 1);
+    assert!(!svg.contains(">go</"));
+}
+
+#[test]
+fn stage_signals_are_unlabeled_through_producers_and_merges() {
+    let source = r#"
+        #[kaalang]
+        fn example(choose: bool) -> u8 {
+            #[question("Choose the prepared value.")]
+            let (yes, no) = |choose| choose;
+            #[action("Prepare the first value.")]
+            let (mut next_stage, shared) = |yes| ((), 1);
+            #[action("Prepare the second value.")]
+            let (mut next_stage, shared) = |no| ((), 2);
+            #[stage("Return the value.")]
+            |next_stage| { |shared| return shared; };
+        }
+    "#;
+    let svg = render_source(source, "example").unwrap();
+    let text = svg
+        .lines()
+        .filter(|line| line.contains("<text"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(!text.contains("next_stage"));
+    assert!(text.contains(">shared</"));
+    assert!(text.contains("Return the value."));
+    let renamed = source.replace("next_stage", "a_much_longer_name_for_the_same_stage_signal");
+    let renamed_svg = render_source(&renamed, "example").unwrap();
+    assert_eq!(svg.split('>').next(), renamed_svg.split('>').next());
+}
+
+#[test]
+fn staged_outer_wires_use_capture_labels_without_data_panels() {
+    let source = include_str!("../../kaalang/tests/stage/behavior/add_through_stages.rs");
+    let svg = render_source(source, "add_through_stages").unwrap();
+    assert!(!svg.contains("stage-data-panel"));
+    assert!(svg.contains("capturing &amp;mut self"));
 }
 
 #[test]
@@ -517,17 +588,78 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     assert!(collapsed.contains("Count to the limit."));
     assert!(collapsed.contains("Cycle: Count to the limit."));
     assert!(collapsed.contains(">mut count, limit</tspan>"));
-    assert!(collapsed.contains(">total</tspan>"));
+    assert!(collapsed.contains(">done</tspan>"));
     assert!(collapsed.contains(
         ".action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }"
     ));
 
-    let invalid = CYCLE_SOURCE.replace("break count", "return count");
+    let invalid = CYCLE_SOURCE.replace("|again| continue;", "|again, count| return count;");
     for collapse_loops in [false, true] {
         assert!(matches!(
             render_source_with_options(&invalid, "count_to", RenderOptions { collapse_loops }),
             Err(RenderError::InvalidFlow { .. })
         ));
+    }
+}
+
+#[test]
+fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() {
+    for (outputs, values, expected) in [
+        ("mut first, second", "1, 2", [1, 1]),
+        ("mut first, second, _spare", "1, 2, 3", [2, 3]),
+    ] {
+        for (preparation, expected) in [
+            format!(
+                r#"#[action("Prepare values.")]
+                let ({outputs}) = || ({values});"#
+            ),
+            format!(
+                r#"#[question("Choose values?")]
+                let (yes, no) = |_choose| _choose;
+                #[action("Prepare the first alternative.")]
+                let ({outputs}) = |yes| ({values});
+                #[action("Prepare the second alternative.")]
+                let ({outputs}) = |no| ({values});"#
+            ),
+        ]
+        .into_iter()
+        .zip(expected)
+        {
+            let source = format!(
+                r#"#[kaalang]
+                fn example(_choose: bool) -> u8 {{
+                    {preparation}
+                    #[cycle("Use the values.")]
+                    let done = {{
+                        #[action("Add to the first value.")]
+                        let done = |second, &mut first| {{
+                            *first += second;
+                            *first
+                        }};
+                    }};
+                    |done| return done;
+                }}"#
+            );
+            let svg = render_source_with_options(
+                &source,
+                "example",
+                RenderOptions {
+                    collapse_loops: true,
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                svg.lines()
+                    .filter(|line| line.contains(r#"class="connection-label""#))
+                    .filter(|line| line.contains("mut first"))
+                    .count(),
+                expected,
+                "{source}"
+            );
+            if expected == 1 {
+                assert!(svg.contains(">mut first, second</tspan>"), "{source}");
+            }
+        }
     }
 }
 

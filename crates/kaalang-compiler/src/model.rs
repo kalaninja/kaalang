@@ -1,7 +1,5 @@
 //! Flow models, execution summaries, convergence, and lowering plans.
 
-use std::collections::BTreeMap;
-
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
 use syn::ext::IdentExt;
@@ -11,6 +9,7 @@ use crate::construct::Arrangement;
 use crate::topology::Topology;
 
 /// Semantic analysis and lowering plan, before diagram construction.
+#[derive(Clone)]
 pub struct Analysis {
     /// The authored flow function name.
     pub name: Ident,
@@ -28,32 +27,52 @@ pub struct Analysis {
     pub convergence_groups: Vec<ConvergenceGroup>,
     /// Implicit junctions of equally named alternative outputs, before captures.
     pub merges: Vec<WireMerge>,
+    /// Other locally analyzed parts of a staged flow, in declaration order.
+    pub stages: Vec<StageAnalysis>,
+    /// Preparation outputs that remain in scope across stage visits.
+    pub common_wires: Vec<Ident>,
+}
+
+/// One stage and its independent, verified local execution plan.
+#[derive(Clone)]
+pub struct StageAnalysis {
+    pub description: String,
+    pub entry: Ident,
+    pub entry_alias: Ident,
+    pub analysis: Box<Analysis>,
 }
 
 /// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
 pub struct SemanticModel {
     /// Everything the analysis established, before any diagram.
     pub analysis: Analysis,
-    /// Structural topology defined by RFC 0002 §7.
+    /// Structural topology of the flow.
     pub topology: Topology,
     /// Verified arrangement for the renderer to realize.
     pub arrangement: Arrangement,
+    /// Locally checked stage diagrams, in declaration order.
+    pub stages: Vec<SemanticModel>,
 }
 
-/// The semantic role of one block. Every kind but `End` is authored.
+/// The semantic role of one block. Every kind but `End` and `Export` is authored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockKind {
     Action,
     Call,
     Question,
     Loop,
-    Break,
+    /// The boundary consumer of one declared cycle output, closing the body in
+    /// declaration order. It lowers to a Rust `break`.
+    Export,
+    Continue,
     Return,
     Choice,
     End,
 }
 
-/// One kaalang block: an authored statement, or the implicit end block.
+/// One kaalang block: an authored statement, a cycle's boundary consumer, or
+/// the implicit end block.
+#[derive(Clone)]
 pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for transfers and end.
@@ -67,6 +86,8 @@ pub struct Block {
     /// Each binding preserves its authored mutability. An outputless block uses `()`.
     pub output_pattern: Pat,
     pub output_span: Span,
+    /// The authored captures, in order. A cycle's are its optional gate, then
+    /// its derived inputs.
     pub inputs: Vec<Input>,
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
@@ -75,19 +96,31 @@ pub struct Block {
     pub parent: Option<usize>,
     /// The exclusive end of a cycle body's depth-first block sequence.
     pub loop_end: Option<usize>,
-    /// The enclosing cycle a break exits.
-    pub break_target: Option<usize>,
+    /// The cycle whose declared output a boundary consumer exports.
+    pub export_target: Option<usize>,
+    /// Destination of a synthetic stage transition, absent on authored returns.
+    pub transition_target: Option<usize>,
 }
 
 impl Block {
-    /// The number of alternative control exits, for a question or choice.
+    /// The number of alternative control exits: a question's two answers, a
+    /// choice's cases, or a cycle's declared outputs when it has several. A
+    /// single cycle output is an ordinary completed result.
     #[must_use]
     pub fn branch_count(&self) -> usize {
         match self.kind {
             BlockKind::Question => 2,
             BlockKind::Choice => self.outputs.len(),
+            BlockKind::Loop if self.outputs.len() > 1 => self.outputs.len(),
             _ => 0,
         }
+    }
+
+    /// Whether this is a cycle whose declared outputs are alternatives: it
+    /// completes with exactly one of several, like the cases of a choice.
+    #[must_use]
+    pub fn has_alternative_outputs(&self) -> bool {
+        self.kind == BlockKind::Loop && self.outputs.len() > 1
     }
 
     /// Returns the authored binding at one validated output position.
@@ -174,6 +207,7 @@ const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
 }
 
 /// One positional branch of a question.
+#[derive(Clone)]
 pub struct QuestionBranch {
     /// Whether a true question body selects this branch.
     pub is_yes: bool,
@@ -182,6 +216,7 @@ pub struct QuestionBranch {
 }
 
 /// One consuming or borrowing block input.
+#[derive(Clone)]
 pub struct Input {
     /// Whether the input borrows the wire rather than binding its value.
     pub borrowed: bool,
@@ -191,37 +226,57 @@ pub struct Input {
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
-    /// The persistent local wire created by a cycle capture. Ordinary block
-    /// captures do not declare a wire and leave this absent.
-    pub binding: Option<Ident>,
+    /// An outer wire a cycle's body captures, recorded on the cycle itself so
+    /// the dependency enters through the cycle. It binds
+    /// nothing and does not decide whether the cycle runs.
+    pub derived: bool,
 }
 
 /// A flow's named inputs and blocks, wire-validated by the time consumers see it.
+#[derive(Clone)]
 pub struct Flow {
     pub flow_inputs: Vec<Ident>,
     pub blocks: Vec<Block>,
+    pub kind: FlowKind,
+}
+
+/// The local sequence represented by a flow's block arena.
+#[derive(Clone)]
+pub enum FlowKind {
+    Plain,
+    Preparation,
+    Stage { entry: Ident, self_output: bool },
 }
 
 impl Flow {
-    /// The persistent local wire of every capture of one cycle, keyed by its binding.
-    pub(crate) fn cycle_bindings(&self, header: usize) -> BTreeMap<Ident, ProducerId> {
-        self.blocks[header]
-            .inputs
+    /// The first producer of one logical wire. Alternative producers share its
+    /// name and mutability.
+    #[must_use]
+    pub fn producer(&self, wire: &Ident) -> Option<ProducerId> {
+        self.flow_inputs
             .iter()
-            .enumerate()
-            .map(|(input, declaration)| {
-                (
-                    declaration
-                        .binding
-                        .clone()
-                        .expect("a cycle capture declares a local binding"),
-                    ProducerId::CycleInput {
-                        block: header,
-                        input,
-                    },
-                )
+            .position(|input| input == wire)
+            .map(ProducerId::FlowInput)
+            .or_else(|| {
+                self.blocks
+                    .iter()
+                    .enumerate()
+                    .find_map(|(block, declaration)| {
+                        declaration
+                            .outputs
+                            .iter()
+                            .position(|output| output == wire)
+                            .map(|output| ProducerId::BlockOutput { block, output })
+                    })
             })
-            .collect()
+    }
+
+    /// The cycle whose body provides a producer's wire, or `None` at the root.
+    pub(crate) fn producer_cycle(&self, producer: ProducerId) -> Option<usize> {
+        match producer {
+            ProducerId::FlowInput(_) => None,
+            ProducerId::BlockOutput { block, .. } => self.blocks[block].parent,
+        }
     }
 
     /// The loops enclosing one block, innermost first.
@@ -231,13 +286,72 @@ impl Flow {
         })
     }
 
-    /// A cycle produces its result only when the execution reaches a matching break.
+    /// The hidden boundary consumers of a cycle's declared outputs: one per
+    /// output, in declaration order, closing its body.
+    #[must_use]
+    pub(crate) fn exports(&self, header: usize) -> std::ops::Range<usize> {
+        let end = self.blocks[header].loop_end.expect("a cycle owns a body");
+        end - self.blocks[header].outputs.len()..end
+    }
+
+    /// The position, among its cycle's declared outputs, of the one a boundary
+    /// consumer exports.
+    #[must_use]
+    pub(crate) fn exported_output(&self, consumer: usize) -> usize {
+        let header = self.blocks[consumer]
+            .export_target
+            .expect("a boundary consumer has a cycle");
+        consumer - self.exports(header).start
+    }
+
+    /// The innermost cycle whose repeat reaches `block`: the block itself for a
+    /// cycle, otherwise the cycle directly containing it.
+    #[must_use]
+    pub(crate) fn level(&self, block: usize) -> Option<usize> {
+        match self.blocks[block].kind {
+            BlockKind::Loop => Some(block),
+            _ => self.blocks[block].parent,
+        }
+    }
+
+    /// The repeat relation depends on where two blocks sit, not on which
+    /// execution repeats. [`Passes::of`] computes it once per cycle and block.
+    fn repeat_reaches(&self, runs: &[Vec<u64>], loop_index: usize, block: usize) -> bool {
+        if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
+            .any(|header| header == loop_index)
+        {
+            return true;
+        }
+        let sequence = std::iter::successors(Some(self.blocks[block].parent), |&sequence| {
+            sequence.map(|header| self.blocks[header].parent)
+        })
+        .find(|&sequence| {
+            std::iter::successors(Some(loop_index), |&header| self.blocks[header].parent)
+                .any(|header| self.blocks[header].parent == sequence)
+        })
+        .expect("the root contains every block");
+        let part = |mut block: usize| {
+            while self.blocks[block].parent != sequence {
+                block = self.blocks[block]
+                    .parent
+                    .expect("the sequence encloses the block");
+            }
+            block
+        };
+        let (block_part, repeat_part) = (part(block), part(loop_index));
+        block_part == repeat_part
+            || (block_part < repeat_part
+                && runs[block_part]
+                    .iter()
+                    .zip(&runs[repeat_part])
+                    .any(|(first, second)| first & second != 0))
+    }
+
+    /// A cycle completes only when the execution exports one of its outputs.
     #[must_use]
     pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
-        execution.blocks.iter().any(|&block| {
-            self.blocks[block].kind == BlockKind::Break
-                && self.blocks[block].break_target == Some(header)
-        })
+        self.exports(header)
+            .any(|consumer| execution.participates(consumer))
     }
 
     /// Whether one producer occurrence exists in this finite execution.
@@ -245,16 +359,20 @@ impl Flow {
     pub(crate) fn produces(&self, execution: &Execution, producer: ProducerId) -> bool {
         match producer {
             ProducerId::FlowInput(_) => true,
-            ProducerId::CycleInput { block, .. } => execution.participates(block),
             ProducerId::BlockOutput { block, output } => {
                 execution.participates(block)
                     && match self.blocks[block].kind {
                         BlockKind::Question | BlockKind::Choice => {
                             execution.selected(block) == Some(output)
                         }
-                        BlockKind::Loop => self.completes_loop(execution, block),
+                        BlockKind::Loop => {
+                            execution.participates(self.exports(block).start + output)
+                        }
                         BlockKind::Action | BlockKind::Call => true,
-                        BlockKind::Break | BlockKind::Return | BlockKind::End => false,
+                        BlockKind::Export
+                        | BlockKind::Continue
+                        | BlockKind::Return
+                        | BlockKind::End => false,
                     }
             }
         }
@@ -272,39 +390,22 @@ impl Flow {
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
     pub(crate) fn wire_name(&self, wire: &Ident) -> String {
-        self.blocks
-            .iter()
-            .find_map(|block| {
-                block
-                    .outputs
-                    .iter()
-                    .position(|output| output == wire)
-                    .map(|index| block.output_binding(index).ident.unraw().to_string())
-                    .or_else(|| {
-                        block.inputs.iter().find_map(|input| {
-                            (input.binding.as_ref() == Some(wire))
-                                .then(|| input.alias.unraw().to_string())
-                        })
-                    })
-            })
-            .unwrap_or_else(|| wire.unraw().to_string())
+        match self.producer(wire) {
+            Some(ProducerId::BlockOutput { block, output }) => self.blocks[block]
+                .output_binding(output)
+                .ident
+                .unraw()
+                .to_string(),
+            _ => wire.unraw().to_string(),
+        }
     }
 }
 
-/// One occurrence that provides a wire: a flow input, a persistent cycle
-/// input, or one block output.
+/// One occurrence that provides a wire: a flow input or one block output.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ProducerId {
     FlowInput(usize),
-    /// One persistent input binding inside a cycle body.
-    CycleInput {
-        block: usize,
-        input: usize,
-    },
-    BlockOutput {
-        block: usize,
-        output: usize,
-    },
+    BlockOutput { block: usize, output: usize },
 }
 
 /// One block input, identified by the block and the input position.
@@ -337,10 +438,52 @@ pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Cycles whose represented iteration reaches its body boundary.
-    pub repeats: Vec<usize>,
     /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
+}
+
+/// Whether a repeated cycle reaches each block, computed from the finite
+/// executions once per analysis. Blocks of one sequence run in source order.
+pub(crate) struct Passes {
+    /// Indexed by repeating cycle, then queried block. Non-cycle rows are empty.
+    reaching: Vec<Vec<bool>>,
+}
+
+impl Passes {
+    /// Whether an execution reaches `block`: it finishes the flow, repeats a
+    /// cycle enclosing `block`, or passes `block` before its repetition.
+    #[must_use]
+    pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
+        let ExecutionOutcome::Repeat { loop_index } = execution.outcome else {
+            return true;
+        };
+        self.reaching[loop_index][block]
+    }
+
+    #[must_use]
+    pub(crate) fn of(flow: &Flow, executions: &[Execution]) -> Self {
+        let mut runs = vec![vec![0; executions.len().div_ceil(64)]; flow.blocks.len()];
+        for (index, execution) in executions.iter().enumerate() {
+            for &block in &execution.blocks {
+                runs[block][index / 64] |= 1 << (index % 64);
+            }
+        }
+        let reaching = flow
+            .blocks
+            .iter()
+            .enumerate()
+            .map(|(loop_index, block)| {
+                if block.kind == BlockKind::Loop {
+                    (0..flow.blocks.len())
+                        .map(|block| flow.repeat_reaches(&runs, loop_index, block))
+                        .collect()
+                } else {
+                    Vec::new()
+                }
+            })
+            .collect();
+        Self { reaching }
+    }
 }
 
 /// The boundary reached by one finite structural execution summary.
@@ -395,18 +538,24 @@ pub struct WireMerge {
 
 /// Verified serial lowering plan. Its joins are distinct from semantic
 /// [`ConvergenceGroup`] records.
+#[derive(Clone)]
 pub enum ExecutionPlan {
     Loop {
         index: usize,
         body: Box<ExecutionPlan>,
-        next: Option<Box<ExecutionPlan>>,
+        /// What runs once the cycle completes: one continuation per declared
+        /// output when it declares several, otherwise the one continuation of
+        /// its result, or none when it never completes.
+        branches: Vec<Branch>,
+        /// The shared continuations of several outputs, as for a choice.
+        joins: Vec<Join>,
     },
-    /// An authored exit from an active enclosing loop.
-    Break { index: usize, target: usize },
+    /// A boundary consumer exporting one declared output of an active cycle.
+    Export { index: usize, target: usize },
     /// An authored completion of the root flow.
     Return { index: usize },
-    /// Normal completion of an iteration along the cycle's back edge.
-    Repeat { index: usize },
+    /// An authored repetition of the directly containing cycle.
+    Continue { index: usize },
     Action {
         index: usize,
         next: Box<ExecutionPlan>,
@@ -449,11 +598,13 @@ pub struct JoinTarget {
 }
 
 /// One verified branch continuation.
+#[derive(Clone)]
 pub struct Branch {
     pub plan: Box<ExecutionPlan>,
 }
 
 /// Wire bindings and continuation shared by branches yielding into a lowering join.
+#[derive(Clone)]
 pub struct Join {
     /// Output positions yielding here, in authored order. The same position may
     /// also yield to an outer join; codegen must use each yield's target.

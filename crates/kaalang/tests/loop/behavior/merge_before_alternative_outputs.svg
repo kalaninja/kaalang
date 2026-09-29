@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1268" viewBox="0 0 1140 1268" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for merge_before_alternative_outputs</title>
+  <desc id="kaalang-description">Cycles: Count past five. with inputs mut count, step and outputs even or odd. Nodes: Start: merge_before_alternative_outputs with parameters fast: bool; mut count: u32 handing over fast, mut count; Question: Count fast? capturing fast handing over quick / slow; Action: Step by two. capturing quick handing over step; Action: Step by one. capturing slow handing over step; Question: Past five? capturing &amp;count handing over past / again; Action: Take a step. capturing again, step, &amp;mut count handing over stepped; Question: Is the count even? capturing past, &amp;count handing over even / odd; Action: Score the even count. capturing even, count handing over score; Action: Score the odd count. capturing odd, count handing over score; End: u32 capturing score; Merge: step; Merge: score. Connections: Start: merge_before_alternative_outputs to Question: Count fast?; Question: Count fast? branch 1 to Action: Step by two.; Question: Count fast? branch 2 to Action: Step by one.; Action: Step by two. to the step merge; Action: Step by one. to the step merge; Question: Past five? branch 1 to Question: Is the count even?; Question: Past five? branch 2 to Action: Take a step.; Action: Take a step. to the iteration tail of the cycle; Question: Is the count even? branch 1 to the even result of the cycle; Question: Is the count even? branch 2 to the odd result of the cycle; Action: Score the even count. to the score merge; Action: Score the odd count. to the score merge; the step merge to the entry of the cycle; the score merge to End: u32; the entry of the cycle to Question: Past five?; the even result of the cycle to Action: Score the even count.; the odd result of the cycle to Action: Score the odd count.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Count past five.</title>
+    <rect class="cycle-boundary" x="32" y="495" width="1076" height="430" rx="12"/>
+    <text class="cycle-caption" x="1096" y="509" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Count past five.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 242 L 200 314
+      M 340 206 L 560 206 L 560 314
+      M 200 378 L 200 454
+      M 560 378 L 560 454 L 200 454
+      M 200 674 L 200 746
+      M 340 638 L 920 638 L 920 746
+      M 920 818 L 920 890
+      M 200 818 L 200 890
+      M 340 782 L 560 782 L 560 890
+      M 200 1026 L 200 1102
+      M 560 1026 L 560 1102 L 200 1102
+      M 200 454 L 200 530
+      M 200 1102 L 200 1178
+      M 200 530 L 200 602
+      M 200 890 L 200 962
+      M 560 890 L 560 962
+    "/>
+    <path class="connection" d="
+      M 920 890 L 1080 890 L 1080 530 L 200 530
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="213" y="472" xml:space="preserve"><tspan x="213" dy="0">step</tspan></text>
+    <text class="connection-label" x="213" y="1120" xml:space="preserve"><tspan x="213" dy="0">score</tspan></text>
+    <text class="connection-label" x="213" y="303" xml:space="preserve"><tspan x="213" dy="0">quick</tspan></text>
+    <text class="connection-label" x="573" y="303" xml:space="preserve"><tspan x="573" dy="0">slow</tspan></text>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">fast, mut count</tspan></text>
+    <text class="connection-label" x="213" y="692" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
+    <text class="connection-label" x="353" y="656" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
+    <text class="connection-label" x="933" y="836" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="213" y="836" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
+    <text class="connection-label" x="353" y="800" xml:space="preserve"><tspan x="353" dy="0">odd</tspan></text>
+    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">fast</tspan></text>
+    <text class="connection-label" x="213" y="591" xml:space="preserve"><tspan x="213" dy="0">&amp;count</tspan></text>
+    <text class="connection-label" x="933" y="735" xml:space="preserve"><tspan x="933" dy="0">again, step, &amp;mut count</tspan></text>
+    <text class="connection-label" x="213" y="735" xml:space="preserve"><tspan x="213" dy="0">past, &amp;count</tspan></text>
+    <text class="connection-label" x="213" y="951" xml:space="preserve"><tspan x="213" dy="0">even, count</tspan></text>
+    <text class="connection-label" x="573" y="951" xml:space="preserve"><tspan x="573" dy="0">odd, count</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">fast: bool</tspan><tspan x="-104" dy="18">mut count: u32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 454)">
+      <title xml:space="preserve">the step merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(200 1102)">
+      <title xml:space="preserve">the score merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">merge_before_alternative_outputs</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 206)">
+      <title xml:space="preserve">Count fast?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Count fast?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 346)">
+      <title xml:space="preserve">Step by two.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Step by two.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 346)">
+      <title xml:space="preserve">Step by one.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Step by one.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 638)">
+      <title xml:space="preserve">Past five?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Past five?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 782)">
+      <title xml:space="preserve">Take a step.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take a step.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 782)">
+      <title xml:space="preserve">Is the count even?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the count even?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 994)">
+      <title xml:space="preserve">Score the even count.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the even count.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 994)">
+      <title xml:space="preserve">Score the odd count.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the odd count.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1207)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

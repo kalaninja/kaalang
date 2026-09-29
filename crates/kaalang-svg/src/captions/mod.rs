@@ -1,15 +1,19 @@
 //! Derives captions and shared-label decisions from the authored flow.
-//! Exits own hand-overs; nodes own captures (RFC 0002 §6).
+//! Exits own hand-overs; nodes own captures.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::topology::{
-    Connection, Destination, ExitId, NodeId, NodeKind, Source, Topology,
+    Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology,
 };
-use kaalang_compiler::{BlockKind, Input, ProducerId, SemanticModel};
+use kaalang_compiler::{Analysis, BlockKind, Input, ProducerId, SemanticModel};
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
 use crate::text::RichText;
+
+mod stage;
+
+pub(crate) use stage::derive_stage;
 
 /// Every string the diagram shows, keyed by the structural item that owns it.
 #[derive(Clone, Default)]
@@ -20,12 +24,14 @@ pub(crate) struct Captions {
     handover: BTreeMap<ExitId, Vec<String>>,
     branch_description: BTreeMap<ExitId, RichText>,
     loop_inputs: BTreeMap<usize, String>,
-    loop_outputs: BTreeMap<usize, String>,
+    /// Per cycle, each declared output's binding label and bare name.
+    loop_outputs: BTreeMap<usize, Vec<(String, String)>>,
     /// Borrowed for a node that has no caption of its own.
     empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
     junction: Vec<Vec<String>>,
     shared: BTreeSet<Connection>,
+    back_marker: BTreeSet<NodeId>,
 }
 
 impl Captions {
@@ -46,6 +52,15 @@ impl Captions {
         self.capture_label.get(&node).map_or(&[], Vec::as_slice)
     }
 
+    /// Derived cycle inputs may share a hand-over regardless of order.
+    pub(crate) fn matches_capture(&self, node: &Node, handover: &[String]) -> bool {
+        let capture = self.capture(node.id);
+        capture == handover
+            || (node.kind == NodeKind::Loop
+                && capture.len() == handover.len()
+                && capture.iter().collect::<BTreeSet<_>>() == handover.iter().collect())
+    }
+
     /// The wires newly provided at this exit, labeled whether or not any
     /// connection leaves.
     pub(crate) fn handover(&self, exit: ExitId) -> &[String] {
@@ -62,8 +77,22 @@ impl Captions {
         self.loop_inputs.get(&block).map_or("()", String::as_str)
     }
 
-    pub(crate) fn loop_outputs(&self, block: usize) -> &str {
-        self.loop_outputs.get(&block).map_or("()", String::as_str)
+    /// A cycle's declared outputs, `()` for none. Several are alternatives:
+    /// one leaves per completion.
+    pub(crate) fn loop_outputs(&self, block: usize) -> String {
+        match self.loop_outputs.get(&block).map(Vec::as_slice) {
+            None | Some([]) => "()".to_owned(),
+            Some(outputs) => outputs
+                .iter()
+                .map(|(label, _)| label.as_str())
+                .collect::<Vec<_>>()
+                .join(" or "),
+        }
+    }
+
+    /// The name of one declared output of a cycle, without its `mut`.
+    pub(crate) fn loop_output(&self, block: usize, output: usize) -> &str {
+        &self.loop_outputs[&block][output].1
     }
 
     /// The wires that meet at one junction, in model order.
@@ -75,14 +104,31 @@ impl Captions {
     pub(crate) fn shares_label(&self, connection: &Connection) -> bool {
         self.shared.contains(connection)
     }
+
+    pub(crate) fn back_marker(&self, node: NodeId) -> bool {
+        self.back_marker.contains(&node)
+    }
 }
 
 /// Reads every caption of one flow's topology. `start` labels the start node and
 /// `return_type` captions end, both taken from the authored source text.
-#[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
 pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> Captions {
+    derive_with_parameters(
+        model,
+        start,
+        return_type,
+        &named_parameters(&model.analysis),
+    )
+}
+
+#[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
+fn derive_with_parameters(
+    model: &SemanticModel,
+    start: &str,
+    return_type: &str,
+    parameters: &[String],
+) -> Captions {
     let topology = &model.topology;
-    let parameters = named_parameters(model);
     let end_input = end_input(model);
     let mut captions = Captions::default();
 
@@ -90,7 +136,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         let label = match node.id {
             NodeId::Start => RichText::literal(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
-            // Undescribed calls use the callee path (RFC 0002 §4.3).
+            // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
                 None if node.kind == NodeKind::Call => {
@@ -108,6 +154,9 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
         // return captures for ordering.
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
+            NodeId::Block(block) if node.kind == NodeKind::Loop => {
+                cycle_inputs(model, parameters, block)
+            }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
                 .iter()
@@ -139,30 +188,30 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .as_deref()
                 .map_or_else(RichText::default, RichText::markdown),
         );
+        let inputs = cycle_inputs(model, parameters, boundary.header);
         captions.loop_inputs.insert(
             boundary.header,
-            if block.inputs.is_empty() {
+            if inputs.is_empty() {
                 "()".to_owned()
             } else {
-                block
-                    .inputs
-                    .iter()
-                    .map(captured)
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                inputs.join(", ")
             },
         );
-        captions.loop_outputs.insert(
-            boundary.header,
-            if block.outputs.is_empty() {
-                "()".to_owned()
-            } else {
+    }
+    // Both views name a cycle's outputs: the expanded results and the
+    // collapsed node's exits.
+    for (header, block) in model.analysis.flow.blocks.iter().enumerate() {
+        if block.loop_end.is_some() {
+            captions.loop_outputs.insert(
+                header,
                 (0..block.outputs.len())
-                    .map(|output| binding_label(block.output_binding(output)))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            },
-        );
+                    .map(|output| {
+                        let binding = block.output_binding(output);
+                        (binding_label(binding), binding.ident.unraw().to_string())
+                    })
+                    .collect(),
+            );
+        }
     }
 
     for exit in &topology.exits {
@@ -170,7 +219,7 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
             exit.id,
             exit.provides
                 .iter()
-                .map(|&producer| provided(model, &parameters, producer))
+                .map(|&producer| provided(&model.analysis, parameters, producer))
                 .collect(),
         );
         if let (NodeId::Block(block), Some(branch)) = (exit.id.node, exit.id.branch)
@@ -194,8 +243,8 @@ pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> C
                 .iter()
                 .map(|&merge| {
                     provided(
-                        model,
-                        &parameters,
+                        &model.analysis,
+                        parameters,
                         model.analysis.merges[merge].producers[0],
                     )
                 })
@@ -253,10 +302,11 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
     !captions.handover(exit).is_empty()
         // The body's hand-over and the cycle's output are separate transfers,
         // even when a body exit supplies the cycle's result directly.
-        && !topology.loop_boundaries.iter().any(|boundary| {
-            boundary.result == Some(connection.source)
-        })
-        && captions.handover(exit) == captions.capture_label(node)
+        && !topology
+            .loop_boundaries
+            .iter()
+            .any(|boundary| boundary.results.contains(&connection.source))
+        && captions.matches_capture(topology.node(node), captions.handover(exit))
         && topology.leaving(exit).count() == 1
         && topology.single_arrival(node)
 }
@@ -264,9 +314,8 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
 /// The named flow parameters, in flow-input order, as the start node's
 /// hand-over addresses them. A receiver is one of them, under the one name
 /// Rust gives it.
-fn named_parameters(model: &SemanticModel) -> Vec<String> {
-    model
-        .analysis
+fn named_parameters(analysis: &Analysis) -> Vec<String> {
+    analysis
         .parameters
         .iter()
         .filter_map(|parameter| match parameter {
@@ -290,24 +339,32 @@ fn binding_label(binding: &PatIdent) -> String {
 }
 
 /// The label one producer occurrence carries at the exit providing it.
-fn provided(model: &SemanticModel, parameters: &[String], producer: ProducerId) -> String {
+fn provided(analysis: &Analysis, parameters: &[String], producer: ProducerId) -> String {
     match producer {
         ProducerId::FlowInput(input) => parameters
             .get(input)
             .expect("a flow input caption names a declared parameter")
             .clone(),
-        ProducerId::CycleInput { block, input } => {
-            let capture = &model.analysis.flow.blocks[block].inputs[input];
-            format!(
-                "{}{}",
-                if capture.mutable { "mut " } else { "" },
-                capture.alias.unraw()
-            )
-        }
         ProducerId::BlockOutput { block, output } => {
-            binding_label(model.analysis.flow.blocks[block].output_binding(output))
+            binding_label(analysis.flow.blocks[block].output_binding(output))
         }
     }
+}
+
+/// A cycle's gate and the outer wires its body captures, each with its
+/// producer's `mut` rather than a capture form.
+fn cycle_inputs(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
+    let flow = &model.analysis.flow;
+    flow.blocks[block]
+        .inputs
+        .iter()
+        .map(|input| {
+            let producer = flow
+                .producer(&input.ident)
+                .expect("a cycle input names a produced wire");
+            provided(&model.analysis, parameters, producer)
+        })
+        .collect()
 }
 
 /// Capture modifiers distinguish the four authored input forms.

@@ -1,0 +1,8 @@
+error: a kaalang stage declaration belongs only in the root stage section
+  --> tests/stage/compile_fail/nested_stage_declaration.rs:7:9
+   |
+ 7 | /         #[stage("Inner.")]
+ 8 | |         |go| {
+ 9 | |             return;
+10 | |         };
+   | |__________^

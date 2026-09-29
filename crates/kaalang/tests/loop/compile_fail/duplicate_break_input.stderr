@@ -1,5 +1,0 @@
-error: duplicate kaalang block input
- --> tests/loop/compile_fail/duplicate_break_input.rs:7:16
-  |
-7 |         |flag, flag| break;
-  |                ^^^^

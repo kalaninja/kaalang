@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1322" viewBox="0 0 1480 1322" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for output_decides_a_later_question</title>
+  <desc id="kaalang-description">Cycles: Take the next positive value. with inputs mut values and outputs positive or empty. Nodes: Start: output_decides_a_later_question with parameters mut values: Vec&lt;i32&gt; handing over mut values; Select: Is another value waiting? capturing &amp;mut values; Case: Check the value. handing over value; Case: The values ran out. handing over empty; Question: Is it zero or negative? capturing &amp;value handing over skip / keep; Action: Keep the positive value. capturing keep, value handing over positive; Question: Is the positive value large? capturing &amp;positive handing over large / small; Action: Cap the large value. capturing large, positive handing over result; Action: Keep the small value. capturing small, positive handing over result; Action: Report nothing found. capturing empty handing over result; End: i32 capturing result; Merge: result. Connections: Start: output_decides_a_later_question to the entry of the cycle; Select: Is another value waiting? to Case: Check the value.; Select: Is another value waiting? to Case: The values ran out.; Case: Check the value. to Question: Is it zero or negative?; Case: The values ran out. to the empty result of the cycle; Question: Is it zero or negative? branch 1 to the iteration tail of the cycle; Question: Is it zero or negative? branch 2 to Action: Keep the positive value.; Action: Keep the positive value. to the positive result of the cycle; Question: Is the positive value large? branch 1 to Action: Cap the large value.; Question: Is the positive value large? branch 2 to Action: Keep the small value.; Action: Cap the large value. to the result merge; Action: Keep the small value. to the result merge; Action: Report nothing found. to the result merge; the result merge to End: i32; the entry of the cycle to Select: Is another value waiting?; the positive result of the cycle to Question: Is the positive value large?; the empty result of the cycle to Action: Report nothing found.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Take the next positive value.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1416" height="708" rx="12"/>
+    <text class="cycle-caption" x="1436" y="141" text-anchor="end" xml:space="preserve"><tspan x="1436" dy="0">Take the next positive value.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 90 L 220 162
+      M 220 306 L 220 378
+      M 348 270 L 1300 270 L 1300 378
+      M 220 448 L 220 520
+      M 1300 448 L 1300 800
+      M 220 592 L 220 696
+      M 360 556 L 580 556 L 580 664
+      M 580 728 L 580 800
+      M 580 944 L 580 1016
+      M 720 908 L 940 908 L 940 1016
+      M 580 1080 L 580 1156
+      M 940 1080 L 940 1156 L 580 1156
+      M 1300 944 L 1300 1156 L 580 1156
+      M 580 1156 L 580 1232
+      M 220 162 L 220 234
+      M 580 800 L 580 872
+      M 1300 800 L 1300 872
+    "/>
+    <path class="connection" d="
+      M 220 696 L 60 696 L 60 162 L 220 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="593" y="1174" xml:space="preserve"><tspan x="593" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut values</tspan></text>
+    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">value</tspan></text>
+    <text class="connection-label" x="1313" y="466" xml:space="preserve"><tspan x="1313" dy="0">empty</tspan></text>
+    <text class="connection-label" x="233" y="610" xml:space="preserve"><tspan x="233" dy="0">skip</tspan></text>
+    <text class="connection-label" x="373" y="574" xml:space="preserve"><tspan x="373" dy="0">keep</tspan></text>
+    <text class="connection-label" x="593" y="746" xml:space="preserve"><tspan x="593" dy="0">positive</tspan></text>
+    <text class="connection-label" x="593" y="962" xml:space="preserve"><tspan x="593" dy="0">large</tspan></text>
+    <text class="connection-label" x="733" y="926" xml:space="preserve"><tspan x="733" dy="0">small</tspan></text>
+    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;mut values</tspan></text>
+    <text class="connection-label" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">&amp;value</tspan></text>
+    <text class="connection-label" x="593" y="653" xml:space="preserve"><tspan x="593" dy="0">keep, value</tspan></text>
+    <text class="connection-label" x="593" y="861" xml:space="preserve"><tspan x="593" dy="0">&amp;positive</tspan></text>
+    <text class="connection-label" x="593" y="1005" xml:space="preserve"><tspan x="593" dy="0">large, positive</tspan></text>
+    <text class="connection-label" x="953" y="1005" xml:space="preserve"><tspan x="953" dy="0">small, positive</tspan></text>
+    <text class="connection-label" x="1313" y="861" xml:space="preserve"><tspan x="1313" dy="0">empty</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 360 61 L 456 61"/>
+    <g class="parameter-panel" transform="translate(576 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: Vec&lt;i32&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(580 1156)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(220 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">output_decides_a_later_question</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 270)">
+      <title xml:space="preserve">Is another value waiting?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is another value waiting?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 413)">
+      <title xml:space="preserve">Check the value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Check the value.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 413)">
+      <title xml:space="preserve">The values ran out.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The values ran out.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 556)">
+      <title xml:space="preserve">Is it zero or negative?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it zero or negative?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 696)">
+      <title xml:space="preserve">Keep the positive value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the positive value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 908)">
+      <title xml:space="preserve">Is the positive value large?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the positive value large?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 1048)">
+      <title xml:space="preserve">Cap the large value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Cap the large value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 1048)">
+      <title xml:space="preserve">Keep the small value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the small value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 908)">
+      <title xml:space="preserve">Report nothing found.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report nothing found.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(580 1261)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i32</tspan></text>
+    </g>
+  </g>
+</svg>

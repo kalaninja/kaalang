@@ -1,0 +1,5 @@
+error: a stage-local output must not shadow a visible outer wire
+ --> tests/stage/compile_fail/shadow_common_stage_wire.rs:8:13
+  |
+8 |         let shared = || 1u8;
+  |             ^^^^^^

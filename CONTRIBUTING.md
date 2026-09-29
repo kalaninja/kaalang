@@ -153,8 +153,8 @@ To resume a partial release, publish one crate at a time with
 `kaalang-cli`. `kaalang-testing` is a repository-only fixture harness and
 remains unpublished.
 
-Gallery examples may group related flows in one `mod.rs` and share a test. Each
-flow still gets its own `<flow>.svg` beside that module.
+Gallery examples may group related flows in one source file and share a test.
+Each flow still gets its own `<flow>.svg` beside that file.
 
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
@@ -209,9 +209,9 @@ So when a refactoring touches a hot path, measure both sides:
 
 1. Record `just rust perf` on the unchanged tree first. Two runs, as above.
 2. Apply the change and record it again, the same way.
-3. Compare the same named lines, and prefer the heaviest shapes: the refusal
-   budgets exhaust the search and separate two implementations long before the
-   corpus medians do.
+3. Compare the same named lines, and prefer the heaviest shapes: the largest
+   generated probes and the stress fixtures separate two implementations long
+   before the corpus medians do.
 
 `cargo test --test performance` is not a substitute at this step. It runs the
 budgets beside each other, so its numbers move with contention and hide

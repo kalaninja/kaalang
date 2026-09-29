@@ -1,0 +1,5 @@
+error: kaalang stage output `nowhere` has no matching stage entry
+ --> tests/stage/compile_fail/stage_output_without_destination.rs:8:9
+  |
+8 |     let nowhere = |go| {
+  |         ^^^^^^^

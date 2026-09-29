@@ -31,20 +31,20 @@
     <path class="connection" d="
       M 172 107 L 172 188
       M 172 260 L 172 332
-      M 312 224 L 892 224 L 892 336
+      M 312 224 L 892 224 L 892 332
       M 172 404 L 172 476
       M 312 368 L 532 368 L 532 476
       M 172 540 L 172 616
       M 532 540 L 532 616 L 172 616
       M 172 756 L 172 832
-      M 892 400 L 892 832 L 172 832
+      M 892 404 L 892 832 L 172 832
       M 172 972 L 172 1044
       M 172 616 L 172 692
       M 172 832 L 172 908
     "/>
     <text class="connection-label" x="185" y="634" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
     <text class="connection-label" x="185" y="850" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
-    <text class="connection-label" x="905" y="325" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
     <text class="connection-label" x="545" y="465" xml:space="preserve"><tspan x="545" dy="0">skip</tspan></text>
     <text class="connection-label" x="185" y="1033" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">outer, inner, text</tspan></text>
@@ -99,7 +99,7 @@
     </g>
     <g class="node action" transform="translate(892 368)">
       <title xml:space="preserve">Use the outer fallback.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the outer fallback.</tspan></text>
     </g>
     <g class="node action" transform="translate(172 940)">

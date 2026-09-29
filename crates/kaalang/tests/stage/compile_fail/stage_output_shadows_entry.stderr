@@ -1,0 +1,5 @@
+error: a stage-local output must not shadow a visible outer wire
+  --> tests/stage/compile_fail/stage_output_shadows_entry.rs:10:13
+   |
+10 |         let go = || ();
+   |             ^^

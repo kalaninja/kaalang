@@ -1,0 +1,5 @@
+error: an outer wire captured inside a kaalang cycle must be available whenever the cycle is entered
+  --> tests/loop/compile_fail/body_error_before_missing_continue.rs:21:26
+   |
+21 |             let read = |&value| *value;
+   |                          ^^^^^

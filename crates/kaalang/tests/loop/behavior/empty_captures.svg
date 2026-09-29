@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="344" height="676" viewBox="0 0 344 676" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="660" viewBox="0 0 400 660" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for empty_captures</title>
-  <desc id="kaalang-description">Cycles: Leave through an explicit empty capture list. with inputs () and outputs (); Leave through a bare break. with inputs () and outputs (). Nodes: Start: const empty_captures; Action: Continue after both loops. capturing nothing handing over result; End: usize capturing result. Connections: Start: const empty_captures to the cycle entry; Action: Continue after both loops. to End: usize; the cycle entry to the cycle result; the cycle result to the cycle entry; the cycle entry to the cycle result; the cycle result to Action: Continue after both loops..</desc>
+  <desc id="kaalang-description">Cycles: Complete without a header. with inputs () and outputs first; Complete through an explicit empty capture list. with inputs () and outputs second. Nodes: Start: const empty_captures; Action: Produce the first unit. capturing nothing handing over first; Action: Produce the second unit. capturing nothing handing over second; Action: Continue after both cycles. capturing first, second handing over result; End: usize capturing result. Connections: Start: const empty_captures to Action: Produce the first unit.; Action: Produce the first unit. to Action: Produce the second unit.; Action: Produce the second unit. to Action: Continue after both cycles.; Action: Continue after both cycles. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,37 +27,51 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
-      <title xml:space="preserve">Leave through an explicit empty capture list.</title>
-    <rect class="cycle-boundary" x="144" y="127" width="56" height="142" rx="12"/>
+      <title xml:space="preserve">Complete without a header.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="336" height="134" rx="12"/>
+    <text class="cycle-caption" x="356" y="141" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Complete without </tspan><tspan x="356" dy="14">a header.</tspan></text>
     </g>
     <g>
-      <title xml:space="preserve">Leave through a bare break.</title>
-    <rect class="cycle-boundary" x="144" y="271" width="56" height="142" rx="12"/>
+      <title xml:space="preserve">Complete through an explicit empty capture list.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="336" height="134" rx="12"/>
+    <text class="cycle-caption" x="356" y="277" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Complete through </tspan><tspan x="356" dy="14">an explicit empty …</tspan></text>
     </g>
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 514 L 172 586
-      M 172 162 L 172 234
-      M 172 234 L 172 306
-      M 172 306 L 172 378
-      M 172 378 L 172 450
+      M 200 90 L 200 162
+      M 200 226 L 200 298
+      M 200 362 L 200 434
+      M 200 498 L 200 570
     "/>
-    <text class="connection-label" x="185" y="575" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="439" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="559" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="213" y="244" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
+    <text class="connection-label" x="213" y="380" xml:space="preserve"><tspan x="213" dy="0">second</tspan></text>
+    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="287" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label" x="213" y="423" xml:space="preserve"><tspan x="213" dy="0">first, second</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
+    <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const empty_captures</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 482)">
-      <title xml:space="preserve">Continue after both loops.</title>
+    <g class="node action" transform="translate(200 194)">
+      <title xml:space="preserve">Produce the first unit.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after both loops.</tspan></text>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the first unit.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 615)">
+    <g class="node action" transform="translate(200 330)">
+      <title xml:space="preserve">Produce the second unit.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the second unit.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 466)">
+      <title xml:space="preserve">Continue after both cycles.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue after both cycles.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 599)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>

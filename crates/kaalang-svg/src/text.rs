@@ -1625,7 +1625,7 @@ mod tests {
     /// Long words split only at grapheme boundaries, even below one cluster's width.
     #[test]
     fn wrapping_splits_between_graphemes_and_never_inside_one() {
-        let word = "драконоподобный";
+        let word = "encyclopædia";
         let lines = wrap_literal(word, 20, 14);
 
         assert!(lines.len() > 1);

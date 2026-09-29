@@ -1,0 +1,5 @@
+error: a kaalang block input must name a flow input or an earlier block output
+  --> tests/stage/compile_fail/capture_other_stage_entry.rs:13:10
+   |
+13 |         |first| ();
+   |          ^^^^^

@@ -1,0 +1,5 @@
+error: a terminal kaalang stage declares no transition outputs
+ --> tests/stage/compile_fail/nonterminal_stage_returns.rs:7:5
+  |
+7 |     #[stage("Go.")]
+  |     ^

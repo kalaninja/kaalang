@@ -1,0 +1,5 @@
+error: this kaalang stage route reaches the end of its body without a transition or `return`
+ --> tests/stage/compile_fail/stage_without_transition_or_return.rs:4:4
+  |
+4 | fn stage_without_transition_or_return() {
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,7 @@
 //! Parses a kaalang flow and validates each block's local syntax.
 
+use std::borrow::Cow;
+
 use proc_macro2::{Ident, Span};
 use syn::{
     Attribute, Error, Expr, ExprAsync, ExprClosure, ExprForLoop, ExprReturn, ExprTry, FnArg, Item,
@@ -11,16 +13,19 @@ use syn::{
     visit::{self, Visit},
 };
 
-use crate::model::{Block, BlockKind, Flow, Input};
+use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
 
 mod action;
-mod break_block;
 mod call;
 mod choice;
+mod continue_block;
 mod end;
 mod loop_block;
 mod question;
 mod return_block;
+mod stage;
+
+pub(crate) use stage::{ParsedStaged, staged};
 
 /// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
@@ -33,8 +38,9 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     let flow = Flow {
         flow_inputs: flow_inputs(function)?,
         blocks: blocks(function)?,
+        kind: FlowKind::Plain,
     };
-    receiver_captures(&flow, receiver(function))?;
+    receiver_captures(&flow, function.sig.receiver())?;
 
     Ok(flow)
 }
@@ -61,23 +67,11 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
         .collect()
 }
 
-/// The receiver this flow declares, if it declares one.
-fn receiver(function: &ItemFn) -> Option<&Receiver> {
-    function
-        .sig
-        .inputs
-        .iter()
-        .find_map(|argument| match argument {
-            FnArg::Receiver(receiver) => Some(receiver),
-            FnArg::Typed(_) => None,
-        })
-}
-
 /// How a capture of the receiver is spelled, and the wire it names: the
 /// receiver's own spelling. A receiver taken by reference borrows, however it
 /// is spelled; every other receiver, including `mut self` and `self: Box<Self>`,
 /// is a value like `mut name: T` is.
-fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
+pub(crate) fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
     let borrows = match &receiver.kind {
         ReceiverKind::Reference(_, _, mutability) => Some(mutability.is_some()),
         ReceiverKind::Typed(_, ty) => match ty.as_ref() {
@@ -183,6 +177,12 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
 /// Flattens lexical cycle regions without changing their authored order.
 fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
     for statement in statements {
+        if stage::is_stage(statement) {
+            return Err(Error::new_spanned(
+                statement,
+                "a kaalang stage declaration belongs only in the root stage section",
+            ));
+        }
         let mut inputs = Vec::new();
         let mut normalized = None;
         let expression = if let Stmt::Expr(expression, _) = statement {
@@ -205,20 +205,15 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         };
         let mut block = match expression {
             Some(Expr::Loop(expression)) => return Err(loop_block::legacy(expression)),
-            Some(Expr::Break(expression)) => {
-                break_block::parse(expression, inputs, parent, blocks)?
-            }
+            Some(Expr::Break(expression)) => return Err(loop_block::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
-                return Err(Error::new_spanned(
-                    expression,
-                    "kaalang cycles repeat implicitly and do not support authored `continue`",
-                ));
+                continue_block::parse(expression, inputs, parent, blocks)?
             }
             Some(Expr::While(expression)) => {
                 return Err(Error::new_spanned(
                     expression,
-                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `break`",
+                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `continue`",
                 ));
             }
             _ => parse_block(statement)?,
@@ -244,6 +239,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             };
             let statements = body.block.stmts.clone();
             self::statements(&statements, Some(index), blocks)?;
+            loop_block::exports(blocks, index)?;
             blocks[index].loop_end = Some(blocks.len());
         }
     }
@@ -258,9 +254,9 @@ pub(crate) fn noun(kind: BlockKind) -> &'static str {
         BlockKind::Question => "question",
         BlockKind::Choice => "choice",
         BlockKind::Loop => "cycle",
-        BlockKind::Break => "break",
+        BlockKind::Continue => "continue",
         BlockKind::Return => "return",
-        BlockKind::End => unreachable!("the end block is implicit"),
+        BlockKind::End | BlockKind::Export => unreachable!("this block is implicit"),
     }
 }
 
@@ -301,13 +297,15 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         span,
         parent: None,
         loop_end: None,
-        break_target: None,
+        export_target: None,
+        transition_target: None,
     }
 }
 
 /// Parses one statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
     let (attributes, output_pattern, closure) = block_statement(statement)?;
+    let closure = closure.as_deref();
     let (kind, kind_attribute, companions) = block_kind(attributes, statement.span())?;
     let (inputs, body) = match closure {
         Some(closure) => block_closure(closure)?,
@@ -336,7 +334,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
         BlockKind::Loop => loop_block::parse(syntax),
-        BlockKind::End | BlockKind::Break | BlockKind::Return => {
+        BlockKind::End | BlockKind::Export | BlockKind::Continue | BlockKind::Return => {
             unreachable!("structural blocks parse separately")
         }
     }
@@ -410,7 +408,8 @@ impl<'a> BlockSyntax<'a> {
             span: self.kind_attribute.span(),
             parent: None,
             loop_end: None,
-            break_target: None,
+            export_target: None,
+            transition_target: None,
         }
     }
 }
@@ -427,11 +426,15 @@ fn unexpected_companion(companion: &Attribute) -> Error {
     )
 }
 
+/// A block's capture list and body. An initializer written without a capture
+/// list is read as `|| body`, so only that one is synthesized.
+type Closure<'a> = Cow<'a, ExprClosure>;
+
 /// Extracts a block's attributes, interfaces, and body. An expression statement
 /// declares no outputs; a bare block or bare application additionally declares
 /// no inputs.
-fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprClosure>)> {
-    let (attributes, pattern, expression) = match statement {
+fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closure<'_>>)> {
+    match statement {
         Stmt::Local(local) => {
             let Some(initializer) = &local.init else {
                 return Err(Error::new_spanned(
@@ -445,61 +448,48 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<&ExprC
                     "kaalang blocks do not support `let else`",
                 ));
             }
-            // A call that captures nothing writes its application alone, with
-            // or without outputs; there is no capture list to delimit.
-            if matches!(ungrouped(initializer.expr.as_ref()), Expr::Call(_)) {
-                return Ok((local.attrs.as_slice(), local.pat.clone(), None));
-            }
-            (
-                local.attrs.as_slice(),
-                local.pat.clone(),
-                initializer.expr.as_ref(),
-            )
+            // A block that captures nothing may omit its empty capture list:
+            // `let output = body;` is `let output = || body;`. A closure or
+            // body written by another macro arrives in an invisible group.
+            let closure = match ungrouped(initializer.expr.as_ref()) {
+                Expr::Closure(closure) if !closure.attrs.is_empty() => {
+                    return Err(Error::new_spanned(
+                        closure,
+                        "kaalang block attributes belong before the statement",
+                    ));
+                }
+                Expr::Closure(closure) => Cow::Borrowed(closure),
+                body => Cow::Owned(parse_quote_spanned!(body.span()=> || #body)),
+            };
+            Ok((local.attrs.as_slice(), local.pat.clone(), Some(closure)))
         }
-        Stmt::Expr(Expr::Closure(closure), _) => {
-            return Ok((
-                &closure.attrs,
-                parse_quote_spanned!(closure.inputs_end.span()=> ()),
-                Some(closure),
-            ));
-        }
+        Stmt::Expr(Expr::Closure(closure), _) => Ok((
+            &closure.attrs,
+            parse_quote_spanned!(closure.inputs_end.span()=> ()),
+            Some(Cow::Borrowed(closure)),
+        )),
         Stmt::Expr(Expr::Block(block), _) => {
-            return Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None));
+            Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None))
         }
         // A call's body is one application, so it needs no braces to delimit
         // it. The attributes decide: an unattributed application is ordinary
         // Rust, which a flow body does not accept, and it must keep reporting
         // that through the arm below.
         Stmt::Expr(Expr::Call(call), _) if !call.attrs.is_empty() => {
-            return Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None));
+            Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None))
         }
         // The same statement written by another macro, where the substitution
         // carries the attributes and the application sits inside it.
         Stmt::Expr(Expr::Group(group), _)
             if !group.attrs.is_empty() && matches!(ungrouped(&group.expr), Expr::Call(_)) =>
         {
-            return Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None));
+            Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None))
         }
-        _ => {
-            return Err(Error::new_spanned(
-                statement,
-                "a kaalang flow body may contain only attributed block statements",
-            ));
-        }
-    };
-    let Expr::Closure(closure) = expression else {
-        return Err(Error::new_spanned(
-            expression,
-            "a kaalang block initializer must have the form `|inputs| { body }`",
-        ));
-    };
-    if !closure.attrs.is_empty() {
-        return Err(Error::new_spanned(
-            expression,
-            "kaalang block attributes belong before the statement",
-        ));
+        _ => Err(Error::new_spanned(
+            statement,
+            "a kaalang flow body may contain only attributed block statements",
+        )),
     }
-    Ok((attributes, pattern, Some(closure)))
 }
 
 fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
@@ -532,17 +522,6 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             let mut application = call.clone();
             application.attrs.clear();
             application
-        }
-        // A `let` carries its own, so whatever sits on the application there
-        // is the body's and stays.
-        Stmt::Local(local) => {
-            let Some(initializer) = &local.init else {
-                unreachable!("a bare application body has an initializer")
-            };
-            let Expr::Call(application) = ungrouped(initializer.expr.as_ref()) else {
-                unreachable!("a missing closure denotes a bare application body")
-            };
-            application.clone()
         }
         _ => unreachable!("a missing closure denotes a bare block or bare application body"),
     };
@@ -693,62 +672,7 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
         mutable,
         ident: alias.unraw(),
         alias,
-        binding: None,
-    }
-}
-
-/// Returns the one value a structural transfer carries, after checking that it
-/// consists only of bindings introduced by that transfer's capture list.
-pub(super) fn transfer_value(
-    value: Option<&Expr>,
-    span: Span,
-    inputs: &[Input],
-    kind: &str,
-) -> Result<Expr> {
-    let value = value
-        .cloned()
-        .unwrap_or_else(|| parse_quote_spanned!(span=> ()));
-    validate_transfer_value(&value, inputs, kind)?;
-    Ok(value)
-}
-
-fn validate_transfer_value(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
-    match value {
-        Expr::Paren(parenthesized) if parenthesized.attrs.is_empty() => {
-            validate_transfer_value(&parenthesized.expr, inputs, kind)
-        }
-        Expr::Group(group) if group.attrs.is_empty() => {
-            validate_transfer_value(&group.expr, inputs, kind)
-        }
-        Expr::Tuple(tuple) if tuple.attrs.is_empty() && tuple.elems.is_empty() => Ok(()),
-        Expr::Tuple(tuple) if tuple.attrs.is_empty() => tuple
-            .elems
-            .iter()
-            .try_for_each(|element| captured_transfer_input(element, inputs, kind)),
-        value => captured_transfer_input(value, inputs, kind),
-    }
-}
-
-fn captured_transfer_input(value: &Expr, inputs: &[Input], kind: &str) -> Result<()> {
-    let ident = match value {
-        Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() => path.path.get_ident(),
-        _ => None,
-    };
-    let Some(ident) = ident else {
-        return Err(Error::new_spanned(
-            value,
-            format!(
-                "a kaalang {kind} value must be a captured input, a tuple of captured inputs, or `()`"
-            ),
-        ));
-    };
-    if captured(inputs, ident) {
-        Ok(())
-    } else {
-        Err(Error::new_spanned(
-            ident,
-            format!("a kaalang {kind} value must name a captured input"),
-        ))
+        derived: false,
     }
 }
 

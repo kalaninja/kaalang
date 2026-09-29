@@ -1,0 +1,5 @@
+error: a kaalang cycle may declare at most one structural `continue`; merge its repeating routes before that continue
+  --> tests/loop/compile_fail/multiple_continues.rs:11:18
+   |
+11 |         |second| continue;
+   |                  ^^^^^^^^

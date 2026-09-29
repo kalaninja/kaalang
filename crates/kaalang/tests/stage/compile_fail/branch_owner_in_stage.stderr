@@ -1,0 +1,5 @@
+error: a branch-local preparation wire must be merged before a kaalang stage can capture it
+  --> tests/stage/compile_fail/branch_owner_in_stage.rs:21:10
+   |
+21 |         |owner| return owner;
+   |          ^^^^^

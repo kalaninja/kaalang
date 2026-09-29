@@ -30,19 +30,19 @@
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
-      M 172 242 L 172 315
+      M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 379 L 172 452
+      M 172 380 L 172 452
       M 532 380 L 532 594 L 172 594
       M 172 518 L 172 594
       M 172 734 L 172 806
       M 172 594 L 172 670
     "/>
-    <text class="connection-label" x="185" y="304" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
     <text class="connection-label" x="185" y="795" xml:space="preserve"><tspan x="185" dy="0">used</tspan></text>
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, order</tspan></text>
-    <text class="connection-label" x="185" y="397" xml:space="preserve"><tspan x="185" dy="0">selected, local_note</tspan></text>
+    <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">selected, local_note</tspan></text>
     <text class="connection-label" x="545" y="398" xml:space="preserve"><tspan x="545" dy="0">selected, noted</tspan></text>
     <text class="connection-label" x="185" y="536" xml:space="preserve"><tspan x="185" dy="0">noted</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
@@ -70,7 +70,7 @@
     </g>
     <g class="node action" transform="translate(172 347)">
       <title xml:space="preserve">Build the yes value and local note.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the yes value and local note.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 347)">

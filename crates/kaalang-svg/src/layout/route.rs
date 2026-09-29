@@ -1,5 +1,5 @@
 //! Converts the verified arrangement's corridors into pixels and checks
-//! RFC 0002 §8. A failed realization is a renderer defect.
+//! the diagram geometry. A failed realization is a renderer defect.
 
 use kaalang_compiler::geometry::{
     bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
@@ -53,13 +53,13 @@ pub(super) fn exit_anchor(scene: &Scene, exit: ExitId, destination: Destination)
 }
 
 /// Realizes every iteration back edge: out of its tail, up the lane the arrangement
-/// chose beside its body, and horizontally into its entry junction
-/// (RFC 0002 §8). The lane sits just outside the body it climbs past.
+/// chose beside its body, and horizontally into its entry junction.
+/// The lane sits just outside the body it climbs past.
 pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<Connection> {
     let mut drawn: Vec<(usize, i32)> = Vec::new();
     let mut connections = Vec::new();
     // Innermost first, so a nested rail is stroked before the one that encloses
-    // it, as RFC 0002 §7 asks.
+    // it.
     for (index, loop_) in scene.topology.loops.iter().enumerate().rev() {
         let from = junction_point(scene, rows, loop_.tail);
         let end = junction_point(scene, rows, loop_.entry);
@@ -204,7 +204,7 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
 }
 
 /// Checks emitted back edges against the recorded side and the whole body's
-/// horizontal extent, independently of rank (RFC 0002 §8).
+/// horizontal extent, independently of rank.
 fn verify_back_edges(scene: &Scene) -> Option<String> {
     let climbs = (0..scene.topology.loops.len())
         .map(|index| {
@@ -270,7 +270,7 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
     None
 }
 
-/// Reports the first RFC 0002 §8 rule the emitted routes break, if any.
+/// Reports the first spatial rule the emitted routes break, if any.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     if let Some(reason) = super::choice::verify(scene) {
         return Some(reason);
@@ -324,8 +324,10 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if collapsed(connection) || collapsed(other) {
                 continue;
             }
-            let shared =
-                connection.source == other.source || connection.destination == other.destination;
+            // The side exits of one node fan out along one row.
+            let shared = connection.source == other.source
+                || connection.destination == other.destination
+                || connection.source.is_side_exit_beside(other.source);
             let meetings = if shared {
                 bundle_meetings(&connection.points, &other.points)
             } else {
@@ -459,6 +461,7 @@ mod tests {
             .collect();
         Scene {
             narrow: false,
+            stage_rows: None,
             reach: std::collections::BTreeMap::new(),
             slack: 0,
             bodies: Vec::new(),

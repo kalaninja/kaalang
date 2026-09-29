@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="830" viewBox="0 0 1140 830" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="838" viewBox="0 0 1140 838" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for terminal_case_after_repeats</title>
-  <desc id="kaalang-description">Cycles: Repeat until the finishing case. with inputs mut mode and outputs result. Nodes: Start: terminal_case_after_repeats with parameters mode: u8 handing over mode; Select: Which route? capturing mode; Case: Advance on the left. handing over left; Case: Advance on the right. handing over right; Case: Finish after the repeating cases. handing over finish; Action: Finish from the final case. capturing finish handing over result; Action: Advance through the left case. capturing left, &amp;mut mode; Action: Advance through the right case. capturing right, &amp;mut mode; End: u8 capturing result. Connections: Start: terminal_case_after_repeats to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Finish after the repeating cases.; Case: Advance on the left. to Action: Advance through the left case.; Case: Advance on the right. to Action: Advance through the right case.; Case: Finish after the repeating cases. to Action: Finish from the final case.; Action: Finish from the final case. to End: u8; Action: Advance through the left case. to the iteration tail of the cycle; Action: Advance through the right case. to the iteration tail of the cycle; the entry of the cycle to Select: Which route?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Repeat until the finishing case. with inputs mut mode and outputs result. Nodes: Start: terminal_case_after_repeats with parameters mut mode: u8 handing over mut mode; Select: Which route? capturing mode; Case: Advance on the left. handing over left; Case: Advance on the right. handing over right; Case: Finish after the repeating cases. handing over finish; Action: Finish from the final case. capturing finish handing over result; Action: Advance through the left case. capturing left, &amp;mut mode handing over advanced; Action: Advance through the right case. capturing right, &amp;mut mode handing over advanced; End: u8 capturing result; Merge: advanced. Connections: Start: terminal_case_after_repeats to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Finish after the repeating cases.; Case: Advance on the left. to Action: Advance through the left case.; Case: Advance on the right. to Action: Advance through the right case.; Case: Finish after the repeating cases. to Action: Finish from the final case.; Action: Finish from the final case. to End: u8; Action: Advance through the left case. to the advanced merge at the iteration tail of the cycle; Action: Advance through the right case. to the advanced merge at the iteration tail of the cycle; the entry of the cycle to Select: Which route?; Repeat from the advanced merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -28,7 +28,7 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Repeat until the finishing case.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1076" height="576" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="127" width="1076" height="580" rx="12"/>
     <text class="cycle-caption" x="1096" y="141" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Repeat until the finishing case.</tspan></text>
     </g>
   </g>
@@ -36,35 +36,40 @@
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 220 90 L 220 162
-      M 220 306 L 220 384
-      M 348 270 L 580 270 L 580 384
+      M 220 306 L 220 378
+      M 348 270 L 580 270 L 580 378
       M 348 270 L 940 270 L 940 378
-      M 220 454 L 220 532
-      M 580 454 L 580 532
+      M 220 460 L 220 532
+      M 580 460 L 580 532
       M 940 460 L 940 532
-      M 940 596 L 940 740
-      M 220 596 L 220 668
-      M 580 596 L 580 668 L 220 668
+      M 940 596 L 940 748
+      M 220 596 L 220 672
+      M 580 596 L 580 672 L 220 672
       M 220 162 L 220 234
     "/>
     <path class="connection" d="
-      M 220 668 L 60 668 L 60 162 L 220 162
+      M 220 672 L 60 672 L 60 162 L 220 162
     " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="233" y="690" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
     <text class="connection-label" x="953" y="521" xml:space="preserve"><tspan x="953" dy="0">finish</tspan></text>
-    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="233" y="472" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
-    <text class="connection-label" x="593" y="472" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
+    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
+    <text class="connection-label" x="233" y="478" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label" x="593" y="478" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
     <text class="connection-label" x="953" y="614" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
     <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
     <text class="connection-label" x="233" y="521" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
     <text class="connection-label" x="593" y="521" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="953" y="729" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
+    <text class="connection-label" x="953" y="737" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 61 L 456 61"/>
     <g class="parameter-panel" transform="translate(576 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(220 672)">
+      <title xml:space="preserve">the advanced merge at the iteration tail of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(220 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
@@ -77,12 +82,12 @@
     </g>
     <g class="node case" transform="translate(220 419)">
       <title xml:space="preserve">Advance on the left.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the left.</tspan></text>
     </g>
     <g class="node case" transform="translate(580 419)">
       <title xml:space="preserve">Advance on the right.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the right.</tspan></text>
     </g>
     <g class="node case" transform="translate(940 419)">
@@ -105,7 +110,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Advance through the right case.</tspan></text>
     </g>
-    <g class="node end" transform="translate(940 769)">
+    <g class="node end" transform="translate(940 777)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

@@ -35,6 +35,17 @@ fn preserves_the_authored_function_signature() {
 }
 
 #[test]
+fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
+    let function = fixture(
+        include_str!("../../../kaalang/tests/stage/behavior/prepared_initial_selection.rs"),
+        "prepared_initial_selection",
+    );
+    let lowered = expand(function).expect("the flow expands");
+    // The authored choice and the dispatcher each select once.
+    assert_eq!(branching_matches(&lowered), 2);
+}
+
+#[test]
 fn a_nested_early_return_needs_no_join_dispatch() {
     let function = fixture(
         include_str!(
@@ -247,13 +258,13 @@ fn nested_partial_joins_emit_each_body_once_without_routing_values() {
                 Stmt::Expr(expression, _) => expression,
                 _ => panic!("each fixture statement declares a block"),
             };
-            if matches!(expression, Expr::Break(_) | Expr::Return(_)) {
+            if matches!(expression, Expr::Return(_)) {
                 continue;
             }
             let Expr::Closure(closure) = expression else {
                 panic!("each block has a closure initializer");
             };
-            if matches!(closure.body.as_ref(), Expr::Break(_) | Expr::Return(_)) {
+            if matches!(closure.body.as_ref(), Expr::Return(_)) {
                 continue;
             }
             if !matches!(closure.body.as_ref(), Expr::Block(_)) {

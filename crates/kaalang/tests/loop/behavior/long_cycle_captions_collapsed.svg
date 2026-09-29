@@ -31,15 +31,15 @@
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 234 L 172 306
-      M 312 198 L 532 198 L 532 324
+      M 312 198 L 532 198 L 532 306
       M 172 408 L 172 484
-      M 532 390 L 532 484 L 172 484
+      M 532 408 L 532 484 L 172 484
       M 172 484 L 172 560
     "/>
     <text class="connection-label" x="185" y="502" xml:space="preserve"><tspan x="185" dy="0">done</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">flag</tspan></text>
     <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="545" y="313" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
     <text class="connection-label" x="185" y="549" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
@@ -69,7 +69,7 @@
     </g>
     <g class="node loop" transform="translate(532 357)">
       <title xml:space="preserve">Read the next item and prepare it for processing.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <rect class="node-shape" x="-140" y="-51" width="280" height="102" rx="8"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Read the next item and </tspan><tspan x="-124" dy="18">prepare it for processing.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>

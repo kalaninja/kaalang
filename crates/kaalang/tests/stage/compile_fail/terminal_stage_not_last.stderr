@@ -1,0 +1,5 @@
+error: a terminal kaalang stage must be declared last
+ --> tests/stage/compile_fail/terminal_stage_not_last.rs:5:5
+  |
+5 |     #[stage("Finish.")]
+  |     ^

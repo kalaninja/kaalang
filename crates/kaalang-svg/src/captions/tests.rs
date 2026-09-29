@@ -23,6 +23,49 @@ fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
 }
 
 #[test]
+fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability() {
+    let function = syn::parse_quote! {
+        fn example(mut parameter: u8, mut entry: ()) -> (u8, u8) {
+            #[action("Prepare shared storage.")]
+            let mut prepared = || 0;
+            #[stage("Finish.")]
+            |entry| {
+                #[cycle("Adjust shared storage.")]
+                let done = |entry| {
+                    #[action("Increment both values.")]
+                    let done = |&mut parameter, &mut prepared| {
+                        *parameter += 1;
+                        *prepared += 1;
+                    };
+                };
+                |done, parameter, prepared| return (parameter, prepared);
+            };
+        }
+    };
+    for collapsed in [false, true] {
+        let model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
+        let captions = super::derive_stage(
+            &model.stages[0],
+            &model.analysis,
+            Some(0),
+            "example",
+            "(u8, u8)",
+        );
+        if collapsed {
+            assert_eq!(
+                captions.capture(NodeId::Block(0)),
+                ["entry", "mut parameter", "mut prepared"]
+            );
+        } else {
+            assert_eq!(
+                captions.loop_inputs(0),
+                "entry, mut parameter, mut prepared"
+            );
+        }
+    }
+}
+
+#[test]
 fn labels_belong_to_exits_and_nodes_including_unused_names() {
     let (_, captions) = read(
         r#"
@@ -63,8 +106,8 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
             if branch == 0 { "Near." } else { "Far." }
         );
         // The distributor is the fan-out this projection actually produces:
-        // both displayed lists are empty and therefore equal, and RFC 0002 §6
-        // still keeps the two ends apart because the exit has two connections.
+        // both displayed lists are empty and therefore equal, but the hand-over rules
+        // still keep the two ends apart because the exit has two connections.
         assert!(!captions.shares_label(&Connection {
             source: Source::Exit(distributor),
             destination: Destination::Node(case),

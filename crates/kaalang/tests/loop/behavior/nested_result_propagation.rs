@@ -14,29 +14,31 @@ fn nested_result_propagation(limit: usize, log: Rc<RefCell<Vec<&'static str>>>) 
     let mut count = || 0;
 
     #[cycle("Search until the inner cycle finds the limit.")]
-    let (final_count, final_log) = |mut count, limit, log| {
+    let next = {
         #[action("Enter the outer scope.")]
         let _outer = |&log| Guard(log.clone(), "outer");
 
         #[cycle("Advance until the search is done.")]
-        let (next_count, next_log) = |mut count, limit, log| {
+        let next = {
             #[action("Enter the inner scope.")]
             let inner = |&log| Guard(log.clone(), "inner");
 
             #[question("Has the search finished?")]
             let (done, again) = |&count, limit| *count >= limit;
 
-            |done, count, log, inner| break (count, log);
+            #[action("Hand over the count and the log.")]
+            let next = |done, count, log, inner| (count, log);
 
             #[action("Advance the search.")]
             |again, &mut count| *count += 1;
-        };
 
-        |next_count, next_log| break (next_count, next_log);
+            |again| continue;
+        };
     };
 
     #[action("Continue after the search.")]
-    let result = |final_count, &final_log| {
+    let result = |next| {
+        let (final_count, final_log) = next;
         final_log.borrow_mut().push("after");
         final_count
     };

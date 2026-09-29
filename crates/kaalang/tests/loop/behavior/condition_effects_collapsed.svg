@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="388" viewBox="0 0 680 388" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for condition_effects</title>
-  <desc id="kaalang-description">Nodes: Start: condition_effects with parameters checks: usize handing over checks; Cycle: Repeat the check until it fails. capturing mut checks handing over checked; End: usize capturing checked. Connections: Start: condition_effects to Cycle: Repeat the check until it fails.; Cycle: Repeat the check until it fails. to End: usize.</desc>
+  <desc id="kaalang-description">Nodes: Start: condition_effects with parameters mut checks: usize handing over mut checks; Cycle: Repeat the check until it fails. capturing mut checks handing over leave_1; End: usize capturing checks. Connections: Start: condition_effects to Cycle: Repeat the check until it fails.; Cycle: Repeat the check until it fails. to End: usize.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -32,15 +32,15 @@
       M 172 90 L 172 162
       M 172 226 L 172 298
     "/>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">checked</tspan></text>
-    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">checks</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut checks</tspan></text>
+    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">leave_1</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">checks</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">checks: usize</tspan></text>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut checks: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>

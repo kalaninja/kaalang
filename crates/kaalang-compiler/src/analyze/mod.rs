@@ -1,5 +1,5 @@
 //! Walks every possible execution of a flow in source order, proving the
-//! execution invariants of RFC 0001 and recording the executions, capture
+//! execution invariants and recording the executions, capture
 //! dependencies, and convergence groups that the rest of the compiler relies on.
 
 use std::cmp::Ordering;
@@ -11,15 +11,17 @@ use syn::{Error, Result};
 
 use crate::model::{
     BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,
-    ExecutionOutcome, Flow, ProducerId, WireMerge,
+    ExecutionOutcome, Flow, FlowKind, Passes, ProducerId, WireMerge,
 };
 
 mod action;
-mod break_block;
 mod call;
 mod choice;
+mod continue_block;
 mod convergence;
 mod end;
+mod export;
+mod frame;
 mod loop_block;
 mod merge;
 mod participation;
@@ -30,36 +32,58 @@ mod return_block;
 #[cfg(test)]
 mod tests;
 
+type FlowResult = (
+    Vec<Execution>,
+    Vec<ConvergenceGroup>,
+    Vec<WireMerge>,
+    Passes,
+);
+
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
-pub(crate) fn flow(flow: &Flow) -> Result<(Vec<Execution>, Vec<ConvergenceGroup>, Vec<WireMerge>)> {
+pub(crate) fn flow(flow: &Flow) -> Result<FlowResult> {
+    flow_with_usage(flow, true)
+}
+
+/// Preparation first needs route summaries before stage captures are known.
+pub(crate) fn flow_without_usage(flow: &Flow) -> Result<FlowResult> {
+    flow_with_usage(flow, false)
+}
+
+fn flow_with_usage(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
     let walk = walk(flow);
     if let Some((_, error)) = walk.error {
         return Err(error);
     }
 
     let executions = walk.executions.into_iter().collect::<Vec<_>>();
+    let frames = frame::Frames::of(flow, &executions);
     let mut merges = merge::collect(flow);
-    let owners = merge::completion(flow, &executions, &mut merges);
-    placement::flow(flow, &executions, &merges, &owners)?;
+    let owners = merge::completion(flow, &frames, &mut merges);
+    let ancestry = placement::ancestry(flow);
+    placement::flow(flow, &executions, &merges, &owners, &ancestry, &frames)?;
     if let Some(error) = walk.incomplete {
         return Err(error);
     }
     reachable(flow, &executions)?;
-    captured(flow, &executions)?;
+    if check_usage {
+        captured(flow, &executions)?;
+    }
     branch_outputs(flow, &executions, &merges)?;
     let captures = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &[]))
         .collect::<Vec<_>>();
-    participation::flow(flow, &executions, &captures)?;
-    let merges = merge::flow(flow, &executions, merges, owners)?;
+    participation::flow(flow, &frames, &captures)?;
+    let merges = merge::flow(flow, &frames, merges, owners, &ancestry)?;
+    loop_block::output_order(flow, &frames)?;
     let precedence = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &merges))
         .collect::<Vec<_>>();
-    let convergence_groups = convergence::flow(flow, &executions, &precedence)?;
-    Ok((executions, convergence_groups, merges))
+    let convergence_groups = convergence::flow(flow, &frames, &precedence, &ancestry)?;
+    let passes = frames.into_passes();
+    Ok((executions, convergence_groups, merges, passes))
 }
 
 /// Enumerates every finite execution summary of a flow in source order,
@@ -87,7 +111,6 @@ fn walk(flow: &Flow) -> Walk<'_> {
             executed: BTreeSet::new(),
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
-            repeats: BTreeSet::new(),
             loops: BTreeMap::new(),
         },
     );
@@ -137,7 +160,8 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
 /// Unfold only selections that change the observed outcome. Earlier converged
 /// selections and later questions do not split its branch interval. Source
 /// order puts deciding ancestors before descendants, so projected traces sort
-/// in authored branch order.
+/// in authored branch order. A cycle seen as a black box sorts by its output
+/// alone: the body route it carries tells executions apart but orders nothing.
 pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
     let mut selectors = BTreeSet::new();
     for (first, execution) in executions.iter().enumerate() {
@@ -155,7 +179,10 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
             .branches
             .iter()
             .filter(|selection| selectors.contains(&selection.block))
-            .copied()
+            .map(|selection| BranchSelection {
+                block: selection.block,
+                branch: frame::branch(selection.branch),
+            })
             .collect::<Vec<_>>()
     });
     ordered
@@ -200,9 +227,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
         preceding[block].extend(flow.enclosing(block));
     }
     for dependency in &execution.dependencies {
-        if let ProducerId::BlockOutput { block, .. } | ProducerId::CycleInput { block, .. } =
-            dependency.producer
-        {
+        if let ProducerId::BlockOutput { block, .. } = dependency.producer {
             preceding[dependency.capture.block].insert(block);
         }
     }
@@ -212,7 +237,7 @@ fn predecessors(flow: &Flow, execution: &Execution, merges: &[WireMerge]) -> Vec
             .iter()
             .filter_map(|producer| match producer {
                 ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
+                ProducerId::FlowInput(_) => None,
             })
             .chain(merge.before.iter().copied())
             .filter(|&block| execution.participates(block))
@@ -239,7 +264,6 @@ struct State {
     executed: BTreeSet<usize>,
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
-    repeats: BTreeSet<usize>,
     loops: BTreeMap<usize, LoopState>,
 }
 
@@ -292,7 +316,7 @@ impl Walk<'_> {
     /// whose inputs this execution has all provided participates; the others
     /// belong to branches this execution did not select.
     fn visit(&mut self, index: usize, mut state: State) {
-        if self.close_loops(index, &mut state) {
+        if self.close_loops(index, &state) {
             return;
         }
         if index == self.end {
@@ -301,12 +325,64 @@ impl Walk<'_> {
             return;
         }
         let block = &self.flow.blocks[index];
+        if block.transition_target.is_some() {
+            let selected = self
+                .flow
+                .blocks
+                .iter()
+                .enumerate()
+                .filter(|(_, candidate)| {
+                    candidate.transition_target.is_some()
+                        && state.available.contains_key(&candidate.inputs[0].ident)
+                })
+                .collect::<Vec<_>>();
+            if selected.len() > 1 {
+                self.report(
+                    (index, 0),
+                    Error::new(
+                        self.flow.blocks[selected[1].0].span,
+                        "a kaalang transition boundary selects more than one stage signal",
+                    ),
+                );
+                return;
+            }
+            if let Some(input) = block
+                .inputs
+                .iter()
+                .skip(1)
+                .find(|input| !state.available.contains_key(&input.ident))
+            {
+                self.report(
+                    (index, 0),
+                    Error::new(input.alias.span(), "a common outer wire used by a kaalang stage must be available on every preparation route"),
+                );
+                return;
+            }
+        }
         if !block
             .inputs
             .iter()
+            .filter(|input| !input.derived)
             .all(|input| state.available.contains_key(&input.ident))
         {
             self.visit(block.loop_end.unwrap_or(index + 1), state);
+            return;
+        }
+        // An inner capture cannot make entering the cycle conditional.
+        if block.kind == BlockKind::Loop
+            && let Some((position, input)) = block
+                .inputs
+                .iter()
+                .enumerate()
+                .find(|(_, input)| input.derived && !state.available.contains_key(&input.ident))
+        {
+            self.report(
+                (index, position),
+                Error::new(
+                    input.ident.span(),
+                    "an outer wire captured inside a kaalang cycle must be available whenever the cycle is entered",
+                ),
+            );
             return;
         }
         state.enter(self.flow, index);
@@ -315,7 +391,8 @@ impl Walk<'_> {
             BlockKind::Call => call::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
             BlockKind::Loop => loop_block::visit(self, index, state),
-            BlockKind::Break => break_block::visit(self, index, state),
+            BlockKind::Export => export::visit(self, index, state),
+            BlockKind::Continue => continue_block::visit(self, index, state),
             BlockKind::Return => return_block::visit(self, index, state),
             BlockKind::Choice => choice::visit(self, index, &state),
             BlockKind::End => unreachable!("the end block closes the walk"),
@@ -364,8 +441,9 @@ impl Walk<'_> {
         true
     }
 
-    /// Reaching the innermost body's boundary records a repeating summary.
-    fn close_loops(&mut self, index: usize, state: &mut State) -> bool {
+    /// An iteration still open at its body's boundary reached neither
+    /// `continue` nor a declared output: repetition is authored, never implied.
+    fn close_loops(&mut self, index: usize, state: &State) -> bool {
         let Some(header) = state
             .loops
             .keys()
@@ -375,14 +453,15 @@ impl Walk<'_> {
         else {
             return false;
         };
-        state.loops.remove(&header).expect("the iteration is open");
-        let bindings = self.flow.cycle_bindings(header);
-        state.produced = bindings.keys().cloned().collect();
-        state.available = bindings;
-        state.repeats.insert(header);
-        self.record(
-            state.clone(),
-            ExecutionOutcome::Repeat { loop_index: header },
+        // The route falls off at the body's end, after every block inside it.
+        let message = if self.flow.blocks[header].outputs.is_empty() {
+            "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"
+        } else {
+            "a route through this kaalang cycle reaches the end of its body without a declared output; produce one of its outputs or repeat it with `continue`"
+        };
+        self.report(
+            (index - 1, usize::MAX),
+            Error::new(self.flow.blocks[header].span, message),
         );
         true
     }
@@ -392,20 +471,58 @@ impl Walk<'_> {
             blocks: state.executed.into_iter().collect(),
             branches: state.branches.into_iter().collect(),
             dependencies: state.dependencies.into_iter().collect(),
-            repeats: state.repeats.into_iter().collect(),
             outcome,
         });
     }
+}
+
+/// The positions of the declared outputs of `header` an execution has already
+/// produced inside its body.
+fn produced_outputs<'s>(
+    flow: &'s Flow,
+    state: &'s State,
+    header: usize,
+) -> impl Iterator<Item = usize> + 's {
+    flow.exports(header)
+        .filter(move |&consumer| {
+            state
+                .available
+                .contains_key(&flow.blocks[consumer].inputs[0].ident)
+        })
+        .map(move |consumer| flow.exported_output(consumer))
+}
+
+/// The authored name of the declared output a boundary consumer exports.
+fn exported_name(flow: &Flow, consumer: usize) -> &Ident {
+    let header = flow.blocks[consumer]
+        .export_target
+        .expect("a boundary consumer has a cycle");
+    &flow.blocks[header]
+        .output_binding(flow.exported_output(consumer))
+        .ident
 }
 
 /// Every authored block participates in at least one execution.
 fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let end = flow.blocks.len() - 1;
     match (0..end).find(|&block| {
+        if matches!(flow.kind, FlowKind::Preparation)
+            && flow.blocks[block].transition_target.is_some()
+        {
+            return false;
+        }
         !executions
             .iter()
             .any(|execution| execution.participates(block))
     }) {
+        // A boundary consumer carries its declared output's span.
+        Some(block) if flow.blocks[block].kind == BlockKind::Export => Err(Error::new(
+            flow.blocks[block].span,
+            format!(
+                "no route through this kaalang cycle reaches the end of its body with its output `{}`",
+                exported_name(flow, block)
+            ),
+        )),
         Some(block) => Err(Error::new(
             flow.blocks[block].span,
             "this kaalang block is unreachable",
@@ -426,6 +543,9 @@ fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
     };
 
     for (index, input) in flow.flow_inputs.iter().enumerate() {
+        if matches!(flow.kind, FlowKind::Stage { .. }) {
+            continue;
+        }
         if !ignored(input) && !captured(ProducerId::FlowInput(index)) {
             return Err(Error::new(
                 input.span(),
@@ -471,10 +591,7 @@ fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -
     {
         if let ProducerId::BlockOutput { block, output } = dependency.producer
             && !merged_wires.contains(&flow.blocks[block].outputs[output])
-            && matches!(
-                flow.blocks[block].kind,
-                BlockKind::Question | BlockKind::Choice
-            )
+            && flow.blocks[block].branch_count() > 0
         {
             captures
                 .entry(dependency.producer)

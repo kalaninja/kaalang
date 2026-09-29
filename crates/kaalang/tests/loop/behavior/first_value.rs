@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn first_value(values: &[i32]) -> Option<i32> {
     #[cycle("Find the first value.")]
-    let result = |values| {
+    let selected = |values| {
         #[question("Is there a first value?")]
         #[yes("YES")]
         #[no("NO")]
@@ -14,11 +14,9 @@ fn first_value(values: &[i32]) -> Option<i32> {
 
         #[action("Produce the first value.")]
         let selected = |iterate_1, values| Some(values[0]);
-
-        |selected| break selected;
     };
 
-    |result| return result;
+    |selected| return selected;
 }
 
 #[test]

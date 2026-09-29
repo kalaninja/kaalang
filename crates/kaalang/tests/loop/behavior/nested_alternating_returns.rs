@@ -3,26 +3,24 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_alternating_returns(flag: bool) {
     #[cycle("Repeat level 0.")]
-    |flag| {
+    let leave_0 = |flag| {
         #[question("Leave level 0?")]
         let (stay_0, leave_0) = |flag| flag;
-        |leave_0| break;
-
         #[cycle("Repeat level 1.")]
-        |stay_0, flag| {
+        let leave_1 = |stay_0| {
             #[question("Leave level 1?")]
             let (leave_1, stay_1) = |flag| flag;
-            |leave_1| break;
-
             #[cycle("Repeat level 2.")]
-            |stay_1, flag| {
+            let leave_2 = |stay_1| {
                 #[question("Leave level 2?")]
-                let (_stay_2, leave_2) = |flag| flag;
-                |leave_2| break;
+                let (stay_2, leave_2) = |flag| flag;
+                |stay_2| continue;
             };
+            |leave_2| continue;
         };
+        |leave_1| continue;
     };
-    return;
+    |leave_0| return;
 }
 
 #[test]

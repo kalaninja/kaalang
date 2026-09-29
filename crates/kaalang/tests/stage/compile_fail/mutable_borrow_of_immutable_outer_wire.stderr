@@ -1,0 +1,5 @@
+error: a mutable capture requires the outer wire to be declared with `mut`
+  --> tests/stage/compile_fail/mutable_borrow_of_immutable_outer_wire.rs:11:15
+   |
+11 |         |&mut shared| return;
+   |               ^^^^^^

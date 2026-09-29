@@ -1,0 +1,5 @@
+error: a kaalang cycle body must use braces
+ --> tests/loop/compile_fail/unbraced_cycle_initializer.rs:6:18
+  |
+6 |     let result = 1;
+  |                  ^

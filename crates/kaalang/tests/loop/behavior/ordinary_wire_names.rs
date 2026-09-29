@@ -12,8 +12,6 @@ fn ordinary_wire_names(input: usize) -> usize {
 
         #[action("Produce a local out wire.")]
         let out = |result| result + 1;
-
-        |out| break out;
     };
 
     #[action("Produce a root result wire.")]

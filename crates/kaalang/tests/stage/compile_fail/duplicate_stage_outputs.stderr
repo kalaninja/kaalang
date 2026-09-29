@@ -1,0 +1,5 @@
+error: a kaalang stage declares each output once
+ --> tests/stage/compile_fail/duplicate_stage_outputs.rs:6:14
+  |
+6 |     let (go, go) = |go| {
+  |              ^^

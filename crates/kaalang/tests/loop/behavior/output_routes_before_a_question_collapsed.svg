@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="972" viewBox="0 0 1064 972" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for output_routes_before_a_question</title>
+  <desc id="kaalang-description">Nodes: Start: output_routes_before_a_question with parameters value: u8; flag: u8 handing over value, flag; Cycle: Sort the value. capturing value handing over tiny / larger; Question: Is the flag even? capturing larger, flag handing over even / odd; Action: Score the tiny value. capturing tiny handing over score; Action: Score the even flag. capturing even handing over score; Action: Keep the score. capturing score handing over result; Action: Score the odd flag. capturing odd handing over result; End: u8 capturing result; Merge: score; Merge: result. Connections: Start: output_routes_before_a_question to Cycle: Sort the value.; Cycle: Sort the value. output tiny to Action: Score the tiny value.; Cycle: Sort the value. output larger to Question: Is the flag even?; Question: Is the flag even? branch 1 to Action: Score the even flag.; Question: Is the flag even? branch 2 to Action: Score the odd flag.; Action: Score the tiny value. to the score merge; Action: Score the even flag. to the score merge; Action: Keep the score. to the result merge; Action: Score the odd flag. to the result merge; the score merge to Action: Keep the score.; the result merge to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 234 L 172 306
+      M 312 202 L 532 202 L 532 306
+      M 532 378 L 532 450
+      M 672 342 L 892 342 L 892 450
+      M 172 378 L 172 590
+      M 532 514 L 532 590 L 172 590
+      M 172 730 L 172 806
+      M 892 514 L 892 806 L 172 806
+      M 172 590 L 172 666
+      M 172 806 L 172 882
+    "/>
+    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">score</tspan></text>
+    <text class="connection-label" x="185" y="824" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">tiny</tspan></text>
+    <text class="connection-label" x="545" y="439" xml:space="preserve"><tspan x="545" dy="0">even</tspan></text>
+    <text class="connection-label" x="905" y="439" xml:space="preserve"><tspan x="905" dy="0">odd</tspan></text>
+    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">value, flag</tspan></text>
+    <text class="connection-label" x="325" y="220" xml:space="preserve"><tspan x="325" dy="0">larger</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">larger, flag</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 590)">
+      <title xml:space="preserve">the score merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 806)">
+      <title xml:space="preserve">the result merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">output_routes_before_a_question</tspan></text>
+    </g>
+    <g class="node loop" transform="translate(172 202)">
+      <title xml:space="preserve">Sort the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Sort the value.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node question" transform="translate(532 342)">
+      <title xml:space="preserve">Is the flag even?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the flag even?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 342)">
+      <title xml:space="preserve">Score the tiny value.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the tiny value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 482)">
+      <title xml:space="preserve">Score the even flag.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the even flag.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 698)">
+      <title xml:space="preserve">Keep the score.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the score.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 482)">
+      <title xml:space="preserve">Score the odd flag.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Score the odd flag.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 911)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

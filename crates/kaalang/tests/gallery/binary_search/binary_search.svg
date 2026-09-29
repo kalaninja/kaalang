@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1250" viewBox="0 0 1500 1250" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1256" viewBox="0 0 1500 1256" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for binary_search</title>
-  <desc id="kaalang-description">Cycles: 🔍 Search the remaining range. with inputs values, target, mut left, mut right and outputs result. Nodes: Start: binary_search with parameters values: &amp;[i32]; target: i32 handing over values, target; Action: 📏 Initialize the search range. capturing values handing over left, right; Question: Does the search range contain any elements? capturing left, right handing over iterate / leave described as branch 1: YES / branch 2: NO; Action: 🚫 The target is absent. capturing leave handing over outcome; Action: 📍 Find the middle index. capturing iterate, left, right handing over mid; Select: Compare the middle element with the target. capturing values, target, mid; Case: Less than the target. handing over less; Case: Greater than the target. handing over greater; Case: Equal to the target. handing over equal; Action: ➡️ Search the right half. capturing less, mid, &amp;mut left; Action: ⬅️ Search the left half. capturing greater, mid, &amp;mut right; Action: 🎯 The target was found. capturing equal, mid handing over outcome; End: Option&lt;usize&gt; capturing result; Merge: outcome. Connections: Start: binary_search to Action: 📏 Initialize the search range.; Action: 📏 Initialize the search range. to the entry of the cycle; Question: Does the search range contain any elements? branch 1 to Action: 📍 Find the middle index.; Question: Does the search range contain any elements? branch 2 to Action: 🚫 The target is absent.; Action: 🚫 The target is absent. to the outcome merge at the cycle result; Action: 📍 Find the middle index. to Select: Compare the middle element with the target.; Select: Compare the middle element with the target. to Case: Less than the target.; Select: Compare the middle element with the target. to Case: Greater than the target.; Select: Compare the middle element with the target. to Case: Equal to the target.; Case: Less than the target. to Action: ➡️ Search the right half.; Case: Greater than the target. to Action: ⬅️ Search the left half.; Case: Equal to the target. to Action: 🎯 The target was found.; Action: ➡️ Search the right half. to the iteration tail of the cycle; Action: ⬅️ Search the left half. to the iteration tail of the cycle; Action: 🎯 The target was found. to the outcome merge at the cycle result; the outcome merge at the cycle result to End: Option&lt;usize&gt;; the entry of the cycle to Question: Does the search range contain any elements?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: 🔍 Narrow the range until the target is found or ruled out. with inputs mut left, mut right, values, target and outputs result. Nodes: Start: binary_search with parameters values: &amp;[i32]; target: i32 handing over values, target; Action: 📏 Start with the entire sorted list. capturing values handing over mut left, mut right; Question: Are any values left in the search range? capturing left, right handing over iterate / leave described as branch 1: YES / branch 2: NO; Action: 🚫 Report that the target is absent. capturing leave handing over result; Action: 📍 Select the middle value of this range. capturing iterate, values, left, right handing over mid, value; Select: How does this value compare with the target? capturing value, target; Case: Less than the target. handing over less; Case: Greater than the target. handing over greater; Case: Equal to the target. handing over equal; Action: ➡️ Discard this value and everything to its left. capturing less, mid, &amp;mut left handing over stepped; Action: ⬅️ Discard this value and everything to its right. capturing greater, mid, &amp;mut right handing over stepped; Action: 🎯 Report the position of this matching value. capturing equal, mid handing over result; End: Option&lt;usize&gt; capturing result; Merge: result; Merge: stepped. Connections: Start: binary_search to Action: 📏 Start with the entire sorted list.; Action: 📏 Start with the entire sorted list. to the entry of the cycle; Question: Are any values left in the search range? branch 1 to Action: 📍 Select the middle value of this range.; Question: Are any values left in the search range? branch 2 to Action: 🚫 Report that the target is absent.; Action: 🚫 Report that the target is absent. to the result merge at the cycle result; Action: 📍 Select the middle value of this range. to Select: How does this value compare with the target?; Select: How does this value compare with the target? to Case: Less than the target.; Select: How does this value compare with the target? to Case: Greater than the target.; Select: How does this value compare with the target? to Case: Equal to the target.; Case: Less than the target. to Action: ➡️ Discard this value and everything to its left.; Case: Greater than the target. to Action: ⬅️ Discard this value and everything to its right.; Case: Equal to the target. to Action: 🎯 Report the position of this matching value.; Action: ➡️ Discard this value and everything to its left. to the stepped merge at the iteration tail of the cycle; Action: ⬅️ Discard this value and everything to its right. to the stepped merge at the iteration tail of the cycle; Action: 🎯 Report the position of this matching value. to the result merge at the cycle result; the result merge at the cycle result to End: Option&lt;usize&gt;; the entry of the cycle to Question: Are any values left in the search range?; Repeat from the stepped merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -27,52 +27,52 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
-      <title xml:space="preserve">🔍 Search the remaining range.</title>
-    <rect class="cycle-boundary" x="32" y="271" width="1436" height="848" rx="12"/>
-    <text class="cycle-caption" x="1456" y="285" text-anchor="end" xml:space="preserve"><tspan x="1456" dy="0">🔍 Search the remaining range.</tspan></text>
+      <title xml:space="preserve">🔍 Narrow the range until the target is found or ruled out.</title>
+    <rect class="cycle-boundary" x="32" y="273" width="1436" height="852" rx="12"/>
+    <text class="cycle-caption" x="1456" y="287" text-anchor="end" xml:space="preserve"><tspan x="1456" dy="0">🔍 Narrow the range until the target is found or ruled out.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 220 94 L 220 170
-      M 220 234 L 220 306
-      M 220 450 L 220 522
-      M 360 414 L 1300 414 L 1300 522
-      M 1300 586 L 1300 1084 L 940 1084
-      M 220 586 L 220 658
-      M 220 730 L 220 802
-      M 348 694 L 580 694 L 580 802
-      M 348 694 L 940 694 L 940 802
-      M 220 872 L 220 944
-      M 580 872 L 580 944
-      M 940 872 L 940 944
-      M 220 1008 L 220 1084
-      M 580 1008 L 580 1084 L 220 1084
-      M 940 1008 L 940 1084
-      M 940 1084 L 940 1160
-      M 220 306 L 220 378
+      M 220 236 L 220 308
+      M 220 452 L 220 524
+      M 360 416 L 1300 416 L 1300 524
+      M 1300 590 L 1300 1090 L 940 1090
+      M 220 590 L 220 662
+      M 220 734 L 220 806
+      M 348 698 L 580 698 L 580 806
+      M 348 698 L 940 698 L 940 806
+      M 220 876 L 220 948
+      M 580 876 L 580 948
+      M 940 876 L 940 948
+      M 220 1014 L 220 1090
+      M 580 1014 L 580 1090 L 220 1090
+      M 940 1014 L 940 1090
+      M 940 1090 L 940 1166
+      M 220 308 L 220 380
     "/>
     <path class="connection" d="
-      M 220 1084 L 60 1084 L 60 306 L 220 306
+      M 220 1090 L 60 1090 L 60 308 L 220 308
     " marker-end="url(#loop-arrow)"/>
-    <text class="connection-label" x="953" y="1102" xml:space="preserve"><tspan x="953" dy="0">outcome</tspan></text>
+    <text class="connection-label" x="953" y="1108" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="1108" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
     <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">values, target</tspan></text>
-    <text class="connection-label" x="233" y="252" xml:space="preserve"><tspan x="233" dy="0">left, right</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="233" y="470" xml:space="preserve"><tspan x="233" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="373" y="402" xml:space="preserve"><tspan x="373" dy="0">NO</tspan></text>
-    <text class="connection-label" x="233" y="604" xml:space="preserve"><tspan x="233" dy="0">mid</tspan></text>
-    <text class="connection-label" x="233" y="890" xml:space="preserve"><tspan x="233" dy="0">less</tspan></text>
-    <text class="connection-label" x="593" y="890" xml:space="preserve"><tspan x="593" dy="0">greater</tspan></text>
-    <text class="connection-label" x="953" y="890" xml:space="preserve"><tspan x="953" dy="0">equal</tspan></text>
+    <text class="connection-label" x="233" y="254" xml:space="preserve"><tspan x="233" dy="0">mut left, mut right</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="233" y="472" xml:space="preserve"><tspan x="233" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="373" y="404" xml:space="preserve"><tspan x="373" dy="0">NO</tspan></text>
+    <text class="connection-label" x="233" y="608" xml:space="preserve"><tspan x="233" dy="0">mid, value</tspan></text>
+    <text class="connection-label" x="233" y="894" xml:space="preserve"><tspan x="233" dy="0">less</tspan></text>
+    <text class="connection-label" x="593" y="894" xml:space="preserve"><tspan x="593" dy="0">greater</tspan></text>
+    <text class="connection-label" x="953" y="894" xml:space="preserve"><tspan x="953" dy="0">equal</tspan></text>
     <text class="connection-label" x="233" y="159" xml:space="preserve"><tspan x="233" dy="0">values</tspan></text>
-    <text class="connection-label" x="233" y="367" xml:space="preserve"><tspan x="233" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="233" y="511" xml:space="preserve"><tspan x="233" dy="0">iterate, left, right</tspan></text>
-    <text class="connection-label" x="233" y="647" xml:space="preserve"><tspan x="233" dy="0">values, target, mid</tspan></text>
-    <text class="connection-label" x="233" y="933" xml:space="preserve"><tspan x="233" dy="0">less, mid, &amp;mut left</tspan></text>
-    <text class="connection-label" x="593" y="933" xml:space="preserve"><tspan x="593" dy="0">greater, mid, &amp;mut right</tspan></text>
-    <text class="connection-label" x="953" y="933" xml:space="preserve"><tspan x="953" dy="0">equal, mid</tspan></text>
-    <text class="connection-label" x="953" y="1149" xml:space="preserve"><tspan x="953" dy="0">result</tspan></text>
+    <text class="connection-label" x="233" y="369" xml:space="preserve"><tspan x="233" dy="0">left, right</tspan></text>
+    <text class="connection-label" x="233" y="513" xml:space="preserve"><tspan x="233" dy="0">iterate, values, left, right</tspan></text>
+    <text class="connection-label" x="233" y="651" xml:space="preserve"><tspan x="233" dy="0">value, target</tspan></text>
+    <text class="connection-label" x="233" y="937" xml:space="preserve"><tspan x="233" dy="0">less, mid, &amp;mut left</tspan></text>
+    <text class="connection-label" x="593" y="937" xml:space="preserve"><tspan x="593" dy="0">greater, mid, &amp;mut right</tspan></text>
+    <text class="connection-label" x="953" y="937" xml:space="preserve"><tspan x="953" dy="0">equal, mid</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 65 L 456 65"/>
@@ -80,70 +80,74 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i32]</tspan><tspan x="-104" dy="18">target: i32</tspan></text>
     </g>
-    <g class="node merge" transform="translate(940 1084)">
-      <title xml:space="preserve">the outcome merge at the cycle result</title>
+    <g class="node merge" transform="translate(940 1090)">
+      <title xml:space="preserve">the result merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(220 1090)">
+      <title xml:space="preserve">the stepped merge at the iteration tail of the cycle</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">binary_search</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 202)">
-      <title xml:space="preserve">📏 Initialize the search range.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">📏 Initialize the search range.</tspan></text>
+    <g class="node action" transform="translate(220 203)">
+      <title xml:space="preserve">📏 Start with the entire sorted list.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">📏 Start with the entire sorted </tspan><tspan x="-124" dy="18">list.</tspan></text>
     </g>
-    <g class="node question" transform="translate(220 414)">
-      <title xml:space="preserve">Does the search range contain any elements?</title>
+    <g class="node question" transform="translate(220 416)">
+      <title xml:space="preserve">Are any values left in the search range?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Does the search range </tspan><tspan x="0" dy="18">contain any elements?</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Are any values left in the </tspan><tspan x="0" dy="18">search range?</tspan></text>
     </g>
-    <g class="node action" transform="translate(1300 554)">
-      <title xml:space="preserve">🚫 The target is absent.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🚫 The target is absent.</tspan></text>
+    <g class="node action" transform="translate(1300 557)">
+      <title xml:space="preserve">🚫 Report that the target is absent.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🚫 Report that the target is </tspan><tspan x="-124" dy="18">absent.</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 554)">
-      <title xml:space="preserve">📍 Find the middle index.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">📍 Find the middle index.</tspan></text>
+    <g class="node action" transform="translate(220 557)">
+      <title xml:space="preserve">📍 Select the middle value of this range.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">📍 Select the middle value of this </tspan><tspan x="-124" dy="18">range.</tspan></text>
     </g>
-    <g class="node select" transform="translate(220 694)">
-      <title xml:space="preserve">Compare the middle element with the target.</title>
+    <g class="node select" transform="translate(220 698)">
+      <title xml:space="preserve">How does this value compare with the target?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Compare the middle </tspan><tspan x="0" dy="18">element with the target.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">How does this value </tspan><tspan x="0" dy="18">compare with the target?</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 837)">
+    <g class="node case" transform="translate(220 841)">
       <title xml:space="preserve">Less than the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Less than the target.</tspan></text>
     </g>
-    <g class="node case" transform="translate(580 837)">
+    <g class="node case" transform="translate(580 841)">
       <title xml:space="preserve">Greater than the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Greater than the target.</tspan></text>
     </g>
-    <g class="node case" transform="translate(940 837)">
+    <g class="node case" transform="translate(940 841)">
       <title xml:space="preserve">Equal to the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Equal to the target.</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 976)">
-      <title xml:space="preserve">➡️ Search the right half.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">➡️ Search the right half.</tspan></text>
+    <g class="node action" transform="translate(220 981)">
+      <title xml:space="preserve">➡️ Discard this value and everything to its left.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">➡️ Discard this value and </tspan><tspan x="-124" dy="18">everything to its left.</tspan></text>
     </g>
-    <g class="node action" transform="translate(580 976)">
-      <title xml:space="preserve">⬅️ Search the left half.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⬅️ Search the left half.</tspan></text>
+    <g class="node action" transform="translate(580 981)">
+      <title xml:space="preserve">⬅️ Discard this value and everything to its right.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⬅️ Discard this value and </tspan><tspan x="-124" dy="18">everything to its right.</tspan></text>
     </g>
-    <g class="node action" transform="translate(940 976)">
-      <title xml:space="preserve">🎯 The target was found.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🎯 The target was found.</tspan></text>
+    <g class="node action" transform="translate(940 981)">
+      <title xml:space="preserve">🎯 Report the position of this matching value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🎯 Report the position of this </tspan><tspan x="-124" dy="18">matching value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(940 1189)">
+    <g class="node end" transform="translate(940 1195)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;usize&gt;</tspan></text>
     </g>

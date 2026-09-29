@@ -1,4 +1,4 @@
-//! Measures and places wire labels under RFC 0002 §6. Shared connection labels
+//! Measures and places wire labels. Shared connection labels
 //! use the capture position; identical alternatives share their merge's label.
 
 use std::collections::BTreeSet;
@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use kaalang_compiler::{
     RunLine,
     geometry::overlaps,
-    topology::{Destination, ExitId, NodeId, Source, Vertex},
+    topology::{Destination, ExitId, NodeId, NodeKind, Source, Vertex},
 };
 
 use super::{
@@ -66,11 +66,14 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
 
     for connection in &shared {
         if let Source::Exit(exit) = connection.source
-            && captions.branch_description(exit).is_some()
+            && captions.branch_description(exit).is_none()
         {
-            continue;
+            labels.extend(capture_label(
+                scene,
+                node_of(connection.destination),
+                captions.handover(exit),
+            ));
         }
-        labels.extend(capture_label(scene, node_of(connection.destination)));
     }
 
     for exit in &topology.exits {
@@ -83,7 +86,7 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
             &mut labels,
             scene,
             exit.id,
-            scene.exit_anchor(exit.id),
+            exit_label_anchor(scene, exit.id),
             skip_handover,
         );
     }
@@ -96,19 +99,23 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
         {
             continue;
         }
-        labels.extend(capture_label(scene, node.id));
+        labels.extend(capture_label(
+            scene,
+            node.id,
+            captions.capture_label(node.id),
+        ));
     }
 
     labels
 }
 
 /// Captures stay above the receiving node, including labels that also represent
-/// the preceding hand-over.
-fn capture_label(scene: &Scene, node: NodeId) -> Option<Label> {
+/// the preceding hand-over. Shared labels retain that hand-over's order.
+fn capture_label(scene: &Scene, node: NodeId, names: &[String]) -> Option<Label> {
     let anchor = scene.top_anchor(node);
     wire_label(
         Vertex::Node(node),
-        scene.captions.capture_label(node),
+        names,
         Point {
             x: anchor.x,
             y: anchor.y - RISE,
@@ -155,7 +162,7 @@ fn place_merge_label(
     if let Some(Destination::Node(node)) = outgoing.next().map(|wire| wire.destination)
         && outgoing.next().is_none()
         && topology.single_arrival(node)
-        && captions.capture(node) == wires
+        && captions.matches_capture(topology.node(node), wires)
     {
         merged_captures.insert(node);
     }
@@ -171,6 +178,31 @@ fn place_merge_label(
         Stack::Below,
         anchor.x,
     ));
+}
+
+/// Several side exits of one node leave along the same row until each turns
+/// down to its own destination, so their labels stand at those corners rather
+/// than together at the node's tip.
+fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
+    let anchor = scene.exit_anchor(exit);
+    let several = exit.branch.is_some_and(|branch| branch > 0)
+        && scene.topology.node(exit.node).kind == NodeKind::Loop
+        && scene.topology.exits.iter().any(|other| {
+            other.id
+                == ExitId {
+                    branch: Some(2),
+                    ..exit
+                }
+        });
+    if !several {
+        return anchor;
+    }
+    scene
+        .topology
+        .leaving(exit)
+        .map(|connection| scene.column_x(scene.column(connection.destination)))
+        .min()
+        .map_or(anchor, |x| Point { x, y: anchor.y })
 }
 
 fn place_exit_labels(
@@ -428,6 +460,7 @@ mod tests {
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
             narrow: false,
+            stage_rows: None,
             reach: std::collections::BTreeMap::new(),
             slack: 0,
             bodies: Vec::new(),

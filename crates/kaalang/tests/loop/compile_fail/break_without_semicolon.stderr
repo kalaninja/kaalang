@@ -1,5 +1,0 @@
-error: a kaalang break requires a trailing semicolon
-  --> tests/loop/compile_fail/break_without_semicolon.rs:10:9
-   |
-10 |         |flag| break flag
-   |         ^^^^^^^^^^^^^^^^^

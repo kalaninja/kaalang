@@ -112,14 +112,12 @@ fn render_markdown(section: u8, condition: bool) {
     let done = |no| {};
 
     #[cycle("<mark>$x$</mark>")]
-    |done| {
+    let ready = |done| {
         #[action("Complete one pass.")]
         let ready = |done| {};
-
-        |ready| break;
     };
 
-    return;
+    |ready| return;
 }
 
 #[test]

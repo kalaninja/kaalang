@@ -33,13 +33,53 @@ mod call;
 mod choice;
 mod loop_block;
 mod question;
+mod stage;
+mod staged;
+
+pub(crate) use staged::serialize_staged;
 
 pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
+    serialize_with_ids(scene, flow_name, None)
+}
+
+#[allow(clippy::too_many_lines)] // The node and route groups write one complete local SVG.
+fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> String {
     let mut svg = String::new();
+    let (title_id, description_id, loop_arrow_id) = part.map_or_else(
+        || {
+            (
+                "kaalang-title".to_owned(),
+                "kaalang-description".to_owned(),
+                "loop-arrow".to_owned(),
+            )
+        },
+        |part| {
+            (
+                format!("kaalang-part-{part}-title"),
+                format!("kaalang-part-{part}-description"),
+                format!("kaalang-part-{part}-loop-arrow"),
+            )
+        },
+    );
     let markdown_styles = markdown_styles(scene);
+    let background = if part.is_none() {
+        "  <rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n"
+    } else {
+        ""
+    };
+    let stage_styles = if scene
+        .topology
+        .nodes
+        .iter()
+        .any(|node| matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition))
+    {
+        "      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }\n      .stage-entry .label, .transition .label { font-weight: 600; }\n      .stage-marker { fill: currentColor; }\n"
+    } else {
+        ""
+    };
     emit!(
         svg,
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">"#,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="{title_id}" aria-describedby="{description_id}">"#,
         scene.width,
         scene.height,
         scene.width,
@@ -47,17 +87,17 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
     );
     emit!(
         svg,
-        "  <title id=\"kaalang-title\">kaalang diagram for {}</title>",
+        "  <title id=\"{title_id}\">kaalang diagram for {}</title>",
         escape(flow_name)
     );
     emit!(
         svg,
-        "  <desc id=\"kaalang-description\">{}</desc>",
+        "  <desc id=\"{description_id}\">{}</desc>",
         escape(&describe(scene))
     );
     emit_inline!(
         svg,
-        r##"  <defs>
+        r#"  <defs>
     <style>
       svg {{ color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }}
       .connection {{ fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }}
@@ -78,18 +118,20 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
       .parameter-panel .label {{ font-weight: 400; text-anchor: start; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }}
-{markdown_styles}    </style>
+{markdown_styles}{stage_styles}    </style>
   </defs>
-  <rect width="100%" height="100%" fill="#ffffff"/>
-  <g class="cycle-regions">
-"##
+{background}  <g class="cycle-regions">
+"#
     );
     for region in &scene.loop_regions {
         loop_block::write(&mut svg, region);
     }
     svg.push_str("  </g>\n  <g class=\"connections\">\n");
     if !scene.topology.back_edges.is_empty() {
-        svg.push_str("    <defs><marker id=\"loop-arrow\" markerWidth=\"10\" markerHeight=\"10\" refX=\"9\" refY=\"5\" orient=\"auto\" markerUnits=\"userSpaceOnUse\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"currentColor\"/></marker></defs>\n");
+        emit!(
+            svg,
+            "    <defs><marker id=\"{loop_arrow_id}\" markerWidth=\"10\" markerHeight=\"10\" refX=\"9\" refY=\"5\" orient=\"auto\" markerUnits=\"userSpaceOnUse\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"currentColor\"/></marker></defs>"
+        );
     }
     // One stroke paints shared distributors and merge rails only once.
     svg.push_str("    <path class=\"connection\" d=\"\n");
@@ -103,7 +145,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
         if scene.is_back_edge(connection) {
             svg.push_str("    <path class=\"connection\" d=\"\n");
             write_connection(&mut svg, connection);
-            svg.push_str("    \" marker-end=\"url(#loop-arrow)\"/>\n");
+            emit!(svg, "    \" marker-end=\"url(#{loop_arrow_id})\"/>");
         }
     }
     // After the routes, so a label's halo covers the connections it crosses.
@@ -601,7 +643,9 @@ fn describe(scene: &Scene) -> String {
         .collect::<Vec<_>>()
         .join("; ");
 
-    if cycles.is_empty() {
+    if cycles.is_empty() && connections.is_empty() {
+        format!("Nodes: {nodes}.")
+    } else if cycles.is_empty() {
         format!("Nodes: {nodes}. Connections: {connections}.")
     } else {
         format!("Cycles: {cycles}. Nodes: {nodes}. Connections: {connections}.")
@@ -658,6 +702,15 @@ fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterP
 
 fn source_name(scene: &Scene, source: Source) -> String {
     match source {
+        // A collapsed cycle's branch exits are its declared outputs.
+        Source::Exit(ExitId {
+            node: node @ NodeId::Block(block),
+            branch: Some(output),
+        }) if scene.topology.node(node).kind == NodeKind::Loop => format!(
+            "{} output {}",
+            node_name(scene, node),
+            scene.captions.loop_output(block, output)
+        ),
         Source::Exit(ExitId {
             node,
             branch: Some(branch),
@@ -675,6 +728,7 @@ fn destination_name(scene: &Scene, destination: Destination) -> String {
 }
 
 fn merge_name(scene: &Scene, junction: usize) -> String {
+    let wires = scene.captions.junction_wires(junction);
     if let Some(loop_) = scene
         .topology
         .loops
@@ -691,21 +745,41 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
         } else {
             "the cycle".to_owned()
         };
-        let part = if loop_.tail == junction {
-            "iteration tail"
+        return if loop_.tail != junction {
+            format!("the entry of {owner}")
+        } else if wires.is_empty() {
+            format!("the iteration tail of {owner}")
         } else {
-            "entry"
+            // A merge that feeds only the continue is drawn as the tail.
+            format!(
+                "the {} merge at the iteration tail of {owner}",
+                wires.join(" and ")
+            )
         };
-        return format!("the {part} of {owner}");
     }
-    let wires = scene.captions.junction_wires(junction);
+    // A cycle with several outputs names the one each result hands over.
+    if let Some((boundary, output)) = scene.topology.loop_boundaries.iter().find_map(|boundary| {
+        let output = boundary
+            .results
+            .iter()
+            .position(|&result| result == Source::Junction(junction))?;
+        (boundary.results.len() > 1).then_some((boundary, output))
+    }) {
+        let name = scene.captions.loop_output(boundary.header, output);
+        return if wires.is_empty() {
+            format!("the {name} result of the cycle")
+        } else {
+            format!(
+                "the {} merge at the {name} result of the cycle",
+                wires.join(" and ")
+            )
+        };
+    }
     let junction = &scene.topology.junctions[junction];
     if junction.is_loop_result && !wires.is_empty() {
         format!("the {} merge at the cycle result", wires.join(" and "))
     } else if junction.is_loop_result {
         "the cycle result".to_owned()
-    } else if junction.is_break {
-        "a cycle break".to_owned()
     } else if junction.is_loop_entry {
         "the cycle entry".to_owned()
     } else if wires.is_empty() {
@@ -719,6 +793,7 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
     let label = scene.captions.label(id).as_ref();
     match scene.topology.node(id).kind {
         NodeKind::Start => format!("Start: {label}"),
+        NodeKind::StageEntry => format!("Stage: {label}"),
         NodeKind::Action => action::name(label),
         NodeKind::Call => call::name(label),
         NodeKind::Loop => format!("Cycle: {label}"),
@@ -726,6 +801,7 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
         NodeKind::Select => choice::select_name(label),
         NodeKind::Case => choice::case_name(label),
         NodeKind::End => format!("End: {label}"),
+        NodeKind::Transition => format!("Transition: {label}"),
     }
 }
 
@@ -752,7 +828,11 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         NodeKind::Loop => loop_block::write_node(svg, node),
         NodeKind::Question => question::write(svg, node),
         NodeKind::Select => choice::write_select(svg, node),
-        NodeKind::Case => choice::write_case(svg, node),
+        NodeKind::Case | NodeKind::StageEntry => choice::write_case(svg, node),
+        NodeKind::Transition => stage::write_transition(svg, node),
+    }
+    if scene.captions.back_marker(node.id) {
+        stage::write_marker(svg, node, projected.kind);
     }
     svg.push_str("    </g>\n");
 }
@@ -810,6 +890,7 @@ fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32, anchor: Tex
 const fn node_class(kind: NodeKind) -> &'static str {
     match kind {
         NodeKind::Start => "start",
+        NodeKind::StageEntry => "stage-entry",
         NodeKind::Action => "action",
         NodeKind::Call => "call",
         NodeKind::Loop => "loop",
@@ -817,6 +898,7 @@ const fn node_class(kind: NodeKind) -> &'static str {
         NodeKind::Select => "select",
         NodeKind::Case => "case",
         NodeKind::End => "end",
+        NodeKind::Transition => "transition",
     }
 }
 

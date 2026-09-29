@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1532" height="1768" viewBox="0 0 1532 1768" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for bubble_sort</title>
+  <desc id="kaalang-description">Cycles: 🫧 Move larger values to the right. with inputs mut unsorted, mut values and outputs sorted; Put each adjacent pair in order, from left to right. with inputs mut index, mut unsorted, mut values, mut last_swap and outputs compared. Nodes: Start: bubble_sort with parameters mut values: &amp;mut [i32] handing over mut values; Action: 📏 Start with the whole list to sort. capturing &amp;values handing over mut unsorted; Question: Are at least two values left to sort? capturing unsorted handing over pass / sorted described as branch 1: YES / branch 2: NO; Action: ⏮️ Start at the first pair; no swaps have been made. capturing pass handing over mut index, mut last_swap; Question: Is there another pair in this pass? capturing index, unsorted handing over select / compared described as branch 1: YES / branch 2: NO; Action: Select the two values in the next adjacent pair. capturing select, &amp;values, index handing over left, right; Question: Is the left value greater than the right? capturing left, right handing over greater / stepped described as branch 1: YES / branch 2: NO; Action: 🔀 Swap the values; remember where this swap happened. capturing greater, &amp;mut values, index, &amp;mut last_swap handing over stepped; Action: ⏭️ Move on to the next pair. capturing stepped, &amp;mut index; Question: Did this pass swap any values? capturing compared, last_swap handing over shrink / sorted described as branch 1: YES / branch 2: NO; Action: 🔻 Leave the sorted tail after the last swap out of the next pass. capturing shrink, last_swap, &amp;mut unsorted; End: () capturing sorted; Merge: sorted; Merge: stepped. Connections: Start: bubble_sort to Action: 📏 Start with the whole list to sort.; Action: 📏 Start with the whole list to sort. to the entry of the cycle; Question: Are at least two values left to sort? branch 1 to Action: ⏮️ Start at the first pair; no swaps have been made.; Question: Are at least two values left to sort? branch 2 to the sorted merge at the cycle result; Action: ⏮️ Start at the first pair; no swaps have been made. to the entry of the cycle; Question: Is there another pair in this pass? branch 1 to Action: Select the two values in the next adjacent pair.; Question: Is there another pair in this pass? branch 2 to Question: Did this pass swap any values?; Action: Select the two values in the next adjacent pair. to Question: Is the left value greater than the right?; Question: Is the left value greater than the right? branch 1 to Action: 🔀 Swap the values; remember where this swap happened.; Question: Is the left value greater than the right? branch 2 to the stepped merge; Action: 🔀 Swap the values; remember where this swap happened. to the stepped merge; Action: ⏭️ Move on to the next pair. to the iteration tail of the cycle; Question: Did this pass swap any values? branch 1 to Action: 🔻 Leave the sorted tail after the last swap out of the next pass.; Question: Did this pass swap any values? branch 2 to the sorted merge at the cycle result; Action: 🔻 Leave the sorted tail after the last swap out of the next pass. to the iteration tail of the cycle; the sorted merge at the cycle result to End: (); the stepped merge to Action: ⏭️ Move on to the next pair.; the entry of the cycle to Question: Are at least two values left to sort?; the entry of the cycle to Question: Is there another pair in this pass?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">🫧 Move larger values to the right.</title>
+    <rect class="cycle-boundary" x="32" y="265" width="1414" height="1372" rx="12"/>
+    <text class="cycle-caption" x="1434" y="279" text-anchor="end" xml:space="preserve"><tspan x="1434" dy="0">🫧 Move larger values to the right.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Put each adjacent pair in order, from left to right.</title>
+    <rect class="cycle-boundary" x="92" y="619" width="576" height="942" rx="12"/>
+    <text class="cycle-caption" x="656" y="633" text-anchor="end" xml:space="preserve"><tspan x="656" dy="0">Put each adjacent pair in order, from left to right.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 280 90 L 280 162
+      M 280 228 L 280 300
+      M 280 444 L 280 516
+      M 420 408 L 1360 408 L 1360 1602
+      M 280 582 L 280 654
+      M 280 798 L 280 870
+      M 420 762 L 1000 762 L 1000 870
+      M 280 942 L 280 1021
+      M 280 1093 L 280 1172
+      M 420 1057 L 640 1057 L 640 1314 L 280 1314
+      M 280 1238 L 280 1314
+      M 280 1454 L 280 1526
+      M 1000 942 L 1000 1021
+      M 1140 906 L 1360 906 L 1360 1602
+      M 1000 1093 L 1000 1602
+      M 1360 1602 L 1360 1678
+      M 280 1314 L 280 1390
+      M 280 300 L 280 372
+      M 280 654 L 280 726
+    "/>
+    <path class="connection" d="
+      M 280 1526 L 120 1526 L 120 654 L 280 654
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1000 1602 L 60 1602 L 60 300 L 280 300
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="1373" y="1620" xml:space="preserve"><tspan x="1373" dy="0">sorted</tspan></text>
+    <text class="connection-label" x="293" y="1332" xml:space="preserve"><tspan x="293" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="293" y="1010" xml:space="preserve"><tspan x="293" dy="0">left, right</tspan></text>
+    <text class="connection-label" x="293" y="108" xml:space="preserve"><tspan x="293" dy="0">mut values</tspan></text>
+    <text class="connection-label" x="293" y="246" xml:space="preserve"><tspan x="293" dy="0">mut unsorted</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="464" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="396" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label" x="293" y="600" xml:space="preserve"><tspan x="293" dy="0">mut index, mut last_swap</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="818" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="750" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="293" y="1113" xml:space="preserve"><tspan x="293" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="433" y="1045" xml:space="preserve"><tspan x="433" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="1013" y="962" xml:space="preserve"><tspan x="1013" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="1153" y="894" xml:space="preserve"><tspan x="1153" dy="0">NO</tspan></text>
+    <text class="connection-label" x="293" y="151" xml:space="preserve"><tspan x="293" dy="0">&amp;values</tspan></text>
+    <text class="connection-label" x="293" y="361" xml:space="preserve"><tspan x="293" dy="0">unsorted</tspan></text>
+    <text class="connection-label" x="293" y="715" xml:space="preserve"><tspan x="293" dy="0">index, unsorted</tspan></text>
+    <text class="connection-label" x="293" y="859" xml:space="preserve"><tspan x="293" dy="0">select, &amp;values, index</tspan></text>
+    <text class="connection-label" x="293" y="1147" xml:space="preserve"><tspan x="293" dy="0">greater, &amp;mut values, index, </tspan><tspan x="293" dy="14">&amp;mut last_swap</tspan></text>
+    <text class="connection-label" x="293" y="1379" xml:space="preserve"><tspan x="293" dy="0">stepped, &amp;mut index</tspan></text>
+    <text class="connection-label" x="1013" y="859" xml:space="preserve"><tspan x="1013" dy="0">compared, last_swap</tspan></text>
+    <text class="connection-label" x="1013" y="996" xml:space="preserve"><tspan x="1013" dy="0">shrink, last_swap, &amp;mut </tspan><tspan x="1013" dy="14">unsorted</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 420 61 L 516 61"/>
+    <g class="parameter-panel" transform="translate(636 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: &amp;mut [i32]</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(1360 1602)">
+      <title xml:space="preserve">the sorted merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(280 1314)">
+      <title xml:space="preserve">the stepped merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(280 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bubble_sort</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 195)">
+      <title xml:space="preserve">📏 Start with the whole list to sort.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">📏 Start with the whole list to </tspan><tspan x="-124" dy="18">sort.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 408)">
+      <title xml:space="preserve">Are at least two values left to sort?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Are at least two values </tspan><tspan x="0" dy="18">left to sort?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 549)">
+      <title xml:space="preserve">⏮️ Start at the first pair; no swaps have been made.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⏮️ Start at the first pair; no </tspan><tspan x="-124" dy="18">swaps have been made.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 762)">
+      <title xml:space="preserve">Is there another pair in this pass?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is there another pair in </tspan><tspan x="0" dy="18">this pass?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 906)">
+      <title xml:space="preserve">Select the two values in the next adjacent pair.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Select the two values in the next </tspan><tspan x="-124" dy="18">adjacent pair.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 1057)">
+      <title xml:space="preserve">Is the left value greater than the right?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the left value greater </tspan><tspan x="0" dy="18">than the right?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 1205)">
+      <title xml:space="preserve">🔀 Swap the values; remember where this swap happened.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🔀 Swap the values; remember </tspan><tspan x="-124" dy="18">where this swap happened.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 1422)">
+      <title xml:space="preserve">⏭️ Move on to the next pair.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⏭️ Move on to the next pair.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(1000 906)">
+      <title xml:space="preserve">Did this pass swap any values?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Did this pass swap any </tspan><tspan x="0" dy="18">values?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1000 1057)">
+      <title xml:space="preserve">🔻 Leave the sorted tail after the last swap out of the next pass.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🔻 Leave the sorted tail after the </tspan><tspan x="-124" dy="18">last swap out of the next pass.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(1360 1707)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>

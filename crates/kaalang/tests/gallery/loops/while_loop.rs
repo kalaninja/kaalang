@@ -5,22 +5,26 @@
 use kaalang::kaalang;
 
 #[kaalang]
-fn while_loop(a: u64, b: u64) -> u64 {
-    #[cycle("Replace the pair with a smaller equivalent one.")]
-    let divisor = |mut a, mut b| {
+fn while_loop(mut a: u64, mut b: u64) -> u64 {
+    #[cycle("Reduce the pair to its greatest common divisor.")]
+    let divisor = {
         #[question("Is the second number zero?")]
         #[yes("YES")]
         #[no("NO")]
         let (done, again) = |b| b == 0;
 
-        |done, a| break a;
+        #[action("🟰 Use the first number as the greatest common divisor.")]
+        let divisor = |done, a| a;
 
-        #[action("➗ Divide and keep the remainder.")]
-        |again, &mut a, &mut b| {
-            let remainder = *a % *b;
-            *a = *b;
-            *b = remainder;
+        #[action("➗ Divide the first number by the second; keep the remainder.")]
+        let remainder = |again, a, b| a % b;
+
+        #[action("Replace the pair with the second number and the remainder.")]
+        |remainder, &mut a, &mut b| {
+            (*a, *b) = (*b, remainder);
         };
+
+        |again| continue;
     };
 
     |divisor| return divisor;

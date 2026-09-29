@@ -1,0 +1,230 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1604" height="1192" viewBox="0 0 1604 1192" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for stage_cycle_alternative_outputs</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: stage_cycle_alternative_outputs with parameters go: u8. Stage go. Cycles: Choose whether to repeat the stage. with inputs current and outputs finish or go. Nodes: Stage: Count down.; Action: Read the current value. capturing go handing over current; Select: What happens to the value? capturing current; Case: Repeat this cycle. handing over retry; Case: Finish the flow. handing over done; Case: Visit this stage again. handing over again; Action: Keep the finished value. capturing done, current handing over finish; Action: Decrease the value. capturing again, current handing over go; Transition: Return the value.; Transition: Count down.. Connections: Stage: Count down. to Action: Read the current value.; Action: Read the current value. to the entry of the cycle; Select: What happens to the value? to Case: Repeat this cycle.; Select: What happens to the value? to Case: Finish the flow.; Select: What happens to the value? to Case: Visit this stage again.; Case: Repeat this cycle. to the iteration tail of the cycle; Case: Finish the flow. to Action: Keep the finished value.; Case: Visit this stage again. to Action: Decrease the value.; Action: Keep the finished value. to the finish result of the cycle; Action: Decrease the value. to the go result of the cycle; the entry of the cycle to Select: What happens to the value?; the finish result of the cycle to Transition: Return the value.; the go result of the cycle to Transition: Count down.; Repeat from the iteration tail of the cycle to the entry of the cycle. Transition to stage finish. Transition to stage go. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 280 114 L 280 150 "/>
+<path d="M 280 150 L 280 186 "/>
+<path d="M 640 1100 L 640 1168 "/>
+<path d="M 1000 1100 L 1000 1168 "/>
+<path d="M 1408 150 L 1408 186 "/>
+<path d="M 280 150 L 1408 150 "/>
+<path d="M 1000 1168 L 24 1168 L 24 150 L 280 150 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(108 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for stage_cycle_alternative_outputs</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: stage_cycle_alternative_outputs with parameters go: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+    "/>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: u8</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">stage_cycle_alternative_outputs</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="1140" height="978" viewBox="0 0 1140 978" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for stage_cycle_alternative_outputs</title>
+  <desc id="kaalang-part-1-description">Cycles: Choose whether to repeat the stage. with inputs current and outputs finish or go. Nodes: Stage: Count down.; Action: Read the current value. capturing go handing over current; Select: What happens to the value? capturing current; Case: Repeat this cycle. handing over retry; Case: Finish the flow. handing over done; Case: Visit this stage again. handing over again; Action: Keep the finished value. capturing done, current handing over finish; Action: Decrease the value. capturing again, current handing over go; Transition: Return the value.; Transition: Count down.. Connections: Stage: Count down. to Action: Read the current value.; Action: Read the current value. to the entry of the cycle; Select: What happens to the value? to Case: Repeat this cycle.; Select: What happens to the value? to Case: Finish the flow.; Select: What happens to the value? to Case: Visit this stage again.; Case: Repeat this cycle. to the iteration tail of the cycle; Case: Finish the flow. to Action: Keep the finished value.; Case: Visit this stage again. to Action: Decrease the value.; Action: Keep the finished value. to the finish result of the cycle; Action: Decrease the value. to the go result of the cycle; the entry of the cycle to Select: What happens to the value?; the finish result of the cycle to Transition: Return the value.; the go result of the cycle to Transition: Count down.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Choose whether to repeat the stage.</title>
+    <rect class="cycle-boundary" x="32" y="275" width="1076" height="564" rx="12"/>
+    <text class="cycle-caption" x="1096" y="289" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Choose whether to repeat the stage.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="kaalang-part-1-loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 102 L 220 174
+      M 220 238 L 220 310
+      M 220 454 L 220 526
+      M 348 418 L 580 418 L 580 526
+      M 348 418 L 940 418 L 940 526
+      M 220 596 L 220 700
+      M 580 596 L 580 668
+      M 940 596 L 940 668
+      M 580 732 L 580 804
+      M 940 732 L 940 804
+      M 220 310 L 220 382
+      M 580 804 L 580 876
+      M 940 804 L 940 876
+    "/>
+    <path class="connection" d="
+      M 220 700 L 60 700 L 60 310 L 220 310
+    " marker-end="url(#kaalang-part-1-loop-arrow)"/>
+    <text class="connection-label" x="233" y="256" xml:space="preserve"><tspan x="233" dy="0">current</tspan></text>
+    <text class="connection-label" x="233" y="614" xml:space="preserve"><tspan x="233" dy="0">retry</tspan></text>
+    <text class="connection-label" x="593" y="614" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
+    <text class="connection-label" x="953" y="614" xml:space="preserve"><tspan x="953" dy="0">again</tspan></text>
+    <text class="connection-label" x="593" y="750" xml:space="preserve"><tspan x="593" dy="0">finish</tspan></text>
+    <text class="connection-label" x="953" y="750" xml:space="preserve"><tspan x="953" dy="0">go</tspan></text>
+    <text class="connection-label" x="233" y="163" xml:space="preserve"><tspan x="233" dy="0">go</tspan></text>
+    <text class="connection-label" x="233" y="371" xml:space="preserve"><tspan x="233" dy="0">current</tspan></text>
+    <text class="connection-label" x="593" y="657" xml:space="preserve"><tspan x="593" dy="0">done, current</tspan></text>
+    <text class="connection-label" x="953" y="657" xml:space="preserve"><tspan x="953" dy="0">again, current</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(220 67)">
+      <title xml:space="preserve">Count down.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Count down.</tspan></text>
+      <polygon class="stage-marker" points="0,35 -60,26 60,26"/>
+    </g>
+    <g class="node action" transform="translate(220 206)">
+      <title xml:space="preserve">Read the current value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Read the current value.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(220 418)">
+      <title xml:space="preserve">What happens to the value?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">What happens to the value?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(220 561)">
+      <title xml:space="preserve">Repeat this cycle.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Repeat this cycle.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 561)">
+      <title xml:space="preserve">Finish the flow.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish the flow.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 561)">
+      <title xml:space="preserve">Visit this stage again.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Visit this stage again.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 700)">
+      <title xml:space="preserve">Keep the finished value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the finished value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 700)">
+      <title xml:space="preserve">Decrease the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Decrease the value.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(580 911)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(940 911)">
+      <title xml:space="preserve">Count down.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Count down.</tspan></text>
+      <polygon class="stage-marker" points="0,-35 -60,-26 60,-26"/>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1236 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for stage_cycle_alternative_outputs</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Return the value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Return the value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

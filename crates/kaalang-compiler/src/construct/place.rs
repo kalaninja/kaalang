@@ -1,4 +1,4 @@
-//! Assigns ranks from precedence and columns from branch footprints (RFC 0002 §8).
+//! Assigns ranks from precedence and columns from branch footprints.
 //! Vertices take their earliest permitted rank unless the search asks to sink them.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -236,7 +236,7 @@ fn columns(
                 arrivals.min()
             }
             .unwrap_or(0)
-        } else if topology.junctions[junction].is_break {
+        } else if topology.junctions[junction].is_loop_result {
             topology
                 .incoming(vertex)
                 .map(|connection| arrives_from(topology, &columns, footprints, connection))
@@ -274,7 +274,7 @@ fn preferred(
         return select + footprints.offsets[&choice][branch] as i32;
     }
 
-    // RFC 0002 §8 puts branches in authored order left to right, so a branch's
+    // Branches appear in authored order from left to right, so a branch's
     // own column decides where its successor goes; only a node no branch
     // reaches falls back to its leftmost predecessor, and a root to column 0.
     let arrival = |connection| arrives_from(topology, columns, footprints, connection);

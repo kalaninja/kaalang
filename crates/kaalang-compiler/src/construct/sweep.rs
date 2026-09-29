@@ -1,8 +1,8 @@
 //! Complete sweep of vertex and shared-route exchange events. Connections and
 //! back edges may change columns between events; vertices, ports and back edge
-//! envelopes supply the persistent horizontal constraints. See RFC 0003 §2.1 for the finite space,
-//! the strip-routing construction, and the state-equivalence argument.
+//! envelopes supply the persistent horizontal constraints.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Flow, WireMerge};
@@ -225,6 +225,15 @@ fn branch_rules(
                 }
             }
         }
+    }
+    // A cycle with several outputs draws its results in declaration order.
+    for boundary in &topology.loop_boundaries {
+        inequalities.extend(
+            boundary
+                .results
+                .windows(2)
+                .map(|pair| (index(Vertex::from(pair[0])), index(Vertex::from(pair[1])))),
+        );
     }
     (inequalities, minima)
 }
@@ -523,9 +532,11 @@ impl<'a> Sweep<'a> {
                     .max(),
             )
         });
+        let mut events = super::choice::events(topology);
+        super::stage::events(topology, &mut events);
         Some(Self {
             visit_order,
-            events: super::choice::events(topology),
+            events,
             flow,
             topology,
             checks: super::ArrangementChecks::new(flow, topology),
@@ -578,8 +589,37 @@ impl<'a> Sweep<'a> {
             && state.frontier[position..end]
                 .iter()
                 .all(|item| wanted.contains(item))
-            && (self.events[vertex].len() == 1 || state.frontier[position..end] == incoming))
+            && (self.events[vertex].len() == 1
+                || self.transition_event(vertex)
+                || state.frontier[position..end] == incoming))
             .then_some((position, wanted.len()))
+    }
+
+    fn transition_event(&self, vertex: usize) -> bool {
+        matches!(self.topology.vertices[vertex], Vertex::Node(NodeId::Block(block))
+            if self.flow.blocks[block].transition_target.is_some())
+    }
+
+    /// Address order follows the live routes, not the declaration of stage outputs.
+    fn event_vertices(&self, step: &Step) -> Cow<'_, [usize]> {
+        let vertex = step.vertex.expect("a vertex event");
+        if !self.transition_event(vertex) {
+            return Cow::Borrowed(&self.events[vertex]);
+        }
+        let mut vertices = step
+            .consumed
+            .iter()
+            .map(|item| {
+                let Lifeline::Wire(wire) = *item else {
+                    unreachable!("stage transitions have only forward arrivals")
+                };
+                index_of(self.topology, self.topology.connections[wire].destination)
+            })
+            .collect::<Vec<_>>();
+        // Interleaved arrivals cannot meet one final-row transition without crossing
+        // another. Retain such repetitions so the strict anchor order rejects them.
+        vertices.dedup();
+        Cow::Owned(vertices)
     }
 
     fn emissions(&self, vertex: usize) -> Vec<Lifeline> {
@@ -670,7 +710,7 @@ impl<'a> Sweep<'a> {
             return take(frontier);
         };
         let mut event = Vec::new();
-        for &v in &self.events[vertex] {
+        for &v in self.event_vertices(step).iter() {
             event.push(Anchor::fixed(self.columns.vertex[v]));
             if let Vertex::Node(node) = self.topology.vertices[v] {
                 event.extend(
@@ -746,7 +786,7 @@ impl<'a> Sweep<'a> {
     /// sides, provided it cannot itself reach v. It cannot meet either path
     /// before v: such a meeting would make it an ancestor of v. Only the
     /// already live edges may escape through their common source; exclude
-    /// those from this obstruction. See RFC 0003 §2.1.
+    /// those from this obstruction.
     fn sealed(&self, state: &State) -> bool {
         let destination = |item: Lifeline| match item {
             Lifeline::Wire(w) => self.topology.connections[w].destination,
@@ -1396,65 +1436,6 @@ mod tests {
     #[test]
     fn the_memoized_walk_agrees_with_the_whole_state_space() {
         compare_reductions(super::super::tests::decision_cases());
-    }
-
-    #[test]
-    fn a_shared_rail_cannot_lower_a_case_past_its_siblings() {
-        let source = super::super::tests::looping(&["repeat", "break", "repeat"]);
-        let parts = super::super::tests::parts_of(&source).unwrap();
-        let sweep = Sweep::of(&parts.flow, &parts.topology, true).unwrap();
-        let mut state = sweep.start();
-        let mut steps = Vec::new();
-        loop {
-            let vertex = (0..state.placed.len())
-                .find(|&v| {
-                    !state.placed[v]
-                        && sweep.predecessors[v].iter().all(|&p| state.placed[p])
-                        && sweep.consumed(&state, v).is_some()
-                })
-                .unwrap();
-            let (position, count) = sweep.consumed(&state, vertex).unwrap();
-            let mut emitted = sweep.departures[vertex]
-                .iter()
-                .flatten()
-                .copied()
-                .map(Lifeline::Wire)
-                .collect::<Vec<_>>();
-            let side = sweep.entry_of[vertex].map(|i| {
-                emitted.insert(0, Lifeline::BackEdge(i));
-                Side::Left
-            });
-            let step = Step {
-                vertex: Some(vertex),
-                position,
-                consumed: state.frontier[position..position + count].to_vec(),
-                emitted,
-                side,
-            };
-            state.order = sweep.constrain(&state, &step).unwrap();
-            state.placed[vertex] = true;
-            if let Some(i) = sweep.entry_of[vertex] {
-                state.sides[i] = side;
-            }
-            state
-                .frontier
-                .splice(position..position + count, step.emitted.iter().copied());
-            steps.push(step);
-            if sweep.departures[vertex].iter().any(|group| group.len() > 1) {
-                break;
-            }
-        }
-        let result = sweep.walk(
-            &mut state,
-            &mut steps,
-            &mut BTreeSet::new(),
-            &mut (0, None),
-            true,
-        );
-        assert!(
-            matches!(result, Ok(None)),
-            "the case row must stay together"
-        );
     }
 
     fn compare_reductions(cases: Vec<String>) {

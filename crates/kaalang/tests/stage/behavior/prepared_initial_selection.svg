@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1908" height="1000" viewBox="0 0 1908 1000" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_initial_selection</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Transition: Measure shared data on the first route.; Transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Transition: Return the selected value and shared length.. Transition to stage first. Transition to stage finish. Stage first. Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Transition: Return the selected value and shared length.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value and shared length.; Action: Measure the shared data after either initial entry. capturing finish, view handing over result; End: (usize, usize) capturing result. Connections: Stage: Return the selected value and shared length. to Action: Measure the shared data after either initial entry.; Action: Measure the shared data after either initial entry. to End: (usize, usize).</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 908 L 232 976 "/>
+<path d="M 592 908 L 592 976 "/>
+<path d="M 1332 150 L 1332 186 "/>
+<path d="M 1332 908 L 1332 976 "/>
+<path d="M 1712 150 L 1712 186 "/>
+<path d="M 232 150 L 1712 150 "/>
+<path d="M 1332 976 L 24 976 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="1064" height="916" viewBox="0 0 1064 916" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for prepared_initial_selection</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Transition: Measure shared data on the first route.; Transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Transition: Return the selected value and shared length..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 228 L 172 300
+      M 172 372 L 172 444
+      M 300 336 L 532 336 L 532 444
+      M 300 336 L 892 336 L 892 444
+      M 172 514 L 172 802
+      M 532 514 L 532 586
+      M 892 514 L 892 586
+      M 532 650 L 532 726
+      M 892 650 L 892 726 L 532 726
+      M 532 726 L 532 802
+    "/>
+    <text class="connection-label" x="545" y="575" xml:space="preserve"><tspan x="545" dy="0">left</tspan></text>
+    <text class="connection-label" x="905" y="575" xml:space="preserve"><tspan x="905" dy="0">right</tspan></text>
+    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">route</tspan></text>
+    <text class="connection-label" x="185" y="246" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">route</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">route: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(532 726)">
+      <title xml:space="preserve">a structural junction</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_initial_selection</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 195)">
+      <title xml:space="preserve">Keep shared temporary data alive across either initial entry.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Keep shared temporary data alive </tspan><tspan x="-124" dy="18">across either initial entry.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 336)">
+      <title xml:space="preserve">Choose an initial stage or one of two finishing values.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Choose an initial stage or </tspan><tspan x="0" dy="18">one of two finishing values.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 479)">
+      <title xml:space="preserve">Visit the first stage.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Visit the first stage.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 479)">
+      <title xml:space="preserve">Finish with the first value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with the first value.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 479)">
+      <title xml:space="preserve">Finish with the second value.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish with the second value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 618)">
+      <title xml:space="preserve">Provide the first finishing value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the first finishing value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 618)">
+      <title xml:space="preserve">Provide the second finishing value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the second finishing value.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 843)">
+      <title xml:space="preserve">Measure shared data on the first route.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Measure shared data on the </tspan><tspan x="0" dy="18">first route.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(532 843)">
+      <title xml:space="preserve">Return the selected value and shared length.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Return the selected value </tspan><tspan x="0" dy="18">and shared length.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1160 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="786" viewBox="0 0 344 786" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for prepared_initial_selection</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Transition: Return the selected value and shared length..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 114 L 172 186
+      M 172 250 L 172 672
+    "/>
+    <text class="connection-label" x="185" y="175" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 73)">
+      <title xml:space="preserve">Measure shared data on the first route.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Measure shared data on the </tspan><tspan x="0" dy="18">first route.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 218)">
+      <title xml:space="preserve">Provide the measured length.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the measured length.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 713)">
+      <title xml:space="preserve">Return the selected value and shared length.</title>
+      <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Return the selected value </tspan><tspan x="0" dy="18">and shared length.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1540 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="414" viewBox="0 0 344 414" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for prepared_initial_selection</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Return the selected value and shared length.; Action: Measure the shared data after either initial entry. capturing finish, view handing over result; End: (usize, usize) capturing result. Connections: Stage: Return the selected value and shared length. to Action: Measure the shared data after either initial entry.; Action: Measure the shared data after either initial entry. to End: (usize, usize).</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 114 L 172 186
+      M 172 252 L 172 324
+    "/>
+    <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label" x="185" y="175" xml:space="preserve"><tspan x="185" dy="0">finish, view</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 73)">
+      <title xml:space="preserve">Return the selected value and shared length.</title>
+      <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Return the selected value </tspan><tspan x="0" dy="18">and shared length.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 219)">
+      <title xml:space="preserve">Measure the shared data after either initial entry.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Measure the shared data after </tspan><tspan x="-124" dy="18">either initial entry.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 353)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(usize, usize)</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

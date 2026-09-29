@@ -1,0 +1,5 @@
+error: a kaalang continue does not support labels; it repeats the current cycle
+ --> tests/loop/compile_fail/labeled_continue.rs:7:18
+  |
+7 |         continue 'outer;
+  |                  ^^^^^^

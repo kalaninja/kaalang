@@ -1,0 +1,19 @@
+error[E0382]: use of moved value
+ --> tests/stage/compile_fail/repeated_move_of_outer_state.rs:8:10
+  |
+3 | #[kaalang]
+  | ----------
+  | |
+  | inside of this loop
+  | in this attribute macro expansion
+4 | fn repeated_move_of_outer_state(data: String, go: ()) -> ! {
+  |                                 ---- move occurs because value has type `String`, which does not implement the `Copy` trait
+...
+8 |         |data| {
+  |          ^^^^ value moved here, in previous iteration of loop
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+  |
+8 |         |data.clone()| {
+  |              ++++++++

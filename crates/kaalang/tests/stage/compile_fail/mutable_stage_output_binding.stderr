@@ -1,0 +1,5 @@
+error: a kaalang stage output cannot declare `mut`
+ --> tests/stage/compile_fail/mutable_stage_output_binding.rs:8:13
+  |
+8 |     let mut go = |go| {
+  |             ^^

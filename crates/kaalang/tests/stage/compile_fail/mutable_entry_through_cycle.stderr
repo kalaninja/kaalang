@@ -1,0 +1,5 @@
+error: a kaalang stage entry cannot be captured through `&mut`
+  --> tests/stage/compile_fail/mutable_entry_through_cycle.rs:10:32
+   |
+10 |             let finish = |&mut go| {
+   |                                ^^

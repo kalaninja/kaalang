@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="750" viewBox="0 0 704 750" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="752" viewBox="0 0 704 752" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for middle_exit</title>
-  <desc id="kaalang-description">Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: 🤔 Guess half the number. capturing positive, number handing over guess; Cycle: Average the guess with the number divided by it. capturing number, mut guess handing over root; Action: ⭕ The root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: 🤔 Guess half the number.; Question: Is the number positive? branch 2 to Action: ⭕ The root of zero is zero.; Action: 🤔 Guess half the number. to Cycle: Average the guess with the number divided by it.; Cycle: Average the guess with the number divided by it. to the root merge; Action: ⭕ The root of zero is zero. to the root merge; the root merge to End: u64.</desc>
+  <desc id="kaalang-description">Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: 🤔 Start with a guess at or above the square root. capturing positive, number handing over mut guess; Cycle: Lower the guess until it is the integer square root. capturing mut guess, number handing over root; Action: ⭕ The square root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: 🤔 Start with a guess at or above the square root.; Question: Is the number positive? branch 2 to Action: ⭕ The square root of zero is zero.; Action: 🤔 Start with a guess at or above the square root. to Cycle: Lower the guess until it is the integer square root.; Cycle: Lower the guess until it is the integer square root. to the root merge; Action: ⭕ The square root of zero is zero. to the root merge; the root merge to End: u64.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -32,18 +32,18 @@
       M 172 90 L 172 162
       M 172 234 L 172 306
       M 312 198 L 532 198 L 532 306
-      M 172 370 L 172 442
-      M 172 508 L 172 584
-      M 532 370 L 532 584 L 172 584
-      M 172 584 L 172 660
+      M 172 372 L 172 444
+      M 172 510 L 172 586
+      M 532 372 L 532 586 L 172 586
+      M 172 586 L 172 662
     "/>
-    <text class="connection-label" x="185" y="602" xml:space="preserve"><tspan x="185" dy="0">root</tspan></text>
+    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">root</tspan></text>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">number</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="186" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
-    <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">guess</tspan></text>
+    <text class="connection-label" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">mut guess</tspan></text>
     <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">positive, number</tspan></text>
-    <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">number, mut guess</tspan></text>
+    <text class="connection-label" x="185" y="433" xml:space="preserve"><tspan x="185" dy="0">mut guess, number</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -51,7 +51,7 @@
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">number: u64</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 584)">
+    <g class="node merge" transform="translate(172 586)">
       <title xml:space="preserve">the root merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -64,23 +64,23 @@
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number positive?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 338)">
-      <title xml:space="preserve">🤔 Guess half the number.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🤔 Guess half the number.</tspan></text>
+    <g class="node action" transform="translate(172 339)">
+      <title xml:space="preserve">🤔 Start with a guess at or above the square root.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🤔 Start with a guess at or above </tspan><tspan x="-124" dy="18">the square root.</tspan></text>
     </g>
-    <g class="node loop" transform="translate(172 475)">
-      <title xml:space="preserve">Average the guess with the number divided by it.</title>
+    <g class="node loop" transform="translate(172 477)">
+      <title xml:space="preserve">Lower the guess until it is the integer square root.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Average the guess with the </tspan><tspan x="-124" dy="18">number divided by it.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Lower the guess until it is the </tspan><tspan x="-124" dy="18">integer square root.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node action" transform="translate(532 338)">
-      <title xml:space="preserve">⭕ The root of zero is zero.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⭕ The root of zero is zero.</tspan></text>
+    <g class="node action" transform="translate(532 339)">
+      <title xml:space="preserve">⭕ The square root of zero is zero.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⭕ The square root of zero is zero.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 689)">
+    <g class="node end" transform="translate(172 691)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
     </g>

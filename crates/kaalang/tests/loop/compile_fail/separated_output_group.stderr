@@ -1,0 +1,5 @@
+error: outputs in a kaalang cycle convergence group must be adjacent
+ --> tests/loop/compile_fail/separated_output_group.rs:6:15
+  |
+6 |     let (red, green, blue) = {
+  |               ^^^^^

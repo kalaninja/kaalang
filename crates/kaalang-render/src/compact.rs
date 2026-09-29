@@ -270,6 +270,82 @@ mod tests {
 
     use kaalang_testing::corpus::flow_named as fixture;
 
+    #[test]
+    fn stage_transitions_keep_their_final_row_through_compaction() {
+        use kaalang_compiler::topology::NodeKind;
+
+        let function = fixture(
+            include_str!("../../kaalang/tests/gallery/sorting/quick_sort.rs"),
+            "quick_sort",
+        );
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let mut stages = std::mem::take(&mut model.stages);
+        for part in std::iter::once(&mut model).chain(stages.iter_mut()) {
+            compact_arrangement(part);
+            let transitions = part
+                .topology
+                .nodes
+                .iter()
+                .filter(|node| node.kind == NodeKind::Transition)
+                .map(|node| Vertex::Node(node.id))
+                .collect::<Vec<_>>();
+            let Some(first) = transitions.first() else {
+                continue;
+            };
+            let row = part.arrangement.rank[first];
+            assert!(
+                transitions
+                    .iter()
+                    .all(|transition| part.arrangement.rank[transition] == row)
+            );
+            assert!(
+                part.topology
+                    .vertices
+                    .iter()
+                    .filter(|vertex| !transitions.contains(vertex))
+                    .all(|vertex| part.arrangement.rank[vertex] < row)
+            );
+            let mut broken = part.arrangement.clone();
+            *broken.rank.get_mut(first).unwrap() -= 1;
+            assert!(
+                ArrangementVerifier::new(&part.analysis.flow, &part.topology)
+                    .normalize(broken)
+                    .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn a_stage_with_a_cycle_compacts_both_transition_routes() {
+        use kaalang_compiler::topology::NodeKind;
+
+        let function = fixture(
+            include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs"),
+            "stage_cycle_alternative_outputs",
+        );
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let stage = &mut model.stages[0];
+        assert!(!stage.topology.loops.is_empty());
+        let transitions = stage
+            .topology
+            .nodes
+            .iter()
+            .filter(|node| node.kind == NodeKind::Transition)
+            .map(|node| Vertex::Node(node.id))
+            .collect::<Vec<_>>();
+        assert!(transitions.len() >= 2);
+        compact_arrangement(stage);
+        ArrangementVerifier::new(&stage.analysis.flow, &stage.topology)
+            .normalize(stage.arrangement.clone())
+            .unwrap();
+        let row = stage.arrangement.rank[&transitions[0]];
+        assert!(
+            transitions
+                .iter()
+                .all(|node| stage.arrangement.rank[node] == row)
+        );
+    }
+
     /// The verifier decides this on its own: the boundary rule reads the
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]
@@ -297,12 +373,12 @@ mod tests {
         assert_eq!(model.arrangement, original);
     }
 
-    /// A completion outside the cycle boundary may share its body's rows (RFC 0002 §8).
+    /// A completion outside the cycle boundary may share its body's rows.
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for (source, name) in [
             (
-                include_str!("../../kaalang/tests/gallery/bubble_sort/mod.rs"),
+                include_str!("../../kaalang/tests/gallery/sorting/bubble_sort.rs"),
                 "bubble_sort",
             ),
             (
@@ -325,7 +401,7 @@ mod tests {
                     .topology
                     .connections
                     .iter()
-                    .filter(|edge| Some(edge.source) == boundary.result)
+                    .filter(|edge| boundary.results.contains(&edge.source))
                     .any(|edge| {
                         let (rank, column) = (
                             built.rank[&edge.destination],
@@ -345,7 +421,7 @@ mod tests {
 
     #[test]
     fn unused_lanes_can_disappear_together_during_compaction() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
         let mut model = kaalang_compiler::build(&syn::parse_str(&source).unwrap()).unwrap();
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
@@ -360,7 +436,7 @@ mod tests {
 
     #[test]
     fn compaction_is_deterministic_and_idempotent() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "break"]);
+        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
         let function: syn::ItemFn = syn::parse_str(&source).unwrap();
         let mut first = kaalang_compiler::build(&function).unwrap();
         let mut second = kaalang_compiler::build(&function).unwrap();

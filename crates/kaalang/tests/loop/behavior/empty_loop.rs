@@ -4,5 +4,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn empty_loop() -> usize {
     #[cycle("Repeat forever.")]
-    || {};
+    {
+        continue;
+    };
 }

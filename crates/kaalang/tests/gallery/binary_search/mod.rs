@@ -1,45 +1,50 @@
+//! Binary search over a sorted slice, shown with two branch orders.
+
 use std::cmp::Ordering;
 
 use kaalang::kaalang;
 
 #[kaalang]
 fn binary_search(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    #[action("📏 Start with the entire sorted list.")]
+    let (mut left, mut right) = |values| (0, values.len());
 
-    #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
-        #[question("Does the search range contain any elements?")]
+    #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
+    let result = {
+        #[question("Are any values left in the search range?")]
         #[yes("YES")]
         #[no("NO")]
         let (iterate, leave) = |left, right| left < right;
 
-        #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        #[action("🚫 Report that the target is absent.")]
+        let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
-        let mid = |iterate, left, right| left + (right - left) / 2;
+        #[action("📍 Select the middle value of this range.")]
+        let (mid, value) = |iterate, values, left, right| {
+            let mid = left + (right - left) / 2;
+            (mid, values[mid])
+        };
 
-        #[choice("Compare the middle element with the target.")]
+        #[choice("How does this value compare with the target?")]
         #[case("Less than the target.")]
         #[case("Greater than the target.")]
         #[case("Equal to the target.")]
-        let (less, greater, equal) = |values, target, mid| match values[mid].cmp(&target) {
+        let (less, greater, equal) = |value, target| match value.cmp(&target) {
             Ordering::Less => (),
             Ordering::Greater => (),
             Ordering::Equal => (),
         };
 
-        #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        #[action("➡️ Discard this value and everything to its left.")]
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
-        #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        #[action("⬅️ Discard this value and everything to its right.")]
+        let stepped = |greater, mid, &mut right| *right = mid;
 
-        #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
+        #[action("🎯 Report the position of this matching value.")]
+        let result = |equal, mid| Some(mid);
 
-        |outcome| break outcome;
+        |stepped| continue;
     };
 
     |result| return result;
@@ -47,42 +52,45 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 
 #[kaalang]
 fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
-    #[action("📏 Initialize the search range.")]
-    let (left, right) = |values| (0, values.len());
+    #[action("📏 Start with the entire sorted list.")]
+    let (mut left, mut right) = |values| (0, values.len());
 
-    #[cycle("🔍 Search the remaining range.")]
-    let result = |values, target, mut left, mut right| {
-        #[question("Does the search range contain any elements?")]
+    #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
+    let result = {
+        #[question("Are any values left in the search range?")]
         #[no("NO")]
         #[yes("YES")]
         let (leave, iterate) = |left, right| left < right;
 
-        #[action("🚫 The target is absent.")]
-        let outcome = |leave| None;
+        #[action("🚫 Report that the target is absent.")]
+        let result = |leave| None;
 
-        #[action("📍 Find the middle index.")]
-        let mid = |iterate, left, right| left + (right - left) / 2;
+        #[action("📍 Select the middle value of this range.")]
+        let (mid, value) = |iterate, values, left, right| {
+            let mid = left + (right - left) / 2;
+            (mid, values[mid])
+        };
 
-        #[choice("Compare the middle element with the target.")]
+        #[choice("How does this value compare with the target?")]
         #[case("Equal to the target.")]
         #[case("Less than the target.")]
         #[case("Greater than the target.")]
-        let (equal, less, greater) = |values, target, mid| match values[mid].cmp(&target) {
+        let (equal, less, greater) = |value, target| match value.cmp(&target) {
             Ordering::Equal => (),
             Ordering::Less => (),
             Ordering::Greater => (),
         };
 
-        #[action("🎯 The target was found.")]
-        let outcome = |equal, mid| Some(mid);
+        #[action("🎯 Report the position of this matching value.")]
+        let result = |equal, mid| Some(mid);
 
-        |outcome| break outcome;
+        #[action("➡️ Discard this value and everything to its left.")]
+        let stepped = |less, mid, &mut left| *left = mid + 1;
 
-        #[action("➡️ Search the right half.")]
-        |less, mid, &mut left| *left = mid + 1;
+        #[action("⬅️ Discard this value and everything to its right.")]
+        let stepped = |greater, mid, &mut right| *right = mid;
 
-        #[action("⬅️ Search the left half.")]
-        |greater, mid, &mut right| *right = mid;
+        |stepped| continue;
     };
 
     |result| return result;

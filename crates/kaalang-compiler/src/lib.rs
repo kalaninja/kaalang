@@ -12,6 +12,7 @@ mod parse;
 mod plan;
 mod resolve;
 mod scope;
+mod stage;
 pub mod topology;
 
 pub(crate) use choice::{choice_match, is_todo_body};
@@ -21,8 +22,8 @@ pub use construct::{
 };
 pub use model::{
     Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
-    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, Input, Join, JoinTarget,
-    ProducerId, QuestionBranch, SemanticModel, WireMerge,
+    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
+    JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
 };
 
 /// Builds the validated semantic model for one kaalang flow function.
@@ -42,6 +43,17 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
 /// Returns the same parsing, validation, and topology errors as [`build`].
 pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<SemanticModel> {
     let analysis = analyze(function)?;
+    let stages = analysis
+        .stages
+        .iter()
+        .map(|stage| build_analysis((*stage.analysis).clone(), collapse_loops))
+        .collect::<Result<Vec<_>>>()?;
+    let mut model = build_analysis(analysis, collapse_loops)?;
+    model.stages = stages;
+    Ok(model)
+}
+
+fn build_analysis(analysis: Analysis, collapse_loops: bool) -> Result<SemanticModel> {
     let expanded = project(&analysis, false);
     let expanded_arrangement = construct(&analysis, &expanded)?;
     let (topology, arrangement) = if collapse_loops {
@@ -56,6 +68,7 @@ pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<Sem
         analysis,
         topology,
         arrangement,
+        stages: Vec::new(),
     })
 }
 
@@ -114,11 +127,22 @@ fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
 /// Returns the first syntax, wire, execution, or convergence error at its
 /// source span.
 pub fn analyze(function: &ItemFn) -> Result<Analysis> {
+    if let Some(parsed) = parse::staged(function)? {
+        return stage::analyze(function, parsed);
+    }
     let mut flow = parse::flow(function)?;
     scope::resolve(&mut flow)?;
     resolve::flow(&flow)?;
-    let (executions, convergence_groups, merges) = analyze::flow(&flow)?;
-    let execution_plan = plan::flow(&flow, &executions, &merges);
+    analyze_local(function, flow, true)
+}
+
+fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Analysis> {
+    let (executions, convergence_groups, merges, passes) = if check_usage {
+        analyze::flow(&flow)?
+    } else {
+        analyze::flow_without_usage(&flow)?
+    };
+    let execution_plan = plan::flow(&flow, &executions, &merges, passes);
 
     Ok(Analysis {
         name: function.sig.ident.clone(),
@@ -129,10 +153,12 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
         executions,
         convergence_groups,
         merges,
+        stages: Vec::new(),
+        common_wires: Vec::new(),
     })
 }
 
-/// Projects an analyzed flow onto the topology defined by RFC 0002 §7.
+/// Projects an analyzed flow onto its structural topology.
 /// Projection is total; [`construct()`] checks whether the topology can be drawn.
 #[must_use]
 pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology {
@@ -150,7 +176,7 @@ pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology 
 ///
 /// # Errors
 ///
-/// Returns a source-spanned error if no RFC 0002 arrangement exists, or an
+/// Returns a source-spanned error if no valid arrangement exists, or an
 /// internal error for inconsistent projection or failed sweep verification.
 pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<Arrangement> {
     construct::construct(&analysis.flow, &analysis.merges, topology)
@@ -272,8 +298,8 @@ mod tests {
                 include_str!("../../kaalang/tests/loop/behavior/empty_loop.rs"),
             ),
             (
-                "repeat_until_break",
-                include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
+                "repeat_until_done",
+                include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
             ),
             (
                 "nested_loops",
@@ -327,7 +353,9 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn forever() -> usize {
                 #[cycle("Repeat forever")]
-                || {};
+                {
+                    continue;
+                };
             }
         };
 
@@ -340,12 +368,12 @@ mod tests {
         assert!(matches!(
             end_body(&model.analysis.execution_plan),
             ExecutionPlan::Loop { index: 0, body, .. }
-                if matches!(body.as_ref(), ExecutionPlan::Repeat { index: 0 })
+                if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
         let model = build(&fixture(
-            include_str!("../../kaalang/tests/loop/behavior/repeat_until_break.rs"),
-            "repeat_until_break",
+            include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
+            "repeat_until_done",
         ))
         .expect("the cycle may either repeat or finish");
         assert_eq!(
@@ -356,7 +384,7 @@ mod tests {
                 .map(|execution| execution.outcome)
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
-                ExecutionOutcome::Return { block_index: 5 },
+                ExecutionOutcome::Return { block_index: 6 },
                 ExecutionOutcome::Repeat { loop_index: 1 },
             ])
         );
@@ -1115,7 +1143,9 @@ mod tests {
                 let (_tag, repeat) = |no| { (2u8, ()) };
 
                 #[cycle("Keep the other route open")]
-                |repeat| {};
+                |repeat| {
+                    continue;
+                };
             }
         };
         let ExecutionPlan::End { gates, .. } = build(&terminal)
@@ -1126,6 +1156,28 @@ mod tests {
             panic!("the plan is rooted at end")
         };
         assert_eq!(gates, ["_tag"]);
+    }
+
+    /// Outside a cycle with several outputs only its own selection decides:
+    /// a selection in its body converges inside the body or not at all.
+    #[test]
+    fn a_body_selection_converges_only_inside_its_cycle() {
+        let model = build(&fixture(
+            include_str!("../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            "alternative_outputs",
+        ))
+        .expect("the flow is valid");
+        let end = model.analysis.flow.blocks[0]
+            .loop_end
+            .expect("the flow opens with its cycle");
+        for group in &model.analysis.convergence_groups {
+            if (1..end).contains(&group.branching_block) {
+                assert!(
+                    group.continuation.iter().all(|&block| block < end),
+                    "{group:?}"
+                );
+            }
+        }
     }
 
     #[test]

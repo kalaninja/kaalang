@@ -32,19 +32,19 @@
       M 172 107 L 172 188
       M 172 254 L 172 326
       M 172 398 L 172 470
-      M 312 362 L 892 362 L 892 474
+      M 312 362 L 892 362 L 892 470
       M 172 542 L 172 614
       M 312 506 L 532 506 L 532 614
       M 172 678 L 172 970
       M 532 678 L 532 754
-      M 892 538 L 892 754 L 532 754
+      M 892 542 L 892 754 L 532 754
       M 532 894 L 532 970 L 172 970
       M 172 970 L 172 1046
       M 532 754 L 532 830
     "/>
     <text class="connection-label" x="185" y="988" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
     <text class="connection-label" x="545" y="772" xml:space="preserve"><tspan x="545" dy="0">selected</tspan></text>
-    <text class="connection-label" x="905" y="463" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label" x="905" y="459" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
     <text class="connection-label" x="545" y="603" xml:space="preserve"><tspan x="545" dy="0">late</tspan></text>
     <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">outer, inner, log</tspan></text>
     <text class="connection-label" x="185" y="272" xml:space="preserve"><tspan x="185" dy="0">logged</tspan></text>
@@ -101,7 +101,7 @@
     </g>
     <g class="node action" transform="translate(892 506)">
       <title xml:space="preserve">Build the direct value.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 862)">

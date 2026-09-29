@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="822" viewBox="0 0 808 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_owner</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Transition: Use the prepared reference while the guard remains alive.. Transition to stage go. Stage go. Nodes: Stage: Use the prepared reference while the guard remains alive.; Action: Record the visit and measure the text. capturing view, events handing over length; End: usize capturing length. Connections: Stage: Use the prepared reference while the guard remains alive. to Action: Record the visit and measure the text.; Action: Record the visit and measure the text. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 730 L 232 798 "/>
+<path d="M 612 158 L 612 194 "/>
+<path d="M 232 158 L 612 158 "/>
+<path d="M 232 798 L 24 798 L 24 158 L 232 158 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="738" viewBox="0 0 680 738" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for prepared_owner</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Transition: Use the prepared reference while the guard remains alive..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 94 L 172 170
+      M 172 236 L 172 308
+      M 172 372 L 172 444
+      M 172 510 L 172 606
+    "/>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
+    <text class="connection-label" x="185" y="254" xml:space="preserve"><tspan x="185" dy="0">_guard</tspan></text>
+    <text class="connection-label" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">owner</tspan></text>
+    <text class="connection-label" x="185" y="528" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="433" xml:space="preserve"><tspan x="185" dy="0">&amp;owner</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">events: </tspan><tspan x="-104" dy="18">&amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt;</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_owner</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 203)">
+      <title xml:space="preserve">Keep the guard until the flow completes.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Keep the guard until the flow </tspan><tspan x="-124" dy="18">completes.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 340)">
+      <title xml:space="preserve">Own the prepared text.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Own the prepared text.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 477)">
+      <title xml:space="preserve">Borrow the text and enter the stage.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Borrow the text and enter the </tspan><tspan x="-124" dy="18">stage.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 656)">
+      <title xml:space="preserve">Use the prepared reference while the guard remains alive.</title>
+      <polygon class="node-shape" points="0,-50 120,-32 120,50 -120,50 -120,-32"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the prepared reference </tspan><tspan x="0" dy="18">while the guard remains </tspan><tspan x="0" dy="18">alive.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(440 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="432" viewBox="0 0 344 432" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for prepared_owner</title>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Use the prepared reference while the guard remains alive.; Action: Record the visit and measure the text. capturing view, events handing over length; End: usize capturing length. Connections: Stage: Use the prepared reference while the guard remains alive. to Action: Record the visit and measure the text.; Action: Record the visit and measure the text. to End: usize.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 132 L 172 204
+      M 172 270 L 172 342
+    "/>
+    <text class="connection-label" x="185" y="331" xml:space="preserve"><tspan x="185" dy="0">length</tspan></text>
+    <text class="connection-label" x="185" y="193" xml:space="preserve"><tspan x="185" dy="0">view, events</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 82)">
+      <title xml:space="preserve">Use the prepared reference while the guard remains alive.</title>
+      <polygon class="node-shape" points="-120,-50 120,-50 120,32 0,50 -120,32"/>
+      <text class="label" y="-21" xml:space="preserve"><tspan x="0" dy="0">Use the prepared reference </tspan><tspan x="0" dy="18">while the guard remains </tspan><tspan x="0" dy="18">alive.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 237)">
+      <title xml:space="preserve">Record the visit and measure the text.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record the visit and measure the </tspan><tspan x="-124" dy="18">text.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 371)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

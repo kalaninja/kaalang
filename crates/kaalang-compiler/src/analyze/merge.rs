@@ -7,19 +7,27 @@ use std::collections::{BTreeMap, BTreeSet};
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
-use crate::model::{BlockKind, Execution, ExecutionOutcome, Flow, ProducerId, WireMerge};
+use crate::model::{
+    BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, Passes, ProducerId, WireMerge,
+};
 
+use super::frame::Frames;
 use super::only_difference;
 
 pub(super) fn flow(
     flow: &Flow,
-    executions: &[Execution],
+    frames: &Frames<'_>,
     merges: Vec<WireMerge>,
     owners: Vec<Vec<(usize, Vec<usize>)>>,
+    ancestry: &[BTreeSet<BranchSelection>],
 ) -> Result<Vec<WireMerge>> {
+    let executions = frames.view(None);
     let blocks = flow.blocks.len();
     let mut successors = vec![BTreeSet::new(); blocks + merges.len()];
-    let mut groups = vec![BTreeMap::<Vec<usize>, BTreeSet<usize>>::new(); blocks];
+    let mut routes_by_owner = BTreeMap::new();
+    let mut groups = (0..blocks)
+        .map(|_| Vec::<super::choice::Group>::new())
+        .collect::<Vec<_>>();
     for dependency in executions
         .iter()
         .flat_map(|execution| &execution.dependencies)
@@ -40,21 +48,50 @@ pub(super) fn flow(
         for &block in &merge.before {
             successors[block].insert(node);
         }
+        // A merge compares the selections its producers' frame sees.
+        let seen = frames.view(frames.of_merge(merge));
         for (owner, branches) in owners {
-            groups[owner].entry(branches).or_default().insert(node);
+            if !matches!(flow.blocks[owner].kind, BlockKind::Choice | BlockKind::Loop) {
+                continue;
+            }
+            // The routes producing this merge and those reaching it, each with
+            // its case of the owner.
+            let owner_routes = routes_by_owner
+                .entry(owner)
+                .or_insert_with(|| super::choice::routes(ancestry, seen, owner));
+            let routes = seen
+                .iter()
+                .zip(owner_routes.iter())
+                .filter(|(execution, _)| {
+                    merge
+                        .producers
+                        .iter()
+                        .any(|&producer| flow.produces(execution, producer))
+                })
+                .filter_map(|(_, &route)| route)
+                .collect();
+            let reaching = seen
+                .iter()
+                .zip(owner_routes.iter())
+                .filter(|(execution, _)| reaches(frames.passes(), execution, merge))
+                .filter_map(|(_, &route)| route)
+                .collect();
+            groups[owner].push(super::choice::Group {
+                cases: branches,
+                routes,
+                reaching,
+            });
         }
     }
 
-    for (block, groups) in groups.into_iter().enumerate() {
-        if flow.blocks[block].kind == BlockKind::Choice {
-            super::choice::validate_groups(
-                &flow.blocks[block].outputs,
-                &groups.into_iter().collect::<Vec<_>>(),
-            )?;
+    for (block, groups) in groups.iter().enumerate() {
+        if matches!(flow.blocks[block].kind, BlockKind::Choice | BlockKind::Loop) {
+            super::choice::validate_groups(&flow.blocks[block], groups)?;
         }
     }
     validate_order(flow, &merges, &successors)?;
     for merge in &merges {
+        let executions = frames.view(frames.of_merge(merge));
         let producers = executions
             .iter()
             .map(|execution| {
@@ -65,7 +102,7 @@ pub(super) fn flow(
                     .find(|&producer| flow.produces(execution, producer))
             })
             .collect::<Vec<_>>();
-        validate_adjacency(flow, executions, merge, &producers)?;
+        validate_adjacency(flow, frames.passes(), executions, merge, &producers)?;
     }
     Ok(merges)
 }
@@ -132,7 +169,7 @@ impl Completion {
                     .filter(|(_, producer)| producer.is_some())
                     .flat_map(|(execution, _)| &execution.branches)
                     .filter(|selection| selection.block == owner)
-                    .map(|selection| selection.branch)
+                    .map(|selection| super::frame::branch(selection.branch))
                     .collect::<BTreeSet<_>>()
                     .into_iter()
                     .collect();
@@ -149,6 +186,37 @@ impl Completion {
 /// the whole flow and each one is handed to the merges both its executions
 /// produce.
 pub(super) fn completion(
+    flow: &Flow,
+    frames: &Frames<'_>,
+    merges: &mut [WireMerge],
+) -> Vec<Vec<(usize, Vec<usize>)>> {
+    if frames.is_flat() {
+        return completion_at(flow, frames.view(None), merges);
+    }
+    // Each merge compares the selections its own frame sees.
+    let mut by_frame = BTreeMap::<Option<usize>, Vec<usize>>::new();
+    for (index, merge) in merges.iter().enumerate() {
+        by_frame
+            .entry(frames.of_merge(merge))
+            .or_default()
+            .push(index);
+    }
+    let mut owners = vec![Vec::new(); merges.len()];
+    for (frame, indices) in by_frame {
+        let mut subset = indices
+            .iter()
+            .map(|&index| merges[index].clone())
+            .collect::<Vec<_>>();
+        let found = completion_at(flow, frames.view(frame), &mut subset);
+        for ((index, merge), found) in indices.into_iter().zip(subset).zip(found) {
+            merges[index] = merge;
+            owners[index] = found;
+        }
+    }
+    owners
+}
+
+fn completion_at(
     flow: &Flow,
     executions: &[Execution],
     merges: &mut [WireMerge],
@@ -544,38 +612,37 @@ impl Compatible<'_> {
     }
 }
 
+/// Whether an execution reaches the position where a merge completes.
+fn reaches(passes: &Passes, execution: &Execution, merge: &WireMerge) -> bool {
+    if !merge.after.is_empty() {
+        return merge
+            .after
+            .iter()
+            .any(|&block| passes.reaches(execution, block));
+    }
+    // Without a consumer the merge completes where its producers run. A
+    // repeating cycle never hands over its own result.
+    merge.producers.iter().any(|producer| match *producer {
+        ProducerId::BlockOutput { block, .. } => {
+            passes.reaches(execution, block)
+                && execution.outcome != ExecutionOutcome::Repeat { loop_index: block }
+        }
+        ProducerId::FlowInput(_) => false,
+    })
+}
+
 /// Producer routes occupy one interval in authored branch order.
 fn validate_adjacency(
     flow: &Flow,
+    passes: &Passes,
     executions: &[Execution],
     merge: &WireMerge,
     producers: &[Option<ProducerId>],
 ) -> Result<()> {
-    // A repeating summary stops at its loop tail. It cannot separate routes
-    // of a merge outside that loop because it never reaches the merge.
-    let has_consumer = !merge.after.is_empty();
-    let points = if has_consumer {
-        merge.after.clone()
-    } else {
-        merge
-            .producers
-            .iter()
-            .filter_map(|producer| match producer {
-                ProducerId::BlockOutput { block, .. } => Some(*block),
-                ProducerId::FlowInput(_) | ProducerId::CycleInput { .. } => None,
-            })
-            .collect::<Vec<_>>()
-    };
     let (executions, producers): (Vec<_>, Vec<_>) = executions
         .iter()
         .zip(producers)
-        .filter(|(execution, _)| match execution.outcome {
-            ExecutionOutcome::Return { .. } => true,
-            ExecutionOutcome::Repeat { loop_index } => points.iter().any(|&block| {
-                (has_consumer && block == loop_index)
-                    || flow.enclosing(block).any(|parent| parent == loop_index)
-            }),
-        })
+        .filter(|(execution, _)| reaches(passes, execution, merge))
         .map(|(execution, producer)| (execution, *producer))
         .unzip();
     let ordered = super::branch_order(&executions, &producers);
@@ -620,12 +687,17 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
             .find(|&node| successors[node].contains(&merge_node))
         {
             let wire = flow.wire_name(&merge.wire);
-            return Err(Error::new(
-                flow.blocks[block].span,
+            let message = if flow.blocks[block].transition_target.is_some() {
+                let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+                format!(
+                    "this kaalang stage transition exports `{signal}` before the `{wire}` wire merge finishes, but it waits for a value from after that merge"
+                )
+            } else {
                 format!(
                     "this kaalang block must finish before the `{wire}` wire merge, but it waits for a value from after that merge"
-                ),
-            ));
+                )
+            };
+            return Err(Error::new(flow.blocks[block].span, message));
         }
     }
     let late = merges
@@ -638,12 +710,17 @@ fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usiz
         .min_by_key(|&(block, _)| block);
     if let Some((block, wire)) = late {
         let wire = flow.wire_name(wire);
-        return Err(Error::new(
-            flow.blocks[block].span,
+        let message = if flow.blocks[block].transition_target.is_some() {
+            let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+            format!(
+                "this kaalang stage transition exports `{signal}` before the `{wire}` wire merge finishes; declare the signal above the blocks that capture the merged wire"
+            )
+        } else {
             format!(
                 "this kaalang block must finish before the `{wire}` wire merge; declare it above the blocks that capture the merged wire"
-            ),
-        ));
+            )
+        };
+        return Err(Error::new(flow.blocks[block].span, message));
     }
     Ok(())
 }
@@ -706,16 +783,16 @@ pub(super) fn collect(flow: &Flow) -> Vec<WireMerge> {
         .into_iter()
         .filter(|(_, producers)| producers.len() > 1)
         .map(|(wire, producers)| WireMerge {
+            // A capture inside a cycle reaches the wire through that cycle's
+            // derived input, so the cycle is the consumer at the merge's level.
             after: flow
                 .blocks
                 .iter()
                 .enumerate()
                 .filter_map(|(block, declaration)| {
-                    declaration
-                        .inputs
-                        .iter()
-                        .any(|input| input.ident == wire)
-                        .then_some(block)
+                    (declaration.parent == flow.producer_cycle(producers[0])
+                        && declaration.inputs.iter().any(|input| input.ident == wire))
+                    .then_some(block)
                 })
                 .collect(),
             wire,
@@ -746,8 +823,8 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::{
-        Completion, collect, compare_compatible, compare_every_pair, completion, context,
-        only_difference,
+        Completion, collect, compare_compatible, compare_every_pair, completion, completion_at,
+        context, only_difference,
     };
     use crate::tests::message as error;
     use crate::{Execution, Flow, ProducerId, WireMerge, build};
@@ -764,6 +841,37 @@ mod tests {
 
     fn output(block: usize, output: usize) -> ProducerId {
         ProducerId::BlockOutput { block, output }
+    }
+
+    #[test]
+    fn a_transition_waiting_on_its_own_merge_names_the_signal() {
+        // Earlier stage scope checks prevent an authored flow from reaching
+        // this dependency cycle, so pin the defensive diagnostic directly.
+        let function: ItemFn = parse_quote! {
+            fn probe(go: ()) {
+                #[action("Forward the signal.")]
+                |go| {};
+            }
+        };
+        let mut flow = crate::parse::flow(&function).unwrap();
+        flow.blocks[0].transition_target = Some(0);
+        let merge = WireMerge {
+            wire: parse_quote!(shared),
+            producers: Vec::new(),
+            before: vec![0],
+            after: vec![0],
+        };
+        let merge_node = flow.blocks.len();
+        let mut successors = vec![BTreeSet::new(); merge_node + 1];
+        successors[0].insert(merge_node);
+        successors[merge_node].insert(0);
+
+        assert_eq!(
+            super::validate_order(&flow, &[merge], &successors)
+                .unwrap_err()
+                .to_string(),
+            "this kaalang stage transition exports `go` before the `shared` wire merge finishes, but it waits for a value from after that merge"
+        );
     }
 
     #[test]
@@ -865,6 +973,32 @@ mod tests {
         agrees("three selectors in a row above one merge", &function);
     }
 
+    /// The merge after a cycle with several outputs is owned by the cycle, not
+    /// by the body selections that made its choice.
+    #[test]
+    fn a_cycle_with_several_outputs_owns_the_merge_after_it() {
+        let model = build(&crate::tests::fixture(
+            include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            "alternative_outputs",
+        ))
+        .expect("the fixture is valid");
+        let flow = &model.analysis.flow;
+        let mut merges = collect(flow);
+        let frames = crate::analyze::frame::Frames::of(flow, &model.analysis.executions);
+        let owners = completion(flow, &frames, &mut merges);
+        let result = merges
+            .iter()
+            .position(|merge| flow.wire_name(&merge.wire) == "result")
+            .expect("the outputs' continuations merge");
+        assert_eq!(
+            owners[result]
+                .iter()
+                .map(|&(owner, _)| owner)
+                .collect::<Vec<_>>(),
+            [0]
+        );
+    }
+
     #[test]
     fn a_repeat_route_does_not_split_a_merge_after_its_loop() {
         let source = r#"
@@ -872,10 +1006,12 @@ mod tests {
                 #[question("Run the loop?")]
                 let (enter, fallback) = |run| { run };
                 #[cycle("Wait until done.")]
-                let result = |enter, done, value| {
+                let result = |enter| {
                     #[question("Done?")]
-                    let (leave, _again) = |done| { done };
-                    |leave, value| break value;
+                    let (leave, again) = |done| { done };
+                    #[action("Keep the value.")]
+                    let result = |leave, value| { value };
+                    |again| continue;
                 };
                 #[action("Use the fallback.")]
                 let result = |fallback| { 2 };
@@ -884,7 +1020,7 @@ mod tests {
         "#;
         for source in [
             source.to_owned(),
-            source.replace("(leave, _again)", "(_again, leave)"),
+            source.replace("(leave, again)", "(again, leave)"),
         ] {
             let function = syn::parse_str::<ItemFn>(&source).expect("the flow parses");
             build(&function).expect("a repeat does not reach the merge after its loop");
@@ -1056,36 +1192,46 @@ mod tests {
     /// reference, the index against the pairwise scan on the same executions
     /// whatever their number, and that no merge waits for the implicit end.
     fn agrees(name: &str, function: &ItemFn) {
-        let Some((flow, executions)) = crate::analyze::walked(function) else {
-            panic!("{name}: the flow parses and resolves")
+        let parts = if let Some(part) = crate::analyze::walked(function) {
+            vec![part]
+        } else {
+            let analysis = crate::analyze(function).expect("the staged flow analyzes");
+            let mut parts = vec![(analysis.flow, analysis.executions)];
+            parts.extend(analysis.stages.into_iter().map(|stage| {
+                let local = *stage.analysis;
+                (local.flow, local.executions)
+            }));
+            parts
         };
-        let end = flow.blocks.len() - 1;
-        let mut merges = collect(&flow);
-        let expected = merges
-            .iter()
-            .map(|merge| reference(&flow, &executions, merge))
-            .collect::<Vec<_>>();
-        let owners = completion(&flow, &executions, &mut merges);
+        for (flow, executions) in parts {
+            let end = flow.blocks.len() - 1;
+            let mut merges = collect(&flow);
+            let expected = merges
+                .iter()
+                .map(|merge| reference(&flow, &executions, merge))
+                .collect::<Vec<_>>();
+            let owners = completion_at(&flow, &executions, &mut merges);
 
-        for ((merge, owners), (before, groups)) in merges.iter().zip(owners).zip(expected) {
-            let wire = &merge.wire;
-            assert_eq!(merge.before, before, "{name}: the `{wire}` merge's order");
-            assert_eq!(owners, groups, "{name}: the `{wire}` merge's owners");
-            assert!(
-                !merge.before.contains(&end),
-                "{name}: the `{wire}` merge waits for the implicit end"
+            for ((merge, owners), (before, groups)) in merges.iter().zip(owners).zip(expected) {
+                let wire = &merge.wire;
+                assert_eq!(merge.before, before, "{name}: the `{wire}` merge's order");
+                assert_eq!(owners, groups, "{name}: the `{wire}` merge's owners");
+                assert!(
+                    !merge.before.contains(&end),
+                    "{name}: the `{wire}` merge waits for the implicit end"
+                );
+            }
+
+            let (producing, context) = context(&flow, &executions, &merges);
+            let mut pairwise = vec![Completion::default(); merges.len()];
+            compare_every_pair(&producing, &context, &mut pairwise, end);
+            let mut indexed = vec![Completion::default(); merges.len()];
+            compare_compatible(&producing, &context, &mut indexed, end);
+            assert_eq!(
+                pairwise, indexed,
+                "{name}: the index and the pairwise scan disagree"
             );
         }
-
-        let (producing, context) = context(&flow, &executions, &merges);
-        let mut pairwise = vec![Completion::default(); merges.len()];
-        compare_every_pair(&producing, &context, &mut pairwise, end);
-        let mut indexed = vec![Completion::default(); merges.len()];
-        compare_compatible(&producing, &context, &mut indexed, end);
-        assert_eq!(
-            pairwise, indexed,
-            "{name}: the index and the pairwise scan disagree"
-        );
     }
 
     /// The opening of a flow over `parameters` whose first block is a choice
@@ -1292,7 +1438,7 @@ mod tests {
         assert!(merges.is_empty(), "the probe repeats no output name");
         assert!(executions.len() > 1, "the probe reaches several executions");
         assert!(
-            completion(&flow, &executions, &mut merges).is_empty(),
+            completion_at(&flow, &executions, &mut merges).is_empty(),
             "a flow without merges owns no branches"
         );
     }
@@ -1410,7 +1556,7 @@ mod tests {
     #[test]
     fn the_index_agrees_where_it_is_the_cheaper_strategy() {
         agrees(
-            "seven branching stages",
+            "seven branching levels",
             &kaalang_testing::probes::flow(&kaalang_testing::probes::branching(7)),
         );
         agrees("two chains under a shared prefix", &split_chains(2, 4));

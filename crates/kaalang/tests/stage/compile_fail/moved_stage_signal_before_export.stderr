@@ -1,0 +1,23 @@
+error[E0382]: use of moved value
+  --> tests/stage/compile_fail/moved_stage_signal_before_export.rs:6:9
+   |
+ 3 | #[kaalang]
+   | ----------
+   | |
+   | inside of this loop
+   | in this attribute macro expansion
+...
+ 6 |     let finish = |go| {
+   |         ^^^^^^ value used here after move
+ 7 |         #[action("Create text.")]
+ 8 |         let finish = |go| String::from("text");
+   |             ------ move occurs because value has type `String`, which does not implement the `Copy` trait
+ 9 |         #[action("Move text.")]
+10 |         |finish| {
+   |          ------ value moved here
+   |
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+   |
+10 |         |finish.clone()| {
+   |                ++++++++

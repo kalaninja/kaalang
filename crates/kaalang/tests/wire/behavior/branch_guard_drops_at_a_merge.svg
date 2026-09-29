@@ -30,9 +30,9 @@
   <g class="connections">
     <path class="connection" d="
       M 172 94 L 172 170
-      M 172 242 L 172 315
+      M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
-      M 172 379 L 172 456
+      M 172 380 L 172 456
       M 532 380 L 532 456 L 172 456
       M 172 596 L 172 668
       M 172 456 L 172 532
@@ -41,10 +41,10 @@
     <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, cell</tspan></text>
     <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
     <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="397" xml:space="preserve"><tspan x="185" dy="0">_yes_guard, ready</tspan></text>
+    <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">_yes_guard, ready</tspan></text>
     <text class="connection-label" x="545" y="398" xml:space="preserve"><tspan x="545" dy="0">_no_guard, ready</tspan></text>
     <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="304" xml:space="preserve"><tspan x="185" dy="0">yes, cell</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, cell</tspan></text>
     <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no, cell</tspan></text>
     <text class="connection-label" x="185" y="521" xml:space="preserve"><tspan x="185" dy="0">ready, cell</tspan></text>
   </g>
@@ -69,7 +69,7 @@
     </g>
     <g class="node action" transform="translate(172 347)">
       <title xml:space="preserve">Borrow the cell and read its size.</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Borrow the cell and read its size.</tspan></text>
     </g>
     <g class="node action" transform="translate(532 347)">

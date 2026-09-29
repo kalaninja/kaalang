@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1388" height="1116" viewBox="0 0 1388 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for inner_cycle_joins_the_tail</title>
+  <desc id="kaalang-description">Cycles: Climb past ten. with inputs mut n and outputs leave; Climb to a multiple of three. with inputs nest, mut n and outputs again. Nodes: Start: inner_cycle_joins_the_tail with parameters mut n: u32 handing over mut n; Question: Is the number past ten? capturing &amp;n handing over leave / rest; Question: Step, then nest on an even number? capturing rest, &amp;mut n handing over nest / again; Question: Is it a multiple of three? capturing &amp;n handing over again / more; Action: Take one step. capturing more, &amp;mut n handing over stepped; End: u32 capturing n; Merge: again. Connections: Start: inner_cycle_joins_the_tail to the entry of the cycle; Question: Is the number past ten? branch 1 to End: u32; Question: Is the number past ten? branch 2 to Question: Step, then nest on an even number?; Question: Step, then nest on an even number? branch 1 to the entry of the cycle; Question: Step, then nest on an even number? branch 2 to the again merge at the iteration tail of the cycle; Question: Is it a multiple of three? branch 1 to the again merge at the iteration tail of the cycle; Question: Is it a multiple of three? branch 2 to Action: Take one step.; Action: Take one step. to the iteration tail of the cycle; the entry of the cycle to Question: Is the number past ten?; the entry of the cycle to Question: Is it a multiple of three?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the again merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Climb past ten.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="1324" height="858" rx="12"/>
+    <text class="cycle-caption" x="1344" y="141" text-anchor="end" xml:space="preserve"><tspan x="1344" dy="0">Climb past ten.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Climb to a multiple of three.</title>
+    <rect class="cycle-boundary" x="392" y="487" width="716" height="422" rx="12"/>
+    <text class="cycle-caption" x="1096" y="501" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Climb to a multiple of three.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 306 L 200 1026
+      M 340 270 L 560 270 L 560 378
+      M 560 450 L 560 522
+      M 700 414 L 1280 414 L 1280 950
+      M 560 666 L 560 950 L 1280 950
+      M 700 630 L 920 630 L 920 738
+      M 920 802 L 920 874
+      M 200 162 L 200 234
+      M 560 522 L 560 594
+    "/>
+    <path class="connection" d="
+      M 920 874 L 1080 874 L 1080 522 L 560 522
+    " marker-end="url(#loop-arrow)"/>
+    <path class="connection" d="
+      M 1280 950 L 1300 950 L 1300 162 L 200 162
+    " marker-end="url(#loop-arrow)"/>
+    <text class="connection-label" x="1293" y="968" xml:space="preserve"><tspan x="1293" dy="0">again</tspan></text>
+    <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mut n</tspan></text>
+    <text class="connection-label" x="213" y="324" xml:space="preserve"><tspan x="213" dy="0">leave</tspan></text>
+    <text class="connection-label" x="353" y="288" xml:space="preserve"><tspan x="353" dy="0">rest</tspan></text>
+    <text class="connection-label" x="573" y="468" xml:space="preserve"><tspan x="573" dy="0">nest</tspan></text>
+    <text class="connection-label" x="713" y="648" xml:space="preserve"><tspan x="713" dy="0">more</tspan></text>
+    <text class="connection-label" x="933" y="820" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">&amp;n</tspan></text>
+    <text class="connection-label" x="573" y="367" xml:space="preserve"><tspan x="573" dy="0">rest, &amp;mut n</tspan></text>
+    <text class="connection-label" x="573" y="583" xml:space="preserve"><tspan x="573" dy="0">&amp;n</tspan></text>
+    <text class="connection-label" x="933" y="727" xml:space="preserve"><tspan x="933" dy="0">more, &amp;mut n</tspan></text>
+    <text class="connection-label" x="213" y="1015" xml:space="preserve"><tspan x="213" dy="0">n</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut n: u32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(1280 950)">
+      <title xml:space="preserve">the again merge at the iteration tail of the cycle</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">inner_cycle_joins_the_tail</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 270)">
+      <title xml:space="preserve">Is the number past ten?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number past ten?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(560 414)">
+      <title xml:space="preserve">Step, then nest on an even number?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Step, then nest on an even </tspan><tspan x="0" dy="18">number?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(560 630)">
+      <title xml:space="preserve">Is it a multiple of three?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it a multiple of three?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 770)">
+      <title xml:space="preserve">Take one step.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take one step.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1055)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

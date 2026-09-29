@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="756" viewBox="0 0 760 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for output_merged_in_the_body</title>
+  <desc id="kaalang-description">Cycles: Take the next item. with inputs mut items, mut log and outputs taken. Nodes: Start: output_merged_in_the_body with parameters mut items: Vec&lt;String&gt;; mut log: Vec&lt;String&gt; handing over mut items, mut log; Action: Take an item. capturing &amp;mut items handing over item; Question: Is it worth logging? capturing &amp;item handing over loud / quiet; Action: Log it and keep it. capturing loud, item, &amp;mut log handing over taken; Action: Keep it quietly. capturing quiet, item handing over taken; End: (Option&lt;String&gt;, Vec&lt;String&gt;) capturing taken, log; Merge: taken. Connections: Start: output_merged_in_the_body to Action: Take an item.; Action: Take an item. to Question: Is it worth logging?; Question: Is it worth logging? branch 1 to Action: Log it and keep it.; Question: Is it worth logging? branch 2 to Action: Keep it quietly.; Action: Log it and keep it. to the taken merge at the cycle result; Action: Keep it quietly. to the taken merge at the cycle result; the taken merge at the cycle result to End: (Option&lt;String&gt;, Vec&lt;String&gt;).</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Take the next item.</title>
+    <rect class="cycle-boundary" x="32" y="135" width="696" height="490" rx="12"/>
+    <text class="cycle-caption" x="716" y="149" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Take the next item.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 200 94 L 200 170
+      M 200 234 L 200 306
+      M 200 378 L 200 450
+      M 340 342 L 560 342 L 560 450
+      M 200 514 L 200 590
+      M 560 514 L 560 590 L 200 590
+      M 200 590 L 200 666
+    "/>
+    <text class="connection-label" x="213" y="608" xml:space="preserve"><tspan x="213" dy="0">taken</tspan></text>
+    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut items, mut log</tspan></text>
+    <text class="connection-label" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">item</tspan></text>
+    <text class="connection-label" x="213" y="396" xml:space="preserve"><tspan x="213" dy="0">loud</tspan></text>
+    <text class="connection-label" x="353" y="360" xml:space="preserve"><tspan x="353" dy="0">quiet</tspan></text>
+    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">&amp;mut items</tspan></text>
+    <text class="connection-label" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">&amp;item</tspan></text>
+    <text class="connection-label" x="213" y="439" xml:space="preserve"><tspan x="213" dy="0">loud, item, &amp;mut log</tspan></text>
+    <text class="connection-label" x="573" y="439" xml:space="preserve"><tspan x="573" dy="0">quiet, item</tspan></text>
+    <text class="connection-label" x="213" y="655" xml:space="preserve"><tspan x="213" dy="0">taken, log</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 65 L 436 65"/>
+    <g class="parameter-panel" transform="translate(556 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut items: Vec&lt;String&gt;</tspan><tspan x="-104" dy="18">mut log: Vec&lt;String&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 590)">
+      <title xml:space="preserve">the taken merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">output_merged_in_the_body</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 202)">
+      <title xml:space="preserve">Take an item.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take an item.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 342)">
+      <title xml:space="preserve">Is it worth logging?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it worth logging?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 482)">
+      <title xml:space="preserve">Log it and keep it.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Log it and keep it.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 482)">
+      <title xml:space="preserve">Keep it quietly.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep it quietly.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 695)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(Option&lt;String&gt;, Vec&lt;String&gt;)</tspan></text>
+    </g>
+  </g>
+</svg>

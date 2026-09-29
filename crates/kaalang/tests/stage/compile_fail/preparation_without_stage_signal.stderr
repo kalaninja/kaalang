@@ -1,0 +1,5 @@
+error: this kaalang preparation route reaches the stage section without selecting a stage signal
+ --> tests/stage/compile_fail/preparation_without_stage_signal.rs:4:4
+  |
+4 | fn preparation_without_stage_signal() {
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
