@@ -421,16 +421,17 @@ bindings preserve that Rust context without introducing another function.
 
 Validate direct, unqualified parameter uses against the block's captures and
 explicit Rust local bindings, including single-segment paths with generic
-arguments. A local `let` binding is not in scope in its own initializer or type
-annotation. This prevents an omitted capture from silently resolving to a module
-item with the same name after the parameter is hidden. Respect Rust's local
-binding scopes. Nested items and macro token streams remain opaque; their own
-name resolution and binding introductions are left to Rust. Bindings introduced
-or removed by conditional compilation and attributes, and scopes whose bindings
-require macro expansion, are also left to Rust's expanded name resolution. These
-checks do not implement a complete Rust name resolver; the original parameter
-storage remains hygienically hidden in every case. Qualified item paths do not
-name parameter wires.
+arguments and expressions in nested closure return types. A local `let` binding
+is not in scope in its own initializer or type annotation. This prevents an
+omitted capture from silently resolving to a module item with the same name
+after the parameter is hidden. Respect Rust's local binding scopes. Nested items
+and macro token streams remain opaque; their own name resolution and binding
+introductions are left to Rust. Bindings introduced or removed by conditional
+compilation and attributes, and scopes whose bindings require macro expansion,
+are also left to Rust's expanded name resolution. These checks do not implement
+a complete Rust name resolver; the original parameter storage remains
+hygienically hidden in every case. Qualified item paths do not name parameter
+wires.
 
 The assignment below is rejected at `value`, even when the signature declares
 the parameter `mut`:

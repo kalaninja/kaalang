@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `value` before using it
+  --> tests/capture/compile_fail/uncaptured_parameter_in_closure_return_type.rs:14:31
+   |
+14 |         let make = || -> [u8; value()] { [1, 2, 3] };
+   |                               ^^^^^

@@ -181,6 +181,7 @@ impl<'ast> Visit<'ast> for Uses {
                 this.bind(input);
                 this.visit_pat(input);
             }
+            this.visit_return_type(&closure.output);
             this.visit_expr(&closure.body);
         });
     }
@@ -253,6 +254,7 @@ mod tests {
             "{ *value = 9; }",
             "{ let value = value; }",
             "{ let value: [u8; value()] = [0; 2]; value }",
+            "{ let make = || -> [u8; value()] { [0; 2] }; }",
             "{ #[allow(unused)] let ignored = value(); }",
             "{ let Some(value) = Some(0) else { value(); }; }",
             "{ { let value = 0; } value }",
@@ -303,6 +305,8 @@ mod tests {
             "{ value(); use crate::{value}; }",
             "{ value(); use crate::value::{self}; }",
             "{ fn nested() { value(); } }",
+            "{ let make = || -> [u8; crate::value()] { [0; 2] }; }",
+            "{ const fn value() -> usize { 2 } let make = || -> [u8; value()] { [0; 2] }; }",
         ] {
             check(body).unwrap_or_else(|error| panic!("{body}: {error}"));
         }
