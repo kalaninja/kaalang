@@ -41,6 +41,19 @@ fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<PathBuf, String>
             format!("{}.svg", options.flow)
         })
     });
+    let same_source = match same_file::is_same_file(&options.source, &output) {
+        Ok(same) => same,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(error) => {
+            return Err(format!(
+                "could not check output `{}`: {error}",
+                output.display()
+            ));
+        }
+    };
+    if same_source {
+        return Err("the output path would overwrite the source file".to_owned());
+    }
     // Rendering finished in memory, so a failed flow never touches the output.
     fs::write(&output, &svg)
         .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;

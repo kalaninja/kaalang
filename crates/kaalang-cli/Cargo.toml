@@ -12,6 +12,7 @@ repository.workspace = true
 
 [dependencies]
 kaalang-svg = { workspace = true }
+same-file = { workspace = true }
 
 [[bin]]
 name = "cargo-kaalang"

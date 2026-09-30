@@ -64,6 +64,42 @@ fn explicit_output_replaces_an_existing_file() {
 }
 
 #[test]
+fn output_cannot_replace_the_source() {
+    let directory = directory("cli-source-output", SOURCE);
+    let failed = run(&directory, "diagram flow.rs --flow route -o ./flow.rs");
+    assert!(!failed.status.success());
+    assert_eq!(
+        fs::read_to_string(directory.join("flow.rs")).unwrap(),
+        SOURCE
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn output_cannot_replace_the_source_through_a_symlink() {
+    let directory = directory("cli-source-symlink", SOURCE);
+    std::os::unix::fs::symlink("flow.rs", directory.join("alias.svg")).unwrap();
+    let failed = run(&directory, "diagram flow.rs --flow route -o alias.svg");
+    assert!(!failed.status.success());
+    assert_eq!(
+        fs::read_to_string(directory.join("flow.rs")).unwrap(),
+        SOURCE
+    );
+}
+
+#[test]
+fn output_cannot_replace_the_source_through_a_hard_link() {
+    let directory = directory("cli-source-hard-link", SOURCE);
+    fs::hard_link(directory.join("flow.rs"), directory.join("alias.svg")).unwrap();
+    let failed = run(&directory, "diagram flow.rs --flow route -o alias.svg");
+    assert!(!failed.status.success());
+    assert_eq!(
+        fs::read_to_string(directory.join("flow.rs")).unwrap(),
+        SOURCE
+    );
+}
+
+#[test]
 fn failed_render_keeps_the_existing_output() {
     let directory = directory("cli-failed", SOURCE);
     fs::write(directory.join("chosen.svg"), "keep this diagram").unwrap();

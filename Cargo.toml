@@ -29,6 +29,7 @@ latex-rust = "=2.0.1"
 proc-macro2 = "1.0.107"
 pulldown-cmark = { version = "0.13.4", default-features = false }
 quote = "1.0.47"
+same-file = "1.0.6"
 syn = { version = "3.0.6", features = ["full"] }
 trybuild = "1.0.121"
 unicode-segmentation = "1.13.3"
