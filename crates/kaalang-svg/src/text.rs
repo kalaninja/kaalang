@@ -1,6 +1,6 @@
 //! Parses, measures, and wraps the restricted Markdown used by descriptions.
 
-use std::{fmt::Write, ops::Range, rc::Rc, sync::OnceLock};
+use std::{ops::Range, rc::Rc, sync::OnceLock};
 
 use latex_rust::{
     BoxContent, Color as MathColor, Dim, MathBox, MathFont, MathStyle, SvgOptions, layout, parse,
@@ -87,10 +87,14 @@ impl Formula {
         }
         options.color = marker_color(marker);
         let document = render_svg(&layout, font, &options).ok()?;
+        // Invalid dimensions can survive layout, including inside nested boxes.
+        if document.contains("NaN") {
+            return None;
+        }
         let svg = document.find("<svg ")?;
         let body = svg + document[svg..].find('>')? + 1;
         let end = document.rfind("</svg>")?;
-        let svg_body = scaled_glyphs(&document[body..end], &layout, font)?
+        let svg_body = document[body..end]
             .replace(
                 &format!("fill=\"{}\"", options.color.css_hex()),
                 "fill=\"inherit\"",
@@ -212,66 +216,6 @@ fn uses_color(layout: &MathBox, color: MathColor) -> bool {
         | BoxContent::Overlap(children) => children.iter().any(|child| uses_color(child, color)),
         _ => false,
     }
-}
-
-/// latex-rust 1.0.4 measures script glyphs at their reduced size but emits every
-/// outline at one em. Correct its path scales from the same measured glyphs.
-fn scaled_glyphs(svg: &str, layout: &MathBox, font: &MathFont) -> Option<String> {
-    fn collect(layout: &MathBox, font: &MathFont, scales: &mut Vec<Dim>) -> Option<()> {
-        match &layout.content {
-            BoxContent::Glyph { ch, glyph_id } => {
-                let glyph = font.glyph_id(*ch, *glyph_id).ok()?;
-                let scale = if glyph.advance.is_zero() {
-                    // Zero-advance accents still have ink to measure.
-                    let ink = &glyph.height + &glyph.depth;
-                    if ink.is_zero() {
-                        return None;
-                    }
-                    (&layout.height + &layout.depth) / ink
-                } else {
-                    &layout.width / &glyph.advance
-                };
-                scales.push(scale / Dim::from_i64(i64::from(font.units_per_em())));
-            }
-            BoxContent::HList(children)
-            | BoxContent::VList(children)
-            | BoxContent::Overlap(children) => {
-                for child in children {
-                    collect(child, font, scales)?;
-                }
-            }
-            BoxContent::Color(_, inner)
-            | BoxContent::BackColor(_, inner)
-            | BoxContent::Frame { inner, .. } => collect(inner, font, scales)?,
-            BoxContent::Empty
-            | BoxContent::Kern(_)
-            | BoxContent::Rule
-            | BoxContent::Line { .. } => {}
-        }
-        Some(())
-    }
-    let mut scales = Vec::new();
-    collect(layout, font, &mut scales)?;
-    let mut result = String::new();
-    let mut rest = svg;
-    for scale in scales {
-        let start = rest.find("scale(")?;
-        let end = start + rest[start..].find(')')? + 1;
-        result.push_str(&rest[..start]);
-        write!(
-            result,
-            "scale({} {})",
-            scale.to_svg_string(),
-            (-scale).to_svg_string()
-        )
-        .expect("writing to a String cannot fail");
-        rest = &rest[end..];
-    }
-    if rest.contains("scale(") {
-        return None;
-    }
-    result.push_str(rest);
-    Some(result)
 }
 
 fn math_font() -> Option<&'static MathFont> {
@@ -1588,6 +1532,37 @@ mod tests {
         let oversized = RichText::markdown(r"$x\rule{1em}{1000000000em}$");
         assert_eq!(oversized.as_ref(), r"$x\rule{1em}{1000000000em}$");
         assert!(oversized.spans().iter().all(|span| span.formula.is_none()));
+    }
+
+    #[test]
+    fn non_finite_math_geometry_falls_back_to_source() {
+        for source in [
+            r"$\hspace{1.2.3em}x$",
+            r"$\hspace{999999999999999999999999999999999999999999em}x$",
+            r"$\frac{\hspace{1.2.3em}x}{y}$",
+            r"$\sqrt{\hspace{1.2.3em}x}$",
+        ] {
+            let text = RichText::markdown(source);
+            assert_eq!(text.as_ref(), source);
+            assert!(text.spans().iter().all(|span| span.formula.is_none()));
+        }
+        let text = RichText::markdown(r"$\text{NaN}$");
+        assert!(text.spans()[0].formula.is_some());
+    }
+
+    #[test]
+    fn over_nested_math_falls_back_to_source() {
+        for (open, close) in [
+            ("{", "}"),
+            (r"\frac{1}{", "}"),
+            (r"\sqrt{", "}"),
+            ("x^{", "}"),
+        ] {
+            let source = format!("${}x{}$", open.repeat(1000), close.repeat(1000));
+            let text = RichText::markdown(&source);
+            assert_eq!(text.as_ref(), source);
+            assert!(text.spans().iter().all(|span| span.formula.is_none()));
+        }
     }
 
     #[test]

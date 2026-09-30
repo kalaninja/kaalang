@@ -110,9 +110,9 @@ dependencies = [
 
 [[package]]
 name = "latex-rust"
-version = "1.0.4"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aea2d0425d4ee210c55372493fbf35e61d59cf74cb241a7a1929e8de55763612"
+checksum = "8e1aa9818513d37299364625e806f7813471e91550a6a8cefdf75bbab2e14871"
 dependencies = [
  "ttf-parser",
 ]
