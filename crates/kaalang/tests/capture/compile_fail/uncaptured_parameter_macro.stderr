@@ -1,0 +1,17 @@
+error[E0425]: cannot find value `value` in this scope
+  --> tests/capture/compile_fail/uncaptured_parameter_macro.rs:12:15
+   |
+ 5 |         $value = 9;
+   |         ------ due to this macro variable
+...
+12 |     { assign!(value); };
+   |               ^^^^^ not found in this scope
+   |
+help: an identifier with the same name is defined here, but is not accessible due to macro hygiene
+  --> tests/capture/compile_fail/uncaptured_parameter_macro.rs:10:31
+   |
+ 9 | #[kaalang]
+   | ---------- in this attribute macro expansion
+10 | fn uncaptured_parameter_macro(value: u32) -> u32 {
+   |                               ^^^^^
+   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

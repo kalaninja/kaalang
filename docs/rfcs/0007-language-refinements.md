@@ -19,6 +19,9 @@ decide and converge at a block, and specifies the corresponding diagram rules.
 These changes apply throughout the language. They can be used without stages;
 [RFC 0006](0006-stages.md) builds its stage bodies on the same rules.
 
+It also corrects parameter isolation during Rust lowering to enforce the
+existing explicit capture rules.
+
 This RFC defines syntax, execution, validation, Rust lowering, and the affected
 visual representation. Section 7 identifies the earlier provisions it
 supersedes. Earlier accepted RFC texts remain unchanged.
@@ -317,12 +320,12 @@ owning cycle. A finite cycle summary exposes its alternative exits to the
 containing sequence and keeps its repeat outcome within the cycle. Preserve the
 selected exit's identity in outer branch and convergence analysis.
 
-As in RFC 0001, computational Rust bodies are opaque. Validation considers all
-question answers and choice cases possible and does not prove termination or
-correlations between iterations. A Rust expression does not establish structural
-divergence. Finite summaries describe repeated execution without unfolding it;
-reject unreachable executable blocks and require a conforming diagram for every
-reachable part.
+For structural reachability, computational Rust bodies remain opaque as in
+RFC 0001. Validation considers all question answers and choice cases possible
+and does not prove termination or correlations between iterations. A Rust
+expression does not establish structural divergence. Finite summaries describe
+repeated execution without unfolding it; reject unreachable executable blocks
+and require a conforming diagram for every reachable part.
 
 ### 5.2 Rust lowering
 
@@ -349,8 +352,8 @@ ordinary match lowering. All generated labels are hygienic.
 
 For example, a cycle can repeat before selecting either of two exits that carry
 the same owned value into a shared continuation. Its illustrative lowering
-preserves an unconstrained generic `T` in a `const fn`; capture aliases and
-parameter withdrawal are omitted as in RFC 0004:
+preserves an unconstrained generic `T` in a `const fn`; capture aliases and the
+parameter prologue are omitted. Parameter isolation follows §5.3:
 
 ```rust
 const fn route_value<T>(value: T, mut remaining: usize, take_left: bool) -> T {
@@ -390,6 +393,75 @@ partial convergence retain the same finite local plans in execution and drawing.
 One iteration either transfers its chosen value outward, discards remaining
 locals and repeats, or stays in a nested divergent execution. This preserves the
 completion rules without unfolding repeated iterations.
+
+### 5.3 Hygienic flow parameters
+
+RFC 0001 §6 requires a computational body to receive local wire bindings only
+for its explicitly listed inputs. The uninitialized parameter declarations in
+RFC 0004 §2 do not enforce that rule: Rust permits their first initialization
+without `mut`, and a later body can read the value without a capture. Correct
+the lowering mechanism while retaining the existing capture semantics.
+
+Keep each named parameter's authored spelling, type, pattern, mutability, and
+source location, but give its binding the macro's hygienic context. The
+parameter prologue references that hygienic binding when moving its value into
+internal wire storage. Choose storage names that differ from every authored
+parameter spelling, so creating one wire cannot shadow a parameter before its
+value is moved. Keep the individual wire initializers: a tuple initializer would
+introduce a generic tuple temporary whose destruction Rust rejects in otherwise
+valid `const fn` flows. Omit the uninitialized authored-name declarations
+entirely. A block receives authored names only through its capture aliases or
+its own Rust declarations. The receiver remains unchanged under its existing
+capture rules.
+
+Lowering stays in the authored function's body. A nested implementation function
+would hide the outer parameter names, but could not use `Self` or the generics
+of the surrounding `impl` without additional transformations. Hygienic parameter
+bindings preserve that Rust context without introducing another function.
+
+Validate direct, unqualified parameter uses against the block's captures and
+explicit Rust local bindings, including single-segment paths with generic
+arguments. A local `let` binding is not in scope in its own initializer or type
+annotation. This prevents an omitted capture from silently resolving to a module
+item with the same name after the parameter is hidden. Respect Rust's local
+binding scopes. Nested items and macro token streams remain opaque; their own
+name resolution and binding introductions are left to Rust. Bindings introduced
+or removed by conditional compilation and attributes, and scopes whose bindings
+require macro expansion, are also left to Rust's expanded name resolution. These
+checks do not implement a complete Rust name resolver; the original parameter
+storage remains hygienically hidden in every case. Qualified item paths do not
+name parameter wires.
+
+The assignment below is rejected at `value`, even when the signature declares
+the parameter `mut`:
+
+```rust
+#[kaalang]
+fn invalid(value: u32) -> u32 {
+    #[action("Assign and read an uncaptured input.")]
+    let result = || {
+        value = 9;
+        value
+    };
+
+    |result| return result;
+}
+```
+
+An explicit mutable value capture remains valid:
+
+```rust
+#[action("Change a local copy of the input.")]
+let result = |mut value| {
+    value += 8;
+    value
+};
+```
+
+It mutates the block's local alias. Changing the original wire uses `&mut value`
+and requires a mutable producer, under the existing capture rules. An explicit
+body-local binding such as `let mut value = 1;` may reuse the spelling and
+retains ordinary Rust checks.
 
 ## 6. Visual representation
 
@@ -512,6 +584,12 @@ declares stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0003 §§2.1, 2.3 and 3:** replace the authored break junction with one
   result junction per declared output, preserving the junction and merge reuse
   rules in §6.2 here.
+- **RFC 0004 §2:** replace the uninitialized authored-name declarations and
+  their permission to assign an uncaptured parameter spelling as an ordinary
+  Rust local with the hygienic parameter bindings and capture checks in §5.3
+  here. Preserve the authored signature text from RFC 0004 §6 while changing the
+  named parameters' binding hygiene. Explicit capture semantics and authored
+  body-local Rust bindings retain RFC 0001's existing rules.
 - **RFC 0004 §7:** remove persistent cycle-header data aliases and implicit
   repetition at body endings. Lower inner data captures against their original
   storage. Explicit continue targets the nearest generated cycle label.
@@ -531,9 +609,9 @@ The selected output is exported only after its route's remaining work, so the
 migrated branch structure must make that work and the continue mutually
 exclusive.
 
-Flows without cycles still use the initializer, branch, and node-height
-refinements where applicable. Concrete compiler and renderer types remain
-implementation choices.
+Flows without cycles still use the initializer, branch, parameter-isolation, and
+node-height refinements where applicable. Concrete compiler and renderer types
+remain implementation choices.
 
 ## 8. Acceptance scenarios
 
@@ -545,6 +623,13 @@ These scenarios define required language behavior and visual representation.
 | Remaining work after an exported wire is produced                                                    | Finish the selected route before exporting its output.                                                              |
 | Branch-local exit wire consumed after a merge closes its branch                                      | Reject under ordinary scope and merge ordering rules.                                                               |
 | Inner computational body reads an uncaptured wire                                                    | Reject according to ordinary capture rules.                                                                         |
+| Computational body assigns an uncaptured parameter, including a mutable or underscore-prefixed one   | Reject; a parameter spelling alone does not introduce a body-local binding.                                         |
+| Body assigns a parameter captured without `mut`                                                      | Let Rust reject the assignment to the immutable capture alias.                                                      |
+| Body assigns a parameter captured through `mut name`                                                 | Allow mutation of the local alias under ordinary move or copy rules.                                                |
+| Body declares its own Rust local with a parameter's spelling                                         | Accept the local binding and retain ordinary Rust scope and mutability checks.                                      |
+| Uncaptured parameter spelling also names a module item                                               | Reject the direct unqualified use; explicitly qualified item paths remain available.                                |
+| Parameter spelling matches a generated wire name                                                     | Choose distinct internal storage names and preserve every input value.                                              |
+| Macro expansion, conditional compilation, or attributes determine a local binding                    | Leave expanded name resolution to Rust while keeping the original parameter bindings hygienic.                      |
 | Repeated local producers in a cycle iteration                                                        | Require mutual exclusion, merge completion, and producer order before consumers.                                    |
 | Mutable outer state and borrowing blocks                                                             | Later iterations observe updates; data borrows begin at their actual capturing blocks.                              |
 | Repeated move of owned outer state on a continuing route                                             | Let Rust reject invalid repeated use in the generated loop.                                                         |

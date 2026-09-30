@@ -154,7 +154,7 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
                 .filter(|wire| analysis.common_wires.contains(wire)),
         );
     }
-    let prologue = parameters::emit(&function, &prepared);
+    let prologue = parameters::emit(&mut function, &prepared);
     let state = state_name();
     let dispatch_label = dispatch_label();
     let order = crate::stage::visit_order(analysis, &analysis.stages);

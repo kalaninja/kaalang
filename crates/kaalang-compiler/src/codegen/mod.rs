@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, ItemFn, Lifetime, Pat, Result, token::Mut};
+use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, ext::IdentExt, token::Mut};
 
 use crate::{Analysis, Block, Branch, ExecutionPlan, Flow, Input};
 
@@ -34,6 +34,17 @@ pub(crate) struct Bindings {
 
 impl Bindings {
     pub(crate) fn new(analysis: &Analysis) -> Self {
+        let parameters = analysis
+            .parameters
+            .iter()
+            .filter_map(|parameter| match parameter {
+                FnArg::Typed(parameter) => match parameter.pat.as_ref() {
+                    Pat::Ident(binding) => Some(binding.ident.unraw().to_string()),
+                    _ => None,
+                },
+                FnArg::Receiver(_) => None,
+            })
+            .collect::<HashSet<_>>();
         // Flow-input spellings remain available for block-local input aliases.
         let wires = analysis
             .flow
@@ -47,10 +58,13 @@ impl Bindings {
                     if wire == "self" {
                         wire.clone()
                     } else {
-                        Ident::new(
-                            &format!("__kaalang_wire_{index}"),
-                            Span::mixed_site().located_at(wire.span()),
-                        )
+                        let mut name = format!("__kaalang_wire_{index}");
+                        // Parameter bindings share generated hygiene. Reserve
+                        // their spellings before moving them into wire storage.
+                        while parameters.contains(&name) {
+                            name.push('_');
+                        }
+                        Ident::new(&name, Span::mixed_site().located_at(wire.span()))
                     },
                 )
             })
@@ -369,7 +383,7 @@ pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     crate::construct(&analysis, &topology)?;
 
     let bindings = Bindings::new(&analysis);
-    let parameters = parameters::emit(&function, &bindings);
+    let parameters = parameters::emit(&mut function, &bindings);
     let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
     // Lower in place to preserve `Self`, enclosing generics, and receiver scope.
     *function.block = syn::parse2(quote!({

@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `value` before using it
+ --> tests/capture/compile_fail/uncaptured_parameter_assignment.rs:7:9
+  |
+7 |         value = 9;
+  |         ^^^^^

@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `value` before using it
+  --> tests/capture/compile_fail/uncaptured_generic_parameter_item.rs:13:25
+   |
+13 |     let uncaptured = || value::<u32>();
+   |                         ^^^^^

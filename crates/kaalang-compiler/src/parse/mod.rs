@@ -17,6 +17,7 @@ use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
 
 mod action;
 mod call;
+mod capture;
 mod choice;
 mod continue_block;
 mod end;
@@ -40,7 +41,7 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
         blocks: blocks(function)?,
         kind: FlowKind::Plain,
     };
-    receiver_captures(&flow, function.sig.receiver())?;
+    body_captures(&flow, function)?;
 
     Ok(flow)
 }
@@ -85,6 +86,12 @@ pub(crate) fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool
         Some(false) => ("&self", true, false),
         None => ("self", false, false),
     }
+}
+
+/// Checks captures against every authored function parameter.
+fn body_captures(flow: &Flow, function: &ItemFn) -> Result<()> {
+    capture::validate(flow, function)?;
+    receiver_captures(flow, function.sig.receiver())
 }
 
 /// Checks every use of the receiver. A capture names a receiver and is spelled

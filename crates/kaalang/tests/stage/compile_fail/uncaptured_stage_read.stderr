@@ -1,13 +1,5 @@
-error[E0381]: used binding `go` isn't initialized
+error: a kaalang block body must capture `go` before using it
  --> tests/stage/compile_fail/uncaptured_stage_read.rs:8:25
   |
-4 | fn uncaptured_stage_read(go: u8) -> u8 {
-  |                          -- binding declared here but left uninitialized
-...
 8 |         let answer = || go + 1;
-  |                         ^^ `go` used here but it isn't initialized
-  |
-help: consider assigning a value
-  |
-4 | fn uncaptured_stage_read(go: u8 = 42) -> u8 {
-  |                                 ++++
+  |                         ^^

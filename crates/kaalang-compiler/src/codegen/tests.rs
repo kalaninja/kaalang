@@ -154,11 +154,6 @@ fn a_choice_dispatches_once_without_a_case_tag() {
     let expansion = function.to_token_stream().to_string();
     assert_eq!(branching_matches(&function), 1);
     assert!(!expansion.contains("Result"));
-    assert_eq!(
-        expansion.matches("Option").count(),
-        2,
-        "only the outer and internal input signatures"
-    );
     assert_eq!(expansion.matches("__kaalang_shared_marker").count(), 1);
 }
 

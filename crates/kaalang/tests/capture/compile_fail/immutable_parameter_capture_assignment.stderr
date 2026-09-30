@@ -1,0 +1,12 @@
+error[E0384]: cannot assign twice to immutable variable `value`
+ --> tests/capture/compile_fail/immutable_parameter_capture_assignment.rs:7:9
+  |
+6 |     let result = |value| {
+  |                   ----- first assignment to `value`
+7 |         value += 8;
+  |         ^^^^^^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+6 |     let result = |mut value| {
+  |                   +++

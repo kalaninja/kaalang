@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `value` before using it
+  --> tests/capture/compile_fail/uncaptured_parameter_in_local_type.rs:14:25
+   |
+14 |         let value: [u8; value()] = [3; 2];
+   |                         ^^^^^

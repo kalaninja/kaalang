@@ -1,13 +1,5 @@
-error[E0381]: used binding `input` isn't initialized
+error: a kaalang block body must capture `input` before using it
  --> tests/capture/compile_fail/undeclared_flow_input.rs:6:30
   |
-4 | fn invalid(input: u32, trigger: ()) -> (u32, u32) {
-  |            ----- binding declared here but left uninitialized
-5 |     #[action("Read a flow input omitted from the inputs.")]
 6 |     let output = |trigger| { input };
-  |                              ^^^^^ `input` used here but it isn't initialized
-  |
-help: consider assigning a value
-  |
-4 | fn invalid(input: u32 = 42, trigger: ()) -> (u32, u32) {
-  |                       ++++
+  |                              ^^^^^
