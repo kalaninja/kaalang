@@ -76,8 +76,18 @@ pub(super) fn contour_lanes(topology: &Topology) -> usize {
 }
 
 impl Grid {
-    pub(super) fn of(topology: &Topology, arrangement: &Arrangement) -> Self {
+    fn spacing(topology: &Topology, arrangement: &Arrangement) -> (i32, i32) {
         let deepest = arrangement.gap_lanes.iter().copied().max().unwrap_or(0);
+        let step = 2 + i32::try_from(deepest).unwrap_or(i32::MAX - 2);
+        // Every lane of both sides of a column gets a position of its own,
+        // plus the column's own, so the deepest lane beside one column
+        // never reaches the shallowest lane beside the next.
+        let scale = 2 * i32::try_from(contour_lanes(topology)).unwrap_or(i32::MAX / 4) + 1;
+        (step, scale)
+    }
+
+    pub(super) fn of(topology: &Topology, arrangement: &Arrangement) -> Self {
+        let (step, scale) = Self::spacing(topology, arrangement);
         let mut occupied = vec![false; arrangement.ranks + 1];
         for &vertex in &topology.vertices {
             if let Some(&rank) = arrangement.rank.get(&vertex)
@@ -87,13 +97,10 @@ impl Grid {
             }
         }
         Self {
-            step: 2 + i32::try_from(deepest).unwrap_or(i32::MAX - 2),
+            step,
             lanes: arrangement.gap_lanes.clone(),
             occupied,
-            // Every lane of both sides of a column gets a position of its own,
-            // plus the column's own, so the deepest lane beside one column
-            // never reaches the shallowest lane beside the next.
-            scale: 2 * i32::try_from(contour_lanes(topology)).unwrap_or(i32::MAX / 4) + 1,
+            scale,
         }
     }
 
@@ -451,6 +458,7 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
     if arrangement.gap_lanes.len() != arrangement.ranks {
         return Err("the arrangement counts lanes for a different number of rank gaps".to_owned());
     }
+    numeric_bounds(topology, arrangement)?;
     for (index, route) in arrangement.all_routes().enumerate() {
         for run in &route.runs {
             match run.line {
@@ -525,6 +533,59 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
     Ok(())
 }
 
+/// Rejects coordinates and spacing that cannot fit the abstract geometry grid.
+fn numeric_bounds(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
+    for (&exit, &offset) in &arrangement.exit_offset {
+        if arrangement.column[&Vertex::Node(exit.node)]
+            .checked_add(offset)
+            .is_none()
+        {
+            return Err(format!("{exit:?} has an overflowing branch column"));
+        }
+    }
+    if arrangement
+        .contours
+        .iter()
+        .any(|contour| contour.lane >= contour_lanes(topology))
+    {
+        return Err("an iteration back edge takes an absent contour lane".to_owned());
+    }
+    if arrangement
+        .gap_lanes
+        .iter()
+        .any(|&lanes| lanes > (i32::MAX - 2) as usize)
+    {
+        return Err("the arrangement's rank spacing overflows its geometry".to_owned());
+    }
+    let (step, scale) = Grid::spacing(topology, arrangement);
+    if i32::try_from(arrangement.ranks)
+        .ok()
+        .and_then(|ranks| ranks.checked_mul(step))
+        .is_none()
+    {
+        return Err("the arrangement's ranks overflow its geometry".to_owned());
+    }
+    let mut columns = arrangement
+        .column
+        .values()
+        .copied()
+        .chain(arrangement.all_routes().flat_map(|route| {
+            [route.departure, route.arrival]
+                .into_iter()
+                .chain(route.runs.iter().flat_map(|run| [run.enter, run.exit]))
+        }))
+        .chain(arrangement.contours.iter().map(|contour| contour.column));
+    let margin = scale / 2;
+    if columns.any(|column| {
+        column.checked_mul(scale).is_none_or(|position| {
+            position.checked_sub(margin).is_none() || position.checked_add(margin).is_none()
+        })
+    }) {
+        return Err("the arrangement's columns overflow its geometry".to_owned());
+    }
+    Ok(())
+}
+
 /// Forward connections descend, except for a side exit that ends at a wire merge
 /// or its sole iteration tail on its row. A cycle's own tail and result may share
 /// a row when their routes are disjoint. A renderer may replace the row rule for
@@ -592,7 +653,9 @@ fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), 
                 let Some(&offset) = arrangement.exit_offset.get(&exit) else {
                     return Err(format!("{exit:?} has no branch column"));
                 };
-                column + offset
+                column
+                    .checked_add(offset)
+                    .ok_or_else(|| format!("{exit:?} has an overflowing branch column"))?
             }
             Source::Junction(junction) => {
                 let source = Vertex::Junction(junction);

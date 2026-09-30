@@ -1,5 +1,5 @@
 use kaalang_compiler::topology::Vertex;
-use kaalang_compiler::{ArrangementChecks, RunLine, SemanticModel};
+use kaalang_compiler::{Arrangement, ArrangementChecks, RunLine, SemanticModel};
 use kaalang_render::ArrangementVerifier;
 
 /// One action between the flow's start and end: the smallest arrangement a
@@ -50,6 +50,56 @@ fn the_public_verifier_rejects_broken_order() {
         .unwrap();
     broken.rank.insert(deepest, 0);
     assert!(verifier.normalize(broken).is_err());
+}
+
+#[test]
+fn the_public_verifier_rejects_overflowing_coordinates() {
+    let model = model(SERIAL_PROBE);
+    let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+    let mut broken = model.arrangement.clone();
+    let start = Vertex::Node(kaalang_compiler::topology::NodeId::Start);
+    broken.column.insert(start, 1);
+    *broken.exit_offset.values_mut().next().unwrap() = i32::MAX;
+    assert!(
+        ArrangementChecks::new(&model.analysis.flow, &model.topology)
+            .verify(&broken)
+            .is_err()
+    );
+    assert!(verifier.normalize(broken).is_err());
+}
+
+#[test]
+fn the_public_verifier_rejects_an_overflowing_contour_lane() {
+    let source = kaalang_testing::shapes::looping(&["repeat", "leave"]);
+    let model = model(&source);
+    let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+    let mut broken = model.arrangement.clone();
+    broken.contours[0].lane = i32::MAX as usize;
+    assert!(
+        ArrangementChecks::new(&model.analysis.flow, &model.topology)
+            .verify(&broken)
+            .is_err()
+    );
+    assert!(verifier.normalize(broken).is_err());
+}
+
+#[test]
+fn the_public_verifiers_reject_unrepresentable_grid_spacing() {
+    let source = kaalang_testing::shapes::looping(&["repeat", "leave"]);
+    let model = model(&source);
+    let checks = ArrangementChecks::new(&model.analysis.flow, &model.topology);
+    let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
+    let mutations: [fn(&mut Arrangement); 3] = [
+        |built| built.gap_lanes[0] = usize::MAX,
+        |built| built.gap_lanes[0] = (i32::MAX - 2) as usize,
+        |built| built.contours[0].column = i32::MAX,
+    ];
+    for mutate in mutations {
+        let mut broken = model.arrangement.clone();
+        mutate(&mut broken);
+        assert!(checks.verify(&broken).is_err());
+        assert!(verifier.normalize(broken).is_err());
+    }
 }
 
 #[test]
