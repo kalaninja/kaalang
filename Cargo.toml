@@ -15,24 +15,24 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/kalaninja/kaalang"
 rust-version = "1.88"
-version = "0.1.0"
+version = "0.2.0"
 
 [workspace.dependencies]
-kaalang-compiler = { version = "0.1.0", path = "crates/kaalang-compiler" }
-kaalang-macros = { version = "0.1.0", path = "crates/kaalang-macros" }
-kaalang-render = { version = "0.1.0", path = "crates/kaalang-render" }
-kaalang-svg = { version = "0.1.0", path = "crates/kaalang-svg" }
+kaalang-compiler = { version = "0.2.0", path = "crates/kaalang-compiler" }
+kaalang-macros = { version = "0.2.0", path = "crates/kaalang-macros" }
+kaalang-render = { version = "0.2.0", path = "crates/kaalang-render" }
+kaalang-svg = { version = "0.2.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 
 # Pinned: `text.rs` corrects this release's glyph outline scales by rewriting
 # its emitted `scale(...)` transforms in traversal order.
 latex-rust = "=1.0.4"
-proc-macro2 = "1"
-pulldown-cmark = { version = "0.13", default-features = false }
-quote = "1"
-syn = { version = "3", features = ["full"] }
-trybuild = "1"
-unicode-segmentation = "1"
+proc-macro2 = "1.0.107"
+pulldown-cmark = { version = "0.13.4", default-features = false }
+quote = "1.0.47"
+syn = { version = "3.0.6", features = ["full"] }
+trybuild = "1.0.121"
+unicode-segmentation = "1.13.3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

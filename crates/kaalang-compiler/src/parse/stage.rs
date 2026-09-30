@@ -49,7 +49,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
     if let Some(asyncness) = &function.sig.asyncness {
         return Err(Error::new(
             asyncness.span(),
-            "kaalang 0.1 does not support async flows",
+            "kaalang does not support async flows",
         ));
     }
     let mut declared = Vec::new();
