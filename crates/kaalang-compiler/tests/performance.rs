@@ -70,6 +70,9 @@ const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
 /// The bound on analysis alone for a generated probe, against a measured median
 /// of about 380 ms for nine branching levels.
 const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
+/// Analysis of twelve branching levels, against a measured median of about
+/// 7.5 s. This reaches 4096 summaries and exposes redundant pairwise scans.
+const LARGE_GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(20);
 /// The bound on the diagram decision for a generated probe, against a worst
 /// measured figure of about 290 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
@@ -164,23 +167,32 @@ fn generated_accepted_probes_stay_inside_their_budget() {
 }
 
 /// Analysis on its own, below the diagram decision. `branching` is what reaches
-/// the execution counts: one more level doubles them, and the placement check
-/// weighs every execution against every other.
+/// the execution counts: one more level doubles them. The larger case exercises
+/// indexed comparisons beyond the nine-level probe's relatively small set.
 #[test]
 fn a_generated_branching_probe_analyzes_inside_its_budget() {
-    let probes = [("nine branching levels", flow(&branching(9)))];
-    assert_pass_budget(
-        "analysis",
-        "probes",
-        &probes,
-        GENERATED_ANALYSIS_BUDGET,
-        |(name, _)| ItemBudget {
-            name: (*name).to_owned(),
-            limit: GENERATED_ANALYSIS_BUDGET,
-            report: false,
-        },
-        |(name, function)| {
-            kaalang_compiler::analyze(function).unwrap_or_else(|error| panic!("{name}: {error}"));
-        },
-    );
+    for (name, levels, budget) in [
+        ("nine branching levels", 9, GENERATED_ANALYSIS_BUDGET),
+        (
+            "twelve branching levels",
+            12,
+            LARGE_GENERATED_ANALYSIS_BUDGET,
+        ),
+    ] {
+        assert_pass_budget(
+            &format!("analysis, {name}"),
+            "probes",
+            &[flow(&branching(levels))],
+            budget,
+            |_| ItemBudget {
+                name: name.to_owned(),
+                limit: budget,
+                report: false,
+            },
+            |function| {
+                kaalang_compiler::analyze(function)
+                    .unwrap_or_else(|error| panic!("{name}: {error}"));
+            },
+        );
+    }
 }

@@ -4,7 +4,7 @@
 //! Branch placement rejects independent selections even after disjoint partial
 //! merges. This pass checks capture ancestry and the order of normal loop exits.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use syn::{Error, Result};
 
@@ -12,7 +12,7 @@ use crate::model::{BlockKind, Flow};
 
 use super::frame::Frames;
 
-use super::only_difference;
+use super::comparison;
 
 /// For every computational block, the questions and choices that decide it. A
 /// question or choice decides a block when two executions select different
@@ -23,23 +23,32 @@ use super::only_difference;
 /// encloses nor passes that block before its tail. Each block compares the
 /// selections its frame sees.
 pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>> {
-    (0..flow.blocks.len() - 1)
-        .map(|block| {
-            let (running, skipping): (Vec<_>, Vec<_>) = frames
-                .at(block)
-                .iter()
-                .partition(|execution| execution.participates(block));
-            running
-                .iter()
-                .flat_map(|run| {
-                    skipping
-                        .iter()
-                        .filter(|skip| frames.passes().reaches(skip, block))
-                        .filter_map(|skip| only_difference(run, skip))
-                })
-                .collect()
-        })
-        .collect()
+    let mut found = vec![BTreeSet::new(); flow.blocks.len() - 1];
+    let mut by_frame = BTreeMap::<_, Vec<_>>::new();
+    for block in 0..found.len() {
+        by_frame.entry(frames.frame(block)).or_default().push(block);
+    }
+    for (frame, blocks) in by_frame {
+        let executions = frames.view(frame).iter().collect::<Vec<_>>();
+        let context = blocks
+            .iter()
+            .map(|&block| {
+                executions
+                    .iter()
+                    .map(|execution| {
+                        let runs = execution.participates(block);
+                        (runs || frames.passes().reaches(execution, block)).then_some(runs)
+                    })
+                    .collect()
+            })
+            .collect::<Vec<_>>();
+        comparison::compare(&executions, &context, |column, selector, first, second| {
+            if context[column][first] != context[column][second] {
+                found[blocks[column]].insert(selector);
+            }
+        });
+    }
+    found
 }
 
 /// The deciders of one block are pairwise dependent: one lies in the
@@ -100,6 +109,74 @@ mod tests {
     use super::deciders;
     use crate::analyze::frame::Frames;
     use crate::build;
+
+    #[test]
+    fn participation_and_branch_order_match_the_pairwise_reference() {
+        let corpus = kaalang_testing::corpus::corpus();
+        kaalang_testing::corpus::assert_corpus_shape(&corpus);
+        let generated = kaalang_testing::probes::accepted()
+            .into_iter()
+            .map(|(name, source, _)| (name, kaalang_testing::probes::flow(&source), false));
+        for (name, function, _) in corpus.into_iter().chain(generated) {
+            let parts = if let Some(part) = crate::analyze::walked(&function) {
+                vec![part]
+            } else {
+                let analysis = crate::analyze(&function).expect("the staged flow analyzes");
+                let mut parts = vec![(analysis.flow, analysis.executions)];
+                parts.extend(analysis.stages.into_iter().map(|stage| {
+                    let local = *stage.analysis;
+                    (local.flow, local.executions)
+                }));
+                parts
+            };
+            for (flow, executions) in parts {
+                let frames = Frames::of(&flow, &executions);
+                for (block, actual) in deciders(&flow, &frames).into_iter().enumerate() {
+                    let executions = frames
+                        .at(block)
+                        .iter()
+                        .filter(|execution| {
+                            execution.participates(block)
+                                || frames.passes().reaches(execution, block)
+                        })
+                        .collect::<Vec<_>>();
+                    let outcomes = executions
+                        .iter()
+                        .map(|execution| execution.participates(block))
+                        .collect::<Vec<_>>();
+                    let mut expected = std::collections::BTreeSet::new();
+                    for (first, execution) in executions.iter().enumerate() {
+                        for (second, other) in executions.iter().enumerate().skip(first + 1) {
+                            if outcomes[first] != outcomes[second]
+                                && let Some(selector) =
+                                    crate::analyze::only_difference(execution, other)
+                            {
+                                expected.insert(selector);
+                            }
+                        }
+                    }
+                    assert_eq!(actual, expected, "{name}: block {block} deciders");
+                    let mut ordered = (0..executions.len()).collect::<Vec<_>>();
+                    ordered.sort_by_cached_key(|&index| {
+                        executions[index]
+                            .branches
+                            .iter()
+                            .filter(|selection| expected.contains(&selection.block))
+                            .map(|selection| crate::BranchSelection {
+                                block: selection.block,
+                                branch: crate::analyze::frame::branch(selection.branch),
+                            })
+                            .collect::<Vec<_>>()
+                    });
+                    assert_eq!(
+                        crate::analyze::branch_order(&executions, &outcomes),
+                        ordered,
+                        "{name}: block {block} branch order"
+                    );
+                }
+            }
+        }
+    }
 
     /// The questions deciding each computational block of one fixture, in
     /// authored order.

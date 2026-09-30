@@ -17,6 +17,7 @@ use crate::model::{
 mod action;
 mod call;
 mod choice;
+mod comparison;
 mod continue_block;
 mod convergence;
 mod end;
@@ -164,15 +165,12 @@ fn only_difference(left: &Execution, right: &Execution) -> Option<usize> {
 /// alone: the body route it carries tells executions apart but orders nothing.
 pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[T]) -> Vec<usize> {
     let mut selectors = BTreeSet::new();
-    for (first, execution) in executions.iter().enumerate() {
-        for (second, other) in executions.iter().enumerate().skip(first + 1) {
-            if outcomes[first] != outcomes[second]
-                && let Some(selector) = only_difference(execution, other)
-            {
-                selectors.insert(selector);
-            }
+    let context = [outcomes.iter().map(Some).collect()];
+    comparison::compare(executions, &context, |_, selector, first, second| {
+        if outcomes[first] != outcomes[second] {
+            selectors.insert(selector);
         }
-    }
+    });
     let mut ordered = (0..executions.len()).collect::<Vec<_>>();
     ordered.sort_by_cached_key(|&index| {
         executions[index]

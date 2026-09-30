@@ -327,6 +327,39 @@ expression does not establish structural divergence. Finite summaries describe
 repeated execution without unfolding it; reject unreachable executable blocks
 and require a conforming diagram for every reachable part.
 
+Merge completion, block participation, and branch ordering compare executions
+that disagree at exactly one selector they both run. A context first excludes
+executions irrelevant to its check: those producing no alternative of a merge,
+or those that repeat before reaching the block or boundary being checked. A
+running block always participates in its own context. Compare the selections
+visible in that context's cycle frame.
+
+For large execution sets, group executions by the selectors they run. For each
+pair of groups and each shared selector, sort by all other shared selections.
+Equal projections contain exactly the candidate pairs for that selector. Within
+each context, compare representatives taking different branches so that every
+connected component of candidate pairs stays connected. With two distinct
+groups, compare only across the groups. Keep up to two representatives with
+different branches on each side; every member connects to each representative on
+the other side whose branch differs. Within one group, two representatives with
+different branches suffice to connect every member.
+
+This preserves the answers needed by all three checks. Equality of producers,
+participation, or observed outcomes propagates along a connected component, so
+any difference within it appears on at least one retained comparison. Likewise,
+the union of differing block sets along connecting paths contains every block
+that any omitted comparison could add to merge completion. Select
+representatives only after excluding executions outside the context; an excluded
+execution must not connect otherwise disconnected candidates. Use the ordinary
+pairwise scan for small sets or group pairs where indexing costs more.
+
+This reduces redundant comparisons without dropping execution summaries or
+weakening validation. It does not make the analysis polynomial in authored flow
+size: consecutive binary questions still produce exponentially many finite
+summaries, and many distinct selector sets can still require pairwise group
+comparisons. Removing that ceiling requires a shared representation of execution
+alternatives throughout validation and lowering.
+
 ### 5.2 Rust lowering
 
 Lower a cycle to a native Rust loop with a hygienic label. Its optional entry
