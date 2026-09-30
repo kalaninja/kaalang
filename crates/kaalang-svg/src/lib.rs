@@ -176,7 +176,7 @@ fn render_staged(
 ) -> Result<String, RenderError> {
     validate_labels(model, &function.sig, start, parameters, return_type)?;
     for (index, stage) in model.stages.iter().enumerate() {
-        validate_label(
+        validate_description(
             &model.analysis.stages[index].description,
             model.analysis.stages[index].entry.span(),
             "stage description",
@@ -303,14 +303,7 @@ fn validate_labels(
                     .map(|text| (text, format!("question branch {} description", branch + 1)))
             });
         for (label, context) in description.into_iter().chain(cases).chain(branches) {
-            // A character reference decodes to the character it names, so the
-            // text a reader sees is checked as well as its source.
-            validate_label(label, block.span, context.clone())?;
-            validate_label(
-                text::RichText::markdown_text(label).as_ref(),
-                block.span,
-                context,
-            )?;
+            validate_description(label, block.span, context)?;
         }
     }
     validate_label(start, signature.span(), "flow header")?;
@@ -322,6 +315,18 @@ fn validate_labels(
     }
 
     Ok(())
+}
+
+fn validate_description(
+    label: &str,
+    span: Span,
+    context: impl Into<String>,
+) -> Result<(), RenderError> {
+    let context = context.into();
+    // Character references decode before serialization, so check both the
+    // authored description and the characters a reader sees.
+    validate_label(label, span, context.clone())?;
+    validate_label(text::RichText::markdown_text(label).as_ref(), span, context)
 }
 
 fn validate_label(label: &str, span: Span, context: impl Into<String>) -> Result<(), RenderError> {
@@ -560,6 +565,39 @@ fn invalid(condition: bool) -> u32 {
             })
         );
         // Escaping the ampersand keeps the reference literal, and valid.
+        let escaped = source.replace("Record&#30;the", r"Record\\&#30;the");
+        assert!(render_source(&escaped, "invalid").is_ok());
+    }
+
+    #[test]
+    fn validates_raw_and_interpreted_stage_descriptions() {
+        let source = r#"#[kaalang]
+fn invalid(go: u8) -> u8 {
+    #[stage("Record&#30;the run.")]
+    let finish = |go| {
+        #[action("Forward the value.")]
+        let finish = |go| go;
+    };
+    #[stage("Return the value.")]
+    |finish| {
+        |finish| return finish;
+    };
+}
+"#;
+        for (source, character) in [
+            (source.to_owned(), '\u{1e}'),
+            (source.replace("&#30;", r"\0"), '\0'),
+        ] {
+            assert_eq!(
+                render_source(&source, "invalid"),
+                Err(RenderError::InvalidLabelCharacter {
+                    character,
+                    line: 4,
+                    column: 19,
+                    context: "stage description".into(),
+                })
+            );
+        }
         let escaped = source.replace("Record&#30;the", r"Record\\&#30;the");
         assert!(render_source(&escaped, "invalid").is_ok());
     }
