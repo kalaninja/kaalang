@@ -16,8 +16,8 @@ explicit structural `continue`.
 
 It also permits block initializers with no capture list, refines which routes
 decide and converge at a block, and specifies the corresponding diagram rules.
-These changes apply throughout the language. They can be used without stages;
-[RFC 0006](0006-stages.md) builds its stage bodies on the same rules.
+These changes apply throughout the language, including preparation and stage
+bodies introduced by [RFC 0006](0006-stages.md).
 
 It also corrects parameter isolation during Rust lowering to enforce the
 existing explicit capture rules.
@@ -730,6 +730,25 @@ declares stages. Earlier accepted RFC texts remain unchanged.
   Alternative outputs use the labeled result blocks from RFC 0004 §4, leaving
   the loop with the selected value before entering its matching outer
   continuation.
+- **RFC 0006 §§3, 4.1, 5–6, 8.3, 8.5 and 10:** apply the cycle rules in §§2 and
+  5 here to preparation and stage bodies, replacing their captured cycle-input
+  bindings, structural break, simultaneous results, and implicit repetition. A
+  cycle inherits the available stage data; a gate naming the stage entry refers
+  to that same wire and performs no move or copy. Inner captures resolve to the
+  original producer. Mutable borrowing of the received stage entry remains
+  forbidden, including inside a cycle; create a separate mutable wire for
+  working state before the cycle. A selected cycle output becomes a stage
+  transition only when the stage also declares that output.
+- **RFC 0006 §6.1:** use the deciding-selection and convergence rules in §4 here
+  for every local part. The execution-condition representation in §5.1 also
+  covers preparation, stage bodies, and their transition boundaries. It checks
+  common-wire availability across all completing preparation histories and
+  traverses the finite stage graph without listing local histories.
+- **RFC 0006 §7 and §10:** apply the cycle projection and row-height rules in §6
+  here inside each part. Derived cycle-input labels replace the authored capture
+  interface; alternative result exits and explicit continue routes replace the
+  single break result and implicit repetition. Preserve stage declaration order,
+  entry and transition icons, and inter-stage rails.
 
 For cycle migration, create any formerly captured owned working state before the
 cycle and keep data captures on its inner blocks. Replace the structural break's
