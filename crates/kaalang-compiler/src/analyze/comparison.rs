@@ -51,8 +51,8 @@ pub(super) fn pairwise<T>(
 
 /// Preserves each selector's compatible components with representative pairs.
 /// Context filtering precedes representative selection; see RFC 0007 §5.1.
-// ponytail: distinct selector sets still pair quadratically; use a symbolic
-// execution representation if enumerating alternatives becomes the bottleneck.
+// ponytail: explicit histories with distinct selector sets still pair quadratically;
+// larger production flows use execution conditions instead of this reference.
 pub(super) fn compatible<T>(
     executions: &[&Execution],
     context: &[Vec<Option<T>>],

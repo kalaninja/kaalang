@@ -1,0 +1,1267 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3537" height="5952" viewBox="0 0 3537 5952" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for staged_branching_with_work</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: staged_branching_with_work with parameters seed: usize; config: usize; events: &amp;std::cell::Cell&lt;usize&gt;; remaining: &amp;std::cell::Cell&lt;usize&gt; handing over seed, config, events, remaining; Action: Prepare the seed. capturing seed handing over pre_prepared; Question: Choose work 0. capturing &amp;config handing over pre_case_0_0 / pre_case_0_1; Action: Prepare branch 0/0. capturing pre_case_0_0, &amp;pre_prepared, &amp;config handing over pre_data_0_0; Action: Record branch 0/0. capturing &amp;pre_data_0_0, &amp;events handing over pre_effect_0_0; Action: Finish branch 0/0. capturing pre_data_0_0, pre_effect_0_0 handing over pre_step_0; Action: Prepare branch 0/1. capturing pre_case_0_1, &amp;pre_prepared, &amp;config handing over pre_data_0_1; Call: Transform branch 0/1/0. capturing pre_data_0_1 handing over pre_data_0_1_0; Action: Record branch 0/1. capturing &amp;pre_data_0_1_0, &amp;events handing over pre_effect_0_1; Action: Finish branch 0/1. capturing pre_data_0_1_0, pre_effect_0_1 handing over pre_step_0; Select: Choose work 1. capturing &amp;config; Case: First. handing over pre_case_1_0; Case: Second. handing over pre_case_1_1; Case: Third. handing over pre_case_1_2; Action: Prepare branch 1/0. capturing pre_case_1_0, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_0; Action: Record branch 1/0. capturing &amp;pre_data_1_0, &amp;events handing over pre_effect_1_0; Action: Finish branch 1/0. capturing pre_data_1_0, pre_effect_1_0 handing over pre_step_1; Action: Prepare branch 1/1. capturing pre_case_1_1, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_1; Call: Transform branch 1/1/0. capturing pre_data_1_1 handing over pre_data_1_1_0; Action: Record branch 1/1. capturing &amp;pre_data_1_1_0, &amp;events handing over pre_effect_1_1; Action: Finish branch 1/1. capturing pre_data_1_1_0, pre_effect_1_1 handing over pre_step_1; Action: Prepare branch 1/2. capturing pre_case_1_2, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_2; Call: Transform branch 1/2/0. capturing pre_data_1_2 handing over pre_data_1_2_0; Call: Transform branch 1/2/1. capturing pre_data_1_2_0 handing over pre_data_1_2_1; Action: Record branch 1/2. capturing &amp;pre_data_1_2_1, &amp;events handing over pre_effect_1_2; Action: Finish branch 1/2. capturing pre_data_1_2_1, pre_effect_1_2 handing over pre_step_1; Question: Choose work 2. capturing &amp;config handing over pre_case_2_0 / pre_case_2_1; Action: Prepare branch 2/0. capturing pre_case_2_0, &amp;pre_step_1, &amp;config, &amp;pre_step_0 handing over pre_data_2_0; Action: Record branch 2/0. capturing &amp;pre_data_2_0, &amp;events handing over pre_effect_2_0; Action: Finish branch 2/0. capturing pre_data_2_0, pre_effect_2_0 handing over pre_step_2; Action: Prepare branch 2/1. capturing pre_case_2_1, &amp;pre_step_1, &amp;config, &amp;pre_step_0 handing over pre_data_2_1; Call: Transform branch 2/1/0. capturing pre_data_2_1 handing over pre_data_2_1_0; Action: Record branch 2/1. capturing &amp;pre_data_2_1_0, &amp;events handing over pre_effect_2_1; Action: Finish branch 2/1. capturing pre_data_2_1_0, pre_effect_2_1 handing over pre_step_2; Select: Choose work 3. capturing &amp;config; Case: First. handing over pre_case_3_0; Case: Second. handing over pre_case_3_1; Case: Third. handing over pre_case_3_2; Action: Prepare branch 3/0. capturing pre_case_3_0, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_0; Action: Record branch 3/0. capturing &amp;pre_data_3_0, &amp;events handing over pre_effect_3_0; Action: Finish branch 3/0. capturing pre_data_3_0, pre_effect_3_0 handing over pre_step_3; Action: Prepare branch 3/1. capturing pre_case_3_1, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_1; Call: Transform branch 3/1/0. capturing pre_data_3_1 handing over pre_data_3_1_0; Action: Record branch 3/1. capturing &amp;pre_data_3_1_0, &amp;events handing over pre_effect_3_1; Action: Finish branch 3/1. capturing pre_data_3_1_0, pre_effect_3_1 handing over pre_step_3; Action: Prepare branch 3/2. capturing pre_case_3_2, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_2; Call: Transform branch 3/2/0. capturing pre_data_3_2 handing over pre_data_3_2_0; Call: Transform branch 3/2/1. capturing pre_data_3_2_0 handing over pre_data_3_2_1; Action: Record branch 3/2. capturing &amp;pre_data_3_2_1, &amp;events handing over pre_effect_3_2; Action: Finish branch 3/2. capturing pre_data_3_2_1, pre_effect_3_2 handing over pre_step_3; Question: Choose work 4. capturing &amp;config handing over pre_case_4_0 / pre_case_4_1; Action: Prepare branch 4/0. capturing pre_case_4_0, &amp;pre_step_3, &amp;config, &amp;pre_step_1 handing over pre_data_4_0; Action: Record branch 4/0. capturing &amp;pre_data_4_0, &amp;events handing over pre_effect_4_0; Action: Finish branch 4/0. capturing pre_data_4_0, pre_effect_4_0 handing over pre_step_4; Action: Prepare branch 4/1. capturing pre_case_4_1, &amp;pre_step_3, &amp;config, &amp;pre_step_1 handing over pre_data_4_1; Call: Transform branch 4/1/0. capturing pre_data_4_1 handing over pre_data_4_1_0; Action: Record branch 4/1. capturing &amp;pre_data_4_1_0, &amp;events handing over pre_effect_4_1; Action: Finish branch 4/1. capturing pre_data_4_1_0, pre_effect_4_1 handing over pre_step_4; Action: Enter the work stage. capturing pre_step_4; Transition: Do more work.; Merge: pre_step_0; Merge: pre_step_1; Merge: pre_step_2; Merge: pre_step_3; Merge: pre_step_4. Connections: Start: staged_branching_with_work to Action: Prepare the seed.; Action: Prepare the seed. to Question: Choose work 0.; Question: Choose work 0. branch 1 to Action: Prepare branch 0/0.; Question: Choose work 0. branch 2 to Action: Prepare branch 0/1.; Action: Prepare branch 0/0. to Action: Record branch 0/0.; Action: Record branch 0/0. to Action: Finish branch 0/0.; Action: Finish branch 0/0. to the pre_step_0 merge; Action: Prepare branch 0/1. to Call: Transform branch 0/1/0.; Call: Transform branch 0/1/0. to Action: Record branch 0/1.; Action: Record branch 0/1. to Action: Finish branch 0/1.; Action: Finish branch 0/1. to the pre_step_0 merge; Select: Choose work 1. to Case: First.; Select: Choose work 1. to Case: Second.; Select: Choose work 1. to Case: Third.; Case: First. to Action: Prepare branch 1/0.; Case: Second. to Action: Prepare branch 1/1.; Case: Third. to Action: Prepare branch 1/2.; Action: Prepare branch 1/0. to Action: Record branch 1/0.; Action: Record branch 1/0. to Action: Finish branch 1/0.; Action: Finish branch 1/0. to the pre_step_1 merge; Action: Prepare branch 1/1. to Call: Transform branch 1/1/0.; Call: Transform branch 1/1/0. to Action: Record branch 1/1.; Action: Record branch 1/1. to Action: Finish branch 1/1.; Action: Finish branch 1/1. to the pre_step_1 merge; Action: Prepare branch 1/2. to Call: Transform branch 1/2/0.; Call: Transform branch 1/2/0. to Call: Transform branch 1/2/1.; Call: Transform branch 1/2/1. to Action: Record branch 1/2.; Action: Record branch 1/2. to Action: Finish branch 1/2.; Action: Finish branch 1/2. to the pre_step_1 merge; Question: Choose work 2. branch 1 to Action: Prepare branch 2/0.; Question: Choose work 2. branch 2 to Action: Prepare branch 2/1.; Action: Prepare branch 2/0. to Action: Record branch 2/0.; Action: Record branch 2/0. to Action: Finish branch 2/0.; Action: Finish branch 2/0. to the pre_step_2 merge; Action: Prepare branch 2/1. to Call: Transform branch 2/1/0.; Call: Transform branch 2/1/0. to Action: Record branch 2/1.; Action: Record branch 2/1. to Action: Finish branch 2/1.; Action: Finish branch 2/1. to the pre_step_2 merge; Select: Choose work 3. to Case: First.; Select: Choose work 3. to Case: Second.; Select: Choose work 3. to Case: Third.; Case: First. to Action: Prepare branch 3/0.; Case: Second. to Action: Prepare branch 3/1.; Case: Third. to Action: Prepare branch 3/2.; Action: Prepare branch 3/0. to Action: Record branch 3/0.; Action: Record branch 3/0. to Action: Finish branch 3/0.; Action: Finish branch 3/0. to the pre_step_3 merge; Action: Prepare branch 3/1. to Call: Transform branch 3/1/0.; Call: Transform branch 3/1/0. to Action: Record branch 3/1.; Action: Record branch 3/1. to Action: Finish branch 3/1.; Action: Finish branch 3/1. to the pre_step_3 merge; Action: Prepare branch 3/2. to Call: Transform branch 3/2/0.; Call: Transform branch 3/2/0. to Call: Transform branch 3/2/1.; Call: Transform branch 3/2/1. to Action: Record branch 3/2.; Action: Record branch 3/2. to Action: Finish branch 3/2.; Action: Finish branch 3/2. to the pre_step_3 merge; Question: Choose work 4. branch 1 to Action: Prepare branch 4/0.; Question: Choose work 4. branch 2 to Action: Prepare branch 4/1.; Action: Prepare branch 4/0. to Action: Record branch 4/0.; Action: Record branch 4/0. to Action: Finish branch 4/0.; Action: Finish branch 4/0. to the pre_step_4 merge; Action: Prepare branch 4/1. to Call: Transform branch 4/1/0.; Call: Transform branch 4/1/0. to Action: Record branch 4/1.; Action: Record branch 4/1. to Action: Finish branch 4/1.; Action: Finish branch 4/1. to the pre_step_4 merge; Action: Enter the work stage. to Transition: Do more work.; the pre_step_0 merge to Select: Choose work 1.; the pre_step_1 merge to Question: Choose work 2.; the pre_step_2 merge to Select: Choose work 3.; the pre_step_3 merge to Question: Choose work 4.; the pre_step_4 merge to Action: Enter the work stage.. Transition to stage entry. Stage entry. Cycles: Repeat before working. with inputs reset, remaining, entry, config, events and outputs left or right. Nodes: Stage: Do more work.; Action: Reset the stage effects. capturing entry, &amp;events handing over reset; Question: Repeat? capturing &amp;remaining handing over again / work; Action: Count the repeat. capturing again, &amp;remaining handing over repeated; Action: Prepare the seed. capturing work, entry handing over prepared; Question: Choose work 0. capturing &amp;prepared, &amp;config handing over case_0_0 / case_0_1; Action: Prepare branch 0/0. capturing case_0_0, &amp;prepared, &amp;config handing over data_0_0; Action: Record branch 0/0. capturing &amp;data_0_0, &amp;events handing over effect_0_0; Action: Finish branch 0/0. capturing data_0_0, effect_0_0 handing over step_0; Action: Prepare branch 0/1. capturing case_0_1, &amp;prepared, &amp;config handing over data_0_1; Call: Transform branch 0/1/0. capturing data_0_1 handing over data_0_1_0; Action: Record branch 0/1. capturing &amp;data_0_1_0, &amp;events handing over effect_0_1; Action: Finish branch 0/1. capturing data_0_1_0, effect_0_1 handing over step_0; Select: Choose work 1. capturing &amp;step_0, &amp;config; Case: First. handing over case_1_0; Case: Second. handing over case_1_1; Case: Third. handing over case_1_2; Action: Prepare branch 1/0. capturing case_1_0, &amp;step_0, &amp;config, &amp;prepared handing over data_1_0; Action: Record branch 1/0. capturing &amp;data_1_0, &amp;events handing over effect_1_0; Action: Finish branch 1/0. capturing data_1_0, effect_1_0 handing over step_1; Action: Prepare branch 1/1. capturing case_1_1, &amp;step_0, &amp;config, &amp;prepared handing over data_1_1; Call: Transform branch 1/1/0. capturing data_1_1 handing over data_1_1_0; Action: Record branch 1/1. capturing &amp;data_1_1_0, &amp;events handing over effect_1_1; Action: Finish branch 1/1. capturing data_1_1_0, effect_1_1 handing over step_1; Action: Prepare branch 1/2. capturing case_1_2, &amp;step_0, &amp;config, &amp;prepared handing over data_1_2; Call: Transform branch 1/2/0. capturing data_1_2 handing over data_1_2_0; Call: Transform branch 1/2/1. capturing data_1_2_0 handing over data_1_2_1; Action: Record branch 1/2. capturing &amp;data_1_2_1, &amp;events handing over effect_1_2; Action: Finish branch 1/2. capturing data_1_2_1, effect_1_2 handing over step_1; Question: Choose work 2. capturing &amp;step_1, &amp;config handing over case_2_0 / case_2_1; Action: Prepare branch 2/0. capturing case_2_0, &amp;step_1, &amp;config, &amp;step_0 handing over data_2_0; Action: Record branch 2/0. capturing &amp;data_2_0, &amp;events handing over effect_2_0; Action: Finish branch 2/0. capturing data_2_0, effect_2_0 handing over step_2; Action: Prepare branch 2/1. capturing case_2_1, &amp;step_1, &amp;config, &amp;step_0 handing over data_2_1; Call: Transform branch 2/1/0. capturing data_2_1 handing over data_2_1_0; Action: Record branch 2/1. capturing &amp;data_2_1_0, &amp;events handing over effect_2_1; Action: Finish branch 2/1. capturing data_2_1_0, effect_2_1 handing over step_2; Select: Choose work 3. capturing &amp;step_2, &amp;config; Case: First. handing over case_3_0; Case: Second. handing over case_3_1; Case: Third. handing over case_3_2; Action: Prepare branch 3/0. capturing case_3_0, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_0; Action: Record branch 3/0. capturing &amp;data_3_0, &amp;events handing over effect_3_0; Action: Finish branch 3/0. capturing data_3_0, effect_3_0 handing over step_3; Action: Prepare branch 3/1. capturing case_3_1, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_1; Call: Transform branch 3/1/0. capturing data_3_1 handing over data_3_1_0; Action: Record branch 3/1. capturing &amp;data_3_1_0, &amp;events handing over effect_3_1; Action: Finish branch 3/1. capturing data_3_1_0, effect_3_1 handing over step_3; Action: Prepare branch 3/2. capturing case_3_2, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_2; Call: Transform branch 3/2/0. capturing data_3_2 handing over data_3_2_0; Call: Transform branch 3/2/1. capturing data_3_2_0 handing over data_3_2_1; Action: Record branch 3/2. capturing &amp;data_3_2_1, &amp;events handing over effect_3_2; Action: Finish branch 3/2. capturing data_3_2_1, effect_3_2 handing over step_3; Question: Choose work 4. capturing &amp;step_3, &amp;config handing over case_4_0 / case_4_1; Action: Prepare branch 4/0. capturing case_4_0, &amp;step_3, &amp;config, &amp;step_1 handing over data_4_0; Action: Record branch 4/0. capturing &amp;data_4_0, &amp;events handing over effect_4_0; Action: Finish branch 4/0. capturing data_4_0, effect_4_0 handing over step_4; Action: Prepare branch 4/1. capturing case_4_1, &amp;step_3, &amp;config, &amp;step_1 handing over data_4_1; Call: Transform branch 4/1/0. capturing data_4_1 handing over data_4_1_0; Action: Record branch 4/1. capturing &amp;data_4_1_0, &amp;events handing over effect_4_1; Action: Finish branch 4/1. capturing data_4_1_0, effect_4_1 handing over step_4; Question: Which result? capturing &amp;step_4, &amp;config handing over pick_left / pick_right; Action: Left result. capturing pick_left, step_4 handing over left; Action: Right result. capturing pick_right, step_4 handing over right; Action: Use the left result. capturing left; Action: Use the right result. capturing right; Transition: Finish on the left.; Transition: Finish on the right.; Merge: step_0; Merge: step_1; Merge: step_2; Merge: step_3; Merge: step_4. Connections: Stage: Do more work. to Action: Reset the stage effects.; Action: Reset the stage effects. to the entry of the cycle; Question: Repeat? branch 1 to Action: Count the repeat.; Question: Repeat? branch 2 to Action: Prepare the seed.; Action: Count the repeat. to the iteration tail of the cycle; Action: Prepare the seed. to Question: Choose work 0.; Question: Choose work 0. branch 1 to Action: Prepare branch 0/0.; Question: Choose work 0. branch 2 to Action: Prepare branch 0/1.; Action: Prepare branch 0/0. to Action: Record branch 0/0.; Action: Record branch 0/0. to Action: Finish branch 0/0.; Action: Finish branch 0/0. to the step_0 merge; Action: Prepare branch 0/1. to Call: Transform branch 0/1/0.; Call: Transform branch 0/1/0. to Action: Record branch 0/1.; Action: Record branch 0/1. to Action: Finish branch 0/1.; Action: Finish branch 0/1. to the step_0 merge; Select: Choose work 1. to Case: First.; Select: Choose work 1. to Case: Second.; Select: Choose work 1. to Case: Third.; Case: First. to Action: Prepare branch 1/0.; Case: Second. to Action: Prepare branch 1/1.; Case: Third. to Action: Prepare branch 1/2.; Action: Prepare branch 1/0. to Action: Record branch 1/0.; Action: Record branch 1/0. to Action: Finish branch 1/0.; Action: Finish branch 1/0. to the step_1 merge; Action: Prepare branch 1/1. to Call: Transform branch 1/1/0.; Call: Transform branch 1/1/0. to Action: Record branch 1/1.; Action: Record branch 1/1. to Action: Finish branch 1/1.; Action: Finish branch 1/1. to the step_1 merge; Action: Prepare branch 1/2. to Call: Transform branch 1/2/0.; Call: Transform branch 1/2/0. to Call: Transform branch 1/2/1.; Call: Transform branch 1/2/1. to Action: Record branch 1/2.; Action: Record branch 1/2. to Action: Finish branch 1/2.; Action: Finish branch 1/2. to the step_1 merge; Question: Choose work 2. branch 1 to Action: Prepare branch 2/0.; Question: Choose work 2. branch 2 to Action: Prepare branch 2/1.; Action: Prepare branch 2/0. to Action: Record branch 2/0.; Action: Record branch 2/0. to Action: Finish branch 2/0.; Action: Finish branch 2/0. to the step_2 merge; Action: Prepare branch 2/1. to Call: Transform branch 2/1/0.; Call: Transform branch 2/1/0. to Action: Record branch 2/1.; Action: Record branch 2/1. to Action: Finish branch 2/1.; Action: Finish branch 2/1. to the step_2 merge; Select: Choose work 3. to Case: First.; Select: Choose work 3. to Case: Second.; Select: Choose work 3. to Case: Third.; Case: First. to Action: Prepare branch 3/0.; Case: Second. to Action: Prepare branch 3/1.; Case: Third. to Action: Prepare branch 3/2.; Action: Prepare branch 3/0. to Action: Record branch 3/0.; Action: Record branch 3/0. to Action: Finish branch 3/0.; Action: Finish branch 3/0. to the step_3 merge; Action: Prepare branch 3/1. to Call: Transform branch 3/1/0.; Call: Transform branch 3/1/0. to Action: Record branch 3/1.; Action: Record branch 3/1. to Action: Finish branch 3/1.; Action: Finish branch 3/1. to the step_3 merge; Action: Prepare branch 3/2. to Call: Transform branch 3/2/0.; Call: Transform branch 3/2/0. to Call: Transform branch 3/2/1.; Call: Transform branch 3/2/1. to Action: Record branch 3/2.; Action: Record branch 3/2. to Action: Finish branch 3/2.; Action: Finish branch 3/2. to the step_3 merge; Question: Choose work 4. branch 1 to Action: Prepare branch 4/0.; Question: Choose work 4. branch 2 to Action: Prepare branch 4/1.; Action: Prepare branch 4/0. to Action: Record branch 4/0.; Action: Record branch 4/0. to Action: Finish branch 4/0.; Action: Finish branch 4/0. to the step_4 merge; Action: Prepare branch 4/1. to Call: Transform branch 4/1/0.; Call: Transform branch 4/1/0. to Action: Record branch 4/1.; Action: Record branch 4/1. to Action: Finish branch 4/1.; Action: Finish branch 4/1. to the step_4 merge; Question: Which result? branch 1 to Action: Left result.; Question: Which result? branch 2 to Action: Right result.; Action: Left result. to the left result of the cycle; Action: Right result. to the right result of the cycle; Action: Use the left result. to Transition: Finish on the left.; Action: Use the right result. to Transition: Finish on the right.; the step_0 merge to Select: Choose work 1.; the step_1 merge to Question: Choose work 2.; the step_2 merge to Select: Choose work 3.; the step_3 merge to Question: Choose work 4.; the step_4 merge to Question: Which result?; the entry of the cycle to Question: Repeat?; the left result of the cycle to Action: Use the left result.; the right result of the cycle to Action: Use the right result.; Repeat from the iteration tail of the cycle to the entry of the cycle. Transition to stage finish_left. Transition to stage finish_right. Stage finish_left. Nodes: Stage: Finish on the left.; Action: Forward the left result. capturing finish_left; Transition: Finish on the right.. Connections: Stage: Finish on the left. to Action: Forward the left result.; Action: Forward the left result. to Transition: Finish on the right.. Transition to stage finish_right. Stage finish_right. Nodes: Stage: Finish on the right.; End: usize capturing finish_right. Connections: Stage: Finish on the right. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
+<g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
+<path d="M 232 5860 L 232 5928 "/>
+<path d="M 1427 212 L 1427 248 "/>
+<path d="M 1787 5860 L 1787 5928 "/>
+<path d="M 2147 5860 L 2147 5928 "/>
+<path d="M 2961 212 L 2961 248 "/>
+<path d="M 2961 5860 L 2961 5928 "/>
+<path d="M 3341 212 L 3341 248 "/>
+<path d="M 232 212 L 3341 212 "/>
+<path d="M 2961 5928 L 24 5928 L 24 212 L 232 212 " marker-end="url(#stage-return-arrow)"/>
+</g>
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="1111" height="5868" viewBox="0 0 1111 5868" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+  <title id="kaalang-part-0-title">kaalang diagram for staged_branching_with_work</title>
+  <desc id="kaalang-part-0-description">Nodes: Start: staged_branching_with_work with parameters seed: usize; config: usize; events: &amp;std::cell::Cell&lt;usize&gt;; remaining: &amp;std::cell::Cell&lt;usize&gt; handing over seed, config, events, remaining; Action: Prepare the seed. capturing seed handing over pre_prepared; Question: Choose work 0. capturing &amp;config handing over pre_case_0_0 / pre_case_0_1; Action: Prepare branch 0/0. capturing pre_case_0_0, &amp;pre_prepared, &amp;config handing over pre_data_0_0; Action: Record branch 0/0. capturing &amp;pre_data_0_0, &amp;events handing over pre_effect_0_0; Action: Finish branch 0/0. capturing pre_data_0_0, pre_effect_0_0 handing over pre_step_0; Action: Prepare branch 0/1. capturing pre_case_0_1, &amp;pre_prepared, &amp;config handing over pre_data_0_1; Call: Transform branch 0/1/0. capturing pre_data_0_1 handing over pre_data_0_1_0; Action: Record branch 0/1. capturing &amp;pre_data_0_1_0, &amp;events handing over pre_effect_0_1; Action: Finish branch 0/1. capturing pre_data_0_1_0, pre_effect_0_1 handing over pre_step_0; Select: Choose work 1. capturing &amp;config; Case: First. handing over pre_case_1_0; Case: Second. handing over pre_case_1_1; Case: Third. handing over pre_case_1_2; Action: Prepare branch 1/0. capturing pre_case_1_0, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_0; Action: Record branch 1/0. capturing &amp;pre_data_1_0, &amp;events handing over pre_effect_1_0; Action: Finish branch 1/0. capturing pre_data_1_0, pre_effect_1_0 handing over pre_step_1; Action: Prepare branch 1/1. capturing pre_case_1_1, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_1; Call: Transform branch 1/1/0. capturing pre_data_1_1 handing over pre_data_1_1_0; Action: Record branch 1/1. capturing &amp;pre_data_1_1_0, &amp;events handing over pre_effect_1_1; Action: Finish branch 1/1. capturing pre_data_1_1_0, pre_effect_1_1 handing over pre_step_1; Action: Prepare branch 1/2. capturing pre_case_1_2, &amp;pre_step_0, &amp;config, &amp;pre_prepared handing over pre_data_1_2; Call: Transform branch 1/2/0. capturing pre_data_1_2 handing over pre_data_1_2_0; Call: Transform branch 1/2/1. capturing pre_data_1_2_0 handing over pre_data_1_2_1; Action: Record branch 1/2. capturing &amp;pre_data_1_2_1, &amp;events handing over pre_effect_1_2; Action: Finish branch 1/2. capturing pre_data_1_2_1, pre_effect_1_2 handing over pre_step_1; Question: Choose work 2. capturing &amp;config handing over pre_case_2_0 / pre_case_2_1; Action: Prepare branch 2/0. capturing pre_case_2_0, &amp;pre_step_1, &amp;config, &amp;pre_step_0 handing over pre_data_2_0; Action: Record branch 2/0. capturing &amp;pre_data_2_0, &amp;events handing over pre_effect_2_0; Action: Finish branch 2/0. capturing pre_data_2_0, pre_effect_2_0 handing over pre_step_2; Action: Prepare branch 2/1. capturing pre_case_2_1, &amp;pre_step_1, &amp;config, &amp;pre_step_0 handing over pre_data_2_1; Call: Transform branch 2/1/0. capturing pre_data_2_1 handing over pre_data_2_1_0; Action: Record branch 2/1. capturing &amp;pre_data_2_1_0, &amp;events handing over pre_effect_2_1; Action: Finish branch 2/1. capturing pre_data_2_1_0, pre_effect_2_1 handing over pre_step_2; Select: Choose work 3. capturing &amp;config; Case: First. handing over pre_case_3_0; Case: Second. handing over pre_case_3_1; Case: Third. handing over pre_case_3_2; Action: Prepare branch 3/0. capturing pre_case_3_0, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_0; Action: Record branch 3/0. capturing &amp;pre_data_3_0, &amp;events handing over pre_effect_3_0; Action: Finish branch 3/0. capturing pre_data_3_0, pre_effect_3_0 handing over pre_step_3; Action: Prepare branch 3/1. capturing pre_case_3_1, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_1; Call: Transform branch 3/1/0. capturing pre_data_3_1 handing over pre_data_3_1_0; Action: Record branch 3/1. capturing &amp;pre_data_3_1_0, &amp;events handing over pre_effect_3_1; Action: Finish branch 3/1. capturing pre_data_3_1_0, pre_effect_3_1 handing over pre_step_3; Action: Prepare branch 3/2. capturing pre_case_3_2, &amp;pre_step_2, &amp;config, &amp;pre_step_0 handing over pre_data_3_2; Call: Transform branch 3/2/0. capturing pre_data_3_2 handing over pre_data_3_2_0; Call: Transform branch 3/2/1. capturing pre_data_3_2_0 handing over pre_data_3_2_1; Action: Record branch 3/2. capturing &amp;pre_data_3_2_1, &amp;events handing over pre_effect_3_2; Action: Finish branch 3/2. capturing pre_data_3_2_1, pre_effect_3_2 handing over pre_step_3; Question: Choose work 4. capturing &amp;config handing over pre_case_4_0 / pre_case_4_1; Action: Prepare branch 4/0. capturing pre_case_4_0, &amp;pre_step_3, &amp;config, &amp;pre_step_1 handing over pre_data_4_0; Action: Record branch 4/0. capturing &amp;pre_data_4_0, &amp;events handing over pre_effect_4_0; Action: Finish branch 4/0. capturing pre_data_4_0, pre_effect_4_0 handing over pre_step_4; Action: Prepare branch 4/1. capturing pre_case_4_1, &amp;pre_step_3, &amp;config, &amp;pre_step_1 handing over pre_data_4_1; Call: Transform branch 4/1/0. capturing pre_data_4_1 handing over pre_data_4_1_0; Action: Record branch 4/1. capturing &amp;pre_data_4_1_0, &amp;events handing over pre_effect_4_1; Action: Finish branch 4/1. capturing pre_data_4_1_0, pre_effect_4_1 handing over pre_step_4; Action: Enter the work stage. capturing pre_step_4; Transition: Do more work.; Merge: pre_step_0; Merge: pre_step_1; Merge: pre_step_2; Merge: pre_step_3; Merge: pre_step_4. Connections: Start: staged_branching_with_work to Action: Prepare the seed.; Action: Prepare the seed. to Question: Choose work 0.; Question: Choose work 0. branch 1 to Action: Prepare branch 0/0.; Question: Choose work 0. branch 2 to Action: Prepare branch 0/1.; Action: Prepare branch 0/0. to Action: Record branch 0/0.; Action: Record branch 0/0. to Action: Finish branch 0/0.; Action: Finish branch 0/0. to the pre_step_0 merge; Action: Prepare branch 0/1. to Call: Transform branch 0/1/0.; Call: Transform branch 0/1/0. to Action: Record branch 0/1.; Action: Record branch 0/1. to Action: Finish branch 0/1.; Action: Finish branch 0/1. to the pre_step_0 merge; Select: Choose work 1. to Case: First.; Select: Choose work 1. to Case: Second.; Select: Choose work 1. to Case: Third.; Case: First. to Action: Prepare branch 1/0.; Case: Second. to Action: Prepare branch 1/1.; Case: Third. to Action: Prepare branch 1/2.; Action: Prepare branch 1/0. to Action: Record branch 1/0.; Action: Record branch 1/0. to Action: Finish branch 1/0.; Action: Finish branch 1/0. to the pre_step_1 merge; Action: Prepare branch 1/1. to Call: Transform branch 1/1/0.; Call: Transform branch 1/1/0. to Action: Record branch 1/1.; Action: Record branch 1/1. to Action: Finish branch 1/1.; Action: Finish branch 1/1. to the pre_step_1 merge; Action: Prepare branch 1/2. to Call: Transform branch 1/2/0.; Call: Transform branch 1/2/0. to Call: Transform branch 1/2/1.; Call: Transform branch 1/2/1. to Action: Record branch 1/2.; Action: Record branch 1/2. to Action: Finish branch 1/2.; Action: Finish branch 1/2. to the pre_step_1 merge; Question: Choose work 2. branch 1 to Action: Prepare branch 2/0.; Question: Choose work 2. branch 2 to Action: Prepare branch 2/1.; Action: Prepare branch 2/0. to Action: Record branch 2/0.; Action: Record branch 2/0. to Action: Finish branch 2/0.; Action: Finish branch 2/0. to the pre_step_2 merge; Action: Prepare branch 2/1. to Call: Transform branch 2/1/0.; Call: Transform branch 2/1/0. to Action: Record branch 2/1.; Action: Record branch 2/1. to Action: Finish branch 2/1.; Action: Finish branch 2/1. to the pre_step_2 merge; Select: Choose work 3. to Case: First.; Select: Choose work 3. to Case: Second.; Select: Choose work 3. to Case: Third.; Case: First. to Action: Prepare branch 3/0.; Case: Second. to Action: Prepare branch 3/1.; Case: Third. to Action: Prepare branch 3/2.; Action: Prepare branch 3/0. to Action: Record branch 3/0.; Action: Record branch 3/0. to Action: Finish branch 3/0.; Action: Finish branch 3/0. to the pre_step_3 merge; Action: Prepare branch 3/1. to Call: Transform branch 3/1/0.; Call: Transform branch 3/1/0. to Action: Record branch 3/1.; Action: Record branch 3/1. to Action: Finish branch 3/1.; Action: Finish branch 3/1. to the pre_step_3 merge; Action: Prepare branch 3/2. to Call: Transform branch 3/2/0.; Call: Transform branch 3/2/0. to Call: Transform branch 3/2/1.; Call: Transform branch 3/2/1. to Action: Record branch 3/2.; Action: Record branch 3/2. to Action: Finish branch 3/2.; Action: Finish branch 3/2. to the pre_step_3 merge; Question: Choose work 4. branch 1 to Action: Prepare branch 4/0.; Question: Choose work 4. branch 2 to Action: Prepare branch 4/1.; Action: Prepare branch 4/0. to Action: Record branch 4/0.; Action: Record branch 4/0. to Action: Finish branch 4/0.; Action: Finish branch 4/0. to the pre_step_4 merge; Action: Prepare branch 4/1. to Call: Transform branch 4/1/0.; Call: Transform branch 4/1/0. to Action: Record branch 4/1.; Action: Record branch 4/1. to Action: Finish branch 4/1.; Action: Finish branch 4/1. to the pre_step_4 merge; Action: Enter the work stage. to Transition: Do more work.; the pre_step_0 merge to Select: Choose work 1.; the pre_step_1 merge to Question: Choose work 2.; the pre_step_2 merge to Select: Choose work 3.; the pre_step_3 merge to Question: Choose work 4.; the pre_step_4 merge to Action: Enter the work stage..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 121 L 172 224
+      M 172 288 L 172 360
+      M 172 432 L 172 511
+      M 312 396 L 532 396 L 532 511
+      M 172 575 L 172 647
+      M 172 711 L 172 783
+      M 172 847 L 172 1066
+      M 532 575 L 532 647
+      M 532 711 L 532 783
+      M 532 847 L 532 926
+      M 532 990 L 532 1066 L 172 1066
+      M 172 1214 L 172 1286
+      M 300 1178 L 532 1178 L 532 1286
+      M 300 1178 L 892 1178 L 892 1286
+      M 172 1356 L 172 1435
+      M 532 1356 L 532 1435
+      M 892 1356 L 892 1435
+      M 172 1499 L 172 1571
+      M 172 1635 L 172 1707
+      M 172 1771 L 172 2133
+      M 532 1499 L 532 1571
+      M 532 1635 L 532 1707
+      M 532 1771 L 532 1850
+      M 532 1914 L 532 2133 L 172 2133
+      M 892 1499 L 892 1571
+      M 892 1635 L 892 1707
+      M 892 1771 L 892 1850
+      M 892 1914 L 892 1993
+      M 892 2057 L 892 2133 L 172 2133
+      M 172 2281 L 172 2360
+      M 312 2245 L 532 2245 L 532 2360
+      M 172 2424 L 172 2496
+      M 172 2560 L 172 2632
+      M 172 2696 L 172 2915
+      M 532 2424 L 532 2496
+      M 532 2560 L 532 2632
+      M 532 2696 L 532 2775
+      M 532 2839 L 532 2915 L 172 2915
+      M 172 3063 L 172 3135
+      M 300 3027 L 532 3027 L 532 3135
+      M 300 3027 L 892 3027 L 892 3135
+      M 172 3205 L 172 3284
+      M 532 3205 L 532 3284
+      M 892 3205 L 892 3284
+      M 172 3348 L 172 3420
+      M 172 3484 L 172 3556
+      M 172 3620 L 172 3982
+      M 532 3348 L 532 3420
+      M 532 3484 L 532 3556
+      M 532 3620 L 532 3699
+      M 532 3763 L 532 3982 L 172 3982
+      M 892 3348 L 892 3420
+      M 892 3484 L 892 3556
+      M 892 3620 L 892 3699
+      M 892 3763 L 892 3842
+      M 892 3906 L 892 3982 L 172 3982
+      M 172 4130 L 172 4209
+      M 312 4094 L 532 4094 L 532 4209
+      M 172 4273 L 172 4345
+      M 172 4409 L 172 4481
+      M 172 4545 L 172 4764
+      M 532 4273 L 532 4345
+      M 532 4409 L 532 4481
+      M 532 4545 L 532 4624
+      M 532 4688 L 532 4764 L 172 4764
+      M 172 4904 L 172 5766
+      M 172 1066 L 172 1142
+      M 172 2133 L 172 2209
+      M 172 2915 L 172 2991
+      M 172 3982 L 172 4058
+      M 172 4764 L 172 4840
+    "/>
+    <text class="connection-label" x="185" y="1084" xml:space="preserve"><tspan x="185" dy="0">pre_step_0</tspan></text>
+    <text class="connection-label" x="185" y="2151" xml:space="preserve"><tspan x="185" dy="0">pre_step_1</tspan></text>
+    <text class="connection-label" x="185" y="2933" xml:space="preserve"><tspan x="185" dy="0">pre_step_2</tspan></text>
+    <text class="connection-label" x="185" y="4000" xml:space="preserve"><tspan x="185" dy="0">pre_step_3</tspan></text>
+    <text class="connection-label" x="185" y="4782" xml:space="preserve"><tspan x="185" dy="0">pre_step_4</tspan></text>
+    <text class="connection-label" x="545" y="636" xml:space="preserve"><tspan x="545" dy="0">pre_data_0_1</tspan></text>
+    <text class="connection-label" x="545" y="1560" xml:space="preserve"><tspan x="545" dy="0">pre_data_1_1</tspan></text>
+    <text class="connection-label" x="905" y="1560" xml:space="preserve"><tspan x="905" dy="0">pre_data_1_2</tspan></text>
+    <text class="connection-label" x="905" y="1696" xml:space="preserve"><tspan x="905" dy="0">pre_data_1_2_0</tspan></text>
+    <text class="connection-label" x="545" y="2485" xml:space="preserve"><tspan x="545" dy="0">pre_data_2_1</tspan></text>
+    <text class="connection-label" x="545" y="3409" xml:space="preserve"><tspan x="545" dy="0">pre_data_3_1</tspan></text>
+    <text class="connection-label" x="905" y="3409" xml:space="preserve"><tspan x="905" dy="0">pre_data_3_2</tspan></text>
+    <text class="connection-label" x="905" y="3545" xml:space="preserve"><tspan x="905" dy="0">pre_data_3_2_0</tspan></text>
+    <text class="connection-label" x="545" y="4334" xml:space="preserve"><tspan x="545" dy="0">pre_data_4_1</tspan></text>
+    <text class="connection-label" x="185" y="139" xml:space="preserve"><tspan x="185" dy="0">seed, config, events, remaining</tspan></text>
+    <text class="connection-label" x="185" y="306" xml:space="preserve"><tspan x="185" dy="0">pre_prepared</tspan></text>
+    <text class="connection-label" x="185" y="450" xml:space="preserve"><tspan x="185" dy="0">pre_case_0_0</tspan></text>
+    <text class="connection-label" x="325" y="414" xml:space="preserve"><tspan x="325" dy="0">pre_case_0_1</tspan></text>
+    <text class="connection-label" x="185" y="593" xml:space="preserve"><tspan x="185" dy="0">pre_data_0_0</tspan></text>
+    <text class="connection-label" x="185" y="729" xml:space="preserve"><tspan x="185" dy="0">pre_effect_0_0</tspan></text>
+    <text class="connection-label" x="545" y="729" xml:space="preserve"><tspan x="545" dy="0">pre_data_0_1_0</tspan></text>
+    <text class="connection-label" x="545" y="865" xml:space="preserve"><tspan x="545" dy="0">pre_effect_0_1</tspan></text>
+    <text class="connection-label" x="185" y="1374" xml:space="preserve"><tspan x="185" dy="0">pre_case_1_0</tspan></text>
+    <text class="connection-label" x="545" y="1374" xml:space="preserve"><tspan x="545" dy="0">pre_case_1_1</tspan></text>
+    <text class="connection-label" x="905" y="1374" xml:space="preserve"><tspan x="905" dy="0">pre_case_1_2</tspan></text>
+    <text class="connection-label" x="185" y="1517" xml:space="preserve"><tspan x="185" dy="0">pre_data_1_0</tspan></text>
+    <text class="connection-label" x="185" y="1653" xml:space="preserve"><tspan x="185" dy="0">pre_effect_1_0</tspan></text>
+    <text class="connection-label" x="545" y="1653" xml:space="preserve"><tspan x="545" dy="0">pre_data_1_1_0</tspan></text>
+    <text class="connection-label" x="545" y="1789" xml:space="preserve"><tspan x="545" dy="0">pre_effect_1_1</tspan></text>
+    <text class="connection-label" x="905" y="1789" xml:space="preserve"><tspan x="905" dy="0">pre_data_1_2_1</tspan></text>
+    <text class="connection-label" x="905" y="1932" xml:space="preserve"><tspan x="905" dy="0">pre_effect_1_2</tspan></text>
+    <text class="connection-label" x="185" y="2299" xml:space="preserve"><tspan x="185" dy="0">pre_case_2_0</tspan></text>
+    <text class="connection-label" x="325" y="2263" xml:space="preserve"><tspan x="325" dy="0">pre_case_2_1</tspan></text>
+    <text class="connection-label" x="185" y="2442" xml:space="preserve"><tspan x="185" dy="0">pre_data_2_0</tspan></text>
+    <text class="connection-label" x="185" y="2578" xml:space="preserve"><tspan x="185" dy="0">pre_effect_2_0</tspan></text>
+    <text class="connection-label" x="545" y="2578" xml:space="preserve"><tspan x="545" dy="0">pre_data_2_1_0</tspan></text>
+    <text class="connection-label" x="545" y="2714" xml:space="preserve"><tspan x="545" dy="0">pre_effect_2_1</tspan></text>
+    <text class="connection-label" x="185" y="3223" xml:space="preserve"><tspan x="185" dy="0">pre_case_3_0</tspan></text>
+    <text class="connection-label" x="545" y="3223" xml:space="preserve"><tspan x="545" dy="0">pre_case_3_1</tspan></text>
+    <text class="connection-label" x="905" y="3223" xml:space="preserve"><tspan x="905" dy="0">pre_case_3_2</tspan></text>
+    <text class="connection-label" x="185" y="3366" xml:space="preserve"><tspan x="185" dy="0">pre_data_3_0</tspan></text>
+    <text class="connection-label" x="185" y="3502" xml:space="preserve"><tspan x="185" dy="0">pre_effect_3_0</tspan></text>
+    <text class="connection-label" x="545" y="3502" xml:space="preserve"><tspan x="545" dy="0">pre_data_3_1_0</tspan></text>
+    <text class="connection-label" x="545" y="3638" xml:space="preserve"><tspan x="545" dy="0">pre_effect_3_1</tspan></text>
+    <text class="connection-label" x="905" y="3638" xml:space="preserve"><tspan x="905" dy="0">pre_data_3_2_1</tspan></text>
+    <text class="connection-label" x="905" y="3781" xml:space="preserve"><tspan x="905" dy="0">pre_effect_3_2</tspan></text>
+    <text class="connection-label" x="185" y="4148" xml:space="preserve"><tspan x="185" dy="0">pre_case_4_0</tspan></text>
+    <text class="connection-label" x="325" y="4112" xml:space="preserve"><tspan x="325" dy="0">pre_case_4_1</tspan></text>
+    <text class="connection-label" x="185" y="4291" xml:space="preserve"><tspan x="185" dy="0">pre_data_4_0</tspan></text>
+    <text class="connection-label" x="185" y="4427" xml:space="preserve"><tspan x="185" dy="0">pre_effect_4_0</tspan></text>
+    <text class="connection-label" x="545" y="4427" xml:space="preserve"><tspan x="545" dy="0">pre_data_4_1_0</tspan></text>
+    <text class="connection-label" x="545" y="4563" xml:space="preserve"><tspan x="545" dy="0">pre_effect_4_1</tspan></text>
+    <text class="connection-label" x="185" y="213" xml:space="preserve"><tspan x="185" dy="0">seed</tspan></text>
+    <text class="connection-label" x="185" y="349" xml:space="preserve"><tspan x="185" dy="0">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="486" xml:space="preserve"><tspan x="185" dy="0">pre_case_0_0, &amp;pre_prepared, </tspan><tspan x="185" dy="14">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="636" xml:space="preserve"><tspan x="185" dy="0">&amp;pre_data_0_0, &amp;events</tspan></text>
+    <text class="connection-label" x="185" y="772" xml:space="preserve"><tspan x="185" dy="0">pre_data_0_0, pre_effect_0_0</tspan></text>
+    <text class="connection-label" x="545" y="486" xml:space="preserve"><tspan x="545" dy="0">pre_case_0_1, &amp;pre_prepared, </tspan><tspan x="545" dy="14">&amp;config</tspan></text>
+    <text class="connection-label" x="545" y="772" xml:space="preserve"><tspan x="545" dy="0">&amp;pre_data_0_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="545" y="901" xml:space="preserve"><tspan x="545" dy="0">pre_data_0_1_0, </tspan><tspan x="545" dy="14">pre_effect_0_1</tspan></text>
+    <text class="connection-label" x="185" y="1131" xml:space="preserve"><tspan x="185" dy="0">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="1410" xml:space="preserve"><tspan x="185" dy="0">pre_case_1_0, &amp;pre_step_0, </tspan><tspan x="185" dy="14">&amp;config, &amp;pre_prepared</tspan></text>
+    <text class="connection-label" x="185" y="1560" xml:space="preserve"><tspan x="185" dy="0">&amp;pre_data_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="185" y="1696" xml:space="preserve"><tspan x="185" dy="0">pre_data_1_0, pre_effect_1_0</tspan></text>
+    <text class="connection-label" x="545" y="1410" xml:space="preserve"><tspan x="545" dy="0">pre_case_1_1, &amp;pre_step_0, </tspan><tspan x="545" dy="14">&amp;config, &amp;pre_prepared</tspan></text>
+    <text class="connection-label" x="545" y="1696" xml:space="preserve"><tspan x="545" dy="0">&amp;pre_data_1_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="545" y="1825" xml:space="preserve"><tspan x="545" dy="0">pre_data_1_1_0, </tspan><tspan x="545" dy="14">pre_effect_1_1</tspan></text>
+    <text class="connection-label" x="905" y="1410" xml:space="preserve"><tspan x="905" dy="0">pre_case_1_2, &amp;pre_step_0, </tspan><tspan x="905" dy="14">&amp;config, &amp;pre_prepared</tspan></text>
+    <text class="connection-label" x="905" y="1839" xml:space="preserve"><tspan x="905" dy="0">&amp;pre_data_1_2_1, &amp;events</tspan></text>
+    <text class="connection-label" x="905" y="1968" xml:space="preserve"><tspan x="905" dy="0">pre_data_1_2_1, </tspan><tspan x="905" dy="14">pre_effect_1_2</tspan></text>
+    <text class="connection-label" x="185" y="2198" xml:space="preserve"><tspan x="185" dy="0">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="2335" xml:space="preserve"><tspan x="185" dy="0">pre_case_2_0, &amp;pre_step_1, </tspan><tspan x="185" dy="14">&amp;config, &amp;pre_step_0</tspan></text>
+    <text class="connection-label" x="185" y="2485" xml:space="preserve"><tspan x="185" dy="0">&amp;pre_data_2_0, &amp;events</tspan></text>
+    <text class="connection-label" x="185" y="2621" xml:space="preserve"><tspan x="185" dy="0">pre_data_2_0, pre_effect_2_0</tspan></text>
+    <text class="connection-label" x="545" y="2335" xml:space="preserve"><tspan x="545" dy="0">pre_case_2_1, &amp;pre_step_1, </tspan><tspan x="545" dy="14">&amp;config, &amp;pre_step_0</tspan></text>
+    <text class="connection-label" x="545" y="2621" xml:space="preserve"><tspan x="545" dy="0">&amp;pre_data_2_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="545" y="2750" xml:space="preserve"><tspan x="545" dy="0">pre_data_2_1_0, </tspan><tspan x="545" dy="14">pre_effect_2_1</tspan></text>
+    <text class="connection-label" x="185" y="2980" xml:space="preserve"><tspan x="185" dy="0">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="3259" xml:space="preserve"><tspan x="185" dy="0">pre_case_3_0, &amp;pre_step_2, </tspan><tspan x="185" dy="14">&amp;config, &amp;pre_step_0</tspan></text>
+    <text class="connection-label" x="185" y="3409" xml:space="preserve"><tspan x="185" dy="0">&amp;pre_data_3_0, &amp;events</tspan></text>
+    <text class="connection-label" x="185" y="3545" xml:space="preserve"><tspan x="185" dy="0">pre_data_3_0, pre_effect_3_0</tspan></text>
+    <text class="connection-label" x="545" y="3259" xml:space="preserve"><tspan x="545" dy="0">pre_case_3_1, &amp;pre_step_2, </tspan><tspan x="545" dy="14">&amp;config, &amp;pre_step_0</tspan></text>
+    <text class="connection-label" x="545" y="3545" xml:space="preserve"><tspan x="545" dy="0">&amp;pre_data_3_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="545" y="3674" xml:space="preserve"><tspan x="545" dy="0">pre_data_3_1_0, </tspan><tspan x="545" dy="14">pre_effect_3_1</tspan></text>
+    <text class="connection-label" x="905" y="3259" xml:space="preserve"><tspan x="905" dy="0">pre_case_3_2, &amp;pre_step_2, </tspan><tspan x="905" dy="14">&amp;config, &amp;pre_step_0</tspan></text>
+    <text class="connection-label" x="905" y="3688" xml:space="preserve"><tspan x="905" dy="0">&amp;pre_data_3_2_1, &amp;events</tspan></text>
+    <text class="connection-label" x="905" y="3817" xml:space="preserve"><tspan x="905" dy="0">pre_data_3_2_1, </tspan><tspan x="905" dy="14">pre_effect_3_2</tspan></text>
+    <text class="connection-label" x="185" y="4047" xml:space="preserve"><tspan x="185" dy="0">&amp;config</tspan></text>
+    <text class="connection-label" x="185" y="4184" xml:space="preserve"><tspan x="185" dy="0">pre_case_4_0, &amp;pre_step_3, </tspan><tspan x="185" dy="14">&amp;config, &amp;pre_step_1</tspan></text>
+    <text class="connection-label" x="185" y="4334" xml:space="preserve"><tspan x="185" dy="0">&amp;pre_data_4_0, &amp;events</tspan></text>
+    <text class="connection-label" x="185" y="4470" xml:space="preserve"><tspan x="185" dy="0">pre_data_4_0, pre_effect_4_0</tspan></text>
+    <text class="connection-label" x="545" y="4184" xml:space="preserve"><tspan x="545" dy="0">pre_case_4_1, &amp;pre_step_3, </tspan><tspan x="545" dy="14">&amp;config, &amp;pre_step_1</tspan></text>
+    <text class="connection-label" x="545" y="4470" xml:space="preserve"><tspan x="545" dy="0">&amp;pre_data_4_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="545" y="4599" xml:space="preserve"><tspan x="545" dy="0">pre_data_4_1_0, </tspan><tspan x="545" dy="14">pre_effect_4_1</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 92 L 408 92"/>
+    <g class="parameter-panel" transform="translate(528 92)">
+      <rect class="node-shape" x="-120" y="-60" width="240" height="120"/>
+      <text class="label" x="-104" y="-30" xml:space="preserve"><tspan x="-104" dy="0">seed: usize</tspan><tspan x="-104" dy="18">config: usize</tspan><tspan x="-104" dy="18">events: &amp;std::cell::Cell&lt;usize&gt;</tspan><tspan x="-104" dy="18">remaining: </tspan><tspan x="-104" dy="18">&amp;std::cell::Cell&lt;usize&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 1066)">
+      <title xml:space="preserve">the pre_step_0 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 2133)">
+      <title xml:space="preserve">the pre_step_1 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 2915)">
+      <title xml:space="preserve">the pre_step_2 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 3982)">
+      <title xml:space="preserve">the pre_step_3 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 4764)">
+      <title xml:space="preserve">the pre_step_4 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 92)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">staged_branching_with_work</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 256)">
+      <title xml:space="preserve">Prepare the seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the seed.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 396)">
+      <title xml:space="preserve">Choose work 0.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 543)">
+      <title xml:space="preserve">Prepare branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 679)">
+      <title xml:space="preserve">Record branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 815)">
+      <title xml:space="preserve">Finish branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 543)">
+      <title xml:space="preserve">Prepare branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 0/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(532 679)">
+      <title xml:space="preserve">Transform branch 0/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 0/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 815)">
+      <title xml:space="preserve">Record branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 0/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 958)">
+      <title xml:space="preserve">Finish branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 0/1.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 1178)">
+      <title xml:space="preserve">Choose work 1.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 1.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 1321)">
+      <title xml:space="preserve">First.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 1321)">
+      <title xml:space="preserve">Second.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 1321)">
+      <title xml:space="preserve">Third.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1467)">
+      <title xml:space="preserve">Prepare branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1603)">
+      <title xml:space="preserve">Record branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1739)">
+      <title xml:space="preserve">Finish branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1467)">
+      <title xml:space="preserve">Prepare branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(532 1603)">
+      <title xml:space="preserve">Transform branch 1/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1739)">
+      <title xml:space="preserve">Record branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1882)">
+      <title xml:space="preserve">Finish branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 1467)">
+      <title xml:space="preserve">Prepare branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/2.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(892 1603)">
+      <title xml:space="preserve">Transform branch 1/2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/2/0.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(892 1739)">
+      <title xml:space="preserve">Transform branch 1/2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 1882)">
+      <title xml:space="preserve">Record branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 2025)">
+      <title xml:space="preserve">Finish branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/2.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 2245)">
+      <title xml:space="preserve">Choose work 2.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 2392)">
+      <title xml:space="preserve">Prepare branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 2528)">
+      <title xml:space="preserve">Record branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 2664)">
+      <title xml:space="preserve">Finish branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 2392)">
+      <title xml:space="preserve">Prepare branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 2/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(532 2528)">
+      <title xml:space="preserve">Transform branch 2/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 2/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 2664)">
+      <title xml:space="preserve">Record branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 2807)">
+      <title xml:space="preserve">Finish branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 2/1.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 3027)">
+      <title xml:space="preserve">Choose work 3.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 3.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 3170)">
+      <title xml:space="preserve">First.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 3170)">
+      <title xml:space="preserve">Second.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 3170)">
+      <title xml:space="preserve">Third.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 3316)">
+      <title xml:space="preserve">Prepare branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 3452)">
+      <title xml:space="preserve">Record branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 3588)">
+      <title xml:space="preserve">Finish branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 3316)">
+      <title xml:space="preserve">Prepare branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(532 3452)">
+      <title xml:space="preserve">Transform branch 3/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 3588)">
+      <title xml:space="preserve">Record branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 3731)">
+      <title xml:space="preserve">Finish branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 3316)">
+      <title xml:space="preserve">Prepare branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/2.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(892 3452)">
+      <title xml:space="preserve">Transform branch 3/2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/2/0.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(892 3588)">
+      <title xml:space="preserve">Transform branch 3/2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 3731)">
+      <title xml:space="preserve">Record branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 3874)">
+      <title xml:space="preserve">Finish branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/2.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 4094)">
+      <title xml:space="preserve">Choose work 4.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 4.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 4241)">
+      <title xml:space="preserve">Prepare branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 4377)">
+      <title xml:space="preserve">Record branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 4513)">
+      <title xml:space="preserve">Finish branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 4241)">
+      <title xml:space="preserve">Prepare branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 4/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(532 4377)">
+      <title xml:space="preserve">Transform branch 4/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 4/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 4513)">
+      <title xml:space="preserve">Record branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 4/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 4656)">
+      <title xml:space="preserve">Finish branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 4/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 4872)">
+      <title xml:space="preserve">Enter the work stage.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Enter the work stage.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 5801)">
+      <title xml:space="preserve">Do more work.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Do more work.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(1207 216)"><svg xmlns="http://www.w3.org/2000/svg" width="1546" height="5676" viewBox="0 0 1546 5676" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+  <title id="kaalang-part-1-title">kaalang diagram for staged_branching_with_work</title>
+  <desc id="kaalang-part-1-description">Cycles: Repeat before working. with inputs reset, remaining, entry, config, events and outputs left or right. Nodes: Stage: Do more work.; Action: Reset the stage effects. capturing entry, &amp;events handing over reset; Question: Repeat? capturing &amp;remaining handing over again / work; Action: Count the repeat. capturing again, &amp;remaining handing over repeated; Action: Prepare the seed. capturing work, entry handing over prepared; Question: Choose work 0. capturing &amp;prepared, &amp;config handing over case_0_0 / case_0_1; Action: Prepare branch 0/0. capturing case_0_0, &amp;prepared, &amp;config handing over data_0_0; Action: Record branch 0/0. capturing &amp;data_0_0, &amp;events handing over effect_0_0; Action: Finish branch 0/0. capturing data_0_0, effect_0_0 handing over step_0; Action: Prepare branch 0/1. capturing case_0_1, &amp;prepared, &amp;config handing over data_0_1; Call: Transform branch 0/1/0. capturing data_0_1 handing over data_0_1_0; Action: Record branch 0/1. capturing &amp;data_0_1_0, &amp;events handing over effect_0_1; Action: Finish branch 0/1. capturing data_0_1_0, effect_0_1 handing over step_0; Select: Choose work 1. capturing &amp;step_0, &amp;config; Case: First. handing over case_1_0; Case: Second. handing over case_1_1; Case: Third. handing over case_1_2; Action: Prepare branch 1/0. capturing case_1_0, &amp;step_0, &amp;config, &amp;prepared handing over data_1_0; Action: Record branch 1/0. capturing &amp;data_1_0, &amp;events handing over effect_1_0; Action: Finish branch 1/0. capturing data_1_0, effect_1_0 handing over step_1; Action: Prepare branch 1/1. capturing case_1_1, &amp;step_0, &amp;config, &amp;prepared handing over data_1_1; Call: Transform branch 1/1/0. capturing data_1_1 handing over data_1_1_0; Action: Record branch 1/1. capturing &amp;data_1_1_0, &amp;events handing over effect_1_1; Action: Finish branch 1/1. capturing data_1_1_0, effect_1_1 handing over step_1; Action: Prepare branch 1/2. capturing case_1_2, &amp;step_0, &amp;config, &amp;prepared handing over data_1_2; Call: Transform branch 1/2/0. capturing data_1_2 handing over data_1_2_0; Call: Transform branch 1/2/1. capturing data_1_2_0 handing over data_1_2_1; Action: Record branch 1/2. capturing &amp;data_1_2_1, &amp;events handing over effect_1_2; Action: Finish branch 1/2. capturing data_1_2_1, effect_1_2 handing over step_1; Question: Choose work 2. capturing &amp;step_1, &amp;config handing over case_2_0 / case_2_1; Action: Prepare branch 2/0. capturing case_2_0, &amp;step_1, &amp;config, &amp;step_0 handing over data_2_0; Action: Record branch 2/0. capturing &amp;data_2_0, &amp;events handing over effect_2_0; Action: Finish branch 2/0. capturing data_2_0, effect_2_0 handing over step_2; Action: Prepare branch 2/1. capturing case_2_1, &amp;step_1, &amp;config, &amp;step_0 handing over data_2_1; Call: Transform branch 2/1/0. capturing data_2_1 handing over data_2_1_0; Action: Record branch 2/1. capturing &amp;data_2_1_0, &amp;events handing over effect_2_1; Action: Finish branch 2/1. capturing data_2_1_0, effect_2_1 handing over step_2; Select: Choose work 3. capturing &amp;step_2, &amp;config; Case: First. handing over case_3_0; Case: Second. handing over case_3_1; Case: Third. handing over case_3_2; Action: Prepare branch 3/0. capturing case_3_0, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_0; Action: Record branch 3/0. capturing &amp;data_3_0, &amp;events handing over effect_3_0; Action: Finish branch 3/0. capturing data_3_0, effect_3_0 handing over step_3; Action: Prepare branch 3/1. capturing case_3_1, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_1; Call: Transform branch 3/1/0. capturing data_3_1 handing over data_3_1_0; Action: Record branch 3/1. capturing &amp;data_3_1_0, &amp;events handing over effect_3_1; Action: Finish branch 3/1. capturing data_3_1_0, effect_3_1 handing over step_3; Action: Prepare branch 3/2. capturing case_3_2, &amp;step_2, &amp;config, &amp;step_0 handing over data_3_2; Call: Transform branch 3/2/0. capturing data_3_2 handing over data_3_2_0; Call: Transform branch 3/2/1. capturing data_3_2_0 handing over data_3_2_1; Action: Record branch 3/2. capturing &amp;data_3_2_1, &amp;events handing over effect_3_2; Action: Finish branch 3/2. capturing data_3_2_1, effect_3_2 handing over step_3; Question: Choose work 4. capturing &amp;step_3, &amp;config handing over case_4_0 / case_4_1; Action: Prepare branch 4/0. capturing case_4_0, &amp;step_3, &amp;config, &amp;step_1 handing over data_4_0; Action: Record branch 4/0. capturing &amp;data_4_0, &amp;events handing over effect_4_0; Action: Finish branch 4/0. capturing data_4_0, effect_4_0 handing over step_4; Action: Prepare branch 4/1. capturing case_4_1, &amp;step_3, &amp;config, &amp;step_1 handing over data_4_1; Call: Transform branch 4/1/0. capturing data_4_1 handing over data_4_1_0; Action: Record branch 4/1. capturing &amp;data_4_1_0, &amp;events handing over effect_4_1; Action: Finish branch 4/1. capturing data_4_1_0, effect_4_1 handing over step_4; Question: Which result? capturing &amp;step_4, &amp;config handing over pick_left / pick_right; Action: Left result. capturing pick_left, step_4 handing over left; Action: Right result. capturing pick_right, step_4 handing over right; Action: Use the left result. capturing left; Action: Use the right result. capturing right; Transition: Finish on the left.; Transition: Finish on the right.; Merge: step_0; Merge: step_1; Merge: step_2; Merge: step_3; Merge: step_4. Connections: Stage: Do more work. to Action: Reset the stage effects.; Action: Reset the stage effects. to the entry of the cycle; Question: Repeat? branch 1 to Action: Count the repeat.; Question: Repeat? branch 2 to Action: Prepare the seed.; Action: Count the repeat. to the iteration tail of the cycle; Action: Prepare the seed. to Question: Choose work 0.; Question: Choose work 0. branch 1 to Action: Prepare branch 0/0.; Question: Choose work 0. branch 2 to Action: Prepare branch 0/1.; Action: Prepare branch 0/0. to Action: Record branch 0/0.; Action: Record branch 0/0. to Action: Finish branch 0/0.; Action: Finish branch 0/0. to the step_0 merge; Action: Prepare branch 0/1. to Call: Transform branch 0/1/0.; Call: Transform branch 0/1/0. to Action: Record branch 0/1.; Action: Record branch 0/1. to Action: Finish branch 0/1.; Action: Finish branch 0/1. to the step_0 merge; Select: Choose work 1. to Case: First.; Select: Choose work 1. to Case: Second.; Select: Choose work 1. to Case: Third.; Case: First. to Action: Prepare branch 1/0.; Case: Second. to Action: Prepare branch 1/1.; Case: Third. to Action: Prepare branch 1/2.; Action: Prepare branch 1/0. to Action: Record branch 1/0.; Action: Record branch 1/0. to Action: Finish branch 1/0.; Action: Finish branch 1/0. to the step_1 merge; Action: Prepare branch 1/1. to Call: Transform branch 1/1/0.; Call: Transform branch 1/1/0. to Action: Record branch 1/1.; Action: Record branch 1/1. to Action: Finish branch 1/1.; Action: Finish branch 1/1. to the step_1 merge; Action: Prepare branch 1/2. to Call: Transform branch 1/2/0.; Call: Transform branch 1/2/0. to Call: Transform branch 1/2/1.; Call: Transform branch 1/2/1. to Action: Record branch 1/2.; Action: Record branch 1/2. to Action: Finish branch 1/2.; Action: Finish branch 1/2. to the step_1 merge; Question: Choose work 2. branch 1 to Action: Prepare branch 2/0.; Question: Choose work 2. branch 2 to Action: Prepare branch 2/1.; Action: Prepare branch 2/0. to Action: Record branch 2/0.; Action: Record branch 2/0. to Action: Finish branch 2/0.; Action: Finish branch 2/0. to the step_2 merge; Action: Prepare branch 2/1. to Call: Transform branch 2/1/0.; Call: Transform branch 2/1/0. to Action: Record branch 2/1.; Action: Record branch 2/1. to Action: Finish branch 2/1.; Action: Finish branch 2/1. to the step_2 merge; Select: Choose work 3. to Case: First.; Select: Choose work 3. to Case: Second.; Select: Choose work 3. to Case: Third.; Case: First. to Action: Prepare branch 3/0.; Case: Second. to Action: Prepare branch 3/1.; Case: Third. to Action: Prepare branch 3/2.; Action: Prepare branch 3/0. to Action: Record branch 3/0.; Action: Record branch 3/0. to Action: Finish branch 3/0.; Action: Finish branch 3/0. to the step_3 merge; Action: Prepare branch 3/1. to Call: Transform branch 3/1/0.; Call: Transform branch 3/1/0. to Action: Record branch 3/1.; Action: Record branch 3/1. to Action: Finish branch 3/1.; Action: Finish branch 3/1. to the step_3 merge; Action: Prepare branch 3/2. to Call: Transform branch 3/2/0.; Call: Transform branch 3/2/0. to Call: Transform branch 3/2/1.; Call: Transform branch 3/2/1. to Action: Record branch 3/2.; Action: Record branch 3/2. to Action: Finish branch 3/2.; Action: Finish branch 3/2. to the step_3 merge; Question: Choose work 4. branch 1 to Action: Prepare branch 4/0.; Question: Choose work 4. branch 2 to Action: Prepare branch 4/1.; Action: Prepare branch 4/0. to Action: Record branch 4/0.; Action: Record branch 4/0. to Action: Finish branch 4/0.; Action: Finish branch 4/0. to the step_4 merge; Action: Prepare branch 4/1. to Call: Transform branch 4/1/0.; Call: Transform branch 4/1/0. to Action: Record branch 4/1.; Action: Record branch 4/1. to Action: Finish branch 4/1.; Action: Finish branch 4/1. to the step_4 merge; Question: Which result? branch 1 to Action: Left result.; Question: Which result? branch 2 to Action: Right result.; Action: Left result. to the left result of the cycle; Action: Right result. to the right result of the cycle; Action: Use the left result. to Transition: Finish on the left.; Action: Use the right result. to Transition: Finish on the right.; the step_0 merge to Select: Choose work 1.; the step_1 merge to Question: Choose work 2.; the step_2 merge to Select: Choose work 3.; the step_3 merge to Question: Choose work 4.; the step_4 merge to Question: Which result?; the entry of the cycle to Question: Repeat?; the left result of the cycle to Action: Use the left result.; the right result of the cycle to Action: Use the right result.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Repeat before working.</title>
+    <rect class="cycle-boundary" x="32" y="275" width="1482" height="5126" rx="12"/>
+    <text class="cycle-caption" x="1502" y="289" text-anchor="end" xml:space="preserve"><tspan x="1502" dy="0">Repeat before working.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="kaalang-part-1-loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 220 102 L 220 174
+      M 220 238 L 220 310
+      M 220 454 L 220 526
+      M 360 418 L 580 418 L 580 526
+      M 220 590 L 220 698
+      M 580 590 L 580 662
+      M 580 734 L 580 806
+      M 720 698 L 940 698 L 940 806
+      M 580 870 L 580 942
+      M 580 1006 L 580 1078
+      M 580 1142 L 580 1354
+      M 940 870 L 940 942
+      M 940 1006 L 940 1078
+      M 940 1142 L 940 1214
+      M 940 1278 L 940 1354 L 580 1354
+      M 580 1502 L 580 1574
+      M 708 1466 L 940 1466 L 940 1574
+      M 708 1466 L 1300 1466 L 1300 1574
+      M 580 1644 L 580 1723
+      M 940 1644 L 940 1723
+      M 1300 1644 L 1300 1723
+      M 580 1787 L 580 1859
+      M 580 1923 L 580 1995
+      M 580 2059 L 580 2407
+      M 940 1787 L 940 1859
+      M 940 1923 L 940 1995
+      M 940 2059 L 940 2131
+      M 940 2195 L 940 2407 L 580 2407
+      M 1300 1787 L 1300 1859
+      M 1300 1923 L 1300 1995
+      M 1300 2059 L 1300 2131
+      M 1300 2195 L 1300 2267
+      M 1300 2331 L 1300 2407 L 580 2407
+      M 580 2555 L 580 2634
+      M 720 2519 L 940 2519 L 940 2634
+      M 580 2698 L 580 2770
+      M 580 2834 L 580 2906
+      M 580 2970 L 580 3182
+      M 940 2698 L 940 2770
+      M 940 2834 L 940 2906
+      M 940 2970 L 940 3042
+      M 940 3106 L 940 3182 L 580 3182
+      M 580 3330 L 580 3402
+      M 708 3294 L 940 3294 L 940 3402
+      M 708 3294 L 1300 3294 L 1300 3402
+      M 580 3472 L 580 3551
+      M 940 3472 L 940 3551
+      M 1300 3472 L 1300 3551
+      M 580 3615 L 580 3687
+      M 580 3751 L 580 3823
+      M 580 3887 L 580 4235
+      M 940 3615 L 940 3687
+      M 940 3751 L 940 3823
+      M 940 3887 L 940 3959
+      M 940 4023 L 940 4235 L 580 4235
+      M 1300 3615 L 1300 3687
+      M 1300 3751 L 1300 3823
+      M 1300 3887 L 1300 3959
+      M 1300 4023 L 1300 4095
+      M 1300 4159 L 1300 4235 L 580 4235
+      M 580 4383 L 580 4462
+      M 720 4347 L 940 4347 L 940 4462
+      M 580 4526 L 580 4598
+      M 580 4662 L 580 4734
+      M 580 4798 L 580 5010
+      M 940 4526 L 940 4598
+      M 940 4662 L 940 4734
+      M 940 4798 L 940 4870
+      M 940 4934 L 940 5010 L 580 5010
+      M 580 5158 L 580 5230
+      M 720 5122 L 940 5122 L 940 5230
+      M 580 5294 L 580 5366
+      M 940 5294 L 940 5366
+      M 580 5502 L 580 5574
+      M 940 5502 L 940 5574
+      M 580 1354 L 580 1430
+      M 580 2407 L 580 2483
+      M 580 3182 L 580 3258
+      M 580 4235 L 580 4311
+      M 580 5010 L 580 5086
+      M 220 310 L 220 382
+      M 580 5366 L 580 5438
+      M 940 5366 L 940 5438
+    "/>
+    <path class="connection" d="
+      M 220 698 L 60 698 L 60 310 L 220 310
+    " marker-end="url(#kaalang-part-1-loop-arrow)"/>
+    <text class="connection-label" x="593" y="1372" xml:space="preserve"><tspan x="593" dy="0">step_0</tspan></text>
+    <text class="connection-label" x="593" y="2425" xml:space="preserve"><tspan x="593" dy="0">step_1</tspan></text>
+    <text class="connection-label" x="593" y="3200" xml:space="preserve"><tspan x="593" dy="0">step_2</tspan></text>
+    <text class="connection-label" x="593" y="4253" xml:space="preserve"><tspan x="593" dy="0">step_3</tspan></text>
+    <text class="connection-label" x="593" y="5028" xml:space="preserve"><tspan x="593" dy="0">step_4</tspan></text>
+    <text class="connection-label" x="953" y="931" xml:space="preserve"><tspan x="953" dy="0">data_0_1</tspan></text>
+    <text class="connection-label" x="953" y="1848" xml:space="preserve"><tspan x="953" dy="0">data_1_1</tspan></text>
+    <text class="connection-label" x="1313" y="1848" xml:space="preserve"><tspan x="1313" dy="0">data_1_2</tspan></text>
+    <text class="connection-label" x="1313" y="1984" xml:space="preserve"><tspan x="1313" dy="0">data_1_2_0</tspan></text>
+    <text class="connection-label" x="953" y="2759" xml:space="preserve"><tspan x="953" dy="0">data_2_1</tspan></text>
+    <text class="connection-label" x="953" y="3676" xml:space="preserve"><tspan x="953" dy="0">data_3_1</tspan></text>
+    <text class="connection-label" x="1313" y="3676" xml:space="preserve"><tspan x="1313" dy="0">data_3_2</tspan></text>
+    <text class="connection-label" x="1313" y="3812" xml:space="preserve"><tspan x="1313" dy="0">data_3_2_0</tspan></text>
+    <text class="connection-label" x="953" y="4587" xml:space="preserve"><tspan x="953" dy="0">data_4_1</tspan></text>
+    <text class="connection-label" x="233" y="256" xml:space="preserve"><tspan x="233" dy="0">reset</tspan></text>
+    <text class="connection-label" x="233" y="472" xml:space="preserve"><tspan x="233" dy="0">again</tspan></text>
+    <text class="connection-label" x="373" y="436" xml:space="preserve"><tspan x="373" dy="0">work</tspan></text>
+    <text class="connection-label" x="233" y="608" xml:space="preserve"><tspan x="233" dy="0">repeated</tspan></text>
+    <text class="connection-label" x="593" y="608" xml:space="preserve"><tspan x="593" dy="0">prepared</tspan></text>
+    <text class="connection-label" x="593" y="752" xml:space="preserve"><tspan x="593" dy="0">case_0_0</tspan></text>
+    <text class="connection-label" x="733" y="716" xml:space="preserve"><tspan x="733" dy="0">case_0_1</tspan></text>
+    <text class="connection-label" x="593" y="888" xml:space="preserve"><tspan x="593" dy="0">data_0_0</tspan></text>
+    <text class="connection-label" x="593" y="1024" xml:space="preserve"><tspan x="593" dy="0">effect_0_0</tspan></text>
+    <text class="connection-label" x="953" y="1024" xml:space="preserve"><tspan x="953" dy="0">data_0_1_0</tspan></text>
+    <text class="connection-label" x="953" y="1160" xml:space="preserve"><tspan x="953" dy="0">effect_0_1</tspan></text>
+    <text class="connection-label" x="593" y="1662" xml:space="preserve"><tspan x="593" dy="0">case_1_0</tspan></text>
+    <text class="connection-label" x="953" y="1662" xml:space="preserve"><tspan x="953" dy="0">case_1_1</tspan></text>
+    <text class="connection-label" x="1313" y="1662" xml:space="preserve"><tspan x="1313" dy="0">case_1_2</tspan></text>
+    <text class="connection-label" x="593" y="1805" xml:space="preserve"><tspan x="593" dy="0">data_1_0</tspan></text>
+    <text class="connection-label" x="593" y="1941" xml:space="preserve"><tspan x="593" dy="0">effect_1_0</tspan></text>
+    <text class="connection-label" x="953" y="1941" xml:space="preserve"><tspan x="953" dy="0">data_1_1_0</tspan></text>
+    <text class="connection-label" x="953" y="2077" xml:space="preserve"><tspan x="953" dy="0">effect_1_1</tspan></text>
+    <text class="connection-label" x="1313" y="2077" xml:space="preserve"><tspan x="1313" dy="0">data_1_2_1</tspan></text>
+    <text class="connection-label" x="1313" y="2213" xml:space="preserve"><tspan x="1313" dy="0">effect_1_2</tspan></text>
+    <text class="connection-label" x="593" y="2573" xml:space="preserve"><tspan x="593" dy="0">case_2_0</tspan></text>
+    <text class="connection-label" x="733" y="2537" xml:space="preserve"><tspan x="733" dy="0">case_2_1</tspan></text>
+    <text class="connection-label" x="593" y="2716" xml:space="preserve"><tspan x="593" dy="0">data_2_0</tspan></text>
+    <text class="connection-label" x="593" y="2852" xml:space="preserve"><tspan x="593" dy="0">effect_2_0</tspan></text>
+    <text class="connection-label" x="953" y="2852" xml:space="preserve"><tspan x="953" dy="0">data_2_1_0</tspan></text>
+    <text class="connection-label" x="953" y="2988" xml:space="preserve"><tspan x="953" dy="0">effect_2_1</tspan></text>
+    <text class="connection-label" x="593" y="3490" xml:space="preserve"><tspan x="593" dy="0">case_3_0</tspan></text>
+    <text class="connection-label" x="953" y="3490" xml:space="preserve"><tspan x="953" dy="0">case_3_1</tspan></text>
+    <text class="connection-label" x="1313" y="3490" xml:space="preserve"><tspan x="1313" dy="0">case_3_2</tspan></text>
+    <text class="connection-label" x="593" y="3633" xml:space="preserve"><tspan x="593" dy="0">data_3_0</tspan></text>
+    <text class="connection-label" x="593" y="3769" xml:space="preserve"><tspan x="593" dy="0">effect_3_0</tspan></text>
+    <text class="connection-label" x="953" y="3769" xml:space="preserve"><tspan x="953" dy="0">data_3_1_0</tspan></text>
+    <text class="connection-label" x="953" y="3905" xml:space="preserve"><tspan x="953" dy="0">effect_3_1</tspan></text>
+    <text class="connection-label" x="1313" y="3905" xml:space="preserve"><tspan x="1313" dy="0">data_3_2_1</tspan></text>
+    <text class="connection-label" x="1313" y="4041" xml:space="preserve"><tspan x="1313" dy="0">effect_3_2</tspan></text>
+    <text class="connection-label" x="593" y="4401" xml:space="preserve"><tspan x="593" dy="0">case_4_0</tspan></text>
+    <text class="connection-label" x="733" y="4365" xml:space="preserve"><tspan x="733" dy="0">case_4_1</tspan></text>
+    <text class="connection-label" x="593" y="4544" xml:space="preserve"><tspan x="593" dy="0">data_4_0</tspan></text>
+    <text class="connection-label" x="593" y="4680" xml:space="preserve"><tspan x="593" dy="0">effect_4_0</tspan></text>
+    <text class="connection-label" x="953" y="4680" xml:space="preserve"><tspan x="953" dy="0">data_4_1_0</tspan></text>
+    <text class="connection-label" x="953" y="4816" xml:space="preserve"><tspan x="953" dy="0">effect_4_1</tspan></text>
+    <text class="connection-label" x="593" y="5176" xml:space="preserve"><tspan x="593" dy="0">pick_left</tspan></text>
+    <text class="connection-label" x="733" y="5140" xml:space="preserve"><tspan x="733" dy="0">pick_right</tspan></text>
+    <text class="connection-label" x="593" y="5312" xml:space="preserve"><tspan x="593" dy="0">left</tspan></text>
+    <text class="connection-label" x="953" y="5312" xml:space="preserve"><tspan x="953" dy="0">right</tspan></text>
+    <text class="connection-label" x="233" y="163" xml:space="preserve"><tspan x="233" dy="0">entry, &amp;events</tspan></text>
+    <text class="connection-label" x="233" y="371" xml:space="preserve"><tspan x="233" dy="0">&amp;remaining</tspan></text>
+    <text class="connection-label" x="233" y="515" xml:space="preserve"><tspan x="233" dy="0">again, &amp;remaining</tspan></text>
+    <text class="connection-label" x="593" y="515" xml:space="preserve"><tspan x="593" dy="0">work, entry</tspan></text>
+    <text class="connection-label" x="593" y="651" xml:space="preserve"><tspan x="593" dy="0">&amp;prepared, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="795" xml:space="preserve"><tspan x="593" dy="0">case_0_0, &amp;prepared, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="931" xml:space="preserve"><tspan x="593" dy="0">&amp;data_0_0, &amp;events</tspan></text>
+    <text class="connection-label" x="593" y="1067" xml:space="preserve"><tspan x="593" dy="0">data_0_0, effect_0_0</tspan></text>
+    <text class="connection-label" x="953" y="795" xml:space="preserve"><tspan x="953" dy="0">case_0_1, &amp;prepared, &amp;config</tspan></text>
+    <text class="connection-label" x="953" y="1067" xml:space="preserve"><tspan x="953" dy="0">&amp;data_0_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="953" y="1203" xml:space="preserve"><tspan x="953" dy="0">data_0_1_0, effect_0_1</tspan></text>
+    <text class="connection-label" x="593" y="1419" xml:space="preserve"><tspan x="593" dy="0">&amp;step_0, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="1698" xml:space="preserve"><tspan x="593" dy="0">case_1_0, &amp;step_0, &amp;config, </tspan><tspan x="593" dy="14">&amp;prepared</tspan></text>
+    <text class="connection-label" x="593" y="1848" xml:space="preserve"><tspan x="593" dy="0">&amp;data_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="593" y="1984" xml:space="preserve"><tspan x="593" dy="0">data_1_0, effect_1_0</tspan></text>
+    <text class="connection-label" x="953" y="1698" xml:space="preserve"><tspan x="953" dy="0">case_1_1, &amp;step_0, &amp;config, </tspan><tspan x="953" dy="14">&amp;prepared</tspan></text>
+    <text class="connection-label" x="953" y="1984" xml:space="preserve"><tspan x="953" dy="0">&amp;data_1_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="953" y="2120" xml:space="preserve"><tspan x="953" dy="0">data_1_1_0, effect_1_1</tspan></text>
+    <text class="connection-label" x="1313" y="1698" xml:space="preserve"><tspan x="1313" dy="0">case_1_2, &amp;step_0, &amp;config, </tspan><tspan x="1313" dy="14">&amp;prepared</tspan></text>
+    <text class="connection-label" x="1313" y="2120" xml:space="preserve"><tspan x="1313" dy="0">&amp;data_1_2_1, &amp;events</tspan></text>
+    <text class="connection-label" x="1313" y="2256" xml:space="preserve"><tspan x="1313" dy="0">data_1_2_1, effect_1_2</tspan></text>
+    <text class="connection-label" x="593" y="2472" xml:space="preserve"><tspan x="593" dy="0">&amp;step_1, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="2609" xml:space="preserve"><tspan x="593" dy="0">case_2_0, &amp;step_1, &amp;config, </tspan><tspan x="593" dy="14">&amp;step_0</tspan></text>
+    <text class="connection-label" x="593" y="2759" xml:space="preserve"><tspan x="593" dy="0">&amp;data_2_0, &amp;events</tspan></text>
+    <text class="connection-label" x="593" y="2895" xml:space="preserve"><tspan x="593" dy="0">data_2_0, effect_2_0</tspan></text>
+    <text class="connection-label" x="953" y="2609" xml:space="preserve"><tspan x="953" dy="0">case_2_1, &amp;step_1, &amp;config, </tspan><tspan x="953" dy="14">&amp;step_0</tspan></text>
+    <text class="connection-label" x="953" y="2895" xml:space="preserve"><tspan x="953" dy="0">&amp;data_2_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="953" y="3031" xml:space="preserve"><tspan x="953" dy="0">data_2_1_0, effect_2_1</tspan></text>
+    <text class="connection-label" x="593" y="3247" xml:space="preserve"><tspan x="593" dy="0">&amp;step_2, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="3526" xml:space="preserve"><tspan x="593" dy="0">case_3_0, &amp;step_2, &amp;config, </tspan><tspan x="593" dy="14">&amp;step_0</tspan></text>
+    <text class="connection-label" x="593" y="3676" xml:space="preserve"><tspan x="593" dy="0">&amp;data_3_0, &amp;events</tspan></text>
+    <text class="connection-label" x="593" y="3812" xml:space="preserve"><tspan x="593" dy="0">data_3_0, effect_3_0</tspan></text>
+    <text class="connection-label" x="953" y="3526" xml:space="preserve"><tspan x="953" dy="0">case_3_1, &amp;step_2, &amp;config, </tspan><tspan x="953" dy="14">&amp;step_0</tspan></text>
+    <text class="connection-label" x="953" y="3812" xml:space="preserve"><tspan x="953" dy="0">&amp;data_3_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="953" y="3948" xml:space="preserve"><tspan x="953" dy="0">data_3_1_0, effect_3_1</tspan></text>
+    <text class="connection-label" x="1313" y="3526" xml:space="preserve"><tspan x="1313" dy="0">case_3_2, &amp;step_2, &amp;config, </tspan><tspan x="1313" dy="14">&amp;step_0</tspan></text>
+    <text class="connection-label" x="1313" y="3948" xml:space="preserve"><tspan x="1313" dy="0">&amp;data_3_2_1, &amp;events</tspan></text>
+    <text class="connection-label" x="1313" y="4084" xml:space="preserve"><tspan x="1313" dy="0">data_3_2_1, effect_3_2</tspan></text>
+    <text class="connection-label" x="593" y="4300" xml:space="preserve"><tspan x="593" dy="0">&amp;step_3, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="4437" xml:space="preserve"><tspan x="593" dy="0">case_4_0, &amp;step_3, &amp;config, </tspan><tspan x="593" dy="14">&amp;step_1</tspan></text>
+    <text class="connection-label" x="593" y="4587" xml:space="preserve"><tspan x="593" dy="0">&amp;data_4_0, &amp;events</tspan></text>
+    <text class="connection-label" x="593" y="4723" xml:space="preserve"><tspan x="593" dy="0">data_4_0, effect_4_0</tspan></text>
+    <text class="connection-label" x="953" y="4437" xml:space="preserve"><tspan x="953" dy="0">case_4_1, &amp;step_3, &amp;config, </tspan><tspan x="953" dy="14">&amp;step_1</tspan></text>
+    <text class="connection-label" x="953" y="4723" xml:space="preserve"><tspan x="953" dy="0">&amp;data_4_1_0, &amp;events</tspan></text>
+    <text class="connection-label" x="953" y="4859" xml:space="preserve"><tspan x="953" dy="0">data_4_1_0, effect_4_1</tspan></text>
+    <text class="connection-label" x="593" y="5075" xml:space="preserve"><tspan x="593" dy="0">&amp;step_4, &amp;config</tspan></text>
+    <text class="connection-label" x="593" y="5219" xml:space="preserve"><tspan x="593" dy="0">pick_left, step_4</tspan></text>
+    <text class="connection-label" x="953" y="5219" xml:space="preserve"><tspan x="953" dy="0">pick_right, step_4</tspan></text>
+    <text class="connection-label" x="593" y="5427" xml:space="preserve"><tspan x="593" dy="0">left</tspan></text>
+    <text class="connection-label" x="953" y="5427" xml:space="preserve"><tspan x="953" dy="0">right</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node merge" transform="translate(580 1354)">
+      <title xml:space="preserve">the step_0 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(580 2407)">
+      <title xml:space="preserve">the step_1 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(580 3182)">
+      <title xml:space="preserve">the step_2 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(580 4235)">
+      <title xml:space="preserve">the step_3 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(580 5010)">
+      <title xml:space="preserve">the step_4 merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node stage-entry" transform="translate(220 67)">
+      <title xml:space="preserve">Do more work.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Do more work.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 206)">
+      <title xml:space="preserve">Reset the stage effects.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Reset the stage effects.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(220 418)">
+      <title xml:space="preserve">Repeat?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Repeat?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(220 558)">
+      <title xml:space="preserve">Count the repeat.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the repeat.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 558)">
+      <title xml:space="preserve">Prepare the seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the seed.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 698)">
+      <title xml:space="preserve">Choose work 0.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 838)">
+      <title xml:space="preserve">Prepare branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 974)">
+      <title xml:space="preserve">Record branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 1110)">
+      <title xml:space="preserve">Finish branch 0/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 0/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 838)">
+      <title xml:space="preserve">Prepare branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 0/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 974)">
+      <title xml:space="preserve">Transform branch 0/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 0/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 1110)">
+      <title xml:space="preserve">Record branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 0/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 1246)">
+      <title xml:space="preserve">Finish branch 0/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 0/1.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(580 1466)">
+      <title xml:space="preserve">Choose work 1.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 1.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 1609)">
+      <title xml:space="preserve">First.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 1609)">
+      <title xml:space="preserve">Second.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 1609)">
+      <title xml:space="preserve">Third.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 1755)">
+      <title xml:space="preserve">Prepare branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 1891)">
+      <title xml:space="preserve">Record branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 2027)">
+      <title xml:space="preserve">Finish branch 1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 1755)">
+      <title xml:space="preserve">Prepare branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 1891)">
+      <title xml:space="preserve">Transform branch 1/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 2027)">
+      <title xml:space="preserve">Record branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 2163)">
+      <title xml:space="preserve">Finish branch 1/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 1755)">
+      <title xml:space="preserve">Prepare branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 1/2.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 1891)">
+      <title xml:space="preserve">Transform branch 1/2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/2/0.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 2027)">
+      <title xml:space="preserve">Transform branch 1/2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 1/2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 2163)">
+      <title xml:space="preserve">Record branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 1/2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 2299)">
+      <title xml:space="preserve">Finish branch 1/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 1/2.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 2519)">
+      <title xml:space="preserve">Choose work 2.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 2666)">
+      <title xml:space="preserve">Prepare branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 2802)">
+      <title xml:space="preserve">Record branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 2938)">
+      <title xml:space="preserve">Finish branch 2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 2/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 2666)">
+      <title xml:space="preserve">Prepare branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 2/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 2802)">
+      <title xml:space="preserve">Transform branch 2/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 2/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 2938)">
+      <title xml:space="preserve">Record branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 3074)">
+      <title xml:space="preserve">Finish branch 2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 2/1.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(580 3294)">
+      <title xml:space="preserve">Choose work 3.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 3.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(580 3437)">
+      <title xml:space="preserve">First.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(940 3437)">
+      <title xml:space="preserve">Second.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1300 3437)">
+      <title xml:space="preserve">Third.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Third.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 3583)">
+      <title xml:space="preserve">Prepare branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 3719)">
+      <title xml:space="preserve">Record branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 3855)">
+      <title xml:space="preserve">Finish branch 3/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 3583)">
+      <title xml:space="preserve">Prepare branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 3719)">
+      <title xml:space="preserve">Transform branch 3/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 3855)">
+      <title xml:space="preserve">Record branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 3991)">
+      <title xml:space="preserve">Finish branch 3/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 3583)">
+      <title xml:space="preserve">Prepare branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 3/2.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 3719)">
+      <title xml:space="preserve">Transform branch 3/2/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/2/0.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(1300 3855)">
+      <title xml:space="preserve">Transform branch 3/2/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 3/2/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 3991)">
+      <title xml:space="preserve">Record branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 3/2.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1300 4127)">
+      <title xml:space="preserve">Finish branch 3/2.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 3/2.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 4347)">
+      <title xml:space="preserve">Choose work 4.</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose work 4.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 4494)">
+      <title xml:space="preserve">Prepare branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 4630)">
+      <title xml:space="preserve">Record branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 4766)">
+      <title xml:space="preserve">Finish branch 4/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 4/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 4494)">
+      <title xml:space="preserve">Prepare branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare branch 4/1.</tspan></text>
+    </g>
+    <g class="node call" transform="translate(940 4630)">
+      <title xml:space="preserve">Transform branch 4/1/0.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <path class="call-bars" d="M -128 -32 V 32 M 128 -32 V 32"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-112" dy="0">Transform branch 4/1/0.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 4766)">
+      <title xml:space="preserve">Record branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Record branch 4/1.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 4902)">
+      <title xml:space="preserve">Finish branch 4/1.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish branch 4/1.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(580 5122)">
+      <title xml:space="preserve">Which result?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which result?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 5262)">
+      <title xml:space="preserve">Left result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Left result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 5262)">
+      <title xml:space="preserve">Right result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Right result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(580 5470)">
+      <title xml:space="preserve">Use the left result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the left result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(940 5470)">
+      <title xml:space="preserve">Use the right result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the right result.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(580 5609)">
+      <title xml:space="preserve">Finish on the left.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Finish on the left.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(940 5609)">
+      <title xml:space="preserve">Finish on the right.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Finish on the right.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(2789 216)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="5676" viewBox="0 0 344 5676" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+  <title id="kaalang-part-2-title">kaalang diagram for staged_branching_with_work</title>
+  <desc id="kaalang-part-2-description">Nodes: Stage: Finish on the left.; Action: Forward the left result. capturing finish_left; Transition: Finish on the right.. Connections: Stage: Finish on the left. to Action: Forward the left result.; Action: Forward the left result. to Transition: Finish on the right..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+      M 172 238 L 172 5574
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish_left</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Finish on the left.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish on the left.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 206)">
+      <title xml:space="preserve">Forward the left result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Forward the left result.</tspan></text>
+    </g>
+    <g class="node transition" transform="translate(172 5609)">
+      <title xml:space="preserve">Finish on the right.</title>
+      <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
+      <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Finish on the right.</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+<g transform="translate(3169 216)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
+  <title id="kaalang-part-3-title">kaalang diagram for staged_branching_with_work</title>
+  <desc id="kaalang-part-3-description">Nodes: Stage: Finish on the right.; End: usize capturing finish_right. Connections: Stage: Finish on the right. to End: usize.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-marker { fill: currentColor; }
+    </style>
+  </defs>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 102 L 172 174
+    "/>
+    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish_right</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node stage-entry" transform="translate(172 67)">
+      <title xml:space="preserve">Finish on the right.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish on the right.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+    </g>
+  </g>
+</svg>
+</g>
+</svg>

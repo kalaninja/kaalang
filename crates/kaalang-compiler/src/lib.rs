@@ -6,6 +6,7 @@ mod analyze;
 mod choice;
 mod codegen;
 mod construct;
+mod executions;
 pub mod geometry;
 mod model;
 mod parse;
@@ -13,6 +14,7 @@ mod plan;
 mod resolve;
 mod scope;
 mod stage;
+mod symbolic;
 pub mod topology;
 
 pub(crate) use choice::{choice_match, is_todo_body};
@@ -20,6 +22,7 @@ pub use codegen::expand;
 pub use construct::{
     Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
 };
+pub use executions::Executions;
 pub use model::{
     Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
     ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
@@ -137,12 +140,28 @@ pub fn analyze(function: &ItemFn) -> Result<Analysis> {
 }
 
 fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Analysis> {
-    let (executions, convergence_groups, merges, passes) = if check_usage {
-        analyze::flow(&flow)?
+    let histories = if symbolic::worth_factoring(&flow) {
+        Some(symbolic::histories(&flow)?)
     } else {
-        analyze::flow_without_usage(&flow)?
+        None
     };
-    let execution_plan = plan::flow(&flow, &executions, &merges, passes);
+    // Count the exact finite domain before choosing the comparison strategy.
+    let histories = histories.filter(|histories| histories.exceeds(64));
+    let (executions, convergence_groups, merges, execution_plan) = if let Some(histories) =
+        histories
+    {
+        let (mut executions, groups, merges) = symbolic::validate(&flow, check_usage, histories)?;
+        let plan = executions.plan(&flow, &merges);
+        (Executions::factored(executions), groups, merges, plan)
+    } else {
+        let (executions, groups, merges, passes) = if check_usage {
+            analyze::flow(&flow)?
+        } else {
+            analyze::flow_without_usage(&flow)?
+        };
+        let plan = plan::flow(&flow, &executions, &merges, passes);
+        (Executions::enumerated(executions), groups, merges, plan)
+    };
 
     Ok(Analysis {
         name: function.sig.ident.clone(),
@@ -164,7 +183,8 @@ fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Ana
 pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology {
     topology::project(&topology::Analyzed {
         flow: &analysis.flow,
-        executions: &analysis.executions,
+        executions: analysis.executions.summaries(),
+        symbolic: analysis.executions.symbolic(),
         merges: &analysis.merges,
         execution_plan: &analysis.execution_plan,
         collapse_loops,

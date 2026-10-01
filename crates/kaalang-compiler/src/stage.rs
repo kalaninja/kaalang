@@ -11,7 +11,7 @@ use crate::model::{
 use crate::parse::ParsedStaged;
 use crate::{analyze_local, plan, resolve, scope};
 
-fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
+pub(crate) fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
     flow.flow_inputs.contains(name)
         || flow.blocks.iter().enumerate().any(|(block, declaration)| {
             declaration.parent.is_none()
@@ -94,7 +94,7 @@ pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTree
 }
 
 fn targets(analysis: &Analysis) -> impl Iterator<Item = usize> + '_ {
-    analysis.executions.iter().filter_map(|route| {
+    analysis.executions.summaries().iter().filter_map(|route| {
         let ExecutionOutcome::Return { block_index } = route.outcome else {
             return None;
         };
@@ -142,11 +142,6 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
     let preliminary = analyze_local(function, parsed.preparation, false)?;
     let (outer, _) = preparation_scope(&preliminary.flow, &preliminary.execution_plan);
     let mut preparation = preliminary.flow;
-    let completed = preliminary
-        .executions
-        .iter()
-        .filter(|route| matches!(route.outcome, ExecutionOutcome::Return { .. }))
-        .collect::<Vec<_>>();
     let candidates = preparation
         .flow_inputs
         .iter()
@@ -164,16 +159,10 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
         .iter()
         .map(|stage| stage.entry.clone())
         .collect::<BTreeSet<_>>();
-    let provided = candidates
-        .iter()
-        .filter(|name| {
-            !entry_names.contains(*name)
-                && completed
-                    .iter()
-                    .all(|route| available(&preparation, route, name))
-        })
-        .cloned()
-        .collect::<BTreeSet<_>>();
+    let provided = preliminary.executions.common_on_completion(
+        &preparation,
+        candidates.difference(&entry_names).cloned().collect(),
+    );
     let common = provided
         .intersection(&outer)
         .cloned()

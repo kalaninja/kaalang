@@ -20,13 +20,13 @@ mod choice;
 mod comparison;
 mod continue_block;
 mod convergence;
-mod end;
+pub(crate) mod end;
 mod export;
-mod frame;
-mod loop_block;
-mod merge;
-mod participation;
-mod placement;
+pub(crate) mod frame;
+pub(crate) mod loop_block;
+pub(crate) mod merge;
+pub(crate) mod participation;
+pub(crate) mod placement;
 mod question;
 mod return_block;
 
@@ -513,20 +513,21 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
             .iter()
             .any(|execution| execution.participates(block))
     }) {
-        // A boundary consumer carries its declared output's span.
-        Some(block) if flow.blocks[block].kind == BlockKind::Export => Err(Error::new(
-            flow.blocks[block].span,
-            format!(
-                "no route through this kaalang cycle reaches the end of its body with its output `{}`",
-                exported_name(flow, block)
-            ),
-        )),
-        Some(block) => Err(Error::new(
-            flow.blocks[block].span,
-            "this kaalang block is unreachable",
-        )),
+        Some(block) => Err(unreachable(flow, block)),
         None => Ok(()),
     }
+}
+
+pub(crate) fn unreachable(flow: &Flow, block: usize) -> Error {
+    let message = if flow.blocks[block].kind == BlockKind::Export {
+        format!(
+            "no route through this kaalang cycle reaches the end of its body with its output `{}`",
+            exported_name(flow, block)
+        )
+    } else {
+        "this kaalang block is unreachable".to_owned()
+    };
+    Error::new(flow.blocks[block].span, message)
 }
 
 /// Requires a capture in some execution for each producer not prefixed with `_`.

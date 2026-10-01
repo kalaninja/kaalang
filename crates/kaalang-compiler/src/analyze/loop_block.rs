@@ -20,7 +20,7 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
 /// Reaching a later block depends on completing the cycle. This is control
 /// order, not a capture dependency or a wire merge. A cycle with several
 /// outputs selects one as it completes, so its own selection stays open.
-pub(super) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
+pub(crate) fn closed_before(flow: &Flow, selection: usize, next: usize) -> bool {
     flow.enclosing(selection)
         .any(|index| flow.blocks[index].loop_end.is_some_and(|end| end <= next))
 }

@@ -290,3 +290,38 @@ fn nested_partial_joins_emit_each_body_once_without_routing_values() {
         }
     }
 }
+
+#[test]
+fn conditional_stage_histories_preserve_constructor_order_and_dispatcher_rust() {
+    fn enumerate(local: &mut crate::Analysis) {
+        let (executions, _, merges, passes) =
+            crate::analyze::flow(&local.flow).expect("the reference analyzes");
+        local.execution_plan = crate::plan::flow(&local.flow, &executions, &merges, passes);
+        local.executions = crate::Executions::enumerated(executions);
+    }
+    for levels in [5, 6] {
+        let function = kaalang_testing::probes::flow(
+            &kaalang_testing::probes::staged_branching_with_work(levels),
+        );
+        let analysis = crate::analyze(&function).expect("the staged probe analyzes");
+        let mut reference = analysis.clone();
+        enumerate(&mut reference);
+        for stage in &mut reference.stages {
+            enumerate(&mut stage.analysis);
+        }
+        assert_eq!(
+            crate::stage::visit_order(&analysis, &analysis.stages),
+            crate::stage::visit_order(&reference, &reference.stages)
+        );
+        assert_eq!(
+            super::stage::expand(function.clone(), &analysis)
+                .expect("the staged probe expands")
+                .to_token_stream()
+                .to_string(),
+            super::stage::expand(function, &reference)
+                .expect("the reference expands")
+                .to_token_stream()
+                .to_string()
+        );
+    }
+}

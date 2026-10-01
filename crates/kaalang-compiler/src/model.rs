@@ -6,6 +6,7 @@ use syn::ext::IdentExt;
 use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
 
 use crate::construct::Arrangement;
+use crate::executions::Executions;
 use crate::topology::Topology;
 
 /// Semantic analysis and lowering plan, before diagram construction.
@@ -21,8 +22,9 @@ pub struct Analysis {
     pub flow: Flow,
     /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
-    /// Structural summaries in [`Execution`]'s derived order.
-    pub executions: Vec<Execution>,
+    /// Structural summaries in [`Execution`]'s derived order. Accessing the
+    /// complete slice enumerates all executions on demand.
+    pub executions: Executions,
     /// Every continuation group, ordered by branching block, then branch list.
     pub convergence_groups: Vec<ConvergenceGroup>,
     /// Implicit junctions of equally named alternative outputs, before captures.
@@ -316,7 +318,12 @@ impl Flow {
 
     /// The repeat relation depends on where two blocks sit, not on which
     /// execution repeats. [`Passes::of`] computes it once per cycle and block.
-    fn repeat_reaches(&self, runs: &[Vec<u64>], loop_index: usize, block: usize) -> bool {
+    pub(crate) fn repeat_reaches(
+        &self,
+        loop_index: usize,
+        block: usize,
+        together: impl FnOnce(usize, usize) -> bool,
+    ) -> bool {
         if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
             .any(|header| header == loop_index)
         {
@@ -339,12 +346,7 @@ impl Flow {
             block
         };
         let (block_part, repeat_part) = (part(block), part(loop_index));
-        block_part == repeat_part
-            || (block_part < repeat_part
-                && runs[block_part]
-                    .iter()
-                    .zip(&runs[repeat_part])
-                    .any(|(first, second)| first & second != 0))
+        block_part == repeat_part || (block_part < repeat_part && together(block_part, repeat_part))
     }
 
     /// A cycle completes only when the execution exports one of its outputs.
@@ -462,7 +464,7 @@ impl Passes {
 
     #[must_use]
     pub(crate) fn of(flow: &Flow, executions: &[Execution]) -> Self {
-        let mut runs = vec![vec![0; executions.len().div_ceil(64)]; flow.blocks.len()];
+        let mut runs = vec![vec![0u64; executions.len().div_ceil(64)]; flow.blocks.len()];
         for (index, execution) in executions.iter().enumerate() {
             for &block in &execution.blocks {
                 runs[block][index / 64] |= 1 << (index % 64);
@@ -475,7 +477,14 @@ impl Passes {
             .map(|(loop_index, block)| {
                 if block.kind == BlockKind::Loop {
                     (0..flow.blocks.len())
-                        .map(|block| flow.repeat_reaches(&runs, loop_index, block))
+                        .map(|block| {
+                            flow.repeat_reaches(loop_index, block, |first, second| {
+                                runs[first]
+                                    .iter()
+                                    .zip(&runs[second])
+                                    .any(|(a, b)| a & b != 0)
+                            })
+                        })
                         .collect()
                 } else {
                     Vec::new()

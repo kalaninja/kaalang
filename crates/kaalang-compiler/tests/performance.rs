@@ -9,7 +9,10 @@ use syn::ItemFn;
 
 use kaalang_testing::corpus;
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::{accepted, branching, flow};
+use kaalang_testing::probes::{
+    accepted, branching, branching_with_work, cyclic_branching_with_work, data_branching, flow,
+    staged_branching_with_work,
+};
 
 /// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {
@@ -17,9 +20,8 @@ struct Cost {
     /// a potential worst case: it exhausts the conflict-guided search.
     accepted: bool,
     /// Projection, construction and its check: the diagram decision alone. The
-    /// generated-probe bounds are stated over it, since each branching level
-    /// doubles the executions analysis enumerates, which would otherwise
-    /// dominate a shape built to stress the decision.
+    /// generated-probe bounds are stated over it, keeping analysis separate
+    /// from a shape built to stress the decision.
     diagram: Duration,
 }
 
@@ -52,9 +54,9 @@ fn cost(function: &ItemFn) -> Option<Cost> {
 const MODEL_CORPUS_BUDGET: Duration = Duration::from_secs(2);
 /// One ordinary fixture flow's model, against a median of about 1.9 ms.
 const MODEL_FLOW_BUDGET: Duration = Duration::from_millis(25);
-/// One stress-fixture flow's model. Five times the current worst median of about
-/// 56 ms, rounded up.
-const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(278);
+/// One stress-fixture flow's model, against the new cycle/stage fixture's
+/// median of about 310 ms, with twice that cost rounded up.
+const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(640);
 
 /// One lowering pass over the fixture corpus, against a measured median of
 /// about 565 ms. Expansion rebuilds the model internally, so this is bounded on
@@ -62,17 +64,24 @@ const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(278);
 const LOWERING_CORPUS_BUDGET: Duration = Duration::from_secs(2);
 /// One ordinary fixture flow's lowering, against a median of about 1.6 ms.
 const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(25);
-/// One stress-fixture flow's lowering. Five times the current worst median of
-/// about 64 ms, rounded up.
-const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(318);
+/// One stress-fixture flow's lowering, with the same headroom as its model.
+const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(640);
 
 // Generated probes sit outside the fixture corpus and exercise selected steps.
 /// The bound on analysis alone for a generated probe, against a measured median
-/// of about 380 ms for nine branching levels.
-const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(2);
+/// of about 60 ms for nine branching levels.
+const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_millis(500);
 /// Analysis of twelve branching levels, against a measured median of about
-/// 7.5 s. This reaches 4096 summaries and exposes redundant pairwise scans.
-const LARGE_GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(20);
+/// 140 ms. The 4096 possible executions remain factored during compilation.
+const LARGE_GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(1);
+/// Analysis of twenty branching levels, against a measured median of about
+/// 1.75 s with branch work and older captures. That flow has over sixty million
+/// executions; compilation keeps their exact conditions instead of listing them.
+const SERIAL_ANALYSIS_BUDGET: Duration = Duration::from_secs(4);
+/// A repeating cycle with over 120 million finite histories, against a median
+/// of about 3.1 s. Preparation and a cycle stage each analyze their own histories.
+const CYCLIC_ANALYSIS_BUDGET: Duration = Duration::from_secs(8);
+const STAGED_ANALYSIS_BUDGET: Duration = Duration::from_secs(16);
 /// The bound on the diagram decision for a generated probe, against a worst
 /// measured figure of about 290 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
@@ -140,11 +149,11 @@ fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
     );
 }
 
-/// Eight nested loops, a few hundred blocks, a thousand finite executions.
+/// Eight nested loops, a few hundred blocks, and serial questions.
 ///
 /// The loop shapes reach 259 blocks but stay in the tens of summaries;
-/// `branching` is what reaches the summary counts, and eight levels is as far as
-/// it goes here because `branching(n)` enumerates 2ⁿ executions.
+/// `branching` exercises factored choices. Larger chains have their own analysis
+/// budget below.
 #[test]
 fn generated_accepted_probes_stay_inside_their_budget() {
     for (what, source, _) in accepted() {
@@ -166,23 +175,51 @@ fn generated_accepted_probes_stay_inside_their_budget() {
     }
 }
 
-/// Analysis on its own, below the diagram decision. `branching` is what reaches
-/// the execution counts: one more level doubles them. The larger case exercises
-/// indexed comparisons beyond the nine-level probe's relatively small set.
+/// Analysis on its own, below the diagram decision. One more branching level
+/// doubles the possible executions without requiring their enumeration.
 #[test]
 fn a_generated_branching_probe_analyzes_inside_its_budget() {
-    for (name, levels, budget) in [
-        ("nine branching levels", 9, GENERATED_ANALYSIS_BUDGET),
+    for (name, source, budget) in [
+        (
+            "nine branching levels",
+            branching(9),
+            GENERATED_ANALYSIS_BUDGET,
+        ),
         (
             "twelve branching levels",
-            12,
+            branching(12),
             LARGE_GENERATED_ANALYSIS_BUDGET,
+        ),
+        (
+            "twenty branching levels",
+            branching(20),
+            SERIAL_ANALYSIS_BUDGET,
+        ),
+        (
+            "twenty branching levels with data",
+            data_branching(20),
+            SERIAL_ANALYSIS_BUDGET,
+        ),
+        (
+            "twenty branching levels with work and older captures",
+            branching_with_work(20),
+            SERIAL_ANALYSIS_BUDGET,
+        ),
+        (
+            "twenty branching levels inside a repeating cycle",
+            cyclic_branching_with_work(20),
+            CYCLIC_ANALYSIS_BUDGET,
+        ),
+        (
+            "twenty branching levels in preparation and a cycle stage",
+            staged_branching_with_work(20),
+            STAGED_ANALYSIS_BUDGET,
         ),
     ] {
         assert_pass_budget(
             &format!("analysis, {name}"),
             "probes",
-            &[flow(&branching(levels))],
+            &[flow(&source)],
             budget,
             |_| ItemBudget {
                 name: name.to_owned(),

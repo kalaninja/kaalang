@@ -353,12 +353,112 @@ representatives only after excluding executions outside the context; an excluded
 execution must not connect otherwise disconnected candidates. Use the ordinary
 pairwise scan for small sets or group pairs where indexing costs more.
 
-This reduces redundant comparisons without dropping execution summaries or
-weakening validation. It does not make the analysis polynomial in authored flow
-size: consecutive binary questions still produce exponentially many finite
-summaries, and many distinct selector sets can still require pairwise group
-comparisons. Removing that ceiling requires a shared representation of execution
-alternatives throughout validation and lowering.
+This reduces redundant comparisons without weakening validation. The explicit
+execution list can still grow exponentially, and many distinct selector sets can
+still require pairwise group comparisons.
+
+Finite local flows also admit an exact representation by execution conditions.
+Give every question, choice, or cycle with alternative outputs one selection
+variable with its declared outcomes and an additional inactive outcome. Store
+Boolean conditions as an ordered, reduced decision graph: a node selects one
+variable, its outgoing edges select that variable's outcomes, equal suffixes
+share a node, and a node with identical successors disappears. This
+representation imposes no restriction on the number of inputs, captures,
+actions, calls, or choice cases, or on which earlier wires a block captures.
+Small flows may retain the ordinary enumeration when it costs less. Count the
+finite domain with a capped decision-graph query before choosing that strategy;
+the product of declared alternatives can greatly overestimate a cycle's actual
+histories. The count does not list them and does not overflow on a large domain.
+
+Walk source order once per finite cycle frame. A block runs where execution
+continues in its frame and all its captures are available. Each producer
+occurrence has its own condition. An action or call provides every output under
+its execution condition; a question or choice provides only the selected output.
+A capture dependency holds where both its consumer and that particular producer
+run. A return or transition removes its condition from the execution that
+continues below it; a continue records the repeated cycle and closes that finite
+route. Reject overlapping producer conditions for one wire name, preserving the
+ordinary walk's diagnostic priority. Require the inactive outcome exactly where
+a question or choice does not run, or where a cycle selects no completed output.
+The resulting condition for a complete execution therefore has one assignment
+per structural history, including histories that do not visit every selector.
+
+A cycle body starts with its entry condition and the available outer wire scope.
+An export records its output condition, closes that body route, restores the
+outer scope, and produces that output under the same condition. Couple the
+cycle's selected output to its export condition. Restore no body-local wires in
+the continuation. A repeating route and a route returning from inside the body
+produce no cycle output and reach no outer continuation. Keep their block and
+capture facts in the finite history; iterations are never unfolded.
+
+Transition boundaries check the same available scope for competing stage signals
+and required common wires. Preparation's common data must be available on every
+completing preparation route. Test that implication directly; repeats that never
+reach a transition select no stage. Keep local stage analyses separate and
+traverse their finite transition graph to decide reachability and constructor
+order. These queries do not enumerate preparation or stage histories.
+
+Perform validation over these exact conditions. Existence means a condition has
+a satisfying assignment, implication means its counterexample condition is
+empty, and transitive dependency paths combine edge conditions by intersection
+and alternative paths by union. Preserve diagnostic priority: placement checks
+use completing histories before a route missing its return is reported, just as
+the ordinary walk does. Reachability, producer usage, branch-output consumers,
+merge order, and convergence use the same predicates as enumerated validation.
+
+To compare two executions, use two adjacent copies of each selection variable.
+Require both histories to have a final return, transition, or repeat outcome,
+both to run the selector being compared and to select different outcomes there.
+For every other selector, require equal outcomes only if both histories run it;
+an inactive selector takes no part in the comparison. In a cycle frame, compare
+only visible selections. A visible cycle is a black box: equality of its
+selection requires both its exported output and every selection in its body
+route to agree. Its unfinished routes have an additional outcome. Inside that
+cycle, its own selection is absent and the body's selections are visible. This
+preserves the ordinary frame's route identity without numbering or listing its
+body routes. The resulting relation is exactly the ordinary `only_difference`
+relation. Query producer differences and block participation within this
+relation to collect merge owners, all branch-local work, and block deciders
+without listing its satisfying pairs. For branch adjacency, project away
+selections that do not change the observed outcome and check whether a missing
+producer lies between the first and last producing traces. Choice and cycle
+routes retain their own selection and only the visible selections nested within
+the chosen case, including a visible nested cycle's body identity. Compare their
+projected route sets for adjacency and crossing convergence groups. Each group
+also has its own reaching condition: a repeat beyond its position can separate
+routes, while a repeat before it cannot. Summarize authored ordering by the
+first and last output, a missing interval, and any output-order reversal; equal
+remaining decision suffixes share that summary. Check cycle output order and
+repeating intervals in the same way.
+
+Lower sets of executions directly. A block can run in a plan scope when every
+execution in that scope participates and its capture producers and merge-local
+work have finished. Branches restrict that scope by their selected outcome;
+joins combine the scopes yielding to them and carry the merged values available
+throughout that combination. Shared computation is emitted once. Independently
+replay the plan with conditions: check each body's participation, original
+producer bindings, source order, completed merges, yielded values, lexical join
+targets, cycle entry and scope restoration, exports, and the final return or
+repeat against every history. This verification queries the entire execution
+domain, including histories never materialized.
+
+Project connections with conditions as well. A connection survives in the union
+when some execution has its direct edge without an alternative path of two or
+more edges to the same destination. Path conditions use intersection along a
+path and union across alternative paths. This preserves per-execution transitive
+reduction; reducing the unconditional connection union would discard edges that
+are direct on some routes. Concrete witnesses may supply union facts such as
+producer usage and capture successors, but do not substitute for validation,
+plan verification, or conditional connection reduction.
+
+This avoids the Cartesian product of independent earlier choices during
+analysis, lowering, and projection. The decision graph can still grow large for
+interacting conditions; no polynomial bound for all flows is claimed. Cycles and
+transition boundaries use the same exact conditional representation. Explicit
+requests to list all execution summaries enumerate every history on demand,
+retaining the original ordering. Counting histories does not materialize them;
+mutable access to that list replaces the conditional representation so later
+projections observe the edited summaries.
 
 ### 5.2 Rust lowering
 

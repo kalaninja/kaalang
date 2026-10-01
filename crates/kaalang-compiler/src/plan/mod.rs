@@ -654,7 +654,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
 
 /// Narrows every yield into one join to the wires that join carries, keeping
 /// each yield's own producer spellings.
-fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
+pub(crate) fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
     match plan {
         ExecutionPlan::Loop {
             body,

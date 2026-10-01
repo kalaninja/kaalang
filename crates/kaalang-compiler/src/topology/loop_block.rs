@@ -35,6 +35,10 @@ pub(super) fn order_exits(
     structural: &BTreeMap<usize, usize>,
     topology: &mut Topology,
 ) {
+    if let Some(symbolic) = model.symbolic {
+        symbolic.clone().order_exits(model, structural, topology);
+        return;
+    }
     for execution in model.executions {
         for (position, &block) in execution.blocks.iter().enumerate() {
             let Some(target) = model.flow.blocks[block].export_target else {
@@ -309,6 +313,9 @@ fn replace_junctions(topology: &mut Topology, replacements: &BTreeMap<usize, Sou
 /// Follow the side occupied by the repeating routes of the first selection.
 /// Without a common rightmost branch, the back edge starts on the left contour.
 pub(super) fn prefer_left(model: &Analyzed<'_>, header: usize) -> bool {
+    if let Some(symbolic) = model.symbolic {
+        return symbolic.clone().prefer_left(model.flow, header);
+    }
     let end = model.flow.blocks[header]
         .loop_end
         .expect("a loop owns a body");

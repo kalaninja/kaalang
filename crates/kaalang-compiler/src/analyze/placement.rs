@@ -32,7 +32,7 @@ fn occurrence(
 /// when it captures the branch output itself or a wire produced inside that
 /// branch; a wire with alternative producers carries only what all of them
 /// agree on, which is how a merge hands the branch back to the common path.
-pub(super) fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
+pub(crate) fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
     let mut wires = BTreeMap::<Ident, BTreeSet<BranchSelection>>::new();
     for input in &flow.flow_inputs {
         wires.insert(input.clone(), BTreeSet::new());
@@ -241,6 +241,10 @@ pub(super) fn flow(
     let Some((block, selection)) = offending else {
         return Ok(());
     };
+    Err(violation(flow, block, selection))
+}
+
+pub(crate) fn violation(flow: &Flow, block: usize, selection: usize) -> Error {
     let declaration = &flow.blocks[selection];
     let kind = crate::parse::noun(declaration.kind);
     let described = declaration
@@ -263,7 +267,7 @@ pub(super) fn flow(
             "this kaalang block runs while the branches of the {kind} `{described}` are still separate; give it an input from one branch, or merge those branches above it"
         )
     };
-    Err(Error::new(flow.blocks[block].span, message))
+    Error::new(flow.blocks[block].span, message)
 }
 
 #[cfg(test)]

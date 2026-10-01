@@ -292,6 +292,7 @@ impl Topology {
 pub(crate) struct Analyzed<'a> {
     pub(crate) flow: &'a Flow,
     pub(crate) executions: &'a [Execution],
+    pub(crate) symbolic: Option<&'a crate::symbolic::Executions>,
     pub(crate) merges: &'a [WireMerge],
     pub(crate) execution_plan: &'a ExecutionPlan,
     /// Whether each cycle draws as one collapsed node instead of its body.
@@ -595,6 +596,11 @@ fn connections(
     structural: &BTreeMap<usize, usize>,
     vertices: &[Vertex],
 ) -> Vec<Connection> {
+    if let Some(symbolic) = model.symbolic {
+        return symbolic
+            .clone()
+            .connections(model, merges, loops, boundaries, structural, vertices);
+    }
     let junction_of = |wire: &Ident| {
         merges
             .iter()
@@ -801,7 +807,7 @@ fn serial_connections(
 
 /// The junction a structural transfer ends its route at: a boundary
 /// consumer's cycle result, or a continue's iteration tail.
-fn transfer_junction(
+pub(crate) fn transfer_junction(
     model: &Analyzed<'_>,
     loops: &[Loop],
     boundaries: &[LoopBoundary],
@@ -849,7 +855,11 @@ fn junction_after(
 
 /// Captured transfers use junctions instead of computational nodes. A
 /// capture-free transfer is redirected directly to its boundary.
-fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block: usize) -> bool {
+pub(crate) fn represented(
+    model: &Analyzed<'_>,
+    structural: &BTreeMap<usize, usize>,
+    block: usize,
+) -> bool {
     if model.flow.blocks[block].kind == BlockKind::End
         && !model.executions.iter().any(|execution| {
             matches!(execution.outcome, ExecutionOutcome::Return { block_index }
@@ -868,11 +878,11 @@ fn represented(model: &Analyzed<'_>, structural: &BTreeMap<usize, usize>, block:
         ) || structural.contains_key(&block))
 }
 
-fn represented_block(model: &Analyzed<'_>, block: usize) -> bool {
+pub(crate) fn represented_block(model: &Analyzed<'_>, block: usize) -> bool {
     !model.collapse_loops || model.flow.blocks[block].parent.is_none()
 }
 
-fn destination(structural: &BTreeMap<usize, usize>, block: usize) -> Destination {
+pub(crate) fn destination(structural: &BTreeMap<usize, usize>, block: usize) -> Destination {
     structural
         .get(&block)
         .map_or(Destination::Node(NodeId::Block(block)), |&junction| {
@@ -976,13 +986,17 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
 /// The cycle an outer wire enters to reach this consumer: its innermost
 /// enclosing cycle, unless the wire is local to that same body. Outer data
 /// arrives through that cycle's entry.
-fn entered(model: &Analyzed<'_>, dependency: &CaptureDependency) -> Option<usize> {
+pub(crate) fn entered(model: &Analyzed<'_>, dependency: &CaptureDependency) -> Option<usize> {
     let parent = model.flow.blocks[dependency.capture.block].parent;
     parent.filter(|_| parent != model.flow.producer_cycle(dependency.producer))
 }
 
 /// Visual source of a producer: start, a cycle boundary, or a block's output exit.
-fn source(model: &Analyzed<'_>, producer: ProducerId, boundaries: &[LoopBoundary]) -> Source {
+pub(crate) fn source(
+    model: &Analyzed<'_>,
+    producer: ProducerId,
+    boundaries: &[LoopBoundary],
+) -> Source {
     match producer {
         ProducerId::FlowInput(_) => Source::Exit(ExitId::of(NodeId::Start)),
         ProducerId::BlockOutput { block, output }
@@ -1020,7 +1034,7 @@ fn selected_exit(
     source(model, ProducerId::BlockOutput { block, output }, boundaries)
 }
 
-fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
+pub(crate) fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source {
     Source::Exit(match model.flow.blocks[block].kind {
         BlockKind::Question => drawn_branch_exit(block, output),
         BlockKind::Choice => choice::exit(block, output),

@@ -336,7 +336,11 @@ fn validate_adjacency(
 /// Checks the combined capture and merge order before any consumer can use it
 /// for lowering or drawing, and that source order already closes each merge's
 /// branch-local work above the blocks capturing the merged wire.
-fn validate_order(flow: &Flow, merges: &[WireMerge], successors: &[BTreeSet<usize>]) -> Result<()> {
+pub(crate) fn validate_order(
+    flow: &Flow,
+    merges: &[WireMerge],
+    successors: &[BTreeSet<usize>],
+) -> Result<()> {
     // A block that both waits for a merge and must finish before it names the
     // merged wire for a value that never left its own branch. Such a block
     // always closes a cycle too, so this pass runs first: it names the mistake
@@ -436,7 +440,7 @@ fn record_difference(
 }
 
 /// Every repeated output name defines one merge, in first-producer order.
-pub(super) fn collect(flow: &Flow) -> Vec<WireMerge> {
+pub(crate) fn collect(flow: &Flow) -> Vec<WireMerge> {
     let mut producers = BTreeMap::<_, Vec<_>>::new();
     for (block, declaration) in flow.blocks.iter().enumerate() {
         for (output, wire) in declaration.outputs.iter().enumerate() {
@@ -861,10 +865,10 @@ mod tests {
             vec![part]
         } else {
             let analysis = crate::analyze(function).expect("the staged flow analyzes");
-            let mut parts = vec![(analysis.flow, analysis.executions)];
+            let mut parts = vec![(analysis.flow, analysis.executions.to_vec())];
             parts.extend(analysis.stages.into_iter().map(|stage| {
                 let local = *stage.analysis;
-                (local.flow, local.executions)
+                (local.flow, local.executions.to_vec())
             }));
             parts
         };

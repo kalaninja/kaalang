@@ -4,7 +4,7 @@ use syn::Error;
 
 use crate::model::{Flow, FlowKind};
 
-pub(super) fn missing_return(flow: &Flow) -> Error {
+pub(crate) fn missing_return(flow: &Flow) -> Error {
     let message = match flow.kind {
         FlowKind::Plain => "this kaalang execution reaches the end of the flow without `return`",
         FlowKind::Preparation => {

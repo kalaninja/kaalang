@@ -84,24 +84,29 @@ pub(super) fn flow(
                 .any(|&second| !dependent(first, second))
         });
         if independent {
-            // A boundary consumer is not authored: it carries its output's span.
-            let message = if flow.blocks[block].transition_target.is_some() {
-                let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
-                format!(
-                    "this kaalang stage transition exports `{signal}` on routes decided by two independent questions, choices, or cycles"
-                )
-            } else if flow.blocks[block].kind == BlockKind::Export {
-                format!(
-                    "this kaalang cycle exports `{}` on routes decided by two independent questions, choices, or cycles",
-                    super::exported_name(flow, block)
-                )
-            } else {
-                "this kaalang block must not be decided by two independent questions, choices, or cycles".to_owned()
-            };
-            return Err(Error::new(flow.blocks[block].span, message));
+            return Err(violation(flow, block));
         }
     }
     Ok(())
+}
+
+pub(crate) fn violation(flow: &Flow, block: usize) -> Error {
+    // A boundary consumer is not authored: it carries its output's span.
+    let message = if flow.blocks[block].transition_target.is_some() {
+        let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
+        format!(
+            "this kaalang stage transition exports `{signal}` on routes decided by two independent questions, choices, or cycles"
+        )
+    } else if flow.blocks[block].kind == BlockKind::Export {
+        format!(
+            "this kaalang cycle exports `{}` on routes decided by two independent questions, choices, or cycles",
+            super::exported_name(flow, block)
+        )
+    } else {
+        "this kaalang block must not be decided by two independent questions, choices, or cycles"
+            .to_owned()
+    };
+    Error::new(flow.blocks[block].span, message)
 }
 
 #[cfg(test)]
@@ -122,10 +127,10 @@ mod tests {
                 vec![part]
             } else {
                 let analysis = crate::analyze(&function).expect("the staged flow analyzes");
-                let mut parts = vec![(analysis.flow, analysis.executions)];
+                let mut parts = vec![(analysis.flow, analysis.executions.to_vec())];
                 parts.extend(analysis.stages.into_iter().map(|stage| {
                     let local = *stage.analysis;
-                    (local.flow, local.executions)
+                    (local.flow, local.executions.to_vec())
                 }));
                 parts
             };

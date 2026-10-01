@@ -166,7 +166,7 @@ fn mark_routes(flow: &Flow, executions: &[Execution], view: &mut [Execution], he
 /// Whether a selection made at `block` is visible from `frame`: it is not made
 /// inside a cycle with several outputs that `frame` lies outside, and it is not
 /// the own selection of one that `frame` lies inside.
-fn visible(inner: &[Option<usize>], frame: Option<usize>, block: usize) -> bool {
+pub(crate) fn visible(inner: &[Option<usize>], frame: Option<usize>, block: usize) -> bool {
     let around = || std::iter::successors(frame, |&header| inner[header]);
     inner[block].is_none_or(|header| around().any(|each| each == header))
         && !around().any(|each| each == block)
