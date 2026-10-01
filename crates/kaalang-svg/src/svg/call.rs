@@ -1,7 +1,7 @@
 //! Serializes a call node.
 use std::fmt::Write;
 
-use crate::layout::CALL_BAR_INSET;
+use crate::layout::{CALL_BAR_INSET, NODE_LABEL_PADDING_X};
 
 use super::{Node, TextAnchor, write_label};
 
@@ -24,5 +24,5 @@ pub(super) fn write(svg: &mut String, node: &Node) {
         svg,
         "      <path class=\"call-bars\" d=\"M -{bar} -{half_height} V {half_height} M {bar} -{half_height} V {half_height}\"/>"
     );
-    write_label(svg, node, 0, -bar + 16, TextAnchor::Start);
+    write_label(svg, node, 0, -bar + NODE_LABEL_PADDING_X, TextAnchor::Start);
 }

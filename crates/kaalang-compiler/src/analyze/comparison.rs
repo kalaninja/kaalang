@@ -51,8 +51,8 @@ pub(super) fn pairwise<T>(
 
 /// Preserves each selector's compatible components with representative pairs.
 /// Context filtering precedes representative selection; see RFC 0007 §5.1.
-// ponytail: explicit histories with distinct selector sets still pair quadratically;
-// larger production flows use execution conditions instead of this reference.
+/// Distinct selector sets can still pair quadratically here; production analysis
+/// uses execution conditions above [`crate::symbolic::ENUMERATED_HISTORY_LIMIT`].
 pub(super) fn compatible<T>(
     executions: &[&Execution],
     context: &[Vec<Option<T>>],

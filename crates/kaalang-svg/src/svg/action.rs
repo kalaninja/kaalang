@@ -1,6 +1,8 @@
 //! Serializes an action node.
 use std::fmt::Write;
 
+use crate::layout::NODE_LABEL_PADDING_X;
+
 use super::{Node, TextAnchor, write_label};
 
 pub(super) fn name(label: &str) -> String {
@@ -16,5 +18,11 @@ pub(super) fn write(svg: &mut String, node: &Node) {
         node.width,
         node.height
     );
-    write_label(svg, node, 0, -half_width + 16, TextAnchor::Start);
+    write_label(
+        svg,
+        node,
+        0,
+        -half_width + NODE_LABEL_PADDING_X,
+        TextAnchor::Start,
+    );
 }

@@ -29,11 +29,19 @@ const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
 const MIN_VERTICAL_GAP: i32 = 72;
 const NODE_WIDTH: i32 = 280;
+pub(crate) const NODE_LABEL_PADDING_X: i32 = 16;
+pub(crate) const NODE_LABEL_PADDING_Y: i32 = 15;
+const NODE_MIN_HEIGHT: i32 = 64;
+const BRANCH_MIN_HEIGHT: i32 = 72;
+const BRANCH_LABEL_PADDING_X: i32 = 40;
+const CAPSULE_MIN_HEIGHT: i32 = 58;
+const CAPSULE_TEXT_CLEARANCE: f64 = 4.0;
+const CAPSULE_DESCENT_DIVISOR: i32 = 3;
 pub(crate) const MERGE_RADIUS: i32 = 4;
 /// Leaves the start hand-over label clear beneath the link to the panel.
 const PARAMETER_PANEL_GAP: i32 = 96;
 const PARAMETER_PANEL_WIDTH: i32 = 240;
-const PARAMETER_LABEL_WIDTH: i32 = PARAMETER_PANEL_WIDTH - 32;
+const PARAMETER_LABEL_WIDTH: i32 = PARAMETER_PANEL_WIDTH - 2 * NODE_LABEL_PADDING_X;
 const CASE_WIDTH: i32 = 240;
 /// How far inside each side of a call node its bar sits.
 pub(crate) const CALL_BAR_INSET: i32 = 12;
@@ -46,6 +54,8 @@ pub(crate) const LABEL_FONT: i32 = 14;
 /// Secondary captions fit two lines in an expanded cycle's top padding.
 pub(crate) const CYCLE_CAPTION_FONT: i32 = 12;
 pub(crate) const CYCLE_CAPTION_LINE_HEIGHT: i32 = 14;
+pub(crate) const CYCLE_CAPTION_PADDING_X: i32 = 12;
+pub(crate) const CYCLE_CAPTION_BASELINE: i32 = 14;
 /// Font size of a connection label, written into the stylesheet the same way.
 pub(crate) const CONNECTION_LABEL_FONT: i32 = 12;
 /// Font size of an authored question-branch description.
@@ -62,11 +72,11 @@ pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
 /// Distance between two horizontal runs sharing one row gap.
 const LANE: i32 = 20;
 /// Text budget inside a rectangular node.
-pub(crate) const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 32;
+pub(crate) const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 /// Branch icons lose horizontal space to their slanted sides.
-const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 80;
+const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * BRANCH_LABEL_PADDING_X;
 /// Text budget inside a case icon.
-const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 32;
+const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 
 #[derive(Clone)]
 pub(crate) struct Scene {
@@ -1041,7 +1051,7 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
         x: 0,
         y: 0,
         width: PARAMETER_PANEL_WIDTH,
-        height: 30 + lines.len() as i32 * LINE_HEIGHT,
+        height: 2 * NODE_LABEL_PADDING_Y + lines.len() as i32 * LINE_HEIGHT,
         lines,
     })
 }
@@ -1053,7 +1063,7 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
         NodeKind::Call => call::dimensions(label),
         NodeKind::Loop => loop_block::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
-            block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, 72)
+            block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, BRANCH_MIN_HEIGHT)
         }
         NodeKind::Case | NodeKind::StageEntry | NodeKind::Transition => {
             choice::case_dimensions(label)
@@ -1065,18 +1075,19 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
 /// SVG clamps the horizontal radius once the capsule grows taller than wide,
 /// so those tall capsules use the corresponding ellipse bound instead.
 fn capsule_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
-    let (width, mut height, lines) = block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, 58);
+    let (width, mut height, lines) =
+        block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, CAPSULE_MIN_HEIGHT);
     let metrics = text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT);
     for (index, line) in lines.iter().enumerate() {
         let line_width = text::text_width(line, LABEL_FONT);
-        let x = f64::from(line_width) / 2.0 + 4.0;
+        let x = f64::from(line_width) / 2.0 + CAPSULE_TEXT_CLEARANCE;
         let baseline = -metrics.height / 2 + metrics.baselines[index];
         let (ascent, descent) = text::line_ink(line.spans(), LABEL_FONT);
         let y = f64::from(
             (baseline - ascent.max(LABEL_FONT))
                 .abs()
-                .max((baseline + descent.max(LABEL_FONT / 3)).abs()),
-        ) + 4.0;
+                .max((baseline + descent.max(LABEL_FONT / CAPSULE_DESCENT_DIVISOR)).abs()),
+        ) + CAPSULE_TEXT_CLEARANCE;
         let inset = f64::from(width) / 2.0 - x;
         // The corner fits when (radius - inset)^2 + y^2 <= radius^2.
         let required = if y <= inset {
@@ -1101,7 +1112,8 @@ fn block_dimensions(
     minimum_height: i32,
 ) -> (i32, i32, Vec<RichText>) {
     let lines = wrap_text(label, budget, LABEL_FONT);
-    let height =
-        minimum_height.max(30 + text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT).height);
+    let height = minimum_height.max(
+        2 * NODE_LABEL_PADDING_Y + text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT).height,
+    );
     (width, height, lines)
 }

@@ -7,7 +7,9 @@ use kaalang_compiler::topology::{NodeId, NodeKind};
 
 use crate::layout::{Point, StagedScene};
 
-use super::{describe, escape, serialize_with_ids};
+use super::{ARROW_MIDPOINT, ARROW_SIZE, STROKE_WIDTH, describe, escape, serialize_with_ids};
+
+const RETURN_ARROW_SIZE: i32 = 8;
 
 pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: &str) -> String {
     let mut svg = format!(
@@ -19,7 +21,10 @@ pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: 
         escape(flow_name),
         escape(&staged_description(scene, root)),
     );
-    svg.push_str("<defs><marker id=\"stage-return-arrow\" viewBox=\"0 0 10 10\" refX=\"10\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto\"><path d=\"M 0 0 L 10 5 L 0 10 Z\" fill=\"#1f2937\"/></marker></defs>\n<g class=\"stage-connections\" fill=\"none\" stroke=\"#1f2937\" stroke-width=\"1.75\">\n");
+    emit_inline!(
+        svg,
+        "<defs><marker id=\"stage-return-arrow\" viewBox=\"0 0 {ARROW_SIZE} {ARROW_SIZE}\" refX=\"{ARROW_SIZE}\" refY=\"{ARROW_MIDPOINT}\" markerWidth=\"{RETURN_ARROW_SIZE}\" markerHeight=\"{RETURN_ARROW_SIZE}\" orient=\"auto\"><path d=\"M 0 0 L {ARROW_SIZE} {ARROW_MIDPOINT} L 0 {ARROW_SIZE} Z\" fill=\"#1f2937\"/></marker></defs>\n<g class=\"stage-connections\" fill=\"none\" stroke=\"#1f2937\" stroke-width=\"{STROKE_WIDTH}\">\n"
+    );
     for points in &scene.connections {
         write_route(&mut svg, points, false);
     }

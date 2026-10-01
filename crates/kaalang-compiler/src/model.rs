@@ -464,10 +464,11 @@ impl Passes {
 
     #[must_use]
     pub(crate) fn of(flow: &Flow, executions: &[Execution]) -> Self {
-        let mut runs = vec![vec![0u64; executions.len().div_ceil(64)]; flow.blocks.len()];
+        let mut runs =
+            vec![vec![0u64; executions.len().div_ceil(u64::BITS as usize)]; flow.blocks.len()];
         for (index, execution) in executions.iter().enumerate() {
             for &block in &execution.blocks {
-                runs[block][index / 64] |= 1 << (index % 64);
+                runs[block][index / u64::BITS as usize] |= 1 << (index % u64::BITS as usize);
             }
         }
         let reaching = flow

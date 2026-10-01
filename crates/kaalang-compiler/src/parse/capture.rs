@@ -158,8 +158,8 @@ impl<'ast> Visit<'ast> for Uses {
     }
 
     fn visit_local(&mut self, local: &'ast Local) {
-        // ponytail: cfg-controlled declarations need Rust's expanded name
-        // resolution; inspect an expanded AST if complete checks become needed.
+        // RFC 0007 §5.3 leaves conditional bindings to Rust's name resolution.
+        // Parameter bindings remain hygienically hidden from uncaptured uses.
         let conditional = local.attrs.iter().any(|attribute| {
             attribute.path().is_ident("cfg") || attribute.path().is_ident("cfg_attr")
         });

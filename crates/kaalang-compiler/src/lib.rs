@@ -146,7 +146,8 @@ fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Ana
         None
     };
     // Count the exact finite domain before choosing the comparison strategy.
-    let histories = histories.filter(|histories| histories.exceeds(64));
+    let histories =
+        histories.filter(|histories| histories.exceeds(symbolic::ENUMERATED_HISTORY_LIMIT));
     let (executions, convergence_groups, merges, execution_plan) = if let Some(histories) =
         histories
     {

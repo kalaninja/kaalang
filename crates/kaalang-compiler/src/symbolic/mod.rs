@@ -25,6 +25,9 @@ mod tests;
 
 use condition::{Condition, Conditions, NEVER};
 
+/// Larger finite domains use execution conditions instead of enumeration.
+pub(crate) const ENUMERATED_HISTORY_LIMIT: usize = 64;
+
 #[derive(Clone)]
 pub(crate) struct Executions {
     conditions: Conditions,
@@ -42,9 +45,11 @@ pub(crate) fn worth_factoring(flow: &Flow) -> bool {
         .iter()
         .filter(|block| block.branch_count() > 0)
         .fold(1usize, |count, block| {
-            count.saturating_mul(block.outputs.len()).min(65)
+            count
+                .saturating_mul(block.outputs.len())
+                .min(ENUMERATED_HISTORY_LIMIT + 1)
         })
-        > 64
+        > ENUMERATED_HISTORY_LIMIT
 }
 
 pub(crate) use walk::flow as histories;

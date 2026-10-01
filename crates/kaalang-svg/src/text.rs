@@ -9,6 +9,33 @@ use latex_rust::{
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use unicode_segmentation::UnicodeSegmentation;
 
+// Rational em scales shared with the SVG text styles and formula decorations.
+pub(crate) const SCRIPT_FONT_SCALE: (i32, i32) = (3, 4);
+pub(crate) const SUPERSCRIPT_SHIFT: (i32, i32) = (2, 5);
+pub(crate) const SUBSCRIPT_SHIFT: (i32, i32) = (1, 5);
+const FORMULA_SLANT: (i32, i32) = (3, 20);
+pub(crate) const FORMULA_UNDERLINE_OFFSET: (i32, i32) = (1, 10);
+pub(crate) const FORMULA_STRIKETHROUGH_OFFSET: (i32, i32) = (1, 3);
+pub(crate) const FORMULA_UNDERLINE_PADDING: i32 = 2;
+pub(crate) const TEXT_ADVANCE_SCALE: i64 = 10_000;
+const COLOR_MARKER_START: u32 = 0x0001_0203;
+
+// Estimated character widths, in hundredths of an em.
+const MONOSPACE_ADVANCE: i32 = 62;
+const TAB_ADVANCE: i32 = 200;
+const NARROW_ADVANCE: i32 = 32;
+const WIDE_ADVANCE: i32 = 90;
+const UPPERCASE_ADVANCE: i32 = 68;
+const ASCII_ADVANCE: i32 = 56;
+const ALPHABETIC_ADVANCE: i32 = 60;
+const FULL_WIDTH_ADVANCE: i32 = 100;
+const CYRILLIC_BLOCK_END: u32 = 0x0500;
+const EMPHASIS_WIDTH_PERCENT: i64 = 105;
+const TEXT_ASCENT_PARTS: i32 = 4;
+const TEXT_EM_PARTS: i32 = 5;
+const SUPERSCRIPT_ASCENT_PERCENT: i32 = 90;
+const SUBSCRIPT_DESCENT_PERCENT: i32 = 30;
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)] // A span combines independent CSS effects.
 pub(crate) struct Style {
@@ -81,7 +108,7 @@ impl Formula {
         options.font_size_pt = Dim::one();
         // The backend writes its default color into every rule. Pick a color
         // absent from the formula so only that default becomes the label color.
-        let mut marker = 0x0001_0203_u32;
+        let mut marker = COLOR_MARKER_START;
         while uses_color(&layout, marker_color(marker)) {
             marker += 1;
         }
@@ -112,7 +139,7 @@ impl Formula {
 
     fn size(font_size: i32, style: Style) -> Dim {
         let script = if style.script.is_some() {
-            Dim::ratio(3, 4)
+            Dim::ratio(SCRIPT_FONT_SCALE.0.into(), SCRIPT_FONT_SCALE.1.into())
         } else {
             Dim::one()
         };
@@ -121,7 +148,7 @@ impl Formula {
 
     pub(crate) fn slant(&self, style: Style) -> Dim {
         if style.italic || style.quote {
-            &self.view_box_height() * Dim::ratio(3, 20)
+            &self.view_box_height() * Dim::ratio(FORMULA_SLANT.0.into(), FORMULA_SLANT.1.into())
         } else {
             Dim::zero()
         }
@@ -147,8 +174,20 @@ impl Formula {
     pub(crate) fn ascent(&self, font_size: i32, style: Style) -> Dim {
         let ascent = &self.layout.height * Self::size(font_size, style);
         match style.script {
-            Some(Script::Superscript) => ascent + Dim::ratio(i64::from(font_size) * 2, 5),
-            Some(Script::Subscript) => ascent - Dim::ratio(i64::from(font_size), 5),
+            Some(Script::Superscript) => {
+                ascent
+                    + Dim::ratio(
+                        i64::from(font_size) * i64::from(SUPERSCRIPT_SHIFT.0),
+                        SUPERSCRIPT_SHIFT.1.into(),
+                    )
+            }
+            Some(Script::Subscript) => {
+                ascent
+                    - Dim::ratio(
+                        i64::from(font_size) * i64::from(SUBSCRIPT_SHIFT.0),
+                        SUBSCRIPT_SHIFT.1.into(),
+                    )
+            }
             None => ascent,
         }
     }
@@ -156,8 +195,20 @@ impl Formula {
     pub(crate) fn descent(&self, font_size: i32, style: Style) -> Dim {
         let descent = &self.layout.depth * Self::size(font_size, style);
         match style.script {
-            Some(Script::Superscript) => descent - Dim::ratio(i64::from(font_size) * 2, 5),
-            Some(Script::Subscript) => descent + Dim::ratio(i64::from(font_size), 5),
+            Some(Script::Superscript) => {
+                descent
+                    - Dim::ratio(
+                        i64::from(font_size) * i64::from(SUPERSCRIPT_SHIFT.0),
+                        SUPERSCRIPT_SHIFT.1.into(),
+                    )
+            }
+            Some(Script::Subscript) => {
+                descent
+                    + Dim::ratio(
+                        i64::from(font_size) * i64::from(SUBSCRIPT_SHIFT.0),
+                        SUBSCRIPT_SHIFT.1.into(),
+                    )
+            }
             None => descent,
         }
     }
@@ -762,19 +813,19 @@ fn active_style(effects: &[Effect], inline: &[InlineEffect], quote: bool) -> Sty
 /// so this estimate errs wide rather than letting a label leave its node.
 fn advance(character: char, code: bool) -> i32 {
     if code && character.is_ascii() && character != '\t' {
-        return 62;
+        return MONOSPACE_ADVANCE;
     }
     match character {
-        '\t' => 200,
+        '\t' => TAB_ADVANCE,
         ' ' | '.' | ',' | ':' | ';' | '!' | '|' | '\'' | '`' | 'i' | 'j' | 'l' | 'I' | '('
-        | ')' | '[' | ']' | '{' | '}' | '/' | '\\' | '-' => 32,
-        'm' | 'w' | 'M' | 'W' | '@' => 90,
-        'A'..='Z' => 68,
-        _ if character.is_ascii() => 56,
+        | ')' | '[' | ']' | '{' | '}' | '/' | '\\' | '-' => NARROW_ADVANCE,
+        'm' | 'w' | 'M' | 'W' | '@' => WIDE_ADVANCE,
+        'A'..='Z' => UPPERCASE_ADVANCE,
+        _ if character.is_ascii() => ASCII_ADVANCE,
         // Latin-1, Greek, and Cyrillic behave like Latin; assume anything
         // beyond them, such as CJK, is full width.
-        _ if (character as u32) < 0x0500 => 60,
-        _ => 100,
+        _ if (character as u32) < CYRILLIC_BLOCK_END => ALPHABETIC_ADVANCE,
+        _ => FULL_WIDTH_ADVANCE,
     }
 }
 
@@ -783,13 +834,18 @@ fn cluster_advance(cluster: &str, style: Style, font_size: i32) -> i64 {
         .chars()
         .next()
         .expect("a grapheme cluster has at least one character");
-    let scale = if style.script.is_some() { 75 } else { 100 };
-    let emphasis = if style.bold || style.italic || style.quote {
-        105
+    let scale = if style.script.is_some() {
+        SCRIPT_FONT_SCALE.0 * 100 / SCRIPT_FONT_SCALE.1
     } else {
         100
     };
-    i64::from(advance(character, style.code)) * i64::from(font_size) * emphasis * scale / 100
+    let emphasis = if style.bold || style.italic || style.quote {
+        EMPHASIS_WIDTH_PERCENT
+    } else {
+        100
+    };
+    i64::from(advance(character, style.code)) * i64::from(font_size) * emphasis * i64::from(scale)
+        / 100
 }
 
 /// One dimension as an SVG attribute value, rounded to four fractional digits.
@@ -909,7 +965,7 @@ impl Cluster {
             |formula| {
                 i64::from(dimension_ceiling(
                     &formula.width(font_size, self.spans[0].style),
-                )) * 10_000
+                )) * TEXT_ADVANCE_SCALE
             },
         )
     }
@@ -975,7 +1031,7 @@ fn clusters_width(clusters: &[Cluster], font_size: i32) -> i32 {
         .iter()
         .map(|cluster| cluster.advance(font_size))
         .sum::<i64>()
-        .checked_div(10_000)
+        .checked_div(TEXT_ADVANCE_SCALE)
         .and_then(|width| i32::try_from(width).ok())
         .unwrap_or(i32::MAX)
 }
@@ -984,7 +1040,7 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
     let mut used = 0;
     for (count, cluster) in clusters.iter().enumerate() {
         used += cluster.advance(font_size);
-        if used / 10_000 > i64::from(budget) {
+        if used / TEXT_ADVANCE_SCALE > i64::from(budget) {
             return count.max(1);
         }
     }
@@ -1001,7 +1057,7 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
         if cluster.text.ends_with('\n') {
             paragraphs.push(Vec::new());
         } else {
-            if cluster.advance(font_size) > i64::from(budget) * 10_000
+            if cluster.advance(font_size) > i64::from(budget) * TEXT_ADVANCE_SCALE
                 && let Some(formula) = &mut cluster.spans[0].formula
             {
                 Rc::make_mut(formula).clip_width = Some(budget.max(1));
@@ -1060,22 +1116,31 @@ pub(crate) struct TextBlockMetrics {
 }
 
 pub(crate) fn line_ink(spans: &[StyledSpan], font_size: i32) -> (i32, i32) {
-    let mut ascent = (font_size * 4 + 4) / 5;
-    let mut descent = (font_size + 4) / 5;
+    let mut ascent = (font_size * TEXT_ASCENT_PARTS + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS;
+    let mut descent = (font_size + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS;
     for span in spans {
         if let Some(formula) = &span.formula {
             ascent = ascent.max(dimension_ceiling(&formula.ascent(font_size, span.style)));
             descent = descent.max(
-                dimension_ceiling(&formula.descent(font_size, span.style))
-                    .saturating_add(if span.style.underline { 2 } else { 0 }),
+                dimension_ceiling(&formula.descent(font_size, span.style)).saturating_add(
+                    if span.style.underline {
+                        FORMULA_UNDERLINE_PADDING
+                    } else {
+                        0
+                    },
+                ),
             );
         }
     }
-    // Match the 75% font size and explicit em shifts in the SVG stylesheet.
+    // Match the script font scale and baseline shifts in the SVG stylesheet.
     for span in spans {
         match span.style.script {
-            Some(Script::Superscript) => ascent = ascent.max((font_size * 90 + 99) / 100),
-            Some(Script::Subscript) => descent = descent.max((font_size * 30 + 99) / 100),
+            Some(Script::Superscript) => {
+                ascent = ascent.max((font_size * SUPERSCRIPT_ASCENT_PERCENT + 99) / 100);
+            }
+            Some(Script::Subscript) => {
+                descent = descent.max((font_size * SUBSCRIPT_DESCENT_PERCENT + 99) / 100);
+            }
             None => {}
         }
     }
@@ -1087,7 +1152,8 @@ pub(crate) fn block_metrics(
     font_size: i32,
     line_height: i32,
 ) -> TextBlockMetrics {
-    let base_ink = (font_size * 4 + 4) / 5 + (font_size + 4) / 5;
+    let base_ink = (font_size * TEXT_ASCENT_PARTS + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS
+        + (font_size + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS;
     let leading = (line_height - base_ink).max(0);
     let mut height = 0;
     let mut baselines = Vec::with_capacity(lines.len());

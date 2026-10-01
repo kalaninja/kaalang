@@ -65,14 +65,14 @@ fn index_of(topology: &Topology, vertex: Vertex) -> usize {
 /// A vertex reaches itself only through a cycle; a caller wanting a reflexive
 /// relation sets the diagonal itself.
 fn close_paths(paths: &mut [Vec<bool>]) {
-    let words = paths.len().div_ceil(64);
+    let words = paths.len().div_ceil(u64::BITS as usize);
     let mut packed = paths
         .iter()
         .map(|row| {
             let mut bits = vec![0_u64; words];
             for (v, &reachable) in row.iter().enumerate() {
                 if reachable {
-                    bits[v / 64] |= 1 << (v % 64);
+                    bits[v / u64::BITS as usize] |= 1 << (v % u64::BITS as usize);
                 }
             }
             bits
@@ -81,7 +81,7 @@ fn close_paths(paths: &mut [Vec<bool>]) {
     for k in 0..paths.len() {
         let through = packed[k].clone();
         for row in &mut packed {
-            if row[k / 64] & (1 << (k % 64)) != 0 {
+            if row[k / u64::BITS as usize] & (1 << (k % u64::BITS as usize)) != 0 {
                 for (word, next) in row.iter_mut().zip(&through) {
                     *word |= next;
                 }
@@ -90,7 +90,7 @@ fn close_paths(paths: &mut [Vec<bool>]) {
     }
     for (row, bits) in paths.iter_mut().zip(packed) {
         for (v, reachable) in row.iter_mut().enumerate() {
-            *reachable = bits[v / 64] & (1 << (v % 64)) != 0;
+            *reachable = bits[v / u64::BITS as usize] & (1 << (v % u64::BITS as usize)) != 0;
         }
     }
 }

@@ -7,6 +7,8 @@ use kaalang_compiler::topology::NodeKind;
 
 use super::{Node, TextAnchor, write_label};
 
+const MARKER_WIDTH_DIVISOR: i32 = 4;
+
 pub(super) fn write_transition(svg: &mut String, node: &Node) {
     let half_width = node.width / 2;
     let half_height = node.height / 2;
@@ -19,7 +21,7 @@ pub(super) fn write_transition(svg: &mut String, node: &Node) {
 }
 
 pub(super) fn write_marker(svg: &mut String, node: &Node, kind: NodeKind) {
-    let half_width = node.width / 4;
+    let half_width = node.width / MARKER_WIDTH_DIVISOR;
     let tip = node.height / 2;
     let base = tip - CASE_TIP_HEIGHT / 2;
     match kind {

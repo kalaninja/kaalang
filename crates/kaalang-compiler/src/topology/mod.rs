@@ -923,7 +923,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
             .binary_search(&vertex)
             .expect("every connection endpoint is a vertex")
     };
-    let words = count.div_ceil(64);
+    let words = count.div_ceil(u64::BITS as usize);
     let mut successors = vec![Vec::new(); count];
     for connection in direct {
         successors[index(connection.source.into())].push(index(connection.destination));
@@ -957,7 +957,7 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
     let mut reach = vec![vec![0u64; words]; count];
     for &vertex in &order {
         for &successor in &successors[vertex] {
-            reach[vertex][successor / 64] |= 1 << (successor % 64);
+            reach[vertex][successor / u64::BITS as usize] |= 1 << (successor % u64::BITS as usize);
             let (row, of) = reach.split_at_mut(vertex.max(successor));
             let (row, of) = if vertex < successor {
                 (&mut row[vertex], &of[0])
@@ -976,9 +976,11 @@ fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection>
         .filter(|connection| {
             let from = index(connection.source.into());
             let to = index(connection.destination);
-            !successors[from]
-                .iter()
-                .any(|&middle| middle != to && reach[middle][to / 64] & (1 << (to % 64)) != 0)
+            !successors[from].iter().any(|&middle| {
+                middle != to
+                    && reach[middle][to / u64::BITS as usize] & (1 << (to % u64::BITS as usize))
+                        != 0
+            })
         })
         .collect()
 }

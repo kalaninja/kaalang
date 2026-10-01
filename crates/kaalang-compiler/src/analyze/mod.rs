@@ -190,7 +190,7 @@ pub(crate) fn branch_order<T: PartialEq>(executions: &[&Execution], outcomes: &[
 /// Source order supplies this order for predecessors, its reverse for successors.
 pub(crate) fn close(relation: &mut [BTreeSet<usize>], order: impl Iterator<Item = usize>) {
     let count = relation.len();
-    let words = count.div_ceil(64);
+    let words = count.div_ceil(u64::BITS as usize);
     let mut reach: Vec<Option<Vec<u64>>> = vec![None; count];
     for index in order {
         let mut row = vec![0; words];
@@ -198,7 +198,7 @@ pub(crate) fn close(relation: &mut [BTreeSet<usize>], order: impl Iterator<Item 
             let inherited = reach[related]
                 .as_ref()
                 .expect("related indices must be closed first");
-            row[related / 64] |= 1 << (related % 64);
+            row[related / u64::BITS as usize] |= 1 << (related % u64::BITS as usize);
             for (word, bits) in row.iter_mut().zip(inherited) {
                 *word |= *bits;
             }
@@ -206,7 +206,7 @@ pub(crate) fn close(relation: &mut [BTreeSet<usize>], order: impl Iterator<Item 
         let mut related = Vec::new();
         for (word, mut bits) in row.iter().copied().enumerate() {
             while bits != 0 {
-                related.push(word * 64 + bits.trailing_zeros() as usize);
+                related.push(word * u64::BITS as usize + bits.trailing_zeros() as usize);
                 bits &= bits - 1;
             }
         }

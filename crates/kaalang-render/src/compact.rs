@@ -9,8 +9,8 @@ use crate::ArrangementVerifier;
 /// Terminates as ranks rise, then contours approach their bodies and coordinates,
 /// lanes, and runs disappear.
 ///
-/// ponytail: local simplifications, not a global minimum of bends or area;
-/// extend the candidates only for a concrete remaining readability defect.
+/// Reaches a deterministic local fixed point, not a global minimum of bends or
+/// area, as specified by RFC 0003 §2.3.
 pub fn compact_arrangement(model: &mut SemanticModel) {
     if model.topology.loops.is_empty()
         && !model

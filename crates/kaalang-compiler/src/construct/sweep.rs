@@ -10,6 +10,11 @@ use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side, close_paths, index_of};
 
+const MEMO_CACHE_BYTES: usize = 64 * 1024 * 1024;
+/// Estimated tree-node and allocation overhead beyond the key payload.
+const MEMO_ENTRY_OVERHEAD_BYTES: usize = 128;
+const ANCHOR_SPACING_FACTOR: i32 = 4;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Lifeline {
     Wire(usize),
@@ -887,16 +892,16 @@ impl<'a> Sweep<'a> {
             }
             at += 1;
         }
-        // Memoization is optional: stop growing the cache after 64 MiB of
-        // estimated payload. Omitting an entry repeats work, never rejects a
-        // continuation or changes the finite exhaustive search.
+        // Memoization is optional: stop growing the cache at the payload budget.
+        // Omitting an entry repeats work, never rejects a continuation or changes
+        // the finite exhaustive search.
         let bytes = state.order.relation.len()
             + state.frontier.len() * size_of::<Lifeline>()
             + state.placed.len()
             + state.sides.len() * size_of::<Option<Side>>()
             + size_of::<Key>()
-            + 128;
-        if memo && failed.len() < 64 * 1024 * 1024 / bytes.max(1) {
+            + MEMO_ENTRY_OVERHEAD_BYTES;
+        if memo && failed.len() < MEMO_CACHE_BYTES / bytes.max(1) {
             failed.insert(key);
         }
         Ok(None)
@@ -984,7 +989,7 @@ impl<'a> Sweep<'a> {
             .number()
             .into_iter()
             .map(|x| {
-                x * (4
+                x * (ANCHOR_SPACING_FACTOR
                     * room
                     * (self.topology.connections.len() + self.topology.loops.len() + 2) as i32)
             })
@@ -1000,9 +1005,11 @@ impl<'a> Sweep<'a> {
             }
             let mut spines = vec![0; self.topology.loops.len()];
             let anchors = self.anchors(&frontier, &sides, step);
-            let mut at = anchors.first().map_or(0, |a| values[a.left] - 4 * room);
+            let mut at = anchors
+                .first()
+                .map_or(0, |a| values[a.left] - ANCHOR_SPACING_FACTOR * room);
             for anchor in anchors {
-                at = (at + 4 * room).max(values[anchor.left]);
+                at = (at + ANCHOR_SPACING_FACTOR * room).max(values[anchor.left]);
                 assert!(
                     at <= values[anchor.right],
                     "ordered intervals have enough room"

@@ -4,12 +4,15 @@ use kaalang_compiler::geometry::{contains, overlaps};
 use kaalang_compiler::topology::{NodeId, Source, Vertex};
 
 use super::{
-    CYCLE_CAPTION_FONT, LoopRegion, MARGIN, NODE_LABEL_WIDTH, NODE_WIDTH, Point, Scene,
-    block_dimensions, label::label_rect,
+    CYCLE_CAPTION_FONT, CYCLE_CAPTION_PADDING_X, LoopRegion, MARGIN, NODE_LABEL_WIDTH,
+    NODE_MIN_HEIGHT, NODE_WIDTH, Point, Scene, block_dimensions, label::label_rect,
 };
 use crate::text::{self, RichText};
 
 const VERTICAL_PADDING: i32 = 35;
+const HORIZONTAL_PADDING: i32 = 28;
+const MARKER_SPACE: i32 = 28;
+const CAPTION_MAX_LINES: usize = 2;
 
 /// Nested boundaries ending on one row stack their padding. The usual row gap
 /// holds one boundary; reserve the additional layers before the next row.
@@ -44,7 +47,12 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
 }
 
 pub(super) fn dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
-    block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH - 28, 64)
+    block_dimensions(
+        label,
+        NODE_WIDTH,
+        NODE_LABEL_WIDTH - MARKER_SPACE,
+        NODE_MIN_HEIGHT,
+    )
 }
 
 #[allow(clippy::too_many_lines)]
@@ -117,14 +125,14 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
             .chain(points.iter().map(|point| point.x))
             .min()
             .unwrap_or(MARGIN)
-            - 28;
+            - HORIZONTAL_PADDING;
         let right = boxes
             .iter()
             .map(|bounds| bounds.2)
             .chain(points.iter().map(|point| point.x))
             .max()
             .unwrap_or(left + NODE_WIDTH)
-            + 28;
+            + HORIZONTAL_PADDING;
         let entry = point(boundary.entry).unwrap_or(Point {
             x: i32::midpoint(left, right),
             y: MARGIN,
@@ -175,7 +183,10 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
                 right,
                 bottom,
                 description: description.as_ref().to_owned(),
-                caption: caption(description, right - caption_left - 24),
+                caption: caption(
+                    description,
+                    right - caption_left - 2 * CYCLE_CAPTION_PADDING_X,
+                ),
                 inputs: scene.captions.loop_inputs(boundary.header).to_owned(),
                 outputs: scene.captions.loop_outputs(boundary.header),
             },
@@ -194,8 +205,8 @@ fn caption(description: &RichText, width: i32) -> Vec<RichText> {
         return Vec::new();
     }
     let mut lines = text::wrap_text(description, width, CYCLE_CAPTION_FONT);
-    for index in 0..lines.len().min(2) {
-        if (index == 1 && lines.len() > 2)
+    for index in 0..lines.len().min(CAPTION_MAX_LINES) {
+        if (index + 1 == CAPTION_MAX_LINES && lines.len() > CAPTION_MAX_LINES)
             || text::text_width(&lines[index], CYCLE_CAPTION_FONT) > width
         {
             lines.truncate(index + 1);
