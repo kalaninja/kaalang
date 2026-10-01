@@ -9,6 +9,9 @@ use latex_rust::{
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use unicode_segmentation::UnicodeSegmentation;
 
+/// Larger formulas stay literal to keep diagram labels readable.
+const MAX_FORMULA_HEIGHT_EM: i64 = 12;
+
 // Rational em scales shared with the SVG text styles and formula decorations.
 pub(crate) const SCRIPT_FONT_SCALE: (i32, i32) = (3, 4);
 pub(crate) const SUPERSCRIPT_SHIFT: (i32, i32) = (2, 5);
@@ -98,10 +101,7 @@ impl Formula {
         if layout.width <= Dim::zero() || &layout.height + &layout.depth < Dim::zero() {
             return None;
         }
-        // ponytail: Extremely tall math falls back to source; use wider scene
-        // coordinates if labels above a million pixels ever need to render.
-        let max_height = Dim::ratio(1_000_000, i64::from(crate::layout::LABEL_FONT));
-        if layout.height.abs() > max_height || layout.depth.abs() > max_height {
+        if layout.height.abs() + layout.depth.abs() > Dim::from_i64(MAX_FORMULA_HEIGHT_EM) {
             return None;
         }
         let mut options = SvgOptions::new();
@@ -1591,13 +1591,19 @@ mod tests {
     }
 
     #[test]
-    fn math_too_tall_for_scene_coordinates_falls_back_to_source() {
-        let normal = RichText::markdown(r"$x\rule{1em}{100em}$");
+    fn math_above_the_label_height_limit_falls_back_to_source() {
+        let normal = RichText::markdown(r"$\hspace{1em}\rule{1em}{12em}$");
         assert!(normal.spans()[0].formula.is_some());
 
-        let oversized = RichText::markdown(r"$x\rule{1em}{1000000000em}$");
-        assert_eq!(oversized.as_ref(), r"$x\rule{1em}{1000000000em}$");
-        assert!(oversized.spans().iter().all(|span| span.formula.is_none()));
+        for source in [
+            r"$x\rule{1em}{12.01em}$",
+            r"$\frac{x\rule{1em}{10em}}{x\rule{1em}{10em}}$",
+            r"$\frac{x}{x\rule{1em}{100em}}$",
+        ] {
+            let oversized = RichText::markdown(source);
+            assert_eq!(oversized.as_ref(), source);
+            assert!(oversized.spans().iter().all(|span| span.formula.is_none()));
+        }
     }
 
     #[test]

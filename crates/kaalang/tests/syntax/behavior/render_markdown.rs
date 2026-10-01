@@ -73,7 +73,7 @@ fn render_markdown(section: u8, condition: bool) {
     #[action("<u>$x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x+x$</u>")]
     let huge = |clipped| clipped;
 
-    #[action(r"$x\rule{1em}{1000000000em}$")]
+    #[action(r"$x\rule{1em}{13em}$")]
     let tested = |huge| huge;
 
     #[action(r#"<b>**warning**</b> <b><u>x</u></b> **outside**"#)]

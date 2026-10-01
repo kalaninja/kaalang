@@ -394,14 +394,17 @@ fn width_only_formula_advances_text_without_an_empty_svg() {
 }
 
 #[test]
-fn a_formula_too_tall_for_scene_coordinates_stays_literal() {
-    let formula = r"$x\rule{1em}{1000000000em}$";
+fn a_formula_above_the_label_height_limit_stays_literal() {
+    let formula = r"$x\rule{1em}{12.01em}$";
     let source = format!("#[kaalang] fn huge() {{ #[action(r\"{formula}\")] {{}}; return; }}");
     let svg = render_source(&source, "huge").expect("oversized math uses literal fallback");
 
     assert!(svg.contains(&format!("<title xml:space=\"preserve\">{formula}</title>")));
     assert!(describe(&svg).contains(formula));
     assert!(!svg.contains("<svg class=\"md-math"));
+    let action = svg.split_once(r#"class="node action""#).unwrap().1;
+    let shape = action.lines().find(|line| line.contains("<rect ")).unwrap();
+    assert!(attribute(shape, "height") < 100.0);
 }
 
 fn formula_scale(math: &str) -> f64 {

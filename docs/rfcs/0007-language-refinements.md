@@ -677,6 +677,13 @@ measured node. Their upper and lower edges align while their centers and side
 ports remain on the recorded rank line. Measuring the row includes each shape's
 full height, including a case's triangular tip.
 
+### 6.4 Oversized formulas
+
+A formula whose absolute ascent plus absolute descent exceeds the renderer's
+height limit stays literal, including its dollar delimiters. Use the unscaled
+math layout in em for this check. This extends RFC 0005's literal fallback rules
+to valid formulas whose height would make a label unreadable.
+
 ## 7. Changes to earlier RFCs
 
 This RFC supersedes the provisions below in every flow, whether or not it
@@ -730,6 +737,8 @@ declares stages. Earlier accepted RFC texts remain unchanged.
   Alternative outputs use the labeled result blocks from RFC 0004 §4, leaving
   the loop with the selected value before entering its matching outer
   continuation.
+- **RFC 0005 §§3.1, 4–5:** apply literal fallback to formulas above the
+  renderer's height limit, as in §6.4 here.
 - **RFC 0006 §§3, 4.1, 5–6, 8.3, 8.5 and 10:** apply the cycle rules in §§2 and
   5 here to preparation and stage bodies, replacing their captured cycle-input
   bindings, structural break, simultaneous results, and implicit repetition. A
@@ -762,9 +771,9 @@ The selected output is exported only after its route's remaining work, so the
 migrated branch structure must make that work and the continue mutually
 exclusive.
 
-Flows without cycles still use the initializer, branch, parameter-isolation, and
-node-height refinements where applicable. Concrete compiler and renderer types
-remain implementation choices.
+Flows without cycles still use the initializer, branch, parameter-isolation,
+node-height, and formula refinements where applicable. Concrete compiler and
+renderer types remain implementation choices.
 
 ## 8. Acceptance scenarios
 
