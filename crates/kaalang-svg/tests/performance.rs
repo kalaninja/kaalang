@@ -14,9 +14,10 @@ use kaalang_testing::probes::accepted;
 // and collapsed diagrams for every cycle fixture. Each diagram is also checked
 // against its fixture tier's diagram budget.
 /// One render pass over the fixture corpus, against a measured median of about
-/// 1.3 s over 246 diagrams. Rendering rebuilds the model internally, so this is
-/// bounded on its own rather than by subtracting the compiler's budget.
-const RENDER_CORPUS_BUDGET: Duration = Duration::from_secs(4);
+/// 4.24 s over 372 diagrams with Turbo Boost disabled. Rendering rebuilds the
+/// model internally, so this is bounded on its own rather than by subtracting
+/// the compiler's budget.
+const RENDER_CORPUS_BUDGET: Duration = Duration::from_secs(6);
 /// One ordinary fixture diagram, against a median of about 4.5 ms.
 const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(60);
 /// One stress-fixture diagram. Five times the current worst median of about
