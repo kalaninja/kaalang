@@ -5,6 +5,8 @@
 - Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
 - Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
 - Lowering: [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md)
+- Markdown: [RFC 0005: Markdown](0005-markdown.md)
+- Stages: [RFC 0006: Stages](0006-stages.md)
 
 ## 1. Motivation and scope
 
@@ -38,6 +40,12 @@ the following additions:
 - A **boundary consumer** is the implicit by-value use of the local wire
   selected for export. It is not an authored block and participates in ordinary
   scope, producer, branch, and merge checks.
+- A **selector** is a question, a choice, or a cycle with alternative outputs: a
+  block whose run selects one of its declared outcomes.
+- A **frame** is one sequence level of a local flow: the root sequence,
+  preparation, a stage body, or a cycle body describing one iteration. A cycle
+  nested in a frame is one block of that frame; its body forms a frame of its
+  own.
 
 ## 2. Cycle scope and interfaces
 
@@ -311,8 +319,8 @@ selection inside one case may therefore send its routes to different groups: a
 timeout case can give up with the completing routes of other cases and retry
 with their repeating routes. A route that repeats before reaching a group's
 comparison context neither sets two groups apart nor separates the group's
-cases, as the adjacency trace of RFC 0001 §7 already states. A repeat beyond
-that context may still separate routes.
+cases, extending the adjacency trace of RFC 0001 §7. A repeat beyond that
+context may still separate routes.
 
 ## 5. Validation and lowering
 
@@ -381,6 +389,7 @@ Small flows may retain the ordinary enumeration when it costs less. Count the
 finite domain with a capped decision-graph query before choosing that strategy;
 the product of declared alternatives can greatly overestimate a cycle's actual
 histories. The count does not list them and does not overflow on a large domain.
+When the product is already within the enumeration limit, no count is needed.
 
 Walk source order once per finite cycle frame. A block runs where execution
 continues in its frame and all its captures are available. Each producer
@@ -428,20 +437,20 @@ selection requires both its exported output and every selection in its body
 route to agree. Its unfinished routes have an additional outcome. Inside that
 cycle, its own selection is absent and the body's selections are visible. This
 preserves the ordinary frame's route identity without numbering or listing its
-body routes. The resulting relation is exactly the ordinary `only_difference`
-relation. Query producer differences and block participation within this
-relation to collect merge owners, all branch-local work, and block deciders
-without listing its satisfying pairs. For branch adjacency, project away
-selections that do not change the observed outcome and check whether a missing
-producer lies between the first and last producing traces. Choice and cycle
-routes retain their own selection and only the visible selections nested within
-the chosen case, including a visible nested cycle's body identity. Compare their
-projected route sets for adjacency and crossing convergence groups. Each group
-also has its own reaching condition: a repeat beyond its position can separate
-routes, while a repeat before it cannot. Summarize authored ordering by the
-first and last output, a missing interval, and any output-order reversal; equal
-remaining decision suffixes share that summary. Check cycle output order and
-repeating intervals in the same way.
+body routes. The resulting relation is exactly the enumerated one: executions
+that disagree at exactly one selector they both run. Query producer differences
+and block participation within this relation to collect merge owners, all
+branch-local work, and block deciders without listing its satisfying pairs. For
+branch adjacency, project away selections that do not change the observed
+outcome and check whether a missing producer lies between the first and last
+producing traces. Choice and cycle routes retain their own selection and only
+the visible selections nested within the chosen case, including a visible nested
+cycle's body identity. Compare their projected route sets for adjacency and
+crossing convergence groups. Each group also has its own reaching condition: a
+repeat beyond its position can separate routes, while a repeat before it cannot.
+Summarize authored ordering by the first and last output, a missing interval,
+and any output-order reversal; equal remaining decision suffixes share that
+summary. Check cycle output order and repeating intervals in the same way.
 
 Lower sets of executions directly. A block can run in a plan scope when every
 execution in that scope participates and its capture producers and merge-local
@@ -613,14 +622,16 @@ retains ordinary Rust checks.
 
 ### 6.1 Cycles and continue
 
-An expanded cycle retains its bounded region, entry junction, loop marker, and
-ordinary local routing. Its entry represents the available outer data for local
-dependency routing, with original provenance retained in the model. Those
-connections follow the existing control routes through the entry. Its unique
-structural continue supplies the iteration tail and the back edge to that entry.
-Continue has no computational figure; its captures and any ordinary merges lead
-to that common tail. A cycle with no reachable continue has no back edge. An
-explicit `continue;` can connect entry to tail directly.
+An expanded cycle retains its bounded region and ordinary local routing; only a
+collapsed cycle node carries the loop marker. Its entry represents the available
+outer data for local dependency routing, with original provenance retained in
+the model. Those connections follow the existing control routes through the
+entry. Its unique structural continue supplies the iteration tail and the back
+edge to that entry. Continue has no computational figure; its captures and any
+ordinary merges lead to that common tail. A cycle with no reachable continue has
+no back edge. If such a cycle's entry leads only to one body block with no other
+incoming route, that route replaces the entry junction. An explicit `continue;`
+can connect entry to tail directly.
 
 Each declared cycle output has a distinct result exit at the drawn cycle
 boundary. All local producers of that output merge under the ordinary rules
@@ -633,16 +644,17 @@ reach those exits without crossing: routes exporting a later output drawn left
 of routes exporting an earlier one, or a repeating route between routes
 exporting different outputs, which the back edge could not clear.
 
-A collapsed cycle retains its described cycle node and loop marker. It has one
-branch-specific exit per declared output, in declaration order: the first leaves
-the lower edge, and later exits fan out to the right using the existing ordered
-branch routing. Each exit is labeled with its output binding. A fully diverging
-cycle has no outgoing exit. Its receiving label lists the external wires used by
-the cycle: begin with the authored gate, when present, then walk the body in
-source order, including nested cycles, and append each captured outer wire on
-its first occurrence. Resolve and deduplicate by wire identity. Exclude wires
-produced inside this cycle, even when a nested cycle captures them. A gate also
-captured inside the body appears only once.
+A collapsed cycle retains its described cycle node and loop marker. With several
+declared outputs, it has one branch-specific exit per output, in declaration
+order: the first leaves the lower edge, and later exits fan out to the right
+using the existing ordered branch routing. A single output leaves through an
+ordinary non-branching exit, as in §2.2. Each exit is labeled with its output
+binding. A fully diverging cycle has no outgoing exit. Its receiving label lists
+the external wires used by the cycle: begin with the authored gate, when
+present, then walk the body in source order, including nested cycles, and append
+each captured outer wire on its first occurrence. Resolve and deduplicate by
+wire identity. Exclude wires produced inside this cycle, even when a nested
+cycle captures them. A gate also captured inside the body appears only once.
 
 This derived list is the collapsed node's input label, in the ordinary receiving
 label position. Show literal names with their producer's `mut` permission and no
@@ -707,6 +719,12 @@ declares stages. Earlier accepted RFC texts remain unchanged.
   structural `break`. Each cycle owns at most one structural `continue`, and
   every repeating route must reach it; reaching the body end without an output
   or transfer is invalid.
+- **RFC 0001 §§1–4:** wherever the overview, the definition of iteration, and
+  the block-kind table describe a cycle completing by `break` or repeating at
+  its body's end, a declared output completes it and `continue` repeats it. An
+  outputless cycle no longer transfers `()`: it repeats or diverges as in §2.2
+  here. RFC 0001 §4.7 keeps the capture, value, and computation restrictions RFC
+  0001 §4.6 gave break, now for return alone.
 - **RFC 0001 §3 and §8:** permit a block initializer without an empty capture
   list, with the grammar and closure-valued initializer rules in §3 here.
 - **RFC 0001 §7:** compare convergence groups by route, including nested
@@ -716,6 +734,12 @@ declares stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0001 §§5–7:** cycle bodies inherit outer data and create fresh local
   scopes per iteration. Multiple outputs participate as alternative branches.
   Ordinary producer order, ownership, local merges, and convergence rules apply.
+- **RFC 0002 §§2–4 and 4.9:** breaks no longer exist. Each declared output's
+  routes reach its own result junction as in §6.2 here, which limits §4.9's
+  reuse of a merge or body exit as the result. A collapsed cycle has one exit
+  per output as in §6.1 here, rather than one non-branching exit.
+- **RFC 0002 §4.8 and RFC 0003 §3:** an expanded cycle shows its boundary
+  without a loop marker; only the collapsed cycle node carries it.
 - **RFC 0002 §§4.8 and 6–8:** cycles have one result exit per declared
   alternative output, and their continue supplies the single iteration tail.
   Collapsed cycles retain those alternative exits. Replace their authored
@@ -750,17 +774,17 @@ declares stages. Earlier accepted RFC texts remain unchanged.
   Alternative outputs use the labeled result blocks from RFC 0004 §4, leaving
   the loop with the selected value before entering its matching outer
   continuation.
-- **RFC 0005 §§3.1, 4–5:** apply literal fallback to formulas above the
-  renderer's height limit, as in §6.4 here.
-- **RFC 0006 §§3, 4.1, 5–6, 8.3, 8.5 and 10:** apply the cycle rules in §§2 and
-  5 here to preparation and stage bodies, replacing their captured cycle-input
-  bindings, structural break, simultaneous results, and implicit repetition. A
-  cycle inherits the available stage data; a gate naming the stage entry refers
-  to that same wire and performs no move or copy. Inner captures resolve to the
-  original producer. Mutable borrowing of the received stage entry remains
-  forbidden, including inside a cycle; create a separate mutable wire for
-  working state before the cycle. A selected cycle output becomes a stage
-  transition only when the stage also declares that output.
+- **RFC 0005 §§3, 4–5:** apply literal fallback to formulas above the renderer's
+  height limit, as in §6.4 here.
+- **RFC 0006 §§1, 3, 4.1, 5–6, 8.3, 8.5 and 10:** apply the cycle rules in §§2
+  and 5 here to preparation and stage bodies, replacing their captured
+  cycle-input bindings, structural break, simultaneous results, and implicit
+  repetition. A cycle inherits the available stage data; a gate naming the stage
+  entry refers to that same wire and performs no move or copy. Inner captures
+  resolve to the original producer. Mutable borrowing of the received stage
+  entry remains forbidden, including inside a cycle; create a separate mutable
+  wire for working state before the cycle. A selected cycle output becomes a
+  stage transition only when the stage also declares that output.
 - **RFC 0006 §6.1:** use the deciding-selection and convergence rules in §4 here
   for every local part. The execution-condition representation in §5.1 also
   covers preparation, stage bodies, and their transition boundaries. It checks

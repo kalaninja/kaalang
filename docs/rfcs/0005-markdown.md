@@ -9,9 +9,9 @@
 
 Descriptions sometimes need to emphasize a condition, distinguish a code name
 from prose, strike out an obsolete term, show indices, quote a statement, write
-a formula, or call out a phrase. Today every character is displayed literally.
-Add bold, italic, strikethrough, code, superscript, subscript, quoted text,
-rendered TeX formulas, underline, highlight, and palette text colors.
+a formula, or call out a phrase. Before this RFC, every character was displayed
+literally. Add bold, italic, strikethrough, code, superscript, subscript, quoted
+text, rendered TeX formulas, underline, highlight, and palette text colors.
 
 This restricted notation does not turn descriptions into Markdown documents. It
 adds no headings, tables, lists, fenced code blocks, links, images, general
@@ -67,7 +67,11 @@ attributes or spacing are accepted. Tags may nest with one another and with
 supported Markdown; a matching closing tag is required on the same authored
 line. For example, `<mark>**important**</mark>` highlights bold text. An
 unrecognized or unpaired tag stays literal. A backslash can keep its opening `<`
-literal.
+literal. Tags must nest properly: a closing tag that does not match the
+innermost open tag stays literal, and if an outer tag of its name is open, that
+tag and every tag opened after it stay literal too. Thus `<u><mark>x</u></mark>`
+displays all four tags. A pair enclosing no text, such as `<mark></mark>`, also
+stays literal.
 
 For example, `x^2^` displays as x² and `H~2~O` displays as H₂O. These effects
 raise or lower the authored text; they do not change letter case or substitute
@@ -177,6 +181,19 @@ retains its effects. Wrapping and shortening split text only between Unicode
 grapheme clusters, including inside code and across adjacent spans. A rendered
 formula remains an indivisible unit.
 
+### 3.4 Colors
+
+The five color tag names have renderer-owned definitions. Color tags with other
+names, color codes, or CSS declarations remain literal fallback. A color tag
+affects only its contents, including formulas; text after the closing tag
+returns to the enclosing or base color.
+
+Within formulas, support the math renderer's TeX color commands, including
+`\color`, `\textcolor`, `\colorbox`, `\fcolorbox`, and `\definecolor`. TeX color
+names and models follow that renderer's rules. A color definition alone does not
+color any glyph; it takes effect when a later command uses the defined name.
+Unknown names and unsupported models leave the complete formula literal.
+
 ## 4. Presentation and accessibility
 
 Measure and wrap the interpreted text before drawing it. Delimiters that become
@@ -197,14 +214,19 @@ beneath the text, and highlight paints a pale background behind its measured
 span without changing the text color. Palette colors use fixed, dark SVG colors
 chosen to remain legible on white, the node fills, and the highlight background.
 These effects may surround formulas: their paths take the selected text color,
-and highlight and underline are drawn around the formula's measured bounds. An
-explicit TeX color overrides a surrounding palette color within its math scope;
-uncolored formula content inherits the surrounding color. Formulas use the
-description's base font size and align their math baseline with surrounding
-text. Subsequent plain text returns to the base size, weight, and baseline. Use
-the existing line height as a minimum and grow it from formula metrics when
-required. Effects must not make text escape its measured bounds or overlap
-adjacent content.
+highlight and underline are drawn around the formula's measured bounds, and
+strikethrough runs across them. Bold strokes its glyph outlines, and italic or
+quoted text slants it. An explicit TeX color overrides a surrounding palette
+color within its math scope; uncolored formula content inherits the surrounding
+color. Inside a superscript or subscript, a formula takes that script's size and
+baseline shift. Elsewhere, formulas use the description's base font size and
+align their math baseline with surrounding text. Subsequent plain text returns
+to the base size, weight, and baseline. Use the existing line height as a
+minimum and grow it from formula metrics when required. A formula wider than its
+label's wrapping width is clipped so that its visible part and a trailing
+ellipsis fill that width; the plain-text projection keeps its complete TeX.
+Effects must not make text escape its measured bounds or overlap adjacent
+content.
 
 Formatting may change pixel dimensions and spacing. It must not change the
 verified arrangement's rows, columns, branch order, connections, or cycle
@@ -284,6 +306,9 @@ provisions only within the scope of description formatting:
   retain the full plain-text projection defined in §4 of this RFC, including
   when a caption is shortened or omitted. Description measurement and display
   use the same styled spans as defined in §§4–5.
+- [RFC 0003 §3](0003-svg-renderer.md#3-svg-output): besides expanded cycle
+  captions, a label may shorten a formula wider than its wrapping width, as
+  defined in §4 of this RFC.
 
 The requirement for nonempty Rust description strings in
 [RFC 0001 §3](0001-language.md#3-block-statements) and all other provisions of
@@ -297,16 +322,3 @@ the earlier RFCs remain in force.
   §4, including when several effects occur in one description.
 - A flow using the complete notation retains the same Rust behavior as its
   plain-text equivalent.
-
-## 8. Color limits
-
-The five color tag names have renderer-owned definitions. Color tags with other
-names, color codes, or CSS declarations remain literal fallback. A color tag
-affects only its contents, including formulas; text after the closing tag
-returns to the enclosing or base color.
-
-Within formulas, support the math renderer's TeX color commands, including
-`\color`, `\textcolor`, `\colorbox`, `\fcolorbox`, and `\definecolor`. TeX color
-names and models follow that renderer's rules. A color definition alone does not
-color any glyph; it takes effect when a later command uses the defined name.
-Unknown names and unsupported models leave the complete formula literal.

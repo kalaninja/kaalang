@@ -5,6 +5,7 @@
 - Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
 - Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
 - Lowering: [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md)
+- Markdown: [RFC 0005: Markdown](0005-markdown.md)
 
 ## 1. Motivation and scope
 
@@ -466,18 +467,19 @@ aliases.
 At a completed transition boundary, construct the destination variant with the
 selected value and finish the current arm's local scopes. Construction checks
 the destination type and, in a `const fn`, the value's `Copy` bound. The
-constructor and its value argument retain the source location of the authored
-output binding, or the function parameter when it supplies the initial signal,
-while generated identifiers retain their hygiene. Type and bound diagnostics
-must identify that authored producer, following RFC 0004 §2's span policy. The
-destination is known from the resolved output name; choosing it requires no
-extra join label. Ordinary merges of alternative producers still use RFC 0004's
-labeled blocks and shared continuations. The next dispatch iteration enters the
-selected stage. The terminal arm returns directly from the enclosing function. A
-wholly diverging arm remains in its nested cycle and produces no next state.
-When a transition boundary continues the dispatcher from inside generated
-labeled blocks, its native `continue` names the hygienic dispatch-loop label.
-Cycle breaks and implicit repeats target that cycle's own generated label under
+constructor and its value argument retain the source location of the binding
+that declares the signal: the stage's output declaration for an outgoing signal,
+and for an initial signal preparation's last root-level producer of that name or
+the function parameter that supplies it. Generated identifiers retain their
+hygiene. Type and bound diagnostics point at that binding. The destination is
+known from the resolved output name; choosing it requires no extra join label.
+Ordinary merges of alternative producers still use RFC 0004's labeled blocks and
+shared continuations. The next dispatch iteration enters the selected stage. The
+terminal arm returns directly from the enclosing function. A wholly diverging
+arm remains in its nested cycle and produces no next state. When a transition
+boundary continues the dispatcher from inside generated labeled blocks, its
+native `continue` names the hygienic dispatch-loop label. Cycle breaks and
+implicit repeats target that cycle's own generated label under
 [RFC 0004 §7](0004-rust-lowering.md#7-cycles).
 
 For example, the counting flow in §8.1 has this illustrative lowering. As in RFC
@@ -730,8 +732,8 @@ For empty preparation, retain the verified start geometry and parameter panel as
 a header-only projection. Its sole transition is represented by the direct
 connection to the receiving stage. Place that header above the stages and check
 the composed rails and bounds normally. This presentation does not change the
-shared stage graph or its local stage arrangements. If no stage has a transition
-node, omit the lower return rail.
+shared stage graph or its local stage arrangements. If no part, including
+preparation, has a transition node, omit the lower return rail.
 
 Composition reserves preparation's start and parameter panel, both horizontal
 rails, and the return line outside the leftmost part when computing the canvas.
@@ -1107,16 +1109,17 @@ apply within preparation and each stage unless explicitly changed here.
   their consumers' capture labels, while existing control connections carry the
   dependency routes. The terminal stage is declared last and occupies the
   rightmost part; its end stays below all other vertices of that local part.
-- **RFC 0003 §§1–2:** compose locally verified stage arrangements and preserve
-  symbolic stage links and the diagram geometry defined in §7.4 here.
+- **RFC 0003 §§1–3:** compose locally verified stage arrangements and preserve
+  symbolic stage links and the diagram geometry and serialization defined in
+  §7.4 here.
 - **RFC 0004 §§1–2 and §5:** retain shared data around the generated stage
   dispatcher, carry each selected entry in its enum variant, and emit the
   terminal return directly from its arm. Each arm binds its received entry
   immutably. Standard enum variants carry inferred payload types without
   introducing generated type names into authored scopes. Transition checks
   require `Copy` only in `const` functions. Ordinary functions transfer owned
-  values without those bounds. Constructor checks preserve the authored
-  producer's source location for diagnostics.
+  values without those bounds. Constructor checks report diagnostics at the
+  binding that declares the signal, as in §6.2 here.
 
 Concrete compiler and renderer types remain implementation choices.
 
@@ -1140,7 +1143,7 @@ addition to the ordinary flow and cycle rules in RFCs 0001–0004.
 | Owned stage entry forwarded through a self-transition                            | Move it through the local output into the next visit without cloning or dropping the transferred owner.                                   |
 | Non-Copy initial or outgoing stage signal moved before its boundary consumer     | Reject the export as a use after move; borrowing before export follows ordinary Rust rules.                                               |
 | Preparation action clones a non-Copy initial signal                              | A value capture moves the original before cloning and prevents export; a shared capture preserves the initial signal.                     |
-| Stage transition fails its type or const Copy check                              | Locate the diagnostic at the authored outgoing binding or initial parameter, preserving its source span.                                  |
+| Stage transition fails its type or const Copy check                              | Locate the diagnostic at the binding that declares the signal under §6.2, preserving its source span.                                     |
 | Several declared exits on alternative stage routes                               | Each completed visit selects exactly one.                                                                                                 |
 | Zero or simultaneous outputs on a completing stage route                         | Reject the unfinished or ambiguous route.                                                                                                 |
 | Remaining work after an exported wire is produced                                | Finish the selected route before exporting its output.                                                                                    |
