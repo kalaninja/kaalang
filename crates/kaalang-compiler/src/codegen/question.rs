@@ -20,8 +20,8 @@ pub(crate) fn emit(
         .position(|branch| branch.is_yes)
         .expect("a question declares one yes branch");
     let no = 1 - yes;
-    let yes_path = super::flow(flow, &branches[yes].plan, bindings);
-    let no_path = super::flow(flow, &branches[no].plan, bindings);
+    let yes_path = super::flow(flow, &branches[yes], bindings);
+    let no_path = super::flow(flow, &branches[no], bindings);
     let inputs = input_bindings(&block.inputs, bindings);
     let body = block_body(&block.body);
     let yes_wire = bindings.pattern(block.output_span, &block.outputs[yes..=yes]);

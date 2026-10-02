@@ -33,7 +33,7 @@ fn compare_flow(
     parsed: &crate::Flow,
     existing: Option<&crate::Analysis>,
 ) -> bool {
-    let ordinary = crate::analyze::flow(parsed);
+    let ordinary = crate::analyze::flow(parsed, true);
     let symbolic = analyze(parsed, true);
     let (mut symbolic, groups, merges) = match (ordinary, symbolic) {
         (Err(expected), Err(actual)) => {
@@ -172,7 +172,7 @@ fn compare_flow(
     assert!(symbolic.verify(parsed, &plan, &merges));
     assert_eq!(
         groups,
-        crate::analyze::flow(parsed)
+        crate::analyze::flow(parsed, true)
             .expect("the ordinary analysis succeeds")
             .1
     );
@@ -358,7 +358,7 @@ fn the_symbolic_verifier_rejects_exporting_to_an_inactive_cycle() {
                 branches, joins, ..
             } => {
                 for branch in branches {
-                    change(&mut branch.plan);
+                    change(branch);
                 }
                 for join in joins {
                     change(&mut join.next);

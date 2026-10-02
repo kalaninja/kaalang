@@ -42,16 +42,7 @@ type FlowResult = (
 
 /// Enumerates executions in source order and derives canonical merges and groups.
 /// Validation order below determines diagnostic priority.
-pub(crate) fn flow(flow: &Flow) -> Result<FlowResult> {
-    flow_with_usage(flow, true)
-}
-
-/// Preparation first needs route summaries before stage captures are known.
-pub(crate) fn flow_without_usage(flow: &Flow) -> Result<FlowResult> {
-    flow_with_usage(flow, false)
-}
-
-fn flow_with_usage(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
+pub(crate) fn flow(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
     let walk = walk(flow);
     if let Some((_, error)) = walk.error {
         return Err(error);
@@ -108,7 +99,6 @@ fn walk(flow: &Flow) -> Walk<'_> {
                 .enumerate()
                 .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
                 .collect(),
-            produced: flow.flow_inputs.iter().cloned().collect(),
             executed: BTreeSet::new(),
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
@@ -257,18 +247,10 @@ struct State {
     /// Every wire this execution has provided, with the occurrence providing
     /// it. A bare capture does not remove it: Rust owns move checking.
     available: BTreeMap<Ident, ProducerId>,
-    /// Every wire name this execution has produced, flow inputs included.
-    produced: BTreeSet<Ident>,
     executed: BTreeSet<usize>,
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
-    loops: BTreeMap<usize, LoopState>,
-}
-
-#[derive(Clone)]
-struct LoopState {
-    available: BTreeMap<Ident, ProducerId>,
-    produced: BTreeSet<Ident>,
+    loops: BTreeMap<usize, BTreeMap<Ident, ProducerId>>,
 }
 
 impl State {
@@ -423,7 +405,7 @@ impl Walk<'_> {
     /// Makes one output available unless this execution already produced its name.
     fn produce(&mut self, state: &mut State, block: usize, output: usize) -> bool {
         let name = &self.flow.blocks[block].outputs[output];
-        if !state.produced.insert(name.clone()) {
+        if state.available.contains_key(name) {
             self.report(
                 (block, output),
                 Error::new(

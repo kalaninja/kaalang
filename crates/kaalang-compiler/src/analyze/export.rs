@@ -32,12 +32,10 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
         );
         return;
     }
-    let outside = state
+    state.available = state
         .loops
         .remove(&target)
         .expect("the target loop is active");
-    state.available = outside.available;
-    state.produced = outside.produced;
     if cycle.branch_count() > 0 {
         state.branches.insert(BranchSelection {
             block: target,

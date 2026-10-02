@@ -46,7 +46,7 @@ pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTree
                 let Some(branch) = branches.first() else {
                     return (wires, *index);
                 };
-                plan = &branch.plan;
+                plan = branch;
             }
             ExecutionPlan::Question {
                 index,
@@ -69,7 +69,7 @@ pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTree
                 };
                 let mut before_join = Vec::new();
                 for branch in branches {
-                    plan::serial_order(&branch.plan, &mut before_join);
+                    plan::serial_order(branch, &mut before_join);
                 }
                 for join in earlier {
                     plan::serial_order(&join.next, &mut before_join);

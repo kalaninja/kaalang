@@ -46,9 +46,7 @@ pub(super) fn lower<'e>(
     } else {
         let next = builder.lower(&completing, &finished, forbidden, scopes)?;
         emitted.extend(next.emitted);
-        let branch = Branch {
-            plan: Box::new(next.plan),
-        };
+        let branch = Box::new(next.plan);
         (vec![branch], Vec::new(), next.yielding)
     };
     Ok(Lowered {
@@ -80,7 +78,7 @@ pub(super) fn replay(
             if replay.flow.blocks[index].branch_count() > 0 {
                 replay.branch(index, branches, joins)
             } else {
-                replay.walk(&branches.first()?.plan)
+                replay.walk(branches.first()?)
             }
         }
         exit @ (Exit::Return(_) | Exit::Repeat(_) | Exit::Export(_)) => Some(exit),

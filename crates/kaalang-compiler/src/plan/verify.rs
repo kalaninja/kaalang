@@ -200,7 +200,7 @@ impl Replay<'_> {
             })
             .map(|(wire, _)| wire.clone())
             .collect::<BTreeSet<_>>();
-        let mut exit = self.walk(&branches.get(selected)?.plan)?;
+        let mut exit = self.walk(branches.get(selected)?)?;
         let mut entered = None;
         while let Exit::Yield(target) = exit {
             if target.block != block || entered.is_some_and(|last| target.join <= last) {
@@ -321,17 +321,17 @@ mod tests {
             unreachable!()
         };
         let mut misplaced = std::mem::replace(
-            &mut branches[1].plan,
+            &mut branches[1],
             Box::new(ExecutionPlan::Continue { index: 3 }),
         );
         let ExecutionPlan::Action { next: suffix, .. } = misplaced.as_mut() else {
             unreachable!()
         };
         *suffix = std::mem::replace(
-            &mut continuations[0].plan,
+            &mut continuations[0],
             Box::new(ExecutionPlan::Continue { index: 0 }),
         );
-        continuations[0].plan = misplaced;
+        continuations[0] = misplaced;
         // Every block is still represented exactly once, but the exiting
         // execution would now run work it should have skipped.
         let emitted = emitted(&model.analysis.execution_plan);
@@ -380,14 +380,14 @@ mod tests {
             unreachable!()
         };
         assert!(matches!(
-            branches[0].plan.as_ref(),
+            branches[0].as_ref(),
             ExecutionPlan::Continue { index: 3 }
         ));
         assert!(matches!(
-            continuations[0].plan.as_ref(),
+            continuations[0].as_ref(),
             ExecutionPlan::Continue { index: 5 }
         ));
-        *branches[0].plan = ExecutionPlan::Continue { index: 5 };
+        *branches[0] = ExecutionPlan::Continue { index: 5 };
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
 

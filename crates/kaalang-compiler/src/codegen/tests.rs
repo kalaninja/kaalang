@@ -295,7 +295,7 @@ fn nested_partial_joins_emit_each_body_once_without_routing_values() {
 fn conditional_stage_histories_preserve_constructor_order_and_dispatcher_rust() {
     fn enumerate(local: &mut crate::Analysis) {
         let (executions, _, merges, passes) =
-            crate::analyze::flow(&local.flow).expect("the reference analyzes");
+            crate::analyze::flow(&local.flow, true).expect("the reference analyzes");
         local.execution_plan = crate::plan::flow(&local.flow, &executions, &merges, passes);
         local.executions = crate::Executions::enumerated(executions);
     }

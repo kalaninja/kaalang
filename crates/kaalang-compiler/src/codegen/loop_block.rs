@@ -37,7 +37,7 @@ pub(super) fn emit(
     let gates = block.outputs.iter().map(|output| bindings.gate(output));
     let next = branches
         .first()
-        .map(|branch| super::flow(flow, &branch.plan, bindings));
+        .map(|branch| super::flow(flow, branch, bindings));
     quote_spanned! {block.span=>
         let #pattern = { #looped };
         #(#gates)*

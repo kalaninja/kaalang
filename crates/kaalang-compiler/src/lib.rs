@@ -155,11 +155,7 @@ fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Ana
         let plan = executions.plan(&flow, &merges);
         (Executions::factored(executions), groups, merges, plan)
     } else {
-        let (executions, groups, merges, passes) = if check_usage {
-            analyze::flow(&flow)?
-        } else {
-            analyze::flow_without_usage(&flow)?
-        };
+        let (executions, groups, merges, passes) = analyze::flow(&flow, check_usage)?;
         let plan = plan::flow(&flow, &executions, &merges, passes);
         (Executions::enumerated(executions), groups, merges, plan)
     };
@@ -713,7 +709,7 @@ mod tests {
         };
         assert_eq!(*index, 0);
         assert!(matches!(
-            no.plan.as_ref(),
+            no.as_ref(),
             ExecutionPlan::Action { index: 6, next }
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
@@ -728,24 +724,24 @@ mod tests {
             index,
             branches,
             joins,
-        } = yes.plan.as_ref()
+        } = yes.as_ref()
         else {
             panic!("the yes branch must contain the choice")
         };
         assert_eq!(*index, 1);
         assert_eq!(branches.len(), 3);
         assert!(matches!(
-            branches[0].plan.as_ref(),
+            branches[0].as_ref(),
             ExecutionPlan::Action { index: 2, next }
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["selected"])
         ));
         assert!(matches!(
-            branches[1].plan.as_ref(),
+            branches[1].as_ref(),
             ExecutionPlan::Action { index: 3, next }
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["selected"])
         ));
         assert!(matches!(
-            branches[2].plan.as_ref(),
+            branches[2].as_ref(),
             ExecutionPlan::Action { index: 4, next }
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
@@ -885,7 +881,7 @@ mod tests {
             panic!("the root must be the choice")
         };
         assert!(matches!(
-            branches[2].plan.as_ref(),
+            branches[2].as_ref(),
             ExecutionPlan::Action { index: 3, next }
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));

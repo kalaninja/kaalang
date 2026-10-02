@@ -408,9 +408,7 @@ impl Builder<'_> {
         emitted.insert(block);
         let branches = branches
             .into_iter()
-            .map(|branch| Branch {
-                plan: Box::new(branch.plan),
-            })
+            .map(|branch| Box::new(branch.plan))
             .collect();
         let plan = if self.flow.blocks[block].kind == BlockKind::Question {
             ExecutionPlan::Question {
@@ -766,7 +764,7 @@ impl Replay<'_> {
         for (branch, subtree) in branches.iter().enumerate() {
             let selected = self.executions.selected(*index, branch);
             let branch_context = self.executions.conditions.and(context, selected);
-            self.visit(&subtree.plan, branch_context);
+            self.visit(subtree, branch_context);
         }
         for (join, continuation) in joins.iter().enumerate() {
             let yielded = self.yields.remove(&(*index, join)).unwrap_or(NEVER);

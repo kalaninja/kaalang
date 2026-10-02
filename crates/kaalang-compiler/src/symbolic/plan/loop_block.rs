@@ -53,13 +53,7 @@ pub(super) fn lower(
     } else {
         let next = builder.lower(completing, &finished, forbidden, scopes);
         emitted.extend(next.emitted);
-        (
-            vec![Branch {
-                plan: Box::new(next.plan),
-            }],
-            Vec::new(),
-            next.yielding,
-        )
+        (vec![Box::new(next.plan)], Vec::new(), next.yielding)
     };
     Lowered {
         plan: ExecutionPlan::Loop {
@@ -112,7 +106,7 @@ pub(super) fn replay(
         replay.branches(header, branches, joins, completed);
     } else if completed != NEVER {
         if let [next] = branches {
-            replay.visit(&next.plan, completed);
+            replay.visit(next, completed);
         } else {
             replay.valid = false;
         }

@@ -608,10 +608,7 @@ pub struct JoinTarget {
 }
 
 /// One verified branch continuation.
-#[derive(Clone)]
-pub struct Branch {
-    pub plan: Box<ExecutionPlan>,
-}
+pub type Branch = Box<ExecutionPlan>;
 
 /// Wire bindings and continuation shared by branches yielding into a lowering join.
 #[derive(Clone)]

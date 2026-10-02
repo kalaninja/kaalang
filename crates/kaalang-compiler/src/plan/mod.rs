@@ -342,9 +342,7 @@ impl Builder<'_> {
 
         let branches = branches
             .into_iter()
-            .map(|branch| Branch {
-                plan: Box::new(branch.plan),
-            })
+            .map(|branch| Box::new(branch.plan))
             .collect::<Vec<_>>();
         Ok((branches, joins, yielding, emitted))
     }
@@ -611,7 +609,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
             order.push(*index);
             serial_order(body, order);
             for branch in branches {
-                serial_order(&branch.plan, order);
+                serial_order(branch, order);
             }
             for join in joins {
                 serial_order(&join.next, order);
@@ -638,7 +636,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
         } => {
             order.push(*index);
             for branch in branches {
-                serial_order(&branch.plan, order);
+                serial_order(branch, order);
             }
             for join in joins {
                 serial_order(&join.next, order);
@@ -664,7 +662,7 @@ pub(crate) fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: Joi
         } => {
             fill_yields(body, wires, target);
             for branch in branches {
-                fill_yields(&mut branch.plan, wires, target);
+                fill_yields(branch, wires, target);
             }
             for join in joins {
                 fill_yields(&mut join.next, wires, target);
@@ -682,7 +680,7 @@ pub(crate) fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: Joi
             branches, joins, ..
         } => {
             for branch in branches {
-                fill_yields(&mut branch.plan, wires, target);
+                fill_yields(branch, wires, target);
             }
             for join in joins {
                 fill_yields(&mut join.next, wires, target);

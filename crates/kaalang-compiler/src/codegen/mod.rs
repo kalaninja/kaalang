@@ -310,7 +310,7 @@ pub(super) fn exits(
         let label = &labels[output];
         let wire = bindings.pattern(block.output_span, &block.outputs[output..=output]);
         let gate = bindings.gate(&block.outputs[output]);
-        let path = self::flow(flow, &branch.plan, bindings);
+        let path = self::flow(flow, branch, bindings);
         dispatch = quote! {
             let #wire = #label: { #dispatch };
             #gate

@@ -3,16 +3,12 @@
 use syn::{Error, Result};
 
 use super::frame::Frames;
-use super::{LoopState, State, Walk};
+use super::{State, Walk};
 use crate::model::{ExecutionOutcome, Flow};
 
 /// The body inherits every outer wire; completion drops its locals again.
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
-    let outside = LoopState {
-        available: state.available.clone(),
-        produced: state.produced.clone(),
-    };
-    state.loops.insert(block, outside);
+    state.loops.insert(block, state.available.clone());
     walk.visit(block + 1, state);
 }
 
