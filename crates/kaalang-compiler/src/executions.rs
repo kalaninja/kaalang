@@ -196,7 +196,7 @@ mod tests {
             let parts = std::iter::once(&analysis)
                 .chain(analysis.stages.iter().map(|stage| &*stage.analysis));
             for part in parts {
-                if part.executions.len() > 64 {
+                if part.executions.len() > crate::symbolic::ENUMERATED_HISTORY_LIMIT {
                     assert!(
                         matches!(&part.executions.storage, Storage::Symbolic { complete, .. } if complete.get().is_none())
                     );

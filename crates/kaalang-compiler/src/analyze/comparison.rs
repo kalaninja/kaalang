@@ -8,7 +8,10 @@ use crate::model::Execution;
 
 use super::only_difference;
 
-/// At most 2016 pairs, cheaper than setting up the index.
+/// At most 2016 pairs. Measured on 2026-10-02, the index is no faster at this
+/// size and wins only for repeating flows of about 70 executions or more.
+/// Enumerated lists stay within [`crate::symbolic::ENUMERATED_HISTORY_LIMIT`],
+/// so production analysis never reaches the index.
 pub(super) const PAIRWISE_EXECUTIONS: usize = 64;
 
 /// For each context, visits enough compatible pairs to preserve connectivity.

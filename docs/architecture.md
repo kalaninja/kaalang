@@ -57,9 +57,9 @@ projection only after the expanded one succeeds.
 ## Execution representation
 
 [`analyze_local`](../crates/kaalang-compiler/src/lib.rs) selects one of two
-exact representations. Local flows with at most 64 finite histories use the
-ordinary execution list. When the product of declared alternatives exceeds that
-threshold,
+exact representations. Local flows with at most `ENUMERATED_HISTORY_LIMIT`
+finite histories use the ordinary execution list. When the product of declared
+alternatives exceeds that threshold,
 [`symbolic/walk/`](../crates/kaalang-compiler/src/symbolic/walk/mod.rs) first
 builds conditions and counts the actual domain with a capped query. A small
 actual domain still uses the ordinary path.
