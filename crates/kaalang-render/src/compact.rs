@@ -60,9 +60,7 @@ fn lanes(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
                     }
                 }
             }
-            if keep(verifier, built, candidate) {
-                changed = true;
-            }
+            changed = keep(verifier, built, candidate) || changed;
         }
     }
     changed
@@ -137,9 +135,7 @@ fn columns(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool 
         }
         let mut candidate = built.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
-        if keep(verifier, built, candidate) {
-            changed = true;
-        }
+        changed = keep(verifier, built, candidate) || changed;
     }
     changed
 }
@@ -224,9 +220,7 @@ fn rows(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> bool {
         }
         candidate.gap_lanes[rank - 2] += candidate.gap_lanes.remove(rank - 1);
         candidate.ranks -= 1;
-        if keep(verifier, built, candidate) {
-            changed = true;
-        }
+        changed = keep(verifier, built, candidate) || changed;
     }
     changed
 }

@@ -28,7 +28,8 @@ impl Bodies {
                 .loop_boundaries
                 .iter()
                 .map(|boundary| {
-                    let owned = owned(flow, topology, boundary.header);
+                    let mut owned = topology.body_vertices(flow, boundary.header);
+                    owned.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
                     let inside = |vertex: Vertex| owned.contains(&vertex);
                     let interface = |edge: &Connection| {
                         edge.destination == boundary.entry
@@ -185,18 +186,6 @@ impl Bodies {
     }
 }
 
-fn owned(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
-    let mut body = topology.body_vertices(flow, header);
-    body.extend(
-        topology
-            .loop_boundaries
-            .iter()
-            .filter(|boundary| boundary.header == header)
-            .flat_map(|boundary| boundary.results.iter().map(|&result| Vertex::from(result))),
-    );
-    body
-}
-
 fn extents(points: &[Point]) -> (i32, i32, i32, i32) {
     points
         .iter()
@@ -217,10 +206,8 @@ fn rectangles(
     back_extents: &[(i32, i32, i32, i32)],
 ) -> Vec<(i32, i32, i32, i32)> {
     let mut settled = vec![None; topology.loop_boundaries.len()];
-    let mut inward = (0..topology.loop_boundaries.len()).collect::<Vec<_>>();
-    inward.sort_by_key(|&index| std::cmp::Reverse(topology.loop_boundaries[index].header));
-    for index in inward {
-        let body = &bodies.0[index];
+    // Boundaries follow source order, with nested cycles after their parents.
+    for (index, body) in bodies.0.iter().enumerate().rev() {
         let cells = body.owned.iter().map(|&vertex| {
             let point = geometry
                 .vertex(vertex)
