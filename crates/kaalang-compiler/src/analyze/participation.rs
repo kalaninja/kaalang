@@ -117,8 +117,10 @@ mod tests {
 
     #[test]
     fn participation_and_branch_order_match_the_pairwise_reference() {
-        let corpus = kaalang_testing::corpus::corpus();
-        kaalang_testing::corpus::assert_corpus_shape(&corpus);
+        use kaalang_testing::corpus::{self, Suite};
+
+        let corpus = corpus::corpus(Suite::All);
+        corpus::assert_corpus_shape(&corpus, Suite::All);
         let generated = kaalang_testing::probes::accepted()
             .into_iter()
             .map(|(name, source, _)| (name, kaalang_testing::probes::flow(&source), false));

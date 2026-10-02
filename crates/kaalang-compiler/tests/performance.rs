@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use syn::ItemFn;
 
-use kaalang_testing::corpus;
+use kaalang_testing::corpus::{self, Suite};
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
 use kaalang_testing::probes::{
     accepted, branching, branching_with_work, cyclic_branching_with_work, data_branching, flow,
@@ -45,23 +45,28 @@ fn cost(function: &ItemFn) -> Option<Cost> {
     Some(Cost { accepted, diagram })
 }
 
-// The corpus budgets include flows from ordinary and stress fixtures. Each flow
-// is also checked against its tier's budget, so the pass catches distributed
-// regressions and the flow checks catch isolated ones.
+// Ordinary and stress fixtures have separate corpus passes. Each flow is also
+// checked against its tier's budget, so the pass catches distributed regressions
+// and the flow checks catch isolated ones.
 
-/// One model pass over the fixture corpus, against a measured median of about
-/// 405 ms over 191 flows.
-const MODEL_CORPUS_BUDGET: Duration = Duration::from_secs(2);
+/// Per-flow allowance for 263 ordinary model flows: serial p50 635 ms with
+/// Turbo Boost disabled.
+const MODEL_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(5);
+/// Per-flow allowance for four stress model flows: serial p50 626 ms with
+/// Turbo Boost disabled.
+const MODEL_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(300);
 /// One ordinary fixture flow's model, against a median of about 1.9 ms.
 const MODEL_FLOW_BUDGET: Duration = Duration::from_millis(25);
 /// One stress-fixture flow's model, against the new cycle/stage fixture's
 /// median of about 310 ms, with twice that cost rounded up.
 const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(640);
 
-/// One lowering pass over the fixture corpus, against a measured median of
-/// about 565 ms. Expansion rebuilds the model internally, so this is bounded on
-/// its own rather than by subtraction.
-const LOWERING_CORPUS_BUDGET: Duration = Duration::from_secs(2);
+/// Per-flow allowance for 263 ordinary lowering flows: serial p50 856 ms with
+/// Turbo Boost disabled. Expansion rebuilds the model, so its budget is separate.
+const LOWERING_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(6);
+/// Per-flow allowance for four stress lowering flows: serial p50 663 ms with
+/// Turbo Boost disabled.
+const LOWERING_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(350);
 /// One ordinary fixture flow's lowering, against a median of about 1.6 ms.
 const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(25);
 /// One stress-fixture flow's lowering, with the same headroom as its model.
@@ -87,39 +92,34 @@ const STAGED_ANALYSIS_BUDGET: Duration = Duration::from_secs(16);
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
 fn check_compiler_corpus_budgets(
     label: &str,
-    corpus_budget: Duration,
-    flow_budget: Duration,
-    stress_flow_budget: Duration,
+    suite: Suite,
+    allowance: Duration,
+    limit: Duration,
     run: impl Fn(&str, &ItemFn),
 ) {
-    let flows = corpus::corpus();
-    corpus::assert_corpus_shape(&flows);
+    let flows = corpus::corpus(suite);
+    corpus::assert_corpus_shape(&flows, suite);
 
     assert_pass_budget(
         label,
         "flows",
         &flows,
-        corpus_budget,
+        allowance * u32::try_from(flows.len()).expect("the flow count fits in u32"),
         |(name, _, stress)| ItemBudget {
             name: name.clone(),
-            limit: if *stress {
-                stress_flow_budget
-            } else {
-                flow_budget
-            },
+            limit,
             report: *stress,
         },
         |(name, function, _)| run(name, function),
     );
 }
 
-#[test]
-fn the_fixture_corpus_model_stays_inside_its_budgets() {
+fn check_model_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, limit: Duration) {
     check_compiler_corpus_budgets(
-        "model",
-        MODEL_CORPUS_BUDGET,
-        MODEL_FLOW_BUDGET,
-        MODEL_STRESS_FLOW_BUDGET,
+        &format!("model, {tier}"),
+        suite,
+        allowance,
+        limit,
         |name, function| {
             let Some(cost) = cost(function) else {
                 panic!("{name}: the fixture should parse")
@@ -132,20 +132,59 @@ fn the_fixture_corpus_model_stays_inside_its_budgets() {
     );
 }
 
-/// What `#[kaalang]` pays at every call site, and the only step a user waits
-/// on while compiling.
 #[test]
-fn the_fixture_corpus_lowering_stays_inside_its_budgets() {
+fn the_ordinary_fixture_corpus_model_stays_inside_its_budgets() {
+    check_model_corpus_budgets(
+        Suite::Ordinary,
+        "ordinary",
+        MODEL_CORPUS_FLOW_BUDGET,
+        MODEL_FLOW_BUDGET,
+    );
+}
+
+#[test]
+fn the_stress_fixture_corpus_model_stays_inside_its_budgets() {
+    check_model_corpus_budgets(
+        Suite::Stress,
+        "stress",
+        MODEL_CORPUS_STRESS_FLOW_BUDGET,
+        MODEL_STRESS_FLOW_BUDGET,
+    );
+}
+
+fn check_lowering_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, limit: Duration) {
     check_compiler_corpus_budgets(
-        "lowering",
-        LOWERING_CORPUS_BUDGET,
-        LOWERING_FLOW_BUDGET,
-        LOWERING_STRESS_FLOW_BUDGET,
+        &format!("lowering, {tier}"),
+        suite,
+        allowance,
+        limit,
         |name, function| {
             let function = function.clone();
             let lowered = kaalang_compiler::expand(function);
             lowered.unwrap_or_else(|error| panic!("{name}: {error}"));
         },
+    );
+}
+
+/// What `#[kaalang]` pays at every call site, and the only step a user waits
+/// on while compiling.
+#[test]
+fn the_ordinary_fixture_corpus_lowering_stays_inside_its_budgets() {
+    check_lowering_corpus_budgets(
+        Suite::Ordinary,
+        "ordinary",
+        LOWERING_CORPUS_FLOW_BUDGET,
+        LOWERING_FLOW_BUDGET,
+    );
+}
+
+#[test]
+fn the_stress_fixture_corpus_lowering_stays_inside_its_budgets() {
+    check_lowering_corpus_budgets(
+        Suite::Stress,
+        "stress",
+        LOWERING_CORPUS_STRESS_FLOW_BUDGET,
+        LOWERING_STRESS_FLOW_BUDGET,
     );
 }
 

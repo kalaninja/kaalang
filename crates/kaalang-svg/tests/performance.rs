@@ -6,22 +6,25 @@
 use std::time::{Duration, Instant};
 
 use kaalang_svg::RenderOptions;
-use kaalang_testing::corpus;
+use kaalang_testing::corpus::{self, Suite};
 use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
 use kaalang_testing::probes::accepted;
 
-// The corpus budget includes ordinary and stress fixtures, with both expanded
+// Ordinary and stress fixtures have separate corpus passes, with both expanded
 // and collapsed diagrams for every cycle fixture. Each diagram is also checked
 // against its fixture tier's diagram budget.
-/// One render pass over the fixture corpus, against a measured median of about
-/// 4.24 s over 372 diagrams with Turbo Boost disabled. Rendering rebuilds the
-/// model internally, so this is bounded on its own rather than by subtracting
-/// the compiler's budget.
-const RENDER_CORPUS_BUDGET: Duration = Duration::from_secs(6);
-/// One ordinary fixture diagram, against a median of about 4.5 ms.
-const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(60);
-/// One stress-fixture diagram. Five times the current worst median of about
-/// 245 ms, rounded up.
+/// Per-diagram allowance for 353 ordinary diagrams: serial p50 4.72 s on a core
+/// with 1.8 GHz base frequency and Turbo Boost disabled, with about 50% headroom.
+/// Rendering rebuilds the model internally, so its budget stands on its own.
+const RENDER_CORPUS_DIAGRAM_BUDGET: Duration = Duration::from_millis(20);
+/// Per-diagram allowance for seven stress diagrams: serial p50 3.63 s on the
+/// same core, with about 50% headroom.
+const RENDER_CORPUS_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(800);
+/// One ordinary fixture diagram: collapsed `kmp_search` measured a median of
+/// 62 ms on the same core.
+const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(100);
+/// One stress-fixture diagram, against a worst measured median of about 1.00 s
+/// on the same core.
 const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 
 // Generated probes sit outside the fixture corpus.
@@ -31,13 +34,10 @@ const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 /// pays this; a macro expansion never renders.
 const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
 
-/// In both presentations a cycle fixture is drawn in.
-#[test]
-fn the_fixture_corpus_renderer_stays_inside_its_budgets() {
-    let diagrams: Vec<(String, String, RenderOptions, bool)> = corpus::files()
+fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, limit: Duration) {
+    let diagrams: Vec<(String, String, RenderOptions)> = corpus::files(suite)
         .into_iter()
-        .flat_map(|(path, source)| {
-            let stress = corpus::is_stress(&path);
+        .flat_map(|(_, source)| {
             let names = kaalang_svg::flow_names(&source).expect("the fixture parses");
             // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
             let views = std::iter::once(false)
@@ -47,33 +47,49 @@ fn the_fixture_corpus_renderer_stays_inside_its_budgets() {
                 .into_iter()
                 .flat_map(|name| {
                     views.iter().map(move |&collapse_loops| {
-                        (name.clone(), RenderOptions { collapse_loops }, stress)
+                        (name.clone(), RenderOptions { collapse_loops })
                     })
                 })
-                .map(|(name, options, stress)| (name, source.clone(), options, stress))
+                .map(|(name, options)| (name, source.clone(), options))
                 .collect::<Vec<_>>()
         })
         .collect();
-    assert!(!diagrams.is_empty(), "the renderer corpus is empty");
 
     assert_pass_budget(
-        "renderer",
+        &format!("renderer, {tier}"),
         "diagrams",
         &diagrams,
-        RENDER_CORPUS_BUDGET,
-        |(name, _, options, stress)| ItemBudget {
+        allowance * u32::try_from(diagrams.len()).expect("the diagram count fits in u32"),
+        |(name, _, options)| ItemBudget {
             name: format!("{name} (collapsed={})", options.collapse_loops),
-            limit: if *stress {
-                RENDER_STRESS_DIAGRAM_BUDGET
-            } else {
-                RENDER_DIAGRAM_BUDGET
-            },
-            report: *stress,
+            limit,
+            report: matches!(suite, Suite::Stress),
         },
-        |(name, source, options, _)| {
+        |(name, source, options)| {
             let drawn = kaalang_svg::render_source_with_options(source, name, *options);
             drawn.unwrap_or_else(|error| panic!("{name}: {error}"));
         },
+    );
+}
+
+/// In both presentations a cycle fixture is drawn in.
+#[test]
+fn the_ordinary_fixture_corpus_renderer_stays_inside_its_budgets() {
+    check_renderer_corpus_budgets(
+        Suite::Ordinary,
+        "ordinary",
+        RENDER_CORPUS_DIAGRAM_BUDGET,
+        RENDER_DIAGRAM_BUDGET,
+    );
+}
+
+#[test]
+fn the_stress_fixture_corpus_renderer_stays_inside_its_budgets() {
+    check_renderer_corpus_budgets(
+        Suite::Stress,
+        "stress",
+        RENDER_CORPUS_STRESS_DIAGRAM_BUDGET,
+        RENDER_STRESS_DIAGRAM_BUDGET,
     );
 }
 

@@ -174,8 +174,10 @@ statistic stops comparing with the others.
 
 The fixture corpus is read from the checked-in executable examples, so it grows
 with the language instead of being kept in step by hand. Ordinary fixtures and
-stress fixtures share the aggregate corpus budgets but have separate per-item
-budgets. Compiler passes include every fixture flow once; SVG passes include
+stress fixtures run in separate corpus tests, each with an aggregate budget of
+`count * allowance` and its own per-item limit. The allowances are smaller than
+the per-item limits, so each aggregate check still catches distributed
+regressions. Compiler passes include every fixture flow once; SVG passes include
 expanded and collapsed diagrams for cycle fixtures. Each flow or diagram also
 has a per-item budget selected by its fixture tier. The render crate's generated
 probes isolate large compaction shapes outside those aggregate passes.

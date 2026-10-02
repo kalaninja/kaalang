@@ -6,33 +6,44 @@ use std::path::{Path, PathBuf};
 
 use syn::ItemFn;
 
-/// Fixture paths and source text in path order.
+/// Fixture suites to load.
+#[derive(Clone, Copy)]
+pub enum Suite {
+    /// Behavior tests and gallery examples outside the stress suite.
+    Ordinary,
+    /// Hand-written stress fixtures.
+    Stress,
+    /// Both ordinary and stress fixtures.
+    All,
+}
+
+/// Selected fixture paths and source text in path order.
 ///
 /// # Panics
 ///
 /// Panics when the fixture tree is not where this crate expects it.
 #[must_use]
-pub fn files() -> Vec<(PathBuf, String)> {
+pub fn files(suite: Suite) -> Vec<(PathBuf, String)> {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../kaalang/tests")
         .canonicalize()
         .expect("the fixture tree exists");
     let mut files = Vec::new();
-    collect(&tests, &mut files);
+    collect(&tests, suite, &mut files);
     files.sort_unstable();
     files
 }
 
-/// Every flow of every fixture, ordered by name, with whether it belongs to the
-/// `stress` suite. The `method` fixtures declare theirs in `impl` and `trait`
-/// blocks, which [`kaalang_compiler::flows`] collects.
+/// Selected fixture flows in name order, with their stress-suite flag.
+/// The `method` fixtures declare theirs in `impl` and `trait` blocks, which
+/// [`kaalang_compiler::flows`] collects.
 ///
 /// # Panics
 ///
 /// Panics when a fixture stops parsing, as the renderer's corpus does.
 #[must_use]
-pub fn corpus() -> Vec<(String, ItemFn, bool)> {
-    let mut flows: Vec<(String, ItemFn, bool)> = files()
+pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
+    let mut flows: Vec<(String, ItemFn, bool)> = files(suite)
         .iter()
         .flat_map(|(path, source)| {
             let file = syn::parse_file(source)
@@ -60,7 +71,7 @@ pub fn flow_named(source: &str, name: &str) -> ItemFn {
         .expect("the fixture declares the flow")
 }
 
-fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
+fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {
     let entries = fs::read_dir(directory)
         .unwrap_or_else(|error| panic!("could not read {}: {error}", directory.display()));
     for entry in entries {
@@ -77,10 +88,18 @@ fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
             if path.file_name().is_some_and(|name| name == "compile_fail") {
                 continue;
             }
-            collect(&path, files);
+            collect(&path, suite, files);
             continue;
         }
         if path.extension().is_none_or(|extension| extension != "rs") {
+            continue;
+        }
+        let included = match suite {
+            Suite::Ordinary => !is_stress(&path),
+            Suite::Stress => is_stress(&path),
+            Suite::All => true,
+        };
+        if !included {
             continue;
         }
         let source = fs::read_to_string(&path)
@@ -89,26 +108,30 @@ fn collect(directory: &Path, files: &mut Vec<(PathBuf, String)>) {
     }
 }
 
-/// Asserts that the corpus retains its representative flow and fixture kinds.
+/// Checks representative flow and fixture kinds within the selected corpus.
 ///
 /// # Panics
 ///
-/// Panics when the corpus has lost a kind of flow or its stress tier.
-pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)]) {
-    for expected in [
-        "destructure_singleton_tuple",
-        "mutate_a_receiver",
-        "doubled",
-    ] {
+/// Panics when the selected corpus has lost a kind of flow or its stress tier.
+pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)], suite: Suite) {
+    if !matches!(suite, Suite::Stress) {
+        for expected in [
+            "destructure_singleton_tuple",
+            "mutate_a_receiver",
+            "doubled",
+        ] {
+            assert!(
+                flows.iter().any(|(name, _, _)| name == expected),
+                "the corpus lost {expected}"
+            );
+        }
+    }
+    if !matches!(suite, Suite::Ordinary) {
         assert!(
-            flows.iter().any(|(name, _, _)| name == expected),
-            "the corpus lost {expected}"
+            flows.iter().any(|(_, _, stress)| *stress),
+            "the fixture corpus lost its stress tier"
         );
     }
-    assert!(
-        flows.iter().any(|(_, _, stress)| *stress),
-        "the fixture corpus lost its stress tier"
-    );
 }
 
 /// Whether a fixture belongs to the stress tier of the corpus.
@@ -116,4 +139,32 @@ pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)]) {
 pub fn is_stress(path: &Path) -> bool {
     path.ancestors()
         .any(|directory| directory.ends_with("tests/stress"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_selected_suites_partition_the_complete_corpus() {
+        let ordinary = corpus(Suite::Ordinary);
+        let stress = corpus(Suite::Stress);
+        assert_corpus_shape(&ordinary, Suite::Ordinary);
+        assert_corpus_shape(&stress, Suite::Stress);
+        assert!(ordinary.iter().all(|(_, _, stress)| !*stress));
+        assert!(stress.iter().all(|(_, _, stress)| *stress));
+
+        let mut split: Vec<_> = ordinary
+            .into_iter()
+            .chain(stress)
+            .map(|(name, _, stress)| (name, stress))
+            .collect();
+        let mut all: Vec<_> = corpus(Suite::All)
+            .into_iter()
+            .map(|(name, _, stress)| (name, stress))
+            .collect();
+        split.sort_unstable();
+        all.sort_unstable();
+        assert_eq!(split, all);
+    }
 }

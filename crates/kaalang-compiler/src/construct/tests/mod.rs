@@ -387,8 +387,10 @@ fn nested_exit_routes_merge_without_crossing_side_departures() {
 /// search. Every result must pass independent verification.
 #[test]
 fn the_sweep_alone_draws_every_executable_fixture() {
-    let corpus = kaalang_testing::corpus::corpus();
-    kaalang_testing::corpus::assert_corpus_shape(&corpus);
+    use kaalang_testing::corpus::{self, Suite};
+
+    let corpus = corpus::corpus(Suite::All);
+    corpus::assert_corpus_shape(&corpus, Suite::All);
     for (name, function, _) in corpus {
         let model = crate::build(&function)
             .unwrap_or_else(|error| panic!("{name}: executable fixture was rejected: {error}"));

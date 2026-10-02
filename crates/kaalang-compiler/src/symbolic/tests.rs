@@ -181,6 +181,8 @@ fn compare_flow(
 
 #[test]
 fn symbolic_analysis_matches_the_complete_fixture_corpus() {
+    use kaalang_testing::corpus::{self, Suite};
+
     fn rejected(directory: &Path, compared: &mut usize) {
         for entry in std::fs::read_dir(directory).expect("the test tree exists") {
             let path = entry.expect("the directory entry exists").path();
@@ -201,7 +203,7 @@ fn symbolic_analysis_matches_the_complete_fixture_corpus() {
         }
     }
     let mut compared = 0;
-    for (_, function, _) in kaalang_testing::corpus::corpus() {
+    for (_, function, _) in corpus::corpus(Suite::All) {
         compared += usize::from(compare(&function));
     }
     rejected(

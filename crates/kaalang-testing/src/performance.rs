@@ -53,7 +53,7 @@ pub fn assert_pass_budget<T>(
 
     let [typical, upper, maximum] = summary(totals);
     println!(
-        "{label}, {} {unit}: p50 {typical:?}, p75 {upper:?}, p100 {maximum:?}",
+        "{label}, {} {unit}: p50 {typical:?}, p75 {upper:?}, p100 {maximum:?}, budget {pass_budget:?}",
         items.len()
     );
     assert!(
