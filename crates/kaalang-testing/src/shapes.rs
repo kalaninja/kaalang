@@ -385,34 +385,25 @@ pub fn staged_shapes() -> Vec<String> {
             |finish| { |finish| return finish; };
         }
     "#;
-    let direct = GRAPH
-        .replace("INPUT", "first")
-        .replace("PREPARATION", "")
-        .replace(
-            "FIRST_VALUE",
-            "#[action(\"Read the first entry.\")] let current = |first| first;",
-        );
-    let prepared = GRAPH
-        .replace("INPUT", "seed")
-        .replace(
-            "PREPARATION",
-            "#[cycle(\"Prepare without a gate.\")] let first = { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
-        )
-        .replace(
-            "FIRST_VALUE",
-            "#[action(\"Read the first entry.\")] let current = |first| first;",
-        );
-    let nested = GRAPH
-        .replace("INPUT", "first")
-        .replace("PREPARATION", "")
-        .replace(
-            "FIRST_VALUE",
-            "#[cycle(\"Read or repeat.\")] let current = |first| { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
-        );
+    let shape = |input: &str, preparation: &str, first_value: &str| {
+        GRAPH
+            .replace("INPUT", input)
+            .replace("PREPARATION", preparation)
+            .replace("FIRST_VALUE", first_value)
+    };
+    let read = "#[action(\"Read the first entry.\")] let current = |first| first;";
     vec![
-        direct,
-        prepared,
-        nested,
+        shape("first", "", read),
+        shape(
+            "seed",
+            "#[cycle(\"Prepare without a gate.\")] let first = { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
+            read,
+        ),
+        shape(
+            "first",
+            "",
+            "#[cycle(\"Read or repeat.\")] let current = |first| { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
+        ),
         include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
             .to_owned(),
         include_str!("../../kaalang/tests/stage/behavior/nested_stage_alternative_outputs.rs")

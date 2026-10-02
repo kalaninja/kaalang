@@ -51,8 +51,11 @@ pub fn assert_pass_budget<T>(
         }
     }
 
-    let typical = median(&totals);
-    println!("{label}, {} {unit}: {}", items.len(), spread(&totals));
+    let [typical, upper, maximum] = summary(totals);
+    println!(
+        "{label}, {} {unit}: p50 {typical:?}, p75 {upper:?}, p100 {maximum:?}",
+        items.len()
+    );
     assert!(
         typical < pass_budget,
         "the median {label} pass over {} {unit} took {typical:?}, past the {pass_budget:?} budget",
@@ -64,9 +67,9 @@ pub fn assert_pass_budget<T>(
             limit,
             report,
         } = describe(item);
-        let typical = median(&samples);
+        let [typical, upper, maximum] = summary(samples);
         if report {
-            println!("{label}, {name}: {}", spread(&samples));
+            println!("{label}, {name}: p50 {typical:?}, p75 {upper:?}, p100 {maximum:?}");
         }
         assert!(
             typical < limit,
@@ -90,40 +93,29 @@ pub fn assert_within(what: &str, budget: Duration, elapsed: Duration) {
     );
 }
 
-/// Nearest-rank percentile for `percent` in `0..=100`; zero selects the minimum.
-///
-/// # Panics
-///
-/// Panics when there are no samples. Percentages above 100 may overflow or
-/// index past the samples.
-fn percentile(samples: &[Duration], percent: usize) -> Duration {
-    assert!(!samples.is_empty(), "a budget needs at least one sample");
-    let mut samples = samples.to_vec();
+/// Nearest-rank p50, p75, and p100 for one complete budget sample.
+/// The median reduces sensitivity to concurrent test load; the rest expose outliers.
+fn summary(mut samples: Vec<Duration>) -> [Duration; 3] {
+    assert_eq!(samples.len(), SAMPLES, "a budget pass samples every item");
     samples.sort_unstable();
-    let rank = (samples.len() * percent).div_ceil(100).max(1);
-    samples[rank - 1]
-}
-
-/// Budget statistic: the median reduces sensitivity to concurrent test load.
-fn median(samples: &[Duration]) -> Duration {
-    percentile(samples, 50)
-}
-
-/// Formats p50, p75, and p100 to expose outliers alongside the budget verdict.
-fn spread(samples: &[Duration]) -> String {
-    // Distinct ranks at `SAMPLES`: the 5th, 7th and 9th of nine. A p90 lands on
-    // the 9th too and would report the maximum twice.
-    format!(
-        "p50 {:?}, p75 {:?}, p100 {:?}",
-        median(samples),
-        percentile(samples, 75),
-        percentile(samples, 100)
-    )
+    [
+        samples[(SAMPLES - 1) / 2],
+        samples[(SAMPLES * 3).div_ceil(4) - 1],
+        samples[SAMPLES - 1],
+    ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn summary_uses_nearest_ranks() {
+        let samples = [9, 1, 8, 2, 7, 3, 6, 4, 5]
+            .map(Duration::from_millis)
+            .to_vec();
+        assert_eq!(summary(samples), [5, 7, 9].map(Duration::from_millis));
+    }
 
     #[test]
     fn pass_budget_warms_and_samples_every_item() {

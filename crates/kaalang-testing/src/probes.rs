@@ -181,14 +181,9 @@ pub fn branching_with_work(levels: usize) -> String {
                 );
                 data = next;
             }
-            let preceding = if level == 0 {
-                "0".to_owned()
-            } else {
-                format!("(1usize << {level}) - 1")
-            };
             let _ = writeln!(
                 body,
-                "    #[action(\"Record branch {level}/{branch}.\")]\n    let effect_{level}_{branch} = |&{data}, &events| {{ assert_eq!(events.get(), {preceding}); events.set(events.get() | (1usize << {level})); }};\n    #[action(\"Finish branch {level}/{branch}.\")]\n    let step_{level} = |{data}, effect_{level}_{branch}| {data};"
+                "    #[action(\"Record branch {level}/{branch}.\")]\n    let effect_{level}_{branch} = |&{data}, &events| {{ assert_eq!(events.get(), (1usize << {level}) - 1); events.set(events.get() | (1usize << {level})); }};\n    #[action(\"Finish branch {level}/{branch}.\")]\n    let step_{level} = |{data}, effect_{level}_{branch}| {data};"
             );
         }
         wire = format!("step_{level}");
