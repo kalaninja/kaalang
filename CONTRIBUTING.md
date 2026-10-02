@@ -197,8 +197,9 @@ something got slower.
 
 ### Refactoring against the budgets
 
-A refactoring changes how the code reads, not what it costs. Do not land one
-that measures slower, however few lines it saves.
+Comparable performance is a successful result for a refactoring; a measurable
+speedup is not required. Do not land one with a reproducible slowdown, however
+few lines it saves.
 
 The budgets do not answer this on their own. They carry deliberate headroom and
 exist to catch a large regression, so a change can halve the margin and still
@@ -217,9 +218,11 @@ So when a refactoring touches a hot path, measure both sides:
 budgets beside each other, so its numbers move with contention and hide
 differences this size.
 
-Two figures that overlap between runs are not a result. Either take enough runs
-to separate them or leave the code alone, and say which of the two happened
-rather than reporting a percentage the samples do not support.
+Overlapping measurements can be consistent with unchanged performance; overlap
+alone is not a reason to reject a refactoring. Report comparable performance
+without claiming a speedup. If noise or inconsistent runs leave a suspected
+slowdown unresolved, improve measurement conditions and repeat the comparison.
+Report only differences the samples support.
 
 ## Commits
 
