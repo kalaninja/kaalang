@@ -212,7 +212,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             None
         };
         let mut block = match expression {
-            Some(Expr::Loop(expression)) => return Err(cycle::legacy(expression)),
+            Some(Expr::Loop(expression)) => return Err(cycle::structural_loop(expression)),
             Some(Expr::Break(expression)) => return Err(cycle::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
@@ -599,7 +599,6 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
         Some("cycle") => Role::Kind(BlockKind::Cycle),
-        Some("loop" | "r#loop") => return Err(cycle::legacy_attribute(attribute)),
         Some("end") => return Err(end::authored(attribute.span())),
         Some("case" | "yes" | "no") => Role::Companion,
         Some("doc") => Role::Comment,

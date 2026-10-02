@@ -1,6 +1,6 @@
 //! Parses a described cycle, its optional entry gate and its declared outputs.
 
-use syn::{Attribute, Error, Expr, ExprBreak, ExprLoop, Result, parse_quote_spanned};
+use syn::{Error, Expr, ExprBreak, ExprLoop, Result, parse_quote_spanned};
 
 use super::{BlockSyntax, description, structural_block};
 use crate::model::{Block, BlockKind, Input};
@@ -97,16 +97,9 @@ pub(super) fn structural_break(expression: &ExprBreak) -> Error {
     )
 }
 
-pub(super) fn legacy(expression: &ExprLoop) -> Error {
+pub(super) fn structural_loop(expression: &ExprLoop) -> Error {
     Error::new_spanned(
         expression,
-        "structural kaalang loops are no longer supported; use a `#[cycle(\"description\")]` block",
-    )
-}
-
-pub(super) fn legacy_attribute(attribute: &Attribute) -> Error {
-    Error::new_spanned(
-        attribute,
-        "the legacy `#[loop]` attribute is no longer supported; use `#[cycle(\"description\")]`",
+        "kaalang does not support structural `loop`; use a `#[cycle(\"description\")]` block with `continue`",
     )
 }

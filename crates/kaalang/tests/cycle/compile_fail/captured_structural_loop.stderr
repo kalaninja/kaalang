@@ -1,0 +1,5 @@
+error: kaalang does not support structural `loop`; use a `#[cycle("description")]` block with `continue`
+ --> tests/cycle/compile_fail/captured_structural_loop.rs:5:12
+  |
+5 |     |flag| loop {};
+  |            ^^^^^^^
