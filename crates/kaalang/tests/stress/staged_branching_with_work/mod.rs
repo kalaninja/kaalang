@@ -8,8 +8,8 @@ thread_local! { static NEXT_ROUTE: Cell<usize> = const { Cell::new(0) }; }
 fn staged_branching_with_work(
     seed: usize,
     config: usize,
-    events: &std::cell::Cell<usize>,
-    remaining: &std::cell::Cell<usize>,
+    events: &Cell<usize>,
+    remaining: &Cell<usize>,
 ) -> usize {
     #[action("Prepare the seed.")]
     let pre_prepared = |seed| seed;

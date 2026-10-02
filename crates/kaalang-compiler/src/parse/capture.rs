@@ -75,10 +75,7 @@ impl Uses {
     fn bind(&mut self, pattern: &Pat) {
         struct Bindings<'a>(&'a mut Vec<Ident>, &'a mut bool);
         impl<'ast> Visit<'ast> for Bindings<'_> {
-            fn visit_pat_ident(&mut self, binding: &'ast PatIdent) {
-                self.0.push(binding.ident.unraw());
-                visit::visit_pat_ident(self, binding);
-            }
+            fn visit_expr(&mut self, _: &'ast Expr) {}
 
             fn visit_pat(&mut self, pattern: &'ast Pat) {
                 if matches!(pattern, Pat::Macro(_)) {
@@ -88,7 +85,10 @@ impl Uses {
                 }
             }
 
-            fn visit_expr(&mut self, _: &'ast Expr) {}
+            fn visit_pat_ident(&mut self, binding: &'ast PatIdent) {
+                self.0.push(binding.ident.unraw());
+                visit::visit_pat_ident(self, binding);
+            }
         }
         Bindings(&mut self.locals, &mut self.opaque).visit_pat(pattern);
     }
@@ -116,23 +116,12 @@ impl Uses {
 }
 
 impl<'ast> Visit<'ast> for Uses {
-    fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
-        if path.qself.is_none()
-            && path.path.leading_colon.is_none()
-            && path.path.segments.len() == 1
-            && let Some(name) = path.path.segments.first().map(|segment| &segment.ident)
-            && self.uncaptured.contains(&name.unraw())
-            && !self.locals.contains(&name.unraw())
-            && !self.opaque
-        {
-            self.error.get_or_insert_with(|| {
-                Error::new(
-                    name.span(),
-                    format!("a kaalang block body must capture `{name}` before using it"),
-                )
-            });
-        }
-        visit::visit_expr_path(self, path);
+    fn visit_arm(&mut self, arm: &'ast syn::Arm) {
+        self.scoped(|this| {
+            this.bind(&arm.pat);
+            this.visit_pat(&arm.pat);
+            this.visit_expr(&arm.body);
+        });
     }
 
     fn visit_block(&mut self, block: &'ast syn::Block) {
@@ -157,24 +146,6 @@ impl<'ast> Visit<'ast> for Uses {
         });
     }
 
-    fn visit_local(&mut self, local: &'ast Local) {
-        // RFC 0007 §5.3 leaves conditional bindings to Rust's name resolution.
-        // Parameter bindings remain hygienically hidden from uncaptured uses.
-        let conditional = local.attrs.iter().any(|attribute| {
-            attribute.path().is_ident("cfg") || attribute.path().is_ident("cfg_attr")
-        });
-        if !conditional {
-            if let Some(initializer) = &local.init {
-                self.visit_expr(&initializer.expr);
-                if let Some((_, diverge)) = &initializer.diverge {
-                    self.visit_expr(diverge);
-                }
-            }
-            self.visit_pat(&local.pat);
-        }
-        self.bind(&local.pat);
-    }
-
     fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
         self.scoped(|this| {
             for input in &closure.inputs {
@@ -195,20 +166,6 @@ impl<'ast> Visit<'ast> for Uses {
         });
     }
 
-    fn visit_arm(&mut self, arm: &'ast syn::Arm) {
-        self.scoped(|this| {
-            this.bind(&arm.pat);
-            this.visit_pat(&arm.pat);
-            this.visit_expr(&arm.body);
-        });
-    }
-
-    fn visit_expr_let(&mut self, let_: &'ast syn::ExprLet) {
-        self.visit_expr(&let_.expr);
-        self.bind(&let_.pat);
-        self.visit_pat(&let_.pat);
-    }
-
     fn visit_expr_if(&mut self, if_: &'ast syn::ExprIf) {
         self.scoped(|this| {
             this.visit_expr(&if_.cond);
@@ -219,6 +176,31 @@ impl<'ast> Visit<'ast> for Uses {
         }
     }
 
+    fn visit_expr_let(&mut self, let_: &'ast syn::ExprLet) {
+        self.visit_expr(&let_.expr);
+        self.bind(&let_.pat);
+        self.visit_pat(&let_.pat);
+    }
+
+    fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+        if path.qself.is_none()
+            && path.path.leading_colon.is_none()
+            && path.path.segments.len() == 1
+            && let Some(name) = path.path.segments.first().map(|segment| &segment.ident)
+            && self.uncaptured.contains(&name.unraw())
+            && !self.locals.contains(&name.unraw())
+            && !self.opaque
+        {
+            self.error.get_or_insert_with(|| {
+                Error::new(
+                    name.span(),
+                    format!("a kaalang block body must capture `{name}` before using it"),
+                )
+            });
+        }
+        visit::visit_expr_path(self, path);
+    }
+
     fn visit_expr_while(&mut self, while_: &'ast syn::ExprWhile) {
         self.scoped(|this| {
             this.visit_expr(&while_.cond);
@@ -227,6 +209,24 @@ impl<'ast> Visit<'ast> for Uses {
     }
 
     fn visit_item(&mut self, _: &'ast Item) {}
+
+    fn visit_local(&mut self, local: &'ast Local) {
+        // RFC 0007 §5.3 leaves conditional bindings to Rust's name resolution.
+        // Parameter bindings remain hygienically hidden from uncaptured uses.
+        let conditional = local.attrs.iter().any(|attribute| {
+            attribute.path().is_ident("cfg") || attribute.path().is_ident("cfg_attr")
+        });
+        if !conditional {
+            if let Some(initializer) = &local.init {
+                self.visit_expr(&initializer.expr);
+                if let Some((_, diverge)) = &initializer.diverge {
+                    self.visit_expr(diverge);
+                }
+            }
+            self.visit_pat(&local.pat);
+        }
+        self.bind(&local.pat);
+    }
 }
 
 #[cfg(test)]

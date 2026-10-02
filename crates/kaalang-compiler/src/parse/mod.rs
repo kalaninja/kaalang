@@ -734,6 +734,10 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
             }
         }
 
+        fn visit_expr_async(&mut self, _: &'ast ExprAsync) {}
+
+        fn visit_expr_closure(&mut self, _: &'ast ExprClosure) {}
+
         fn visit_expr_for_loop(&mut self, expression: &'ast ExprForLoop) {
             for attribute in &expression.attrs {
                 self.visit_attribute(attribute);
@@ -772,10 +776,6 @@ fn reject_control_transfers(body: &Expr) -> Result<()> {
                 )
             });
         }
-
-        fn visit_expr_closure(&mut self, _: &'ast ExprClosure) {}
-
-        fn visit_expr_async(&mut self, _: &'ast ExprAsync) {}
 
         fn visit_item(&mut self, _: &'ast Item) {}
     }

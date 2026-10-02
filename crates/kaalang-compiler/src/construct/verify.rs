@@ -136,7 +136,7 @@ impl Grid {
     pub(super) fn lane(&self, gap: usize, lane: usize) -> i32 {
         let capture = i32::from(self.occupied.get(gap + 1).copied().unwrap_or(false));
         let lanes = self.lanes.get(gap).copied().unwrap_or(lane + 1);
-        self.rank(gap + 1) - capture - (lanes.saturating_sub(lane + 1)) as i32
+        self.rank(gap + 1) - capture - lanes.saturating_sub(lane + 1) as i32
     }
 }
 

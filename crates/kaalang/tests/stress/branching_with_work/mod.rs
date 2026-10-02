@@ -5,7 +5,7 @@ use kaalang::kaalang;
 use super::{ROUTE, expected, selected};
 
 #[kaalang]
-fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {
+fn branching_with_work(seed: usize, config: usize, events: &Cell<usize>) -> usize {
     #[action("Prepare the seed.")]
     let prepared = |seed| seed;
     #[question("Choose work 0.")]

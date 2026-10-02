@@ -199,7 +199,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<LoopRegion> {
 /// Fits the optional caption beside the incoming route in the existing top
 /// padding. The complete description remains available through the SVG title.
 fn caption(description: &RichText, width: i32) -> Vec<RichText> {
-    let ellipsis = text::RichText::literal("…");
+    let ellipsis = RichText::literal("…");
     let ellipsis_width = text::text_width(&ellipsis, CYCLE_CAPTION_FONT);
     if width < ellipsis_width {
         return Vec::new();

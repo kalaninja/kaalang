@@ -7,8 +7,8 @@ use super::{ROUTE, expected, selected};
 fn cyclic_branching_with_work(
     seed: usize,
     config: usize,
-    events: &std::cell::Cell<usize>,
-    remaining: &std::cell::Cell<usize>,
+    events: &Cell<usize>,
+    remaining: &Cell<usize>,
 ) -> usize {
     #[cycle("Repeat before working.")]
     let (left, right) = || {

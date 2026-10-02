@@ -28,11 +28,7 @@ fn compare(function: &syn::ItemFn) -> bool {
 }
 
 #[allow(clippy::too_many_lines)] // Compares all observable phases with the complete reference.
-fn compare_flow(
-    function: &syn::ItemFn,
-    parsed: &crate::Flow,
-    existing: Option<&crate::Analysis>,
-) -> bool {
+fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::Analysis>) -> bool {
     let ordinary = crate::analyze::flow(parsed, true);
     let symbolic = analyze(parsed, true);
     let (mut symbolic, groups, merges) = match (ordinary, symbolic) {
@@ -80,7 +76,7 @@ fn compare_flow(
                 let expected = executions
                     .iter()
                     .filter(|execution| {
-                        matches!(execution.outcome, crate::ExecutionOutcome::Return { .. })
+                        matches!(execution.outcome, ExecutionOutcome::Return { .. })
                     })
                     .all(|execution| crate::stage::available(parsed, execution, name));
                 assert_eq!(

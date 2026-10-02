@@ -490,7 +490,7 @@ mod tests {
             .find(|label| label.owner == Vertex::Node(NodeId::Start))
             .unwrap();
         assert!(handover.lines.len() >= 4);
-        assert!(placement.y + super::super::label_rect(handover).3 < rail_y);
+        assert!(placement.y + label_rect(handover).3 < rail_y);
     }
 
     #[test]
@@ -612,7 +612,7 @@ mod tests {
                             && line[1].y == return_route[0].y));
                     }
                     for rail in &rails {
-                        assert!(!super::super::route::crosses(
+                        assert!(!route::crosses(
                             rail,
                             (
                                 x - node.width / 2,

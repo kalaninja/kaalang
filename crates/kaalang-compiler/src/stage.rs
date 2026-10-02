@@ -21,8 +21,7 @@ pub(crate) fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
                     .enumerate()
                     .any(|(output, wire)| {
                         wire == name
-                            && flow
-                                .produces(route, crate::ProducerId::BlockOutput { block, output })
+                            && flow.produces(route, ProducerId::BlockOutput { block, output })
                     })
         })
 }

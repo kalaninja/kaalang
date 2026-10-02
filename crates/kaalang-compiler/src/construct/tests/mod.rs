@@ -172,21 +172,15 @@ type Mutation = (&'static str, fn(&mut Arrangement));
 #[allow(clippy::too_many_lines)] // One data table; each entry names its break.
 fn mutations() -> Vec<Mutation> {
     vec![
-        (
-            "a dropped corridor",
-            (|arrangement: &mut Arrangement| {
-                arrangement.routes.pop();
-            }),
-        ),
-        (
-            "a dropped contour",
-            (|arrangement: &mut Arrangement| {
-                arrangement.contours.pop();
-            }),
-        ),
+        ("a dropped corridor", |arrangement: &mut Arrangement| {
+            arrangement.routes.pop();
+        }),
+        ("a dropped contour", |arrangement: &mut Arrangement| {
+            arrangement.contours.pop();
+        }),
         (
             "a route that does not descend",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 let deepest = arrangement
                     .rank
                     .iter()
@@ -194,78 +188,75 @@ fn mutations() -> Vec<Mutation> {
                     .map(|(vertex, _)| *vertex)
                     .expect("a arrangement ranks its vertices");
                 arrangement.rank.insert(deepest, 0);
-            }),
+            },
         ),
         (
             "a corridor that arrives away from its destination",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     route.arrival += 1;
                 }
-            }),
+            },
         ),
         (
             "a corridor that leaves a column its exit does not own",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     route.departure += 1;
                 }
-            }),
+            },
         ),
-        (
-            "reversed branch order",
-            (|arrangement: &mut Arrangement| {
-                // The columns the branches are drawn in, not the reserved
-                // widths: the check reads the placement, so the mutation has
-                // to move the placement.
-                let cases = arrangement
+        ("reversed branch order", |arrangement: &mut Arrangement| {
+            // The columns the branches are drawn in, not the reserved
+            // widths: the check reads the placement, so the mutation has
+            // to move the placement.
+            let cases = arrangement
+                .column
+                .iter()
+                .filter(|(vertex, _)| matches!(vertex, Vertex::Node(NodeId::Case { .. })))
+                .map(|(vertex, column)| (*vertex, *column))
+                .collect::<Vec<_>>();
+            for (index, (vertex, _)) in cases.iter().enumerate() {
+                arrangement
                     .column
-                    .iter()
-                    .filter(|(vertex, _)| matches!(vertex, Vertex::Node(NodeId::Case { .. })))
-                    .map(|(vertex, column)| (*vertex, *column))
-                    .collect::<Vec<_>>();
-                for (index, (vertex, _)) in cases.iter().enumerate() {
-                    arrangement
-                        .column
-                        .insert(*vertex, cases[cases.len() - 1 - index].1);
-                }
-            }),
-        ),
+                    .insert(*vertex, cases[cases.len() - 1 - index].1);
+            }
+        }),
         (
             "a corridor moved across another",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     for run in &mut route.runs {
                         run.enter += 1;
                     }
                 }
-            }),
+            },
         ),
         (
             "unrelated routes sharing one run",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 for route in &mut arrangement.routes {
                     for run in &mut route.runs {
                         run.enter = 0;
                         run.exit = 0;
                     }
                 }
-            }),
+            },
         ),
         (
             "a contour on the other side",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 if let Some(contour) = arrangement.contours.first_mut() {
                     contour.side = match contour.side {
                         Side::Left => Side::Right,
                         Side::Right => Side::Left,
                     };
                 }
-            }),
+            },
         ),
         (
             "a contour climbing between the columns of its body",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 // The far edge of the cases, so the climb lands inside the
                 // body's column range however much room the arrangement left
                 // beside it.
@@ -283,11 +274,11 @@ fn mutations() -> Vec<Mutation> {
                         Side::Right => inside,
                     };
                 }
-            }),
+            },
         ),
         (
             "a contour one lane past the last a topology offers",
-            (|arrangement: &mut Arrangement| {
+            |arrangement: &mut Arrangement| {
                 // Each cycle takes a lane for its back edge and the next one
                 // out for the boundary around it, so a topology offers twice
                 // its cycle count. This probe has one cycle, so lane 2 is
@@ -295,7 +286,7 @@ fn mutations() -> Vec<Mutation> {
                 if let Some(contour) = arrangement.contours.first_mut() {
                     contour.lane += 2;
                 }
-            }),
+            },
         ),
     ]
 }

@@ -761,7 +761,7 @@ fn math_branch_descriptions_clear_their_nodes_and_connections() {
         }
         for connection in &scene.connections {
             assert!(
-                !super::route::crosses(&connection.points, rect),
+                !route::crosses(&connection.points, rect),
                 "{rect:?} meets a connection"
             );
         }
@@ -1394,7 +1394,7 @@ fn clearing_one_label_can_take_more_than_one_lane() {
     scene.labels = vec![Label {
         owner: Vertex::Node(NodeId::Start),
         kind: LabelKind::Wire,
-        lines: vec![crate::text::RichText::literal("wwwwwwwwww")],
+        lines: vec![RichText::literal("wwwwwwwwww")],
         at: Point {
             x: climb[0].x - 3 * LANE,
             y: i32::midpoint(climb[0].y, climb[1].y),
