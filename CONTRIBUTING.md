@@ -129,7 +129,8 @@ committing: nothing else checks that the new diagrams still make sense.
 
 ### Packaging a release
 
-Verify the publishable workspace packages together:
+Set the version in the root `Cargo.toml` and date its section in `CHANGELOG.md`.
+Then verify the publishable workspace packages together:
 
 ```sh
 just release package
@@ -152,6 +153,13 @@ To resume a partial release, publish one crate at a time with
 `kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
 `kaalang-cli`. `kaalang-testing` is a repository-only fixture harness and
 remains unpublished.
+
+After publishing, tag the released commit and push the tag:
+
+```sh
+git tag -a v<version> -m "kaalang <version>"
+git push origin v<version>
+```
 
 Gallery examples may group related flows in one source file and share a test.
 Each flow still gets its own `<flow>.svg` beside that file.
