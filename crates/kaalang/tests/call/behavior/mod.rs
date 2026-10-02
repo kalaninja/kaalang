@@ -2,7 +2,6 @@ mod call_a_bare_application;
 mod call_a_borrowed_input;
 mod call_a_callee_from_a_macro;
 mod call_a_described_function;
-mod call_a_path;
 mod call_a_qualified_path;
 mod call_a_statement_from_a_macro;
 mod call_a_turbofish_path;

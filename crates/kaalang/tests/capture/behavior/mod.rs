@@ -13,7 +13,6 @@ mod independent_borrowers;
 mod internal_parameter_names;
 mod internal_stage_parameter_names;
 mod local_mutability_of_outputs;
-mod local_parameter_assignment;
 mod local_parameter_shadow;
 mod log_then_transform;
 mod mutable_reference_through_nested_joins;

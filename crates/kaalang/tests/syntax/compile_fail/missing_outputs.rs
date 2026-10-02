@@ -1,6 +1,6 @@
 use kaalang::kaalang;
 
-// Omitting the outputs leaves the body unbraced, which is reported first.
+// An expression statement declares no outputs, and a question needs two.
 #[kaalang]
 fn invalid(input: u32) -> u32 {
     #[question("Omit the question outputs.")]
