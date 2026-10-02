@@ -113,7 +113,7 @@ pub(super) fn prepare(
     let index = match plan {
         ExecutionPlan::Question { index, .. }
         | ExecutionPlan::Choice { index, .. }
-        | ExecutionPlan::Loop { index, .. }
+        | ExecutionPlan::Cycle { index, .. }
         | ExecutionPlan::Return { index } => *index,
         _ => return body,
     };

@@ -20,5 +20,5 @@ pub(super) fn lower<'e>(index: usize) -> Lowered<'e> {
 pub(super) fn replay(replay: &mut Replay<'_>, index: usize) -> Option<Exit> {
     replay.enter(index, BlockKind::Continue)?;
     let target = replay.flow.blocks[index].parent?;
-    (replay.loop_indices.last() == Some(&target)).then_some(Exit::Repeat(target))
+    (replay.cycle_indices.last() == Some(&target)).then_some(Exit::Repeat(target))
 }

@@ -26,10 +26,10 @@ pub(super) fn flow(
         let executions = frames.at(brancher);
         // A cycle's continuation starts after its body, which only makes the
         // selection.
-        let past_body = |block: usize| declaration.loop_end.is_none_or(|end| block >= end);
+        let past_body = |block: usize| declaration.cycle_end.is_none_or(|end| block >= end);
         // Choice-like branchers compare their groups by route: the routes
         // each block continues, with the case each selected.
-        let cases = matches!(declaration.kind, BlockKind::Choice | BlockKind::Loop);
+        let cases = matches!(declaration.kind, BlockKind::Choice | BlockKind::Cycle);
         let mut branch_sets = vec![BTreeSet::new(); flow.blocks.len()];
         let route_of = cases.then(|| super::choice::routes(ancestry, executions, brancher));
         let mut routes = vec![BTreeMap::new(); flow.blocks.len()];

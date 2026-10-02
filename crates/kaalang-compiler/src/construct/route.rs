@@ -503,7 +503,7 @@ pub(super) fn obstruction(
             Vertex::from(topology.connections[connection].source),
         ),
         message,
-        loop_index: None,
+        cycle_index: None,
         connection: Some(connection),
     }
 }

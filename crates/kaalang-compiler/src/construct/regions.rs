@@ -124,7 +124,7 @@ pub(super) fn footprint_vertices(
     for set in branches {
         owned.extend(set.iter().copied());
     }
-    // Include tail precedence so flow below a loop is not mistaken for a
+    // Include tail precedence so flow below a cycle is not mistaken for a
     // private continuation of only the branches that exit it.
     let converged = (0..flow.blocks[block].branch_count())
         .map(|branch| {

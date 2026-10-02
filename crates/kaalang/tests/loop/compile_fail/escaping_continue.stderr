@@ -1,5 +1,0 @@
-error: a kaalang block body must not use `break` or `continue` outside its own Rust loops
-  --> tests/loop/compile_fail/escaping_continue.rs:12:13
-   |
-12 |             continue;
-   |             ^^^^^^^^

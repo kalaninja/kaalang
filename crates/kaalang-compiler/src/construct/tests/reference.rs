@@ -154,7 +154,7 @@ pub(super) fn witness(flow: &Flow, topology: &Topology) -> Option<Arrangement> {
         if let Some(drawing) = reference.enumerate(
             &mut Vec::new(),
             &[],
-            &vec![None; topology.loops.len()],
+            &vec![None; topology.cycles.len()],
             &straight,
         ) {
             return Some(drawing);
@@ -166,7 +166,7 @@ pub(super) fn witness(flow: &Flow, topology: &Topology) -> Option<Arrangement> {
     reference.enumerate(
         &mut Vec::new(),
         &[],
-        &vec![None; topology.loops.len()],
+        &vec![None; topology.cycles.len()],
         &constraints,
     )
 }
@@ -188,7 +188,7 @@ impl<'a> Reference<'a> {
             .map(|e| (e.id, initial.fresh()))
             .collect::<BTreeMap<_, _>>();
         let spines = topology
-            .loops
+            .cycles
             .iter()
             .map(|_| initial.fresh())
             .collect::<Vec<_>>();
@@ -208,9 +208,9 @@ impl<'a> Reference<'a> {
         for &destination in &topology.vertices {
             if matches!(destination, Vertex::Node(NodeId::Case { .. }))
                 || topology
-                    .loops
+                    .cycles
                     .iter()
-                    .any(|loop_| destination == Vertex::Junction(loop_.tail))
+                    .any(|cycle| destination == Vertex::Junction(cycle.tail))
             {
                 continue;
             }
@@ -228,7 +228,7 @@ impl<'a> Reference<'a> {
             }
         }
         let (priority, order_keys) = vertex_priority(topology);
-        let mut variations = 2usize.saturating_pow(topology.loops.len() as u32);
+        let mut variations = 2usize.saturating_pow(topology.cycles.len() as u32);
         let divisors = topology
             .vertices
             .iter()
@@ -503,12 +503,12 @@ impl<'a> Reference<'a> {
         }
         let entry = self
             .topology
-            .loops
+            .cycles
             .iter()
             .position(|l| vertex == Vertex::Junction(l.entry));
         let tail = self
             .topology
-            .loops
+            .cycles
             .iter()
             .position(|l| vertex == Vertex::Junction(l.tail));
         if tail.is_some_and(|i| sides[i].is_none()) {
@@ -708,13 +708,13 @@ impl<'a> Reference<'a> {
     fn event(
         &self,
         vertex: Vertex,
-        loops: (Option<usize>, Option<usize>),
+        cycles: (Option<usize>, Option<usize>),
         cut: &[Active],
         incident: (&[Active], &[Active]),
         sides: &[Option<Side>],
         next: &mut Inequalities,
     ) -> (Event, Vec<Active>) {
-        let (entry, tail) = loops;
+        let (entry, tail) = cycles;
         let (input, output) = incident;
         let position = cut.iter().position(|a| input.contains(a)).unwrap_or(0);
         let before = cut
@@ -729,9 +729,9 @@ impl<'a> Reference<'a> {
                 .map(|&item| (item, self.coordinate(item, next))),
         );
         let own = self.vertices[&vertex];
-        let own_loop = entry.or(tail);
-        let flank = own_loop.map(|i| sides[i].unwrap());
-        let at_back_edge = own_loop.map(|i| {
+        let own_cycle = entry.or(tail);
+        let flank = own_cycle.map(|i| sides[i].unwrap());
+        let at_back_edge = own_cycle.map(|i| {
             if entry.is_some() {
                 after[&Active::Back(i)]
             } else {
@@ -813,19 +813,19 @@ impl<'a> Reference<'a> {
     }
 
     fn outside(&self, i: usize, side: Side, next: &mut Inequalities) {
-        let loop_ = self.topology.loops[i];
-        let end = self.flow.blocks[loop_.header].loop_end.unwrap();
+        let cycle = self.topology.cycles[i];
+        let end = self.flow.blocks[cycle.header].cycle_end.unwrap();
         let mut body =
-            crate::construct::loop_block::body_vertices(self.flow, self.topology, loop_.header)
+            crate::construct::cycle::body_vertices(self.flow, self.topology, cycle.header)
                 .into_iter()
                 .map(|v| self.vertices[&v])
                 .collect::<Vec<_>>();
         body.extend(
             self.topology
-                .loops
+                .cycles
                 .iter()
                 .enumerate()
-                .filter(|(_, l)| (loop_.header + 1..end).contains(&l.header))
+                .filter(|(_, l)| (cycle.header + 1..end).contains(&l.header))
                 .map(|(j, _)| {
                     if side == Side::Left {
                         self.spines[j]
@@ -892,17 +892,17 @@ impl<'a> Reference<'a> {
             gap_lanes: vec![0; events.len()],
             back_routes: self
                 .topology
-                .loops
+                .cycles
                 .iter()
                 .enumerate()
-                .map(|(i, loop_)| {
+                .map(|(i, cycle)| {
                     let entry = events
                         .iter()
-                        .find(|e| e.vertex == Some(Vertex::Junction(loop_.entry)))
+                        .find(|e| e.vertex == Some(Vertex::Junction(cycle.entry)))
                         .unwrap();
                     let tail = events
                         .iter()
-                        .find(|e| e.vertex == Some(Vertex::Junction(loop_.tail)))
+                        .find(|e| e.vertex == Some(Vertex::Junction(cycle.tail)))
                         .unwrap();
                     (
                         i,
@@ -916,13 +916,13 @@ impl<'a> Reference<'a> {
                 .collect(),
             contours: self
                 .topology
-                .loops
+                .cycles
                 .iter()
                 .enumerate()
-                .map(|(i, loop_)| {
+                .map(|(i, cycle)| {
                     let entry = events
                         .iter()
-                        .find(|e| e.vertex == Some(Vertex::Junction(loop_.entry)))
+                        .find(|e| e.vertex == Some(Vertex::Junction(cycle.entry)))
                         .unwrap();
                     Contour {
                         side: sides[i].unwrap(),
@@ -1068,7 +1068,7 @@ fn vertex_priority(topology: &Topology) -> (Vec<Vertex>, BTreeMap<Vertex, Vec<bo
             .unwrap()
             .insert(wire.destination);
     }
-    for l in &topology.loops {
+    for l in &topology.cycles {
         reach
             .get_mut(&Vertex::Junction(l.entry))
             .unwrap()
@@ -1101,7 +1101,7 @@ fn vertex_priority(topology: &Topology) -> (Vec<Vertex>, BTreeMap<Vertex, Vec<bo
                 .count()
                 > 1
                 || topology
-                    .loops
+                    .cycles
                     .iter()
                     .any(|l| *v == Vertex::Junction(l.tail))
         })

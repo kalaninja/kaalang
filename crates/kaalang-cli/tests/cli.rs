@@ -116,7 +116,7 @@ fn failed_render_keeps_the_existing_output() {
 #[test]
 fn collapsed_default_output_has_a_collapsed_suffix() {
     let directory = directory("cli-collapsed", CYCLE_SOURCE);
-    let rendered = run(&directory, "diagram flow.rs --flow route --collapse-loops");
+    let rendered = run(&directory, "diagram flow.rs --flow route --collapse-cycles");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("route_collapsed.svg")).unwrap();
     assert!(svg.contains(r#"class="node loop""#));

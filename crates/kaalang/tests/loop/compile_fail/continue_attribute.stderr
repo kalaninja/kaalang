@@ -1,5 +1,0 @@
-error: a kaalang continue does not support attributes
- --> tests/loop/compile_fail/continue_attribute.rs:7:9
-  |
-7 |         #[allow(unused)]
-  |         ^^^^^^^^^^^^^^^^

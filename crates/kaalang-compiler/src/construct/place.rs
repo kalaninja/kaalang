@@ -57,17 +57,17 @@ pub(super) fn rows(
     // A sunk vertex may take any rank its predecessors allow, so it goes below
     // every vertex precedence leaves free. One vertex per rank is always
     // enough room for that. Iteration tails keep their nesting while they
-    // sink: an inner tail stays above the tail of the loop enclosing it, so
+    // sink: an inner tail stays above the tail of the cycle enclosing it, so
     // the inner arrival never spans the enclosing tail's row.
     let floor = topology.vertices.len();
     let depth = topology
-        .loops
+        .cycles
         .iter()
         .enumerate()
-        .map(|(index, loop_)| {
+        .map(|(index, cycle)| {
             (
-                Vertex::Junction(loop_.tail),
-                topology.loops.len() - 1 - index,
+                Vertex::Junction(cycle.tail),
+                topology.cycles.len() - 1 - index,
             )
         })
         .collect::<BTreeMap<_, _>>();
@@ -121,9 +121,9 @@ pub(super) fn rows(
 /// Entries keep their ranks. Renumbering preserves forward order and removes gaps.
 fn separate_junctions(topology: &Topology, rows: &mut BTreeMap<Vertex, usize>) {
     let alone = topology
-        .loops
+        .cycles
         .iter()
-        .map(|loop_| Vertex::Junction(loop_.tail))
+        .map(|cycle| Vertex::Junction(cycle.tail))
         .collect::<BTreeSet<_>>();
     let mut ranks: BTreeMap<usize, Vec<Vertex>> = BTreeMap::new();
     for (&vertex, &rank) in rows.iter() {
@@ -221,9 +221,9 @@ fn columns(
         let preferred = if let Some(arrival) = super::serial_arrival(topology, vertex) {
             arrives_from(topology, &columns, footprints, arrival)
         } else if let Some(index) = topology
-            .loops
+            .cycles
             .iter()
-            .position(|loop_| loop_.tail == junction)
+            .position(|cycle| cycle.tail == junction)
         {
             let arrivals = topology
                 .incoming(vertex)
@@ -236,7 +236,7 @@ fn columns(
                 arrivals.min()
             }
             .unwrap_or(0)
-        } else if topology.junctions[junction].is_loop_result {
+        } else if topology.junctions[junction].is_cycle_result {
             topology
                 .incoming(vertex)
                 .map(|connection| arrives_from(topology, &columns, footprints, connection))

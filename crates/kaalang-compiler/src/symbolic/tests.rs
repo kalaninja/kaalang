@@ -147,17 +147,17 @@ fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::
                     "{}: back edges",
                     function.sig.ident
                 );
-                let loops = |topology: &crate::topology::Topology| {
+                let cycles = |topology: &crate::topology::Topology| {
                     topology
-                        .loops
+                        .cycles
                         .iter()
-                        .map(|loop_| (loop_.header, loop_.tail, loop_.prefer_left))
+                        .map(|cycle| (cycle.header, cycle.tail, cycle.prefer_left))
                         .collect::<Vec<_>>()
                 };
                 assert_eq!(
-                    loops(&actual),
-                    loops(&expected),
-                    "{}: loop tails",
+                    cycles(&actual),
+                    cycles(&expected),
+                    "{}: cycle tails",
                     function.sig.ident
                 );
             }
@@ -347,7 +347,7 @@ fn the_symbolic_verifier_rejects_exporting_to_an_inactive_cycle() {
         use crate::ExecutionPlan;
         match plan {
             ExecutionPlan::Export { target, .. } => *target = usize::MAX,
-            ExecutionPlan::End { body, .. } | ExecutionPlan::Loop { body, .. } => change(body),
+            ExecutionPlan::End { body, .. } | ExecutionPlan::Cycle { body, .. } => change(body),
             ExecutionPlan::Action { next, .. } | ExecutionPlan::Call { next, .. } => change(next),
             ExecutionPlan::Question {
                 branches, joins, ..

@@ -7,7 +7,7 @@ use std::{
 };
 
 const USAGE: &str =
-    "usage: cargo kaalang diagram <source.rs> --flow <name> [--collapse-loops] [-o <path>]";
+    "usage: cargo kaalang diagram <source.rs> --flow <name> [--collapse-cycles] [-o <path>]";
 
 fn main() -> ExitCode {
     match run(env::args_os()) {
@@ -30,12 +30,12 @@ fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<PathBuf, String>
         &source,
         &options.flow,
         kaalang_svg::RenderOptions {
-            collapse_loops: options.collapse_loops,
+            collapse_cycles: options.collapse_cycles,
         },
     )
     .map_err(|error| error.to_string())?;
     let output = options.output.unwrap_or_else(|| {
-        PathBuf::from(if options.collapse_loops {
+        PathBuf::from(if options.collapse_cycles {
             format!("{}_collapsed.svg", options.flow)
         } else {
             format!("{}.svg", options.flow)
@@ -65,7 +65,7 @@ struct Options {
     source: PathBuf,
     flow: String,
     output: Option<PathBuf>,
-    collapse_loops: bool,
+    collapse_cycles: bool,
 }
 
 fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Options, String> {
@@ -82,7 +82,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
         .ok_or_else(|| USAGE.to_owned())?;
     let mut flow = None;
     let mut output = None;
-    let mut collapse_loops = false;
+    let mut collapse_cycles = false;
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
             Some("--flow") if flow.is_none() => {
@@ -102,7 +102,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
                         .ok_or_else(|| "`-o` requires an output path".to_owned())?,
                 );
             }
-            Some("--collapse-loops") if !collapse_loops => collapse_loops = true,
+            Some("--collapse-cycles") if !collapse_cycles => collapse_cycles = true,
             _ => return Err(USAGE.to_owned()),
         }
     }
@@ -112,7 +112,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
         source,
         flow,
         output,
-        collapse_loops,
+        collapse_cycles,
     })
 }
 
@@ -133,17 +133,17 @@ mod tests {
             let options = parse(line).unwrap();
             assert_eq!(options.source, PathBuf::from("flow.rs"));
             assert_eq!(options.flow, "decide");
-            assert!(!options.collapse_loops);
+            assert!(!options.collapse_cycles);
         }
     }
 
     #[test]
-    fn accepts_collapse_loops_anywhere_among_the_options() {
+    fn accepts_collapse_cycles_anywhere_among_the_options() {
         for line in [
-            "cargo-kaalang diagram flow.rs --flow decide --collapse-loops",
-            "cargo-kaalang diagram flow.rs --collapse-loops -o chosen.svg --flow decide",
+            "cargo-kaalang diagram flow.rs --flow decide --collapse-cycles",
+            "cargo-kaalang diagram flow.rs --collapse-cycles -o chosen.svg --flow decide",
         ] {
-            assert!(parse(line).unwrap().collapse_loops);
+            assert!(parse(line).unwrap().collapse_cycles);
         }
     }
 
@@ -151,7 +151,7 @@ mod tests {
     fn rejects_unknown_or_duplicate_collapse_options() {
         for line in [
             "cargo-kaalang diagram flow.rs --flow decide --collapsed",
-            "cargo-kaalang diagram flow.rs --flow decide --collapse-loops --collapse-loops",
+            "cargo-kaalang diagram flow.rs --flow decide --collapse-cycles --collapse-cycles",
         ] {
             assert!(parse(line).is_err());
         }

@@ -1,5 +1,0 @@
-error: the routes exporting `retry` leave this kaalang cycle to the left of those exporting `ready`; declare its outputs in the order their routes leave it
- --> tests/loop/compile_fail/nested_outputs_out_of_order.rs:8:21
-  |
-8 |         let (ready, retry) = {
-  |                     ^^^^^

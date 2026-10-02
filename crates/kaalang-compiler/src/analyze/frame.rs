@@ -130,7 +130,7 @@ pub(super) const fn branch(selection: usize) -> usize {
 /// inside the body then differ at the cycle, never only at a selection outside
 /// it, just as they would with the body's selections in sight.
 fn mark_routes(flow: &Flow, executions: &[Execution], view: &mut [Execution], header: usize) {
-    let end = flow.blocks[header].loop_end.expect("a cycle owns a body");
+    let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
     let outputs = flow.blocks[header].outputs.len();
     let mut routes = BTreeMap::new();
     for (seen, execution) in view.iter_mut().zip(executions) {
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn a_cycle_with_several_outputs_splits_what_each_side_sees() {
         let model = crate::build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the fixture is valid");
@@ -201,7 +201,7 @@ mod tests {
     #[test]
     fn body_routes_differ_only_at_their_cycle() {
         let model = crate::build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/loop/behavior/output_routes_after_a_merge.rs"),
+            include_str!("../../../kaalang/tests/cycle/behavior/output_routes_after_a_merge.rs"),
             "output_routes_after_a_merge",
         ))
         .expect("the fixture is valid");

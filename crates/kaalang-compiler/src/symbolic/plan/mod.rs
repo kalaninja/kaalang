@@ -8,7 +8,7 @@ use super::{
     Executions,
     condition::{Condition, NEVER},
 };
-mod loop_block;
+mod cycle;
 
 use crate::{BlockKind, Branch, ExecutionPlan, Flow, Join, JoinTarget, ProducerId, WireMerge};
 
@@ -159,9 +159,7 @@ impl Builder<'_> {
             BlockKind::Question | BlockKind::Choice => {
                 self.branch(block, context, &next_done, forbidden, scopes)
             }
-            BlockKind::Loop => {
-                loop_block::lower(self, block, context, &next_done, forbidden, scopes)
-            }
+            BlockKind::Cycle => cycle::lower(self, block, context, &next_done, forbidden, scopes),
             BlockKind::Export => Lowered {
                 plan: ExecutionPlan::Export {
                     index: block,
@@ -529,7 +527,7 @@ impl Executions {
             yields: BTreeMap::new(),
             transfers: BTreeMap::new(),
             scopes: Vec::new(),
-            loop_indices: Vec::new(),
+            cycle_indices: Vec::new(),
             exports: BTreeMap::new(),
             valid: true,
         };
@@ -571,7 +569,7 @@ struct Replay<'a> {
     yields: BTreeMap<(usize, usize), Condition>,
     transfers: BTreeMap<(usize, usize, Ident), Condition>,
     scopes: Vec<usize>,
-    loop_indices: Vec<usize>,
+    cycle_indices: Vec<usize>,
     exports: BTreeMap<usize, Condition>,
     valid: bool,
 }
@@ -647,7 +645,7 @@ impl Replay<'_> {
             }
         }
         self.ran[block] = self.executions.conditions.or(self.ran[block], context);
-        if kind != BlockKind::Loop {
+        if kind != BlockKind::Cycle {
             self.produce(block, context);
         }
     }
@@ -728,16 +726,16 @@ impl Replay<'_> {
                 self.enter(*index, context, kind);
                 self.branches(*index, branches, joins, context);
             }
-            ExecutionPlan::Loop {
+            ExecutionPlan::Cycle {
                 index,
                 body,
                 branches,
                 joins,
-            } => loop_block::replay(self, *index, body, branches, joins, context),
+            } => cycle::replay(self, *index, body, branches, joins, context),
             ExecutionPlan::Export { index, target } => {
-                loop_block::export(self, *index, *target, context);
+                cycle::export(self, *index, *target, context);
             }
-            ExecutionPlan::Continue { index } => loop_block::repeat(self, *index, context),
+            ExecutionPlan::Continue { index } => cycle::repeat(self, *index, context),
         }
     }
     fn branches(&mut self, index: usize, branches: &[Branch], joins: &[Join], context: Condition) {

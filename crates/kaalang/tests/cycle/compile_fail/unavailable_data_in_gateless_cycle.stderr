@@ -1,0 +1,5 @@
+error: an outer wire captured inside a kaalang cycle must be available whenever the cycle is entered
+  --> tests/cycle/compile_fail/unavailable_data_in_gateless_cycle.rs:20:23
+   |
+20 |         let result = |value| value;
+   |                       ^^^^^

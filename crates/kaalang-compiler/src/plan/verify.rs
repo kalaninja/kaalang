@@ -40,14 +40,14 @@ pub(super) fn plan(
             ran: BTreeSet::new(),
             last: None,
             dependencies: BTreeSet::new(),
-            loop_indices: Vec::new(),
+            cycle_indices: Vec::new(),
         };
         (match (replay.walk(plan), execution.outcome) {
             (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
                 found == block_index
             }
-            (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { loop_index }) => {
-                found == loop_index
+            (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { cycle_index }) => {
+                found == cycle_index
             }
             _ => false,
         }) && replay
@@ -90,14 +90,14 @@ pub(super) struct Replay<'a> {
     last: Option<usize>,
     dependencies: BTreeSet<CaptureDependency>,
     /// Only the innermost active body may be the target of a native continue.
-    pub(super) loop_indices: Vec<usize>,
+    pub(super) cycle_indices: Vec<usize>,
 }
 
 impl Replay<'_> {
     pub(super) fn iteration(&mut self, index: usize, body: &ExecutionPlan) -> Option<Exit> {
-        self.loop_indices.push(index);
+        self.cycle_indices.push(index);
         let exit = self.walk(body);
-        self.loop_indices.pop();
+        self.cycle_indices.pop();
         exit
     }
 
@@ -125,7 +125,7 @@ impl Replay<'_> {
         }
         self.last = Some(block);
         self.capture(block)?;
-        if kind != BlockKind::Loop {
+        if kind != BlockKind::Cycle {
             self.produce(block);
         }
         Some(())
@@ -142,12 +142,12 @@ impl Replay<'_> {
 
     pub(super) fn walk(&mut self, plan: &ExecutionPlan) -> Option<Exit> {
         match plan {
-            ExecutionPlan::Loop {
+            ExecutionPlan::Cycle {
                 index,
                 body,
                 branches,
                 joins,
-            } => super::loop_block::replay(self, *index, body, branches, joins),
+            } => super::cycle::replay(self, *index, body, branches, joins),
             ExecutionPlan::Export { index, target } => super::export::replay(self, *index, *target),
             ExecutionPlan::Return { index } => super::return_block::replay(self, *index),
             ExecutionPlan::Continue { index } => super::continue_block::replay(self, *index),
@@ -250,11 +250,11 @@ mod tests {
                 |end| return end;
             }
         })
-        .expect("both loops exit");
+        .expect("both cycles exit");
         let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
-        let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
+        let ExecutionPlan::Cycle { body, .. } = body.as_mut() else {
             unreachable!()
         };
         let ExecutionPlan::Action { next, .. } = body.as_mut() else {
@@ -265,7 +265,7 @@ mod tests {
         };
         *target = 3;
         // Even agreement with a corrupted resolved target cannot authorize a
-        // jump into a sibling loop that has not been entered.
+        // jump into a sibling cycle that has not been entered.
         model.analysis.flow.blocks[2].export_target = Some(3);
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
@@ -309,7 +309,7 @@ mod tests {
         let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
-        let ExecutionPlan::Loop {
+        let ExecutionPlan::Cycle {
             body,
             branches: continuations,
             ..
@@ -361,14 +361,14 @@ mod tests {
                 };
             }
         })
-        .expect("a trailing inner loop can exit and repeat its parent");
+        .expect("a trailing inner cycle can exit and repeat its parent");
         let ExecutionPlan::End { body, .. } = &mut model.analysis.execution_plan else {
             unreachable!()
         };
-        let ExecutionPlan::Loop { body, .. } = body.as_mut() else {
+        let ExecutionPlan::Cycle { body, .. } = body.as_mut() else {
             unreachable!()
         };
-        let ExecutionPlan::Loop {
+        let ExecutionPlan::Cycle {
             body,
             branches: continuations,
             ..
@@ -392,12 +392,12 @@ mod tests {
     }
 
     #[test]
-    fn a_diverging_inner_loop_propagates_through_its_parent() {
+    fn a_diverging_inner_cycle_propagates_through_its_parent() {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Choose whether to finish.")]
                 let leave_2 = |flag| {
-                    #[question("Enter the loop?")]
+                    #[question("Enter the cycle?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     #[cycle("Repeat forever.")]
                     |iterate_2| {
@@ -410,7 +410,7 @@ mod tests {
                 |end| return end;
             }
         })
-        .expect("the inner loop may diverge instead of reaching end");
+        .expect("the inner cycle may diverge instead of reaching end");
         assert_eq!(
             model
                 .analysis
@@ -420,7 +420,7 @@ mod tests {
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
                 ExecutionOutcome::Return { block_index: 6 },
-                ExecutionOutcome::Repeat { loop_index: 2 }
+                ExecutionOutcome::Repeat { cycle_index: 2 }
             ])
         );
         assert!(replays(&model, &model.analysis.execution_plan));

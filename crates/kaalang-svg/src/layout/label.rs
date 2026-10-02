@@ -184,7 +184,7 @@ fn place_merge_label(
 fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
     let anchor = scene.exit_anchor(exit);
     let several = exit.branch.is_some_and(|branch| branch > 0)
-        && scene.topology.node(exit.node).kind == NodeKind::Loop
+        && scene.topology.node(exit.node).kind == NodeKind::Cycle
         && scene.topology.exits.iter().any(|other| {
             other.id
                 == ExitId {
@@ -470,7 +470,7 @@ mod tests {
                 lines: vec![RichText::literal("end")],
                 at,
             }],
-            loop_regions: Vec::new(),
+            cycle_regions: Vec::new(),
         }
     }
 

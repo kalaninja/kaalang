@@ -14,9 +14,9 @@ use crate::text::{self, RichText, wrap_literal, wrap_text};
 mod action;
 mod call;
 mod choice;
+mod cycle;
 mod end;
 mod label;
-mod loop_block;
 mod route;
 mod staged;
 #[cfg(test)]
@@ -97,7 +97,7 @@ pub(crate) struct Scene {
     narrow: bool,
     /// Common header height and transition row of a staged diagram.
     stage_rows: Option<staged::StageRows>,
-    /// Model-defined body vertices, one set per `topology.loops` entry.
+    /// Model-defined body vertices, one set per `topology.cycles` entry.
     bodies: Vec<BTreeSet<Vertex>>,
     /// The owned vertices of every expanded cycle boundary, including cycles
     /// that have no repeating execution and therefore no back edge.
@@ -108,12 +108,12 @@ pub(crate) struct Scene {
     pub(crate) parameters: Option<ParameterPanel>,
     pub(crate) connections: Vec<Connection>,
     pub(crate) labels: Vec<Label>,
-    pub(crate) loop_regions: Vec<LoopRegion>,
+    pub(crate) cycle_regions: Vec<CycleRegion>,
 }
 
 /// One described expanded cycle boundary.
 #[derive(Clone)]
-pub(crate) struct LoopRegion {
+pub(crate) struct CycleRegion {
     pub(crate) left: i32,
     pub(crate) top: i32,
     pub(crate) right: i32,
@@ -124,7 +124,7 @@ pub(crate) struct LoopRegion {
     pub(crate) outputs: String,
 }
 
-impl LoopRegion {
+impl CycleRegion {
     /// Left, top, right, bottom, like `Scene::bounds`.
     pub(super) const fn bounds(&self) -> (i32, i32, i32, i32) {
         (self.left, self.top, self.right, self.bottom)
@@ -214,7 +214,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
     let mut wanted = 0;
     // Innermost first: an enclosing rail is measured from the one it encloses,
     // so it has to follow it out rather than be stepped into.
-    for index in (0..scene.topology.loops.len()).rev() {
+    for index in (0..scene.topology.cycles.len()).rev() {
         // Move enclosing rails together to preserve the lanes between them.
         let side = scene.arrangement.contours[index].side;
         let Some(back) = scene.back_edge_index(index) else {
@@ -222,12 +222,12 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         };
         let chain = std::iter::once(back)
             .chain(
-                (0..scene.topology.loops.len())
+                (0..scene.topology.cycles.len())
                     .filter(|&other| {
                         other != index
                             && scene.arrangement.contours[other].side == side
                             && scene.bodies[other]
-                                .contains(&Vertex::Junction(scene.topology.loops[index].entry))
+                                .contains(&Vertex::Junction(scene.topology.cycles[index].entry))
                     })
                     .filter_map(|other| scene.back_edge_index(other)),
             )
@@ -238,9 +238,9 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         };
         let boundary = scene
             .topology
-            .loop_boundaries
+            .cycle_boundaries
             .iter()
-            .find(|boundary| boundary.header == scene.topology.loops[index].header)
+            .find(|boundary| boundary.header == scene.topology.cycles[index].header)
             .expect("a repeating cycle has a boundary");
         let (boundary_header, boundary_end) = (boundary.header, boundary.end);
         let obstructions = |scene: &Scene| {
@@ -248,9 +248,9 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             bounds.extend(
                 scene
                     .topology
-                    .loop_boundaries
+                    .cycle_boundaries
                     .iter()
-                    .zip(loop_block::regions(scene))
+                    .zip(cycle::regions(scene))
                     .filter(|(nested, _)| {
                         (boundary_header + 1..boundary_end).contains(&nested.header)
                     })
@@ -362,15 +362,15 @@ fn collapsed_text(text: &str) -> String {
 
 /// Maximum rail reach on each side of every column used by a back edge.
 fn contour_reaches(model: &SemanticModel) -> BTreeMap<i32, (i32, i32)> {
-    let loops = &model.topology.loops;
-    let mut reach = vec![0; loops.len()];
-    // Innermost first: `topology.loops` runs outermost first.
-    for index in (0..loops.len()).rev() {
-        let end = model.analysis.flow.blocks[loops[index].header]
-            .loop_end
-            .expect("a loop owns a body");
-        let body = loops[index].header + 1..end;
-        let nested = loops
+    let cycles = &model.topology.cycles;
+    let mut reach = vec![0; cycles.len()];
+    // Innermost first: `topology.cycles` runs outermost first.
+    for index in (0..cycles.len()).rev() {
+        let end = model.analysis.flow.blocks[cycles[index].header]
+            .cycle_end
+            .expect("a cycle owns a body");
+        let body = cycles[index].header + 1..end;
+        let nested = cycles
             .iter()
             .enumerate()
             .filter(|(_, other)| body.contains(&other.header))
@@ -535,7 +535,7 @@ fn back_edge_correspondence(scene: &Scene) -> Option<String> {
     let origin =
         scene.node(NodeId::Start).x - scene.column_x(scene.column(Vertex::Node(NodeId::Start)));
     for (index, contour) in scene.arrangement.contours.iter().enumerate() {
-        let tail = scene.topology.loops[index].tail;
+        let tail = scene.topology.cycles[index].tail;
         let Some(edge) = scene.back_edge(index) else {
             return Some(format!(
                 "the iteration back edge of junction {tail} is missing"
@@ -608,18 +608,18 @@ fn attempt(
         parameters: parameter_panel(parameters),
         connections: Vec::new(),
         labels: Vec::new(),
-        loop_regions: Vec::new(),
+        cycle_regions: Vec::new(),
         captions: Rc::clone(captions),
         reach: contour_reaches(model),
         bodies: model
             .topology
-            .loops
+            .cycles
             .iter()
-            .map(|loop_| topology.body_vertices(flow, loop_.header))
+            .map(|cycle| topology.body_vertices(flow, cycle.header))
             .collect(),
         region_bodies: model
             .topology
-            .loop_boundaries
+            .cycle_boundaries
             .iter()
             .map(|boundary| topology.body_vertices(flow, boundary.header))
             .collect(),
@@ -657,8 +657,8 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     if wanted > 0 {
         return Err(Blocked::Narrow(wanted));
     }
-    scene.loop_regions = loop_block::regions(&scene);
-    let wanted = loop_block::clearance(&scene);
+    scene.cycle_regions = cycle::regions(&scene);
+    let wanted = cycle::clearance(&scene);
     if wanted > 0 {
         return Err(Blocked::Narrow(wanted));
     }
@@ -667,7 +667,7 @@ fn finish(mut scene: Scene) -> Result<Scene, Blocked> {
     // Recheck after all transformations, including canvas sizing and translation.
     if let Some(reason) = route::verify(&scene)
         .or_else(|| label::verify(&scene))
-        .or_else(|| loop_block::verify(&scene))
+        .or_else(|| cycle::verify(&scene))
         .or_else(|| correspondence(&scene))
     {
         return Err(Blocked::Refused(reason));
@@ -768,7 +768,7 @@ impl Scene {
             height[row] = height[row].max(parameters.height);
         }
         let lanes = self.arrangement.gap_lanes.clone();
-        let bottom_padding = loop_block::bottom_padding(self);
+        let bottom_padding = cycle::bottom_padding(self);
         let mut top = Vec::with_capacity(ranks + 1);
         let mut next = MARGIN;
         for (row, own) in height.iter().enumerate() {
@@ -884,9 +884,9 @@ impl Scene {
         })
     }
 
-    /// Where one loop's iteration back edge sits in `connections`, once drawn.
+    /// Where one cycle's iteration back edge sits in `connections`, once drawn.
     pub(super) fn back_edge_index(&self, index: usize) -> Option<usize> {
-        let tail = self.topology.loops[index].tail;
+        let tail = self.topology.cycles[index].tail;
         self.connections
             .iter()
             .position(|edge| edge.source == Source::Junction(tail))
@@ -949,7 +949,7 @@ impl Scene {
         match (self.topology.node(exit.node).kind, exit.branch) {
             // A question, or a collapsed cycle with several outputs, leaves by
             // its first branch below and by the others from its right tip.
-            (NodeKind::Question | NodeKind::Loop, Some(branch)) if branch > 0 => Point {
+            (NodeKind::Question | NodeKind::Cycle, Some(branch)) if branch > 0 => Point {
                 x: node.x + node.width / 2,
                 y: node.y,
             },
@@ -971,7 +971,7 @@ impl Scene {
             .min()
             .unwrap_or(MARGIN)
             .min(
-                self.loop_regions
+                self.cycle_regions
                     .iter()
                     .map(|region| region.left)
                     .min()
@@ -997,7 +997,7 @@ impl Scene {
         if let Some(parameters) = &mut self.parameters {
             parameters.x += shift;
         }
-        for region in &mut self.loop_regions {
+        for region in &mut self.cycle_regions {
             region.left += shift;
             region.right += shift;
         }
@@ -1021,7 +1021,7 @@ impl Scene {
             right = right.max(label_right);
             bottom = bottom.max(label_bottom);
         }
-        for region in &self.loop_regions {
+        for region in &self.cycle_regions {
             right = right.max(region.right);
             bottom = bottom.max(region.bottom);
         }
@@ -1061,7 +1061,7 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
         NodeKind::Start | NodeKind::End => capsule_dimensions(label),
         NodeKind::Action => action::dimensions(label),
         NodeKind::Call => call::dimensions(label),
-        NodeKind::Loop => loop_block::dimensions(label),
+        NodeKind::Cycle => cycle::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, BRANCH_MIN_HEIGHT)
         }

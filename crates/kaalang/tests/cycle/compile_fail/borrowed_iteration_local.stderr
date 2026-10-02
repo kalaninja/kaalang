@@ -1,0 +1,8 @@
+error[E0515]: cannot return value referencing temporary value
+  --> tests/cycle/compile_fail/borrowed_iteration_local.rs:19:23
+   |
+11 |         let text = |done| String::from("local");
+   |             ---- temporary value created here
+...
+19 |     |borrowed| return borrowed;
+   |                       ^^^^^^^^ returns a value referencing data owned by the current function

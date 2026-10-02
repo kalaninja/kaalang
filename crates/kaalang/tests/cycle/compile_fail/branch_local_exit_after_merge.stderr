@@ -1,0 +1,5 @@
+error: this kaalang block must finish before the `shared` wire merge, but it waits for a value from after that merge
+  --> tests/cycle/compile_fail/branch_local_exit_after_merge.rs:19:9
+   |
+19 |         #[action("Exit through the first branch.")]
+   |         ^

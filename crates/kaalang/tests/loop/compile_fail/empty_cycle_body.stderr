@@ -1,5 +1,0 @@
-error: a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`
- --> tests/loop/compile_fail/empty_cycle_body.rs:5:5
-  |
-5 |     #[cycle("Do nothing at all.")]
-  |     ^

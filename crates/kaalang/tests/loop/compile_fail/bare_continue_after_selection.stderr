@@ -1,5 +1,0 @@
-error: this kaalang block runs while the branches of the question `Leave now?` are still separate; give it an input from one branch, or merge those branches above it
-  --> tests/loop/compile_fail/bare_continue_after_selection.rs:10:9
-   |
-10 |         continue;
-   |         ^^^^^^^^

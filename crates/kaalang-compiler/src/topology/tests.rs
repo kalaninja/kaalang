@@ -64,7 +64,7 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
         }
     "#,
     );
-    let loop_ = topology.loops[0];
+    let cycle = topology.cycles[0];
     assert_eq!(topology.nodes.len(), 1);
     assert_eq!(topology.nodes[0].id, NodeId::Start);
     assert_eq!(topology.junctions.len(), 2);
@@ -73,19 +73,19 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
         [
             Connection {
                 source: Source::Exit(ExitId::of(NodeId::Start)),
-                destination: Destination::Junction(loop_.entry),
+                destination: Destination::Junction(cycle.entry),
             },
             Connection {
-                source: Source::Junction(loop_.entry),
-                destination: Destination::Junction(loop_.tail),
+                source: Source::Junction(cycle.entry),
+                destination: Destination::Junction(cycle.tail),
             },
         ]
     );
     assert_eq!(
         topology.back_edges,
         [Connection {
-            source: Source::Junction(loop_.tail),
-            destination: Destination::Junction(loop_.entry),
+            source: Source::Junction(cycle.tail),
+            destination: Destination::Junction(cycle.entry),
         }]
     );
 }
@@ -103,7 +103,7 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
         "#,
     );
     let cycle = NodeId::Block(0);
-    assert_eq!(topology.node(cycle).kind, NodeKind::Loop);
+    assert_eq!(topology.node(cycle).kind, NodeKind::Cycle);
     assert!(!topology.exits.iter().any(|exit| exit.id.node == cycle));
     assert!(topology.outgoing(Vertex::Node(cycle)).next().is_none());
 }
@@ -111,7 +111,7 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
 #[test]
 fn a_collapsed_cycle_omits_its_internal_choice_connections() {
     let function = crate::tests::fixture(
-        include_str!("../../../kaalang/tests/loop/behavior/diverging_middle_branch.rs"),
+        include_str!("../../../kaalang/tests/cycle/behavior/diverging_middle_branch.rs"),
         "diverging_middle_branch",
     );
     let topology = crate::build_with_options(&function, true)
@@ -138,8 +138,8 @@ fn a_capture_free_continue_redirects_without_a_structural_junction() {
         }
         "#,
     );
-    let boundary = &topology.loop_boundaries[0];
-    let tail = topology.loops[0].tail;
+    let boundary = &topology.cycle_boundaries[0];
+    let tail = topology.cycles[0].tail;
 
     assert!(boundary.results.is_empty());
     assert_eq!(topology.junctions.len(), 2);
@@ -170,7 +170,7 @@ fn nested_completing_cycles_reach_the_root_return() {
         }
         "#,
     );
-    assert!(topology.loops.is_empty());
+    assert!(topology.cycles.is_empty());
     let end = topology
         .nodes
         .iter()
@@ -178,7 +178,7 @@ fn nested_completing_cycles_reach_the_root_return() {
         .expect("the returning flow has an end boundary")
         .id;
     for result in topology
-        .loop_boundaries
+        .cycle_boundaries
         .iter()
         .flat_map(|boundary| &boundary.results)
     {
@@ -204,8 +204,8 @@ fn an_inner_cycle_output_reaches_the_outer_iteration_tail() {
         }
         "#,
     );
-    let [outer, inner] = topology.loops[..] else {
-        panic!("both loops repeat");
+    let [outer, inner] = topology.cycles[..] else {
+        panic!("both cycles repeat");
     };
     assert!(topology.connections.contains(&Connection {
         source: Source::Exit(ExitId {
@@ -252,14 +252,14 @@ fn a_merged_cycle_output_reaches_the_enclosing_iteration_tail() {
         .find(|&junction| merged(&model, junction) == ["leave"])
         .expect("the question outputs merge before the cycle result");
     assert_eq!(
-        topology.loop_boundaries[1].results,
+        topology.cycle_boundaries[1].results,
         [Source::Junction(merge)]
     );
-    assert!(topology.junctions[merge].is_loop_result);
+    assert!(topology.junctions[merge].is_cycle_result);
     assert!(reaches(
         topology,
         Vertex::Junction(merge),
-        Vertex::Junction(topology.loops[0].tail)
+        Vertex::Junction(topology.cycles[0].tail)
     ));
 }
 
@@ -285,7 +285,7 @@ fn work_after_a_merge_keeps_the_cycle_result_separate() {
     let merge = (0..topology.junctions.len())
         .find(|&junction| merged(&model, junction) == ["done"])
         .unwrap();
-    let result = topology.loop_boundaries[0].results[0];
+    let result = topology.cycle_boundaries[0].results[0];
     assert_eq!(result, Source::Exit(ExitId::of(NodeId::Block(3))));
     assert!(reaches(topology, Vertex::Junction(merge), result.into()));
 }

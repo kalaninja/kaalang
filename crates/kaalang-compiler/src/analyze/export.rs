@@ -10,7 +10,7 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
         .export_target
         .expect("a boundary consumer has a cycle");
     debug_assert_eq!(
-        state.loops.last_key_value().map(|(&index, _)| index),
+        state.cycles.last_key_value().map(|(&index, _)| index),
         Some(target)
     );
     let output = walk.flow.exported_output(block);
@@ -33,9 +33,9 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
         return;
     }
     state.available = state
-        .loops
+        .cycles
         .remove(&target)
-        .expect("the target loop is active");
+        .expect("the target cycle is active");
     if cycle.branch_count() > 0 {
         state.branches.insert(BranchSelection {
             block: target,
@@ -43,6 +43,6 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
         });
     }
     if walk.produce(&mut state, target, output) {
-        walk.visit(cycle.loop_end.expect("a loop owns a body"), state);
+        walk.visit(cycle.cycle_end.expect("a cycle owns a body"), state);
     }
 }

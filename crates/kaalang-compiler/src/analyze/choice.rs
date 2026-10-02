@@ -62,7 +62,7 @@ pub(super) struct Group {
 /// group the same way.
 pub(super) fn validate_groups(owner: &Block, groups: &[Group]) -> Result<()> {
     let (noun, members) = match owner.kind {
-        BlockKind::Loop => ("cycle", "outputs"),
+        BlockKind::Cycle => ("cycle", "outputs"),
         _ => ("choice", "branches"),
     };
     let mut offending = None::<(usize, String)>;

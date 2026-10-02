@@ -453,7 +453,7 @@ fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
         &source,
         "count_to",
         RenderOptions {
-            collapse_loops: true,
+            collapse_cycles: true,
         },
     )
     .unwrap();
@@ -573,7 +573,7 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
         CYCLE_SOURCE,
         "count_to",
         RenderOptions {
-            collapse_loops: true,
+            collapse_cycles: true,
         },
     )
     .expect("the cycle collapses");
@@ -597,9 +597,9 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     ));
 
     let invalid = CYCLE_SOURCE.replace("|again| continue;", "|again, count| return count;");
-    for collapse_loops in [false, true] {
+    for collapse_cycles in [false, true] {
         assert!(matches!(
-            render_source_with_options(&invalid, "count_to", RenderOptions { collapse_loops }),
+            render_source_with_options(&invalid, "count_to", RenderOptions { collapse_cycles }),
             Err(RenderError::InvalidFlow { .. })
         ));
     }
@@ -647,7 +647,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
                 &source,
                 "example",
                 RenderOptions {
-                    collapse_loops: true,
+                    collapse_cycles: true,
                 },
             )
             .unwrap();

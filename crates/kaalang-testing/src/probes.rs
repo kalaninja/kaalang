@@ -24,10 +24,10 @@ pub fn flow(source: &str) -> ItemFn {
 #[must_use]
 pub fn accepted() -> Vec<(String, String, &'static str)> {
     [(8, 8), (8, 64), (4, 120)]
-        .map(|(loops, actions)| {
+        .map(|(cycles, actions)| {
             (
-                format!("{loops} loops and {actions} steps"),
-                nested_cycles(loops, actions, false),
+                format!("{cycles} cycles and {actions} steps"),
+                nested_cycles(cycles, actions, false),
                 "nested_cycles",
             )
         })
@@ -65,8 +65,8 @@ fn open_level(depth: usize) -> String {
 
 /// Closes every level [`open_level`] opened, innermost first, each after the
 /// `continue` its staying route reaches.
-fn close_levels(body: &mut String, loops: usize) {
-    for depth in (0..loops).rev() {
+fn close_levels(body: &mut String, cycles: usize) {
+    for depth in (0..cycles).rev() {
         let pad = indent(depth);
         let _ = writeln!(body, "{pad}    |stay_{depth}| continue;");
         let _ = writeln!(body, "{pad}}};");
@@ -78,12 +78,12 @@ fn close_levels(body: &mut String, loops: usize) {
 ///
 /// # Panics
 ///
-/// Panics when `loops` is zero: every shape here nests at least one.
+/// Panics when `cycles` is zero: every shape here nests at least one.
 #[must_use]
-pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
-    assert!(loops > 0, "a nested-cycle probe needs at least one loop");
+pub fn nested_cycles(cycles: usize, actions: usize, empty_tail: bool) -> String {
+    assert!(cycles > 0, "a nested-cycle probe needs at least one cycle");
     let mut body = String::new();
-    for depth in 0..loops {
+    for depth in 0..cycles {
         let pad = indent(depth);
         body.push_str(&open_level(depth));
         let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
@@ -92,13 +92,13 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
             "{pad}    let (stay_{depth}, _leave_{depth}) = |step| step > {depth};"
         );
     }
-    let deepest = loops - 1;
+    let deepest = cycles - 1;
     let pad = indent(deepest);
     if !empty_tail {
         let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
         let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
     }
-    close_levels(&mut body, loops);
+    close_levels(&mut body, cycles);
     for index in 0..actions {
         let _ = writeln!(body, "    #[action(\"Step {index}.\")]");
         let _ = writeln!(body, "    let step_{index} = || {index}usize;");
@@ -114,7 +114,7 @@ pub fn nested_cycles(loops: usize, actions: usize, empty_tail: bool) -> String {
 ///
 /// Every level doubles the possible executions. The compiler stores execution conditions for this
 /// flow; explicitly listing its summaries still enumerates every
-/// combination. The loop shapes above stay in the tens however many blocks
+/// combination. The cycle shapes above stay in the tens however many blocks
 /// they hold.
 #[must_use]
 pub fn branching(levels: usize) -> String {

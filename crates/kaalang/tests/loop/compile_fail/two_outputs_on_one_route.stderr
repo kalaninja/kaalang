@@ -1,5 +1,0 @@
-error: a route through this kaalang cycle produces both `low` and `high`; a completed cycle exports exactly one of its outputs
- --> tests/loop/compile_fail/two_outputs_on_one_route.rs:6:15
-  |
-6 |     let (low, high) = |value| {
-  |               ^^^^

@@ -60,25 +60,25 @@ pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> V
     let mut connections = Vec::new();
     // Innermost first, so a nested rail is stroked before the one that encloses
     // it.
-    for (index, loop_) in scene.topology.loops.iter().enumerate().rev() {
-        let from = junction_point(scene, rows, loop_.tail);
-        let end = junction_point(scene, rows, loop_.entry);
+    for (index, cycle) in scene.topology.cycles.iter().enumerate().rev() {
+        let from = junction_point(scene, rows, cycle.tail);
+        let end = junction_point(scene, rows, cycle.entry);
         // The body still stands where it was numbered, so the recorded column
         // is realized through the same map every node and route uses.
         if !scene.arrangement.back_routes.is_empty() {
             connections.push(Connection {
-                source: Source::Junction(loop_.tail),
-                destination: Destination::Junction(loop_.entry),
+                source: Source::Junction(cycle.tail),
+                destination: Destination::Junction(cycle.entry),
                 points: bent_back_edge(scene, rows, index, from, end),
             });
             continue;
         }
         let anchor = contour_anchor(scene, index);
         let aside = contour_x(scene, model, index, from, end, &drawn, anchor);
-        drawn.push((loop_.header, aside));
+        drawn.push((cycle.header, aside));
         connections.push(Connection {
-            source: Source::Junction(loop_.tail),
-            destination: Destination::Junction(loop_.entry),
+            source: Source::Junction(cycle.tail),
+            destination: Destination::Junction(cycle.entry),
             points: straighten(back_edge_points(from, aside, end)),
         });
     }
@@ -147,7 +147,7 @@ pub(super) fn contour_x(
     drawn: &[(usize, i32)],
     anchor: i32,
 ) -> i32 {
-    let loop_ = scene.topology.loops[index];
+    let cycle = scene.topology.cycles[index];
     let contour = scene.arrangement.contours[index];
     let (left, right) = body_extent(scene, index).unwrap_or((from.x.min(end.x), from.x.max(end.x)));
     let (left, right) = (left.min(from.x).min(end.x), right.max(from.x).max(end.x));
@@ -157,12 +157,12 @@ pub(super) fn contour_x(
     // one lane past it is enough: the arrangement put this contour outside
     // that one, so the lane step above is measured from the body and this only
     // holds the two apart.
-    let body = model.analysis.flow.blocks[loop_.header]
-        .loop_end
-        .expect("a loop owns a body");
+    let body = model.analysis.flow.blocks[cycle.header]
+        .cycle_end
+        .expect("a cycle owns a body");
     let nested = drawn
         .iter()
-        .filter(|(header, _)| (loop_.header..body).contains(header))
+        .filter(|(header, _)| (cycle.header..body).contains(header))
         .map(|&(_, rail)| rail);
     match contour.side {
         Side::Left => nested.fold(left - step, |aside, rail| aside.min(rail - super::LANE)),
@@ -173,8 +173,8 @@ pub(super) fn contour_x(
 /// Horizontal extent of the model-defined body, including junctions and
 /// vertices below the tail. The caller adds entry and tail route endpoints.
 fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
-    let loop_ = scene.topology.loops[index];
-    let ends = [Vertex::Junction(loop_.entry), Vertex::Junction(loop_.tail)];
+    let cycle = scene.topology.cycles[index];
+    let ends = [Vertex::Junction(cycle.entry), Vertex::Junction(cycle.tail)];
     scene.bodies[index]
         .iter()
         .copied()
@@ -206,7 +206,7 @@ fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
 /// Checks emitted back edges against the recorded side and the whole body's
 /// horizontal extent, independently of rank.
 fn verify_back_edges(scene: &Scene) -> Option<String> {
-    let climbs = (0..scene.topology.loops.len())
+    let climbs = (0..scene.topology.cycles.len())
         .map(|index| {
             let edge = scene.back_edge(index)?;
             if !edge.points.windows(2).any(|pair| pair[1].y < pair[0].y)
@@ -222,10 +222,10 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
             ))
         })
         .collect::<Vec<_>>();
-    for (index, loop_) in scene.topology.loops.iter().enumerate() {
+    for (index, cycle) in scene.topology.cycles.iter().enumerate() {
         let at = format!(
             "the iteration back edge of the cycle at block {}",
-            loop_.header + 1
+            cycle.header + 1
         );
         let Some(climb) = climbs[index] else {
             return Some(format!("{at} is not drawn, or does not climb"));
@@ -239,7 +239,7 @@ fn verify_back_edges(scene: &Scene) -> Option<String> {
         if let Some(nested) = (0..climbs.len())
             .filter(|&other| other != index)
             .filter(|&other| {
-                scene.bodies[index].contains(&Vertex::Junction(scene.topology.loops[other].entry))
+                scene.bodies[index].contains(&Vertex::Junction(scene.topology.cycles[other].entry))
             })
             .find_map(|other| {
                 climbs[other]
@@ -475,7 +475,7 @@ mod tests {
             parameters: None,
             connections,
             labels: vec![],
-            loop_regions: Vec::new(),
+            cycle_regions: Vec::new(),
         }
     }
 

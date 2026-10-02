@@ -1,5 +1,0 @@
-error: a route through this kaalang cycle produces its output `total` and then repeats; a route either completes with one output or continues
-  --> tests/loop/compile_fail/output_then_continue.rs:16:17
-   |
-16 |         |again| continue;
-   |                 ^^^^^^^^

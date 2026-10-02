@@ -11,8 +11,8 @@ use crate::{
 };
 
 mod condition;
+mod cycle;
 mod frame;
-mod loop_block;
 mod order;
 mod plan;
 mod projection;
@@ -95,7 +95,7 @@ pub(crate) fn validate(
     let captures = executions.predecessors(flow, &[]);
     executions.participation(flow, &frames, &captures)?;
     executions.validate_merges(flow, &merges, &owners, &ancestry, &frames)?;
-    loop_block::output_order(&mut executions, flow, &frames)?;
+    cycle::output_order(&mut executions, flow, &frames)?;
     let precedence = executions.predecessors(flow, &merges);
     let groups = executions.convergence(flow, &precedence, &ancestry, &frames)?;
     Ok((executions, groups, merges))

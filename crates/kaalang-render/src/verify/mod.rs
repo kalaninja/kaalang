@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use kaalang_compiler::topology::{Connection, Topology, Vertex};
 use kaalang_compiler::{Arrangement, ArrangementChecks, Flow};
 
-mod loop_block;
+mod cycle;
 
 /// Reusable verification context for renderer-proposed arrangements.
 ///
@@ -14,7 +14,7 @@ mod loop_block;
 pub struct ArrangementVerifier<'a> {
     checks: ArrangementChecks<'a>,
     topology: &'a Topology,
-    bodies: loop_block::Bodies,
+    bodies: cycle::Bodies,
     body_vertices: BTreeMap<usize, BTreeSet<Vertex>>,
 }
 
@@ -23,14 +23,14 @@ impl<'a> ArrangementVerifier<'a> {
     #[must_use]
     pub fn new(flow: &'a Flow, topology: &'a Topology) -> Self {
         let body_vertices = topology
-            .loops
+            .cycles
             .iter()
-            .map(|loop_| (loop_.header, topology.body_vertices(flow, loop_.header)))
+            .map(|cycle| (cycle.header, topology.body_vertices(flow, cycle.header)))
             .collect();
         Self {
             checks: ArrangementChecks::new(flow, topology),
             topology,
-            bodies: loop_block::Bodies::of(flow, topology),
+            bodies: cycle::Bodies::of(flow, topology),
             body_vertices,
         }
     }

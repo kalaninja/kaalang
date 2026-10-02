@@ -1,0 +1,5 @@
+error: the routes exporting `stop` leave this kaalang cycle to the left of those exporting `up`; declare its outputs in the order their routes leave it
+  --> tests/cycle/compile_fail/misdeclared_inner_outputs.rs:14:18
+   |
+14 |         let (up, stop) = |small| {
+   |                  ^^^^

@@ -15,10 +15,10 @@ pub(super) fn vertex_span(flow: &Flow, topology: &Topology, vertex: Vertex) -> S
             flow.blocks[block].span
         }
         Vertex::Junction(junction) => topology
-            .loops
+            .cycles
             .iter()
-            .find(|loop_| loop_.tail == junction || loop_.entry == junction)
-            .map_or_else(|| flow.end_span(), |loop_| flow.blocks[loop_.header].span),
+            .find(|cycle| cycle.tail == junction || cycle.entry == junction)
+            .map_or_else(|| flow.end_span(), |cycle| flow.blocks[cycle.header].span),
         Vertex::Node(NodeId::Start) => flow.end_span(),
     }
 }
@@ -74,7 +74,7 @@ pub(super) fn vertex(
 }
 
 /// One cycle, named by its authored description.
-pub(super) fn loop_name(flow: &Flow, header: usize) -> String {
+pub(super) fn cycle_name(flow: &Flow, header: usize) -> String {
     flow.blocks[header].description.as_deref().map_or_else(
         || "this cycle".to_owned(),
         |text| format!("the cycle `{text}`"),
@@ -85,7 +85,7 @@ fn block_name(flow: &Flow, block: usize) -> String {
     let declaration = &flow.blocks[block];
     match (&declaration.description, declaration.kind) {
         (Some(text), _) => format!("`{text}`"),
-        (None, BlockKind::Loop) => loop_name(flow, block),
+        (None, BlockKind::Cycle) => cycle_name(flow, block),
         (None, BlockKind::Call) => format!("the call `{}`", flow.blocks[block].callee()),
         (None, BlockKind::Export) => {
             let header = declaration
@@ -108,20 +108,20 @@ fn junction_name(
     topology: &Topology,
     junction: usize,
 ) -> String {
-    if let Some(loop_) = topology
-        .loops
+    if let Some(cycle) = topology
+        .cycles
         .iter()
-        .find(|loop_| loop_.tail == junction || loop_.entry == junction)
+        .find(|cycle| cycle.tail == junction || cycle.entry == junction)
     {
-        let part = if loop_.tail == junction {
+        let part = if cycle.tail == junction {
             "the iteration tail"
         } else {
             "the entry"
         };
-        return format!("{part} of {}", loop_name(flow, loop_.header));
+        return format!("{part} of {}", cycle_name(flow, cycle.header));
     }
     let junction = &topology.junctions[junction];
-    if junction.is_loop_result {
+    if junction.is_cycle_result {
         return "a cycle result".to_owned();
     }
     let wires = junction
@@ -166,7 +166,7 @@ mod tests {
                 index,
             )
         };
-        assert_eq!(name(|junction| junction.is_loop_result), "a cycle result");
+        assert_eq!(name(|junction| junction.is_cycle_result), "a cycle result");
 
         let mut topology = model.topology.clone();
         topology

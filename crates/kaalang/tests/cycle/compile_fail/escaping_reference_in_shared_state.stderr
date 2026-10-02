@@ -1,0 +1,16 @@
+error[E0716]: temporary value dropped while borrowed
+ --> tests/cycle/compile_fail/escaping_reference_in_shared_state.rs:8:13
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+4 | fn escaping_reference_in_shared_state<'a>(mut slot: &'a mut Option<&'a u8>) {
+  |                                       --      ---- assignment requires that borrow lasts for `'a`
+  |                                       |
+  |                                       lifetime `'a` defined here
+5 |     #[cycle("Store a departing local in shared state.")]
+  |     - temporary value is freed at the end of this statement
+...
+8 |         let local = || 7u8;
+  |             ^^^^^ creates a temporary value which is freed while still in use
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

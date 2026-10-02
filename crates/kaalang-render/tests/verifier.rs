@@ -70,7 +70,7 @@ fn the_public_verifier_rejects_overflowing_coordinates() {
 
 #[test]
 fn the_public_verifier_rejects_an_overflowing_contour_lane() {
-    let source = kaalang_testing::shapes::looping(&["repeat", "leave"]);
+    let source = kaalang_testing::shapes::cycle_routes(&["repeat", "leave"]);
     let model = model(&source);
     let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);
     let mut broken = model.arrangement.clone();
@@ -85,7 +85,7 @@ fn the_public_verifier_rejects_an_overflowing_contour_lane() {
 
 #[test]
 fn the_public_verifiers_reject_unrepresentable_grid_spacing() {
-    let source = kaalang_testing::shapes::looping(&["repeat", "leave"]);
+    let source = kaalang_testing::shapes::cycle_routes(&["repeat", "leave"]);
     let model = model(&source);
     let checks = ArrangementChecks::new(&model.analysis.flow, &model.topology);
     let verifier = ArrangementVerifier::new(&model.analysis.flow, &model.topology);

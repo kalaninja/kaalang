@@ -1,0 +1,5 @@
+error: this kaalang cycle exports `found` on routes decided by two independent questions, choices, or cycles
+ --> tests/cycle/compile_fail/export_decided_twice.rs:6:10
+  |
+6 |     let (found, other) = {
+  |          ^^^^^

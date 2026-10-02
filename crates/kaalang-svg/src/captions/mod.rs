@@ -23,9 +23,9 @@ pub(crate) struct Captions {
     capture_label: BTreeMap<NodeId, Vec<String>>,
     handover: BTreeMap<ExitId, Vec<String>>,
     branch_description: BTreeMap<ExitId, RichText>,
-    loop_inputs: BTreeMap<usize, String>,
+    cycle_inputs: BTreeMap<usize, String>,
     /// Per cycle, each declared output's binding label and bare name.
-    loop_outputs: BTreeMap<usize, Vec<(String, String)>>,
+    cycle_outputs: BTreeMap<usize, Vec<(String, String)>>,
     /// Borrowed for a node that has no caption of its own.
     empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
@@ -56,7 +56,7 @@ impl Captions {
     pub(crate) fn matches_capture(&self, node: &Node, handover: &[String]) -> bool {
         let capture = self.capture(node.id);
         capture == handover
-            || (node.kind == NodeKind::Loop
+            || (node.kind == NodeKind::Cycle
                 && capture.len() == handover.len()
                 && capture.iter().collect::<BTreeSet<_>>() == handover.iter().collect())
     }
@@ -73,14 +73,14 @@ impl Captions {
         self.branch_description.get(&exit)
     }
 
-    pub(crate) fn loop_inputs(&self, block: usize) -> &str {
-        self.loop_inputs.get(&block).map_or("()", String::as_str)
+    pub(crate) fn cycle_inputs(&self, block: usize) -> &str {
+        self.cycle_inputs.get(&block).map_or("()", String::as_str)
     }
 
     /// A cycle's declared outputs, `()` for none. Several are alternatives:
     /// one leaves per completion.
-    pub(crate) fn loop_outputs(&self, block: usize) -> String {
-        match self.loop_outputs.get(&block).map(Vec::as_slice) {
+    pub(crate) fn cycle_outputs(&self, block: usize) -> String {
+        match self.cycle_outputs.get(&block).map(Vec::as_slice) {
             None | Some([]) => "()".to_owned(),
             Some(outputs) => outputs
                 .iter()
@@ -91,8 +91,8 @@ impl Captions {
     }
 
     /// The name of one declared output of a cycle, without its `mut`.
-    pub(crate) fn loop_output(&self, block: usize, output: usize) -> &str {
-        &self.loop_outputs[&block][output].1
+    pub(crate) fn cycle_output(&self, block: usize, output: usize) -> &str {
+        &self.cycle_outputs[&block][output].1
     }
 
     /// The wires that meet at one junction, in model order.
@@ -154,8 +154,8 @@ fn derive_with_parameters(
         // return captures for ordering.
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
-            NodeId::Block(block) if node.kind == NodeKind::Loop => {
-                cycle_inputs(model, parameters, block)
+            NodeId::Block(block) if node.kind == NodeKind::Cycle => {
+                cycle_input_names(model, parameters, block)
             }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
@@ -179,7 +179,7 @@ fn derive_with_parameters(
         captions.capture_label.insert(node.id, displayed);
     }
 
-    for boundary in &topology.loop_boundaries {
+    for boundary in &topology.cycle_boundaries {
         let block = &model.analysis.flow.blocks[boundary.header];
         captions.label.insert(
             NodeId::Block(boundary.header),
@@ -188,8 +188,8 @@ fn derive_with_parameters(
                 .as_deref()
                 .map_or_else(RichText::default, RichText::markdown),
         );
-        let inputs = cycle_inputs(model, parameters, boundary.header);
-        captions.loop_inputs.insert(
+        let inputs = cycle_input_names(model, parameters, boundary.header);
+        captions.cycle_inputs.insert(
             boundary.header,
             if inputs.is_empty() {
                 "()".to_owned()
@@ -201,8 +201,8 @@ fn derive_with_parameters(
     // Both views name a cycle's outputs: the expanded results and the
     // collapsed node's exits.
     for (header, block) in model.analysis.flow.blocks.iter().enumerate() {
-        if block.loop_end.is_some() {
-            captions.loop_outputs.insert(
+        if block.cycle_end.is_some() {
+            captions.cycle_outputs.insert(
                 header,
                 (0..block.outputs.len())
                     .map(|output| {
@@ -303,7 +303,7 @@ fn shares_label(topology: &Topology, captions: &Captions, connection: &Connectio
         // The body's hand-over and the cycle's output are separate transfers,
         // even when a body exit supplies the cycle's result directly.
         && !topology
-            .loop_boundaries
+            .cycle_boundaries
             .iter()
             .any(|boundary| boundary.results.contains(&connection.source))
         && captions.matches_capture(topology.node(node), captions.handover(exit))
@@ -353,7 +353,7 @@ fn provided(analysis: &Analysis, parameters: &[String], producer: ProducerId) ->
 
 /// A cycle's gate and the outer wires its body captures, each with its
 /// producer's `mut` rather than a capture form.
-fn cycle_inputs(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
+fn cycle_input_names(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
     let flow = &model.analysis.flow;
     flow.blocks[block]
         .inputs

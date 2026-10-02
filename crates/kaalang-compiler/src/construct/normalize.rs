@@ -86,9 +86,9 @@ mod tests {
     #[test]
     fn normalization_keeps_a_bend_above_a_junction_with_a_straight_arrival() {
         let parts =
-            super::super::tests::parts_of(&super::super::tests::looping(&["repeat", "leave"]))
+            super::super::tests::parts_of(&super::super::tests::cycle_routes(&["repeat", "leave"]))
                 .unwrap();
-        let junction = Vertex::Junction(parts.topology.loops[0].entry);
+        let junction = Vertex::Junction(parts.topology.cycles[0].entry);
         let mut built = Arrangement {
             rank: BTreeMap::from([(junction, 1)]),
             ranks: 2,

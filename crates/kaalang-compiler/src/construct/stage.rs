@@ -126,9 +126,9 @@ mod tests {
         assert!(
             model
                 .topology
-                .loops
+                .cycles
                 .iter()
-                .all(|loop_| model.arrangement.rank[&Vertex::Junction(loop_.tail)] < row)
+                .all(|cycle| model.arrangement.rank[&Vertex::Junction(cycle.tail)] < row)
         );
         assert_eq!(
             model

@@ -27,7 +27,7 @@ pub(super) fn replay(replay: &mut Replay<'_>, index: usize, target: usize) -> Op
     let selected = replay.flow.blocks[target].branch_count() == 0
         || replay.execution.selected(target) == Some(replay.flow.exported_output(index));
     (replay.flow.blocks[index].export_target == Some(target)
-        && replay.loop_indices.last() == Some(&target)
+        && replay.cycle_indices.last() == Some(&target)
         && selected)
         .then_some(Exit::Export(target))
 }

@@ -1,5 +1,0 @@
-error: the routes exporting `found` leave this kaalang cycle to the left of those exporting `exhausted`; declare its outputs in the order their routes leave it
- --> tests/loop/compile_fail/outputs_out_of_order.rs:6:21
-  |
-6 |     let (exhausted, found) = {
-  |                     ^^^^^

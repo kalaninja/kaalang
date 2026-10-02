@@ -51,7 +51,10 @@ pub(super) fn flow(
         // A merge compares the selections its producers' frame sees.
         let seen = frames.view(frames.of_merge(merge));
         for (owner, branches) in owners {
-            if !matches!(flow.blocks[owner].kind, BlockKind::Choice | BlockKind::Loop) {
+            if !matches!(
+                flow.blocks[owner].kind,
+                BlockKind::Choice | BlockKind::Cycle
+            ) {
                 continue;
             }
             // The routes producing this merge and those reaching it, each with
@@ -85,7 +88,10 @@ pub(super) fn flow(
     }
 
     for (block, groups) in groups.iter().enumerate() {
-        if matches!(flow.blocks[block].kind, BlockKind::Choice | BlockKind::Loop) {
+        if matches!(
+            flow.blocks[block].kind,
+            BlockKind::Choice | BlockKind::Cycle
+        ) {
             super::choice::validate_groups(&flow.blocks[block], groups)?;
         }
     }
@@ -292,7 +298,7 @@ fn reaches(passes: &Passes, execution: &Execution, merge: &WireMerge) -> bool {
     merge.producers.iter().any(|producer| match *producer {
         ProducerId::BlockOutput { block, .. } => {
             passes.reaches(execution, block)
-                && execution.outcome != ExecutionOutcome::Repeat { loop_index: block }
+                && execution.outcome != ExecutionOutcome::Repeat { cycle_index: block }
         }
         ProducerId::FlowInput(_) => false,
     })
@@ -647,7 +653,7 @@ mod tests {
     #[test]
     fn a_cycle_with_several_outputs_owns_the_merge_after_it() {
         let model = build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the fixture is valid");
@@ -669,10 +675,10 @@ mod tests {
     }
 
     #[test]
-    fn a_repeat_route_does_not_split_a_merge_after_its_loop() {
+    fn a_repeat_route_does_not_split_a_merge_after_its_cycle() {
         let source = r#"
             fn valid(run: bool, done: bool, value: u8) -> u8 {
-                #[question("Run the loop?")]
+                #[question("Run the cycle?")]
                 let (enter, fallback) = |run| { run };
                 #[cycle("Wait until done.")]
                 let result = |enter| {
@@ -692,7 +698,7 @@ mod tests {
             source.replace("(leave, again)", "(again, leave)"),
         ] {
             let function = syn::parse_str::<ItemFn>(&source).expect("the flow parses");
-            build(&function).expect("a repeat does not reach the merge after its loop");
+            build(&function).expect("a repeat does not reach the merge after its cycle");
             agrees("a merge fed from inside and outside a cycle", &function);
         }
     }
@@ -1112,7 +1118,7 @@ mod tests {
         agrees("one selector set per execution", &function);
     }
 
-    /// A flow whose outputs are all distinct has no merge to order. Loops reach
+    /// A flow whose outputs are all distinct has no merge to order. Cycles reach
     /// several executions without repeating a name, which is the shape that
     /// would otherwise pay for pairs no merge ever reads: 87 of the 191 corpus
     /// flows declare no merge at all.

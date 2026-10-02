@@ -60,23 +60,23 @@ fn draws_a_diagram_beside_every_executable_fixture() {
 
             for flow in names {
                 let mut expanded = None;
-                for (suffix, collapse_loops) in std::iter::once(("", false))
+                for (suffix, collapse_cycles) in std::iter::once(("", false))
                     .chain(source.contains("#[cycle(").then_some(("_collapsed", true)))
                 {
                     let svg = kaalang_svg::render_source_with_options(
                         &source,
                         &flow,
-                        kaalang_svg::RenderOptions { collapse_loops },
+                        kaalang_svg::RenderOptions { collapse_cycles },
                     )
                     .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
-                    if !collapse_loops && stem != "mod" {
+                    if !collapse_cycles && stem != "mod" {
                         assert!(
                             source.contains("#[test]") || !svg.contains("End:"),
                             "{} declares a flow that finishes and no test that calls it",
                             fixture.display()
                         );
                     }
-                    if collapse_loops && expanded.as_ref() == Some(&svg) {
+                    if collapse_cycles && expanded.as_ref() == Some(&svg) {
                         continue;
                     }
                     let diagram = directory.join(format!("{flow}{suffix}.svg"));
@@ -90,7 +90,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                         fs::write(&diagram, &svg).unwrap();
                     }
                     current.push(diagram);
-                    if !collapse_loops {
+                    if !collapse_cycles {
                         expanded = Some(svg);
                     }
                 }

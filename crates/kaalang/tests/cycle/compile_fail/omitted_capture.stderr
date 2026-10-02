@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `count` before using it
+  --> tests/cycle/compile_fail/omitted_capture.rs:12:13
+   |
+12 |             count -= 1;
+   |             ^^^^^

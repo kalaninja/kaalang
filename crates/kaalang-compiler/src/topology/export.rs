@@ -1,9 +1,9 @@
 //! A cycle's boundary consumer ends at the result junction of its output.
 
-use super::LoopBoundary;
+use super::CycleBoundary;
 use crate::model::Flow;
 
-pub(super) fn result(flow: &Flow, boundaries: &[LoopBoundary], block: usize) -> usize {
+pub(super) fn result(flow: &Flow, boundaries: &[CycleBoundary], block: usize) -> usize {
     let target = flow.blocks[block]
         .export_target
         .expect("a boundary consumer has a cycle");

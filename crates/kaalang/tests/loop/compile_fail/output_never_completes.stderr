@@ -1,5 +1,0 @@
-error: no route through this kaalang cycle reaches the end of its body with its output `found`
- --> tests/loop/compile_fail/output_never_completes.rs:6:9
-  |
-6 |     let found = {
-  |         ^^^^^

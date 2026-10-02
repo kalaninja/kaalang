@@ -177,7 +177,7 @@ fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
                 .filter(|label| label.owner != Vertex::Node(NodeId::Start))
                 .map(label_rect),
         )
-        .chain(scene.loop_regions.iter().map(super::LoopRegion::bounds))
+        .chain(scene.cycle_regions.iter().map(super::CycleRegion::bounds))
         .collect::<Vec<_>>();
     let mut shift = 0;
     loop {
@@ -250,7 +250,7 @@ fn verify(diagram: &StagedScene) -> Result<(), String> {
             .map(Scene::bounds)
             .chain(scene.labels.iter().map(label_rect))
             .chain(scene.parameters.iter().map(Scene::parameter_bounds))
-            .chain(scene.loop_regions.iter().map(super::LoopRegion::bounds));
+            .chain(scene.cycle_regions.iter().map(super::CycleRegion::bounds));
         for (left, top, right, bottom) in bounds {
             let bounds = (
                 placement.x + left,
@@ -526,9 +526,9 @@ mod tests {
                 )
                 .chain(
                     preparation
-                        .loop_regions
+                        .cycle_regions
                         .iter()
-                        .map(super::super::LoopRegion::bounds),
+                        .map(super::super::CycleRegion::bounds),
                 );
             let line = [
                 Point {
@@ -557,7 +557,7 @@ mod tests {
                     label.owner != Vertex::Node(NodeId::Start) && label.lines.len() >= 2
                 }));
             } else {
-                assert!(!preparation.loop_regions.is_empty());
+                assert!(!preparation.cycle_regions.is_empty());
             }
         }
     }

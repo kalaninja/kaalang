@@ -7,7 +7,8 @@ use super::{
     condition::{ALWAYS, Condition, NEVER},
 };
 use crate::topology::{
-    Analyzed, Connection, Destination, ExitId, Loop, LoopBoundary, NodeId, Source, Topology, Vertex,
+    Analyzed, Connection, Cycle, CycleBoundary, Destination, ExitId, NodeId, Source, Topology,
+    Vertex,
 };
 use crate::{BlockKind, Execution, Flow, ProducerId};
 
@@ -38,7 +39,7 @@ impl Executions {
     fn departures(
         &mut self,
         model: &Analyzed<'_>,
-        boundaries: &[LoopBoundary],
+        boundaries: &[CycleBoundary],
         structural: &BTreeMap<usize, usize>,
         block: usize,
     ) -> Vec<(Source, Condition)> {
@@ -59,7 +60,7 @@ impl Executions {
                     )
                 })
                 .collect();
-            if declaration.kind == BlockKind::Loop {
+            if declaration.kind == BlockKind::Cycle {
                 let absent = self
                     .conditions
                     .minus(self.runs[block], self.selected_runs[block]);
@@ -83,8 +84,8 @@ impl Executions {
         &mut self,
         model: &Analyzed<'_>,
         groups: &[Vec<usize>],
-        loops: &[Loop],
-        boundaries: &[LoopBoundary],
+        cycles: &[Cycle],
+        boundaries: &[CycleBoundary],
         structural: &BTreeMap<usize, usize>,
         vertices: &[Vertex],
     ) -> Vec<Connection> {
@@ -117,7 +118,7 @@ impl Executions {
         crate::plan::serial_order(model.execution_plan, &mut order);
         order.retain(|&block| {
             crate::topology::represented(model, structural, block)
-                || (!model.collapse_loops
+                || (!model.collapse_cycles
                     && matches!(
                         flow.blocks[block].kind,
                         BlockKind::Export | BlockKind::Continue
@@ -127,8 +128,8 @@ impl Executions {
         let mut previous = BTreeMap::from([(Source::Exit(ExitId::of(NodeId::Start)), ALWAYS)]);
         for (position, &block) in order.iter().enumerate() {
             let participates = runs(self, block);
-            let transfer = (!model.collapse_loops)
-                .then(|| crate::topology::transfer_junction(model, loops, boundaries, block))
+            let transfer = (!model.collapse_cycles)
+                .then(|| crate::topology::transfer_junction(model, cycles, boundaries, block))
                 .flatten();
             let destination = match transfer {
                 Some(junction) if !structural.contains_key(&block) => {
@@ -287,7 +288,7 @@ impl Executions {
             };
             let mut next_when = self.runs[block];
             let end = model.flow.blocks[target]
-                .loop_end
+                .cycle_end
                 .expect("a cycle owns a body");
             for next in block + 1..model.flow.blocks.len() - 1 {
                 if !crate::topology::represented(model, structural, next) {
@@ -295,13 +296,13 @@ impl Executions {
                 }
                 let adjacent = self.conditions.and(next_when, self.runs[next]);
                 if self.has(adjacent) {
-                    for loop_ in topology
-                        .loops
+                    for cycle in topology
+                        .cycles
                         .iter()
-                        .filter(|loop_| (target..end).contains(&loop_.header))
+                        .filter(|cycle| (target..end).contains(&cycle.header))
                     {
                         topology.order.push(Connection {
-                            source: Source::Junction(loop_.tail),
+                            source: Source::Junction(cycle.tail),
                             destination: crate::topology::destination(structural, next),
                         });
                     }
@@ -312,7 +313,7 @@ impl Executions {
     }
 
     pub(crate) fn prefer_left(&mut self, flow: &Flow, header: usize) -> bool {
-        let end = flow.blocks[header].loop_end.expect("a cycle owns a body");
+        let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
         let Some(first) = (header + 1..end).find(|&block| flow.blocks[block].branch_count() > 0)
         else {
             return true;
@@ -320,7 +321,9 @@ impl Executions {
         let selected = self.selected(first, flow.blocks[first].branch_count() - 1);
         let repeated = self
             .outcomes
-            .get(&crate::ExecutionOutcome::Repeat { loop_index: header })
+            .get(&crate::ExecutionOutcome::Repeat {
+                cycle_index: header,
+            })
             .copied()
             .unwrap_or(NEVER);
         let left = self.conditions.minus(repeated, selected);

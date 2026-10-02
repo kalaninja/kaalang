@@ -36,8 +36,10 @@ impl Frames {
                     continue;
                 }
                 let mut equal = executions.same_selection(position);
-                if flow.blocks[selector].kind == BlockKind::Loop {
-                    let end = flow.blocks[selector].loop_end.expect("a cycle owns a body");
+                if flow.blocks[selector].kind == BlockKind::Cycle {
+                    let end = flow.blocks[selector]
+                        .cycle_end
+                        .expect("a cycle owns a body");
                     for (inside, _) in executions
                         .selectors
                         .clone()
@@ -108,8 +110,8 @@ impl Executions {
         for (outcome, when) in self.outcomes.clone() {
             let reachable = match outcome {
                 ExecutionOutcome::Return { .. } => true,
-                ExecutionOutcome::Repeat { loop_index } => {
-                    flow.repeat_reaches(loop_index, block, |first, second| {
+                ExecutionOutcome::Repeat { cycle_index } => {
+                    flow.repeat_reaches(cycle_index, block, |first, second| {
                         let together = self.conditions.and(self.runs[first], self.runs[second]);
                         self.has(together)
                     })
@@ -130,7 +132,7 @@ impl Executions {
                     let context = self.reaching(flow, block);
                     let repeated = self
                         .outcomes
-                        .get(&ExecutionOutcome::Repeat { loop_index: block })
+                        .get(&ExecutionOutcome::Repeat { cycle_index: block })
                         .copied()
                         .unwrap_or(NEVER);
                     let context = self.conditions.minus(context, repeated);

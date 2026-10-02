@@ -20,8 +20,8 @@ mod call;
 mod capture;
 mod choice;
 mod continue_block;
+mod cycle;
 mod end;
-mod loop_block;
 mod question;
 mod return_block;
 mod stage;
@@ -121,7 +121,8 @@ fn receiver_captures(flow: &Flow, receiver: Option<&Receiver>) -> Result<()> {
         }
         // A cycle's body holds the statements that parse into their own blocks,
         // and each of those is checked in turn.
-        if block.kind == BlockKind::Loop || block.inputs.iter().any(|input| input.ident == "self") {
+        if block.kind == BlockKind::Cycle || block.inputs.iter().any(|input| input.ident == "self")
+        {
             continue;
         }
         if let Some(span) = receiver_use(&block.body) {
@@ -211,8 +212,8 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             None
         };
         let mut block = match expression {
-            Some(Expr::Loop(expression)) => return Err(loop_block::legacy(expression)),
-            Some(Expr::Break(expression)) => return Err(loop_block::structural_break(expression)),
+            Some(Expr::Loop(expression)) => return Err(cycle::legacy(expression)),
+            Some(Expr::Break(expression)) => return Err(cycle::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
                 continue_block::parse(expression, inputs, parent, blocks)?
@@ -240,14 +241,14 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         block.parent = parent;
         let index = blocks.len();
         blocks.push(block);
-        if blocks[index].kind == BlockKind::Loop {
+        if blocks[index].kind == BlockKind::Cycle {
             let Expr::Block(body) = &blocks[index].body else {
                 unreachable!("a cycle body is normalized to a block")
             };
             let statements = body.block.stmts.clone();
             self::statements(&statements, Some(index), blocks)?;
-            loop_block::exports(blocks, index)?;
-            blocks[index].loop_end = Some(blocks.len());
+            cycle::exports(blocks, index)?;
+            blocks[index].cycle_end = Some(blocks.len());
         }
     }
     Ok(())
@@ -260,7 +261,7 @@ pub(crate) fn noun(kind: BlockKind) -> &'static str {
         BlockKind::Call => "call",
         BlockKind::Question => "question",
         BlockKind::Choice => "choice",
-        BlockKind::Loop => "cycle",
+        BlockKind::Cycle => "cycle",
         BlockKind::Continue => "continue",
         BlockKind::Return => "return",
         BlockKind::End | BlockKind::Export => unreachable!("this block is implicit"),
@@ -303,7 +304,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         body: syn::parse_quote!({}),
         span,
         parent: None,
-        loop_end: None,
+        cycle_end: None,
         export_target: None,
         transition_target: None,
     }
@@ -332,7 +333,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         body,
     };
 
-    if kind != BlockKind::Loop {
+    if kind != BlockKind::Cycle {
         reject_control_transfers(&syntax.body)?;
     }
     match kind {
@@ -340,7 +341,7 @@ fn parse_block(statement: &Stmt) -> Result<Block> {
         BlockKind::Call => call::parse(syntax),
         BlockKind::Question => question::parse(syntax),
         BlockKind::Choice => choice::parse(syntax),
-        BlockKind::Loop => loop_block::parse(syntax),
+        BlockKind::Cycle => cycle::parse(syntax),
         BlockKind::End | BlockKind::Export | BlockKind::Continue | BlockKind::Return => {
             unreachable!("structural blocks parse separately")
         }
@@ -414,7 +415,7 @@ impl<'a> BlockSyntax<'a> {
             body: self.body,
             span: self.kind_attribute.span(),
             parent: None,
-            loop_end: None,
+            cycle_end: None,
             export_target: None,
             transition_target: None,
         }
@@ -597,8 +598,8 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("call") => Role::Kind(BlockKind::Call),
         Some("question") => Role::Kind(BlockKind::Question),
         Some("choice") => Role::Kind(BlockKind::Choice),
-        Some("cycle") => Role::Kind(BlockKind::Loop),
-        Some("loop" | "r#loop") => return Err(loop_block::legacy_attribute(attribute)),
+        Some("cycle") => Role::Kind(BlockKind::Cycle),
+        Some("loop" | "r#loop") => return Err(cycle::legacy_attribute(attribute)),
         Some("end") => return Err(end::authored(attribute.span())),
         Some("case" | "yes" | "no") => Role::Companion,
         Some("doc") => Role::Comment,

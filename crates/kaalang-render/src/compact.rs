@@ -12,7 +12,7 @@ use crate::ArrangementVerifier;
 /// Reaches a deterministic local fixed point, not a global minimum of bends or
 /// area, as specified by RFC 0003 §2.3.
 pub fn compact_arrangement(model: &mut SemanticModel) {
-    if model.topology.loops.is_empty()
+    if model.topology.cycles.is_empty()
         && !model
             .arrangement
             .routes
@@ -74,8 +74,8 @@ fn contours(
 ) -> bool {
     let mut changed = false;
     if built.back_routes.is_empty() {
-        for (index, loop_) in topology.loops.iter().enumerate().rev() {
-            let body = verifier.body_vertices(loop_.header);
+        for (index, cycle) in topology.cycles.iter().enumerate().rev() {
+            let body = verifier.body_vertices(cycle.header);
             let columns = body.iter().map(|vertex| built.column[vertex]);
             let column = match built.contours[index].side {
                 Side::Left => columns.min(),
@@ -85,7 +85,7 @@ fn contours(
             if column == built.contours[index].column {
                 continue;
             }
-            for lane in 0..topology.loops.len() {
+            for lane in 0..topology.cycles.len() {
                 let mut candidate = built.clone();
                 candidate.contours[index].column = column;
                 candidate.contours[index].lane = lane;
@@ -319,7 +319,7 @@ mod tests {
         );
         let mut model = kaalang_compiler::build(&function).unwrap();
         let stage = &mut model.stages[0];
-        assert!(!stage.topology.loops.is_empty());
+        assert!(!stage.topology.cycles.is_empty());
         let transitions = stage
             .topology
             .nodes
@@ -345,12 +345,12 @@ mod tests {
     #[test]
     fn an_outer_tail_cannot_join_a_column_inside_a_nested_frame() {
         let function = fixture(
-            include_str!("../../kaalang/tests/loop/behavior/nested_side_returns.rs"),
+            include_str!("../../kaalang/tests/cycle/behavior/nested_side_returns.rs"),
             "nested_side_returns",
         );
         let mut model = kaalang_compiler::build(&function).unwrap();
         compact_arrangement(&mut model);
-        let tail = Vertex::Junction(model.topology.loops[0].tail);
+        let tail = Vertex::Junction(model.topology.cycles[0].tail);
         let column = model.arrangement.column[&tail];
         let mut candidate = model.arrangement.clone();
         map_columns(&mut candidate, |x| x - i32::from(x >= column));
@@ -376,14 +376,14 @@ mod tests {
                 "bubble_sort",
             ),
             (
-                include_str!("../../kaalang/tests/loop/behavior/collect_steps.rs"),
+                include_str!("../../kaalang/tests/cycle/behavior/collect_steps.rs"),
                 "collect_steps",
             ),
         ] {
             let mut model = kaalang_compiler::build(&fixture(source, name)).unwrap();
             compact_arrangement(&mut model);
             let built = &model.arrangement;
-            let beside = model.topology.loop_boundaries.iter().any(|boundary| {
+            let beside = model.topology.cycle_boundaries.iter().any(|boundary| {
                 let body = model
                     .topology
                     .body_vertices(&model.analysis.flow, boundary.header);
@@ -415,7 +415,7 @@ mod tests {
 
     #[test]
     fn unused_lanes_can_disappear_together_during_compaction() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
+        let source = kaalang_testing::shapes::cycle_routes(&["repeat", "repeat", "leave"]);
         let mut model = kaalang_compiler::build(&syn::parse_str(&source).unwrap()).unwrap();
         for lanes in &mut model.arrangement.gap_lanes {
             *lanes += 4;
@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn compaction_is_deterministic_and_idempotent() {
-        let source = kaalang_testing::shapes::looping(&["repeat", "repeat", "leave"]);
+        let source = kaalang_testing::shapes::cycle_routes(&["repeat", "repeat", "leave"]);
         let function: syn::ItemFn = syn::parse_str(&source).unwrap();
         let mut first = kaalang_compiler::build(&function).unwrap();
         let mut second = kaalang_compiler::build(&function).unwrap();

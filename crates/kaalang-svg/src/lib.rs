@@ -13,8 +13,8 @@ mod text;
 /// Presentation options for one rendered flow.
 #[derive(Clone, Copy, Default)]
 pub struct RenderOptions {
-    /// Replace every validated cycle region with one described loop node.
-    pub collapse_loops: bool,
+    /// Replace every validated cycle region with one described cycle node.
+    pub collapse_cycles: bool,
 }
 
 /// An error produced while selecting, validating, or rendering a kaalang flow.
@@ -132,7 +132,7 @@ pub fn render_source_with_options(
     let file = parse_file(source)?;
     let parser_source = parser_source(source, &file);
     let function = select_flow(&file.items, flow_name)?;
-    let mut model = kaalang_compiler::build_with_options(&function, options.collapse_loops)
+    let mut model = kaalang_compiler::build_with_options(&function, options.collapse_cycles)
         .map_err(|error| invalid_flow(flow_name, &error))?;
     kaalang_render::compact_arrangement(&mut model);
     for stage in &mut model.stages {

@@ -1,0 +1,5 @@
+error: a kaalang cycle has no structural `break`; it completes when a route reaches the end of its body with one of its declared outputs
+ --> tests/cycle/compile_fail/structural_break.rs:7:16
+  |
+7 |         |flag| break flag;
+  |                ^^^^^^^^^^

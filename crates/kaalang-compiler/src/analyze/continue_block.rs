@@ -10,7 +10,7 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: State) {
         .parent
         .expect("a continue belongs to a cycle");
     debug_assert_eq!(
-        state.loops.last_key_value().map(|(&index, _)| index),
+        state.cycles.last_key_value().map(|(&index, _)| index),
         Some(header)
     );
     // A route either completes with an output or repeats.
@@ -27,5 +27,10 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: State) {
         );
         return;
     }
-    walk.record(state, ExecutionOutcome::Repeat { loop_index: header });
+    walk.record(
+        state,
+        ExecutionOutcome::Repeat {
+            cycle_index: header,
+        },
+    );
 }

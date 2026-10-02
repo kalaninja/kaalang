@@ -188,9 +188,9 @@ fn the_stress_fixture_corpus_lowering_stays_inside_its_budgets() {
     );
 }
 
-/// Eight nested loops, a few hundred blocks, and serial questions.
+/// Eight nested cycles, a few hundred blocks, and serial questions.
 ///
-/// The loop shapes reach 259 blocks but stay in the tens of summaries;
+/// The cycle shapes reach 259 blocks but stay in the tens of summaries;
 /// `branching` exercises factored choices. Larger chains have their own analysis
 /// budget below.
 #[test]

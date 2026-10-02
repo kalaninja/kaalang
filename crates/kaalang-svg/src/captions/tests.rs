@@ -58,7 +58,7 @@ fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability
             );
         } else {
             assert_eq!(
-                captions.loop_inputs(0),
+                captions.cycle_inputs(0),
                 "entry, mut parameter, mut prepared"
             );
         }

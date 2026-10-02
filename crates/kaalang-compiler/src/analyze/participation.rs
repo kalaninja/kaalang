@@ -2,7 +2,7 @@
 //! form a chain of nested selections rather than independent ones.
 //!
 //! Branch placement rejects independent selections even after disjoint partial
-//! merges. This pass checks capture ancestry and the order of normal loop exits.
+//! merges. This pass checks capture ancestry and the order of normal cycle exits.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -52,8 +52,8 @@ pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>>
 }
 
 /// The deciders of one block are pairwise dependent: one lies in the
-/// continuation of a branch of the other, or after the loop containing it exits.
-/// Loop exit order does not add captures or convergence groups. Two independent
+/// continuation of a branch of the other, or after the cycle containing it exits.
+/// Cycle exit order does not add captures or convergence groups. Two independent
 /// selections would withhold the block's inputs in a way none of its own
 /// decisions explains, whether by leaving a branch output unselected or a wire
 /// unproduced.
@@ -72,8 +72,8 @@ pub(super) fn flow(
                     || preceding[second].contains(&first)
                     || (execution.participates(first)
                         && execution.participates(second)
-                        && (super::loop_block::closed_before(flow, first, second)
-                            || super::loop_block::closed_before(flow, second, first)))
+                        && (super::cycle::closed_before(flow, first, second)
+                            || super::cycle::closed_before(flow, second, first)))
             })
     };
     for (block, deciders) in deciders(flow, frames).into_iter().enumerate() {
@@ -202,7 +202,7 @@ mod tests {
     /// the body's own selections stay inside it.
     #[test]
     fn a_cycle_with_several_outputs_decides_the_blocks_after_it() {
-        let source = include_str!("../../../kaalang/tests/loop/behavior/alternative_outputs.rs");
+        let source = include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs");
         let deciders = fixture(source, "alternative_outputs");
         assert_eq!(deciders[7], [0], "return the found item");
         assert_eq!(deciders[8], [0], "report exhaustion");

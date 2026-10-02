@@ -1,0 +1,5 @@
+error: `result` is a declared output of the enclosing kaalang cycle; capture it after its producer in the cycle body
+ --> tests/cycle/compile_fail/cycle_result_inside_body.rs:8:10
+  |
+8 |         |result| {};
+  |          ^^^^^^

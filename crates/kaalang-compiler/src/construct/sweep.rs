@@ -31,7 +31,8 @@ struct Step {
 }
 
 /// Transitive closure of weak (1) and strict (2) column inequalities.
-/// A positive cycle is inconsistent; a cycle of weak inequalities is equality.
+/// A positive constraint cycle is inconsistent; a cycle of weak inequalities is
+/// an equality.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct Order {
     size: usize,
@@ -213,9 +214,9 @@ fn branch_rules(
                 unite(
                     parent,
                     index(entry),
-                    *approaches
-                        .first()
-                        .expect("projected topology contains the required vertex or loop endpoint"),
+                    *approaches.first().expect(
+                        "projected topology contains the required vertex or cycle endpoint",
+                    ),
                 );
             } else {
                 minima.push((index(entry), approaches.into_iter().collect::<Vec<_>>()));
@@ -232,7 +233,7 @@ fn branch_rules(
         }
     }
     // A cycle with several outputs draws its results in declaration order.
-    for boundary in &topology.loop_boundaries {
+    for boundary in &topology.cycle_boundaries {
         inequalities.extend(
             boundary
                 .results
@@ -255,7 +256,7 @@ impl Columns {
             .map(|(i, e)| (e.id, n + i))
             .collect::<BTreeMap<_, _>>();
         let back_edge_start = n + raw_exits.len();
-        let count = topology.loops.len();
+        let count = topology.cycles.len();
         let mut parent = (0..back_edge_start + 2 * count).collect::<Vec<_>>();
         if !flexible {
             for i in 0..count {
@@ -315,23 +316,23 @@ impl Columns {
             }
         }
         let bodies = topology
-            .loops
+            .cycles
             .iter()
-            .map(|loop_| {
-                let end = flow.blocks[loop_.header]
-                    .loop_end
-                    .expect("projected topology contains the required vertex or loop endpoint");
+            .map(|cycle| {
+                let end = flow.blocks[cycle.header]
+                    .cycle_end
+                    .expect("projected topology contains the required vertex or cycle endpoint");
                 std::array::from_fn(|side| {
-                    super::loop_block::body_vertices(flow, topology, loop_.header)
+                    super::cycle::body_vertices(flow, topology, cycle.header)
                         .into_iter()
                         .map(|vertex| groups[index(vertex)])
                         .chain(
                             topology
-                                .loops
+                                .cycles
                                 .iter()
                                 .enumerate()
                                 .filter(|(_, inner)| {
-                                    (loop_.header + 1..end).contains(&inner.header)
+                                    (cycle.header + 1..end).contains(&inner.header)
                                 })
                                 .map(|(i, _)| groups[back_edge_start + side * count + i]),
                         )
@@ -493,19 +494,19 @@ impl<'a> Sweep<'a> {
         }
         let mut entry_of = vec![None; n];
         let mut tail_of = vec![None; n];
-        for (i, loop_) in topology.loops.iter().enumerate() {
-            entry_of[index(Vertex::Junction(loop_.entry))] = Some(i);
-            tail_of[index(Vertex::Junction(loop_.tail))] = Some(i);
-            predecessors[index(Vertex::Junction(loop_.tail))]
-                .insert(index(Vertex::Junction(loop_.entry)));
+        for (i, cycle) in topology.cycles.iter().enumerate() {
+            entry_of[index(Vertex::Junction(cycle.entry))] = Some(i);
+            tail_of[index(Vertex::Junction(cycle.tail))] = Some(i);
+            predecessors[index(Vertex::Junction(cycle.tail))]
+                .insert(index(Vertex::Junction(cycle.entry)));
         }
         let mut paths = vec![vec![false; n]; n];
         let mut precedence = paths.clone();
         for wire in &topology.connections {
             paths[index(Vertex::from(wire.source))][index(wire.destination)] = true;
         }
-        for loop_ in &topology.loops {
-            paths[index(Vertex::Junction(loop_.entry))][index(Vertex::Junction(loop_.tail))] = true;
+        for cycle in &topology.cycles {
+            paths[index(Vertex::Junction(cycle.entry))][index(Vertex::Junction(cycle.tail))] = true;
         }
         for (v, incoming) in predecessors.iter().enumerate() {
             for &p in incoming {
@@ -567,7 +568,7 @@ impl<'a> Sweep<'a> {
         State {
             placed: vec![false; self.topology.vertices.len()],
             frontier: Vec::new(),
-            sides: vec![None; self.topology.loops.len()],
+            sides: vec![None; self.topology.cycles.len()],
             order: self.columns.base.clone(),
         }
     }
@@ -639,12 +640,12 @@ impl<'a> Sweep<'a> {
             Vertex::Node(NodeId::Block(block) | NodeId::Case { choice: block, .. }) => Some(block),
             Vertex::Node(NodeId::Start) | Vertex::Junction(_) => None,
         };
-        let loop_ = self.topology.loops.iter().rev().find(|loop_| {
+        let cycle = self.topology.cycles.iter().rev().find(|cycle| {
             owner.is_some_and(|block| {
-                (loop_.header + 1
-                    ..self.flow.blocks[loop_.header]
-                        .loop_end
-                        .expect("a loop owns its body"))
+                (cycle.header + 1
+                    ..self.flow.blocks[cycle.header]
+                        .cycle_end
+                        .expect("a cycle owns its body"))
                     .contains(&block)
             })
         });
@@ -663,10 +664,10 @@ impl<'a> Sweep<'a> {
                     group.sort_by_key(|&wire| {
                         let destination =
                             index_of(self.topology, self.topology.connections[wire].destination);
-                        let flank = loop_.is_some_and(|loop_| {
+                        let flank = cycle.is_some_and(|cycle| {
                             let repeats = self.paths[destination]
-                                [index_of(self.topology, Vertex::Junction(loop_.tail))];
-                            repeats != loop_.prefer_left
+                                [index_of(self.topology, Vertex::Junction(cycle.tail))];
+                            repeats != cycle.prefer_left
                         });
                         (
                             flank,
@@ -731,7 +732,7 @@ impl<'a> Sweep<'a> {
             match step
                 .side
                 .or(sides[i])
-                .expect("a loop side is chosen at entry")
+                .expect("a cycle side is chosen at entry")
             {
                 Side::Left => event.insert(0, self.back_edge_anchor(i)),
                 Side::Right => event.push(self.back_edge_anchor(i)),
@@ -749,7 +750,7 @@ impl<'a> Sweep<'a> {
         if let Some(i) = self.entry_of[vertex] {
             let side = step
                 .side
-                .expect("projected topology contains the required vertex or loop endpoint");
+                .expect("projected topology contains the required vertex or cycle endpoint");
             let bound = match side {
                 Side::Left => self.columns.back_edge_right[i],
                 Side::Right => self.columns.back_edges[i],
@@ -767,7 +768,7 @@ impl<'a> Sweep<'a> {
         }
         if let Some(i) = self.tail_of[vertex] {
             let outside = match state.sides[i]
-                .expect("projected topology contains the required vertex or loop endpoint")
+                .expect("projected topology contains the required vertex or cycle endpoint")
             {
                 Side::Left => step.consumed.first(),
                 Side::Right => step.consumed.last(),
@@ -795,7 +796,7 @@ impl<'a> Sweep<'a> {
     fn sealed(&self, state: &State) -> bool {
         let destination = |item: Lifeline| match item {
             Lifeline::Wire(w) => self.topology.connections[w].destination,
-            Lifeline::BackEdge(i) => Vertex::Junction(self.topology.loops[i].tail),
+            Lifeline::BackEdge(i) => Vertex::Junction(self.topology.cycles[i].tail),
         };
         let ends = state
             .frontier
@@ -932,7 +933,7 @@ impl<'a> Sweep<'a> {
             };
             let consumed = state.frontier[position..position + count].to_vec();
             let sides = if let Some(i) = self.entry_of[vertex] {
-                if self.topology.loops[i].prefer_left {
+                if self.topology.cycles[i].prefer_left {
                     vec![Some(Side::Left), Some(Side::Right)]
                 } else {
                     vec![Some(Side::Right), Some(Side::Left)]
@@ -944,7 +945,7 @@ impl<'a> Sweep<'a> {
                 let mut emitted = self.emissions(vertex);
                 if let Some(i) = self.entry_of[vertex] {
                     match side
-                        .expect("projected topology contains the required vertex or loop endpoint")
+                        .expect("projected topology contains the required vertex or cycle endpoint")
                     {
                         Side::Left => emitted.insert(0, Lifeline::BackEdge(i)),
                         Side::Right => emitted.push(Lifeline::BackEdge(i)),
@@ -991,19 +992,19 @@ impl<'a> Sweep<'a> {
             .map(|x| {
                 x * (ANCHOR_SPACING_FACTOR
                     * room
-                    * (self.topology.connections.len() + self.topology.loops.len() + 2) as i32)
+                    * (self.topology.connections.len() + self.topology.cycles.len() + 2) as i32)
             })
             .collect::<Vec<_>>();
         let mut built = self.empty_arrangement(steps, &values);
         let mut frontier = Vec::new();
         let mut previous = BTreeMap::new();
-        let mut sides = vec![None; self.topology.loops.len()];
+        let mut sides = vec![None; self.topology.cycles.len()];
         for (rank, step) in steps.iter().enumerate() {
             if let Some(i) = step.vertex.and_then(|v| self.entry_of[v]) {
                 sides[i] = step.side;
                 built.contours[i].side = step.side.expect("an entry chooses its side");
             }
-            let mut spines = vec![0; self.topology.loops.len()];
+            let mut spines = vec![0; self.topology.cycles.len()];
             let anchors = self.anchors(&frontier, &sides, step);
             let mut at = anchors
                 .first()
@@ -1124,7 +1125,7 @@ impl<'a> Sweep<'a> {
                     column: 0,
                     lane: 0
                 };
-                self.topology.loops.len()
+                self.topology.cycles.len()
             ],
         }
     }
@@ -1426,7 +1427,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn strict_cycles_are_refused_and_weak_cycles_are_equalities() {
+    fn strict_constraint_cycles_are_refused_and_weak_ones_are_equalities() {
         let mut order = Order::new(3);
         assert!(order.insert(0, 1, false));
         assert!(order.insert(1, 0, false));

@@ -77,7 +77,7 @@ pub(crate) fn resolve(flow: &mut Flow) -> Result<()> {
         }
         // A cycle's own outputs exist only once it completes, so its body
         // inherits what was visible before them, and never under those names.
-        let body = (block.kind == BlockKind::Loop).then(|| {
+        let body = (block.kind == BlockKind::Cycle).then(|| {
             let own = block.outputs.iter().collect::<BTreeSet<_>>();
             Scope {
                 inherited: scope
@@ -148,7 +148,7 @@ fn derive_cycle_inputs(flow: &mut Flow) {
         .iter()
         .enumerate()
         .filter_map(|(header, block)| {
-            let end = block.loop_end?;
+            let end = block.cycle_end?;
             let body = &flow.blocks[header + 1..end];
             let local = body
                 .iter()

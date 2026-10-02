@@ -29,7 +29,7 @@ const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 
 // Generated probes sit outside the fixture corpus.
 /// One rendered generated probe, against a worst measured figure of about 4.4 s:
-/// `4 loops and 120 steps` expanded, some 250 blocks. The geometry costs eight
+/// `4 cycles and 120 steps` expanded, some 250 blocks. The geometry costs eight
 /// to thirty-five times the decision below it at that size. Only `cargo kaalang`
 /// pays this; a macro expansion never renders.
 const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
@@ -46,8 +46,8 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
             names
                 .into_iter()
                 .flat_map(|name| {
-                    views.iter().map(move |&collapse_loops| {
-                        (name.clone(), RenderOptions { collapse_loops })
+                    views.iter().map(move |&collapse_cycles| {
+                        (name.clone(), RenderOptions { collapse_cycles })
                     })
                 })
                 .map(|(name, options)| (name, source.clone(), options))
@@ -61,7 +61,7 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
         &diagrams,
         allowance * u32::try_from(diagrams.len()).expect("the diagram count fits in u32"),
         |(name, _, options)| ItemBudget {
-            name: format!("{name} (collapsed={})", options.collapse_loops),
+            name: format!("{name} (collapsed={})", options.collapse_cycles),
             limit,
             report: matches!(suite, Suite::Stress),
         },
@@ -98,15 +98,15 @@ fn the_stress_fixture_corpus_renderer_stays_inside_its_budgets() {
 #[test]
 fn generated_probes_render_inside_their_budget() {
     for (what, source, name) in accepted() {
-        for collapse_loops in [false, true] {
-            let options = RenderOptions { collapse_loops };
+        for collapse_cycles in [false, true] {
+            let options = RenderOptions { collapse_cycles };
             // No warm-up: at seconds a page fault is noise, not what it removes.
             let started = Instant::now();
             let drawn = kaalang_svg::render_source_with_options(&source, name, options);
             let elapsed = started.elapsed();
-            drawn.unwrap_or_else(|error| panic!("{what} (collapsed={collapse_loops}): {error}"));
+            drawn.unwrap_or_else(|error| panic!("{what} (collapsed={collapse_cycles}): {error}"));
             assert_within(
-                &format!("generated render probe: {what}, collapsed={collapse_loops}"),
+                &format!("generated render probe: {what}, collapsed={collapse_cycles}"),
                 GENERATED_RENDER_BUDGET,
                 elapsed,
             );

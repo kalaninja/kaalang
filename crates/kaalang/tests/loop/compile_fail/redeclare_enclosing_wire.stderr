@@ -1,5 +1,0 @@
-error: a cycle-local output must not shadow a wire visible outside the cycle
- --> tests/loop/compile_fail/redeclare_enclosing_wire.rs:8:13
-  |
-8 |         let count = || 1;
-  |             ^^^^^

@@ -62,7 +62,7 @@ pub enum BlockKind {
     Action,
     Call,
     Question,
-    Loop,
+    Cycle,
     /// The boundary consumer of one declared cycle output, closing the body in
     /// declaration order. It lowers to a Rust `break`.
     Export,
@@ -97,7 +97,7 @@ pub struct Block {
     /// The enclosing cycle block, if this block belongs to an iteration.
     pub parent: Option<usize>,
     /// The exclusive end of a cycle body's depth-first block sequence.
-    pub loop_end: Option<usize>,
+    pub cycle_end: Option<usize>,
     /// The cycle whose declared output a boundary consumer exports.
     pub export_target: Option<usize>,
     /// Destination of a synthetic stage transition, absent on authored returns.
@@ -113,7 +113,7 @@ impl Block {
         match self.kind {
             BlockKind::Question => 2,
             BlockKind::Choice => self.outputs.len(),
-            BlockKind::Loop if self.outputs.len() > 1 => self.outputs.len(),
+            BlockKind::Cycle if self.outputs.len() > 1 => self.outputs.len(),
             _ => 0,
         }
     }
@@ -122,7 +122,7 @@ impl Block {
     /// completes with exactly one of several, like the cases of a choice.
     #[must_use]
     pub fn has_alternative_outputs(&self) -> bool {
-        self.kind == BlockKind::Loop && self.outputs.len() > 1
+        self.kind == BlockKind::Cycle && self.outputs.len() > 1
     }
 
     /// Returns the authored binding at one validated output position.
@@ -224,7 +224,7 @@ pub struct Input {
     pub borrowed: bool,
     /// Mutability of the reference for a borrow, or of the local value binding.
     pub mutable: bool,
-    /// The logical wire key: raw spellings normalize and loop locals are scoped.
+    /// The logical wire key: raw spellings normalize and cycle locals are scoped.
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
@@ -281,7 +281,7 @@ impl Flow {
         }
     }
 
-    /// The loops enclosing one block, innermost first.
+    /// The cycles enclosing one block, innermost first.
     pub(crate) fn enclosing(&self, block: usize) -> impl Iterator<Item = usize> + '_ {
         std::iter::successors(self.blocks[block].parent, |&header| {
             self.blocks[header].parent
@@ -292,7 +292,7 @@ impl Flow {
     /// output, in declaration order, closing its body.
     #[must_use]
     pub(crate) fn exports(&self, header: usize) -> std::ops::Range<usize> {
-        let end = self.blocks[header].loop_end.expect("a cycle owns a body");
+        let end = self.blocks[header].cycle_end.expect("a cycle owns a body");
         end - self.blocks[header].outputs.len()..end
     }
 
@@ -311,7 +311,7 @@ impl Flow {
     #[must_use]
     pub(crate) fn level(&self, block: usize) -> Option<usize> {
         match self.blocks[block].kind {
-            BlockKind::Loop => Some(block),
+            BlockKind::Cycle => Some(block),
             _ => self.blocks[block].parent,
         }
     }
@@ -320,12 +320,12 @@ impl Flow {
     /// execution repeats. [`Passes::of`] computes it once per cycle and block.
     pub(crate) fn repeat_reaches(
         &self,
-        loop_index: usize,
+        cycle_index: usize,
         block: usize,
         together: impl FnOnce(usize, usize) -> bool,
     ) -> bool {
         if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
-            .any(|header| header == loop_index)
+            .any(|header| header == cycle_index)
         {
             return true;
         }
@@ -333,7 +333,7 @@ impl Flow {
             sequence.map(|header| self.blocks[header].parent)
         })
         .find(|&sequence| {
-            std::iter::successors(Some(loop_index), |&header| self.blocks[header].parent)
+            std::iter::successors(Some(cycle_index), |&header| self.blocks[header].parent)
                 .any(|header| self.blocks[header].parent == sequence)
         })
         .expect("the root contains every block");
@@ -345,13 +345,13 @@ impl Flow {
             }
             block
         };
-        let (block_part, repeat_part) = (part(block), part(loop_index));
+        let (block_part, repeat_part) = (part(block), part(cycle_index));
         block_part == repeat_part || (block_part < repeat_part && together(block_part, repeat_part))
     }
 
     /// A cycle completes only when the execution exports one of its outputs.
     #[must_use]
-    pub(crate) fn completes_loop(&self, execution: &Execution, header: usize) -> bool {
+    pub(crate) fn completes_cycle(&self, execution: &Execution, header: usize) -> bool {
         self.exports(header)
             .any(|consumer| execution.participates(consumer))
     }
@@ -367,7 +367,7 @@ impl Flow {
                         BlockKind::Question | BlockKind::Choice => {
                             execution.selected(block) == Some(output)
                         }
-                        BlockKind::Loop => {
+                        BlockKind::Cycle => {
                             execution.participates(self.exports(block).start + output)
                         }
                         BlockKind::Action | BlockKind::Call => true,
@@ -456,10 +456,10 @@ impl Passes {
     /// cycle enclosing `block`, or passes `block` before its repetition.
     #[must_use]
     pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
-        let ExecutionOutcome::Repeat { loop_index } = execution.outcome else {
+        let ExecutionOutcome::Repeat { cycle_index } = execution.outcome else {
             return true;
         };
-        self.reaching[loop_index][block]
+        self.reaching[cycle_index][block]
     }
 
     #[must_use]
@@ -475,11 +475,11 @@ impl Passes {
             .blocks
             .iter()
             .enumerate()
-            .map(|(loop_index, block)| {
-                if block.kind == BlockKind::Loop {
+            .map(|(cycle_index, block)| {
+                if block.kind == BlockKind::Cycle {
                     (0..flow.blocks.len())
                         .map(|block| {
-                            flow.repeat_reaches(loop_index, block, |first, second| {
+                            flow.repeat_reaches(cycle_index, block, |first, second| {
                                 runs[first]
                                     .iter()
                                     .zip(&runs[second])
@@ -500,7 +500,7 @@ impl Passes {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ExecutionOutcome {
     Return { block_index: usize },
-    Repeat { loop_index: usize },
+    Repeat { cycle_index: usize },
 }
 
 impl Execution {
@@ -550,7 +550,7 @@ pub struct WireMerge {
 /// [`ConvergenceGroup`] records.
 #[derive(Clone)]
 pub enum ExecutionPlan {
-    Loop {
+    Cycle {
         index: usize,
         body: Box<ExecutionPlan>,
         /// What runs once the cycle completes: one continuation per declared

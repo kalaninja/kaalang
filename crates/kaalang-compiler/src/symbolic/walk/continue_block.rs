@@ -20,5 +20,11 @@ pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &mut State, mut ru
             runs = walk.executions.conditions.minus(runs, both);
         }
     }
-    walk.finish(state, ExecutionOutcome::Repeat { loop_index: header }, runs);
+    walk.finish(
+        state,
+        ExecutionOutcome::Repeat {
+            cycle_index: header,
+        },
+        runs,
+    );
 }

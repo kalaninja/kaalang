@@ -20,10 +20,10 @@ mod choice;
 mod comparison;
 mod continue_block;
 mod convergence;
+pub(crate) mod cycle;
 pub(crate) mod end;
 mod export;
 pub(crate) mod frame;
-pub(crate) mod loop_block;
 pub(crate) mod merge;
 pub(crate) mod participation;
 pub(crate) mod placement;
@@ -68,7 +68,7 @@ pub(crate) fn flow(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
         .collect::<Vec<_>>();
     participation::flow(flow, &frames, &captures)?;
     let merges = merge::flow(flow, &frames, merges, owners, &ancestry)?;
-    loop_block::output_order(flow, &frames)?;
+    cycle::output_order(flow, &frames)?;
     let precedence = executions
         .iter()
         .map(|execution| predecessors(flow, execution, &merges))
@@ -102,7 +102,7 @@ fn walk(flow: &Flow) -> Walk<'_> {
             executed: BTreeSet::new(),
             branches: BTreeSet::new(),
             dependencies: BTreeSet::new(),
-            loops: BTreeMap::new(),
+            cycles: BTreeMap::new(),
         },
     );
     walk
@@ -250,7 +250,7 @@ struct State {
     executed: BTreeSet<usize>,
     branches: BTreeSet<BranchSelection>,
     dependencies: BTreeSet<CaptureDependency>,
-    loops: BTreeMap<usize, BTreeMap<Ident, ProducerId>>,
+    cycles: BTreeMap<usize, BTreeMap<Ident, ProducerId>>,
 }
 
 impl State {
@@ -296,7 +296,7 @@ impl Walk<'_> {
     /// whose inputs this execution has all provided participates; the others
     /// belong to branches this execution did not select.
     fn visit(&mut self, index: usize, mut state: State) {
-        if self.close_loops(index, &state) {
+        if self.close_cycles(index, &state) {
             return;
         }
         if index == self.end {
@@ -345,11 +345,11 @@ impl Walk<'_> {
             .filter(|input| !input.derived)
             .all(|input| state.available.contains_key(&input.ident))
         {
-            self.visit(block.loop_end.unwrap_or(index + 1), state);
+            self.visit(block.cycle_end.unwrap_or(index + 1), state);
             return;
         }
         // An inner capture cannot make entering the cycle conditional.
-        if block.kind == BlockKind::Loop
+        if block.kind == BlockKind::Cycle
             && let Some((position, input)) = block
                 .inputs
                 .iter()
@@ -370,7 +370,7 @@ impl Walk<'_> {
             BlockKind::Action => action::visit(self, index, state),
             BlockKind::Call => call::visit(self, index, state),
             BlockKind::Question => question::visit(self, index, &state),
-            BlockKind::Loop => loop_block::visit(self, index, state),
+            BlockKind::Cycle => cycle::visit(self, index, state),
             BlockKind::Export => export::visit(self, index, state),
             BlockKind::Continue => continue_block::visit(self, index, state),
             BlockKind::Return => return_block::visit(self, index, state),
@@ -423,13 +423,13 @@ impl Walk<'_> {
 
     /// An iteration still open at its body's boundary reached neither
     /// `continue` nor a declared output: repetition is authored, never implied.
-    fn close_loops(&mut self, index: usize, state: &State) -> bool {
+    fn close_cycles(&mut self, index: usize, state: &State) -> bool {
         let Some(header) = state
-            .loops
+            .cycles
             .keys()
             .rev()
             .copied()
-            .find(|&header| self.flow.blocks[header].loop_end == Some(index))
+            .find(|&header| self.flow.blocks[header].cycle_end == Some(index))
         else {
             return false;
         };

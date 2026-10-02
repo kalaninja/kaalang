@@ -38,28 +38,28 @@ pub fn build(function: &ItemFn) -> Result<SemanticModel> {
     build_with_options(function, false)
 }
 
-/// Builds a validated model with the requested loop presentation.
-/// Always validates the expanded diagram before collapsing loops.
+/// Builds a validated model with the requested cycle presentation.
+/// Always validates the expanded diagram before collapsing cycles.
 ///
 /// # Errors
 ///
 /// Returns the same parsing, validation, and topology errors as [`build`].
-pub fn build_with_options(function: &ItemFn, collapse_loops: bool) -> Result<SemanticModel> {
+pub fn build_with_options(function: &ItemFn, collapse_cycles: bool) -> Result<SemanticModel> {
     let analysis = analyze(function)?;
     let stages = analysis
         .stages
         .iter()
-        .map(|stage| build_analysis((*stage.analysis).clone(), collapse_loops))
+        .map(|stage| build_analysis((*stage.analysis).clone(), collapse_cycles))
         .collect::<Result<Vec<_>>>()?;
-    let mut model = build_analysis(analysis, collapse_loops)?;
+    let mut model = build_analysis(analysis, collapse_cycles)?;
     model.stages = stages;
     Ok(model)
 }
 
-fn build_analysis(analysis: Analysis, collapse_loops: bool) -> Result<SemanticModel> {
+fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticModel> {
     let expanded = project(&analysis, false);
     let expanded_arrangement = construct(&analysis, &expanded)?;
-    let (topology, arrangement) = if collapse_loops {
+    let (topology, arrangement) = if collapse_cycles {
         let topology = project(&analysis, true);
         let arrangement = construct(&analysis, &topology)?;
         (topology, arrangement)
@@ -177,14 +177,14 @@ fn analyze_local(function: &ItemFn, flow: Flow, check_usage: bool) -> Result<Ana
 /// Projects an analyzed flow onto its structural topology.
 /// Projection is total; [`construct()`] checks whether the topology can be drawn.
 #[must_use]
-pub fn project(analysis: &Analysis, collapse_loops: bool) -> topology::Topology {
+pub fn project(analysis: &Analysis, collapse_cycles: bool) -> topology::Topology {
     topology::project(&topology::Analyzed {
         flow: &analysis.flow,
         executions: analysis.executions.summaries(),
         symbolic: analysis.executions.symbolic(),
         merges: &analysis.merges,
         execution_plan: &analysis.execution_plan,
-        collapse_loops,
+        collapse_cycles,
     })
 }
 
@@ -289,7 +289,7 @@ mod tests {
         for (name, source) in [
             (
                 "count_to",
-                include_str!("../../kaalang/tests/loop/behavior/count_to.rs"),
+                include_str!("../../kaalang/tests/cycle/behavior/count_to.rs"),
             ),
             (
                 "binary_search",
@@ -297,23 +297,23 @@ mod tests {
             ),
             (
                 "nested_search",
-                include_str!("../../kaalang/tests/loop/behavior/nested_search.rs"),
+                include_str!("../../kaalang/tests/cycle/behavior/nested_search.rs"),
             ),
             (
-                "empty_loop",
-                include_str!("../../kaalang/tests/loop/behavior/empty_loop.rs"),
+                "empty_cycle",
+                include_str!("../../kaalang/tests/cycle/behavior/empty_cycle.rs"),
             ),
             (
                 "repeat_until_done",
-                include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
+                include_str!("../../kaalang/tests/cycle/behavior/repeat_until_done.rs"),
             ),
             (
-                "nested_loops",
-                include_str!("../../kaalang/tests/loop/behavior/nested_loops.rs"),
+                "nested_cycles",
+                include_str!("../../kaalang/tests/cycle/behavior/nested_cycles.rs"),
             ),
             (
-                "nested_unconditional_loops",
-                include_str!("../../kaalang/tests/loop/behavior/nested_unconditional_loops.rs"),
+                "nested_unconditional_cycles",
+                include_str!("../../kaalang/tests/cycle/behavior/nested_unconditional_cycles.rs"),
             ),
         ] {
             let model =
@@ -366,19 +366,19 @@ mod tests {
         };
 
         let model = build(&function).expect("the diverging flow is valid");
-        assert_eq!(model.analysis.flow.blocks[0].kind, BlockKind::Loop);
+        assert_eq!(model.analysis.flow.blocks[0].kind, BlockKind::Cycle);
         assert_eq!(
             model.analysis.executions[0].outcome,
-            ExecutionOutcome::Repeat { loop_index: 0 }
+            ExecutionOutcome::Repeat { cycle_index: 0 }
         );
         assert!(matches!(
             end_body(&model.analysis.execution_plan),
-            ExecutionPlan::Loop { index: 0, body, .. }
+            ExecutionPlan::Cycle { index: 0, body, .. }
                 if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
         let model = build(&fixture(
-            include_str!("../../kaalang/tests/loop/behavior/repeat_until_done.rs"),
+            include_str!("../../kaalang/tests/cycle/behavior/repeat_until_done.rs"),
             "repeat_until_done",
         ))
         .expect("the cycle may either repeat or finish");
@@ -391,7 +391,7 @@ mod tests {
                 .collect::<BTreeSet<_>>(),
             BTreeSet::from([
                 ExecutionOutcome::Return { block_index: 6 },
-                ExecutionOutcome::Repeat { loop_index: 1 },
+                ExecutionOutcome::Repeat { cycle_index: 1 },
             ])
         );
     }
@@ -1169,12 +1169,12 @@ mod tests {
     #[test]
     fn a_body_selection_converges_only_inside_its_cycle() {
         let model = build(&fixture(
-            include_str!("../../kaalang/tests/loop/behavior/alternative_outputs.rs"),
+            include_str!("../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the flow is valid");
         let end = model.analysis.flow.blocks[0]
-            .loop_end
+            .cycle_end
             .expect("the flow opens with its cycle");
         for group in &model.analysis.convergence_groups {
             if (1..end).contains(&group.branching_block) {

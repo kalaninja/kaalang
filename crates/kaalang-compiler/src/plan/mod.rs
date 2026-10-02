@@ -16,8 +16,8 @@ use crate::model::{
 
 mod choice;
 mod continue_block;
+mod cycle;
 mod export;
-mod loop_block;
 mod question;
 mod return_block;
 pub(crate) mod verify;
@@ -92,7 +92,7 @@ struct Lowered<'e> {
     emitted: BTreeSet<usize>,
 }
 
-/// An enclosing selection or loop, with the blocks its joins or normal exit run.
+/// An enclosing selection or cycle, with the blocks its joins or normal exit run.
 #[derive(Clone)]
 struct Scope {
     block: usize,
@@ -179,8 +179,8 @@ impl Builder<'_> {
                     emitted: next.emitted,
                 })
             }
-            BlockKind::Loop => {
-                loop_block::lower(self, block, executions, &next_done, forbidden, scopes)
+            BlockKind::Cycle => {
+                cycle::lower(self, block, executions, &next_done, forbidden, scopes)
             }
             BlockKind::Export => Ok(export::lower(self.flow, block)),
             BlockKind::Continue => Ok(continue_block::lower(block)),
@@ -264,7 +264,7 @@ impl Builder<'_> {
             BlockKind::Action
             | BlockKind::Call
             | BlockKind::End
-            | BlockKind::Loop
+            | BlockKind::Cycle
             | BlockKind::Export
             | BlockKind::Continue
             | BlockKind::Return => {
@@ -400,7 +400,7 @@ impl Builder<'_> {
         // A single join has nothing to nest against.
         if matches!(
             self.flow.blocks[block].kind,
-            BlockKind::Choice | BlockKind::Loop
+            BlockKind::Choice | BlockKind::Cycle
         ) && groups.len() > 1
         {
             let executions = selections.iter().flatten().collect::<Vec<_>>();
@@ -600,7 +600,7 @@ impl Builder<'_> {
 /// including branches yielding to an outer join.
 pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
     match plan {
-        ExecutionPlan::Loop {
+        ExecutionPlan::Cycle {
             index,
             body,
             branches,
@@ -654,7 +654,7 @@ pub(crate) fn serial_order(plan: &ExecutionPlan, order: &mut Vec<usize>) {
 /// each yield's own producer spellings.
 pub(crate) fn fill_yields(plan: &mut ExecutionPlan, wires: &[Ident], target: JoinTarget) {
     match plan {
-        ExecutionPlan::Loop {
+        ExecutionPlan::Cycle {
             body,
             branches,
             joins,

@@ -114,7 +114,7 @@ impl<'a> Junction<'a> {
                 unreachable!("a wire merge combines block outputs")
             };
             // A cycle's output is ready only once its whole body has run.
-            let ready = flow.blocks[block].loop_end.map_or(block, |end| end - 1);
+            let ready = flow.blocks[block].cycle_end.map_or(block, |end| end - 1);
             position = position.max(ready);
             producers.push((producer, occurrence(flow, &ancestry[block], block, output)));
         }
@@ -225,7 +225,7 @@ pub(super) fn flow(
                 .iter()
                 .filter(|s| s.block < block && frames.visible(frame, s.block))
             {
-                if super::loop_block::closed_before(flow, selection.block, block)
+                if super::cycle::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
                     || junctions.iter_mut().any(|junction| {
                         junction.closes(execution, &carried, block, *selection, executions)

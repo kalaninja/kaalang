@@ -32,7 +32,7 @@ fn combinations(names: &[&'static str], count: u32) -> Vec<Vec<&'static str>> {
 pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
     lengths
         .flat_map(|count| combinations(&ROUTES, count))
-        .map(|routes| looping(&routes))
+        .map(|routes| cycle_routes(&routes))
         .collect()
 }
 
@@ -44,12 +44,12 @@ pub fn flat_bodies(lengths: RangeInclusive<u32>) -> Vec<String> {
 ///
 /// Panics on a route it does not generate.
 #[must_use]
-pub fn looping(routes: &[&str]) -> String {
-    looping_with(routes, &selection(routes, "case_"))
+pub fn cycle_routes(routes: &[&str]) -> String {
+    cycle_routes_with(routes, &selection(routes, "case_"))
 }
 
-/// [`looping`] opened by `choice` instead of the distributor it generates.
-fn looping_with(routes: &[&str], choice: &str) -> String {
+/// [`cycle_routes`] opened by `choice` instead of the distributor it generates.
+fn cycle_routes_with(routes: &[&str], choice: &str) -> String {
     let bodies = routes
         .iter()
         .enumerate()
@@ -174,7 +174,7 @@ fn selection(routes: &[&str], prefix: &str) -> String {
 }
 
 /// One cycle whose body selects `routes`, wrapped in an outer cycle whose other
-/// branches take `propagate`. It uses the same names as `looping`, plus
+/// branches take `propagate`. It uses the same names as [`cycle_routes`], plus
 /// `propagate` for an inner result that the enclosing cycle explicitly handles.
 /// The inner cycle repeats through `inner_again`: a nested local cannot reuse
 /// the outer `again` it can see.
@@ -293,7 +293,7 @@ pub fn declared_domain() -> Vec<String> {
 /// Every generated cycle shape, flat and nested. Both the model and the SVG
 /// tests chain [`question_shapes`] onto this for the corpus they count.
 #[must_use]
-pub fn loop_shapes() -> Vec<String> {
+pub fn cycle_shapes() -> Vec<String> {
     let mut shapes = declared_domain();
     shapes.extend(flat_bodies(5..=5));
     for count in 2..=4 {
@@ -322,7 +322,7 @@ pub fn question_shapes() -> Vec<String> {
         let (case_1, case_2) = |other, mode| mode == 1;"#;
     combinations(&ROUTES, 3)
         .iter()
-        .map(|routes| looping_with(routes, QUESTIONS))
+        .map(|routes| cycle_routes_with(routes, QUESTIONS))
         .collect()
 }
 

@@ -13,8 +13,8 @@ mod parameters;
 mod tests;
 
 mod choice;
+mod cycle;
 mod join;
-mod loop_block;
 mod question;
 mod stage;
 
@@ -226,18 +226,18 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
 pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> TokenStream2 {
     let body = match plan {
-        ExecutionPlan::Loop {
+        ExecutionPlan::Cycle {
             index,
             body,
             branches,
             joins,
-        } => loop_block::emit(flow, bindings, *index, body, branches, joins),
+        } => cycle::emit(flow, bindings, *index, body, branches, joins),
         ExecutionPlan::Export { index, target } => {
             let span = flow.blocks[*index].span;
             // One output is the loop's own value; several leave by their own
             // result blocks.
             let label = if flow.blocks[*target].branch_count() > 0 {
-                loop_block::exit_label(*target, flow.exported_output(*index))
+                cycle::exit_label(*target, flow.exported_output(*index))
             } else {
                 loop_label(*target, span)
             };

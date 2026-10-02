@@ -38,7 +38,7 @@ pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTree
                 wires.extend(flow.blocks[*index].outputs.iter().cloned());
                 plan = next;
             }
-            ExecutionPlan::Loop {
+            ExecutionPlan::Cycle {
                 index, branches, ..
             } if flow.blocks[*index].branch_count() == 0 => {
                 wires.extend(flow.blocks[*index].outputs.iter().cloned());
@@ -57,7 +57,7 @@ pub(crate) fn preparation_scope(flow: &Flow, mut plan: &ExecutionPlan) -> (BTree
                 branches,
                 joins,
             }
-            | ExecutionPlan::Loop {
+            | ExecutionPlan::Cycle {
                 index,
                 branches,
                 joins,

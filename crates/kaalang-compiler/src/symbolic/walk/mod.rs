@@ -16,8 +16,8 @@ mod action;
 mod call;
 mod choice;
 mod continue_block;
+mod cycle;
 mod export;
-mod loop_block;
 mod question;
 mod return_block;
 
@@ -153,7 +153,7 @@ impl Walk<'_> {
             let provided = self.present(&state.available, &input.ident);
             runs = self.executions.conditions.and(runs, provided);
         }
-        if declaration.kind == BlockKind::Loop {
+        if declaration.kind == BlockKind::Cycle {
             for (position, input) in declaration
                 .inputs
                 .iter()
@@ -215,9 +215,9 @@ impl Walk<'_> {
             let runs = self.enter(block, &mut state);
             let declaration = &self.flow.blocks[block];
             match declaration.kind {
-                BlockKind::Loop => {
-                    state = loop_block::visit(self, block, state, runs);
-                    block = declaration.loop_end.expect("a cycle owns a body");
+                BlockKind::Cycle => {
+                    state = cycle::visit(self, block, state, runs);
+                    block = declaration.cycle_end.expect("a cycle owns a body");
                     continue;
                 }
                 BlockKind::Export => export::visit(self, block, &mut state, runs),

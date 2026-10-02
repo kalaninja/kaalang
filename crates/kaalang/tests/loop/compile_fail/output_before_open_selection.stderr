@@ -1,5 +1,0 @@
-error: this kaalang cycle exports `taken` while the branches of the question `Is it worth logging?` are still separate; merge those branches before the end of its body
- --> tests/loop/compile_fail/output_before_open_selection.rs:6:9
-  |
-6 |     let taken = {
-  |         ^^^^^

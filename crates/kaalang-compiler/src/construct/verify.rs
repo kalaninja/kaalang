@@ -8,7 +8,7 @@ use crate::geometry::{
 use std::collections::BTreeSet;
 
 use crate::model::Flow;
-use crate::topology::{Connection, Destination, ExitId, Loop, NodeId, Source, Topology, Vertex};
+use crate::topology::{Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex};
 
 use super::{Arrangement, RunLine, Side};
 
@@ -29,7 +29,7 @@ pub(super) struct Grid {
 /// Read-only abstract geometry of one arrangement.
 ///
 /// Connection polylines follow [`Topology::connections`] order and iteration
-/// back edges follow [`Topology::loops`] order.
+/// back edges follow [`Topology::cycles`] order.
 pub struct ArrangementGeometry {
     vertices: Vec<(Vertex, Point)>,
     connections: Vec<Vec<Point>>,
@@ -72,7 +72,7 @@ impl ArrangementGeometry {
 /// Two lanes per cycle on each side of a column: one for its back edge and one
 /// for its boundary. Nested cycles may stack all pairs beside one column.
 pub(super) fn contour_lanes(topology: &Topology) -> usize {
-    2 * topology.loops.len()
+    2 * topology.cycles.len()
 }
 
 impl Grid {
@@ -182,7 +182,7 @@ pub(super) fn back_edge_polyline(
     index: usize,
     contour: super::Contour,
 ) -> Vec<Point> {
-    let Loop { tail, entry, .. } = topology.loops[index];
+    let Cycle { tail, entry, .. } = topology.cycles[index];
     let at = |junction| {
         let vertex = Vertex::Junction(junction);
         Point {
@@ -369,7 +369,7 @@ pub(super) fn placement(
 /// A cycle with several outputs draws its result exits left to right in
 /// declaration order.
 pub(super) fn result_order(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
-    for boundary in &topology.loop_boundaries {
+    for boundary in &topology.cycle_boundaries {
         let columns = boundary
             .results
             .iter()
@@ -402,7 +402,7 @@ fn geometry_after_choice(
     let (grid, lines) = drawing(topology, arrangement);
     let geometry = ArrangementGeometry {
         vertices: vertex_points(topology, arrangement, &grid),
-        back_edges: (0..topology.loops.len())
+        back_edges: (0..topology.cycles.len())
             .map(|index| {
                 back_edge_polyline(
                     topology,
@@ -422,7 +422,7 @@ fn geometry_after_choice(
 }
 
 /// Every vertex has a rank and a column, every connection a corridor, and
-/// every loop a contour.
+/// every cycle a contour.
 pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
     if arrangement.rank.len() != topology.vertices.len() {
         return Err("the arrangement ranks a different set of vertices".to_owned());
@@ -452,7 +452,7 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
     if arrangement.routes.len() != topology.connections.len() {
         return Err("the arrangement covers a different number of connections".to_owned());
     }
-    if arrangement.contours.len() != topology.loops.len() {
+    if arrangement.contours.len() != topology.cycles.len() {
         return Err("the arrangement covers a different number of iteration back edges".to_owned());
     }
     if arrangement.gap_lanes.len() != arrangement.ranks {
@@ -618,10 +618,10 @@ fn order(
     }
     for edge in &topology.order {
         let (from, to) = ranks(edge)?;
-        let aligned = topology.loops.iter().any(|loop_| {
-            edge.source == Source::Junction(loop_.tail)
-                && topology.loop_boundaries.iter().any(|boundary| {
-                    boundary.header == loop_.header
+        let aligned = topology.cycles.iter().any(|cycle| {
+            edge.source == Source::Junction(cycle.tail)
+                && topology.cycle_boundaries.iter().any(|boundary| {
+                    boundary.header == cycle.header
                         && boundary
                             .results
                             .iter()
@@ -887,17 +887,17 @@ fn back_edges(
     let lines = &geometry.connections;
     let back_edges = &geometry.back_edges;
     let mut drawn: Vec<&Vec<Point>> = Vec::new();
-    for (index, loop_) in topology.loops.iter().enumerate() {
+    for (index, cycle) in topology.cycles.iter().enumerate() {
         let contour = arrangement.contours[index];
-        let body = super::loop_block::body_columns(flow, topology, arrangement, loop_.header);
-        let end = flow.blocks[loop_.header]
-            .loop_end
-            .expect("a loop owns a body");
+        let body = super::cycle::body_columns(flow, topology, arrangement, cycle.header);
+        let end = flow.blocks[cycle.header]
+            .cycle_end
+            .expect("a cycle owns a body");
         let nested = topology
-            .loops
+            .cycles
             .iter()
             .enumerate()
-            .filter(|(_, inner)| (loop_.header + 1..end).contains(&inner.header))
+            .filter(|(_, inner)| (cycle.header + 1..end).contains(&inner.header))
             .flat_map(|(i, _)| back_edges[i].iter().map(|p| p.x))
             .collect::<Vec<_>>();
         let line = &back_edges[index];
@@ -905,30 +905,30 @@ fn back_edges(
             && line.len() >= 4
             && line[1..line.len() - 1]
                 .iter()
-                .all(|p| super::loop_block::outside(grid, contour.side, p.x, &body, &nested));
+                .all(|p| super::cycle::outside(grid, contour.side, p.x, &body, &nested));
         if !outside {
             return Err(format!(
                 "the iteration back edge of the cycle at block {} climbs inside its body",
-                loop_.header + 1
+                cycle.header + 1
             ));
         }
         if line.windows(2).any(|pair| pair[1].y > pair[0].y) {
             return Err(format!(
                 "the iteration back edge of the cycle at block {} moves downward",
-                loop_.header + 1
+                cycle.header + 1
             ));
         }
         let back = (
-            Source::Junction(loop_.tail),
-            Destination::Junction(loop_.entry),
+            Source::Junction(cycle.tail),
+            Destination::Junction(cycle.entry),
         );
         simple(
             line,
             &geometry.vertices,
-            &[Vertex::Junction(loop_.tail), Vertex::Junction(loop_.entry)],
+            &[Vertex::Junction(cycle.tail), Vertex::Junction(cycle.entry)],
             &format!(
                 "the iteration back edge of the cycle at block {}",
-                loop_.header + 1
+                cycle.header + 1
             ),
         )?;
         for (other, points) in lines.iter().enumerate() {
@@ -936,7 +936,7 @@ fn back_edges(
             if !compatible(line, points, shared, &meetings) {
                 return Err(format!(
                     "the iteration back edge of the cycle at block {} crosses connection {}",
-                    loop_.header + 1,
+                    cycle.header + 1,
                     other + 1
                 ));
             }
@@ -945,7 +945,7 @@ fn back_edges(
             if !compatible(line, earlier, false, &[]) {
                 return Err(format!(
                     "the iteration back edge of the cycle at block {} crosses another back edge",
-                    loop_.header + 1
+                    cycle.header + 1
                 ));
             }
         }
@@ -963,7 +963,7 @@ mod tests {
     /// serial column, which the complete verifier may reject first.
     #[test]
     fn a_sibling_inside_a_reserved_footprint_is_caught() {
-        let source = super::super::tests::looping(&["repeat", "repeat", "leave", "leave"]);
+        let source = super::super::tests::cycle_routes(&["repeat", "repeat", "leave", "leave"]);
         let model = crate::build(&syn::parse_str(&source).unwrap()).unwrap();
         let reachable = super::super::regions::reachable(&model.topology);
         let block = super::super::regions::branchers(&model.analysis.flow, &model.topology)[0];

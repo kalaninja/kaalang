@@ -1,0 +1,5 @@
+error: every kaalang action output must have a consumer
+  --> tests/cycle/compile_fail/unconsumed_local.rs:11:13
+   |
+11 |         let local = |again| 1;
+   |             ^^^^^

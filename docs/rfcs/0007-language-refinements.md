@@ -735,6 +735,9 @@ declares stages. Earlier accepted RFC texts remain unchanged.
 - **RFC 0003 §§2.1, 2.3 and 3:** replace the authored break junction with one
   result junction per declared output, preserving the junction and merge reuse
   rules in §6.2 here.
+- **RFC 0003 §§4–5:** name the collapsed view after cycles: the
+  `RenderOptions::collapse_cycles` field and the `--collapse-cycles` option
+  replace `collapse_loops` and `--collapse-loops` with the same meaning.
 - **RFC 0004 §2:** replace the uninitialized authored-name declarations and
   their permission to assign an uncaptured parameter spelling as an ordinary
   Rust local with the hygienic parameter bindings and capture checks in §5.3

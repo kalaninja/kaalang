@@ -17,9 +17,9 @@ use crate::model::{Flow, WireMerge};
 use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
 
 mod choice;
+pub(crate) mod cycle;
 mod describe;
 mod end;
-pub(crate) mod loop_block;
 mod normalize;
 mod place;
 mod regions;
@@ -36,9 +36,9 @@ pub use verify::ArrangementGeometry;
 fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
         || topology
-            .loops
+            .cycles
             .iter()
-            .any(|loop_| vertex == Vertex::Junction(loop_.tail))
+            .any(|cycle| vertex == Vertex::Junction(cycle.tail))
     {
         return None;
     }
@@ -113,7 +113,7 @@ pub struct Arrangement {
     pub routes: Vec<Route>,
     /// Per rank gap, how many lanes its sideways runs occupy.
     pub gap_lanes: Vec<usize>,
-    /// Per cycle, in `Topology::loops` order, the contour of its iteration back edge.
+    /// Per cycle, in `Topology::cycles` order, the contour of its iteration back edge.
     pub contours: Vec<Contour>,
     /// Optional sideways runs of a back edge's climb, indexed by cycle. Stored in
     /// downward order from entry to tail; a renderer reverses it. An absent
@@ -324,8 +324,8 @@ pub(super) struct Obstruction {
     pub(super) span: proc_macro2::Span,
     pub(super) message: String,
     /// The cycle whose back edge could not be drawn, when one is to blame. The
-    /// search changes that loop's rank or contour next.
-    pub(super) loop_index: Option<usize>,
+    /// search changes that cycle's rank or contour next.
+    pub(super) cycle_index: Option<usize>,
     /// The connection in the way, when one is. The search gives that
     /// connection a longer corridor next.
     pub(super) connection: Option<usize>,
@@ -398,16 +398,16 @@ fn preferred(
     // Branch widths depend on topology, not the ranks or contours tried below.
     let footprints = place::footprints(topology, flow);
     let tails = topology
-        .loops
+        .cycles
         .iter()
-        .map(|loop_| Vertex::Junction(loop_.tail))
+        .map(|cycle| Vertex::Junction(cycle.tail))
         .collect::<Vec<_>>();
     // Start with the preferred contour.
     let sides = topology
-        .loops
+        .cycles
         .iter()
-        .map(|loop_| {
-            if loop_.prefer_left {
+        .map(|cycle| {
+            if cycle.prefer_left {
                 Side::Left
             } else {
                 Side::Right
@@ -429,7 +429,7 @@ fn preferred(
                 // Lowering every tail is the last resort, blamed or not: a
                 // route crossing a nested body can pass below it instead.
                 pending.push((every_tail.clone(), sides.clone()));
-                if let Some(index) = reason.loop_index {
+                if let Some(index) = reason.cycle_index {
                     // Pushed in reverse order of preference: flipping one
                     // contour is tried before lowering one tail.
                     let mut lowered = sunk.clone();
@@ -467,7 +467,7 @@ fn unarrangeable(flow: &Flow) -> Obstruction {
     Obstruction {
         span: flow.end_span(),
         message: "its connections cannot be arranged without a crossing".to_owned(),
-        loop_index: None,
+        cycle_index: None,
         connection: None,
     }
 }
@@ -486,7 +486,7 @@ fn corridors(
         place::place(topology, footprints, sunk, sides).map_err(sweep::Refusal::Internal)?;
     // No corridor shape moves a column, so results placed out of declaration
     // order leave nothing to try here.
-    if let Some(boundary) = topology.loop_boundaries.iter().find(|boundary| {
+    if let Some(boundary) = topology.cycle_boundaries.iter().find(|boundary| {
         !boundary.results.windows(2).all(|pair| {
             placement.column[&Vertex::from(pair[0])] < placement.column[&Vertex::from(pair[1])]
         })
@@ -495,9 +495,9 @@ fn corridors(
             span: flow.blocks[boundary.header].span,
             message: format!(
                 "the outputs of {} cannot leave it in declaration order",
-                describe::loop_name(flow, boundary.header)
+                describe::cycle_name(flow, boundary.header)
             ),
-            loop_index: None,
+            cycle_index: None,
             connection: None,
         }));
     }
@@ -543,7 +543,7 @@ fn corridors(
             }
             continue;
         }
-        match loop_block::contours(flow, merges, topology, &arrangement, sides) {
+        match cycle::contours(flow, merges, topology, &arrangement, sides) {
             Ok(contours) => {
                 arrangement.contours = contours;
                 return Ok(arrangement);

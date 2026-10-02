@@ -19,7 +19,7 @@ pub(super) fn lower<'e>(index: usize) -> Lowered<'e> {
 pub(super) fn replay(replay: &mut Replay<'_>, index: usize) -> Option<Exit> {
     replay.enter(index, BlockKind::Return)?;
     replay
-        .loop_indices
+        .cycle_indices
         .is_empty()
         .then_some(Exit::Return(index))
 }

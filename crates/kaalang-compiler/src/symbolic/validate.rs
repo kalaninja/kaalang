@@ -48,7 +48,7 @@ impl Executions {
                     }
                     let owner = self.selectors[position];
                     let branches = (0..self.conditions.widths[position * 2]
-                        - usize::from(flow.blocks[owner].kind != BlockKind::Loop))
+                        - usize::from(flow.blocks[owner].kind != BlockKind::Cycle))
                         .filter(|&branch| {
                             let selected = self.selected(owner, branch);
                             let produces = self.conditions.and(present, selected);
@@ -155,8 +155,8 @@ impl Executions {
                     let dependent = self
                         .conditions
                         .or(preceding[first][second], preceding[second][first]);
-                    let exit_order = crate::analyze::loop_block::closed_before(flow, first, second)
-                        || crate::analyze::loop_block::closed_before(flow, second, first);
+                    let exit_order = crate::analyze::cycle::closed_before(flow, first, second)
+                        || crate::analyze::cycle::closed_before(flow, second, first);
                     let together = self.conditions.and(self.runs[first], self.runs[second]);
                     if !(self.has(dependent) || exit_order && self.has(together)) {
                         return Err(crate::analyze::participation::violation(flow, block));
@@ -223,7 +223,7 @@ impl Executions {
                     break;
                 }
                 if !frames.visible(frames.frame(block), selector)
-                    || crate::analyze::loop_block::closed_before(flow, selector, block)
+                    || crate::analyze::cycle::closed_before(flow, selector, block)
                 {
                     continue;
                 }
@@ -347,7 +347,7 @@ impl Executions {
                         || visible.iter().any(|&outer| {
                             let header = self.selectors[outer];
                             flow.blocks[header]
-                                .loop_end
+                                .cycle_end
                                 .is_some_and(|end| (header + 1..end).contains(&block))
                         }))
                     .then_some(position * 2)
@@ -385,7 +385,7 @@ impl Executions {
             .iter()
             .map(|(_, _, context)| self.routes(flow, ancestry, owner, *context, frames, frame))
             .collect();
-        let (noun, members) = if flow.blocks[owner].kind == BlockKind::Loop {
+        let (noun, members) = if flow.blocks[owner].kind == BlockKind::Cycle {
             ("cycle", "outputs")
         } else {
             ("choice", "branches")
@@ -477,7 +477,7 @@ impl Executions {
             for (owner, branches) in owners {
                 if matches!(
                     flow.blocks[*owner].kind,
-                    BlockKind::Choice | BlockKind::Loop
+                    BlockKind::Choice | BlockKind::Cycle
                 ) {
                     let reaching = self.merge_reaching(flow, merge);
                     groups[*owner].push((branches.clone(), provided, reaching));
@@ -485,7 +485,10 @@ impl Executions {
             }
         }
         for (owner, groups) in groups.iter().enumerate() {
-            if matches!(flow.blocks[owner].kind, BlockKind::Choice | BlockKind::Loop) {
+            if matches!(
+                flow.blocks[owner].kind,
+                BlockKind::Choice | BlockKind::Cycle
+            ) {
                 self.groups(flow, ancestry, owner, groups, frames, frames.frame(owner))?;
             }
         }
@@ -550,7 +553,7 @@ impl Executions {
             let mut groups = BTreeMap::<Vec<usize>, Vec<usize>>::new();
             let mut continued = Vec::new();
             for (block, row) in preceding.iter().enumerate().take(flow.blocks.len() - 1) {
-                if flow.blocks[owner].loop_end.is_some_and(|end| block < end)
+                if flow.blocks[owner].cycle_end.is_some_and(|end| block < end)
                     || !frames.visible(frames.frame(block), owner)
                 {
                     continue;
@@ -569,7 +572,10 @@ impl Executions {
                     continued.push((branches, context, reaching));
                 }
             }
-            if matches!(flow.blocks[owner].kind, BlockKind::Choice | BlockKind::Loop) {
+            if matches!(
+                flow.blocks[owner].kind,
+                BlockKind::Choice | BlockKind::Cycle
+            ) {
                 self.groups(
                     flow,
                     ancestry,

@@ -406,7 +406,7 @@ cargo kaalang diagram crates/kaalang/tests/gallery/fizzbuzz/mod.rs --flow fizzbu
 ```
 
 Open `fizzbuzz.svg` in a browser. Replace the source path and flow name to
-render another example; add `--collapse-loops` for the compact cycle view shown
+render another example; add `--collapse-cycles` for the compact cycle view shown
 above. The output is a standalone SVG with no external rendering tools required.
 
 ## Read more
