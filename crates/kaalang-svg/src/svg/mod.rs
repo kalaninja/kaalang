@@ -8,7 +8,7 @@ use crate::layout::{
 use crate::text::{
     Color, FORMULA_STRIKETHROUGH_OFFSET, FORMULA_UNDERLINE_OFFSET, FORMULA_UNDERLINE_PADDING,
     Formula, RichText, SCRIPT_FONT_SCALE, SUBSCRIPT_SHIFT, SUPERSCRIPT_SHIFT, Script, Style,
-    TEXT_ADVANCE_SCALE, block_metrics, line_ink, shaping_spans, span_advances, svg_dimension,
+    TEXT_ADVANCE_SCALE, block_metrics, line_ink, shaping_spans, svg_dimension,
 };
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 use latex_rust::Dim;
@@ -395,9 +395,11 @@ fn write_composed_lines(
     let first_baseline = metrics.baselines.first().copied().unwrap_or_default();
     for (index, line) in lines.iter().enumerate() {
         let baseline = first_y + metrics.baselines[index] - first_baseline;
-        let advances = span_advances(line, font_size);
-        let width = Dim::ratio(advances.iter().copied().sum(), TEXT_ADVANCE_SCALE);
-        let spans = line.spans().iter().zip(&advances).collect::<Vec<_>>();
+        let shaped = shaping_spans(line, font_size);
+        let width = Dim::ratio(
+            shaped.iter().map(|(_, advance, _)| *advance).sum(),
+            TEXT_ADVANCE_SCALE,
+        );
         let x = Dim::from_i64(i64::from(x));
         let start = match anchor {
             TextAnchor::Start => x,
@@ -405,10 +407,10 @@ fn write_composed_lines(
             TextAnchor::End => x - width,
         };
         let mut decorated_x = start.clone();
-        for (span, advance) in &spans {
-            let advance = Dim::ratio(**advance, TEXT_ADVANCE_SCALE);
+        for (span, advance, _) in &shaped {
+            let advance = Dim::ratio(*advance, TEXT_ADVANCE_SCALE);
             if span.style.highlight && !advance.is_zero() {
-                let (ascent, descent) = line_ink(std::slice::from_ref(*span), font_size);
+                let (ascent, descent) = line_ink(std::slice::from_ref(span), font_size);
                 let ascent = Dim::from_i64(i64::from(ascent));
                 let descent = Dim::from_i64(i64::from(descent));
                 let top = Dim::from_i64(i64::from(baseline)) - &ascent;
@@ -424,7 +426,6 @@ fn write_composed_lines(
             }
             decorated_x = decorated_x + advance;
         }
-        let shaped = shaping_spans(line, font_size);
         let mut cursor = start;
         for run in shaped.chunk_by(|(left, _, left_index), (right, _, right_index)| {
             left.formula.is_none()

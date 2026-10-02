@@ -172,45 +172,23 @@ impl Formula {
     }
 
     pub(crate) fn ascent(&self, font_size: i32, style: Style) -> Dim {
-        let ascent = &self.layout.height * Self::size(font_size, style);
-        match style.script {
-            Some(Script::Superscript) => {
-                ascent
-                    + Dim::ratio(
-                        i64::from(font_size) * i64::from(SUPERSCRIPT_SHIFT.0),
-                        SUPERSCRIPT_SHIFT.1.into(),
-                    )
-            }
-            Some(Script::Subscript) => {
-                ascent
-                    - Dim::ratio(
-                        i64::from(font_size) * i64::from(SUBSCRIPT_SHIFT.0),
-                        SUBSCRIPT_SHIFT.1.into(),
-                    )
-            }
-            None => ascent,
-        }
+        &self.layout.height * Self::size(font_size, style) + Self::baseline_shift(font_size, style)
     }
 
     pub(crate) fn descent(&self, font_size: i32, style: Style) -> Dim {
-        let descent = &self.layout.depth * Self::size(font_size, style);
-        match style.script {
-            Some(Script::Superscript) => {
-                descent
-                    - Dim::ratio(
-                        i64::from(font_size) * i64::from(SUPERSCRIPT_SHIFT.0),
-                        SUPERSCRIPT_SHIFT.1.into(),
-                    )
-            }
-            Some(Script::Subscript) => {
-                descent
-                    + Dim::ratio(
-                        i64::from(font_size) * i64::from(SUBSCRIPT_SHIFT.0),
-                        SUBSCRIPT_SHIFT.1.into(),
-                    )
-            }
-            None => descent,
-        }
+        &self.layout.depth * Self::size(font_size, style) - Self::baseline_shift(font_size, style)
+    }
+
+    fn baseline_shift(font_size: i32, style: Style) -> Dim {
+        let (numerator, denominator) = match style.script {
+            Some(Script::Superscript) => SUPERSCRIPT_SHIFT,
+            Some(Script::Subscript) => (-SUBSCRIPT_SHIFT.0, SUBSCRIPT_SHIFT.1),
+            None => (0, 1),
+        };
+        Dim::ratio(
+            i64::from(font_size) * i64::from(numerator),
+            denominator.into(),
+        )
     }
 
     pub(crate) fn view_box(
@@ -914,15 +892,6 @@ pub(crate) fn joined(lines: &[RichText], separator: &str) -> String {
 
 pub(crate) fn text_width(text: &RichText, font_size: i32) -> i32 {
     clusters_width(&clusters(text), font_size)
-}
-
-/// Assign each grapheme's advance to its first styled span.
-pub(crate) fn span_advances(text: &RichText, font_size: i32) -> Vec<i64> {
-    let mut advances = vec![0; text.spans.len()];
-    for cluster in clusters(text) {
-        advances[cluster.first_span] += cluster.advance(font_size);
-    }
-    advances
 }
 
 /// The first style and advance own a grapheme that crosses span boundaries.

@@ -1251,73 +1251,12 @@ fn named_node<'a>(scene: &'a Scene, description: &str) -> &'a Node {
 /// A long label beside an iteration back edge remains clear after boundary placement.
 #[test]
 fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
-    let source = r#"
-        #[kaalang]
-        fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
-            #[question("Collect the steps?")]
-            let (run, skip) = |enabled| enabled;
-
-            #[action("Start an empty log.")]
-            let mut initial_log = |run| Vec::new();
-
-            #[cycle("Collect the first steps.")]
-            let leave_1 = |initial_log| {
-                #[question("Are there more first steps?")]
-                #[yes("YES")]
-                #[no("NO")]
-                let (iterate_1, leave_1) = |&initial_log, &limit| initial_log.len() < *limit;
-
-                #[action("Build the first step.")]
-                let wwwwwwwwwwwwwwwwwwwwwwww = |iterate_1| {
-                    let mut text = String::new();
-                    'native: for value in [0, 1, 2] {
-                        if value == 0 {
-                            continue 'native;
-                        }
-                        text.push('a');
-                        break 'native;
-                    }
-                    text
-                };
-
-                #[action("Record the first step.")]
-                |&mut initial_log, wwwwwwwwwwwwwwwwwwwwwwww| initial_log.push(wwwwwwwwwwwwwwwwwwwwwwww);
-
-                |iterate_1| continue;
-            };
-
-            #[cycle("Collect the second steps.")]
-            let end = |leave_1| {
-                #[question("Are there more second steps?")]
-                #[yes("YES")]
-                #[no("NO")]
-                let (iterate_2, leave_2) = |&initial_log, &limit| initial_log.len() < *limit * 2;
-
-                #[action("Hand over the collected log.")]
-                let end = |leave_2, initial_log| initial_log;
-
-                #[question("Is the log length odd?")]
-                let (odd, even) = |iterate_2, &initial_log| initial_log.len() % 2 == 1;
-
-                #[action("Build an odd step.")]
-                let wwwwwwwwwwwwwwwwwwwwwwww = |odd| String::from("b");
-
-                #[action("Build an even step.")]
-                let wwwwwwwwwwwwwwwwwwwwwwww = |even| String::from("c");
-
-                #[action("Record the second step.")]
-                |&mut initial_log, wwwwwwwwwwwwwwwwwwwwwwww| initial_log.push(wwwwwwwwwwwwwwwwwwwwwwww);
-
-                |iterate_2| continue;
-            };
-
-            #[action("Return an empty log.")]
-            let end = |skip| Vec::new();
-
-            |end| return end;
-        }
-    "#;
-    drawn((source, "collect_steps"));
+    let (source, flow) = fixture!("loop/behavior", "collect_steps");
+    let source = source
+        .replace("let step =", "let wwwwwwwwwwwwwwwwwwwwwwww =")
+        .replace(", step|", ", wwwwwwwwwwwwwwwwwwwwwwww|")
+        .replace("push(step)", "push(wwwwwwwwwwwwwwwwwwwwwwww)");
+    drawn((&source, flow));
 }
 
 /// Nested rails must preserve their horizontal order even with disjoint row
@@ -1402,46 +1341,15 @@ fn rail(scene: &Scene, index: usize) -> i32 {
 /// moving only one would close the lane between them.
 #[test]
 fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
-    let source = r#"
-        #[kaalang]
-        fn nested_exit_convergence(mut count: usize) -> usize {
-            #[cycle("Count to completion.")]
-            let done = {
-                #[cycle("Resolve the inner count.")]
-                let inner_done = {
-                    #[choice("Leave the inner loop?")]
-                    #[case("Leave at zero.")]
-                    #[case("Leave at one.")]
-                    #[case("Count down.")]
-                    let (zero, one, wwwwwwww) = |&count| match *count {
-                        0 => (),
-                        1 => (),
-                        _ => (),
-                    };
-
-                    #[action("Finish at zero.")]
-                    let inner_done = |zero| {};
-                    #[action("Finish at one.")]
-                    let inner_done = |one| {};
-                    #[action("Count down.")]
-                    |wwwwwwww, &mut count| *count -= 1;
-
-                    |wwwwwwww| continue;
-                };
-
-                #[question("Finish the outer loop?")]
-                let (done, wwwwwwww) = |inner_done, &count| *count == 0;
-
-                #[action("Count down once more.")]
-                |wwwwwwww, &mut count| *count -= 1;
-
-                |wwwwwwww| continue;
-            };
-
-            |done, count| return count;
-        }
-    "#;
-    let scene = drawn((source, "nested_exit_convergence"));
+    let (source, flow) = fixture!("loop/behavior", "nested_exit_convergence");
+    let source = source
+        .replace("Count down to zero.", "Count to completion.")
+        .replace(
+            "Converge the inner stopping routes.",
+            "Resolve the inner count.",
+        )
+        .replace("again", "wwwwwwww");
+    let scene = drawn((&source, flow));
     let rails = (0..scene.topology.loops.len())
         .map(|index| rail(&scene, index))
         .collect::<Vec<_>>();

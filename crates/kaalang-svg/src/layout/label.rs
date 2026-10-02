@@ -121,7 +121,6 @@ fn capture_label(scene: &Scene, node: NodeId, names: &[String]) -> Option<Label>
             y: anchor.y - RISE,
         },
         Stack::Above,
-        anchor.x,
     )
 }
 
@@ -176,7 +175,6 @@ fn place_merge_label(
             y: anchor.y + DROP,
         },
         Stack::Below,
-        anchor.x,
     ));
 }
 
@@ -223,7 +221,6 @@ fn place_exit_labels(
             description,
             Point { x: anchor.x, y },
             stack,
-            anchor.x,
         ));
     } else if !skip_handover {
         labels.extend(wire_label(
@@ -234,7 +231,6 @@ fn place_exit_labels(
                 y: anchor.y + DROP,
             },
             Stack::Below,
-            anchor.x,
         ));
     }
 }
@@ -265,26 +261,14 @@ fn wrap_wires(names: &[String]) -> Option<Vec<RichText>> {
 
 /// Wraps one label and stacks its lines against `at`. Its left edge, including
 /// the halo, stays clear of the adjacent vertical run or node boundary.
-fn wire_label(
-    owner: Vertex,
-    names: &[String],
-    at: Point,
-    stack: Stack,
-    clear: i32,
-) -> Option<Label> {
+fn wire_label(owner: Vertex, names: &[String], at: Point, stack: Stack) -> Option<Label> {
     let lines = wrap_wires(names)?;
-    Some(place_label(owner, lines, LabelKind::Wire, at, stack, clear))
+    Some(place_label(owner, lines, LabelKind::Wire, at, stack))
 }
 
-fn branch_label(
-    owner: Vertex,
-    description: &RichText,
-    at: Point,
-    stack: Stack,
-    clear: i32,
-) -> Label {
+fn branch_label(owner: Vertex, description: &RichText, at: Point, stack: Stack) -> Label {
     let lines = wrap_text(description, LABEL_WIDTH, LabelKind::Branch.font_size());
-    place_label(owner, lines, LabelKind::Branch, at, stack, clear)
+    place_label(owner, lines, LabelKind::Branch, at, stack)
 }
 
 fn place_label(
@@ -293,17 +277,14 @@ fn place_label(
     kind: LabelKind,
     at: Point,
     stack: Stack,
-    clear: i32,
 ) -> Label {
-    let x = (at.x - label_width(&lines, kind.font_size()) / 2)
-        .max(clear + CONNECTION_LABEL_HALO + CLEARANCE);
     let (baseline_span, above, below) = extent(&lines, kind);
 
     Label {
         owner,
         kind,
         at: Point {
-            x,
+            x: at.x + CONNECTION_LABEL_HALO + CLEARANCE,
             y: at.y
                 - match stack {
                     Stack::Above => baseline_span + below,
@@ -523,13 +504,7 @@ mod tests {
     fn tall_math_stacks_away_from_the_connection() {
         let text = RichText::markdown(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$");
         for (stack, y) in [(Stack::Above, -BRANCH_RISE), (Stack::Below, BRANCH_DROP)] {
-            let label = branch_label(
-                Vertex::Node(NodeId::Start),
-                &text,
-                Point { x: 0, y },
-                stack,
-                0,
-            );
+            let label = branch_label(Vertex::Node(NodeId::Start), &text, Point { x: 0, y }, stack);
             let (_, top, _, bottom) = label_rect(&label);
             match stack {
                 Stack::Above => assert!(bottom <= 0, "bottom = {bottom}"),
