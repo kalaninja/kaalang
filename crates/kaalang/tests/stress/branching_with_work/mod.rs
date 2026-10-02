@@ -2,19 +2,14 @@ use std::cell::Cell;
 
 use kaalang::kaalang;
 
-thread_local! { static ROUTE: Cell<usize> = const { Cell::new(0) }; }
-
-fn selected(level: usize, _config: usize) -> usize {
-    let divisor: usize = [2, 3, 2, 3, 2][..level].iter().product();
-    ROUTE.get() / divisor % [2, 3, 2, 3, 2][level]
-}
+use super::{ROUTE, expected, selected};
 
 #[kaalang]
 fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {
     #[action("Prepare the seed.")]
     let prepared = |seed| seed;
     #[question("Choose work 0.")]
-    let (case_0_0, case_0_1) = |&config| selected(0, *config) == 0;
+    let (case_0_0, case_0_1) = |&config| selected(0) == 0;
     #[action("Prepare branch 0/0.")]
     let data_0_0 = |case_0_0, &prepared, &config| *prepared + *config;
     #[action("Record branch 0/0.")]
@@ -39,7 +34,7 @@ fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usiz
     #[case("First.")]
     #[case("Second.")]
     #[case("Third.")]
-    let (case_1_0, case_1_1, case_1_2) = |&config| match selected(1, *config) {
+    let (case_1_0, case_1_1, case_1_2) = |&config| match selected(1) {
         0 => (),
         1 => (),
         _ => (),
@@ -78,7 +73,7 @@ fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usiz
     #[action("Finish branch 1/2.")]
     let step_1 = |data_1_2_1, effect_1_2| data_1_2_1;
     #[question("Choose work 2.")]
-    let (case_2_0, case_2_1) = |&config| selected(2, *config) == 0;
+    let (case_2_0, case_2_1) = |&config| selected(2) == 0;
     #[action("Prepare branch 2/0.")]
     let data_2_0 = |case_2_0, &step_1, &config, &step_0| *step_1 + *config + *step_0;
     #[action("Record branch 2/0.")]
@@ -103,7 +98,7 @@ fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usiz
     #[case("First.")]
     #[case("Second.")]
     #[case("Third.")]
-    let (case_3_0, case_3_1, case_3_2) = |&config| match selected(3, *config) {
+    let (case_3_0, case_3_1, case_3_2) = |&config| match selected(3) {
         0 => (),
         1 => (),
         _ => (),
@@ -142,7 +137,7 @@ fn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usiz
     #[action("Finish branch 3/2.")]
     let step_3 = |data_3_2_1, effect_3_2| data_3_2_1;
     #[question("Choose work 4.")]
-    let (case_4_0, case_4_1) = |&config| selected(4, *config) == 0;
+    let (case_4_0, case_4_1) = |&config| selected(4) == 0;
     #[action("Prepare branch 4/0.")]
     let data_4_0 = |case_4_0, &step_3, &config, &step_1| *step_3 + *config + *step_1;
     #[action("Record branch 4/0.")]
@@ -172,16 +167,11 @@ fn every_route_runs_its_work_once_and_preserves_captured_values() {
         ROUTE.set(route);
         for seed in [0, 1, 7] {
             for config in [0, 3, 11] {
-                let mut values = vec![seed];
-                for level in 0..5 {
-                    let mut next = values[level] + config + selected(level, config);
-                    if level > 0 {
-                        next += values[if level > 1 { level / 2 } else { 0 }];
-                    }
-                    values.push(next);
-                }
                 let events = Cell::new(0);
-                assert_eq!(branching_with_work(seed, config, &events), values[5]);
+                assert_eq!(
+                    branching_with_work(seed, config, &events),
+                    expected(seed, config)
+                );
                 assert_eq!(events.get(), 31);
             }
         }

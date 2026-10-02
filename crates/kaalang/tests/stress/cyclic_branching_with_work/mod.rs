@@ -1,10 +1,7 @@
 use kaalang::kaalang;
 use std::cell::Cell;
-thread_local! { static ROUTE: Cell<usize> = const { Cell::new(0) }; }
-fn selected(level: usize) -> usize {
-    let divisor: usize = [2, 3, 2, 3, 2][..level].iter().product();
-    ROUTE.get() / divisor % [2, 3, 2, 3, 2][level]
-}
+
+use super::{ROUTE, expected, selected};
 
 #[kaalang]
 fn cyclic_branching_with_work(
@@ -187,17 +184,6 @@ fn cyclic_branching_with_work(
     |result| return result;
 }
 
-fn expected(seed: usize, config: usize) -> usize {
-    let mut values = vec![seed];
-    for level in 0..5 {
-        let mut next = values[level] + config + selected(level);
-        if level > 0 {
-            next += values[if level > 1 { level / 2 } else { 0 }];
-        }
-        values.push(next);
-    }
-    values[5]
-}
 #[test]
 fn every_cycle_route_preserves_data_and_effect_order() {
     for route in 0..72 {

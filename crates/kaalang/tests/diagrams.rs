@@ -3,6 +3,8 @@
 //!
 //! Geometry is reviewed in `git diff`. Every executable fixture must render;
 //! a routing failure cannot silently delete a working diagram.
+//! Fixtures must be declared by their module and carry a test unless their
+//! flows never finish.
 
 use std::{
     fs,
@@ -14,11 +16,20 @@ fn draws_a_diagram_beside_every_executable_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
+        let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
         // Collected up front because the loop below writes into this directory.
         let paths: Vec<PathBuf> = read_directory(&directory).collect();
 
         let mut current = Vec::new();
         for fixture in paths.iter().filter(|path| extension_is(path, "rs")) {
+            let stem = fixture.file_stem().unwrap().to_str().unwrap();
+            if stem != "mod" {
+                assert!(
+                    declarations.contains(&format!("mod {stem};")),
+                    "{} is not declared by the mod.rs beside it",
+                    fixture.display()
+                );
+            }
             let source = fs::read_to_string(fixture).unwrap();
             let names = kaalang_svg::flow_names(&source).unwrap();
             // A `mod.rs` that only lists the fixtures beside it draws nothing.
@@ -28,15 +39,13 @@ fn draws_a_diagram_beside_every_executable_fixture() {
 
             // Gallery files may group related flows, starting with the file's
             // namesake. Other fixtures keep exactly one flow with that name.
-            let stem = fixture.file_stem().unwrap();
             let gallery = directory.parent() == Some(tests.join("gallery").as_path());
             if stem != "mod" || !gallery {
-                let named_after = if stem == "mod" {
-                    directory.file_name().unwrap()
+                let expected = if stem == "mod" {
+                    directory.file_name().unwrap().to_str().unwrap()
                 } else {
                     stem
                 };
-                let expected = named_after.to_str().unwrap();
                 if gallery {
                     assert_eq!(
                         names.first().map(String::as_str),
@@ -60,6 +69,13 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                         kaalang_svg::RenderOptions { collapse_loops },
                     )
                     .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
+                    if !collapse_loops && stem != "mod" {
+                        assert!(
+                            source.contains("#[test]") || !svg.contains("End:"),
+                            "{} declares a flow that finishes and no test that calls it",
+                            fixture.display()
+                        );
+                    }
                     if collapse_loops && expanded.as_ref() == Some(&svg) {
                         continue;
                     }
@@ -114,48 +130,4 @@ fn read_directory(path: &Path) -> impl Iterator<Item = PathBuf> {
 
 fn extension_is(path: &Path, extension: &str) -> bool {
     path.extension().is_some_and(|found| found == extension)
-}
-
-/// Every executable fixture is declared by the `mod.rs` beside it, and every one
-/// that can finish carries a test of its own.
-///
-/// `render_source` reads the file rather than the module tree, so a fixture
-/// renamed out of its module would go on producing a reviewed diagram that
-/// nothing runs. A flow with no reachable end cannot be called at all — it
-/// would not return — so those are exempt from the second half and from
-/// nothing else.
-#[test]
-fn every_executable_fixture_is_declared_and_executed() {
-    let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
-    for directory in fixture_directories(&tests) {
-        let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
-        for fixture in read_directory(&directory).filter(|path| extension_is(path, "rs")) {
-            let stem = fixture.file_stem().unwrap().to_str().unwrap().to_owned();
-            if stem == "mod" {
-                continue;
-            }
-            assert!(
-                declarations.contains(&format!("mod {stem};")),
-                "{} is not declared by the mod.rs beside it",
-                fixture.display()
-            );
-            let source = fs::read_to_string(&fixture).unwrap();
-            if source.contains("#[test]") {
-                continue;
-            }
-            let finishes = kaalang_svg::flow_names(&source)
-                .unwrap()
-                .iter()
-                .any(|flow| {
-                    kaalang_svg::render_source(&source, flow)
-                        .unwrap()
-                        .contains("End:")
-                });
-            assert!(
-                !finishes,
-                "{} declares a flow that finishes and no test that calls it",
-                fixture.display()
-            );
-        }
-    }
 }

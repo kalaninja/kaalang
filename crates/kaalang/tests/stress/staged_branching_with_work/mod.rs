@@ -1,10 +1,7 @@
 use kaalang::kaalang;
 use std::cell::Cell;
-thread_local! { static ROUTE: Cell<usize> = const { Cell::new(0) }; }
-fn selected(level: usize) -> usize {
-    let divisor: usize = [2, 3, 2, 3, 2][..level].iter().product();
-    ROUTE.get() / divisor % [2, 3, 2, 3, 2][level]
-}
+
+use super::{ROUTE, expected, selected};
 
 thread_local! { static NEXT_ROUTE: Cell<usize> = const { Cell::new(0) }; }
 #[kaalang]
@@ -374,17 +371,6 @@ fn staged_branching_with_work(
     };
 }
 
-fn expected(seed: usize, config: usize) -> usize {
-    let mut values = vec![seed];
-    for level in 0..5 {
-        let mut next = values[level] + config + selected(level);
-        if level > 0 {
-            next += values[if level > 1 { level / 2 } else { 0 }];
-        }
-        values.push(next);
-    }
-    values[5]
-}
 #[test]
 fn independent_preparation_and_stage_routes_preserve_values_and_effect_order() {
     for initial in 0..72 {
