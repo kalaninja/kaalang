@@ -44,6 +44,29 @@ fn run(directory: &Path, line: &str) -> Output {
 }
 
 #[test]
+fn help_prints_usage_and_succeeds() {
+    let directory = directory("cli-help", SOURCE);
+    for line in ["--help", "-h", "kaalang --help"] {
+        let printed = run(&directory, line);
+        assert!(printed.status.success(), "{:?}", printed.stderr);
+        assert!(String::from_utf8_lossy(&printed.stdout).starts_with("usage: cargo kaalang"));
+    }
+}
+
+#[test]
+fn version_prints_the_crate_version() {
+    let directory = directory("cli-version", SOURCE);
+    for line in ["--version", "-V", "kaalang --version"] {
+        let printed = run(&directory, line);
+        assert!(printed.status.success(), "{:?}", printed.stderr);
+        assert_eq!(
+            String::from_utf8_lossy(&printed.stdout).trim_end(),
+            concat!("cargo-kaalang ", env!("CARGO_PKG_VERSION"))
+        );
+    }
+}
+
+#[test]
 fn default_output_is_the_flow_name_in_the_current_directory() {
     let directory = directory("cli-default", SOURCE);
     let rendered = run(&directory, "diagram flow.rs --flow route");

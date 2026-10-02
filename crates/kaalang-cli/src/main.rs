@@ -1,18 +1,12 @@
-use std::{
-    env,
-    ffi::{OsStr, OsString},
-    fs,
-    path::PathBuf,
-    process::ExitCode,
-};
+use std::{env, ffi::OsString, fs, path::PathBuf, process::ExitCode};
 
 const USAGE: &str =
     "usage: cargo kaalang diagram <source.rs> --flow <name> [--collapse-cycles] [-o <path>]";
 
 fn main() -> ExitCode {
     match run(env::args_os()) {
-        Ok(path) => {
-            println!("{}", path.display());
+        Ok(report) => {
+            println!("{report}");
             ExitCode::SUCCESS
         }
         Err(error) => {
@@ -22,8 +16,13 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<PathBuf, String> {
-    let options = parse_arguments(arguments)?;
+/// Returns what to print on success: the written path, usage, or version.
+fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<String, String> {
+    let options = match parse_arguments(arguments)? {
+        Command::Diagram(options) => options,
+        Command::Help => return Ok(USAGE.to_owned()),
+        Command::Version => return Ok(format!("cargo-kaalang {}", env!("CARGO_PKG_VERSION"))),
+    };
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("could not read `{}`: {error}", options.source.display()))?;
     let svg = kaalang_svg::render_source_with_options(
@@ -58,7 +57,13 @@ fn run(arguments: impl IntoIterator<Item = OsString>) -> Result<PathBuf, String>
     fs::write(&output, &svg)
         .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
 
-    Ok(output)
+    Ok(output.display().to_string())
+}
+
+enum Command {
+    Diagram(Options),
+    Help,
+    Version,
 }
 
 struct Options {
@@ -68,12 +73,19 @@ struct Options {
     collapse_cycles: bool,
 }
 
-fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Options, String> {
+fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Command, String> {
     // Skip the program name, then the `kaalang` word cargo inserts.
     let mut arguments = arguments.into_iter().skip(1).peekable();
     arguments.next_if(|argument| argument == "kaalang");
-    if arguments.next().as_deref() != Some(OsStr::new("diagram")) {
-        return Err(USAGE.to_owned());
+    match arguments
+        .next()
+        .as_ref()
+        .and_then(|argument| argument.to_str())
+    {
+        Some("diagram") => {}
+        Some("-h" | "--help") => return Ok(Command::Help),
+        Some("-V" | "--version") => return Ok(Command::Version),
+        _ => return Err(USAGE.to_owned()),
     }
     let source = arguments
         .next()
@@ -108,12 +120,12 @@ fn parse_arguments(arguments: impl IntoIterator<Item = OsString>) -> Result<Opti
     }
     let flow = flow.ok_or_else(|| "missing required `--flow <name>`\n\n".to_owned() + USAGE)?;
 
-    Ok(Options {
+    Ok(Command::Diagram(Options {
         source,
         flow,
         output,
         collapse_cycles,
-    })
+    }))
 }
 
 #[cfg(test)]
@@ -121,7 +133,10 @@ mod tests {
     use super::*;
 
     fn parse(line: &str) -> Result<Options, String> {
-        parse_arguments(line.split_whitespace().map(OsString::from))
+        match parse_arguments(line.split_whitespace().map(OsString::from))? {
+            Command::Diagram(options) => Ok(options),
+            Command::Help | Command::Version => Err("not a diagram command".to_owned()),
+        }
     }
 
     #[test]
