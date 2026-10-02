@@ -156,7 +156,7 @@ mod tests {
                 |result| return result;
             }
         "#;
-        let model = crate::build(&crate::tests::fixture(source, "example")).unwrap();
+        let model = crate::tests::model(source);
         let name = |predicate: fn(&crate::topology::Junction) -> bool| {
             let index = model.topology.junctions.iter().position(predicate).unwrap();
             junction_name(
@@ -196,7 +196,7 @@ mod tests {
                 |end| return end;
             }
         ";
-        let model = crate::build(&crate::tests::fixture(source, "example")).unwrap();
+        let model = crate::tests::model(source);
         assert_eq!(
             block_name(&model.analysis.flow, 0),
             "the call `math::halve`"

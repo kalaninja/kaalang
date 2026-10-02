@@ -115,21 +115,14 @@ impl Deref for Executions {
 
 impl DerefMut for Executions {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        if matches!(self.storage, Storage::Symbolic { .. }) {
-            let storage = std::mem::replace(&mut self.storage, Storage::Enumerated(Vec::new()));
-            let Storage::Symbolic {
-                conditions,
-                complete,
-                ..
-            } = storage
-            else {
-                unreachable!()
-            };
-            self.storage = Storage::Enumerated(
-                complete
-                    .into_inner()
-                    .unwrap_or_else(|| conditions.enumerate()),
-            );
+        if let Storage::Symbolic {
+            conditions,
+            complete,
+            ..
+        } = &mut self.storage
+        {
+            let executions = complete.take().unwrap_or_else(|| conditions.enumerate());
+            self.storage = Storage::Enumerated(executions);
         }
         let Storage::Enumerated(executions) = &mut self.storage else {
             unreachable!()
@@ -163,10 +156,15 @@ mod tests {
         assert!(
             matches!(&analysis.executions.storage, Storage::Symbolic { complete, .. } if complete.get().is_none())
         );
-        let mut edited = analysis.executions.clone();
-        edited.pop();
-        assert_eq!(edited.len(), 71);
-        assert!(edited.symbolic().is_none());
+        for materialized in [false, true] {
+            let mut edited = analysis.executions.clone();
+            if materialized {
+                assert_eq!(edited.as_slice().len(), 72);
+            }
+            edited.pop();
+            assert_eq!(edited.len(), 71);
+            assert!(edited.symbolic().is_none());
+        }
         assert_eq!(analysis.executions.as_slice().len(), 72);
     }
 

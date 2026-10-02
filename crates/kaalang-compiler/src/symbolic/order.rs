@@ -13,7 +13,6 @@ pub(super) struct Sequence {
     pub(super) last: Option<usize>,
     prefix_missing: bool,
     suffix_missing: bool,
-    pub(super) gap: bool,
     pub(super) gap_outputs: Option<(usize, usize)>,
     pub(super) descent: Option<(usize, usize)>,
 }
@@ -25,11 +24,6 @@ impl Sequence {
             last: next.last.or(self.last),
             prefix_missing: self.prefix_missing || (self.first.is_none() && next.prefix_missing),
             suffix_missing: next.suffix_missing || (next.last.is_none() && self.suffix_missing),
-            gap: self.gap
-                || next.gap
-                || (self.last.is_some()
-                    && next.first.is_some()
-                    && (self.suffix_missing || next.prefix_missing)),
             gap_outputs: self
                 .gap_outputs
                 .or_else(|| {

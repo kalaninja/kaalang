@@ -39,9 +39,7 @@ pub(super) fn output_order(
         let selectors =
             executions.outcome_selectors(&outcomes, frames.in_frame(Some(header)), context);
         let ordered = executions.ordered(&outcomes, &selectors);
-        if ordered.gap {
-            // Get the outputs on either side of the first repeating interval.
-            let (before, after) = ordered.gap_outputs.expect("a gap has producing sides");
+        if let Some((before, after)) = ordered.gap_outputs {
             return Err(Error::new(
                 cycle.span,
                 format!(

@@ -207,6 +207,7 @@ pub fn construct(analysis: &Analysis, topology: &topology::Topology) -> Result<A
 mod tests {
     use std::collections::BTreeSet;
 
+    pub(crate) use kaalang_testing::corpus::flow_named as fixture;
     use syn::{FnArg, ItemFn, Pat, ReturnType, Type, parse_quote};
 
     use super::{
@@ -237,18 +238,6 @@ mod tests {
     pub(crate) fn model(source: &str) -> SemanticModel {
         let function = syn::parse_str(source).expect("the flow parses");
         build(&function).expect("the flow is valid")
-    }
-
-    /// The flow named `flow` in a fixture file's source.
-    pub(crate) fn fixture(source: &str, flow: &str) -> ItemFn {
-        let file = syn::parse_file(source).expect("the fixture parses");
-        file.items
-            .into_iter()
-            .find_map(|item| match item {
-                syn::Item::Fn(function) if function.sig.ident == flow => Some(function),
-                _ => None,
-            })
-            .expect("the fixture declares its flow")
     }
 
     fn end_body(plan: &ExecutionPlan) -> &ExecutionPlan {

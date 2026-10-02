@@ -501,7 +501,7 @@ impl Executions {
             }
             let relations = frames.in_frame(frames.of_merge(merge));
             let selectors = self.outcome_selectors(&outcomes, relations, context);
-            if self.ordered(&outcomes, &selectors).gap {
+            if self.ordered(&outcomes, &selectors).gap_outputs.is_some() {
                 let wire = flow.wire_name(&merge.wire);
                 return Err(Error::new(
                     merge.wire.span(),
