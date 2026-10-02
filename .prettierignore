@@ -1,0 +1,2 @@
+# A symlink to the root README; Windows checkouts may turn it into a path string.
+crates/kaalang/README.md

@@ -1,7 +1,7 @@
 [package]
 name = "kaalang-cli"
 description = "Command-line SVG rendering for kaalang flows"
-documentation = "https://docs.rs/kaalang-cli"
+readme = "../../README.md"
 keywords = ["code-visualization", "flowchart", "drakon", "cargo", "cli"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "visualization"]
 version.workspace = true

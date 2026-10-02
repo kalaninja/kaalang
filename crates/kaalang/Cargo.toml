@@ -2,7 +2,7 @@
 name = "kaalang"
 description = "A visual flow dialect of Rust"
 documentation = "https://docs.rs/kaalang"
-readme = "../../README.md"
+readme = "README.md"
 keywords = ["code-visualization", "flowchart", "drakon", "visual-programming", "procedural-macro"]
 categories = ["development-tools", "visualization"]
 version.workspace = true

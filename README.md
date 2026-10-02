@@ -23,7 +23,7 @@ easier to read, explain, change, and review.
 
 _Work in progress._
 
-## A first flow: FizzBuzz
+## A first flow: `FizzBuzz`
 
 A flow is a Rust function marked with `#[kaalang]`. Here, it chooses what to say
 based on whether a number is divisible by three, five, both, or neither.
@@ -61,9 +61,9 @@ fn fizzbuzz(number: u32) -> String {
 }
 ```
 
-[![Diagram of the FizzBuzz flow](crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)](crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)
+[![Diagram of the FizzBuzz flow](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)
 
-[Source](crates/kaalang/tests/gallery/fizzbuzz/mod.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/fizzbuzz/mod.rs)
 
 ## Reading the flow
 
@@ -92,12 +92,12 @@ before compiling it.
 
 ## Anatomy of a block
 
-Here is the last action from FizzBuzz, with its Rust body wrapped in braces:
+Here is the last action from `FizzBuzz`, with its Rust body wrapped in braces:
 
-```rust
-#[action("🔢 Say the number itself.")]  // kind + description
-let end = |plain| {                     // output = |inputs|
-    plain.to_string()                   // Rust body
+```rust ignore
+#[action("🔢 Use the number itself, written as text.")]  // kind + description
+let end = |plain| {                                      // output = |inputs|
+    plain.to_string()                                    // Rust body
 };
 ```
 
@@ -111,7 +111,7 @@ let end = |plain| {                     // output = |inputs|
 Actions can also create a value without inputs, consume inputs without producing
 outputs, or perform an effect with neither:
 
-```rust
+```rust ignore
 // No inputs: the capture list can be omitted.
 #[action("Start with fifteen.")]
 let number = 15;
@@ -136,9 +136,29 @@ Captures express how an action accesses a wire:
 | `&name`     | Borrow the value.                          |
 | `&mut name` | Mutably borrow a wire declared mutable.    |
 
+## Formatting descriptions
+
+Descriptions accept a small inline notation, so a label can stress a condition,
+name a piece of code, or show a formula:
+
+| Write                                                       | Shows                                                                           |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `**bold**`, `*italic*`, `~~struck~~`                        | Bold, italic, strikethrough                                                     |
+| `` `code` ``                                                | Inline code                                                                     |
+| `x^2^`, `H~2~O`                                             | Superscript, subscript                                                          |
+| `> quote` at the start of a line                            | A quoted line                                                                   |
+| `$\sqrt{x}$`, `$$\sum_i x_i$$`                              | A TeX formula                                                                   |
+| `<u>…</u>`, `<mark>…</mark>`, `<color name="red">…</color>` | Underline, highlight, palette color (`red`, `green`, `blue`, `purple`, `muted`) |
+
+Formatting changes only the diagram; the generated Rust is the same. A marker
+without its pair stays literal, and a backslash keeps one literal: `\\*` in an
+ordinary string, `\*` in a raw one. Descriptions written for kaalang 0.1.0 that
+contain these markers now render formatted.
+[One diagram shows every effect](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markdown.svg).
+
 ## Block kinds
 
-FizzBuzz uses `choice` and `action`. The other kinds let a flow ask a yes/no
+`FizzBuzz` uses `choice` and `action`. The other kinds let a flow ask a yes/no
 question, call an existing function, repeat a sequence, or organize work into
 named stages:
 
@@ -218,9 +238,9 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 }
 ```
 
-[![Diagram of binary search in kaalang](crates/kaalang/tests/gallery/binary_search/binary_search.svg)](crates/kaalang/tests/gallery/binary_search/binary_search.svg)
+[![Diagram of binary search in kaalang](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/binary_search/binary_search.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/binary_search.svg)
 
-[Source](crates/kaalang/tests/gallery/binary_search/mod.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/mod.rs)
 
 The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
 the `less` and `greater` branches can update them. Both then produce `stepped`,
@@ -232,21 +252,23 @@ returns it.
 <details>
 <summary>See the same flow with its cycle collapsed</summary>
 
-[![Binary search with its cycle collapsed](crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)](crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)
+[![Binary search with its cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)
 
 The cycle's description and interface remain visible while its body is hidden.
 
 </details>
 
-Both examples are [executable gallery tests](crates/kaalang/tests/gallery), with
-SVGs generated from their source. The gallery also includes
-[swap](crates/kaalang/tests/gallery/swap/mod.rs), a flow that returns its inputs
-without a computational block,
-[bubble sort](crates/kaalang/tests/gallery/sorting/bubble_sort.rs), with nested
-cycles, [quicksort](crates/kaalang/tests/gallery/sorting/quick_sort.rs), with
-stages for in-place partitioning and recursion, and
-[KMP search](crates/kaalang/tests/gallery/kmp_search/mod.rs), with stages for
-comparison, advancement, and prefix fallback.
+Both examples are
+[executable gallery tests](https://github.com/kalaninja/kaalang/tree/main/crates/kaalang/tests/gallery),
+with SVGs generated from their source. The gallery also includes
+[swap](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/swap/mod.rs),
+a flow that returns its inputs without a computational block,
+[bubble sort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/bubble_sort.rs),
+with nested cycles,
+[quicksort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.rs),
+with stages for in-place partitioning and recursion, and
+[KMP search](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/kmp_search/mod.rs),
+with stages for comparison, advancement, and prefix fallback.
 
 ## Stages
 
@@ -255,16 +277,16 @@ dispatch loop, and the diagram labels transitions between stages.
 
 This empty state machine only follows `First → Second → Finish`. With stages:
 
-[![State machine with stages](crates/kaalang/tests/stage/behavior/state_machine.svg)](crates/kaalang/tests/stage/behavior/state_machine.svg)
+[![State machine with stages](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/stage/behavior/state_machine.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine.svg)
 
-[Source](crates/kaalang/tests/stage/behavior/state_machine.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine.rs)
 
 Without stages, the diagram shows the cycle and the choice that selects the
 current state:
 
-[![State machine with an explicit dispatcher](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)](crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)
+[![State machine with an explicit dispatcher](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)
 
-[Source](crates/kaalang/tests/stage/behavior/state_machine_without_stages.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.rs)
 
 After each state update, control returns to the choice. Selecting `Finish`
 leaves the cycle and reaches the return. Both versions follow the same path.
@@ -380,12 +402,19 @@ logarithmic.
 
 With the partitioning cycle collapsed, the four stages are easier to see:
 
-[![Quicksort with its partitioning cycle collapsed](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)](crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)
+[![Quicksort with its partitioning cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)
 
-[Source](crates/kaalang/tests/gallery/sorting/quick_sort.rs) ·
-[Expanded diagram](crates/kaalang/tests/gallery/sorting/quick_sort.svg)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.rs)
+·
+[Expanded diagram](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.svg)
 
 ## Try it
+
+Add the macro to a project:
+
+```sh
+cargo add kaalang
+```
 
 Install the released CLI from crates.io:
 
@@ -399,7 +428,7 @@ Or install the version from the current repository checkout:
 cargo install --path crates/kaalang-cli
 ```
 
-From a repository checkout, draw the FizzBuzz example:
+From a repository checkout, draw the `FizzBuzz` example:
 
 ```sh
 cargo kaalang diagram crates/kaalang/tests/gallery/fizzbuzz/mod.rs --flow fizzbuzz -o fizzbuzz.svg
@@ -411,8 +440,9 @@ above. The output is a standalone SVG with no external rendering tools required.
 
 ## Read more
 
-- [RFCs](docs/rfcs/), the source of truth for syntax, semantics, and diagrams.
-- [Contributing](CONTRIBUTING.md)
+- [RFCs](https://github.com/kalaninja/kaalang/tree/main/docs/rfcs), the source
+  of truth for syntax, semantics, and diagrams.
+- [Contributing](https://github.com/kalaninja/kaalang/blob/main/CONTRIBUTING.md)
 
 [spring-running]: https://www.gutenberg.org/cache/epub/37364/pg37364-images.html
 [ci]: https://github.com/kalaninja/kaalang/actions/workflows/ci.yml
