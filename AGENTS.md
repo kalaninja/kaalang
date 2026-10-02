@@ -33,5 +33,6 @@ tests, commit messages, and pull request content.
   `.svg` beside each `behavior/<flow>.rs` is drawn by `cargo test -p kaalang`
   and reviewed in the diff; never edit one by hand.
 
-Do not restate the language contract in this guide or the root README. Link to
-the relevant RFC instead.
+Do not restate the language contract in this guide or the root README. This
+guide links the relevant RFC instead. The README is an overview of the language:
+it links the RFC directory once and never a specific RFC.
