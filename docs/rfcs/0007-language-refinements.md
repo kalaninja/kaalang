@@ -284,10 +284,21 @@ action_statement :=
 ### 4.1 Deciding selections
 
 A question or choice decides a block only through executions that reach the
-block. An execution that repeats a cycle not enclosing the block stops at that
-cycle's tail, so it does not skip the block. Cycles on separate branches that
-merge their results are therefore decided only by the selection between them,
-not by the questions inside them.
+block's comparison context. Reaching is distinct from running: an execution may
+reach a block's position while unavailable captures keep that block from
+running. Such an execution supplies the skipped outcome in RFC 0001's
+deciding-selection comparison.
+
+A completing finite history reaches every block in its local frame. A repeat
+reaches the repeated cycle's own header and the blocks it encloses. For other
+blocks, compare the block and repeated cycle in their nearest shared containing
+sequence, using the position of an enclosing cycle when necessary. The repeat
+reaches the block if those positions coincide, or if the block's position comes
+first and both containing statements can run in one structural execution. A
+repeat before that position, or on a mutually exclusive branch outside it, does
+not count as skipping the block. Cycles on separate branches that merge their
+results are therefore decided only by the selection between them, not by the
+questions inside them.
 
 ### 4.2 Convergence groups
 
@@ -298,9 +309,10 @@ and are not part of it. Two groups are invalid only when they share a route and
 each also takes a route that the other reaches but does not take. A later
 selection inside one case may therefore send its routes to different groups: a
 timeout case can give up with the completing routes of other cases and retry
-with their repeating routes. A route that repeats a cycle not enclosing a group
-never reaches that group, so it neither sets two groups apart nor separates a
-group's cases, as the adjacency trace of RFC 0001 §7 already states.
+with their repeating routes. A route that repeats before reaching a group's
+comparison context neither sets two groups apart nor separates the group's
+cases, as the adjacency trace of RFC 0001 §7 already states. A repeat beyond
+that context may still separate routes.
 
 ## 5. Validation and lowering
 
@@ -387,9 +399,9 @@ A cycle body starts with its entry condition and the available outer wire scope.
 An export records its output condition, closes that body route, restores the
 outer scope, and produces that output under the same condition. Couple the
 cycle's selected output to its export condition. Restore no body-local wires in
-the continuation. A repeating route and a route returning from inside the body
-produce no cycle output and reach no outer continuation. Keep their block and
-capture facts in the finite history; iterations are never unfolded.
+the continuation. A repeating route or one diverging in a nested cycle produces
+no cycle output and reaches no outer continuation. Keep their block and capture
+facts in the finite history; iterations are never unfolded.
 
 Transition boundaries check the same available scope for competing stage signals
 and required common wires. Preparation's common data must be available on every
@@ -521,7 +533,7 @@ owner dropped by that transfer.
 A structural continue emits its capture aliases and a native `continue` to the
 directly containing cycle's generated label. Nesting uses distinct labels.
 Validation supplies an explicit outcome for every route; lowering generates no
-repeat from an unfinished body ending. Returning cycles, diverging cycles, and
+repeat from an unfinished body ending. Completing cycles, diverging cycles, and
 partial convergence retain the same finite local plans in execution and drawing.
 One iteration either transfers its chosen value outward, discards remaining
 locals and repeats, or stays in a nested divergent execution. This preserves the
@@ -665,10 +677,8 @@ merge. In a cycle with several outputs, a result fed directly by a branch exit
 keeps its own junction, so each alternative leaves the body at its own result.
 
 An exit enclosed between repeating routes splits the merge before their one
-continue, so validation rejects it before construction. The generated domains
-therefore contain no topology refusals, and no shared-rail exchange test
-remains: no valid flow is known to reach a refusal. The construction still
-reports one when a search exhausts its space.
+continue, so validation rejects it before construction. Construction reports a
+topology refusal when a search exhausts its space.
 
 ### 6.3 Aligning node heights
 

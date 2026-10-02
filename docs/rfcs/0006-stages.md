@@ -609,6 +609,11 @@ The stage's displayed name is its authored description, rendered using
 [RFC 0005](0005-markdown.md). It appears inside the entry node. Stage entry and
 transition nodes have no separate signal-name captions.
 
+Distinct decoded descriptions may render identically after Markdown
+interpretation. Authors are responsible for keeping destination descriptions
+distinguishable in the diagram; formatting does not affect the uniqueness check
+in §2.
+
 Common outer wires appear in the capture labels of the blocks that use them,
 including their authored capture modifiers and the ordinary label-sharing rules.
 The model records each wire's original producer in preparation or the function
@@ -1160,7 +1165,7 @@ addition to the ordinary flow and cycle rules in RFCs 0001–0004.
 | Backward or self-transition                                                      | Mark the transition tip and the destination entry tip.                                                                                    |
 | Forward transition to an entry also targeted backward                            | Keep that transition unmarked and mark the shared destination entry once.                                                                 |
 | Transition to the terminal stage                                                 | Draw it as a forward transition to the last declared stage, without a backward marker.                                                    |
-| Several stages with identical descriptions                                       | Reject the repeated decoded description; visible destination names must be distinct within the flow.                                      |
+| Several stages with identical descriptions                                       | Reject the repeated decoded description, including ordinary and raw literals with the same value.                                         |
 | Stage captures and collapsed-cycle inputs                                        | Show outer stage wires at their capturing blocks and the cycle's authored capture interface on its collapsed node.                        |
 | Expanded and collapsed cycle views                                               | Preserve cycle results, break and repetition behavior, and surrounding stage links and markers.                                           |
 | Terminal stage declares an output, return in preparation, or multiple returns    | Reject the invalid completion structure.                                                                                                  |
