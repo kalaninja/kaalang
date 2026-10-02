@@ -119,6 +119,6 @@ fn collapsed_default_output_has_a_collapsed_suffix() {
     let rendered = run(&directory, "diagram flow.rs --flow route --collapse-cycles");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("route_collapsed.svg")).unwrap();
-    assert!(svg.contains(r#"class="node loop""#));
+    assert!(svg.contains(r#"class="node cycle""#));
     assert!(!directory.join("route.svg").exists());
 }

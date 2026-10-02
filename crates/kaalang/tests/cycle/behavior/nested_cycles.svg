@@ -12,13 +12,13 @@
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape, .call .node-shape { fill: #f8fafc; }
       .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
-      .loop .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
       .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
       .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
-      .action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
@@ -38,7 +38,7 @@
     </g>
   </g>
   <g class="connections">
-    <defs><marker id="loop-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
       M 248 90 L 248 162
       M 248 226 L 248 298
@@ -54,10 +54,10 @@
     "/>
     <path class="connection" d="
       M 248 898 L 88 898 L 88 506 L 248 506
-    " marker-end="url(#loop-arrow)"/>
+    " marker-end="url(#back-edge-arrow)"/>
     <path class="connection" d="
       M 968 1002 L 1128 1002 L 1128 298 L 248 298
-    " marker-end="url(#loop-arrow)"/>
+    " marker-end="url(#back-edge-arrow)"/>
     <text class="connection-label" x="261" y="108" xml:space="preserve"><tspan x="261" dy="0">limit</tspan></text>
     <text class="connection-label" x="261" y="244" xml:space="preserve"><tspan x="261" dy="0">mut outer</tspan></text>
     <text class="connection-label" x="261" y="452" xml:space="preserve"><tspan x="261" dy="0">mut inner</tspan></text>

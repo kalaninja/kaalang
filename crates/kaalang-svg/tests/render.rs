@@ -90,7 +90,7 @@ fn staged_svg_preserves_authored_text_and_describes_stage_links() {
         fn suspicious() {
             #[action("kaalang-title")]
             let go = || {};
-            #[stage("loop-arrow and kaalang-description")]
+            #[stage("back-edge-arrow and kaalang-description")]
             |go| { return; };
         }
     "#;
@@ -100,9 +100,9 @@ fn staged_svg_preserves_authored_text_and_describes_stage_links() {
     ));
     assert!(svg.contains("Transition to stage go. Stage go."));
     assert!(svg.contains(r#"<title xml:space="preserve">kaalang-title</title>"#));
-    assert!(
-        svg.contains(r#"<title xml:space="preserve">loop-arrow and kaalang-description</title>"#)
-    );
+    assert!(svg.contains(
+        r#"<title xml:space="preserve">back-edge-arrow and kaalang-description</title>"#
+    ));
     assert!(svg.contains(r#"id="kaalang-part-0-title""#));
     assert!(!svg.contains("kaalang-part-0-kaalang-title"));
     assert!(svg.contains(r#"class="stage-connections""#));
@@ -579,13 +579,13 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     .expect("the cycle collapses");
 
     assert!(expanded.contains(r#"class="cycle-boundary""#));
-    assert!(!expanded.contains(r#"class="node loop""#));
+    assert!(!expanded.contains(r#"class="node cycle""#));
     assert!(expanded.contains("Increment the counter."));
     assert!(!expanded.contains("cycle-interface"));
     assert!(expanded.contains(r#"<title xml:space="preserve">Count to the limit.</title>"#));
     assert!(expanded.contains(">Count to the limit.</tspan>"));
 
-    assert!(collapsed.contains(r#"class="node loop""#));
+    assert!(collapsed.contains(r#"class="node cycle""#));
     assert!(!collapsed.contains(r#"class="cycle-boundary""#));
     assert!(!collapsed.contains("Increment the counter."));
     assert!(collapsed.contains("Count to the limit."));
@@ -593,7 +593,7 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     assert!(collapsed.contains(">mut count, limit</tspan>"));
     assert!(collapsed.contains(">done</tspan>"));
     assert!(collapsed.contains(
-        ".action .label, .call .label, .loop .label { font-weight: 500; text-anchor: start; }"
+        ".action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }"
     ));
 
     let invalid = CYCLE_SOURCE.replace("|again| continue;", "|again, count| return count;");

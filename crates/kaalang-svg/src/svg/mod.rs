@@ -74,14 +74,14 @@ fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> St
             (
                 "kaalang-title".to_owned(),
                 "kaalang-description".to_owned(),
-                "loop-arrow".to_owned(),
+                "back-edge-arrow".to_owned(),
             )
         },
         |part| {
             (
                 format!("kaalang-part-{part}-title"),
                 format!("kaalang-part-{part}-description"),
-                format!("kaalang-part-{part}-loop-arrow"),
+                format!("kaalang-part-{part}-back-edge-arrow"),
             )
         },
     );
@@ -134,13 +134,13 @@ fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> St
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape {{ fill: #f0f9ff; }}
       .action .node-shape, .call .node-shape {{ fill: #f8fafc; }}
       .call-bars {{ fill: none; stroke: currentColor; stroke-width: {STROKE_WIDTH}; }}
-      .loop .node-shape {{ fill: #f0fdf4; stroke-width: {CYCLE_NODE_STROKE_WIDTH}; }}
+      .cycle .node-shape {{ fill: #f0fdf4; stroke-width: {CYCLE_NODE_STROKE_WIDTH}; }}
       .loop-marker {{ fill: #15803d; font-size: {LOOP_MARKER_FONT}px; font-weight: {FONT_WEIGHT_BOLD}; text-anchor: middle; }}
       .question .node-shape {{ fill: #fffbeb; }}
       .select .node-shape, .case .node-shape {{ fill: #f5f3ff; }}
       .label {{ fill: currentColor; font-size: {LABEL_FONT}px; text-anchor: middle; }}
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: {FONT_WEIGHT_SEMIBOLD}; }}
-      .action .label, .call .label, .loop .label {{ font-weight: {FONT_WEIGHT_MEDIUM}; text-anchor: start; }}
+      .action .label, .call .label, .cycle .label {{ font-weight: {FONT_WEIGHT_MEDIUM}; text-anchor: start; }}
       .parameter-panel .label {{ font-weight: {FONT_WEIGHT_REGULAR}; text-anchor: start; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: {CYCLE_STROKE_WIDTH}; stroke-dasharray: {CYCLE_DASH_LENGTH} {CYCLE_DASH_GAP}; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: {FONT_WEIGHT_SEMIBOLD}; paint-order: stroke; stroke: #ffffff; stroke-width: {CYCLE_CAPTION_HALO}px; }}
@@ -954,7 +954,7 @@ const fn node_class(kind: NodeKind) -> &'static str {
         NodeKind::StageEntry => "stage-entry",
         NodeKind::Action => "action",
         NodeKind::Call => "call",
-        NodeKind::Cycle => "loop",
+        NodeKind::Cycle => "cycle",
         NodeKind::Question => "question",
         NodeKind::Select => "select",
         NodeKind::Case => "case",
