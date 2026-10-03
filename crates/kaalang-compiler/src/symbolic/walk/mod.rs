@@ -199,8 +199,15 @@ impl Walk<'_> {
     }
 
     fn sequence(&mut self, start: usize, end: usize, mut state: State) -> State {
+        // A for cycle out of items passes its body by, up to its export.
+        let mut exhausted = None;
         let mut block = start;
         while block < end {
+            if let Some((export, when)) = exhausted
+                && export == block
+            {
+                state.live = self.executions.conditions.or(state.live, when);
+            }
             if let Err(error) = stage::transition(
                 &mut self.executions.conditions,
                 self.flow,
@@ -224,7 +231,16 @@ impl Walk<'_> {
                 BlockKind::Continue => continue_block::visit(self, block, &mut state, runs),
                 BlockKind::Return => return_block::visit(self, block, &mut state, runs),
                 BlockKind::Question => question::visit(self, block, &mut state, runs),
-                BlockKind::Choice => choice::visit(self, block, &mut state, runs),
+                BlockKind::Choice => {
+                    choice::visit(self, block, &mut state, runs);
+                    if self.flow.takes_next_item(block) {
+                        let header = declaration.parent.expect("the choice opens a for cycle");
+                        let selected = self.executions.selected(block, 1);
+                        let when = self.executions.conditions.and(runs, selected);
+                        state.live = self.executions.conditions.minus(state.live, when);
+                        exhausted = Some((self.flow.exports(header).start, when));
+                    }
+                }
                 BlockKind::Action => action::visit(self, block, &mut state, runs),
                 BlockKind::Call => call::visit(self, block, &mut state, runs),
                 BlockKind::End => unreachable!("the end closes the root sequence"),

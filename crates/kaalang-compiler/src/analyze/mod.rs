@@ -390,6 +390,7 @@ impl Walk<'_> {
     }
 
     /// Questions and choices each select exactly one output per successor.
+    /// A for cycle that runs out of items skips its body for the export.
     fn branch(&mut self, block: usize, state: &State) {
         for output in 0..self.flow.blocks[block].outputs.len() {
             let mut branch = state.clone();
@@ -398,7 +399,13 @@ impl Walk<'_> {
                 branch: output,
             });
             if self.produce(&mut branch, block, output) {
-                self.visit(block + 1, branch);
+                let next = match self.flow.blocks[block].parent {
+                    Some(header) if output == 1 && self.flow.takes_next_item(block) => {
+                        self.flow.exports(header).start
+                    }
+                    _ => block + 1,
+                };
+                self.visit(next, branch);
             }
         }
     }
@@ -489,6 +496,7 @@ fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     match (0..end).find(|&block| {
         if matches!(flow.kind, FlowKind::Preparation)
             && flow.blocks[block].transition_target.is_some()
+            || flow.ends_iteration(block)
         {
             return false;
         }

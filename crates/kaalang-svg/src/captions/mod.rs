@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::{
-    Analysis, BlockKind, Input, ProducerId, SemanticModel,
+    Analysis, BlockKind, Input, ProducerId, SemanticModel, is_unnamed,
     topology::{Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology},
 };
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
@@ -204,10 +204,9 @@ fn derive_with_parameters(
             captions.cycle_outputs.insert(
                 header,
                 (0..block.outputs.len())
-                    .map(|output| {
-                        let binding = block.output_binding(output);
-                        (binding_label(binding), binding.ident.unraw().to_string())
-                    })
+                    .map(|output| block.output_binding(output))
+                    .filter(|binding| !is_unnamed(&binding.ident))
+                    .map(|binding| (binding_label(binding), binding.ident.unraw().to_string()))
                     .collect(),
             );
         }
@@ -218,6 +217,14 @@ fn derive_with_parameters(
             exit.id,
             exit.provides
                 .iter()
+                .filter(|&&producer| match producer {
+                    ProducerId::BlockOutput { block, output } => !is_unnamed(
+                        &model.analysis.flow.blocks[block]
+                            .output_binding(output)
+                            .ident,
+                    ),
+                    ProducerId::FlowInput(_) => true,
+                })
                 .map(|&producer| provided(&model.analysis, parameters, producer))
                 .collect(),
         );

@@ -1,12 +1,13 @@
 //! Runs the body in a native loop against the outer storage and captures its
-//! result. The gate binds nothing.
+//! result. A loop cycle's gate binds nothing; a for cycle's header captures
+//! bind only while its iterator is built.
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote_spanned;
+use quote::{ToTokens, quote_spanned};
 use syn::Lifetime;
 
-use super::{Bindings, loop_label};
-use crate::{Branch, ExecutionPlan, Flow, Join};
+use super::{Bindings, input_bindings, loop_label};
+use crate::{Branch, ExecutionPlan, Flow, Iteration, Join};
 
 pub(super) fn emit(
     flow: &Flow,
@@ -19,10 +20,22 @@ pub(super) fn emit(
     let block = &flow.blocks[index];
     let body = super::flow(flow, body, bindings);
     let label = loop_label(index, block.span);
-    let looped = quote_spanned! {block.span=>
+    let mut looped = quote_spanned! {block.span=>
         #[allow(unused_labels, clippy::never_loop)]
         #label: loop { #body }
     };
+    if let Some(iteration) = &block.iteration {
+        let iterator = Iteration::iterator();
+        let captures = input_bindings(&block.inputs, bindings);
+        let mut items = iteration.items.to_token_stream();
+        if !captures.is_empty() {
+            items = quote_spanned!(block.span=> { #captures #items });
+        }
+        looped = quote_spanned! {block.span=>
+            let mut #iterator = ::core::iter::IntoIterator::into_iter(#items);
+            #looped
+        };
+    }
     if block.branch_count() > 0 {
         // Several outputs each leave through their own labeled result block,
         // like the cases of a choice.

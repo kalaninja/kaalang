@@ -11,8 +11,9 @@ pub use self::{
     executions::Executions,
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
-        ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
-        JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
+        ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input,
+        Iteration, Join, JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis,
+        WireMerge, is_unnamed,
     },
 };
 

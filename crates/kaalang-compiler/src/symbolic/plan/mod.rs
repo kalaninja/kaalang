@@ -500,8 +500,9 @@ impl Executions {
             let count = order.iter().filter(|&&found| found == block).count();
             count != 1
                 && !(count == 0
-                    && matches!(flow.kind, crate::FlowKind::Preparation)
-                    && flow.blocks[block].transition_target.is_some())
+                    && (matches!(flow.kind, crate::FlowKind::Preparation)
+                        && flow.blocks[block].transition_target.is_some()
+                        || flow.ends_iteration(block)))
         }) {
             return false;
         }

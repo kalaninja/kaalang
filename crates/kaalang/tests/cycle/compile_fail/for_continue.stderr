@@ -1,0 +1,5 @@
+error: a kaalang for cycle has no `continue`; every route through its body ends the iteration at the end of the body
+  --> tests/cycle/compile_fail/for_continue.rs:10:16
+   |
+10 |         |used| continue;
+   |                ^^^^^^^^

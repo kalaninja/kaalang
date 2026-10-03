@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1172" height="1386" viewBox="0 0 1172 1386" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_inside_loop</title>
+  <desc id="kaalang-description">Cycles: Repeat the rounds. with inputs mut rounds, values, mut total and outputs finished; Add every value. with inputs round, values, mut total and outputs added. Nodes: Start: for_inside_loop with parameters mut rounds: u32; values: &amp;[u32] handing over mut rounds, values; Action: Start with a total of zero. capturing nothing handing over mut total; Question: Is another round left? capturing &amp;rounds handing over round / finished; Select: Add every value. capturing nothing; Case: Take the next item. handing over value; Case: No item is left. handing over added; Action: Add the value. capturing value, &amp;mut total; Action: Count the round. capturing added, &amp;mut rounds handing over counted; End: u32 capturing total. Connections: Start: for_inside_loop to Action: Start with a total of zero.; Action: Start with a total of zero. to the entry of the cycle; Question: Is another round left? branch 1 to the entry of the cycle; Question: Is another round left? branch 2 to End: u32; Select: Add every value. to Case: Take the next item.; Select: Add every value. to Case: No item is left.; Case: Take the next item. to Action: Add the value.; Case: No item is left. to Action: Count the round.; Action: Add the value. to the iteration tail of the cycle; Action: Count the round. to the iteration tail of the cycle; the entry of the cycle to Question: Is another round left?; the entry of the cycle to Select: Add every value.; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Repeat the rounds.</title>
+    <rect class="cycle-boundary" x="32" y="271" width="784" height="988" rx="12"/>
+    <text class="cycle-caption" x="804" y="285" text-anchor="end" xml:space="preserve"><tspan x="804" dy="0">Repeat the rounds.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Add every value.</title>
+    <rect class="cycle-boundary" x="92" y="487" width="696" height="564" rx="12"/>
+    <text class="cycle-caption" x="776" y="501" text-anchor="end" xml:space="preserve"><tspan x="776" dy="0">Add every value.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 280 94 L 280 170
+      M 280 234 L 280 306
+      M 280 450 L 280 522
+      M 420 414 L 1000 414 L 1000 1296
+      M 280 666 L 280 738
+      M 408 630 L 640 630 L 640 738
+      M 280 808 L 280 880
+      M 640 808 L 640 1088
+      M 280 944 L 280 1016
+      M 640 1152 L 640 1224
+      M 280 306 L 280 378
+      M 280 522 L 280 594
+    "/>
+    <path class="connection" d="
+      M 280 1016 L 120 1016 L 120 522 L 280 522
+    " marker-end="url(#back-edge-arrow)"/>
+    <path class="connection" d="
+      M 640 1224 L 60 1224 L 60 306 L 280 306
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label" x="293" y="112" xml:space="preserve"><tspan x="293" dy="0">mut rounds, values</tspan></text>
+    <text class="connection-label" x="293" y="252" xml:space="preserve"><tspan x="293" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="293" y="468" xml:space="preserve"><tspan x="293" dy="0">round</tspan></text>
+    <text class="connection-label" x="433" y="432" xml:space="preserve"><tspan x="433" dy="0">finished</tspan></text>
+    <text class="connection-label" x="293" y="826" xml:space="preserve"><tspan x="293" dy="0">value</tspan></text>
+    <text class="connection-label" x="653" y="826" xml:space="preserve"><tspan x="653" dy="0">added</tspan></text>
+    <text class="connection-label" x="653" y="1170" xml:space="preserve"><tspan x="653" dy="0">counted</tspan></text>
+    <text class="connection-label" x="293" y="159" xml:space="preserve"><tspan x="293" dy="0">()</tspan></text>
+    <text class="connection-label" x="293" y="367" xml:space="preserve"><tspan x="293" dy="0">&amp;rounds</tspan></text>
+    <text class="connection-label" x="293" y="583" xml:space="preserve"><tspan x="293" dy="0">()</tspan></text>
+    <text class="connection-label" x="293" y="869" xml:space="preserve"><tspan x="293" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="653" y="1077" xml:space="preserve"><tspan x="653" dy="0">added, &amp;mut rounds</tspan></text>
+    <text class="connection-label" x="1013" y="1285" xml:space="preserve"><tspan x="1013" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 420 65 L 516 65"/>
+    <g class="parameter-panel" transform="translate(636 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut rounds: u32</tspan><tspan x="-104" dy="18">values: &amp;[u32]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(280 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_inside_loop</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 202)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(280 414)">
+      <title xml:space="preserve">Is another round left?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is another round left?</tspan></text>
+    </g>
+    <g class="node select" transform="translate(280 630)">
+      <title xml:space="preserve">Add every value.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add every value.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(280 773)">
+      <title xml:space="preserve">Take the next item.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the next item.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(640 773)">
+      <title xml:space="preserve">No item is left.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No item is left.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(280 912)">
+      <title xml:space="preserve">Add the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(640 1120)">
+      <title xml:space="preserve">Count the round.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the round.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(1000 1325)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -29,6 +29,12 @@ pub(super) fn parse(
             "a kaalang continue requires an enclosing cycle",
         ));
     };
+    if preceding[target].iteration.is_some() {
+        return Err(Error::new(
+            expression.span(),
+            "a kaalang for cycle has no `continue`; every route through its body ends the iteration at the end of the body",
+        ));
+    }
     if preceding
         .iter()
         .any(|block| block.kind == BlockKind::Continue && block.parent == Some(target))

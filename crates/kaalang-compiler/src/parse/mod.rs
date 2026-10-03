@@ -120,12 +120,17 @@ fn receiver_captures(flow: &Flow, receiver: Option<&Receiver>) -> Result<()> {
             }
         }
         // A cycle's body holds the statements that parse into their own blocks,
-        // and each of those is checked in turn.
-        if block.kind == BlockKind::Cycle || block.inputs.iter().any(|input| input.ident == "self")
-        {
+        // and each of those is checked in turn; a for cycle's header reads its
+        // iterated expression itself.
+        let body = match (block.kind, &block.iteration) {
+            (BlockKind::Cycle, Some(iteration)) => &iteration.items,
+            (BlockKind::Cycle, None) => continue,
+            _ => &block.body,
+        };
+        if block.inputs.iter().any(|input| input.ident == "self") {
             continue;
         }
-        if let Some(span) = receiver_use(&block.body) {
+        if let Some(span) = receiver_use(body) {
             return Err(Error::new(
                 span,
                 match receiver {
@@ -221,6 +226,15 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             {
                 return Err(cycle::structural_loop(expression));
             }
+            // Only a cycle is written as a `for`.
+            Some(Expr::ForLoop(expression))
+                if !expression
+                    .attrs
+                    .iter()
+                    .any(|attribute| attribute.path().is_ident("cycle")) =>
+            {
+                return Err(cycle::structural_for(expression));
+            }
             Some(Expr::Break(expression)) => return Err(cycle::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
@@ -238,7 +252,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         // be read twice to know where it stops. A `let` gets its semicolon
         // from Rust; every other spelling is checked here, except a bare
         // `loop`: its braces end it, and rustfmt removes the semicolon.
-        if matches!(statement, Stmt::Expr(expression, None) if !matches!(expression, Expr::Loop(_)))
+        if matches!(statement, Stmt::Expr(expression, None) if !matches!(expression, Expr::Loop(_) | Expr::ForLoop(_)))
         {
             return Err(Error::new_spanned(
                 statement,
@@ -256,6 +270,9 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
                 unreachable!("a cycle body is normalized to a block")
             };
             let statements = body.block.stmts.clone();
+            if blocks[index].iteration.is_some() {
+                cycle::open_iteration(blocks, index)?;
+            }
             self::statements(&statements, Some(index), blocks)?;
             cycle::exports(blocks, index)?;
             blocks[index].cycle_end = Some(blocks.len());
@@ -317,6 +334,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         cycle_end: None,
         export_target: None,
         transition_target: None,
+        iteration: None,
     }
 }
 
@@ -428,6 +446,7 @@ impl<'a> BlockSyntax<'a> {
             cycle_end: None,
             export_target: None,
             transition_target: None,
+            iteration: None,
         }
     }
 }
@@ -500,6 +519,9 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
         Stmt::Expr(Expr::Loop(body), _) => {
             Ok((&body.attrs, parse_quote_spanned!(body.span()=> ()), None))
         }
+        Stmt::Expr(Expr::ForLoop(body), _) => {
+            Ok((&body.attrs, parse_quote_spanned!(body.span()=> ()), None))
+        }
         // A call's body is one application, so it needs no braces to delimit
         // it. The attributes decide: an unattributed application is ordinary
         // Rust, which a flow body does not accept, and it must keep reporting
@@ -539,12 +561,18 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             }
             return Ok(Expr::Block(body));
         }
-        // Only a statement declaring a cycle gets here as a `loop`.
+        // Only a statement declaring a cycle gets here as a `loop` or `for`.
         Stmt::Expr(Expr::Loop(body), _) => {
             let mut body = body.clone();
             body.attrs
                 .retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
             return Ok(Expr::Loop(body));
+        }
+        Stmt::Expr(Expr::ForLoop(body), _) => {
+            let mut body = body.clone();
+            body.attrs
+                .retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
+            return Ok(Expr::ForLoop(body));
         }
         // A statement carries its attributes on its expression, and the kind
         // attribute was classified before this ran.
@@ -1119,6 +1147,41 @@ mod tests {
         let flow = flow(&function).expect("rustfmt's spelling parses");
         assert_eq!(flow.blocks[1].kind, BlockKind::Cycle);
         assert_eq!(flow.blocks[1].parent, Some(0));
+    }
+
+    #[test]
+    fn a_bare_for_cycle_may_omit_its_semicolon_before_later_statements() {
+        let function: ItemFn = parse_quote! {
+            fn knock() {
+                #[cycle("Knock three times.")]
+                for _ in 0..3 {
+                    #[action("Knock once.")]
+                    || knock();
+                }
+                return;
+            }
+        };
+
+        let flow = flow(&function).expect("rustfmt's spelling parses");
+        assert!(flow.blocks[0].iteration.is_some());
+        assert_eq!(flow.blocks[2].kind, BlockKind::Action);
+    }
+
+    #[test]
+    fn a_for_cycle_output_may_be_named_after_a_keyword() {
+        let function: ItemFn = parse_quote! {
+            fn visit(values: Vec<u32>) {
+                #[cycle("Visit every value.")]
+                let r#match = |values| for value in values {
+                    #[action("Use the value.")]
+                    |value| drop(value);
+                };
+
+                |r#match| return;
+            }
+        };
+
+        flow(&function).expect("the raw output binds");
     }
 
     #[test]

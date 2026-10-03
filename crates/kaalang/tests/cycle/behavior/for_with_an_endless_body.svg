@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="788" height="1125" viewBox="0 0 788 1125" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_with_an_endless_body</title>
+  <desc id="kaalang-description">Cycles: Spin on the first value, if there is one. with inputs values, mut total and outputs (); Spin forever. with inputs () and outputs (). Nodes: Start: for_with_an_endless_body with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; Select: Spin on the first value, if there is one. capturing nothing; Case: Take the next item. handing over value; Case: No item is left.; Action: Take the value. capturing value, &amp;mut total; Action: Wait. capturing nothing handing over waited; End: u32 capturing total. Connections: Start: for_with_an_endless_body to Action: Start with a total of zero.; Action: Start with a total of zero. to Select: Spin on the first value, if there is one.; Select: Spin on the first value, if there is one. to Case: Take the next item.; Select: Spin on the first value, if there is one. to Case: No item is left.; Case: Take the next item. to Action: Take the value.; Case: No item is left. to End: u32; Action: Take the value. to the entry of the cycle; Action: Wait. to the iteration tail of the cycle; the entry of the cycle to Action: Wait.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Spin on the first value, if there is one.</title>
+    <rect class="cycle-boundary" x="32" y="263" width="724" height="735" rx="12"/>
+    <text class="cycle-caption" x="744" y="277" text-anchor="end" xml:space="preserve"><tspan x="744" dy="0">Spin on the first value, if there is one.</tspan></text>
+    </g>
+    <g>
+      <title xml:space="preserve">Spin forever.</title>
+    <rect class="cycle-boundary" x="60" y="685" width="356" height="278" rx="12"/>
+    <text class="cycle-caption" x="404" y="699" text-anchor="end" xml:space="preserve"><tspan x="404" dy="0">Spin forever.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 248 90 L 248 162
+      M 248 226 L 248 298
+      M 248 370 L 248 442
+      M 376 334 L 608 334 L 608 442
+      M 248 512 L 248 584
+      M 608 512 L 608 1035
+      M 248 648 L 248 720
+      M 248 856 L 248 928
+      M 248 720 L 248 792
+    "/>
+    <path class="connection" d="
+      M 248 928 L 88 928 L 88 720 L 248 720
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label" x="261" y="108" xml:space="preserve"><tspan x="261" dy="0">values</tspan></text>
+    <text class="connection-label" x="261" y="244" xml:space="preserve"><tspan x="261" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="261" y="530" xml:space="preserve"><tspan x="261" dy="0">value</tspan></text>
+    <text class="connection-label" x="261" y="874" xml:space="preserve"><tspan x="261" dy="0">waited</tspan></text>
+    <text class="connection-label" x="261" y="151" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label" x="261" y="287" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label" x="261" y="573" xml:space="preserve"><tspan x="261" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="261" y="781" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label" x="621" y="1024" xml:space="preserve"><tspan x="621" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 388 61 L 484 61"/>
+    <g class="parameter-panel" transform="translate(604 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(248 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_with_an_endless_body</tspan></text>
+    </g>
+    <g class="node action" transform="translate(248 194)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(248 334)">
+      <title xml:space="preserve">Spin on the first value, if there is one.</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Spin on the first value, if </tspan><tspan x="0" dy="18">there is one.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(248 477)">
+      <title xml:space="preserve">Take the next item.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the next item.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(608 477)">
+      <title xml:space="preserve">No item is left.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No item is left.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(248 616)">
+      <title xml:space="preserve">Take the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(248 824)">
+      <title xml:space="preserve">Wait.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(608 1064)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

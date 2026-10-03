@@ -1,0 +1,5 @@
+error: a kaalang for cycle declares at most one output, the signal that its items ran out
+ --> tests/cycle/compile_fail/for_two_outputs.rs:6:9
+  |
+6 |     let (found, done) = |values| for value in values {
+  |         ^^^^^^^^^^^^^

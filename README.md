@@ -179,7 +179,9 @@ blocks. A route through it can repeat at its one `continue`, complete with one
 declared output, or diverge in a nested cycle. A completed output becomes
 available after the cycle. In the diagram, `continue` routes meet at the cycle's
 back edge, completing routes leave through the cycle boundary, and `return`
-reaches the flow end.
+reaches the flow end. A cycle written `for item in items { ... }` instead runs
+its body once per item of a Rust iterator. It has no `continue` or early exit
+and may declare one output, the signal that its items ran out.
 
 ### Putting it together: binary search
 

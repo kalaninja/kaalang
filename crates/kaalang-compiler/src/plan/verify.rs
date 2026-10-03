@@ -24,8 +24,9 @@ pub(super) fn plan(
     bodies.iter().enumerate().all(|(block, &count)| {
         count == 1
             || (count == 0
-                && matches!(flow.kind, crate::FlowKind::Preparation)
-                && flow.blocks[block].transition_target.is_some())
+                && (matches!(flow.kind, crate::FlowKind::Preparation)
+                    && flow.blocks[block].transition_target.is_some()
+                    || flow.ends_iteration(block)))
     }) && executions.iter().all(|execution| {
         let mut replay = Replay {
             flow,

@@ -99,6 +99,34 @@ pub struct Block {
     pub export_target: Option<usize>,
     /// Destination of a synthetic stage transition, absent on authored returns.
     pub transition_target: Option<usize>,
+    /// What a for cycle iterates. A loop cycle and every other block have none.
+    pub iteration: Option<Iteration>,
+}
+
+/// Whether the compiler named this wire, for a for cycle that leaves its item
+/// or completion unnamed. No caption shows it, and no stage sees it.
+#[must_use]
+pub fn is_unnamed(wire: &Ident) -> bool {
+    wire.to_string().starts_with(UNNAMED)
+}
+
+/// The prefix of a wire the compiler names for a for cycle.
+pub(crate) const UNNAMED: &str = "__kaalang_unnamed_";
+
+/// The header of a for cycle after its capture list.
+#[derive(Clone)]
+pub struct Iteration {
+    /// The authored item binding, or `_`.
+    pub item: Pat,
+    /// The expression the cycle iterates, evaluated once over its header captures.
+    pub items: Expr,
+}
+
+impl Iteration {
+    /// The hygienic iterator a for cycle takes its items from.
+    pub(crate) fn iterator() -> Ident {
+        Ident::new("__kaalang_items", Span::mixed_site())
+    }
 }
 
 impl Block {
@@ -301,6 +329,34 @@ impl Flow {
             .export_target
             .expect("a boundary consumer has a cycle");
         consumer - self.exports(header).start
+    }
+
+    /// The hidden choice that opens every iteration of a for cycle, when
+    /// `block` runs inside one: it takes the next item, or exports the
+    /// cycle's completion once none is left. Every other block of the body,
+    /// apart from that export, belongs to its first case.
+    #[must_use]
+    pub(crate) fn next_item(&self, block: usize) -> Option<usize> {
+        let header = self.blocks[block].parent?;
+        self.blocks[header].iteration.as_ref()?;
+        let next = header + 1;
+        (block != next && self.blocks[block].kind != BlockKind::Export).then_some(next)
+    }
+
+    /// Whether `block` is the hidden `continue` that ends a for cycle's
+    /// iteration. It runs on every route with an item that does not diverge,
+    /// so it may run on none.
+    #[must_use]
+    pub(crate) fn ends_iteration(&self, block: usize) -> bool {
+        self.blocks[block].kind == BlockKind::Continue && self.next_item(block).is_some()
+    }
+
+    /// Whether `block` is the hidden choice that opens a for cycle's iterations.
+    #[must_use]
+    pub(crate) fn takes_next_item(&self, block: usize) -> bool {
+        self.blocks[block]
+            .parent
+            .is_some_and(|header| self.blocks[header].iteration.is_some() && block == header + 1)
     }
 
     /// The innermost cycle whose repeat reaches `block`: the block itself for a

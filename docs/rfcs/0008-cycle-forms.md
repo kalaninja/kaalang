@@ -92,10 +92,10 @@ in Rust: `0..n`, `(1..=n).rev()`, `(0..n).step_by(2)`, or
 `values.iter().enumerate()`. An iterator that needs more work is built by an
 earlier action and captured as a wire.
 
-The item pattern follows the action output pattern: one binding with optional
-`mut`, or a flat tuple of such bindings. `for (index, value) in ...` binds two
-item wires. A for cycle that does not use its items writes `_`, which binds
-none.
+The item pattern is one binding with optional `mut`, which binds one item wire.
+A for cycle that does not use its items writes `_`, which binds none. An item
+that needs destructuring, such as a pair from `enumerate()`, is captured whole
+and taken apart by an action.
 
 A for cycle may declare one output, written `let done = ...` or
 `let (done,) = ...`. Without `let`, or with `let ()`, it declares none. An empty
@@ -119,7 +119,7 @@ for_body :=
     "for" item_pattern "in" rust_expression cycle_body | "{" for_body ";"? "}"
 cycle_body := "{" block_statement* "}"
 for_output := output_binding | "(" ")" | "(" output_binding "," ")"
-item_pattern := output_pattern | "_"
+item_pattern := output_binding | "_"
 ```
 
 The final `";"` is optional when the statement has neither `let` nor a capture
@@ -136,9 +136,11 @@ The header captures participate like an action's: they gate the cycle's entry
 under the ordinary branch rules, and they move, copy, or borrow their wires
 once, before the first iteration. Unlike a loop cycle's gate, they are real
 captures with Rust value operations. The `in` expression is evaluated once over
-those aliases and iterated through `IntoIterator`. The aliases and the iterator
-live until the cycle completes, so a borrowing capture holds its borrow for the
-whole cycle.
+those aliases and iterated through `IntoIterator`. The aliases end once the
+iterator is built. A value capture moves or copies its wire into the `in`
+expression, so iterating a collection by reference needs a borrowing capture, as
+in `|&values| for value in values.iter()`. A borrowing capture keeps its wire
+borrowed for as long as the iterator holds the borrow.
 
 Each iteration binds the item pattern to the next item. Item wires are
 iteration-local: they are fresh on every iteration, inner blocks capture them
@@ -157,9 +159,10 @@ or move the header made.
 
 Every route through the body ends at the end of the body, where the iteration
 ends and the next item begins. A route may instead diverge in a nested loop
-cycle. Selections inside the body need not converge before the end: each of
-their routes simply ends the iteration there. Branch-local and body-local owners
-drop when the iteration ends.
+cycle. Branches inside the body converge before its end, as the repeating routes
+of a loop cycle converge before its `continue`: a branch with no work of its own
+merges with the others through a same-named wire. Branch-local and body-local
+owners drop when the iteration ends.
 
 Questions, choices, actions, calls, and nested cycles of either form follow
 their ordinary rules inside the body. A nested loop cycle's `continue` and
@@ -194,8 +197,9 @@ A for cycle is rejected when:
 - it declares more than one output;
 - its `in` expression reads a wire it does not capture, under the ordinary
   computational-body rules of RFC 0001 §3;
-- its item pattern is anything other than §2.2's bindings, a flat tuple of them,
-  or `_`;
+- its item pattern is anything other than one binding or `_`;
+- its body ends an iteration while the branches of a selection inside it are
+  still separate;
 - it carries a label;
 - its body moves an outer non-`Copy` value on a route that reaches the next
   iteration, which Rust rejects in the generated loop as it does for a loop
@@ -209,13 +213,14 @@ cycle's body is rejected when its braces hold anything other than its `loop`.
 
 A loop cycle lowers as RFC 0007 §5.2 describes; the keyword changes nothing.
 
-A for cycle lowers to a native Rust `for` loop. Its header captures bind as an
-action's capture aliases do, in authored order, inside a scope that encloses the
-loop. The `in` expression is evaluated in that scope. Each iteration binds the
-item pattern to the generated storage of the item wires, then runs the lowered
-body. The body contains no structural transfer, so it needs no generated label.
-When the cycle declares an output, its binding receives the `for` expression's
-`()` value after the loop.
+A for cycle lowers to a native Rust loop over an iterator, the way Rust lowers
+its own `for`. Its header captures bind as an action's capture aliases do, in
+authored order, inside a scope that evaluates the `in` expression and ends
+before the loop, so the body never sees the aliases. `IntoIterator` turns the
+value of that scope into the iterator. Each iteration first takes the next item.
+With one, it binds the item wire and runs the lowered body, which ends by
+repeating the loop. Without one, it leaves the loop with the cycle's `()`
+output.
 
 For example:
 
@@ -241,11 +246,20 @@ Illustrative Rust, omitting unit control-wire bindings and lint allowances:
 fn sum(wire_values: &[i64]) -> i64 {
     let mut wire_total = 0;
     let wire_added = {
-        let values = wire_values;
-        for wire_value in values {
-            let value = wire_value;
-            let total = &mut wire_total;
-            *total += *value;
+        let mut items = IntoIterator::into_iter({
+            let values = wire_values;
+            values
+        });
+        'cycle: loop {
+            match items.next() {
+                Some(wire_value) => {
+                    let value = wire_value;
+                    let total = &mut wire_total;
+                    *total += *value;
+                    continue 'cycle;
+                }
+                None => break 'cycle,
+            }
         }
     };
     {
@@ -255,12 +269,12 @@ fn sum(wire_values: &[i64]) -> i64 {
 }
 ```
 
-Analysis records one representative iteration of the body as a frame of its own,
-as for a loop cycle. Every completing route of that frame repeats; none exports.
-In the containing frame, the for cycle is one block whose completion depends
-only on its participation. Rust checks the iterator type, item pattern
-destructuring, moves, borrows, and drop order. Whether a `for` loop is allowed
-in a `const fn` is decided by Rust.
+Analysis records one representative iteration, as for a loop cycle. An iteration
+either takes an item, runs the body and repeats, or finds none and completes.
+Every block of the body runs only on the first of those routes, so the cycle
+completes whenever it is entered. Rust checks the iterator type, moves, borrows,
+and drop order. Whether a `for` loop is allowed in a `const fn` is decided by
+Rust.
 
 ## 6. Visual representation
 
@@ -334,7 +348,7 @@ fn total_of(values: &[i64], twice: bool) -> i64 {
 Each branch runs its own for cycle. Their `counted` outputs merge by the
 ordinary rules, so the return follows whichever cycle ran.
 
-### 7.2 Ranges and tuple items
+### 7.2 Ranges and destructured items
 
 ```rust
 #[kaalang]
@@ -343,7 +357,10 @@ fn countdown(from: u32) -> Vec<(usize, u32)> {
     let mut log = || Vec::new();
 
     #[cycle("Count down to one, numbering each step.")]
-    |from| for (step, value) in (1..=from).rev().enumerate() {
+    |from| for numbered in (1..=from).rev().enumerate() {
+        #[action("Take the step number and the value apart.")]
+        let (step, value) = |numbered| numbered;
+
         #[action("Record the step.")]
         |step, value, &mut log| log.push((step, value));
     };
@@ -363,18 +380,19 @@ fn sum_of_even(values: &[u32]) -> u32 {
     #[cycle("Add the even values.")]
     |values| for value in values {
         #[question("Is the value even?")]
-        let (even, _odd) = |value| *value % 2 == 0;
+        let (even, _counted) = |value| *value % 2 == 0;
 
         #[action("Add the value.")]
-        |even, value, &mut total| *total += *value;
+        let _counted = |even, value, &mut total| *total += *value;
     };
 
     |total| return total;
 }
 ```
 
-The odd route ends the iteration without work; `_odd` needs no consumer. Both
-routes arrive at the bottom cap.
+The odd route does no work of its own; its `_counted` output merges with the
+action's, so both routes end the iteration together. `_counted` needs no
+consumer.
 
 ## 8. Changes to earlier RFCs
 
@@ -421,11 +439,12 @@ Concrete compiler and renderer types remain implementation choices.
 | For cycle over an empty iterator                               | Run no iteration and complete.                                                                            |
 | `in` expression with ranges and adapters over header captures  | Accept any Rust expression reading only those aliases.                                                    |
 | `in` expression reading an uncaptured wire                     | Reject under the ordinary capture rules.                                                                  |
-| Tuple item pattern                                             | Bind one item wire per name for each iteration.                                                           |
+| Tuple item pattern                                             | Reject; an action takes the captured item apart.                                                          |
 | `_` item pattern                                               | Bind no item wire.                                                                                        |
 | Nested or reference item pattern                               | Reject.                                                                                                   |
 | Item wire without a consumer                                   | Reject unless its name begins with `_`.                                                                   |
-| Question in the body with an unused branch                     | Accept; each route ends the iteration at the bottom cap.                                                  |
+| Question in the body whose branches merge before its end       | Accept; both routes end the iteration together.                                                           |
+| Branches still separate at the end of the body                 | Reject.                                                                                                   |
 | Structural `continue` or `return` in a for body                | Reject.                                                                                                   |
 | Body produces the for cycle's declared output                  | Reject.                                                                                                   |
 | Two outputs on a for cycle                                     | Reject.                                                                                                   |

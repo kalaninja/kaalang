@@ -83,7 +83,8 @@ pub(crate) fn validate(
     }
     for (index, block) in flow.blocks[..flow.blocks.len() - 1].iter().enumerate() {
         if !(executions.has(executions.runs[index])
-            || matches!(flow.kind, FlowKind::Preparation) && block.transition_target.is_some())
+            || matches!(flow.kind, FlowKind::Preparation) && block.transition_target.is_some()
+            || flow.ends_iteration(index))
         {
             return Err(crate::analyze::unreachable(flow, index));
         }

@@ -1,4 +1,4 @@
-error: a kaalang cycle body is a `loop { ... }` block
+error: a kaalang cycle body is a `loop { ... }` or `for ... in ... { ... }` block
  --> tests/cycle/compile_fail/cycle_body_without_loop.rs:6:8
   |
 6 |     || continue;

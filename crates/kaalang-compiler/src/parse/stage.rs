@@ -105,7 +105,8 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             preparation
                 .iter()
                 .filter(|block| block.parent.is_none())
-                .flat_map(|block| block.outputs.iter().cloned()),
+                .flat_map(|block| block.outputs.iter().cloned())
+                .filter(|wire| !crate::model::is_unnamed(wire)),
         )
         .collect::<BTreeSet<_>>();
     let common = direct

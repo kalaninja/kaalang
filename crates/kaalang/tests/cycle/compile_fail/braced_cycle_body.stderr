@@ -1,4 +1,4 @@
-error: a kaalang cycle body is a `loop { ... }` block
+error: a kaalang cycle body is a `loop { ... }` or `for ... in ... { ... }` block
   --> tests/cycle/compile_fail/braced_cycle_body.rs:9:16
    |
  9 |       let done = {

@@ -190,6 +190,9 @@ impl Executions {
             for when in carried[block].values_mut() {
                 *when = self.conditions.and(*when, self.runs[block]);
             }
+            if let Some(selection) = crate::analyze::placement::item_case(flow, block) {
+                carried[block].insert(selection, self.runs[block]);
+            }
             for (dependency, when) in captures {
                 let ProducerId::BlockOutput {
                     block: source,

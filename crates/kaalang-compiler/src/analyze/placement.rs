@@ -30,6 +30,15 @@ fn occurrence(
     selections
 }
 
+/// The case of a for cycle's hidden choice that every block of its body runs
+/// in, apart from the choice itself and the export it skips to.
+pub(crate) fn item_case(flow: &Flow, block: usize) -> Option<BranchSelection> {
+    flow.next_item(block).map(|next| BranchSelection {
+        block: next,
+        branch: 0,
+    })
+}
+
 /// The selections each block inherits by capture. A block belongs to a branch
 /// when it captures the branch output itself or a wire produced inside that
 /// branch; a wire with alternative producers carries only what all of them
@@ -49,6 +58,7 @@ pub(crate) fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
         if let Some(parent) = declaration.parent {
             inherited.extend(blocks[parent].iter().copied());
         }
+        inherited.extend(item_case(flow, index));
         for (output, name) in declaration.outputs.iter().enumerate() {
             let occurrence = occurrence(flow, &inherited, index, output);
             // Alternative producers meet before every capture, so the merged
@@ -79,6 +89,7 @@ fn carried_in(flow: &Flow, execution: &Execution) -> Vec<BTreeSet<BranchSelectio
             .parent
             .map(|parent| carried[parent].clone())
             .unwrap_or_default();
+        selections.extend(item_case(flow, block));
         for &(producer, output) in &captured[block] {
             selections.extend(occurrence(flow, &carried[producer], producer, output));
         }
@@ -258,6 +269,10 @@ pub(crate) fn violation(flow: &Flow, block: usize, selection: usize) -> Error {
         let signal = flow.wire_name(&flow.blocks[block].inputs[0].ident);
         format!(
             "this kaalang stage transition exports `{signal}` while the branches of the {kind} `{described}` are still separate; merge those branches before the transition"
+        )
+    } else if flow.ends_iteration(block) {
+        format!(
+            "this kaalang for cycle ends an iteration while the branches of the {kind} `{described}` are still separate; merge those branches before the end of its body"
         )
     } else if flow.blocks[block].kind == BlockKind::Export {
         format!(
