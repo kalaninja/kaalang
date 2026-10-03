@@ -34,10 +34,12 @@ fn directory(name: &str, source: &str) -> PathBuf {
     directory
 }
 
-/// Runs the binary from `directory` with a command line of plain words.
+/// Runs the binary from `directory` with a command line of plain words, with
+/// color off so assertions see plain text.
 fn run(directory: &Path, line: &str) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
         .current_dir(directory)
+        .env("NO_COLOR", "1")
         .args(line.split_whitespace())
         .output()
         .expect("the binary runs")
@@ -49,7 +51,7 @@ fn help_prints_usage_and_succeeds() {
     for line in ["--help", "-h", "kaalang --help"] {
         let printed = run(&directory, line);
         assert!(printed.status.success(), "{:?}", printed.stderr);
-        assert!(String::from_utf8_lossy(&printed.stdout).starts_with("usage: cargo kaalang"));
+        assert!(String::from_utf8_lossy(&printed.stdout).contains("Usage: cargo kaalang"));
     }
 }
 

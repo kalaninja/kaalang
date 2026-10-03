@@ -11,6 +11,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+clap = { workspace = true, features = ["derive"] }
 kaalang-svg = { workspace = true }
 same-file = { workspace = true }
 

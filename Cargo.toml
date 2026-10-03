@@ -24,6 +24,7 @@ kaalang-render = { version = "0.2.0", path = "crates/kaalang-render" }
 kaalang-svg = { version = "0.2.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 
+clap = "4.6.7"
 # Pin formula layout and SVG output; upgrades may change glyph geometry.
 latex-rust = "=2.0.1"
 proc-macro2 = "1.0.107"
