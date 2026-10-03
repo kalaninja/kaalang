@@ -29,6 +29,7 @@ jobs:
       - run: just fmt-check
 
   validate:
+    needs: fmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +57,7 @@ jobs:
   # Linux containers do not run on these runners, so they install the same
   # toolchain from mise/ and call cargo directly. Formatting is checked above.
   native:
+    needs: fmt
     strategy:
       fail-fast: false
       matrix:
@@ -78,6 +80,7 @@ jobs:
       - run: git add -A && git diff --cached --exit-code
 
   msrv:
+    needs: fmt
     runs-on: ubuntu-latest
     env:
       RUSTUP_TOOLCHAIN: '1.88'
