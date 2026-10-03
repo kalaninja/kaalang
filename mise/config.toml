@@ -2,6 +2,5 @@
 # between releases. `rust-src` is part of the pin because a diagnostic that
 # quotes the standard library only shows the snippet when the source is present.
 # Bump deliberately and re-record with `just rust test`.
-[toolchain]
-channel = "1.98.1"
-components = ["clippy", "rustfmt", "rust-src"]
+[tools]
+rust = { version = "1.98.1", profile = "minimal", components = "clippy,rust-src" }

@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::{cell::RefCell, rc::Rc};
+
+use kaalang::kaalang;
 
 struct Entry(Rc<RefCell<Vec<usize>>>);
 impl Drop for Entry {

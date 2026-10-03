@@ -6,9 +6,11 @@
 use std::time::{Duration, Instant};
 
 use kaalang_svg::RenderOptions;
-use kaalang_testing::corpus::{self, Suite};
-use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::accepted;
+use kaalang_testing::{
+    corpus::{self, Suite},
+    performance::{ItemBudget, assert_pass_budget, assert_within},
+    probes::accepted,
+};
 
 // Ordinary and stress fixtures have separate corpus passes, with both expanded
 // and collapsed diagrams for every cycle fixture. Each diagram is also checked

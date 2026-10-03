@@ -1,0 +1,5 @@
+# The formatting image, selected with MISE_ENV=fmt: nightly rustfmt for the
+# import options in `rustfmt.toml`, and Node.js for Prettier.
+[tools]
+rust = { version = "nightly-2026-10-01", profile = "minimal", components = "rustfmt" }
+node = "24.21.0"

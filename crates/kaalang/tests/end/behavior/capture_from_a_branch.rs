@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::{cell::Cell, rc::Rc};
+
+use kaalang::kaalang;
 
 struct Guard(Rc<Cell<bool>>);
 impl Drop for Guard {

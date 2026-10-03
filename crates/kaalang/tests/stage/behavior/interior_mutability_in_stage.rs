@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::cell::Cell;
+
+use kaalang::kaalang;
 #[kaalang]
 fn interior_mutability_in_stage(go: Cell<u8>) -> u8 {
     #[stage("Update the cell.")]

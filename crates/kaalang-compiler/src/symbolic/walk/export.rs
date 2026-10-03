@@ -1,7 +1,8 @@
 //! Conditional exports close one body route.
 
-use super::{Condition, State, Walk};
 use syn::Error;
+
+use super::{Condition, State, Walk};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &mut State, mut runs: Condition) {
     let header = walk.flow.blocks[block]

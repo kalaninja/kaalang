@@ -1,7 +1,9 @@
 //! Measures and verifies expanded cycle boundaries around their arranged bodies.
 
-use kaalang_compiler::geometry::{contains, overlaps};
-use kaalang_compiler::topology::{NodeId, Source, Vertex};
+use kaalang_compiler::{
+    geometry::{contains, overlaps},
+    topology::{NodeId, Source, Vertex},
+};
 
 use super::{
     CYCLE_CAPTION_FONT, CYCLE_CAPTION_PADDING_X, CycleRegion, MARGIN, NODE_LABEL_WIDTH,

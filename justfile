@@ -10,6 +10,9 @@ mod release 'just/release.just'
 # Rust commands
 mod rust 'just/rust.just'
 
+# Tooling image commands
+mod tooling 'just/tooling.just'
+
 # List the available recipes.
 [default]
 list:

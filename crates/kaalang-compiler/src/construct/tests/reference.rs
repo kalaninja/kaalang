@@ -5,11 +5,14 @@
 //! index, transition, state key, numbering, or route
 //! expansion is used. The shared verifier checks the resulting witness.
 
-use super::verify;
-use crate::construct::{Arrangement, Contour, Route, Run, RunLine, Side};
-use crate::model::{BlockKind, Flow};
-use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
 use std::collections::{BTreeMap, BTreeSet};
+
+use super::verify;
+use crate::{
+    construct::{Arrangement, Contour, Route, Run, RunLine, Side},
+    model::{BlockKind, Flow},
+    topology::{Connection, ExitId, NodeId, Source, Topology, Vertex},
+};
 
 const STATES: usize = 40_000_000;
 

@@ -2,12 +2,13 @@
 
 use std::fmt::Write;
 
-use kaalang_compiler::Analysis;
-use kaalang_compiler::topology::{NodeId, NodeKind};
-
-use crate::layout::{Point, StagedScene};
+use kaalang_compiler::{
+    Analysis,
+    topology::{NodeId, NodeKind},
+};
 
 use super::{ARROW_MIDPOINT, ARROW_SIZE, STROKE_WIDTH, describe, escape, serialize_with_ids};
+use crate::layout::{Point, StagedScene};
 
 const RETURN_ARROW_SIZE: i32 = 8;
 

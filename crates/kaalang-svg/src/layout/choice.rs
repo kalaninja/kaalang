@@ -2,9 +2,10 @@
 
 use std::collections::BTreeMap;
 
-use super::{Node, NodeId, Point, Scene};
-
-use super::{CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, SELECT_SKEW};
+use super::{
+    CASE_LABEL_WIDTH, CASE_TIP_HEIGHT, CASE_WIDTH, LABEL_FONT, LINE_HEIGHT, Node, NodeId, Point,
+    SELECT_SKEW, Scene,
+};
 use crate::text::{RichText, block_metrics, wrap_text};
 
 const CASE_MIN_BODY_HEIGHT: i32 = 52;

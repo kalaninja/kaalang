@@ -1,9 +1,10 @@
-use kaalang_compiler::SemanticModel;
-use kaalang_compiler::topology::{Connection, Destination, ExitId, NodeId, Source, Vertex};
-
-use crate::text::RichText;
+use kaalang_compiler::{
+    SemanticModel,
+    topology::{Connection, Destination, ExitId, NodeId, Source, Vertex},
+};
 
 use super::{Captions, derive};
+use crate::text::RichText;
 
 fn read(source: &str) -> (SemanticModel, Captions) {
     let function = syn::parse_str(source).expect("the flow parses");

@@ -2,8 +2,10 @@
 //! Connections combine each execution's direct precedence, using
 //! the verified plan's source order. Coordinates and captions belong to rendering.
 
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use proc_macro2::Ident;
 

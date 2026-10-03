@@ -1,8 +1,7 @@
 //! Checks that end finishes the entire diagram, including iteration back edges.
 
-use crate::topology::{NodeKind, Topology, Vertex};
-
 use super::Arrangement;
+use crate::topology::{NodeKind, Topology, Vertex};
 
 /// Read the final-row rule directly, independently of the projected order.
 pub(super) fn verify(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {

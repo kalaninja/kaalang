@@ -1,8 +1,11 @@
 //! Lazy materialization of the complete structural execution summaries.
 
+use std::{
+    ops::{Deref, DerefMut},
+    sync::OnceLock,
+};
+
 use crate::Execution;
-use std::ops::{Deref, DerefMut};
-use std::sync::OnceLock;
 
 /// Complete execution summaries, ordered as [`Execution`].
 ///

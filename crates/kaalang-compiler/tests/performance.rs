@@ -5,14 +5,15 @@
 
 use std::time::{Duration, Instant};
 
-use syn::ItemFn;
-
-use kaalang_testing::corpus::{self, Suite};
-use kaalang_testing::performance::{ItemBudget, assert_pass_budget, assert_within};
-use kaalang_testing::probes::{
-    accepted, branching, branching_with_work, cyclic_branching_with_work, data_branching, flow,
-    staged_branching_with_work,
+use kaalang_testing::{
+    corpus::{self, Suite},
+    performance::{ItemBudget, assert_pass_budget, assert_within},
+    probes::{
+        accepted, branching, branching_with_work, cyclic_branching_with_work, data_branching, flow,
+        staged_branching_with_work,
+    },
 };
+use syn::ItemFn;
 
 /// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {

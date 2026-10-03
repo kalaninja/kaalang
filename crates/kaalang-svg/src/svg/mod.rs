@@ -1,20 +1,22 @@
 use std::fmt::Write;
 
-use crate::layout::{
-    CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
-    LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, NODE_LABEL_PADDING_X, NODE_LABEL_PADDING_Y, Node,
-    ParameterPanel, Point, Scene,
-};
-use crate::text::{
-    Color, FORMULA_STRIKETHROUGH_OFFSET, FORMULA_UNDERLINE_OFFSET, FORMULA_UNDERLINE_PADDING,
-    Formula, RichText, SCRIPT_FONT_SCALE, SUBSCRIPT_SHIFT, SUPERSCRIPT_SHIFT, Script, Style,
-    TEXT_ADVANCE_SCALE, block_metrics, line_ink, shaping_spans, svg_dimension,
-};
 use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 use latex_rust::Dim;
 use unicode_segmentation::UnicodeSegmentation;
 
-pub(crate) use staged::serialize_staged;
+pub(crate) use self::staged::serialize_staged;
+use crate::{
+    layout::{
+        CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, CYCLE_CAPTION_FONT, Connection, LABEL_FONT,
+        LINE_HEIGHT, Label, LabelKind, MERGE_RADIUS, NODE_LABEL_PADDING_X, NODE_LABEL_PADDING_Y,
+        Node, ParameterPanel, Point, Scene,
+    },
+    text::{
+        Color, FORMULA_STRIKETHROUGH_OFFSET, FORMULA_UNDERLINE_OFFSET, FORMULA_UNDERLINE_PADDING,
+        Formula, RichText, SCRIPT_FONT_SCALE, SUBSCRIPT_SHIFT, SUPERSCRIPT_SHIFT, Script, Style,
+        TEXT_ADVANCE_SCALE, block_metrics, line_ink, shaping_spans, svg_dimension,
+    },
+};
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {

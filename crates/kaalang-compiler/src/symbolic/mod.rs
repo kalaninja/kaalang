@@ -2,16 +2,14 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use syn::ext::IdentExt;
-use syn::{Error, Result};
+use syn::{Error, Result, ext::IdentExt};
 
+use self::condition::{Condition, Conditions, NEVER};
+pub(crate) use self::walk::flow as histories;
 use crate::{
     BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution, ExecutionOutcome,
     Flow, FlowKind, ProducerId, WireMerge,
 };
-
-use condition::{Condition, Conditions, NEVER};
-pub(crate) use walk::flow as histories;
 
 mod condition;
 mod cycle;

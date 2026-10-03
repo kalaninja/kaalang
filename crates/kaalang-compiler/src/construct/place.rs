@@ -3,8 +3,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::Flow;
-use crate::topology::{Connection, ExitId, NodeId, Source, Topology, Vertex};
+use crate::{
+    model::Flow,
+    topology::{Connection, ExitId, NodeId, Source, Topology, Vertex},
+};
 
 #[derive(Clone)]
 pub(super) struct Placement {

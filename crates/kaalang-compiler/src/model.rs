@@ -2,12 +2,9 @@
 
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
-use syn::ext::IdentExt;
-use syn::{Expr, FnArg, Pat, PatIdent, ReturnType};
+use syn::{Expr, FnArg, Pat, PatIdent, ReturnType, ext::IdentExt};
 
-use crate::construct::Arrangement;
-use crate::executions::Executions;
-use crate::topology::Topology;
+use crate::{construct::Arrangement, executions::Executions, topology::Topology};
 
 /// Semantic analysis and lowering plan, before diagram construction.
 #[derive(Clone)]

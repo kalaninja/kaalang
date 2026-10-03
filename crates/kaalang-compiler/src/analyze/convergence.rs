@@ -5,9 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::Result;
 
-use crate::model::{BlockKind, BranchSelection, ConvergenceGroup, Flow};
-
 use super::frame::Frames;
+use crate::model::{BlockKind, BranchSelection, ConvergenceGroup, Flow};
 
 /// Returns every convergence group in canonical order, or the earliest
 /// crossing or separated choice group. Divergence after a convergence is the

@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::cell::RefCell;
+
+use kaalang::kaalang;
 #[kaalang]
 fn work_after_stage_signal(go: (), events: &RefCell<Vec<&'static str>>) -> u8 {
     #[stage("Prepare the result.")]

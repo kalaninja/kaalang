@@ -4,13 +4,15 @@
 
 use std::collections::BTreeSet;
 
-use crate::model::{Flow, WireMerge};
-use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
-
-use crate::geometry::{Point, compatible};
-
-use super::verify::{Grid, back_edge_polyline, ends, meetings};
-use super::{Arrangement, Contour, Side};
+use super::{
+    Arrangement, Contour, Side,
+    verify::{Grid, back_edge_polyline, ends, meetings},
+};
+use crate::{
+    geometry::{Point, compatible},
+    model::{Flow, WireMerge},
+    topology::{Destination, NodeId, Source, Topology, Vertex},
+};
 
 /// Body columns, independent of ranks: vertices below the tail still count.
 /// Nested back edges occupy lanes, checked separately by `nested_back_edges`.

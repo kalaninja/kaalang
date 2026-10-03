@@ -4,8 +4,10 @@
 
 use proc_macro2::Span;
 
-use crate::model::{BlockKind, Flow, WireMerge};
-use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
+use crate::{
+    model::{BlockKind, Flow, WireMerge},
+    topology::{ExitId, NodeId, Source, Topology, Vertex},
+};
 
 /// The span to report one vertex at: the block it draws, or the cycle whose
 /// entry or tail it is.

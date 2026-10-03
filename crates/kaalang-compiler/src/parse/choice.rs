@@ -4,8 +4,10 @@ use proc_macro2::Ident;
 use syn::{Attribute, Error, Expr, Result};
 
 use super::{BlockSyntax, description};
-use crate::choice::{choice_match, is_todo_body, is_todo_macro};
-use crate::model::Block;
+use crate::{
+    choice::{choice_match, is_todo_body, is_todo_macro},
+    model::Block,
+};
 
 /// Reports a case attribute that appears before its choice declaration.
 pub(super) fn case_before_choice(attribute: &Attribute) -> Error {

@@ -4,8 +4,7 @@
 use quote::{ToTokens, format_ident};
 use syn::{Expr, ItemFn, Stmt, parse_quote, visit::Visit};
 
-use crate::expand;
-use crate::tests::fixture;
+use crate::{expand, tests::fixture};
 
 fn branching_matches(function: &ItemFn) -> usize {
     struct Count(usize);

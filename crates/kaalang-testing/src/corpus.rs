@@ -1,8 +1,10 @@
 //! Loads executable fixture flows from `crates/kaalang/tests`, keeping the
 //! performance corpus in sync with behavior tests, gallery examples, and stress fixtures.
 
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use syn::ItemFn;
 

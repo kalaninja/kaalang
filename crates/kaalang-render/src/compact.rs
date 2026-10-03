@@ -1,7 +1,9 @@
 //! Arrangement compaction shared by kaalang renderers.
 
-use kaalang_compiler::topology::{Topology, Vertex};
-use kaalang_compiler::{Arrangement, Run, RunLine, SemanticModel, Side};
+use kaalang_compiler::{
+    Arrangement, Run, RunLine, SemanticModel, Side,
+    topology::{Topology, Vertex},
+};
 
 use crate::ArrangementVerifier;
 
@@ -260,9 +262,9 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use kaalang_testing::corpus::flow_named as fixture;
+
+    use super::*;
 
     #[test]
     fn stage_transitions_keep_their_final_row_through_compaction() {

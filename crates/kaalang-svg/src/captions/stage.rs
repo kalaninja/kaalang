@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
 
-use kaalang_compiler::topology::{ExitId, NodeId};
-use kaalang_compiler::{Analysis, ProducerId, SemanticModel};
-
-use crate::text::RichText;
+use kaalang_compiler::{
+    Analysis, ProducerId, SemanticModel,
+    topology::{ExitId, NodeId},
+};
 
 use super::{Captions, derive_with_parameters, named_parameters, provided, shares_label};
+use crate::text::RichText;
 
 /// Reuses ordinary captions, then resolves stage labels from their destinations.
 pub(crate) fn derive_stage(

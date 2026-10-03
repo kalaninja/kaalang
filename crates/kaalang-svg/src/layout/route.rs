@@ -1,17 +1,16 @@
 //! Converts the verified arrangement's corridors into pixels and checks
 //! the diagram geometry. A failed realization is a renderer defect.
 
-use kaalang_compiler::geometry::{
-    bundle_meetings, compatible, overlaps_itself, straighten, turns_downward,
-};
-use kaalang_compiler::topology::{Destination, ExitId, NodeId, Source, Vertex};
-use kaalang_compiler::{SemanticModel, Side};
-
-use super::{Connection, Point, Rows, Scene};
-
 /// Whether a segment passes through a rectangle rather than merely touching it.
 /// The model checks its own boundaries with this same definition.
 pub(super) use kaalang_compiler::geometry::enters;
+use kaalang_compiler::{
+    SemanticModel, Side,
+    geometry::{bundle_meetings, compatible, overlaps_itself, straighten, turns_downward},
+    topology::{Destination, ExitId, NodeId, Source, Vertex},
+};
+
+use super::{Connection, Point, Rows, Scene};
 
 pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
     scene
@@ -446,8 +445,9 @@ pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use kaalang_compiler::topology::{ExitId, Topology};
+
+    use super::*;
 
     fn routes(paths: &[&[(i32, i32)]]) -> Scene {
         let connections = paths

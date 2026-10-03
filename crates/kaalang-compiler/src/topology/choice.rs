@@ -1,10 +1,9 @@
 //! Projects a choice's select, cases, and distributor connections.
 
-use crate::model::{Block, Execution};
-
 use super::{
     Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, block_node, branch_exits,
 };
+use crate::model::{Block, Execution};
 
 pub(super) fn project(index: usize, block: &Block, nodes: &mut Vec<Node>, exits: &mut Vec<Exit>) {
     // The cases and the outputs are walked separately below, so the pairing the

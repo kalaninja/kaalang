@@ -1,9 +1,8 @@
 //! Serializes a question node.
 use std::fmt::Write;
 
-use crate::layout::QUESTION_POINT;
-
 use super::{Node, TextAnchor, write_label};
+use crate::layout::QUESTION_POINT;
 
 pub(super) fn name(label: &str) -> String {
     format!("Question: {label}")

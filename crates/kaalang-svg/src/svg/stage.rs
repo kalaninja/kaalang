@@ -2,10 +2,10 @@
 
 use std::fmt::Write;
 
-use crate::layout::CASE_TIP_HEIGHT;
 use kaalang_compiler::topology::NodeKind;
 
 use super::{Node, TextAnchor, write_label};
+use crate::layout::CASE_TIP_HEIGHT;
 
 const MARKER_WIDTH_DIVISOR: i32 = 4;
 

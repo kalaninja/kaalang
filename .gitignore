@@ -10,3 +10,6 @@ target/
 # Operating systems
 .DS_Store
 Thumbs.db
+
+# Tooling caches
+/.cache/

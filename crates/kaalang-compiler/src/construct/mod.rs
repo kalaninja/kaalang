@@ -12,11 +12,12 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::Error;
 
-use crate::geometry::Point;
-use crate::model::{Flow, WireMerge};
-use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
-
-pub use verify::ArrangementGeometry;
+pub use self::verify::ArrangementGeometry;
+use crate::{
+    geometry::Point,
+    model::{Flow, WireMerge},
+    topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex},
+};
 
 mod choice;
 pub(crate) mod cycle;

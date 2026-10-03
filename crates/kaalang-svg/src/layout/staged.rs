@@ -2,12 +2,13 @@
 
 use std::rc::Rc;
 
-use kaalang_compiler::topology::{ExitId, NodeId, NodeKind, Topology, Vertex};
-use kaalang_compiler::{Arrangement, BlockKind, SemanticModel};
-
-use crate::captions;
+use kaalang_compiler::{
+    Arrangement, BlockKind, SemanticModel,
+    topology::{ExitId, NodeId, NodeKind, Topology, Vertex},
+};
 
 use super::{CONNECTION_LABEL_HALO, Point, Scene, label_rect, layout_with_stage_rows, route};
+use crate::captions;
 
 const MARGIN: i32 = 24;
 const PART_GAP: i32 = 36;
@@ -373,8 +374,9 @@ fn place(parts: &[Scene], direct_entry: Option<usize>) -> Vec<PartPlacement> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::BTreeSet;
+
+    use super::*;
 
     fn drawn(source: &str, name: &str, return_type: &str) -> StagedScene {
         let function = syn::parse_str(source).unwrap();

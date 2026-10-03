@@ -1,7 +1,6 @@
 //! Shared structural layout preparation for kaalang renderers.
 
-pub use compact::compact_arrangement;
-pub use verify::ArrangementVerifier;
+pub use self::{compact::compact_arrangement, verify::ArrangementVerifier};
 
 mod compact;
 mod verify;

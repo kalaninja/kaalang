@@ -3,15 +3,14 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_compiler::topology::{
-    Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology,
+use kaalang_compiler::{
+    Analysis, BlockKind, Input, ProducerId, SemanticModel,
+    topology::{Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology},
 };
-use kaalang_compiler::{Analysis, BlockKind, Input, ProducerId, SemanticModel};
 use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
+pub(crate) use self::stage::derive_stage;
 use crate::text::RichText;
-
-pub(crate) use stage::derive_stage;
 
 mod stage;
 

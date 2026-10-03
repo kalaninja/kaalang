@@ -3,8 +3,10 @@
 use std::collections::BTreeSet;
 
 use super::{Builder, Lowered, Replay, Scope};
-use crate::symbolic::condition::{Condition, NEVER};
-use crate::{BlockKind, Branch, ExecutionOutcome, ExecutionPlan, Join};
+use crate::{
+    BlockKind, Branch, ExecutionOutcome, ExecutionPlan, Join,
+    symbolic::condition::{Condition, NEVER},
+};
 
 pub(super) fn lower(
     builder: &mut Builder<'_>,

@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::{cell::RefCell, rc::Rc};
+
+use kaalang::kaalang;
 
 struct Guard(Rc<RefCell<Vec<&'static str>>>, &'static str);
 impl Drop for Guard {

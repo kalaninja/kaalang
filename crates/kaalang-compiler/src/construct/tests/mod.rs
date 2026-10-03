@@ -7,9 +7,11 @@ use kaalang_testing::shapes::{
 };
 
 use super::{Arrangement, Contour, Side, place, verify};
-use crate::model::{Flow, SemanticModel, WireMerge};
-use crate::tests::model;
-use crate::topology::{ExitId, NodeId, Source, Topology, Vertex, linked};
+use crate::{
+    model::{Flow, SemanticModel, WireMerge},
+    tests::model,
+    topology::{ExitId, NodeId, Source, Topology, Vertex, linked},
+};
 
 fn arrangement(model: &SemanticModel) -> Arrangement {
     super::construct(

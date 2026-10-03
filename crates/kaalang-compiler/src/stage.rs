@@ -5,11 +5,14 @@ use std::collections::{BTreeSet, VecDeque};
 use proc_macro2::Ident;
 use syn::{Error, FnArg, ItemFn, Pat, Result};
 
-use crate::model::{
-    Analysis, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, StageAnalysis,
+use crate::{
+    analyze_local,
+    model::{
+        Analysis, Execution, ExecutionOutcome, ExecutionPlan, Flow, ProducerId, StageAnalysis,
+    },
+    parse::ParsedStaged,
+    plan, resolve, scope,
 };
-use crate::parse::ParsedStaged;
-use crate::{analyze_local, plan, resolve, scope};
 
 pub(crate) fn available(flow: &Flow, route: &Execution, name: &Ident) -> bool {
     flow.flow_inputs.contains(name)

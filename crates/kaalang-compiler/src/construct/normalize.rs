@@ -1,8 +1,7 @@
 //! Canonical numbering for arrangement columns and routing lanes.
 
-use crate::topology::Vertex;
-
 use super::{Arrangement, RunLine};
+use crate::topology::Vertex;
 
 pub(super) fn arrangement(built: &mut Arrangement) {
     // Normalization runs for every compaction candidate, so plain integer

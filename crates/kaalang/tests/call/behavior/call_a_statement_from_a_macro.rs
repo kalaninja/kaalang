@@ -1,6 +1,6 @@
-use kaalang::kaalang;
-
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+use kaalang::kaalang;
 
 static NOTICES: AtomicUsize = AtomicUsize::new(0);
 

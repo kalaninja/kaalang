@@ -2,13 +2,16 @@
 //! back edges may change columns between events; vertices, ports and back edge
 //! envelopes supply the persistent horizontal constraints.
 
-use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet};
-
-use crate::model::{Flow, WireMerge};
-use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side, close_paths, index_of};
+use crate::{
+    model::{Flow, WireMerge},
+    topology::{ExitId, NodeId, Source, Topology, Vertex},
+};
 
 const MEMO_CACHE_BYTES: usize = 64 * 1024 * 1024;
 /// Estimated tree-node and allocation overhead beyond the key payload.

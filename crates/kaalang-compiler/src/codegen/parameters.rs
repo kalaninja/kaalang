@@ -3,8 +3,7 @@
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::ext::IdentExt;
-use syn::{FnArg, ItemFn, Pat, PatIdent};
+use syn::{FnArg, ItemFn, Pat, PatIdent, ext::IdentExt};
 
 use super::Bindings;
 

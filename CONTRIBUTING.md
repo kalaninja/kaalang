@@ -89,15 +89,27 @@ For syntax or semantic changes:
 ## Validation
 
 Recipes live in `justfile` and the `just/` modules and run from the repository
-root with [just](https://just.systems). Format sources:
+root with [just](https://just.systems). The Rust and Markdown recipes run in
+Docker images built from `Dockerfile`, so building and testing need only just
+and Docker on the host. The release recipes still run cargo on the host, since
+publishing uses its crates.io credentials. The images install the tools pinned
+in `mise/` with [mise](https://mise.jdx.dev). The `rust` image builds and tests
+with the Rust release in `mise/config.toml`. The `fmt` image formats with the
+nightly rustfmt and the Node.js for Prettier in `mise/config.fmt.toml`; the
+nightly is what applies the import options in `rustfmt.toml`. A recipe rebuilds
+its image when those files change; `just tooling build <rust|fmt>` does it
+alone. Downloaded crates and npm packages stay in the ignored `.cache/`
+directory.
+
+Format sources:
 
 ```sh
 just fmt
 ```
 
-That formats Markdown with [Prettier](https://prettier.io/docs/cli), which needs
-Node.js and npm and respects `.gitignore`, then Rust with `cargo fmt`. The
-pinned Prettier version lives in `just/docs.just`; CI uses the same one.
+That formats Markdown with [Prettier](https://prettier.io/docs/cli), which
+respects `.gitignore`, then Rust with the pinned nightly `cargo fmt`. The pinned
+Prettier version lives in `just/docs.just`; CI uses the same one.
 
 Run the full baseline before committing:
 

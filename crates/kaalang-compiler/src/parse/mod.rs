@@ -13,9 +13,8 @@ use syn::{
     visit::{self, Visit},
 };
 
+pub(crate) use self::stage::{ParsedStaged, staged};
 use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
-
-pub(crate) use stage::{ParsedStaged, staged};
 
 mod action;
 mod call;

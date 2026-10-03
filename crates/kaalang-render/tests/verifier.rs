@@ -1,5 +1,4 @@
-use kaalang_compiler::topology::Vertex;
-use kaalang_compiler::{Arrangement, ArrangementChecks, RunLine, SemanticModel};
+use kaalang_compiler::{Arrangement, ArrangementChecks, RunLine, SemanticModel, topology::Vertex};
 use kaalang_render::ArrangementVerifier;
 
 /// One action between the flow's start and end: the smallest arrangement a

@@ -1,8 +1,9 @@
 //! Conditional repeats close one finite iteration.
 
+use syn::Error;
+
 use super::{Condition, State, Walk};
 use crate::ExecutionOutcome;
-use syn::Error;
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &mut State, mut runs: Condition) {
     let header = walk.flow.blocks[block]

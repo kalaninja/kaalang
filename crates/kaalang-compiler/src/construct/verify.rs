@@ -2,15 +2,16 @@
 //! on an abstract grid and checking diagram geometry. Rejecting a candidate says nothing
 //! about whether another arrangement exists.
 
-use crate::geometry::{
-    Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
-};
 use std::collections::BTreeSet;
 
-use crate::model::Flow;
-use crate::topology::{Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex};
-
 use super::{Arrangement, RunLine, Side};
+use crate::{
+    geometry::{
+        Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
+    },
+    model::Flow,
+    topology::{Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex},
+};
 
 /// Abstract coordinates with separate lines for ranks and gap lanes, and space
 /// beside columns for contours. Gap lanes stay above the next occupied rank;

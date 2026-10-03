@@ -2,9 +2,8 @@
 
 use std::collections::BTreeMap;
 
-use crate::topology::{Destination, ExitId, NodeId, Source, Topology, Vertex};
-
 use super::Arrangement;
+use crate::topology::{Destination, ExitId, NodeId, Source, Topology, Vertex};
 
 /// The case reached directly from its choice's distributor.
 pub(super) fn case_destination(source: Source, destination: Destination) -> Option<NodeId> {

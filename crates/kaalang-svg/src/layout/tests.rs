@@ -1,8 +1,7 @@
-use super::*;
 use std::rc::Rc;
 
-use crate::captions::Captions;
-use crate::text::joined;
+use super::*;
+use crate::{captions::Captions, text::joined};
 
 #[test]
 fn actions_and_cases_in_one_row_share_their_upper_edge() {

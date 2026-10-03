@@ -2,8 +2,7 @@
 
 use syn::{Error, Result};
 
-use super::frame::Frames;
-use super::{State, Walk};
+use super::{State, Walk, frame::Frames};
 use crate::model::{ExecutionOutcome, Flow};
 
 /// The body inherits every outer wire; completion drops its locals again.

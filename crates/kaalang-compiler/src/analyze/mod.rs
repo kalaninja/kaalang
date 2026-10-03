@@ -2,12 +2,13 @@
 //! execution invariants and recording the executions, capture
 //! dependencies, and convergence groups that the rest of the compiler relies on.
 
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use proc_macro2::Ident;
-use syn::ext::IdentExt;
-use syn::{Error, Result};
+use syn::{Error, Result, ext::IdentExt};
 
 use crate::model::{
     BlockKind, BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution,

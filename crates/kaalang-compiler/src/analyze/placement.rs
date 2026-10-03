@@ -2,8 +2,10 @@
 //! source order runs must stay inside the selected branch, or inside a nested
 //! continuation of it, until a wire merge joins that branch with the others.
 
-use std::cell::OnceCell;
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    cell::OnceCell,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use proc_macro2::Ident;
 use syn::{Error, Result};

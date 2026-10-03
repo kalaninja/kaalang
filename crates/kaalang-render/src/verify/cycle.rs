@@ -2,9 +2,11 @@
 
 use std::collections::BTreeSet;
 
-use kaalang_compiler::geometry::{Point, contains, enters, inside, overlaps};
-use kaalang_compiler::topology::{Connection, Topology, Vertex};
-use kaalang_compiler::{Arrangement, ArrangementGeometry, Flow};
+use kaalang_compiler::{
+    Arrangement, ArrangementGeometry, Flow,
+    geometry::{Point, contains, enters, inside, overlaps},
+    topology::{Connection, Topology, Vertex},
+};
 
 /// Boundary contents in `Topology::cycle_boundaries` order, cached because
 /// ownership is independent of candidate coordinates.

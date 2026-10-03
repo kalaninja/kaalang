@@ -5,8 +5,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::{BlockKind, Flow};
-use crate::topology::{ExitId, NodeId, Source, Topology, Vertex};
+use crate::{
+    model::{BlockKind, Flow},
+    topology::{ExitId, NodeId, Source, Topology, Vertex},
+};
 
 /// Every drawn question, choice and collapsed cycle with several outputs, in
 /// authored order.

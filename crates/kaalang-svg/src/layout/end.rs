@@ -1,7 +1,8 @@
 //! Keeps end below the rest of the diagram, including iteration back edges.
 
-use super::Scene;
 use kaalang_compiler::topology::NodeKind;
+
+use super::Scene;
 
 /// Nothing may end below the final block.
 pub(super) fn verify(scene: &Scene) -> Option<String> {

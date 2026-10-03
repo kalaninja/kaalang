@@ -1,8 +1,7 @@
 use std::collections::BTreeSet;
 
 use super::*;
-use crate::model::SemanticModel;
-use crate::tests::model;
+use crate::{model::SemanticModel, tests::model};
 
 fn drawn(source: &str) -> Topology {
     model(source).topology

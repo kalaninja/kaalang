@@ -1,0 +1,3 @@
+# The images only install the tools pinned in mise/
+*
+!mise/

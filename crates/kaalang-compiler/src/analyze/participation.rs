@@ -8,11 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::{Error, Result};
 
+use super::{comparison, frame::Frames};
 use crate::model::{BlockKind, Flow};
-
-use super::frame::Frames;
-
-use super::comparison;
 
 /// For every computational block, the questions and choices that decide it. A
 /// question or choice decides a block when two executions select different
@@ -112,8 +109,7 @@ pub(crate) fn violation(flow: &Flow, block: usize) -> Error {
 #[cfg(test)]
 mod tests {
     use super::deciders;
-    use crate::analyze::frame::Frames;
-    use crate::build;
+    use crate::{analyze::frame::Frames, build};
 
     #[test]
     fn participation_and_branch_order_match_the_pairwise_reference() {

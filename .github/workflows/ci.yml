@@ -5,12 +5,61 @@ on:
     branches: [ main ]
   pull_request:
 
+# A recipe builds its image with plain `docker build`, which cannot read the
+# GitHub Actions layer cache. Each container job builds its image from that
+# cache in a build-push-action step and loads it, so the recipes skip the build.
+env:
+  SKIP_IMAGE_BUILD: '1'
+
 jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: fmt
+          load: true
+          tags: kaalang-fmt
+          cache-from: type=gha,scope=fmt
+          cache-to: type=gha,scope=fmt,mode=max
+      - uses: extractions/setup-just@v3
+      - run: just fmt-check
+
   validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: rust
+          load: true
+          tags: kaalang-rust
+          cache-from: type=gha,scope=rust
+          cache-to: type=gha,scope=rust,mode=max
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/cargo
+            target
+          key: cargo-${{ hashFiles('Cargo.lock', 'mise/config.toml') }}
+      - uses: extractions/setup-just@v3
+      - run: just rust clippy
+      - run: just rust test
+      # The behavior diagrams redraw themselves during the tests above.
+      - run: git add -A && git diff --cached --exit-code
+
+  # Linux containers do not run on these runners, so they install the same
+  # toolchain from mise/ and call cargo directly. Formatting is checked above.
+  native:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ windows-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -19,23 +68,18 @@ jobs:
       - if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: jdx/mise-action@v2
         with:
-          node-version: '22'
-      # The toolchain comes from rust-toolchain.toml.
-      - run: rustup show
+          # The same mise as the base image tag in Dockerfile.
+          version: 2026.10.0
       - uses: Swatinem/rust-cache@v2
-      - uses: extractions/setup-just@v3
-      - run: just fmt-check
-      - run: just rust clippy
-      - run: just rust test
-      # The behavior diagrams redraw themselves during the tests above.
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
       - run: git add -A && git diff --cached --exit-code
 
   msrv:
     runs-on: ubuntu-latest
     env:
-      # Overrides rust-toolchain.toml: nothing here should pull the pinned toolchain.
       RUSTUP_TOOLCHAIN: '1.88'
     steps:
       - uses: actions/checkout@v4

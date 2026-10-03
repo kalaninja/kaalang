@@ -5,11 +5,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::{Flow, WireMerge};
-use crate::topology::{Destination, NodeId, Source, Topology, Vertex};
-
-use super::place::Placement;
-use super::{Run, RunLine, Shape, describe};
+use super::{Run, RunLine, Shape, describe, place::Placement};
+use crate::{
+    model::{Flow, WireMerge},
+    topology::{Destination, NodeId, Source, Topology, Vertex},
+};
 
 /// What one connection does in one rank gap: it enters from above at `enter`,
 /// leaves downward at `exit`, and needs a lane when those differ.

@@ -4,12 +4,11 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use syn::{Error, Result};
 
-use super::frame::Frames;
 use super::{
     Executions,
     condition::{ALWAYS, Condition, NEVER},
+    frame::Frames,
 };
-
 use crate::{BlockKind, BranchSelection, ConvergenceGroup, Flow, ProducerId, WireMerge};
 
 impl Executions {

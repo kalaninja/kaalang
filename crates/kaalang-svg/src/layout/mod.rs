@@ -1,23 +1,27 @@
 //! Places the visual topology on rows and columns, routes its connections, and
 //! positions the labels its exits and nodes own.
 
-use std::collections::{BTreeMap, BTreeSet};
-use std::rc::Rc;
-
-use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex};
-use kaalang_compiler::{Arrangement, RunLine, SemanticModel, Side};
-use syn::{ReturnType, Signature, spanned::Spanned};
-
-use crate::captions::Captions;
-use crate::text::{self, RichText, wrap_literal, wrap_text};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    rc::Rc,
+};
 
 /// One point of the diagram, in pixels. The model's own check reads the same
 /// type over its abstract grid, so the crossing rules of `geometry` decide for
 /// both.
 pub(crate) use kaalang_compiler::geometry::Point;
+use kaalang_compiler::{
+    Arrangement, RunLine, SemanticModel, Side,
+    topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex},
+};
+use syn::{ReturnType, Signature, spanned::Spanned};
 
-use label::{label_rect, vertical_gaps};
-pub(crate) use staged::{StagedScene, layout_staged};
+use self::label::{label_rect, vertical_gaps};
+pub(crate) use self::staged::{StagedScene, layout_staged};
+use crate::{
+    captions::Captions,
+    text::{self, RichText, wrap_literal, wrap_text},
+};
 
 mod action;
 mod call;

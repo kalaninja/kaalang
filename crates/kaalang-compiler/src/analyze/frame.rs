@@ -4,8 +4,7 @@
 //! tells executions apart at the cycle. Inside the body its own selection does not exist yet, since
 //! the body's routes are what make it.
 
-use std::borrow::Cow;
-use std::collections::BTreeMap;
+use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::model::{BranchSelection, Execution, Flow, Passes, ProducerId, WireMerge};
 

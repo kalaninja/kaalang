@@ -1,12 +1,10 @@
 //! Connects executions that disagree at exactly one shared selector.
 //! See RFC 0007 §5.1 for the comparison reduction and its remaining bounds.
 
-use std::cmp::Ordering;
-use std::collections::BTreeMap;
-
-use crate::model::Execution;
+use std::{cmp::Ordering, collections::BTreeMap};
 
 use super::only_difference;
+use crate::model::Execution;
 
 /// At most 2016 pairs. Measured on 2026-10-02, the index is no faster at this
 /// size and wins only for repeating flows of about 70 executions or more.

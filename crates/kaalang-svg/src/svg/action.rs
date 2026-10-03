@@ -1,9 +1,8 @@
 //! Serializes an action node.
 use std::fmt::Write;
 
-use crate::layout::NODE_LABEL_PADDING_X;
-
 use super::{Node, TextAnchor, write_label};
+use crate::layout::NODE_LABEL_PADDING_X;
 
 pub(super) fn name(label: &str) -> String {
     format!("Action: {label}")

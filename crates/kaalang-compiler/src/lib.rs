@@ -2,16 +2,18 @@
 
 use syn::{ItemFn, Result};
 
-pub(crate) use choice::{choice_match, is_todo_body};
-pub use codegen::expand;
-pub use construct::{
-    Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
-};
-pub use executions::Executions;
-pub use model::{
-    Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
-    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
-    JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
+pub(crate) use self::choice::{choice_match, is_todo_body};
+pub use self::{
+    codegen::expand,
+    construct::{
+        Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
+    },
+    executions::Executions,
+    model::{
+        Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
+        ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
+        JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
+    },
 };
 
 mod analyze;

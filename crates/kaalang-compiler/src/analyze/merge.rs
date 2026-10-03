@@ -1,18 +1,18 @@
 //! Records the implicit merge of every repeated output name and checks that
 //! source order closes each merge's branch-local work before its consumers.
 
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use proc_macro2::Ident;
 use syn::{Error, Result};
 
+use super::{comparison, frame::Frames};
 use crate::model::{
     BlockKind, BranchSelection, Execution, ExecutionOutcome, Flow, Passes, ProducerId, WireMerge,
 };
-
-use super::comparison;
-use super::frame::Frames;
 
 pub(super) fn flow(
     flow: &Flow,
@@ -500,9 +500,12 @@ mod tests {
     use syn::{ItemFn, parse_quote};
 
     use super::{Completion, collect, completion, completion_at, context};
-    use crate::analyze::{comparison, only_difference};
-    use crate::tests::message as error;
-    use crate::{Execution, Flow, ProducerId, WireMerge, build};
+    use crate::{
+        Execution, Flow, ProducerId, WireMerge,
+        analyze::{comparison, only_difference},
+        build,
+        tests::message as error,
+    };
 
     fn merge(function: &ItemFn, wire: &str) -> WireMerge {
         let model = build(function).expect("the flow is valid");

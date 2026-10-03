@@ -434,8 +434,9 @@ fn label_width(lines: &[RichText], font_size: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use kaalang_compiler::topology::{NodeId, Topology};
+
+    use super::*;
 
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {

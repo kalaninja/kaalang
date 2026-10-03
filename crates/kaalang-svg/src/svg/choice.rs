@@ -1,9 +1,8 @@
 //! Serializes a choice's Select node and its derived Case nodes.
 use std::fmt::Write;
 
-use crate::layout::{CASE_TIP_HEIGHT, SELECT_SKEW};
-
 use super::{Node, TextAnchor, write_label};
+use crate::layout::{CASE_TIP_HEIGHT, SELECT_SKEW};
 
 pub(super) fn select_name(label: &str) -> String {
     format!("Select: {label}")

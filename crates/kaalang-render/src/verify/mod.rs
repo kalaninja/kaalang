@@ -2,8 +2,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use kaalang_compiler::topology::{Connection, Topology, Vertex};
-use kaalang_compiler::{Arrangement, ArrangementChecks, Flow};
+use kaalang_compiler::{
+    Arrangement, ArrangementChecks, Flow,
+    topology::{Connection, Topology, Vertex},
+};
 
 mod cycle;
 

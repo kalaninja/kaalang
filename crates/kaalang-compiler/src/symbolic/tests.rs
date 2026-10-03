@@ -1,8 +1,9 @@
 use std::path::Path;
 
+use kaalang_testing::probes::{branching, branching_with_work, data_branching, flow};
+
 use super::*;
 use crate::codegen::Bindings;
-use kaalang_testing::probes::{branching, branching_with_work, data_branching, flow};
 
 #[allow(clippy::too_many_lines)] // Compares diagnostics, semantics, Rust and topology against the complete reference.
 fn compare(function: &syn::ItemFn) -> bool {

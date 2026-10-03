@@ -1,5 +1,6 @@
-use kaalang::kaalang;
 use std::cell::Cell;
+
+use kaalang::kaalang;
 
 use super::{ROUTE, expected, selected};
 

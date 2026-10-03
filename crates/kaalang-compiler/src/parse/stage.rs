@@ -3,8 +3,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::{Ident, Span};
-use syn::ext::IdentExt;
-use syn::{Error, Expr, FnArg, ItemFn, Pat, Result, Stmt, parse_quote_spanned, spanned::Spanned};
+use syn::{
+    Error, Expr, FnArg, ItemFn, Pat, Result, Stmt, ext::IdentExt, parse_quote_spanned,
+    spanned::Spanned,
+};
 
 use super::{
     block_closure, block_outputs, block_statement, body_captures, description, end, flow_inputs,

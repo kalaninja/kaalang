@@ -1,9 +1,8 @@
 //! Serializes a call node.
 use std::fmt::Write;
 
-use crate::layout::{CALL_BAR_INSET, NODE_LABEL_PADDING_X};
-
 use super::{Node, TextAnchor, write_label};
+use crate::layout::{CALL_BAR_INSET, NODE_LABEL_PADDING_X};
 
 pub(super) fn name(label: &str) -> String {
     format!("Call: {label}")

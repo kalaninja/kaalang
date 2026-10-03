@@ -6,11 +6,13 @@ use super::{
     Executions,
     condition::{ALWAYS, Condition, NEVER},
 };
-use crate::topology::{
-    Analyzed, Connection, Cycle, CycleBoundary, Destination, ExitId, NodeId, Source, Topology,
-    Vertex,
+use crate::{
+    BlockKind, Execution, Flow, ProducerId,
+    topology::{
+        Analyzed, Connection, Cycle, CycleBoundary, Destination, ExitId, NodeId, Source, Topology,
+        Vertex,
+    },
 };
-use crate::{BlockKind, Execution, Flow, ProducerId};
 
 impl Executions {
     /// Concrete witnesses for the union facts read outside connection reduction.

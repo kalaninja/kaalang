@@ -4,8 +4,10 @@
 
 use std::time::{Duration, Instant};
 
-use kaalang_testing::performance::assert_within;
-use kaalang_testing::probes::{flow, nested_cycles};
+use kaalang_testing::{
+    performance::assert_within,
+    probes::{flow, nested_cycles},
+};
 
 /// The bound on building and compacting one generated probe, against a measured
 /// median of about 740 ms before compaction moved out of the compiler crate.

@@ -1,5 +1,4 @@
-use kaalang_compiler::topology::Vertex;
-use kaalang_compiler::{ArrangementChecks, RunLine, SemanticModel};
+use kaalang_compiler::{ArrangementChecks, RunLine, SemanticModel, topology::Vertex};
 
 fn model(source: &str) -> SemanticModel {
     kaalang_compiler::build(&syn::parse_str(source).expect("the flow parses"))

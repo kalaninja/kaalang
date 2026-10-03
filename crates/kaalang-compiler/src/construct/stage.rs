@@ -2,9 +2,8 @@
 
 use std::collections::BTreeSet;
 
-use crate::topology::{NodeKind, Topology, Vertex};
-
 use super::Arrangement;
+use crate::topology::{NodeKind, Topology, Vertex};
 
 pub(super) fn events(topology: &Topology, events: &mut [Vec<usize>]) {
     let transitions = topology
