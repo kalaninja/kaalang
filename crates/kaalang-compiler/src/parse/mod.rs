@@ -15,6 +15,8 @@ use syn::{
 
 use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
 
+pub(crate) use stage::{ParsedStaged, staged};
+
 mod action;
 mod call;
 mod capture;
@@ -25,8 +27,6 @@ mod end;
 mod question;
 mod return_block;
 mod stage;
-
-pub(crate) use stage::{ParsedStaged, staged};
 
 /// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {

@@ -10,6 +10,9 @@ use crate::{
     Flow, FlowKind, ProducerId, WireMerge,
 };
 
+use condition::{Condition, Conditions, NEVER};
+pub(crate) use walk::flow as histories;
+
 mod condition;
 mod cycle;
 mod frame;
@@ -22,8 +25,6 @@ mod walk;
 
 #[cfg(test)]
 mod tests;
-
-use condition::{Condition, Conditions, NEVER};
 
 /// Larger finite domains use execution conditions instead of enumeration.
 /// Measured on 2026-10-02 over macro expansion in the dev profile: enumeration
@@ -54,8 +55,6 @@ pub(crate) fn worth_factoring(flow: &Flow) -> bool {
         })
         > ENUMERATED_HISTORY_LIMIT
 }
-
-pub(crate) use walk::flow as histories;
 
 #[cfg(test)]
 pub(crate) fn analyze(

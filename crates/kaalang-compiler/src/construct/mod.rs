@@ -16,6 +16,8 @@ use crate::geometry::Point;
 use crate::model::{Flow, WireMerge};
 use crate::topology::{Connection, Destination, ExitId, NodeId, Topology, Vertex};
 
+pub use verify::ArrangementGeometry;
+
 mod choice;
 pub(crate) mod cycle;
 mod describe;
@@ -27,8 +29,6 @@ mod route;
 mod stage;
 mod sweep;
 mod verify;
-
-pub use verify::ArrangementGeometry;
 
 /// The sole arrival that keeps an ordinary vertex in its predecessor's
 /// column. A case may be reached by a distributor detour, and an iteration

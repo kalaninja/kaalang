@@ -14,6 +14,8 @@ use kaalang_compiler::topology::{Destination, ExitId, NodeId, NodeKind, Source};
 use latex_rust::Dim;
 use unicode_segmentation::UnicodeSegmentation;
 
+pub(crate) use staged::serialize_staged;
+
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
     ($svg:expr, $($argument:tt)*) => {
@@ -37,8 +39,6 @@ mod cycle;
 mod question;
 mod stage;
 mod staged;
-
-pub(crate) use staged::serialize_staged;
 
 const STROKE_WIDTH: f64 = 1.75;
 const CYCLE_NODE_STROKE_WIDTH: i32 = 2;

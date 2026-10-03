@@ -6,11 +6,14 @@ use proc_macro2::Ident;
 
 use super::{
     Executions,
-    condition::{Condition, NEVER},
+    condition::{ALWAYS, Condition, NEVER},
 };
-mod cycle;
+use crate::{
+    BlockKind, Branch, ExecutionOutcome, ExecutionPlan, Flow, Join, JoinTarget, ProducerId,
+    WireMerge,
+};
 
-use crate::{BlockKind, Branch, ExecutionPlan, Flow, Join, JoinTarget, ProducerId, WireMerge};
+mod cycle;
 
 struct Builder<'a> {
     executions: &'a mut Executions,
@@ -555,9 +558,6 @@ impl Executions {
         true
     }
 }
-
-use super::condition::ALWAYS;
-use crate::ExecutionOutcome;
 
 struct Replay<'a> {
     executions: &'a mut Executions,

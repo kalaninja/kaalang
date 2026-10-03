@@ -9,6 +9,10 @@ use kaalang_compiler::{SemanticModel, Side};
 
 use super::{Connection, Point, Rows, Scene};
 
+/// Whether a segment passes through a rectangle rather than merely touching it.
+/// The model checks its own boundaries with this same definition.
+pub(super) use kaalang_compiler::geometry::enters;
+
 pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
     scene
         .topology
@@ -439,10 +443,6 @@ pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
         .windows(2)
         .any(|segment| enters(segment[0], segment[1], bounds))
 }
-
-/// Whether a segment passes through a rectangle rather than merely touching it.
-/// The model checks its own boundaries with this same definition.
-pub(super) use kaalang_compiler::geometry::enters;
 
 #[cfg(test)]
 mod tests {

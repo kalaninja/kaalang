@@ -11,6 +11,14 @@ use syn::{ReturnType, Signature, spanned::Spanned};
 use crate::captions::Captions;
 use crate::text::{self, RichText, wrap_literal, wrap_text};
 
+/// One point of the diagram, in pixels. The model's own check reads the same
+/// type over its abstract grid, so the crossing rules of `geometry` decide for
+/// both.
+pub(crate) use kaalang_compiler::geometry::Point;
+
+use label::{label_rect, vertical_gaps};
+pub(crate) use staged::{StagedScene, layout_staged};
+
 mod action;
 mod call;
 mod choice;
@@ -21,9 +29,6 @@ mod route;
 mod staged;
 #[cfg(test)]
 mod tests;
-
-use label::{label_rect, vertical_gaps};
-pub(crate) use staged::{StagedScene, layout_staged};
 
 const MARGIN: i32 = 32;
 const COLUMN_WIDTH: i32 = 360;
@@ -153,11 +158,6 @@ pub(crate) struct Node {
     pub(crate) height: i32,
     pub(crate) lines: Vec<RichText>,
 }
-
-/// One point of the diagram, in pixels. The model's own check reads the same
-/// type over its abstract grid, so the crossing rules of `geometry` decide for
-/// both.
-pub(crate) use kaalang_compiler::geometry::Point;
 
 /// One routed connection. It owns no label: a hand-over belongs to the exit it
 /// leaves and a capture to the node it reaches.

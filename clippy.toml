@@ -1,2 +1,10 @@
 allow-mixed-uninlined-format-args = false
 allow-unwrap-in-tests = true
+# Imports open a module; everything else, `mod` included, follows in any order.
+source-item-ordering = ["module"]
+module-items-ordered-within-groupings = "none"
+module-item-order-groupings = [
+    ["crates", ["extern_crate"]],
+    ["imports", ["use"]],
+    ["items", ["mod", "foreign_mod", "macro", "global_asm", "static", "const", "ty_alias", "enum", "struct", "union", "trait", "trait_alias", "impl", "fn"]],
+]

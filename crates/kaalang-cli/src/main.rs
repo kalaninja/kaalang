@@ -1,10 +1,10 @@
-mod diagram;
-
 use std::{env, ffi::OsString, process::ExitCode};
 
 use clap::{Parser, Subcommand};
 
 use crate::diagram::Diagram;
+
+mod diagram;
 
 /// The binary's name from its `[[bin]]` entry.
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");

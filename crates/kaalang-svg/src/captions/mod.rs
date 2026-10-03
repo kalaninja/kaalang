@@ -11,9 +11,9 @@ use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
 
 use crate::text::RichText;
 
-mod stage;
-
 pub(crate) use stage::derive_stage;
+
+mod stage;
 
 /// Every string the diagram shows, keyed by the structural item that owns it.
 #[derive(Clone, Default)]

@@ -2,6 +2,18 @@
 
 use syn::{ItemFn, Result};
 
+pub(crate) use choice::{choice_match, is_todo_body};
+pub use codegen::expand;
+pub use construct::{
+    Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
+};
+pub use executions::Executions;
+pub use model::{
+    Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
+    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
+    JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
+};
+
 mod analyze;
 mod choice;
 mod codegen;
@@ -16,18 +28,6 @@ mod scope;
 mod stage;
 mod symbolic;
 pub mod topology;
-
-pub(crate) use choice::{choice_match, is_todo_body};
-pub use codegen::expand;
-pub use construct::{
-    Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
-};
-pub use executions::Executions;
-pub use model::{
-    Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
-    ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input, Join,
-    JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis, WireMerge,
-};
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///

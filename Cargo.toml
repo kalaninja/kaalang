@@ -41,6 +41,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 unwrap_used = "deny"
+arbitrary_source_item_ordering = "warn"
 
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"
