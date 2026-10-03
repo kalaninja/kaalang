@@ -6,7 +6,7 @@ fn ordinary_wire_names(input: usize) -> usize {
     let end = |input| input + 1;
 
     #[cycle("Use completion-like names inside a cycle.")]
-    let out = |end| {
+    let out = |end| loop {
         #[action("Produce a local result wire.")]
         let result = |end| end + 1;
 

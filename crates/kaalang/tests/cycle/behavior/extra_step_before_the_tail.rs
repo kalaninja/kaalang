@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn extra_step_before_the_tail(mut n: u32) -> u32 {
     #[cycle("Climb past ten.")]
-    let leave = {
+    let leave = loop {
         #[question("Is the number past ten?")]
         let (leave, rest) = |&n| *n > 10;
 
@@ -14,7 +14,7 @@ fn extra_step_before_the_tail(mut n: u32) -> u32 {
         };
 
         #[cycle("Climb to a multiple of three.")]
-        let again = |nest| {
+        let again = |nest| loop {
             #[question("Is it a multiple of three?")]
             let (again, more) = |&n| *n % 3 == 0;
 

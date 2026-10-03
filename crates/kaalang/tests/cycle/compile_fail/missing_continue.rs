@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Forget to repeat.")]
-    let leave = {
+    let leave = loop {
         #[question("Leave now?")]
         let (leave, again) = |flag| flag;
 

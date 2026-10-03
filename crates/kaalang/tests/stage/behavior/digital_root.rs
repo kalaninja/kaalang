@@ -16,7 +16,7 @@ fn digital_root(n: u32) -> u32 {
         let (mut rest, mut sum) = |several, n| (n, 0u32);
 
         #[cycle("Add up the digits.")]
-        let n = |rest| {
+        let n = |rest| loop {
             #[question("Are any digits left?")]
             #[yes("YES")]
             #[no("NO")]

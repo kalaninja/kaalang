@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Create an unused local wire.")]
-    let done = |flag| {
+    let done = |flag| loop {
         #[question("Repeat?")]
         let (again, done) = |flag| flag;
 

@@ -8,9 +8,9 @@ fn nested_stage_alternative_outputs(go: u8) -> u8 {
         let current = |go| go;
 
         #[cycle("Select an outer result.")]
-        let (finish, go) = |current| {
+        let (finish, go) = |current| loop {
             #[cycle("Select an inner result.")]
-            let (inner_finish, inner_again) = |current| {
+            let (inner_finish, inner_again) = |current| loop {
                 #[question("Is the value zero?")]
                 let (inner_finish, inner_again) = |current| current == 0;
             };

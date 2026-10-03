@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 const fn empty_captures() -> usize {
     #[cycle("Complete without a header.")]
-    let first = {
+    let first = loop {
         #[action("Produce the first unit.")]
         let first = || {};
     };
 
     #[cycle("Complete through an explicit empty capture list.")]
-    let second = || {
+    let second = || loop {
         #[action("Produce the second unit.")]
         let second = || {};
     };

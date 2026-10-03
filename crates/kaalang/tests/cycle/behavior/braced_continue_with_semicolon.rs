@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn braced_continue_with_semicolon(mut remaining: usize) -> usize {
     #[cycle("Count down.")]
-    let done = {
+    let done = loop {
         #[question("Is there another step?")]
         let (again, done) = |&remaining| *remaining > 0;
 

@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn output_routes_before_a_question(value: u8, flag: u8) -> u8 {
     #[cycle("Sort the value.")]
-    let (tiny, larger) = {
+    let (tiny, larger) = loop {
         #[question("Is it below ten?")]
         let (low, high) = |value| value < 10;
 

@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 const fn nearest_cycle_outputs(mut count: usize) -> usize {
     #[cycle("Run passes until two have finished.")]
-    let done = {
+    let done = loop {
         #[cycle("Complete the inner pass immediately.")]
-        let finished = || {
+        let finished = || loop {
             #[action("Finish the inner pass.")]
             let finished = || {};
         };

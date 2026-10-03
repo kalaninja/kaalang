@@ -5,11 +5,14 @@
 ### Breaking
 
 - Cycles no longer complete with a structural `break` or repeat at the end of
-  their body. A cycle declares named outputs, each produced by a same-named wire
-  in its body, and repeats only through an explicit `continue`. Its header names
-  at most one plain gate wire instead of a capture list, and inner blocks
-  capture outer wires directly. See
-  [RFC 0007](docs/rfcs/0007-language-refinements.md).
+  their body, and the body is written as `loop { ... }` instead of a bare brace
+  block. A bare `#[cycle("...")] loop { ... }` may omit its trailing semicolon,
+  which rustfmt removes. A cycle declares named outputs, each produced by a
+  same-named wire in its body, and repeats only through an explicit `continue`.
+  Its header names at most one plain gate wire instead of a capture list, and
+  inner blocks capture outer wires directly. See
+  [RFC 0007](docs/rfcs/0007-language-refinements.md) and
+  [RFC 0008](docs/rfcs/0008-cycle-forms.md).
 - A block body can no longer read or assign a flow parameter it does not
   capture. 0.1.0 accepted this by mistake.
 - The `--collapse-loops` option and `RenderOptions::collapse_loops` are renamed

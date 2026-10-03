@@ -4,9 +4,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn empty_trailing_cycle(flag: bool) -> usize {
     #[cycle("Repeat the outer pass forever.")]
-    |flag| {
+    |flag| loop {
         #[cycle("Repeat the inner check until it leaves.")]
-        let leave_1 = |flag| {
+        let leave_1 = |flag| loop {
             #[question("Repeat the inner iteration?")]
             #[yes("YES")]
             #[no("NO")]

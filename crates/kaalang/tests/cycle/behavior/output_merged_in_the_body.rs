@@ -8,7 +8,7 @@ fn output_merged_in_the_body(
     mut log: Vec<String>,
 ) -> (Option<String>, Vec<String>) {
     #[cycle("Take the next item.")]
-    let taken = {
+    let taken = loop {
         #[action("Take an item.")]
         let item = |&mut items| items.pop();
 

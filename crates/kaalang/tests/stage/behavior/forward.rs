@@ -5,7 +5,7 @@ fn forward<T>(go: T) -> T {
     #[stage("Forward the incoming value.")]
     let finish = |go| {
         #[cycle("Complete on the first iteration.")]
-        let finish = |go| {
+        let finish = |go| loop {
             #[action("Provide the incoming value.")]
             let finish = |go| go;
         };

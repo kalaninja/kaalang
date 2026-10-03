@@ -323,7 +323,7 @@ mod tests {
                 #[stage("Repeat forever.")]
                 |go| {
                     #[cycle("Stay in this stage.")]
-                    {
+                    loop {
                         continue;
                     };
                 };

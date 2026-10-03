@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 const fn generic_owned_outputs<T>(value: T, mut remaining: usize, take_left: bool) -> T {
     #[cycle("Count down, then pick a side.")]
-    let (left, right) = {
+    let (left, right) = loop {
         #[question("Is any count left?")]
         let (again, decide) = |&remaining| *remaining > 0;
 

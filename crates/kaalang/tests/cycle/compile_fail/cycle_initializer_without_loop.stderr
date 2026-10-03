@@ -1,0 +1,5 @@
+error: a kaalang cycle body is a `loop { ... }` block
+ --> tests/cycle/compile_fail/cycle_initializer_without_loop.rs:6:18
+  |
+6 |     let result = 1;
+  |                  ^

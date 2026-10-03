@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid() {
     #[cycle("Repeat forever.")]
-    {
+    loop {
         #[action("Visit a Rust iterator.")]
         {
             for _ in {

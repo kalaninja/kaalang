@@ -11,7 +11,7 @@ fn transition_to_diverging_stage(go: ()) -> ! {
     #[stage("Repeat forever.")]
     |repeat| {
         #[cycle("Stay in this stage.")]
-        |repeat| {
+        |repeat| loop {
             continue;
         };
     };

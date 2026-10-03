@@ -198,12 +198,12 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
             #[question("Choose a cycle.")]
             let (left, right) = |flag| flag;
             #[cycle("Collect.")]
-            let done = |left| {
+            let done = |left| loop {
                 #[action("Collect the results.")]
                 let done = |left| ();
             };
             #[cycle("Skip.")]
-            |right| { continue; };
+            |right| loop { continue; };
             |done| return;
         }
     "#;
@@ -1054,7 +1054,7 @@ fn a_cycle_that_only_repeats_draws_its_described_boundary() {
         #[kaalang]
         fn example() {
             #[cycle("Repeat forever.")]
-            {
+            loop {
                 continue;
             };
         }
@@ -1263,7 +1263,7 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
         #[kaalang]
         fn nested_contours(mode: u8) -> u8 {
             #[cycle("Repeat the outer cycle.")]
-            |mode| {
+            |mode| loop {
                 #[question("Repeat the outer cycle?")]
                 let (again, enter) = |mode| mode == 0;
 
@@ -1280,7 +1280,7 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
                 let third = |second| ();
 
                 #[cycle("Repeat the inner cycle.")]
-                |third| {
+                |third| loop {
                     continue;
                 };
 
@@ -1418,7 +1418,7 @@ const FAR_CONTOUR: (&str, &str) = (
         #[kaalang]
         fn far_contour(mut mode: u8) -> u8 {
             #[cycle("Advance until the mode can leave.")]
-            let case_2 = {
+            let case_2 = loop {
                 #[choice("Which route?")]
                 #[case("Case 0 repeat.")]
                 #[case("Case 1 repeat.")]
@@ -1515,19 +1515,19 @@ const FOUR_LANES: (&str, &str) = (
         #[kaalang]
         fn deep(mut step: usize) -> usize {
             #[cycle("Repeat the first cycle.")]
-            let leave_0 = {
+            let leave_0 = loop {
                 #[question("Leave the first?")]
                 let (stay_0, leave_0) = |&step| *step > 0;
                 #[cycle("Repeat the second cycle.")]
-                let leave_1 = |stay_0| {
+                let leave_1 = |stay_0| loop {
                     #[question("Leave the second?")]
                     let (stay_1, leave_1) = |&step| *step > 1;
                     #[cycle("Repeat the third cycle.")]
-                    let leave_2 = |stay_1| {
+                    let leave_2 = |stay_1| loop {
                         #[question("Leave the third?")]
                         let (stay_2, leave_2) = |&step| *step > 2;
                         #[cycle("Repeat the fourth cycle.")]
-                        let leave_3 = |stay_2| {
+                        let leave_3 = |stay_2| loop {
                             #[question("Leave the fourth?")]
                             let (stay_3, leave_3) = |&step| *step > 3;
                             #[action("Advance at the deepest level.")]

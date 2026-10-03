@@ -9,7 +9,7 @@ fn do_while(mut number: u64) -> Vec<u8> {
     let mut digits = || Vec::new();
 
     #[cycle("Collect the number's decimal digits from right to left.")]
-    let collected = {
+    let collected = loop {
         #[action("✂️ Append the last digit to the list; remove it from the number.")]
         |&mut number, &mut digits| {
             digits.push((*number % 10) as u8);

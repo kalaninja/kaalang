@@ -15,7 +15,7 @@ fn middle_exit(number: u64) -> u64 {
     let mut guess = |positive, number| number / 2 + 1;
 
     #[cycle("Lower the guess until it is the integer square root.")]
-    let root = |guess| {
+    let root = |guess| loop {
         #[action("Divide the number by the current guess.")]
         let quotient = |number, guess| number / guess;
 

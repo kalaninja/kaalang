@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn unmoved_gate(text: String) -> usize {
     #[cycle("Enter through an owned gate.")]
-    let entered = |text| {
+    let entered = |text| loop {
         #[action("Enter once.")]
         let entered = || {};
     };

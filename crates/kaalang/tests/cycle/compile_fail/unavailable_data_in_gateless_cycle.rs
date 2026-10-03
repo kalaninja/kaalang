@@ -15,7 +15,7 @@ fn unavailable_data_in_gateless_cycle(flag: bool) -> u8 {
     let ready = |value| ();
 
     #[cycle("Try to read the optional value.")]
-    let result = {
+    let result = loop {
         #[action("Copy the value.")]
         let result = |value| value;
     };

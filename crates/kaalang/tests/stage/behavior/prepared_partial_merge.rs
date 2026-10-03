@@ -19,7 +19,7 @@ fn prepared_partial_merge(mode: u8) -> String {
     let (shared, go) = |second| (String::from("second"), ());
 
     #[cycle("Stay on the remaining branch.")]
-    |stay| {
+    |stay| loop {
         continue;
     };
 

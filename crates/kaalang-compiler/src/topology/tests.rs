@@ -57,7 +57,7 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
         r#"
         fn example() -> usize {
             #[cycle("Repeat forever.")]
-            {
+            loop {
                 continue;
             };
         }
@@ -95,7 +95,7 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
         r#"
         fn forever() -> ! {
             #[cycle("Never completes.")]
-            {
+            loop {
                 continue;
             };
         }
@@ -131,7 +131,7 @@ fn a_capture_free_continue_redirects_without_a_structural_junction() {
         r#"
         fn example() -> ! {
             #[cycle("Repeat immediately.")]
-            {
+            loop {
                 continue;
             };
         }
@@ -154,13 +154,13 @@ fn nested_completing_cycles_reach_the_root_return() {
         r#"
         fn example(flag: bool) -> usize {
             #[cycle("Choose the result.")]
-            let selected = |flag| {
+            let selected = |flag| loop {
                 #[question("Flag?")]
                 let (iterate_1, leave_1) = |flag| flag;
                 #[action("Return two.")]
                 let selected = |leave_1| 2;
                 #[cycle("Produce one.")]
-                let selected = |iterate_1| {
+                let selected = |iterate_1| loop {
                     #[action("Return one.")]
                     let selected = || 1;
                 };
@@ -191,9 +191,9 @@ fn an_inner_cycle_output_reaches_the_outer_iteration_tail() {
         r#"
         fn example(flag: bool) -> usize {
             #[cycle("Repeat the outer cycle.")]
-            |flag| {
+            |flag| loop {
                 #[cycle("Leave or repeat the inner cycle.")]
-                let leave_2 = |flag| {
+                let leave_2 = |flag| loop {
                     #[question("Flag?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     |iterate_2| continue;
@@ -230,9 +230,9 @@ fn a_merged_cycle_output_reaches_the_enclosing_iteration_tail() {
         r#"
         fn example(first: bool, second: bool) {
             #[cycle("Repeat the outer cycle.")]
-            {
+            loop {
                 #[cycle("Leave or repeat the inner cycle.")]
-                let leave = {
+                let leave = loop {
                     #[question("Leave immediately?")]
                     let (leave, check) = |first| first;
 
@@ -268,7 +268,7 @@ fn work_after_a_merge_keeps_the_cycle_result_separate() {
         r#"
         fn example(flag: bool) {
             #[cycle("Choose, then finish.")]
-            let done = |flag| {
+            let done = |flag| loop {
                 #[question("Which route?")]
                 let (done, other) = |flag| flag;
                 #[action("Finish the other route.")]

@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn empty_capture_continue() -> ! {
     #[cycle("Repeat without an output.")]
-    {
+    loop {
         || continue;
-    };
+    }
 }
 
 #[test]

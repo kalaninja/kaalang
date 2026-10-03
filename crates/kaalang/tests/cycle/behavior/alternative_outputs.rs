@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn alternative_outputs(mut items: Vec<String>) -> Option<String> {
     #[cycle("Find a nonempty item.")]
-    let (found, exhausted) = {
+    let (found, exhausted) = loop {
         #[choice("Is another item available?")]
         #[case("Inspect the item.")]
         #[case("The collection is exhausted.")]

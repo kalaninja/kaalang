@@ -8,13 +8,13 @@ fn long_cycle_captions(flag: bool) {
     #[cycle(
         "Collect the available results from the source until there are enough items to complete the current request."
     )]
-    let done = |left| {
+    let done = |left| loop {
         #[action("Collect the results.")]
         let done = |left| {};
     };
 
     #[cycle("Read the next item and prepare it for processing.")]
-    let done = |right| {
+    let done = |right| loop {
         #[action("Read the item.")]
         let done = |right| {};
     };

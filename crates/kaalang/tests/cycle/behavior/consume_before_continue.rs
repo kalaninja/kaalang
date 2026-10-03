@@ -6,7 +6,7 @@ fn consume_before_continue(mut remaining: usize) -> Vec<String> {
     let mut values = || Vec::new();
 
     #[cycle("Collect one value per iteration.")]
-    let done = {
+    let done = loop {
         #[question("Is another value needed?")]
         let (again, done) = |&remaining| *remaining > 0;
 

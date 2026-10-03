@@ -56,9 +56,9 @@ fn indent(depth: usize) -> String {
 fn open_level(depth: usize) -> String {
     let pad = indent(depth);
     let opening = if depth == 0 {
-        "let _leave_0 = |step| {".to_owned()
+        "let _leave_0 = |step| loop {".to_owned()
     } else {
-        format!("let _leave_{depth} = |stay_{}| {{", depth - 1)
+        format!("let _leave_{depth} = |stay_{}| loop {{", depth - 1)
     };
     format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
 }
@@ -224,7 +224,7 @@ pub fn cyclic_branching_with_work(levels: usize) -> String {
         );
     }
     format!(
-        "#[kaalang] fn cyclic_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n#[cycle(\"Repeat before working.\")] let (left, right) = || {{\n#[question(\"Repeat?\")] let (again, work) = |&remaining| remaining.get() > 0;\n#[action(\"Count the repeat.\")] let repeated = |again, &remaining| remaining.set(remaining.get() - 1);\n|repeated| continue;\n{body}\n}};\n#[action(\"Use the left result.\")] let result = |left| left;\n#[action(\"Use the right result.\")] let result = |right| right.0;\n|result| return result;\n}}"
+        "#[kaalang] fn cyclic_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n#[cycle(\"Repeat before working.\")] let (left, right) = || loop {{\n#[question(\"Repeat?\")] let (again, work) = |&remaining| remaining.get() > 0;\n#[action(\"Count the repeat.\")] let repeated = |again, &remaining| remaining.set(remaining.get() - 1);\n|repeated| continue;\n{body}\n}};\n#[action(\"Use the left result.\")] let result = |left| left;\n#[action(\"Use the right result.\")] let result = |right| right.0;\n|result| return result;\n}}"
     )
 }
 

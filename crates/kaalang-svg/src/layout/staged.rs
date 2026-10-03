@@ -418,7 +418,7 @@ mod tests {
                             let repeat = |go| {};
                         };
                         #[stage("Repeat forever.")]
-                        |repeat| { #[cycle("Repeat.")] { continue; }; };
+                        |repeat| { #[cycle("Repeat.")] loop { continue; }; };
                     }
                 "#,
         ] {

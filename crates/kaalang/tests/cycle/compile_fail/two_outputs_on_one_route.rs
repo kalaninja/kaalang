@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(value: u8) -> u8 {
     #[cycle("Produce both outputs on one route.")]
-    let (low, high) = |value| {
+    let (low, high) = |value| loop {
         #[action("Produce the low output.")]
         let low = |value| value;
 

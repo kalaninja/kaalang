@@ -14,7 +14,7 @@ fn invalid(take: bool) -> String {
     let go = |&owner| ();
 
     #[cycle("Stay on the other branch.")]
-    |stay| {
+    |stay| loop {
         continue;
     };
 

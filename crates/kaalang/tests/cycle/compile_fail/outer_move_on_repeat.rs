@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(text: String, done: bool) -> String {
     #[cycle("Move outer data on a repeating route.")]
-    let finish = {
+    let finish = loop {
         #[question("Finish?")]
         let (finish, again) = |done| done;
 

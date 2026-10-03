@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn retry_or_give_up(mut attempts: u32, mut state: u8) -> Option<u8> {
     #[cycle("Poll until a response arrives.")]
-    let result = {
+    let result = loop {
         #[choice("What did the poll return?")]
         #[case("A response.")]
         #[case("A timeout.")]

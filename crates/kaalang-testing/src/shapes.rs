@@ -100,7 +100,7 @@ fn cycle_flow(
         ("", "")
     };
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
     )
 }
 
@@ -142,7 +142,7 @@ fn alternative(routes: &[&str]) -> String {
     };
     let selection = selection(routes, "case_");
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
     )
 }
 
@@ -224,15 +224,15 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
             )
         } else if inner_completes {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         } else {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         }
     };
@@ -378,7 +378,7 @@ pub fn staged_shapes() -> Vec<String> {
                 #[action("Finish from second.")]
                 let finish = |done, current| current;
                 #[cycle("Diverge in second.")]
-                |diverge| { continue; };
+                |diverge| loop { continue; };
             };
 
             #[stage("Return.")]
@@ -396,13 +396,13 @@ pub fn staged_shapes() -> Vec<String> {
         shape("first", "", read),
         shape(
             "seed",
-            "#[cycle(\"Prepare without a gate.\")] let first = { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
+            "#[cycle(\"Prepare without a gate.\")] let first = loop { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
             read,
         ),
         shape(
             "first",
             "",
-            "#[cycle(\"Read or repeat.\")] let current = |first| { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
+            "#[cycle(\"Read or repeat.\")] let current = |first| loop { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
         ),
         include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
             .to_owned(),

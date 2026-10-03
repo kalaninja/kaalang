@@ -105,7 +105,7 @@ mod tests {
                 #[question("Repeat forever?")]
                 let (again, finish) = |repeat| repeat;
                 #[cycle("Repeat.")]
-                |again| {
+                |again| loop {
                     #[action("Work.")]
                     || ();
                     continue;

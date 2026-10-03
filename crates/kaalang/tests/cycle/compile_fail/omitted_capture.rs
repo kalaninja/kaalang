@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(count: usize) {
     #[cycle("Try an implicit environment capture.")]
-    let done = {
+    let done = loop {
         #[question("Repeat?")]
         let (again, done) = |count| count > 0;
 

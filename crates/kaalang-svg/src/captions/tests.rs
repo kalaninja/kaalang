@@ -32,7 +32,7 @@ fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability
             #[stage("Finish.")]
             |entry| {
                 #[cycle("Adjust shared storage.")]
-                let done = |entry| {
+                let done = |entry| loop {
                     #[action("Increment both values.")]
                     let done = |&mut parameter, &mut prepared| {
                         *parameter += 1;

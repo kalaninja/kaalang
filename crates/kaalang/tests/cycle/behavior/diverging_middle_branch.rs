@@ -7,7 +7,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle("Choose a repeating, diverging, or leaving route.")]
-    let selected = {
+    let selected = loop {
         #[choice("Which route?")]
         #[case("Advance and repeat.")]
         #[case("Spin forever.")]
@@ -24,7 +24,7 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
         let advanced = |advance| {};
 
         #[cycle("Spin forever.")]
-        |spin| {
+        |spin| loop {
             #[action("Spin.")]
             || {};
 

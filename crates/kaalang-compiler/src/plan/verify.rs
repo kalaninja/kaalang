@@ -241,9 +241,9 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn sequential() {
                 #[cycle("Leave the first cycle.")]
-                let first = { #[action("Finish the first cycle.")] let first = || (); };
+                let first = loop { #[action("Finish the first cycle.")] let first = || (); };
                 #[cycle("Leave the second cycle.")]
-                let second = |first| { #[action("Finish the second cycle.")] let second = || (); };
+                let second = |first| loop { #[action("Finish the second cycle.")] let second = || (); };
                 #[action("Finish.")]
                 let end = |second| {};
 
@@ -294,7 +294,7 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
                 #[cycle("Count to three.")]
-                let done = {
+                let done = loop {
                     #[question("Finished?")]
                     let (done, again) = |count| count == 3;
                     #[action("Advance.")]
@@ -350,9 +350,9 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Repeat the outer cycle.")]
-                |flag| {
+                |flag| loop {
                     #[cycle("Repeat the inner cycle.")]
-                    let leave_1 = |flag| {
+                    let leave_1 = |flag| loop {
                         #[question("Repeat?")]
                         let (iterate_1, leave_1) = |flag| flag;
                         |iterate_1| continue;
@@ -396,11 +396,11 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Choose whether to finish.")]
-                let leave_2 = |flag| {
+                let leave_2 = |flag| loop {
                     #[question("Enter the cycle?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     #[cycle("Repeat forever.")]
-                    |iterate_2| {
+                    |iterate_2| loop {
                         continue;
                     };
                 };

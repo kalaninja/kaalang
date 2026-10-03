@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn abort_output(mut count: u32, limit: u32) -> Result<u32, u32> {
     #[cycle("Count until done or aborted.")]
-    let (done, abort) = {
+    let (done, abort) = loop {
         #[choice("Where is the count?")]
         #[case("Below the limit.")]
         #[case("At the limit.")]

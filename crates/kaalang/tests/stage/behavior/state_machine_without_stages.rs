@@ -11,7 +11,7 @@ enum State {
 #[kaalang]
 fn state_machine_without_stages(mut state: State) {
     #[cycle("Follow state transitions until `Finish`.")]
-    let done = {
+    let done = loop {
         #[choice("Which state is selected?")]
         #[case("First")]
         #[case("Second")]

@@ -38,7 +38,7 @@ const CYCLE_SOURCE: &str = r#"
     #[kaalang]
     fn count_to(mut count: usize, limit: usize) -> usize {
         #[cycle("Count to the limit.")]
-        let done = {
+        let done = loop {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 
@@ -633,7 +633,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
                 fn example(_choose: bool) -> u8 {{
                     {preparation}
                     #[cycle("Use the values.")]
-                    let done = {{
+                    let done = loop {{
                         #[action("Add to the first value.")]
                         let done = |second, &mut first| {{
                             *first += second;

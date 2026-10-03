@@ -3,10 +3,11 @@
 use std::borrow::Cow;
 
 use proc_macro2::{Ident, Span};
+use quote::ToTokens;
 use syn::{
-    Attribute, Error, Expr, ExprAsync, ExprClosure, ExprForLoop, ExprReturn, ExprTry, FnArg, Item,
-    ItemFn, LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result, ReturnType, Stmt,
-    Type,
+    Attribute, Error, Expr, ExprAsync, ExprBlock, ExprClosure, ExprForLoop, ExprReturn, ExprTry,
+    FnArg, Item, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result,
+    ReturnType, Stmt, Type,
     ext::IdentExt,
     parse_quote_spanned,
     spanned::Spanned,
@@ -211,7 +212,15 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             None
         };
         let mut block = match expression {
-            Some(Expr::Loop(expression)) => return Err(cycle::structural_loop(expression)),
+            // Only a cycle is written as a `loop`.
+            Some(Expr::Loop(expression))
+                if !expression
+                    .attrs
+                    .iter()
+                    .any(|attribute| attribute.path().is_ident("cycle")) =>
+            {
+                return Err(cycle::structural_loop(expression));
+            }
             Some(Expr::Break(expression)) => return Err(cycle::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
             Some(Expr::Continue(expression)) => {
@@ -227,8 +236,10 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         };
         // Every kaalang block statement ends the same way, so no shape has to
         // be read twice to know where it stops. A `let` gets its semicolon
-        // from Rust; every other spelling is checked here.
-        if matches!(statement, Stmt::Expr(_, None)) {
+        // from Rust; every other spelling is checked here, except a bare
+        // `loop`: its braces end it, and rustfmt removes the semicolon.
+        if matches!(statement, Stmt::Expr(expression, None) if !matches!(expression, Expr::Loop(_)))
+        {
             return Err(Error::new_spanned(
                 statement,
                 format!(
@@ -421,6 +432,14 @@ impl<'a> BlockSyntax<'a> {
     }
 }
 
+/// A block body carries neither attributes nor a label.
+fn decorated_body(body: impl ToTokens) -> Error {
+    Error::new_spanned(
+        body,
+        "kaalang block bodies do not support attributes or labels",
+    )
+}
+
 fn unexpected_companion(companion: &Attribute) -> Error {
     let name = companion
         .path()
@@ -478,6 +497,9 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
         Stmt::Expr(Expr::Block(block), _) => {
             Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None))
         }
+        Stmt::Expr(Expr::Loop(body), _) => {
+            Ok((&body.attrs, parse_quote_spanned!(body.span()=> ()), None))
+        }
         // A call's body is one application, so it needs no braces to delimit
         // it. The attributes decide: an unattributed application is ordinary
         // Rust, which a flow body does not accept, and it must keep reporting
@@ -508,10 +530,7 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
                     .iter()
                     .any(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)))
             {
-                return Err(Error::new_spanned(
-                    block,
-                    "kaalang block bodies do not support attributes or labels",
-                ));
+                return Err(decorated_body(block));
             }
             let mut body = block.clone();
             body.attrs.clear();
@@ -519,6 +538,13 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
                 return Err(call::braced(&Expr::Block(body)));
             }
             return Ok(Expr::Block(body));
+        }
+        // Only a statement declaring a cycle gets here as a `loop`.
+        Stmt::Expr(Expr::Loop(body), _) => {
+            let mut body = body.clone();
+            body.attrs
+                .retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
+            return Ok(Expr::Loop(body));
         }
         // A statement carries its attributes on its expression, and the kind
         // attribute was classified before this ran.
@@ -530,7 +556,7 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             application.attrs.clear();
             application
         }
-        _ => unreachable!("a missing closure denotes a bare block or bare application body"),
+        _ => unreachable!("a missing closure denotes a bare block, loop, or application body"),
     };
     if kind != BlockKind::Call {
         return Err(Error::new_spanned(
@@ -632,15 +658,19 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
 
     let body = match closure.body.as_ref() {
         Expr::Block(block) if !block.attrs.is_empty() || block.label.is_some() => {
-            return Err(Error::new_spanned(
-                block,
-                "kaalang block bodies do not support attributes or labels",
-            ));
+            return Err(decorated_body(block));
         }
         body @ Expr::Block(_) => body.clone(),
         // rustfmt removes braces around a closure's single expression. Keep
         // one body shape for validation and lowering regardless of spelling.
-        body => parse_quote_spanned!(body.span()=> { #body }),
+        body => Expr::Block(ExprBlock {
+            attrs: Vec::new(),
+            label: None,
+            block: syn::Block {
+                brace_token: syn::token::Brace(body.span()),
+                stmts: vec![Stmt::Expr(body.clone(), None)],
+            },
+        }),
     };
 
     let inputs = closure
@@ -1069,6 +1099,44 @@ mod tests {
         };
 
         reject_control_transfers(&body).expect("the iterator transfer targets the local loop");
+    }
+
+    #[test]
+    fn a_bare_cycle_may_omit_its_semicolon_before_later_statements() {
+        let function: ItemFn = parse_quote! {
+            fn spin() -> ! {
+                #[cycle("Repeat the outer cycle.")]
+                loop {
+                    #[cycle("Repeat the inner cycle.")]
+                    loop {
+                        continue;
+                    }
+                    continue;
+                }
+            }
+        };
+
+        let flow = flow(&function).expect("rustfmt's spelling parses");
+        assert_eq!(flow.blocks[1].kind, BlockKind::Cycle);
+        assert_eq!(flow.blocks[1].parent, Some(0));
+    }
+
+    #[test]
+    fn braces_may_enclose_a_cycle_loop() {
+        let function: ItemFn = parse_quote! {
+            fn spin() -> ! {
+                #[cycle("Repeat.")]
+                || {
+                    loop {
+                        continue;
+                    }
+                };
+            }
+        };
+
+        let flow = flow(&function).expect("the braced loop is the same cycle");
+        assert_eq!(flow.blocks[1].kind, BlockKind::Continue);
+        assert_eq!(flow.blocks[1].parent, Some(0));
     }
 
     #[test]

@@ -15,12 +15,12 @@ fn nested_result_propagation(limit: usize, log: Rc<RefCell<Vec<&'static str>>>) 
     let mut count = || 0;
 
     #[cycle("Search until the inner cycle finds the limit.")]
-    let next = {
+    let next = loop {
         #[action("Enter the outer scope.")]
         let _outer = |&log| Guard(log.clone(), "outer");
 
         #[cycle("Advance until the search is done.")]
-        let next = {
+        let next = loop {
             #[action("Enter the inner scope.")]
             let inner = |&log| Guard(log.clone(), "inner");
 

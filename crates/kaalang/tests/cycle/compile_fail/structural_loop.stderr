@@ -1,4 +1,4 @@
-error: kaalang does not support structural `loop`; use a `#[cycle("description")]` block with `continue`
+error: a `loop` in a kaalang flow is a cycle and needs `#[cycle("description")]`
  --> tests/cycle/compile_fail/structural_loop.rs:5:5
   |
 5 |     loop {}

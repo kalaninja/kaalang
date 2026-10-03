@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool, other: bool) -> u32 {
     #[cycle("Run the outer cycle.")]
-    let read = {
+    let read = loop {
         #[question("Take the first route?")]
         let (first, rest) = |flag| flag;
 
@@ -16,7 +16,7 @@ fn invalid(flag: bool, other: bool) -> u32 {
         let value = |third| 1;
 
         #[cycle("Read the value on every other route.")]
-        let read = |rest| {
+        let read = |rest| loop {
             #[action("Read the value.")]
             let read = |&value| *value;
         };

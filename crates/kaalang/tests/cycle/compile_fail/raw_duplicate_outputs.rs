@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn raw_duplicate_outputs() -> u8 {
     #[cycle("Declare the same result twice.")]
-    let (found, r#found) = {
+    let (found, r#found) = loop {
         #[action("Produce the result.")]
         let found = || 7u8;
     };

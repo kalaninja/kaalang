@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut count: u32) -> u32 {
     #[cycle("Run the outer cycle.")]
-    let result = {
+    let result = loop {
         #[cycle("Settle the count.")]
-        let (ready, retry) = {
+        let (ready, retry) = loop {
             #[question("Is the count positive?")]
             let (retry, ready) = |&count| *count > 0;
         };

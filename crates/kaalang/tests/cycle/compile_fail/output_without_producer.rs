@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(value: usize) -> usize {
     #[cycle("Declare an output the body never produces.")]
-    let (left, right) = |value| {
+    let (left, right) = |value| loop {
         #[action("Produce only the left output.")]
         let left = |value| value;
     };

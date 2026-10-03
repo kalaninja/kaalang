@@ -5,7 +5,7 @@ fn record() {}
 #[kaalang]
 fn invalid(limit: usize) -> usize {
     #[cycle("Count to the limit.")]
-    let leave_1 = |limit| {
+    let leave_1 = |limit| loop {
         #[question("Is the limit reached?")]
         #[yes("YES")]
         #[no("NO")]

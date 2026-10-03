@@ -684,7 +684,7 @@ mod tests {
                 #[question("Run the cycle?")]
                 let (enter, fallback) = |run| { run };
                 #[cycle("Wait until done.")]
-                let result = |enter| {
+                let result = |enter| loop {
                     #[question("Done?")]
                     let (leave, again) = |done| { done };
                     #[action("Keep the value.")]

@@ -10,7 +10,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
-    let result = {
+    let result = loop {
         #[question("Are any values left in the search range?")]
         #[yes("YES")]
         #[no("NO")]
@@ -56,7 +56,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
-    let result = {
+    let result = loop {
         #[question("Are any values left in the search range?")]
         #[no("NO")]
         #[yes("YES")]

@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_cycle_shadows_outer_wire(value: u8) -> u8 {
     #[cycle("Complete an outer cycle.")]
-    let result = {
+    let result = loop {
         #[cycle("Try to shadow the outer value.")]
-        let nested = {
+        let nested = loop {
             #[action("Reuse the outer name.")]
             let value = || 1u8;
 

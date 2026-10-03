@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 const fn const_initial_cycle_signal() -> String {
     #[cycle("Prepare text.")]
-    let go = {
+    let go = loop {
         #[action("Create the text.")]
         let go = || String::new();
     };

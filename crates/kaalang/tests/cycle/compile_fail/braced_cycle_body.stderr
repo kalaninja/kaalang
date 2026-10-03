@@ -1,0 +1,11 @@
+error: a kaalang cycle body is a `loop { ... }` block
+  --> tests/cycle/compile_fail/braced_cycle_body.rs:9:16
+   |
+ 9 |       let done = {
+   |  ________________^
+10 | |         #[question("Has the limit been reached?")]
+11 | |         let (done, again) = |&count, &limit| *count >= *limit;
+...  |
+16 | |         |again| continue;
+17 | |     };
+   | |_____^

@@ -128,7 +128,7 @@ impl BatchProcessor {
         let (mut pending, mut report) = |jobs| (jobs.into_iter(), Report::default());
 
         #[cycle("Process tasks until the queue ends or cancellation is requested.")]
-        let reason = |started| {
+        let reason = |started| loop {
             #[question("Has the cancellation boundary been reached?")]
             #[no("Take another task.")]
             #[yes("Cancel the batch.")]
@@ -199,7 +199,7 @@ impl BatchProcessor {
             #[cycle(
                 "Retry transient failures; complete on a response, a fatal error, or exhaustion."
             )]
-            let final_result = |responses| {
+            let final_result = |responses| loop {
                 #[question("Is there another scripted response?")]
                 let (try_next, exhausted) = |&responses| responses.len() > 0;
 
@@ -242,7 +242,7 @@ impl BatchProcessor {
                     |payload| (payload.into_iter(), 0i128, 0usize);
 
                 #[cycle("Parse each response part; discard the subtotal if any part is malformed.")]
-                let checked = |parts| {
+                let checked = |parts| loop {
                     #[call]
                     let part = |&mut parts| Iterator::next(parts);
 
@@ -347,7 +347,7 @@ impl BatchProcessor {
         let mut audit_queue = |&mut self| std::mem::take(&mut self.pending_audit).into_iter();
 
         #[cycle("Audit every recorded task before returning the report.")]
-        let flushed = {
+        let flushed = loop {
             #[call]
             let entry = |&mut audit_queue| Iterator::next(audit_queue);
 

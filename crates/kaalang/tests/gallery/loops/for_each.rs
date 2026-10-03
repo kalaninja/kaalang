@@ -9,7 +9,7 @@ fn for_each(values: &[i32]) -> i64 {
     let (mut cursor, mut total) = |values| (values.iter(), 0);
 
     #[cycle("Add the list's values to the total one by one.")]
-    let done = {
+    let done = loop {
         #[choice("What comes next in the list?")]
         #[case("Another value.")]
         #[case("The end of the list.")]

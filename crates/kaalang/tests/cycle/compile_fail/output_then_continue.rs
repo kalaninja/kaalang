@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut count: usize) -> usize {
     #[cycle("Produce the output, then repeat anyway.")]
-    let total = {
+    let total = loop {
         #[action("Produce the total.")]
         let total = |&count| *count;
 

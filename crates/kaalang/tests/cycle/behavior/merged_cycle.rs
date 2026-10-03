@@ -6,13 +6,13 @@ fn merged_cycle(select_first: bool) -> usize {
     let (first, second) = |select_first| select_first;
 
     #[cycle("Produce the first result.")]
-    let result = |first| {
+    let result = |first| loop {
         #[action("Build the first value.")]
         let result = || 1;
     };
 
     #[cycle("Produce the second result.")]
-    let result = |second| {
+    let result = |second| loop {
         #[action("Build the second value.")]
         let result = || 2;
     };

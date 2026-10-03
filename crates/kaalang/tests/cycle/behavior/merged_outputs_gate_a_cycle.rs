@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn merged_outputs_gate_a_cycle(mut first: u32, mut second: u32) -> u32 {
     #[cycle("Count the first number past five.")]
-    let (even, odd) = {
+    let (even, odd) = loop {
         #[question("Past five?")]
         let (past, again) = |&first| *first > 5;
 
@@ -25,7 +25,7 @@ fn merged_outputs_gate_a_cycle(mut first: u32, mut second: u32) -> u32 {
     let base = |odd| 2;
 
     #[cycle("Count the second number past three.")]
-    let (large, small) = |base| {
+    let (large, small) = |base| loop {
         #[question("Past three?")]
         let (past, again) = |&second| *second > 3;
 

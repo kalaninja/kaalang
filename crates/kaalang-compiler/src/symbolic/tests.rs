@@ -309,16 +309,16 @@ fn nested_cycle_frames_and_rejected_body_mutations_match_the_reference() {
         else {
             panic!("the cycle is a closure")
         };
-        let syn::Expr::Block(block) = closure.body.as_mut() else {
-            panic!("the cycle has a body")
+        let syn::Expr::Loop(body) = closure.body.as_mut() else {
+            panic!("the cycle has a loop body")
         };
-        &mut block.block
+        &mut body.body
     }
     let source = kaalang_testing::probes::cyclic_branching_with_work(3);
     let nested = source
         .replace(
-            "let (left, right) = || {",
-            "let (left, right) = || { #[cycle(\"Inner work.\")] let (left, right) = || {",
+            "let (left, right) = || loop {",
+            "let (left, right) = || loop { #[cycle(\"Inner work.\")] let (left, right) = || loop {",
         )
         .replace(
             "\n};\n#[action(\"Use the left result.\")]",

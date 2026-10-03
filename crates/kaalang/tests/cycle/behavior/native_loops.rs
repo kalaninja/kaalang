@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn native_loops(limit: usize) -> usize {
     #[cycle("Run native Rust control flow once.")]
-    let count = |limit| {
+    let count = |limit| loop {
         #[action("Count with local Rust control flow.")]
         let count = |limit| {
             let mut count = 0;

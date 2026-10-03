@@ -361,7 +361,7 @@ mod tests {
         let function: ItemFn = parse_quote! {
             fn forever() -> usize {
                 #[cycle("Repeat forever")]
-                {
+                loop {
                     continue;
                 };
             }
@@ -1151,7 +1151,7 @@ mod tests {
                 let (_tag, repeat) = |no| { (2u8, ()) };
 
                 #[cycle("Keep the other route open")]
-                |repeat| {
+                |repeat| loop {
                     continue;
                 };
             }

@@ -147,7 +147,7 @@ mod tests {
         let source = r#"
             fn example(value: u8) -> u8 {
                 #[cycle("Choose the result.")]
-                let result = |value| {
+                let result = |value| loop {
                     #[question("Keep the value?")]
                     let (keep, zero) = |value| value > 1;
                     #[action("Keep it.")]

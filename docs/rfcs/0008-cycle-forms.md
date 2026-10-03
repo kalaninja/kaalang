@@ -64,8 +64,14 @@ let finish = |start| loop {
 
 The shorthands of RFC 0007 §3 carry over. `let finish = loop { ... };` is
 `let finish = || loop { ... };`, and a cycle with neither gate nor outputs may
-write `#[cycle("...")] loop { ... };`. A body written as a bare brace block, the
-form before this RFC, is invalid.
+write `#[cycle("...")] loop { ... };`. Braces may enclose the `loop`, as they
+may enclose a `match`, `return`, or `continue`: `|gate| { loop { ... } }` is
+`|gate| loop { ... }`. A brace block that holds the body's statements directly,
+the form before this RFC, is invalid.
+
+A cycle written with neither `let` nor a capture list may omit its trailing
+semicolon. Its braces already end the statement, and rustfmt removes the
+semicolon after a bare `loop` or `for`.
 
 ### 2.2 For cycles
 
@@ -94,7 +100,9 @@ none.
 A for cycle may declare one output, written `let done = ...` or
 `let (done,) = ...`. Without `let`, or with `let ()`, it declares none. An empty
 capture list may be omitted: `for index in 0..3 { ... }` is
-`|| for index in 0..3 { ... }`.
+`|| for index in 0..3 { ... }`. Braces may enclose the `for` as they enclose a
+loop cycle's `loop`; rustfmt writes a `for` closure body that way, as in
+`|values| { for value in values { ... } }`.
 
 ### 2.3 Grammar
 
@@ -103,20 +111,22 @@ Using RFC 0001's block notation, replace RFC 0007 §2.2's cycle alternative with
 ```text
 cycle_statement :=
     "#[cycle(" block_description ")]"
-    ( ("let" output_pattern "=")? ("|" (identifier ","?)? "|")?
-      "loop" cycle_body
-    | ("let" for_output "=")? ("|" input_list? "|")?
-      "for" item_pattern "in" rust_expression cycle_body
+    ( ("let" output_pattern "=")? ("|" (identifier ","?)? "|")? loop_body
+    | ("let" for_output "=")? ("|" input_list? "|")? for_body
     ) ";"
+loop_body := "loop" cycle_body | "{" loop_body ";"? "}"
+for_body :=
+    "for" item_pattern "in" rust_expression cycle_body | "{" for_body ";"? "}"
 cycle_body := "{" block_statement* "}"
 for_output := output_binding | "(" ")" | "(" output_binding "," ")"
 item_pattern := output_pattern | "_"
 ```
 
-`block_statement` keeps RFC 0007's alternatives; section 4 states which of them
-a for cycle's body excludes. Neither form takes a label or body-level
-attributes. A `loop` or `for` statement without `#[cycle]`, and a `while` in any
-position outside a computational body, remain invalid.
+The final `";"` is optional when the statement has neither `let` nor a capture
+list, as §2.1 explains. `block_statement` keeps RFC 0007's alternatives; section
+4 states which of them a for cycle's body excludes. Neither form takes a label
+or body-level attributes. A `loop` or `for` statement without `#[cycle]`, and a
+`while` in any position outside a computational body, remain invalid.
 
 ## 3. Execution of a for cycle
 
@@ -193,7 +203,7 @@ A for cycle is rejected when:
 
 A structural `continue` in a for body is rejected even when an enclosing loop
 cycle exists: continue targets only its directly containing cycle. A loop
-cycle's body is rejected when its closure body is a bare brace block.
+cycle's body is rejected when its braces hold anything other than its `loop`.
 
 ## 5. Rust lowering
 
@@ -404,7 +414,8 @@ Concrete compiler and renderer types remain implementation choices.
 | Scenario                                                       | Required result                                                                                           |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Loop cycle written with `loop`, with or without gate or output | Accept with RFC 0007's semantics and unchanged diagrams.                                                  |
-| Cycle body written as a bare brace block                       | Reject and name the `loop` and `for` forms.                                                               |
+| Cycle body written as a brace block of statements              | Reject and name the `loop` and `for` forms.                                                               |
+| Braces around a cycle's `loop` or `for`                        | Accept as the same cycle.                                                                                 |
 | For cycle over a borrowed collection with no declared output   | Run the body once per item; later blocks capturing the changed state run after it.                        |
 | For cycle with one declared output                             | Provide the unit output after the iterator is exhausted.                                                  |
 | For cycle over an empty iterator                               | Run no iteration and complete.                                                                            |

@@ -12,7 +12,7 @@ fn invalid(take: bool) -> String {
     let go = |&owner| ();
 
     #[cycle("Stay on the other branch.")]
-    |no| {
+    |no| loop {
         continue;
     };
 

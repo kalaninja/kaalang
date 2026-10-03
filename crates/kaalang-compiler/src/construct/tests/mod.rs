@@ -502,7 +502,7 @@ fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
 fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
     let source = "fn probe(mode: u8) {
     #[cycle(\"Repeat the outer cycle.\")]
-    |mode| {
+    |mode| loop {
         #[question(\"Repeat?\")]
         let (again, enter) = |mode| mode == 0;
         #[action(\"Repeat.\")]
@@ -514,7 +514,7 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
         #[action(\"Third.\")]
         let third = |second| ();
         #[cycle(\"Diverge in the inner cycle.\")]
-        |third| {
+        |third| loop {
             continue;
         };
         |again| continue;
@@ -745,9 +745,9 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
     let model = model(
         "fn probe(flag: bool) {
             #[cycle(\"Repeat the outer cycle.\")]
-            |flag| {
+            |flag| loop {
                 #[cycle(\"Repeat or leave the inner cycle.\")]
-                let leave = |flag| {
+                let leave = |flag| loop {
                     #[question(\"Repeat?\")]
                     let (again, leave) = |flag| flag;
                     #[action(\"Repeat.\")]
@@ -799,7 +799,7 @@ fn a_nested_result_and_its_continuation_belong_to_the_outer_body() {
 /// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
 const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
     #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
-    let selected = {
+    let selected = loop {
         #[choice(\"Which route?\")]
         #[case(\"Advance and repeat.\")]
         #[case(\"Spin forever.\")]
@@ -814,7 +814,7 @@ const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay
         #[action(\"Advance.\")]
         let advanced = |advance| {};
         #[cycle(\"Spin forever.\")]
-        |spin| {
+        |spin| loop {
             #[action(\"Spin.\")]
             || {};
             continue;
@@ -924,19 +924,19 @@ fn a_back_edge_with_one_arrival_may_stand_beyond_its_body() {
 /// four lanes. The outermost takes lane 3, which no fixture reaches.
 pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
     #[cycle(\"Repeat the first cycle.\")]
-    let leave_0 = |step| {
+    let leave_0 = |step| loop {
         #[question(\"Leave the first?\")]
         let (stay_0, leave_0) = |&step| *step > 0;
         #[cycle(\"Repeat the second cycle.\")]
-        let leave_1 = |stay_0| {
+        let leave_1 = |stay_0| loop {
             #[question(\"Leave the second?\")]
             let (stay_1, leave_1) = |&step| *step > 1;
             #[cycle(\"Repeat the third cycle.\")]
-            let leave_2 = |stay_1| {
+            let leave_2 = |stay_1| loop {
                 #[question(\"Leave the third?\")]
                 let (stay_2, leave_2) = |&step| *step > 2;
                 #[cycle(\"Repeat the fourth cycle.\")]
-                let leave_3 = |stay_2| {
+                let leave_3 = |stay_2| loop {
                     #[question(\"Leave the fourth?\")]
                     let (stay_3, leave_3) = |&step| *step > 3;
                     #[action(\"Advance at the deepest level.\")]

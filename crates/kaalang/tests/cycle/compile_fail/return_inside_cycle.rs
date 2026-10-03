@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(condition: bool) {
     #[cycle("Try to return from a nested branch.")]
-    |condition| {
+    |condition| loop {
         #[question("Return from this branch?")]
         let (leave, repeat) = |condition| condition;
 

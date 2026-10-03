@@ -1,0 +1,6 @@
+error: a `loop` in a kaalang flow is a cycle and needs `#[cycle("description")]`
+ --> tests/cycle/compile_fail/loop_without_cycle_attribute.rs:5:5
+  |
+5 | /     #[action("Repeat forever.")]
+6 | |     loop {};
+  | |___________^

@@ -8,7 +8,7 @@ fn stage_cycle_alternative_outputs(go: u8) -> u8 {
         let current = |go| go;
 
         #[cycle("Choose whether to repeat the stage.")]
-        let (finish, go) = |current| {
+        let (finish, go) = |current| loop {
             #[choice("What happens to the value?")]
             #[case("Repeat this cycle.")]
             #[case("Finish the flow.")]

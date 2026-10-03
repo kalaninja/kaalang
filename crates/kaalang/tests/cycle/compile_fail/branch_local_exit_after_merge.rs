@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn branch_local_exit_after_merge(go: bool) -> u8 {
     #[cycle("Complete after a merge.")]
-    let finish = |go| {
+    let finish = |go| loop {
         #[question("Take the first branch?")]
         let (first, second) = |go| go;
 

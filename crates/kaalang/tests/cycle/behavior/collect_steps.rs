@@ -9,7 +9,7 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     let mut initial_log = |run| Vec::new();
 
     #[cycle("Collect the first steps.")]
-    let leave_1 = |initial_log| {
+    let leave_1 = |initial_log| loop {
         #[question("Are there more first steps?")]
         #[yes("YES")]
         #[no("NO")]
@@ -35,7 +35,7 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
     };
 
     #[cycle("Collect the second steps.")]
-    let end = |leave_1| {
+    let end = |leave_1| loop {
         #[question("Are there more second steps?")]
         #[yes("YES")]
         #[no("NO")]

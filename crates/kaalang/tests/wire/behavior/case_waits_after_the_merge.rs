@@ -25,7 +25,7 @@ fn case_waits_after_the_merge(value: u8) -> u8 {
     let result = |selected| selected + 1;
 
     #[cycle("Wait forever.")]
-    |wait| {
+    |wait| loop {
         continue;
     };
 

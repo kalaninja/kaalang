@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
     #[cycle("Settle the mode.")]
-    let leave = {
+    let leave = loop {
         #[choice("Which route?")]
         #[case("Advance on the left.")]
         #[case("Serve forever.")]
@@ -20,7 +20,7 @@ fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
         let advanced = |left, &mut mode| *mode = 3;
 
         #[cycle("Serve requests forever.")]
-        |serve| {
+        |serve| loop {
             #[choice("Which request?")]
             #[case("A read.")]
             #[case("A write.")]

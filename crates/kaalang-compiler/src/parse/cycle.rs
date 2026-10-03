@@ -1,20 +1,28 @@
 //! Parses a described cycle, its optional entry gate and its declared outputs.
 
-use syn::{Error, Expr, ExprBreak, ExprLoop, Result, parse_quote_spanned};
+use syn::{Error, Expr, ExprBlock, ExprBreak, ExprLoop, Result, parse_quote_spanned};
 
-use super::{BlockSyntax, description, structural_block};
+use super::{
+    BlockSyntax, decorated_body, description, structural_block, structural_expression, ungrouped,
+};
 use crate::model::{Block, BlockKind, Input};
 
-pub(super) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
-    if syntax
-        .closure
-        .is_some_and(|closure| !matches!(closure.body.as_ref(), Expr::Block(_)))
-    {
+pub(super) fn parse(mut syntax: BlockSyntax<'_>) -> Result<Block> {
+    let Expr::Loop(body) = ungrouped(structural_expression(&syntax.body)) else {
         return Err(Error::new_spanned(
             &syntax.body,
-            "a kaalang cycle body must use braces",
+            "a kaalang cycle body is a `loop { ... }` block",
         ));
+    };
+    if body.label.is_some() || !body.attrs.is_empty() {
+        return Err(decorated_body(body));
     }
+    // The statements inside the loop are the body; `loop` only names the form.
+    syntax.body = Expr::Block(ExprBlock {
+        attrs: Vec::new(),
+        label: None,
+        block: body.body.clone(),
+    });
     let description = description(syntax.kind_attribute, "kaalang cycle")?;
     syntax.reject_companions()?;
     // The header only gates entry; the body captures outer data itself.
@@ -100,6 +108,6 @@ pub(super) fn structural_break(expression: &ExprBreak) -> Error {
 pub(super) fn structural_loop(expression: &ExprLoop) -> Error {
     Error::new_spanned(
         expression,
-        "kaalang does not support structural `loop`; use a `#[cycle(\"description\")]` block with `continue`",
+        "a `loop` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`",
     )
 }
