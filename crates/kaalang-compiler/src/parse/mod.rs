@@ -1,6 +1,6 @@
 //! Parses a kaalang flow and validates each block's local syntax.
 
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::BTreeSet};
 
 use proc_macro2::{Ident, Span};
 use quote::ToTokens;
@@ -165,7 +165,12 @@ fn receiver_use(body: &Expr) -> Option<Span> {
 /// implicit completion boundary.
 fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
     let mut blocks = Vec::new();
-    statements(&function.block.stmts, None, &mut blocks)?;
+    statements(
+        &function.block.stmts,
+        None,
+        &mut blocks,
+        &mut names(function),
+    )?;
     if let Some(second) = blocks
         .iter()
         .filter(|block| block.kind == BlockKind::Return)
@@ -181,8 +186,27 @@ fn blocks(function: &ItemFn) -> Result<Vec<Block>> {
     Ok(blocks)
 }
 
+/// Reserves authored names before adding any synthetic wires.
+fn names(function: &ItemFn) -> BTreeSet<Ident> {
+    #[derive(Default)]
+    struct Names(BTreeSet<Ident>);
+    impl<'ast> Visit<'ast> for Names {
+        fn visit_ident(&mut self, ident: &'ast Ident) {
+            self.0.insert(ident.unraw());
+        }
+    }
+    let mut names = Names::default();
+    names.visit_item_fn(function);
+    names.0
+}
+
 /// Flattens lexical cycle regions without changing their authored order.
-fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block>) -> Result<()> {
+fn statements(
+    statements: &[Stmt],
+    parent: Option<usize>,
+    blocks: &mut Vec<Block>,
+    names: &mut BTreeSet<Ident>,
+) -> Result<()> {
     for statement in statements {
         if stage::is_stage(statement) {
             return Err(Error::new_spanned(
@@ -249,9 +273,9 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             };
             let statements = body.block.stmts.clone();
             if blocks[index].iteration.is_some() {
-                cycle::open_iteration(blocks, index)?;
+                cycle::open_iteration(blocks, index, names)?;
             }
-            self::statements(&statements, Some(index), blocks)?;
+            self::statements(&statements, Some(index), blocks, names)?;
             cycle::exports(blocks, index)?;
             blocks[index].cycle_end = Some(blocks.len());
         }
@@ -308,6 +332,7 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         question_branches: Vec::new(),
         case_descriptions: Vec::new(),
         outputs: Vec::new(),
+        unnamed_outputs: Vec::new(),
         output_pattern: syn::parse_quote!(()),
         output_span: span,
         inputs,
@@ -428,6 +453,7 @@ impl<'a> BlockSyntax<'a> {
             question_branches: Vec::new(),
             case_descriptions,
             outputs: self.outputs,
+            unnamed_outputs: Vec::new(),
             output_pattern: self.output_pattern,
             output_span: self.output_span,
             inputs: self.inputs,

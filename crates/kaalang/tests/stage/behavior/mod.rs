@@ -19,6 +19,7 @@ mod prepared_branch_drop;
 mod prepared_cycle;
 mod prepared_drop_order;
 mod prepared_initial_selection;
+mod prepared_internal_names;
 mod prepared_measure_chosen_text;
 mod prepared_merge;
 mod prepared_owner;

@@ -13,6 +13,32 @@ fn read(source: &str) -> (SemanticModel, Captions) {
     (model, captions)
 }
 
+#[test]
+fn internal_looking_names_keep_their_for_cycle_labels() {
+    let (model, captions) = read(
+        r#"
+        fn example() {
+            #[cycle("Visit every item.")]
+            let __kaalang_unnamed_done = for __kaalang_unnamed_item in 0..3 {
+                #[action("Use the item.")]
+                |__kaalang_unnamed_item| drop(__kaalang_unnamed_item);
+            };
+            |__kaalang_unnamed_done| return;
+        }
+        "#,
+    );
+    assert_eq!(captions.cycle_outputs(0), "__kaalang_unnamed_done");
+    let caps = model.topology.cycle_boundaries[0].caps.unwrap();
+    assert_eq!(
+        captions.handover(ExitId::of(caps.top)),
+        ["__kaalang_unnamed_item"]
+    );
+    assert_eq!(
+        captions.handover(ExitId::of(caps.bottom)),
+        ["__kaalang_unnamed_done"]
+    );
+}
+
 /// One flow of an authored fixture file. The start and return type only caption
 /// start and end, which no test here reads.
 fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {

@@ -122,7 +122,7 @@ impl Executions {
             }
         }
         // A for cycle out of items passes its body by.
-        if let Some(next) = flow.next_item(block) {
+        for next in flow.required_items(block) {
             let exhausted = self.selected(next, 1);
             reaches = self.conditions.minus(reaches, exhausted);
         }

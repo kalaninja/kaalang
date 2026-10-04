@@ -72,8 +72,14 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
         declared.push(stage);
     }
 
+    let mut names = super::names(function);
     let mut preparation = Vec::new();
-    statements(&function.block.stmts[..first], None, &mut preparation)?;
+    statements(
+        &function.block.stmts[..first],
+        None,
+        &mut preparation,
+        &mut names,
+    )?;
     let empty_preparation = preparation.is_empty();
     if let Some(block) = preparation
         .iter()
@@ -92,8 +98,14 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             preparation
                 .iter()
                 .filter(|block| block.parent.is_none())
-                .flat_map(|block| block.outputs.iter().cloned())
-                .filter(|wire| !crate::model::is_unnamed(wire)),
+                .flat_map(|block| {
+                    block
+                        .outputs
+                        .iter()
+                        .enumerate()
+                        .filter(|(output, _)| !block.unnamed_outputs.contains(output))
+                        .map(|(_, wire)| wire.clone())
+                }),
         )
         .collect::<BTreeSet<_>>();
     let common = direct
@@ -153,7 +165,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             }
         }
         let mut blocks = Vec::new();
-        statements(&declaration.statements, None, &mut blocks)?;
+        statements(&declaration.statements, None, &mut blocks, &mut names)?;
         let authored_returns = blocks
             .iter()
             .filter(|block| block.kind == BlockKind::Return)

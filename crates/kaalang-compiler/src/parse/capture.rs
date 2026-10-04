@@ -18,7 +18,10 @@ pub(super) fn validate(flow: &Flow, function: &ItemFn) -> Result<()> {
         .into_iter()
         .filter(|name| name != "self")
         .collect::<BTreeSet<_>>();
-    for block in &flow.blocks {
+    for (index, block) in flow.blocks.iter().enumerate() {
+        if flow.takes_next_item(index) {
+            continue;
+        }
         let body = match (block.kind, &block.iteration) {
             (BlockKind::Action | BlockKind::Call | BlockKind::Question | BlockKind::Choice, _) => {
                 &block.body

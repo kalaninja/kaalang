@@ -31,9 +31,11 @@ pub(super) fn emit(
         if !captures.is_empty() {
             items = quote_spanned!(block.span=> { #captures #items });
         }
+        // A match preserves the scrutinee's temporaries throughout the loop.
         looped = quote_spanned! {block.span=>
-            let mut #iterator = ::core::iter::IntoIterator::into_iter(#items);
-            #looped
+            match ::core::iter::IntoIterator::into_iter(#items) {
+                mut #iterator => { #looped },
+            }
         };
     }
     if block.branch_count() > 0 {

@@ -13,7 +13,7 @@ pub use self::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
         ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input,
         Iteration, Join, JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis,
-        WireMerge, is_unnamed,
+        WireMerge,
     },
 };
 

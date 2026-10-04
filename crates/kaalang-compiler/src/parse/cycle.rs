@@ -1,6 +1,8 @@
 //! Parses a described cycle: a loop with its optional entry gate and declared
 //! outputs, or a for cycle with its header captures, item and completion.
 
+use std::collections::BTreeSet;
+
 use proc_macro2::{Ident, Span};
 use syn::{Error, Expr, ExprBlock, ExprBreak, Pat, Result, parse_quote, parse_quote_spanned};
 
@@ -8,7 +10,7 @@ use super::{
     BlockSyntax, block_outputs, decorated_body, description, forward, reject_control_transfers,
     structural_block, structural_expression,
 };
-use crate::model::{Block, BlockKind, Iteration, UNNAMED};
+use crate::model::{Block, BlockKind, Iteration};
 
 pub(super) fn parse(mut syntax: BlockSyntax<'_>) -> Result<Block> {
     let iteration = match structural_expression(&syntax.body).clone() {
@@ -90,19 +92,26 @@ fn braced(block: syn::Block) -> Expr {
 /// Opens the body of the for cycle at `header` with the hidden choice that
 /// takes its next item, or selects its completion once none is left. A for
 /// cycle always completes, so one without a declared output gets a hidden one.
-pub(super) fn open_iteration(blocks: &mut Vec<Block>, header: usize) -> Result<()> {
+pub(super) fn open_iteration(
+    blocks: &mut Vec<Block>,
+    header: usize,
+    names: &mut BTreeSet<Ident>,
+) -> Result<()> {
     let cycle = &mut blocks[header];
     let span = cycle.span;
     if cycle.outputs.is_empty() {
-        let done = Ident::new(&format!("{UNNAMED}done_{header}"), span);
+        let done = unnamed(&format!("done_{header}"), span, names);
         cycle.output_pattern = parse_quote!(#done);
         cycle.outputs.push(done);
+        cycle.unnamed_outputs.push(0);
     }
     // The authored spelling keeps `r#`, so an output named after a keyword binds.
     let done = cycle.output_binding(0).ident.clone();
+    let mut unnamed_outputs = cycle.unnamed_outputs.iter().map(|_| 1).collect::<Vec<_>>();
     let item = match &cycle.iteration.as_ref().expect("a for cycle").item {
         Pat::Wild(_) => {
-            let item = Ident::new(&format!("{UNNAMED}item_{header}"), span);
+            let item = unnamed(&format!("item_{header}"), span, names);
+            unnamed_outputs.push(0);
             parse_quote!(#item)
         }
         item => item.clone(),
@@ -115,7 +124,7 @@ pub(super) fn open_iteration(blocks: &mut Vec<Block>, header: usize) -> Result<(
     }
     let pattern: Pat = parse_quote!((#item, #done));
     let items = Iteration::iterator();
-    let value = Ident::new("item", Span::mixed_site());
+    let value = Ident::new("__kaalang_item", Span::mixed_site());
     let mut next = structural_block(BlockKind::Choice, span, Vec::new());
     next.description.clone_from(&cycle.description);
     next.case_descriptions = vec![
@@ -123,9 +132,10 @@ pub(super) fn open_iteration(blocks: &mut Vec<Block>, header: usize) -> Result<(
         "No item is left.".to_owned(),
     ];
     next.outputs = block_outputs(&pattern)?;
+    next.unnamed_outputs = unnamed_outputs;
     next.output_pattern = pattern;
     next.body = parse_quote_spanned! {span=> {
-        match #items.next() {
+        match ::core::iter::Iterator::next(&mut #items) {
             ::core::option::Option::Some(#value) => #value,
             ::core::option::Option::None => (),
         }
@@ -133,6 +143,18 @@ pub(super) fn open_iteration(blocks: &mut Vec<Block>, header: usize) -> Result<(
     next.parent = Some(header);
     blocks.push(next);
     Ok(())
+}
+
+/// A logical wire name that cannot collide with any authored or synthetic wire.
+fn unnamed(stem: &str, span: Span, names: &mut BTreeSet<Ident>) -> Ident {
+    let mut name = format!("__kaalang_unnamed_{stem}");
+    loop {
+        let ident = Ident::new(&name, span);
+        if names.insert(ident.clone()) {
+            return ident;
+        }
+        name.push('_');
+    }
 }
 
 /// Appends one hidden boundary consumer per declared output to the body that

@@ -81,6 +81,8 @@ pub struct Block {
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
     pub outputs: Vec<Ident>,
+    /// Positions of compiler-only outputs, omitted from captions and stage inputs.
+    pub unnamed_outputs: Vec<usize>,
     /// The validated identifier or flat tuple pattern declaring the outputs.
     /// Each binding preserves its authored mutability. An outputless block uses `()`.
     pub output_pattern: Pat,
@@ -102,16 +104,6 @@ pub struct Block {
     /// What a for cycle iterates. A loop cycle and every other block have none.
     pub iteration: Option<Iteration>,
 }
-
-/// Whether the compiler named this wire, for a for cycle that leaves its item
-/// or completion unnamed. No caption shows it, and no stage sees it.
-#[must_use]
-pub fn is_unnamed(wire: &Ident) -> bool {
-    wire.to_string().starts_with(UNNAMED)
-}
-
-/// The prefix of a wire the compiler names for a for cycle.
-pub(crate) const UNNAMED: &str = "__kaalang_unnamed_";
 
 /// The header of a for cycle after its capture list.
 #[derive(Clone)]
@@ -343,6 +335,14 @@ impl Flow {
         (block != next && self.blocks[block].kind != BlockKind::Export).then_some(next)
     }
 
+    /// The for cycles that must have an item to reach `block`, including
+    /// enclosing bodies. A cycle's own choice and export need only outer items.
+    pub(crate) fn required_items(&self, block: usize) -> impl Iterator<Item = usize> + '_ {
+        std::iter::once(block)
+            .chain(self.enclosing(block))
+            .filter_map(|block| self.next_item(block))
+    }
+
     /// Whether `block` is the hidden `continue` that ends a for cycle's
     /// iteration. It runs on every route with an item that does not diverge,
     /// so it may run on none.
@@ -523,8 +523,8 @@ pub struct Execution {
 pub(crate) struct Passes {
     /// Indexed by repeating cycle, then queried block. Non-cycle rows are empty.
     reaching: Vec<Vec<bool>>,
-    /// Per block, the hidden choice of the for cycle whose body holds it.
-    items: Vec<Option<usize>>,
+    /// Per block, the hidden choices of the for cycles whose items it needs.
+    items: Vec<Vec<usize>>,
 }
 
 impl Passes {
@@ -533,7 +533,10 @@ impl Passes {
     #[must_use]
     pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
         // A for cycle out of items passes its body by.
-        if self.items[block].is_some_and(|next| execution.selected(next) == Some(1)) {
+        if self.items[block]
+            .iter()
+            .any(|&next| execution.selected(next) == Some(1))
+        {
             return false;
         }
         let ExecutionOutcome::Repeat { cycle_index } = execution.outcome else {
@@ -573,7 +576,7 @@ impl Passes {
             })
             .collect();
         let items = (0..flow.blocks.len())
-            .map(|block| flow.next_item(block))
+            .map(|block| flow.required_items(block).collect())
             .collect();
         Self { reaching, items }
     }

@@ -243,6 +243,24 @@ fn cycles_and_stage_boundaries_match_complete_histories() {
 }
 
 #[test]
+fn independent_nested_for_cycles_match_complete_histories() {
+    for (source, name) in [
+        (
+            include_str!("../../../kaalang/tests/cycle/behavior/for_independent_ranges.rs"),
+            "for_independent_ranges",
+        ),
+        (
+            include_str!("../../../kaalang/tests/cycle/behavior/for_inside_loop_inside_for.rs"),
+            "for_inside_loop_inside_for",
+        ),
+    ] {
+        let function = crate::tests::fixture(source, name);
+        crate::analyze(&function).expect("independent nested ranges analyze");
+        assert!(compare(&function));
+    }
+}
+
+#[test]
 fn nested_cycle_frames_and_rejected_body_mutations_match_the_reference() {
     fn body(function: &mut syn::ItemFn) -> &mut syn::Block {
         let syn::Stmt::Local(local) = &mut function.block.stmts[0] else {
