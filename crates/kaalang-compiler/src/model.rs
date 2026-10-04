@@ -446,6 +446,15 @@ impl Flow {
             .span
     }
 
+    /// The wire one producer occurrence provides.
+    #[must_use]
+    pub fn wire(&self, producer: ProducerId) -> &Ident {
+        match producer {
+            ProducerId::FlowInput(index) => &self.flow_inputs[index],
+            ProducerId::BlockOutput { block, output } => &self.blocks[block].outputs[output],
+        }
+    }
+
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
     pub(crate) fn wire_name(&self, wire: &Ident) -> String {

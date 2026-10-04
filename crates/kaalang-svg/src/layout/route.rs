@@ -46,10 +46,11 @@ pub(super) fn emit(scene: &Scene, rows: &Rows) -> Vec<Connection> {
 
 pub(super) fn exit_anchor(scene: &Scene, exit: ExitId, destination: Destination) -> Point {
     match destination {
+        // The first case leaves the distributor below, like any exit.
         Destination::Node(NodeId::Case { choice, branch })
-            if exit.node == NodeId::Block(choice) =>
+            if exit.node == NodeId::Block(choice) && branch > 0 =>
         {
-            super::choice::exit_anchor(scene.node(exit.node), branch)
+            super::choice::exit_anchor(scene.node(exit.node))
         }
         _ => scene.exit_anchor(exit),
     }
@@ -66,23 +67,19 @@ pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> V
     for (index, cycle) in scene.topology.cycles.iter().enumerate().rev() {
         let from = junction_point(scene, rows, cycle.tail);
         let end = junction_point(scene, rows, cycle.entry);
-        // The body still stands where it was numbered, so the recorded column
-        // is realized through the same map every node and route uses.
-        if !scene.arrangement.back_routes.is_empty() {
-            connections.push(Connection {
-                source: Source::Junction(cycle.tail),
-                destination: Destination::Junction(cycle.entry),
-                points: bent_back_edge(scene, rows, index, from, end),
-            });
-            continue;
-        }
-        let anchor = contour_anchor(scene, index);
-        let aside = contour_x(scene, model, index, from, end, &drawn, anchor);
-        drawn.push((cycle.header, aside));
+        let points = if scene.arrangement.back_routes.is_empty() {
+            let aside = contour_x(scene, model, index, from, end, &drawn);
+            drawn.push((cycle.header, aside));
+            straighten(back_edge_points(from, aside, end))
+        } else {
+            // The body still stands where it was numbered, so the recorded
+            // column is realized through the same map every node and route uses.
+            bent_back_edge(scene, rows, index, from, end)
+        };
         connections.push(Connection {
             source: Source::Junction(cycle.tail),
             destination: Destination::Junction(cycle.entry),
-            points: straighten(back_edge_points(from, aside, end)),
+            points,
         });
     }
     connections
@@ -139,7 +136,8 @@ pub(super) fn contour_anchor(scene: &Scene, index: usize) -> i32 {
 }
 
 /// Realizes the recorded contour side, column, and lane. Measured body bounds
-/// may push the rail outward, never inward past `anchor` or into another corridor.
+/// may push the rail outward, never inward past its contour anchor or into
+/// another corridor.
 /// Body membership is independent of rank; continuations are excluded.
 pub(super) fn contour_x(
     scene: &Scene,
@@ -148,8 +146,8 @@ pub(super) fn contour_x(
     from: Point,
     end: Point,
     drawn: &[(usize, i32)],
-    anchor: i32,
 ) -> i32 {
+    let anchor = contour_anchor(scene, index);
     let cycle = scene.topology.cycles[index];
     let contour = scene.arrangement.contours[index];
     let (left, right) = body_extent(scene, index).unwrap_or((from.x.min(end.x), from.x.max(end.x)));
@@ -198,7 +196,7 @@ fn body_extent(scene: &Scene, index: usize) -> Option<(i32, i32)> {
         .reduce(|(left, right), (edge, beyond)| (left.min(edge), right.max(beyond)))
 }
 
-fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
+pub(super) fn junction_point(scene: &Scene, rows: &Rows, junction: usize) -> Point {
     let row = scene.rank(Vertex::Junction(junction));
     Point {
         x: scene.column_x(scene.column(Vertex::Junction(junction))),
@@ -445,7 +443,7 @@ pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::topology::{ExitId, Topology};
+    use kaalang_compiler::topology::ExitId;
 
     use super::*;
 
@@ -460,22 +458,10 @@ mod tests {
             })
             .collect();
         Scene {
-            narrow: false,
-            stage_rows: None,
-            reach: std::collections::BTreeMap::new(),
-            slack: 0,
-            bodies: Vec::new(),
-            region_bodies: Vec::new(),
             width: 10,
             height: 10,
-            topology: Topology::default(),
-            arrangement: kaalang_compiler::Arrangement::default(),
-            captions: std::rc::Rc::default(),
-            nodes: vec![],
-            parameters: None,
             connections,
-            labels: vec![],
-            cycle_regions: Vec::new(),
+            ..Scene::default()
         }
     }
 

@@ -11,17 +11,11 @@ use crate::text::{RichText, block_metrics, wrap_text};
 const CASE_MIN_BODY_HEIGHT: i32 = 52;
 const CASE_LABEL_PADDING_Y: i32 = 14;
 
-pub(super) fn exit_anchor(node: &Node, branch: usize) -> Point {
-    if branch == 0 {
-        Point {
-            x: node.x,
-            y: node.y + node.height / 2,
-        }
-    } else {
-        Point {
-            x: node.x + (node.width - SELECT_SKEW) / 2,
-            y: node.y,
-        }
+/// A later case leaves the distributor from its right side.
+pub(super) fn exit_anchor(node: &Node) -> Point {
+    Point {
+        x: node.x + (node.width - SELECT_SKEW) / 2,
+        y: node.y,
     }
 }
 

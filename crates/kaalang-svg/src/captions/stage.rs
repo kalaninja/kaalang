@@ -1,11 +1,11 @@
 use std::collections::BTreeSet;
 
 use kaalang_compiler::{
-    Analysis, ProducerId, SemanticModel,
+    Analysis, SemanticModel,
     topology::{ExitId, NodeId},
 };
 
-use super::{Captions, derive_with_parameters, named_parameters, provided, shares_label};
+use super::{Captions, derive_with_parameters, named_parameters, provided};
 use crate::text::RichText;
 
 /// Reuses ordinary captions, then resolves stage labels from their destinations.
@@ -81,12 +81,7 @@ pub(crate) fn derive_stage(
         .filter(|input| !input.derived)
         .map(|input| &input.ident)
         .collect::<BTreeSet<_>>();
-    let is_signal = |producer: ProducerId| {
-        signals.contains(match producer {
-            ProducerId::FlowInput(input) => &flow.flow_inputs[input],
-            ProducerId::BlockOutput { block, output } => &flow.blocks[block].outputs[output],
-        })
-    };
+    let is_signal = |producer| signals.contains(flow.wire(producer));
     for exit in &model.topology.exits {
         let mut producers = exit.provides.iter();
         captions
@@ -102,12 +97,5 @@ pub(crate) fn derive_stage(
             !is_signal(model.analysis.merges[merge].producers[0])
         });
     }
-    captions.shared = model
-        .topology
-        .connections
-        .iter()
-        .filter(|connection| shares_label(&model.topology, &captions, connection))
-        .copied()
-        .collect();
     captions
 }

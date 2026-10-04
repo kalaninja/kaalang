@@ -907,44 +907,11 @@ fn a_back_edge_with_one_arrival_may_stand_beyond_its_body() {
         .expect("the farther contour is a valid witness for SVG");
 }
 
-/// Four cycles nested one inside the next, whose back edges climb the same side in
-/// four lanes. The outermost takes lane 3, which no fixture reaches.
-pub(super) const FOUR_LANES: &str = "fn deep(mut step: usize) -> usize {
-    #[cycle(\"Repeat the first cycle.\")]
-    let leave_0 = |step| loop {
-        #[question(\"Leave the first?\")]
-        let (stay_0, leave_0) = |&step| *step > 0;
-        #[cycle(\"Repeat the second cycle.\")]
-        let leave_1 = |stay_0| loop {
-            #[question(\"Leave the second?\")]
-            let (stay_1, leave_1) = |&step| *step > 1;
-            #[cycle(\"Repeat the third cycle.\")]
-            let leave_2 = |stay_1| loop {
-                #[question(\"Leave the third?\")]
-                let (stay_2, leave_2) = |&step| *step > 2;
-                #[cycle(\"Repeat the fourth cycle.\")]
-                let leave_3 = |stay_2| loop {
-                    #[question(\"Leave the fourth?\")]
-                    let (stay_3, leave_3) = |&step| *step > 3;
-                    #[action(\"Advance at the deepest level.\")]
-                    |stay_3, &mut step| *step += 1;
-                    |stay_3| continue;
-                };
-                |leave_3| continue;
-            };
-            |leave_2| continue;
-        };
-        |leave_1| continue;
-    };
-    |leave_0, step| return step;
-}
-";
-
 /// Packs four nested back edges into lanes 0–3, beyond generated coverage.
 /// The lane budget also reserves cycle boundaries; `kaalang-svg` draws this witness.
 #[test]
 fn four_nested_back_edges_climb_four_lanes_on_one_side() {
-    let model = model(FOUR_LANES);
+    let model = model(kaalang_testing::shapes::FOUR_LANES);
     assert_eq!(model.topology.cycles.len(), 4, "four nested cycles");
 
     let side = model.arrangement.contours[0].side;

@@ -519,18 +519,11 @@ impl Replay<'_> {
         }
     }
 
-    fn name(&self, producer: ProducerId) -> &Ident {
-        match producer {
-            ProducerId::FlowInput(index) => &self.flow.flow_inputs[index],
-            ProducerId::BlockOutput { block, output } => &self.flow.blocks[block].outputs[output],
-        }
-    }
-
     fn present(&mut self, name: &Ident) -> Condition {
         let producers: Vec<_> = self
             .available
             .iter()
-            .filter(|(producer, _)| self.name(**producer) == name)
+            .filter(|(producer, _)| self.flow.wire(**producer) == name)
             .map(|(_, &when)| when)
             .collect();
         producers
@@ -690,7 +683,7 @@ impl Replay<'_> {
             .collect();
         let outside: BTreeSet<_> = possible
             .into_iter()
-            .map(|producer| self.name(producer).clone())
+            .map(|producer| self.flow.wire(producer).clone())
             .collect();
         if branches.len() != self.flow.blocks[*index].outputs.len() {
             self.valid = false;
@@ -721,7 +714,7 @@ impl Replay<'_> {
                 self.requires(yielded, transferred);
             }
             for producer in self.available.keys().copied().collect::<Vec<_>>() {
-                let name = self.name(producer);
+                let name = self.flow.wire(producer);
                 if !outside.contains(name) && !continuation.wires.contains(name) {
                     let bound = self.available[&producer];
                     let retained = self.executions.conditions.minus(bound, yielded);

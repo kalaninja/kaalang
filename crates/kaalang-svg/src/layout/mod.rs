@@ -90,7 +90,7 @@ const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * BRANCH_LABEL_PADDING_X;
 /// Text budget inside a case icon.
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct Scene {
     pub(crate) width: i32,
     pub(crate) height: i32,
@@ -143,6 +143,16 @@ impl CycleRegion {
     /// Left, top, right, bottom, like `Scene::bounds`.
     pub(super) const fn bounds(&self) -> (i32, i32, i32, i32) {
         (self.left, self.top, self.right, self.bottom)
+    }
+
+    /// The bounds grown by `by` on every side.
+    pub(super) const fn padded(&self, by: i32) -> (i32, i32, i32, i32) {
+        (
+            self.left - by,
+            self.top - by,
+            self.right + by,
+            self.bottom + by,
+        )
     }
 }
 
@@ -264,29 +274,25 @@ fn clear_labels(scene: &mut Scene) -> i32 {
                     .filter(|(nested, _)| {
                         (boundary_header + 1..boundary_end).contains(&nested.header)
                     })
-                    .map(|(_, region)| {
-                        (
-                            region.left - LANE,
-                            region.top - LANE,
-                            region.right + LANE,
-                            region.bottom + LANE,
-                        )
-                    }),
+                    .map(|(_, region)| region.padded(LANE)),
             );
             bounds
         };
         let struck = |scene: &Scene| {
-            obstructions(scene)
+            let hits = obstructions(scene)
                 .into_iter()
-                .filter(|rect| route::crosses(&scene.connections[back].points, *rect))
-                .map(|rect| match side {
-                    Side::Left => rect.0,
-                    Side::Right => rect.2,
-                })
-                .reduce(|outer, edge| match side {
-                    Side::Left => outer.min(edge),
-                    Side::Right => outer.max(edge),
-                })
+                .filter(|rect| route::crosses(&scene.connections[back].points, *rect));
+            match side {
+                Side::Left => hits.map(|rect| rect.0).min(),
+                Side::Right => hits.map(|rect| rect.2).max(),
+            }
+        };
+        let shift = |scene: &mut Scene, by: i32| {
+            for &edge in &chain {
+                for point in &mut scene.connections[edge].points[1..3] {
+                    point.x += by;
+                }
+            }
         };
         // A label or nested boundary can span several lanes. Past the
         // outermost obstruction the climb is clear; a collision left there is
@@ -302,19 +308,9 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             if struck(scene).is_none() {
                 break;
             }
-            let kept = chain
-                .iter()
-                .map(|&edge| scene.connections[edge].points.clone())
-                .collect::<Vec<_>>();
-            for &edge in &chain {
-                for point in &mut scene.connections[edge].points[1..3] {
-                    point.x += step;
-                }
-            }
+            shift(scene, step);
             if route::verify(scene).is_some() {
-                for (&edge, points) in chain.iter().zip(kept) {
-                    scene.connections[edge].points = points;
-                }
+                shift(scene, -step);
                 break;
             }
         }
@@ -738,21 +734,17 @@ pub(super) struct Rows {
 }
 
 impl Rows {
+    /// Lanes pack horizontal runs toward the following row, leaving the spare
+    /// room below the producers rather than pressing the merge against their
+    /// exits.
     pub(super) fn line_y(&self, line: RunLine) -> i32 {
         match line {
             RunLine::Rank(rank) => self.top[rank] + self.height[rank] / 2,
-            RunLine::Lane { gap, lane } => self.lane_y(gap, lane, self.lanes_in(gap)),
+            RunLine::Lane { gap, lane } => {
+                let lanes = self.lanes.get(gap).copied().unwrap_or(0);
+                self.top[gap + 1] - self.capture_space[gap + 1] - (lanes - lane - 1) as i32 * LANE
+            }
         }
-    }
-
-    pub(super) fn lanes_in(&self, gap: usize) -> usize {
-        self.lanes.get(gap).copied().unwrap_or(0)
-    }
-
-    /// Packs horizontal runs toward the following row, leaving the spare room
-    /// below the producers rather than pressing the merge against their exits.
-    pub(super) fn lane_y(&self, gap: usize, lane: usize, lanes: usize) -> i32 {
-        self.top[gap + 1] - self.capture_space[gap + 1] - (lanes - lane - 1) as i32 * LANE
     }
 }
 
@@ -847,13 +839,7 @@ impl Scene {
         let base = if !self.narrow || !self.arrangement.back_routes.is_empty() {
             COLUMN_WIDTH
         } else {
-            let narrow_half = |at| {
-                if content(at) {
-                    COLUMN_WIDTH / 2
-                } else {
-                    LANE / 2
-                }
-            };
+            let narrow_half = |at| (if content(at) { COLUMN_WIDTH } else { LANE }) / 2;
             narrow_half(left) + narrow_half(left + 1)
         };
         let right = self.reach.get(&left).map_or(0, |reach| reach.1);
@@ -979,16 +965,8 @@ impl Scene {
             .iter()
             .flat_map(|connection| &connection.points)
             .map(|point| point.x)
-            .min()
-            .unwrap_or(MARGIN)
-            .min(
-                self.cycle_regions
-                    .iter()
-                    .map(|region| region.left)
-                    .min()
-                    .unwrap_or(MARGIN),
-            )
-            .min(MARGIN);
+            .chain(self.cycle_regions.iter().map(|region| region.left))
+            .fold(MARGIN, i32::min);
         if left >= MARGIN {
             return;
         }
@@ -1075,7 +1053,7 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
         NodeKind::Call => call::dimensions(label),
         NodeKind::Cycle => cycle::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
-            block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, BRANCH_MIN_HEIGHT)
+            block_dimensions(label, BRANCH_LABEL_WIDTH, BRANCH_MIN_HEIGHT)
         }
         NodeKind::Case | NodeKind::StageEntry | NodeKind::StageTransition => {
             choice::case_dimensions(label)
@@ -1087,8 +1065,7 @@ fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>
 /// SVG clamps the horizontal radius once the capsule grows taller than wide,
 /// so those tall capsules use the corresponding ellipse bound instead.
 fn capsule_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
-    let (width, mut height, lines) =
-        block_dimensions(label, NODE_WIDTH, NODE_LABEL_WIDTH, CAPSULE_MIN_HEIGHT);
+    let (width, mut height, lines) = block_dimensions(label, NODE_LABEL_WIDTH, CAPSULE_MIN_HEIGHT);
     let metrics = text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT);
     for (index, line) in lines.iter().enumerate() {
         let line_width = text::text_width(line, LABEL_FONT);
@@ -1117,15 +1094,10 @@ fn capsule_dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     (width, height, lines)
 }
 
-fn block_dimensions(
-    label: &RichText,
-    width: i32,
-    budget: i32,
-    minimum_height: i32,
-) -> (i32, i32, Vec<RichText>) {
+fn block_dimensions(label: &RichText, budget: i32, minimum: i32) -> (i32, i32, Vec<RichText>) {
     let lines = wrap_text(label, budget, LABEL_FONT);
-    let height = minimum_height.max(
+    let height = minimum.max(
         2 * NODE_LABEL_PADDING_Y + text::block_metrics(&lines, LABEL_FONT, LINE_HEIGHT).height,
     );
-    (width, height, lines)
+    (NODE_WIDTH, height, lines)
 }

@@ -56,12 +56,7 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
 }
 
 pub(super) fn dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
-    block_dimensions(
-        label,
-        NODE_WIDTH,
-        NODE_LABEL_WIDTH - MARKER_SPACE,
-        NODE_MIN_HEIGHT,
-    )
+    block_dimensions(label, NODE_LABEL_WIDTH - MARKER_SPACE, NODE_MIN_HEIGHT)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -185,13 +180,9 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
             .chain(points.iter().map(|point| point.y))
             .max()
             .unwrap_or(entry.y);
-        let bottom = (body_bottom + vertical).max(
-            boxes
-                .iter()
-                .map(|bounds| bounds.3)
-                .max()
-                .unwrap_or(body_bottom),
-        );
+        let bottom = boxes.iter().fold(body_bottom + vertical, |bottom, bounds| {
+            bottom.max(bounds.3)
+        });
         regions.push((
             boundary.header,
             CycleRegion {
@@ -338,12 +329,9 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         .zip(&scene.cycle_regions)
         .enumerate()
     {
-        if region.left < 0
-            || region.top < 0
-            || region.left >= region.right
+        if region.left >= region.right
             || region.top >= region.bottom
-            || region.right > scene.width
-            || region.bottom > scene.height
+            || !contains((0, 0, scene.width, scene.height), region.bounds())
         {
             return Some("a cycle boundary lies outside the diagram".to_owned());
         }
@@ -406,12 +394,10 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                 edge.destination == boundary.entry || boundary.results.contains(&edge.source);
             if source_owned
                 && destination_owned
-                && edge.points.iter().any(|point| {
-                    point.x < region.left
-                        || point.x > region.right
-                        || point.y < region.top
-                        || point.y > region.bottom
-                })
+                && edge
+                    .points
+                    .iter()
+                    .any(|point| !contains(region.bounds(), (point.x, point.y, point.x, point.y)))
             {
                 return Some(format!(
                     "cycle {} {:?} does not contain internal route {:?} -> {:?}: {:?}",
@@ -459,15 +445,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
                 && scene.connections.iter().any(|edge| {
                     edge.destination == boundary.entry
                         && scene.is_back_edge(edge)
-                        && super::route::crosses(
-                            &edge.points,
-                            (
-                                nested_region.left - super::LANE,
-                                nested_region.top - super::LANE,
-                                nested_region.right + super::LANE,
-                                nested_region.bottom + super::LANE,
-                            ),
-                        )
+                        && super::route::crosses(&edge.points, nested_region.padded(super::LANE))
                 })
             {
                 return Some(format!(

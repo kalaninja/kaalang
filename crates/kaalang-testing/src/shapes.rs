@@ -4,6 +4,40 @@
 
 use std::ops::RangeInclusive;
 
+/// Four cycles nested one inside the next, whose back edges climb the same side
+/// in four lanes. The outermost takes lane 3, which no fixture reaches.
+pub const FOUR_LANES: &str = r#"#[kaalang]
+fn deep(mut step: usize) -> usize {
+    #[cycle("Repeat the first cycle.")]
+    let leave_0 = |step| loop {
+        #[question("Leave the first?")]
+        let (stay_0, leave_0) = |&step| *step > 0;
+        #[cycle("Repeat the second cycle.")]
+        let leave_1 = |stay_0| loop {
+            #[question("Leave the second?")]
+            let (stay_1, leave_1) = |&step| *step > 1;
+            #[cycle("Repeat the third cycle.")]
+            let leave_2 = |stay_1| loop {
+                #[question("Leave the third?")]
+                let (stay_2, leave_2) = |&step| *step > 2;
+                #[cycle("Repeat the fourth cycle.")]
+                let leave_3 = |stay_2| loop {
+                    #[question("Leave the fourth?")]
+                    let (stay_3, leave_3) = |&step| *step > 3;
+                    #[action("Advance at the deepest level.")]
+                    |stay_3, &mut step| *step += 1;
+                    |stay_3| continue;
+                };
+                |leave_3| continue;
+            };
+            |leave_2| continue;
+        };
+        |leave_1| continue;
+    };
+    |leave_0, step| return step;
+}
+"#;
+
 /// The outcomes a flat cycle body selects between.
 const ROUTES: [&str; 3] = ["repeat", "leave", "finish"];
 

@@ -7,7 +7,7 @@ use kaalang_compiler::{
     topology::{NodeId, NodeKind},
 };
 
-use super::{ARROW_MIDPOINT, ARROW_SIZE, STROKE_WIDTH, describe, escape, serialize_with_ids};
+use super::{ARROW_MIDPOINT, ARROW_SIZE, STROKE_WIDTH, describe, escape, serialize};
 use crate::layout::{Point, StagedScene};
 
 const RETURN_ARROW_SIZE: i32 = 8;
@@ -35,7 +35,7 @@ pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: 
     svg.push_str("</g>\n");
     for (part, (local, placement)) in scene.parts.iter().enumerate() {
         let (x, y) = (placement.x, placement.y);
-        let nested = serialize_with_ids(local, flow_name, Some(part));
+        let nested = serialize(local, flow_name, Some(part));
         let _ = writeln!(svg, "<g transform=\"translate({x} {y})\">{nested}</g>");
     }
     svg.push_str("</svg>\n");
@@ -76,13 +76,9 @@ fn staged_description(scene: &StagedScene, root: &Analysis) -> String {
             &root.stages[part - 1].analysis.flow
         };
         for node in &local.topology.nodes {
-            if node.kind != NodeKind::StageTransition {
-                continue;
-            }
-            let NodeId::Block(block) = node.id else {
-                continue;
-            };
-            if let Some(destination) = flow.blocks[block].transition_target {
+            if let (NodeKind::StageTransition, NodeId::Block(block)) = (node.kind, node.id)
+                && let Some(destination) = flow.blocks[block].transition_target
+            {
                 let _ = write!(
                     description,
                     "Transition to stage {}. ",

@@ -4,7 +4,6 @@
 use std::collections::BTreeSet;
 
 use kaalang_compiler::{
-    RunLine,
     geometry::overlaps,
     topology::{Destination, ExitId, NodeId, NodeKind, Source, Vertex},
 };
@@ -47,7 +46,7 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
     let shared = topology
         .connections
         .iter()
-        .filter(|connection| captions.shares_label(connection))
+        .filter(|connection| captions.shares_label(topology, connection))
         .collect::<Vec<_>>();
     let mut labels = Vec::new();
     let mut merged_exits = BTreeSet::new();
@@ -66,29 +65,19 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
 
     for connection in &shared {
         if let Source::Exit(exit) = connection.source
+            && let Destination::Node(node) = connection.destination
             && captions.branch_description(exit).is_none()
         {
-            labels.extend(capture_label(
-                scene,
-                node_of(connection.destination),
-                captions.handover(exit),
-            ));
+            labels.extend(capture_label(scene, node, captions.handover(exit)));
         }
     }
 
     for exit in &topology.exits {
-        let shared_handover = shared
-            .iter()
-            .any(|connection| connection.source == Source::Exit(exit.id));
         let skip_handover = merged_exits.contains(&exit.id)
-            || (shared_handover && captions.branch_description(exit.id).is_none());
-        place_exit_labels(
-            &mut labels,
-            scene,
-            exit.id,
-            exit_label_anchor(scene, exit.id),
-            skip_handover,
-        );
+            || shared
+                .iter()
+                .any(|connection| connection.source == Source::Exit(exit.id));
+        labels.extend(exit_label(scene, exit.id, skip_handover));
     }
 
     for node in &topology.nodes {
@@ -166,7 +155,9 @@ fn place_merge_label(
         merged_captures.insert(node);
     }
 
-    let anchor = merge_anchor(scene, rows, junction);
+    // Incoming routes end at the visible merge; its outgoing segment owns the
+    // vertical below it.
+    let anchor = super::route::junction_point(scene, rows, junction);
     labels.extend(wire_label(
         Vertex::Junction(junction),
         wires,
@@ -203,66 +194,45 @@ fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
         .map_or(anchor, |x| Point { x, y: anchor.y })
 }
 
-fn place_exit_labels(
-    labels: &mut Vec<Label>,
-    scene: &Scene,
-    exit: ExitId,
-    anchor: Point,
-    skip_handover: bool,
-) {
+/// The label one exit draws: its branch description, or else its handover
+/// unless a merge or a shared capture label already names it.
+fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label> {
+    let anchor = exit_label_anchor(scene, exit);
     if let Some(description) = scene.captions.branch_description(exit) {
         let (y, stack) = if exit.branch == Some(0) {
             (anchor.y + BRANCH_DROP, Stack::Below)
         } else {
             (anchor.y - BRANCH_RISE, Stack::Above)
         };
-        labels.push(branch_label(
+        let at = Point { x: anchor.x, y };
+        Some(branch_label(
             Vertex::Node(exit.node),
             description,
-            Point { x: anchor.x, y },
+            at,
             stack,
-        ));
-    } else if !skip_handover {
-        labels.extend(wire_label(
+        ))
+    } else if skip_handover {
+        None
+    } else {
+        let at = Point {
+            x: anchor.x,
+            y: anchor.y + DROP,
+        };
+        wire_label(
             Vertex::Node(exit.node),
             scene.captions.handover(exit),
-            Point {
-                x: anchor.x,
-                y: anchor.y + DROP,
-            },
+            at,
             Stack::Below,
-        ));
+        )
     }
-}
-
-fn node_of(destination: Destination) -> NodeId {
-    match destination {
-        Destination::Node(node) => node,
-        Destination::Junction(_) => unreachable!("a shared label needs a node at both ends"),
-    }
-}
-
-/// Incoming routes end at the visible merge; its outgoing segment owns the
-/// vertical below it.
-fn merge_anchor(scene: &Scene, rows: &Rows, junction: usize) -> Point {
-    let vertex = Vertex::Junction(junction);
-    Point {
-        x: scene.column_x(scene.column(vertex)),
-        y: rows.line_y(RunLine::Rank(scene.rank(vertex))),
-    }
-}
-
-/// Wraps the wire names one label draws, or nothing when it names none.
-/// Wrapping an empty label would yield one blank line, so every caller needs
-/// the same guard.
-fn wrap_wires(names: &[String]) -> Option<Vec<RichText>> {
-    (!names.is_empty()).then(|| wrap_literal(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))
 }
 
 /// Wraps one label and stacks its lines against `at`. Its left edge, including
-/// the halo, stays clear of the adjacent vertical run or node boundary.
+/// the halo, stays clear of the adjacent vertical run or node boundary. Nothing
+/// is drawn when it names no wire: wrapping an empty label yields a blank line.
 fn wire_label(owner: Vertex, names: &[String], at: Point, stack: Stack) -> Option<Label> {
-    let lines = wrap_wires(names)?;
+    let lines = (!names.is_empty())
+        .then(|| wrap_literal(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))?;
     Some(place_label(owner, lines, LabelKind::Wire, at, stack))
 }
 
@@ -434,24 +404,15 @@ fn label_width(lines: &[RichText], font_size: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::topology::{NodeId, Topology};
+    use kaalang_compiler::topology::NodeId;
 
     use super::*;
 
     /// One label of a known width, so a test can put it where it must not be.
     fn scene(at: Point, node: Option<(i32, i32)>) -> Scene {
         Scene {
-            narrow: false,
-            stage_rows: None,
-            reach: std::collections::BTreeMap::new(),
-            slack: 0,
-            bodies: Vec::new(),
-            region_bodies: Vec::new(),
             width: 200,
             height: 200,
-            topology: Topology::default(),
-            arrangement: kaalang_compiler::Arrangement::default(),
-            captions: std::rc::Rc::default(),
             nodes: node
                 .into_iter()
                 .map(|(x, y)| super::super::Node {
@@ -463,15 +424,13 @@ mod tests {
                     lines: vec![RichText::literal("Do the work.")],
                 })
                 .collect(),
-            parameters: None,
-            connections: vec![],
             labels: vec![Label {
                 owner: Vertex::Node(NodeId::Block(0)),
                 kind: LabelKind::Wire,
                 lines: vec![RichText::literal("end")],
                 at,
             }],
-            cycle_regions: Vec::new(),
+            ..Scene::default()
         }
     }
 

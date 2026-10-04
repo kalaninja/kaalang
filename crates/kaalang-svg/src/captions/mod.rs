@@ -29,7 +29,6 @@ pub(crate) struct Captions {
     empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
     junction: Vec<Vec<String>>,
-    shared: BTreeSet<Connection>,
     back_marker: BTreeSet<NodeId>,
 }
 
@@ -99,9 +98,25 @@ impl Captions {
         self.junction.get(junction).map_or(&[], Vec::as_slice)
     }
 
-    /// Whether the two ends of one connection are drawn as a single label.
-    pub(crate) fn shares_label(&self, connection: &Connection) -> bool {
-        self.shared.contains(connection)
+    /// Whether the two ends of one connection are drawn as a single label:
+    /// equal, nonempty lists on a connection unique at both ends. Modifiers
+    /// and empty-input markers prevent a match with bare wire names.
+    pub(crate) fn shares_label(&self, topology: &Topology, connection: &Connection) -> bool {
+        let (Source::Exit(exit), Destination::Node(node)) =
+            (connection.source, connection.destination)
+        else {
+            return false;
+        };
+        !self.handover(exit).is_empty()
+            // The body's hand-over and the cycle's output are separate transfers,
+            // even when a body exit supplies the cycle's result directly.
+            && !topology
+                .cycle_boundaries
+                .iter()
+                .any(|boundary| boundary.results.contains(&connection.source))
+            && self.matches_capture(topology.node(node), self.handover(exit))
+            && topology.leaving(exit).count() == 1
+            && topology.single_arrival(node)
     }
 
     pub(crate) fn back_marker(&self, node: NodeId) -> bool {
@@ -135,16 +150,6 @@ fn derive_with_parameters(
         let label = match node.id {
             NodeId::Start => RichText::literal(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
-            // The for-end repeats the description of the cycle it closes.
-            NodeId::Block(block) if node.kind == NodeKind::ForEnd => {
-                let header = model.analysis.flow.blocks[block]
-                    .parent
-                    .expect("a for-end closes a for cycle");
-                model.analysis.flow.blocks[header]
-                    .description
-                    .as_deref()
-                    .map_or_else(RichText::default, RichText::markdown)
-            }
             // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
@@ -205,22 +210,21 @@ fn derive_with_parameters(
 
     for boundary in &topology.cycle_boundaries {
         let block = &model.analysis.flow.blocks[boundary.header];
-        captions.label.insert(
-            NodeId::Block(boundary.header),
-            block
-                .description
-                .as_deref()
-                .map_or_else(RichText::default, RichText::markdown),
-        );
+        let label = block
+            .description
+            .as_deref()
+            .map_or_else(RichText::default, RichText::markdown);
+        // The for-end repeats the description of the cycle it closes.
+        if let Some((_, bottom)) = boundary.caps {
+            captions.label.insert(bottom, label.clone());
+        }
+        captions.label.insert(NodeId::Block(boundary.header), label);
         let inputs = cycle_input_names(model, parameters, boundary.header);
-        captions.cycle_inputs.insert(
-            boundary.header,
-            if inputs.is_empty() {
-                "()".to_owned()
-            } else {
-                inputs.join(", ")
-            },
-        );
+        if !inputs.is_empty() {
+            captions
+                .cycle_inputs
+                .insert(boundary.header, inputs.join(", "));
+        }
     }
     // Both views name a cycle's outputs: the expanded results and the
     // collapsed node's exits.
@@ -283,13 +287,6 @@ fn derive_with_parameters(
         })
         .collect();
 
-    captions.shared = topology
-        .connections
-        .iter()
-        .filter(|connection| shares_label(topology, &captions, connection))
-        .copied()
-        .collect();
-
     captions
 }
 
@@ -323,25 +320,6 @@ fn transferred(value: &Expr) -> Vec<String> {
     }
 }
 
-/// Shares equal, nonempty lists only on a connection unique at both ends.
-/// Modifiers and empty-input markers prevent a match with bare wire names.
-fn shares_label(topology: &Topology, captions: &Captions, connection: &Connection) -> bool {
-    let (Source::Exit(exit), Destination::Node(node)) = (connection.source, connection.destination)
-    else {
-        return false;
-    };
-    !captions.handover(exit).is_empty()
-        // The body's hand-over and the cycle's output are separate transfers,
-        // even when a body exit supplies the cycle's result directly.
-        && !topology
-            .cycle_boundaries
-            .iter()
-            .any(|boundary| boundary.results.contains(&connection.source))
-        && captions.matches_capture(topology.node(node), captions.handover(exit))
-        && topology.leaving(exit).count() == 1
-        && topology.single_arrival(node)
-}
-
 /// The named flow parameters, in flow-input order, as the start node's
 /// hand-over addresses them. A receiver is one of them, under the one name
 /// Rust gives it.
@@ -361,11 +339,7 @@ fn named_parameters(analysis: &Analysis) -> Vec<String> {
 
 /// One binding as a caption: its authored spelling, with a permitted `mut`.
 fn binding_label(binding: &PatIdent) -> String {
-    let mutable = if binding.mutability.is_some() {
-        "mut "
-    } else {
-        ""
-    };
+    let mutable = binding.mutability.map_or("", |_| "mut ");
     format!("{mutable}{}", binding.ident.unraw())
 }
 

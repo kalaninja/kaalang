@@ -626,24 +626,17 @@ fn long_wire_labels_clear_a_tall_neighbor() {
 
 #[test]
 fn long_labels_enlarge_only_their_adjacent_row_gaps() {
-    let scene = drawn((
-        r#"
-        #[kaalang]
-        fn example(condition: bool) -> u8 {
-            #[question("Choose a branch.")]
-            #[no("Take the deliberately long fallback description that wraps onto several lines.")]
-            #[yes("Take the deliberately long continuation description that wraps onto several lines.")]
-            let (fallback, proceed) = |condition| { condition };
-            #[action("Use the fallback.")]
-            let end = |fallback| { 0 };
-            #[action("Proceed.")]
-            let end = |proceed| { 1 };
-
-            |end| return end;
-        }
-    "#,
-        "example",
-    ));
+    let (source, flow) = fixture!("question/behavior", "run_question");
+    let source = source
+        .replace(
+            "The condition is false.",
+            "Take the deliberately long fallback description that wraps onto several lines.",
+        )
+        .replace(
+            "The condition is true.",
+            "Take the deliberately long continuation description that wraps onto several lines.",
+        );
+    let scene = drawn((&source, flow));
     let question = scene.rank(Vertex::Node(NodeId::Block(0)));
     let gaps = vertical_gaps(&scene);
 
@@ -658,24 +651,14 @@ fn long_labels_enlarge_only_their_adjacent_row_gaps() {
 
 #[test]
 fn a_right_question_branch_description_replaces_its_output_above_the_connection() {
-    let scene = drawn((
-        r#"
-        #[kaalang]
-        fn example(condition: bool) -> u8 {
-            #[question("Choose a branch.")]
-            #[no]
-            #[yes("Take the longer continuation description that must wrap beside the branch.")]
-            let (fallback, proceed) = |condition| { condition };
-            #[action("Use the fallback.")]
-            let end = |fallback| { 0 };
-            #[action("Proceed.")]
-            let end = |proceed| { 1 };
-
-            |end| return end;
-        }
-    "#,
-        "example",
-    ));
+    let (source, flow) = fixture!("question/behavior", "run_question");
+    let source = source
+        .replace(r#"#[no("The condition is false.")]"#, "#[no]")
+        .replace(
+            "The condition is true.",
+            "Take the longer continuation description that must wrap beside the branch.",
+        );
+    let scene = drawn((&source, flow));
     let question = scene.node(NodeId::Block(0));
     assert_eq!(scene.node(NodeId::Block(1)).x, question.x);
     assert!(scene.node(NodeId::Block(2)).x > question.x);
@@ -691,10 +674,10 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
         scene
             .labels
             .iter()
-            .all(|label| joined(&label.lines, "") != "proceed")
+            .all(|label| joined(&label.lines, "") != "yes")
     );
     assert!(scene.labels.iter().any(|label| {
-        matches!(label.kind, LabelKind::Wire) && joined(&label.lines, "") == "fallback"
+        matches!(label.kind, LabelKind::Wire) && joined(&label.lines, "") == "no"
     }));
     let connection = scene
         .connections
@@ -712,23 +695,13 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
 
 #[test]
 fn math_branch_descriptions_clear_their_nodes_and_connections() {
-    let scene = drawn((
-        r#"
-        #[kaalang]
-        fn example(condition: bool) -> u8 {
-            #[question("$x^2$ or $y^2$?")]
-            #[no(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$")]
-            #[yes(r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$")]
-            let (fallback, proceed) = |condition| condition;
-            #[action("Use the fallback.")]
-            let end = |fallback| 0;
-            #[action("Proceed.")]
-            let end = |proceed| 1;
-            |end| return end;
-        }
-    "#,
-        "example",
-    ));
+    let (source, flow) = fixture!("question/behavior", "run_question");
+    let math = r#"r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$""#;
+    let source = source
+        .replace("Take the yes branch?", "$x^2$ or $y^2$?")
+        .replace(r#""The condition is false.""#, math)
+        .replace(r#""The condition is true.""#, math);
+    let scene = drawn((&source, flow));
     let branch_labels = scene
         .labels
         .iter()
@@ -897,7 +870,7 @@ fn branches_run_left_to_right_from_their_branchers_own_column() {
 }
 
 /// The implicit visual end boundary, which `Flow::blocks` carries last.
-fn end_node(scene: &Scene) -> NodeId {
+pub(super) fn end_node(scene: &Scene) -> NodeId {
     scene
         .topology
         .nodes
@@ -989,13 +962,9 @@ fn continuation_starts_below_the_completed_nested_cycle() {
         .topology
         .cycles
         .iter()
-        .find(|cycle| cycle.header == outer.header)
+        .position(|cycle| cycle.header == outer.header)
         .expect("the outer cycle repeats");
-    let back = scene
-        .connections
-        .iter()
-        .position(|edge| edge.source == Source::Junction(outer.tail))
-        .expect("the outer cycle has a back edge");
+    let back = scene.back_edge_index(outer).unwrap();
 
     let mut crossed = scene.clone();
     let climb = crossed.connections[back]
@@ -1016,12 +985,8 @@ fn continuation_starts_below_the_completed_nested_cycle() {
 fn enclosing_back_edges_leave_a_lane_beside_nested_boundaries() {
     let mut close = drawn(fixture!("cycle/behavior", "nested_exit_convergence"));
     let x = close.cycle_regions[1].right + LANE - 1;
-    let back = close
-        .connections
-        .iter_mut()
-        .find(|edge| edge.source == Source::Junction(close.topology.cycles[0].tail))
-        .unwrap();
-    for point in &mut back.points[1..3] {
+    let back = close.back_edge_index(0).unwrap();
+    for point in &mut close.connections[back].points[1..3] {
         point.x = x;
     }
     assert_eq!(route::verify(&close), None);
@@ -1050,16 +1015,7 @@ fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
 
 #[test]
 fn a_cycle_that_only_repeats_draws_its_described_boundary() {
-    let source = r#"
-        #[kaalang]
-        fn example() {
-            #[cycle("Repeat forever.")]
-            loop {
-                continue;
-            };
-        }
-    "#;
-    let scene = drawn((source, "example"));
+    let scene = drawn(fixture!("cycle/behavior", "empty_cycle"));
     let [region] = scene.cycle_regions.as_slice() else {
         panic!("the expanded cycle has one boundary");
     };
@@ -1087,12 +1043,7 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
         .find(|label| joined(&label.lines, "") == description)
         .unwrap();
     assert!(label.lines.len() > 1);
-    let outer = scene.topology.cycles[0];
-    let edge = scene
-        .connections
-        .iter()
-        .find(|edge| edge.source == Source::Junction(outer.tail))
-        .unwrap();
+    let edge = scene.back_edge(0).unwrap();
     let vertical = edge
         .points
         .windows(2)
@@ -1128,12 +1079,7 @@ fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
     let scene = drawn(fixture);
     for index in 0..scene.topology.cycles.len() {
         let mut pulled = drawn(fixture);
-        let tail = pulled.topology.cycles[index].tail;
-        let back = pulled
-            .connections
-            .iter()
-            .position(|edge| edge.source == Source::Junction(tail))
-            .expect("every repeating cycle draws its back edge");
+        let back = pulled.back_edge_index(index).unwrap();
         let inside = pulled.connections[back].points[0].x;
         for point in &mut pulled.connections[back].points[1..3] {
             point.x = inside;
@@ -1179,13 +1125,7 @@ fn a_disconnected_junction_is_caught_by_the_geometry_gates() {
 fn a_misplaced_end_is_caught_by_the_geometry_check() {
     let fixture = fixture!("cycle/behavior", "end_below_nested_back_edges");
     let scene = drawn(fixture);
-    let end = scene
-        .topology
-        .nodes
-        .iter()
-        .find(|node| node.kind == NodeKind::End)
-        .unwrap()
-        .id;
+    let end = end_node(&scene);
     let reach = scene.height;
 
     // A node left below end.
@@ -1210,11 +1150,7 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
     // the block still sits below the rail — so this has to go further.
     let mut trailing = drawn(fixture);
     let top = Scene::bounds(trailing.node(end)).1;
-    let back = trailing
-        .connections
-        .iter()
-        .position(|edge| trailing.is_back_edge(edge))
-        .expect("the fixture has a back edge");
+    let back = trailing.back_edge_index(0).unwrap();
     assert!(
         {
             for point in &mut trailing.connections[back].points {
@@ -1305,11 +1241,7 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
         Side::Left => outer - LANE,
         Side::Right => outer + LANE,
     };
-    let back = passed
-        .connections
-        .iter()
-        .position(|edge| edge.source == Source::Junction(passed.topology.cycles[1].tail))
-        .expect("every repeating cycle draws its back edge");
+    let back = passed.back_edge_index(1).unwrap();
     for point in &mut passed.connections[back].points[1..3] {
         point.x = beyond;
     }
@@ -1328,13 +1260,7 @@ fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
 
 /// Where one cycle's back edge climbs.
 fn rail(scene: &Scene, index: usize) -> i32 {
-    scene
-        .connections
-        .iter()
-        .find(|edge| edge.source == Source::Junction(scene.topology.cycles[index].tail))
-        .expect("every repeating cycle draws its back edge")
-        .points[1]
-        .x
+    scene.back_edge(index).unwrap().points[1].x
 }
 
 /// Clearing a label moves the struck rail and its enclosing rails together;
@@ -1381,11 +1307,7 @@ fn translating_the_drawing_preserves_its_back_edge_contours() {
 #[test]
 fn clearing_one_label_can_take_more_than_one_lane() {
     let mut scene = drawn(fixture!("cycle/behavior", "empty_cycle"));
-    let back = scene
-        .connections
-        .iter()
-        .find(|edge| scene.is_back_edge(edge))
-        .unwrap();
+    let back = scene.back_edge(0).unwrap();
     let climb = back
         .points
         .windows(2)
@@ -1413,39 +1335,16 @@ fn clearing_one_label_can_take_more_than_one_lane() {
 
 /// The probe `a_back_edge_may_stand_beyond_the_body_it_clears` checks in the
 /// model: a cycle whose three cases repeat, repeat and leave.
-const FAR_CONTOUR: (&str, &str) = (
-    r#"
-        #[kaalang]
-        fn far_contour(mut mode: u8) -> u8 {
-            #[cycle("Advance until the mode can leave.")]
-            let case_2 = loop {
-                #[choice("Which route?")]
-                #[case("Case 0 repeat.")]
-                #[case("Case 1 repeat.")]
-                #[case("Case 2 leave.")]
-                let (case_0, case_1, case_2) = |mode| match mode {
-                    0 => (),
-                    1 => (),
-                    _ => (),
-                };
-                #[action("Advance in case 0.")]
-                let again = |case_0| ();
-                #[action("Advance in case 1.")]
-                let again = |case_1| ();
-                |again| continue;
-            };
-
-            |case_2, mode| return mode;
-        }
-    "#,
-    "far_contour",
-);
+fn far_contour() -> String {
+    let probe = kaalang_testing::shapes::cycle_routes(&["repeat", "repeat", "leave"]);
+    format!("#[kaalang]\n{probe}")
+}
 
 /// A far contour retains its recorded column; measuring only body boxes would
 /// incorrectly pull the rail two columns inward.
 #[test]
 fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
-    let near = drawn(FAR_CONTOUR);
+    let near = drawn((&far_contour(), "probe"));
     let contour = near.arrangement.contours[0];
     let beyond = match contour.side {
         Side::Left => near.arrangement.column.values().copied().min(),
@@ -1457,7 +1356,7 @@ fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
             Side::Right => 2,
         };
 
-    let far = drawn_with(FAR_CONTOUR, |arrangement| {
+    let far = drawn_with((&far_contour(), "probe"), |arrangement| {
         arrangement.contours[0].column = beyond;
     });
     // `indent` slides the whole drawing, so the recorded column is read as an
@@ -1507,57 +1406,20 @@ fn a_sole_tail_arrival_keeps_its_recorded_far_contour() {
     );
 }
 
-/// Four cycles nested one inside the next. The model's
-/// `four_nested_back_edges_climb_four_lanes_on_one_side` checks the same witness
-/// in abstract columns; this one draws it.
-const FOUR_LANES: (&str, &str) = (
-    r#"
-        #[kaalang]
-        fn deep(mut step: usize) -> usize {
-            #[cycle("Repeat the first cycle.")]
-            let leave_0 = loop {
-                #[question("Leave the first?")]
-                let (stay_0, leave_0) = |&step| *step > 0;
-                #[cycle("Repeat the second cycle.")]
-                let leave_1 = |stay_0| loop {
-                    #[question("Leave the second?")]
-                    let (stay_1, leave_1) = |&step| *step > 1;
-                    #[cycle("Repeat the third cycle.")]
-                    let leave_2 = |stay_1| loop {
-                        #[question("Leave the third?")]
-                        let (stay_2, leave_2) = |&step| *step > 2;
-                        #[cycle("Repeat the fourth cycle.")]
-                        let leave_3 = |stay_2| loop {
-                            #[question("Leave the fourth?")]
-                            let (stay_3, leave_3) = |&step| *step > 3;
-                            #[action("Advance at the deepest level.")]
-                            |stay_3, &mut step| *step += 1;
-                            |stay_3| continue;
-                        };
-                        |leave_3| continue;
-                    };
-                    |leave_2| continue;
-                };
-                |leave_1| continue;
-            };
-
-            |leave_0, step| return step;
-        }
-    "#,
-    "deep",
-);
-
 /// Four nested rails reach lane 3, beyond ordinary fixture coverage. Each stays
 /// a lane outside the one it encloses, with the outermost four lanes from the body.
 #[test]
 fn four_nested_back_edges_are_drawn_in_four_lanes() {
-    let scene = drawn_with(FOUR_LANES, |arrangement| {
-        let side = arrangement.contours[0].side;
-        for (index, contour) in arrangement.contours.iter_mut().enumerate() {
-            contour.side = side;
-            contour.lane = 3 - index;
-        }
-    });
+    let scene = drawn_with(
+        (kaalang_testing::shapes::FOUR_LANES, "deep"),
+        |arrangement| {
+            let side = arrangement.contours[0].side;
+            for (index, contour) in arrangement.contours.iter_mut().enumerate() {
+                contour.side = side;
+                contour.lane = 3 - index;
+            }
+        },
+    );
     assert_eq!(scene.topology.cycles.len(), 4, "four nested cycles");
 
     let side = scene.arrangement.contours[0].side;
@@ -1631,26 +1493,13 @@ fn every_generated_shape_the_model_accepts_also_renders() {
 
     let (mut drawn, mut refused) = (0, 0);
     for source in &sources {
-        let file = crate::parse_file(source).expect("the probe is valid Rust");
-        let function = crate::select_flow(&file.items, "probe").expect("the probe declares it");
-        let mut model = match kaalang_compiler::build(&function) {
-            Ok(model) => model,
-            Err(error) => {
-                assert!(
-                    !error.to_string().contains("internal kaalang"),
-                    "{source}\n{error}"
-                );
+        match crate::render_source(source, "probe") {
+            Ok(_) => drawn += 1,
+            Err(crate::RenderError::InvalidFlow { message, .. }) => {
+                assert!(!message.contains("internal kaalang"), "{source}\n{message}");
                 refused += 1;
-                continue;
             }
-        };
-        drawn += 1;
-        kaalang_render::compact_arrangement(&mut model);
-        let start = start_text(source, &function.sig);
-        let parameters = parameter_text(source, &function.sig);
-        let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
-        if let Err(reason) = layout(&model, &captions, &parameters) {
-            panic!("{source}\nan accepted flow did not render: {reason}");
+            Err(error) => panic!("{source}\nan accepted flow did not render: {error}"),
         }
     }
     assert_eq!((drawn, refused), (1095, 1740));
@@ -1705,12 +1554,8 @@ fn every_accepted_staged_shape_renders_in_both_views() {
 /// contour chosen by the arrangement.
 #[test]
 fn a_back_edge_keeps_its_recorded_contour() {
-    let mut scene = drawn(FAR_CONTOUR);
-    let back = scene
-        .connections
-        .iter()
-        .position(|edge| scene.is_back_edge(edge))
-        .unwrap();
+    let mut scene = drawn((&far_contour(), "probe"));
+    let back = scene.back_edge_index(0).unwrap();
     let climb = scene.connections[back]
         .points
         .windows(2)
@@ -1731,11 +1576,7 @@ fn a_back_edge_clears_its_drawn_entry_and_tail() {
     let scene = drawn(fixture!("cycle/behavior", "reversed_empty_cycle"));
     for first in [false, true] {
         let mut moved = scene.clone();
-        let index = moved
-            .connections
-            .iter()
-            .position(|edge| moved.is_back_edge(edge))
-            .unwrap();
+        let index = moved.back_edge_index(0).unwrap();
         let points = &mut moved.connections[index].points;
         let endpoint = if first { 0 } else { points.len() - 1 };
         // This right back edge now stands left of its own endpoint. No other

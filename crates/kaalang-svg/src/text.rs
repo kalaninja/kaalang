@@ -121,15 +121,10 @@ impl Formula {
         let svg = document.find("<svg ")?;
         let body = svg + document[svg..].find('>')? + 1;
         let end = document.rfind("</svg>")?;
+        let hex = options.color.css_hex();
         let svg_body = document[body..end]
-            .replace(
-                &format!("fill=\"{}\"", options.color.css_hex()),
-                "fill=\"inherit\"",
-            )
-            .replace(
-                &format!("stroke=\"{}\"", options.color.css_hex()),
-                "stroke=\"currentColor\"",
-            );
+            .replace(&format!("fill=\"{hex}\""), "fill=\"inherit\"")
+            .replace(&format!("stroke=\"{hex}\""), "stroke=\"currentColor\"");
         Some(Self {
             layout,
             svg_body,
@@ -294,9 +289,7 @@ impl RichText {
             if index != 0 {
                 result.push("\n", Style::default());
             }
-            for span in parse_line(line, formulas).spans {
-                result.push_span(span);
-            }
+            parse_line(line, formulas, &mut result);
         }
         result.finish();
         result
@@ -306,20 +299,13 @@ impl RichText {
         &self.spans
     }
 
+    /// A formula is one cluster whose text is its whole source, so it goes
+    /// in one piece.
     pub(crate) fn pop_grapheme(&mut self) {
-        let Some(index) = self.spans.iter().rposition(|span| !span.text.is_empty()) else {
+        let Some(last) = clusters(self).pop() else {
             return;
         };
-        if self.spans[index].formula.is_some() {
-            self.spans.remove(index);
-            self.finish();
-            return;
-        }
-        let mut remaining = clusters(self)
-            .last()
-            .expect("nonempty text has a grapheme")
-            .text
-            .len();
+        let mut remaining = last.text.len();
         for span in self.spans.iter_mut().rev() {
             let removed = remaining.min(span.text.len());
             span.text.truncate(span.text.len() - removed);
@@ -405,15 +391,6 @@ impl AsRef<str> for RichText {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-enum Effect {
-    Bold,
-    Italic,
-    Strikethrough,
-    Superscript,
-    Subscript,
-}
-
 #[derive(Clone, Copy)]
 enum InlineEffect {
     Underline,
@@ -465,57 +442,49 @@ fn paired_tags(events: &[(Event<'_>, Range<usize>)]) -> Vec<bool> {
     let mut paired = vec![false; events.len()];
     let mut opened = Vec::new();
     let mut literal_depth = 0_usize;
-    let literal = |tag: TagEnd| {
-        effect(tag).is_none() && !matches!(tag, TagEnd::Paragraph | TagEnd::BlockQuote(_))
-    };
+    let literal =
+        |tag: TagEnd| !is_effect(tag) && !matches!(tag, TagEnd::Paragraph | TagEnd::BlockQuote(_));
     for (current, (event, _)) in events.iter().enumerate() {
-        let Event::InlineHtml(source) = event else {
-            match event {
-                Event::Start(tag) if literal(tag.to_end()) => literal_depth += 1,
-                Event::End(tag) if literal(*tag) => {
-                    literal_depth = literal_depth.saturating_sub(1);
+        match event {
+            Event::Start(tag) if literal(tag.to_end()) => literal_depth += 1,
+            Event::End(tag) if literal(*tag) => literal_depth = literal_depth.saturating_sub(1),
+            Event::InlineHtml(source) if literal_depth == 0 => match inline_tag(source) {
+                Some(InlineTag::Open(effect)) => opened.push((current, effect)),
+                Some(InlineTag::Close(tag))
+                    if opened.last().is_some_and(|(_, effect)| effect.tag() == tag) =>
+                {
+                    let (start, _) = opened.pop().expect("a matching tag was just found");
+                    if events[start].1.end != events[current].1.start {
+                        paired[start] = true;
+                        paired[current] = true;
+                    }
                 }
-                _ => {}
-            }
-            continue;
-        };
-        if literal_depth > 0 {
-            continue;
-        }
-        match inline_tag(source) {
-            Some(InlineTag::Open(effect)) => opened.push((current, effect)),
-            Some(InlineTag::Close(tag))
-                if opened.last().is_some_and(|(_, effect)| effect.tag() == tag) =>
-            {
-                let (start, _) = opened.pop().expect("a matching tag was just found");
-                if events[start].1.end != events[current].1.start {
-                    paired[start] = true;
-                    paired[current] = true;
+                Some(InlineTag::Close(tag)) => {
+                    if let Some(position) =
+                        opened.iter().rposition(|(_, effect)| effect.tag() == tag)
+                    {
+                        opened.truncate(position);
+                    }
                 }
-            }
-            Some(InlineTag::Close(tag)) => {
-                if let Some(position) = opened.iter().rposition(|(_, effect)| effect.tag() == tag) {
-                    opened.truncate(position);
-                }
-            }
+                None => {}
+            },
             _ => {}
         }
     }
     paired
 }
 
-const fn effect_marker_len(effect: Effect) -> usize {
+const fn effect_marker_len(effect: TagEnd) -> usize {
     match effect {
-        Effect::Bold | Effect::Strikethrough => 2,
-        Effect::Italic | Effect::Superscript | Effect::Subscript => 1,
+        TagEnd::Strong | TagEnd::Strikethrough => 2,
+        _ => 1,
     }
 }
 
 #[allow(clippy::too_many_lines)] // One pass keeps parser events and their source ranges together.
-fn parse_line(line: &str, formulas: bool) -> RichText {
-    let mut output = RichText::default();
+fn parse_line(line: &str, formulas: bool, output: &mut RichText) {
     if line.is_empty() {
-        return output;
+        return;
     }
     let options = Options::ENABLE_STRIKETHROUGH
         | Options::ENABLE_SUPERSCRIPT
@@ -526,8 +495,7 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         .collect::<Vec<_>>();
     let Some((mut index, end, paragraph, quoted)) = paragraph(&events) else {
         output.push(line, Style::default());
-        output.finish();
-        return output;
+        return;
     };
     let paired = paired_tags(&events);
 
@@ -557,23 +525,18 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         // it after changing `effects` or `inline_effects`.
         let style = active_style(&effects, &inline_effects, quoted);
         if !matches!(event, Event::Text(_)) {
-            pending.flush(&mut output, style);
+            pending.flush(output, style);
         }
         match event {
-            Event::Start(tag) if effect(tag.to_end()).is_some() => {
-                let started = effect(tag.to_end()).expect("a supported tag has an effect");
-                effects.push(started);
-                consumed = consumed.max(range.start + effect_marker_len(started));
+            Event::Start(tag) if is_effect(tag.to_end()) => {
+                effects.push(tag.to_end());
+                consumed = consumed.max(range.start + effect_marker_len(tag.to_end()));
             }
-            Event::End(tag) if effect(*tag).is_some() => {
-                let ended = effect(*tag).expect("a supported end tag has an effect");
-                if let Some(position) = effects.iter().rposition(|active| *active == ended) {
-                    effects.remove(position);
-                    consumed = consumed.max(range.end);
-                } else if range.end > consumed {
-                    output.push(&line[consumed..range.end], style);
-                    consumed = range.end;
-                }
+            // The parser nests its events, and the arm below skips whole
+            // literal subtrees, so an effect always ends the innermost one.
+            Event::End(tag) if is_effect(*tag) => {
+                effects.pop();
+                consumed = consumed.max(range.end);
             }
             Event::Start(tag) => {
                 output.push(&line[range.clone()], style);
@@ -606,15 +569,9 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
             Event::InlineHtml(source) if paired[index] => {
                 match inline_tag(source).expect("a paired tag is recognized") {
                     InlineTag::Open(effect) => inline_effects.push(effect),
-                    InlineTag::Close(tag) => {
-                        if inline_effects
-                            .last()
-                            .is_some_and(|effect| effect.tag() == tag)
-                        {
-                            inline_effects.pop();
-                        } else {
-                            output.push(&line[range.clone()], style);
-                        }
+                    // `paired_tags` pairs a close only with the innermost open.
+                    InlineTag::Close(_) => {
+                        inline_effects.pop();
                     }
                 }
                 consumed = consumed.max(range.end);
@@ -633,13 +590,11 @@ fn parse_line(line: &str, formulas: bool) -> RichText {
         }
         index += 1;
     }
-    pending.flush(&mut output, active_style(&effects, &inline_effects, quoted));
+    pending.flush(output, active_style(&effects, &inline_effects, quoted));
     output.push(&line[consumed..], active_style(&[], &[], quoted));
     if quoted {
         output.push("”", active_style(&[], &[], true));
     }
-    output.finish();
-    output
 }
 
 fn paragraph(events: &[(Event<'_>, Range<usize>)]) -> Option<(usize, usize, Range<usize>, bool)> {
@@ -694,6 +649,7 @@ impl InlineText {
                 && self.is_marker(self.text.len() - rest.len() + index, *character)
         }) {
             let after_open = open + marker.len_utf8();
+            // Only a nonempty, unpadded run touching a word is a script.
             let Some(close) = rest[after_open..]
                 .char_indices()
                 .find(|(index, character)| {
@@ -704,26 +660,22 @@ impl InlineText {
                         )
                 })
                 .map(|(index, _)| after_open + index)
+                .filter(|&close| {
+                    let inside = &rest[after_open..close];
+                    let previous = rest[..open].chars().next_back();
+                    let following = rest[close + marker.len_utf8()..].chars().next();
+                    !inside.is_empty()
+                        && !inside.starts_with(char::is_whitespace)
+                        && !inside.ends_with(char::is_whitespace)
+                        && (previous.is_some_and(char::is_alphanumeric)
+                            || following.is_some_and(char::is_alphanumeric))
+                })
             else {
                 output.push(&rest[..after_open], base_style);
                 rest = &rest[after_open..];
                 continue;
             };
             let inside = &rest[after_open..close];
-            let previous = rest[..open].chars().next_back();
-            let following = rest[close + marker.len_utf8()..].chars().next();
-            let intraword = previous.is_some_and(char::is_alphanumeric)
-                || following.is_some_and(char::is_alphanumeric);
-            if inside.is_empty()
-                || inside.starts_with(char::is_whitespace)
-                || inside.ends_with(char::is_whitespace)
-                || !intraword
-            {
-                let split = after_open;
-                output.push(&rest[..split], base_style);
-                rest = &rest[split..];
-                continue;
-            }
             output.push(&rest[..open], base_style);
             let mut style = base_style;
             style.script = Some(if marker == '^' {
@@ -750,22 +702,22 @@ impl InlineText {
     }
 }
 
-const fn effect(tag: TagEnd) -> Option<Effect> {
-    match tag {
-        TagEnd::Strong => Some(Effect::Bold),
-        TagEnd::Emphasis => Some(Effect::Italic),
-        TagEnd::Strikethrough => Some(Effect::Strikethrough),
-        TagEnd::Superscript => Some(Effect::Superscript),
-        TagEnd::Subscript => Some(Effect::Subscript),
-        _ => None,
-    }
+const fn is_effect(tag: TagEnd) -> bool {
+    matches!(
+        tag,
+        TagEnd::Strong
+            | TagEnd::Emphasis
+            | TagEnd::Strikethrough
+            | TagEnd::Superscript
+            | TagEnd::Subscript
+    )
 }
 
-fn active_style(effects: &[Effect], inline: &[InlineEffect], quote: bool) -> Style {
+fn active_style(effects: &[TagEnd], inline: &[InlineEffect], quote: bool) -> Style {
     Style {
-        bold: effects.contains(&Effect::Bold),
-        italic: effects.contains(&Effect::Italic),
-        strikethrough: effects.contains(&Effect::Strikethrough),
+        bold: effects.contains(&TagEnd::Strong),
+        italic: effects.contains(&TagEnd::Emphasis),
+        strikethrough: effects.contains(&TagEnd::Strikethrough),
         underline: inline
             .iter()
             .any(|effect| matches!(effect, InlineEffect::Underline)),
@@ -775,8 +727,8 @@ fn active_style(effects: &[Effect], inline: &[InlineEffect], quote: bool) -> Sty
         code: false,
         quote,
         script: effects.iter().rev().find_map(|effect| match effect {
-            Effect::Superscript => Some(Script::Superscript),
-            Effect::Subscript => Some(Script::Subscript),
+            TagEnd::Superscript => Some(Script::Superscript),
+            TagEnd::Subscript => Some(Script::Subscript),
             _ => None,
         }),
         color: inline.iter().rev().find_map(|effect| match effect {
@@ -895,28 +847,21 @@ pub(crate) fn text_width(text: &RichText, font_size: i32) -> i32 {
 }
 
 /// The first style and advance own a grapheme that crosses span boundaries.
+/// A formula span is a single cluster, so it never joins its neighbors.
 pub(crate) fn shaping_spans(text: &RichText, font_size: i32) -> Vec<(StyledSpan, i64, usize)> {
-    let mut shaped: Vec<(StyledSpan, i64, usize)> = Vec::new();
-    for cluster in clusters(text) {
-        let advance = cluster.advance(font_size);
-        if let Some((previous, width, index)) = shaped.last_mut()
-            && *index == cluster.first_span
-            && previous.formula.is_none()
-        {
-            previous.text.push_str(&cluster.text);
-            *width += advance;
-            continue;
-        }
-        let mut first = cluster.spans[0].clone();
-        if first.formula.is_none() {
-            first.text = cluster.text;
-        }
-        shaped.push((first, advance, cluster.first_span));
-    }
-    shaped
+    clusters(text)
+        .chunk_by(|left, right| left.first_span == right.first_span)
+        .map(|run| {
+            let mut first = run[0].spans[0].clone();
+            if first.formula.is_none() {
+                first.text = run.iter().map(|cluster| cluster.text.as_str()).collect();
+            }
+            let advance = run.iter().map(|cluster| cluster.advance(font_size)).sum();
+            (first, advance, run[0].first_span)
+        })
+        .collect()
 }
 
-#[derive(Clone)]
 /// One Unicode grapheme (possibly spanning styles), or one indivisible formula.
 struct Cluster {
     text: String,
@@ -966,16 +911,12 @@ fn clusters(text: &RichText) -> Vec<Cluster> {
             };
             while remaining > 0 {
                 let span = &text.spans[index];
-                let available = if span.formula.is_some() {
-                    1
+                // A formula's NUL stands for its whole source.
+                let (taken, part) = if span.formula.is_some() {
+                    (1, span.text.as_str())
                 } else {
-                    span.text.len() - offset
-                };
-                let taken = remaining.min(available);
-                let part = if span.formula.is_some() {
-                    span.text.as_str()
-                } else {
-                    &span.text[offset..offset + taken]
+                    let taken = remaining.min(span.text.len() - offset);
+                    (taken, &span.text[offset..offset + taken])
                 };
                 cluster.text.push_str(part);
                 cluster.spans.push(StyledSpan {
@@ -985,7 +926,7 @@ fn clusters(text: &RichText) -> Vec<Cluster> {
                 });
                 remaining -= taken;
                 offset += taken;
-                if taken == available {
+                if span.formula.is_some() || offset == span.text.len() {
                     index += 1;
                     offset = 0;
                 }
@@ -1019,27 +960,19 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
 /// Wraps at the last fitting space, or between grapheme clusters for long words.
 /// Preserves text except newline separators; an oversized cluster stays intact.
 pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<RichText> {
-    let mut paragraphs = vec![Vec::new()];
-    for mut cluster in clusters(text) {
-        // A CRLF is one grapheme cluster, so match the terminator rather than
-        // the whole cluster; either way the separator leaves no ink.
-        if cluster.text.ends_with('\n') {
-            paragraphs.push(Vec::new());
-        } else {
-            if cluster.advance(font_size) > i64::from(budget) * TEXT_ADVANCE_SCALE
-                && let Some(formula) = &mut cluster.spans[0].formula
-            {
-                Rc::make_mut(formula).clip_width = Some(budget.max(1));
-            }
-            paragraphs
-                .last_mut()
-                .expect("one paragraph exists")
-                .push(cluster);
+    let mut all = clusters(text);
+    for cluster in &mut all {
+        if cluster.advance(font_size) > i64::from(budget) * TEXT_ADVANCE_SCALE
+            && let Some(formula) = &mut cluster.spans[0].formula
+        {
+            Rc::make_mut(formula).clip_width = Some(budget.max(1));
         }
     }
 
     let mut lines = Vec::new();
-    for clusters in paragraphs {
+    // A CRLF is one grapheme cluster, so match the terminator rather than the
+    // whole cluster; either way the separator leaves no ink.
+    for clusters in all.split(|cluster| cluster.text.ends_with('\n')) {
         if clusters.is_empty() {
             lines.push(RichText::default());
             continue;
@@ -1090,19 +1023,11 @@ pub(crate) fn line_ink(spans: &[StyledSpan], font_size: i32) -> (i32, i32) {
     for span in spans {
         if let Some(formula) = &span.formula {
             ascent = ascent.max(dimension_ceiling(&formula.ascent(font_size, span.style)));
-            descent = descent.max(
-                dimension_ceiling(&formula.descent(font_size, span.style)).saturating_add(
-                    if span.style.underline {
-                        FORMULA_UNDERLINE_PADDING
-                    } else {
-                        0
-                    },
-                ),
-            );
+            let padding = i32::from(span.style.underline) * FORMULA_UNDERLINE_PADDING;
+            let below = dimension_ceiling(&formula.descent(font_size, span.style));
+            descent = descent.max(below.saturating_add(padding));
         }
-    }
-    // Match the script font scale and baseline shifts in the SVG stylesheet.
-    for span in spans {
+        // Match the script font scale and baseline shifts in the SVG stylesheet.
         match span.style.script {
             Some(Script::Superscript) => {
                 ascent = ascent.max((font_size * SUPERSCRIPT_ASCENT_PERCENT + 99) / 100);
@@ -1121,9 +1046,8 @@ pub(crate) fn block_metrics(
     font_size: i32,
     line_height: i32,
 ) -> TextBlockMetrics {
-    let base_ink = (font_size * TEXT_ASCENT_PARTS + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS
-        + (font_size + (TEXT_EM_PARTS - 1)) / TEXT_EM_PARTS;
-    let leading = (line_height - base_ink).max(0);
+    let (ascent, descent) = line_ink(&[], font_size);
+    let leading = (line_height - ascent - descent).max(0);
     let mut height = 0;
     let mut baselines = Vec::with_capacity(lines.len());
     for line in lines {
