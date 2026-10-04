@@ -262,29 +262,38 @@ fn map_columns(built: &mut Arrangement, map: impl Fn(i32) -> i32) {
 
 #[cfg(test)]
 mod tests {
+    use kaalang_compiler::topology::NodeKind;
     use kaalang_testing::corpus::flow_named as fixture;
 
     use super::*;
 
+    /// The flow declared by `crates/kaalang/tests/<dir>/<stem>.rs`, named after the file.
+    macro_rules! fixture {
+        ($dir:literal, $stem:literal) => {
+            fixture(
+                include_str!(concat!("../../kaalang/tests/", $dir, "/", $stem, ".rs")),
+                $stem,
+            )
+        };
+    }
+
+    fn transitions(topology: &Topology) -> Vec<Vertex> {
+        topology
+            .nodes
+            .iter()
+            .filter(|node| node.kind == NodeKind::StageTransition)
+            .map(|node| Vertex::Node(node.id))
+            .collect()
+    }
+
     #[test]
     fn stage_transitions_keep_their_final_row_through_compaction() {
-        use kaalang_compiler::topology::NodeKind;
-
-        let function = fixture(
-            include_str!("../../kaalang/tests/gallery/sorting/quick_sort.rs"),
-            "quick_sort",
-        );
-        let mut model = kaalang_compiler::build(&function).unwrap();
+        let mut model =
+            kaalang_compiler::build(&fixture!("gallery/sorting", "quick_sort")).unwrap();
         let mut stages = std::mem::take(&mut model.stages);
         for part in std::iter::once(&mut model).chain(stages.iter_mut()) {
             compact_arrangement(part);
-            let transitions = part
-                .topology
-                .nodes
-                .iter()
-                .filter(|node| node.kind == NodeKind::StageTransition)
-                .map(|node| Vertex::Node(node.id))
-                .collect::<Vec<_>>();
+            let transitions = transitions(&part.topology);
             let Some(first) = transitions.first() else {
                 continue;
             };
@@ -313,22 +322,11 @@ mod tests {
 
     #[test]
     fn a_stage_with_a_cycle_compacts_both_transition_routes() {
-        use kaalang_compiler::topology::NodeKind;
-
-        let function = fixture(
-            include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs"),
-            "stage_cycle_alternative_outputs",
-        );
+        let function = fixture!("stage/behavior", "stage_cycle_alternative_outputs");
         let mut model = kaalang_compiler::build(&function).unwrap();
         let stage = &mut model.stages[0];
         assert!(!stage.topology.cycles.is_empty());
-        let transitions = stage
-            .topology
-            .nodes
-            .iter()
-            .filter(|node| node.kind == NodeKind::StageTransition)
-            .map(|node| Vertex::Node(node.id))
-            .collect::<Vec<_>>();
+        let transitions = transitions(&stage.topology);
         assert!(transitions.len() >= 2);
         compact_arrangement(stage);
         ArrangementVerifier::new(&stage.analysis.flow, &stage.topology)
@@ -346,11 +344,8 @@ mod tests {
     /// rectangle each cycle draws, not just the vertices and routes in it.
     #[test]
     fn an_outer_tail_cannot_join_a_column_inside_a_nested_frame() {
-        let function = fixture(
-            include_str!("../../kaalang/tests/cycle/behavior/nested_side_returns.rs"),
-            "nested_side_returns",
-        );
-        let mut model = kaalang_compiler::build(&function).unwrap();
+        let mut model =
+            kaalang_compiler::build(&fixture!("cycle/behavior", "nested_side_returns")).unwrap();
         compact_arrangement(&mut model);
         let tail = Vertex::Junction(model.topology.cycles[0].tail);
         let column = model.arrangement.column[&tail];
@@ -372,17 +367,12 @@ mod tests {
     /// A completion outside the cycle boundary may share its body's rows.
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
-        for (source, name) in [
-            (
-                include_str!("../../kaalang/tests/gallery/sorting/bubble_sort.rs"),
-                "bubble_sort",
-            ),
-            (
-                include_str!("../../kaalang/tests/cycle/behavior/collect_steps.rs"),
-                "collect_steps",
-            ),
+        for function in [
+            fixture!("gallery/sorting", "bubble_sort"),
+            fixture!("cycle/behavior", "collect_steps"),
         ] {
-            let mut model = kaalang_compiler::build(&fixture(source, name)).unwrap();
+            let name = &function.sig.ident;
+            let mut model = kaalang_compiler::build(&function).unwrap();
             compact_arrangement(&mut model);
             let built = &model.arrangement;
             let beside = model.topology.cycle_boundaries.iter().any(|boundary| {
@@ -447,10 +437,7 @@ mod tests {
 
     #[test]
     fn junction_arrivals_keep_their_rank_through_compaction() {
-        let function = fixture(
-            include_str!("../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
-            "two_merges_reach_one_consumer",
-        );
+        let function = fixture!("wire/behavior", "two_merges_reach_one_consumer");
         let mut model = kaalang_compiler::build(&function).unwrap();
         compact_arrangement(&mut model);
         ArrangementVerifier::new(&model.analysis.flow, &model.topology)

@@ -39,8 +39,7 @@ impl Bodies {
                     };
                     let (mut internal, mut foreign_routes) = (Vec::new(), Vec::new());
                     for (index, edge) in topology.connections.iter().enumerate() {
-                        let both = inside(Vertex::from(edge.source)) && inside(edge.destination);
-                        if both {
+                        if inside(Vertex::from(edge.source)) && inside(edge.destination) {
                             internal.push(index);
                         } else if !interface(edge) {
                             foreign_routes.push(index);
@@ -115,7 +114,7 @@ impl Bodies {
         topology: &Topology,
         geometry: &ArrangementGeometry,
     ) -> Result<(), String> {
-        if topology.cycle_boundaries.is_empty() {
+        if self.0.is_empty() {
             return Ok(());
         }
         let route_extents = geometry.connections().map(extents).collect::<Vec<_>>();
