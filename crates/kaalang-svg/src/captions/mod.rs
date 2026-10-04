@@ -215,8 +215,8 @@ fn derive_with_parameters(
             .as_deref()
             .map_or_else(RichText::default, RichText::markdown);
         // The for-end repeats the description of the cycle it closes.
-        if let Some((_, bottom)) = boundary.caps {
-            captions.label.insert(bottom, label.clone());
+        if let Some(caps) = boundary.caps {
+            captions.label.insert(caps.bottom, label.clone());
         }
         captions.label.insert(NodeId::Block(boundary.header), label);
         let inputs = cycle_input_names(model, parameters, boundary.header);

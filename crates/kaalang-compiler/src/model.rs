@@ -375,6 +375,14 @@ impl Flow {
             .is_some_and(|header| self.blocks[header].iteration.is_some() && block == header + 1)
     }
 
+    /// The hidden choice and continue a for cycle at `header` draws as its
+    /// for-entry and for-end.
+    #[must_use]
+    pub(crate) fn for_caps(&self, header: usize) -> Option<(usize, usize)> {
+        self.blocks[header].iteration.as_ref()?;
+        Some((header + 1, self.exports(header).start - 1))
+    }
+
     /// The repeat relation depends on where two blocks sit, not on which
     /// execution repeats. [`Passes::of`] computes it once per cycle and block.
     pub(crate) fn repeat_reaches(

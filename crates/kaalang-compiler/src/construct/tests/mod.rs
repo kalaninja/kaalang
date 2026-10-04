@@ -685,9 +685,10 @@ fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
         "for_each_value",
     ))
     .expect("the fixture is valid");
-    let (top, bottom) = model.topology.cycle_boundaries[0]
+    let caps = model.topology.cycle_boundaries[0]
         .caps
         .expect("a for cycle draws caps");
+    let (top, bottom) = (caps.top, caps.bottom);
     let mut broken = model.arrangement.clone();
     *broken.column.get_mut(&Vertex::Node(bottom)).unwrap() += 1;
     let error = verify::serial_columns(&model.topology, &broken).unwrap_err();
@@ -709,9 +710,10 @@ fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
             vertex,
         )
     };
-    let (entry, end) = model.topology.cycle_boundaries[0]
+    let caps = model.topology.cycle_boundaries[0]
         .caps
         .expect("a for cycle draws caps");
+    let (entry, end) = (caps.top, caps.bottom);
     assert_eq!(
         name(Vertex::Node(entry)),
         "the for-entry `Add the even values.`"

@@ -1,4 +1,5 @@
-//! Cycle statements use structural junctions, not computational nodes.
+//! Cycle statements use structural junctions, not computational nodes; a
+//! for cycle's for-entry and for-end are the exception.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -53,16 +54,7 @@ pub(super) fn order_exits(
             let end = model.flow.blocks[target]
                 .cycle_end
                 .expect("a cycle owns a body");
-            for cycle in topology
-                .cycles
-                .iter()
-                .filter(|cycle| (target..end).contains(&cycle.header))
-            {
-                topology.order.push(Connection {
-                    source: Source::Junction(cycle.tail),
-                    destination: destination(structural, next),
-                });
-            }
+            topology.order_iteration_ends(target..end, destination(model, structural, next));
         }
     }
 }
@@ -74,15 +66,24 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();
     for boundary in &topology.cycle_boundaries {
         let owns = |block| (boundary.header + 1..boundary.end).contains(&block);
-        for result in boundary.result_junctions() {
+        // A completing loop cycle continues from its result junctions, a for
+        // cycle from its for-end.
+        let targets = match boundary.caps {
+            Some(caps) => vec![Destination::Node(caps.bottom)],
+            None => boundary
+                .result_junctions()
+                .map(Destination::Junction)
+                .collect(),
+        };
+        for &target in &targets {
             order.extend(topology.nodes.iter().filter_map(|node| {
                 let block = match node.id {
                     NodeId::Block(block) | NodeId::Case { choice: block, .. } => block,
                     NodeId::Start => return None,
                 };
-                owns(block).then_some(Connection {
+                (owns(block) && Vertex::Node(node.id) != target).then_some(Connection {
                     source: Source::Exit(ExitId::of(node.id)),
-                    destination: Destination::Junction(result),
+                    destination: target,
                 })
             }));
             order.extend(
@@ -92,20 +93,25 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
                     .filter(|cycle| (boundary.header..boundary.end).contains(&cycle.header))
                     .map(|cycle| Connection {
                         source: Source::Junction(cycle.tail),
-                        destination: Destination::Junction(result),
+                        destination: target,
                     }),
             );
+            // A nested for cycle's caps are body nodes, ordered above.
             order.extend(
                 topology
                     .cycle_boundaries
                     .iter()
                     .filter(|nested| owns(nested.header))
                     .flat_map(|nested| {
-                        std::iter::once(nested.entry_junction()).chain(nested.result_junctions())
+                        std::iter::once(nested.entry)
+                            .chain(nested.results.iter().map(|&result| Vertex::from(result)))
                     })
-                    .map(|junction| Connection {
-                        source: Source::Junction(junction),
-                        destination: Destination::Junction(result),
+                    .filter_map(|vertex| match vertex {
+                        Vertex::Junction(junction) => Some(Connection {
+                            source: Source::Junction(junction),
+                            destination: target,
+                        }),
+                        Vertex::Node(_) => None,
                     }),
             );
         }
@@ -138,17 +144,27 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
             .then_some((junction, source))
     };
     // The repeating routes of a cycle merge before its one continue; when that
-    // merge feeds nothing else, it is the iteration tail.
+    // merge feeds nothing else, it is the iteration tail. A for cycle's rail
+    // likewise, and a sole ending enters the for-end directly.
     let tails = view
         .cycles
         .iter()
         .filter_map(|cycle| reuse(cycle.tail, false))
+        .chain(view.cycle_boundaries.iter().filter_map(|boundary| {
+            let caps = boundary.caps?;
+            let rail = caps.rail?;
+            reuse(rail, false).or_else(|| {
+                sole(view.incoming(Destination::Junction(rail)))
+                    .map(|_| (rail, Source::Exit(ExitId::of(caps.bottom))))
+            })
+        }))
         .collect::<Vec<_>>();
     // Several results keep their own junctions, which construction orders by
     // output; one may still reuse the merge feeding it.
     let mut replacements = view
         .cycle_boundaries
         .iter()
+        .filter(|boundary| boundary.caps.is_none())
         .flat_map(|boundary| {
             let exits = boundary.results.len() < 2;
             boundary
@@ -162,10 +178,11 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
         }
     }
     for boundary in &topology.cycle_boundaries {
-        if topology
-            .cycles
-            .iter()
-            .any(|cycle| cycle.header == boundary.header)
+        if boundary.caps.is_some()
+            || topology
+                .cycles
+                .iter()
+                .any(|cycle| cycle.header == boundary.header)
         {
             continue;
         }
@@ -208,151 +225,78 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
         .retain(|edge| !side_tails.contains(&edge.destination));
 }
 
-/// Draws each for cycle between two caps instead of a boundary with a back
-/// edge. Its hidden choice becomes the for-entry, which hands over the item;
-/// its iteration tail becomes the for-end, where every iteration ends and
-/// from which the completed cycle continues. The boundary stays undrawn, so
-/// nothing outside still passes between the caps.
-pub(super) fn cap_for_cycles(flow: &Flow, topology: &mut Topology) {
-    let mut replacements = BTreeMap::new();
-    let mut caps = Vec::new();
-    for position in 0..topology.cycle_boundaries.len() {
-        let header = topology.cycle_boundaries[position].header;
-        if flow.blocks[header].iteration.is_some() {
-            let top = NodeId::Block(header + 1);
-            let bottom = NodeId::Block(flow.exports(header).start - 1);
-            draw_caps(topology, position, top, bottom, &mut replacements);
-            topology.cycle_boundaries[position].caps = Some((top, bottom));
-            caps.push((position, top, bottom));
-        }
-    }
-    if caps.is_empty() {
-        return;
-    }
-    topology.nodes.sort_by_key(|node| node.id);
-    topology.index();
-    replace_junctions(topology, &replacements);
-    // With no back edge, an entry that only leads to the for-entry is the for-entry.
-    let entries = caps
-        .iter()
-        .filter_map(|&(position, top, _)| {
-            let Vertex::Junction(entry) = topology.cycle_boundaries[position].entry else {
-                return None;
-            };
-            let only = sole(topology.outgoing(Vertex::Junction(entry)))?.destination;
-            (only == Vertex::Node(top) && topology.single_arrival(top))
-                .then_some((entry, Source::Exit(ExitId::of(top))))
-        })
-        .collect::<BTreeMap<_, _>>();
-    if !entries.is_empty() {
-        replace_junctions(topology, &entries);
-    }
-    for (position, _, bottom) in caps {
-        let header = topology.cycle_boundaries[position].header;
-        precede_bottom_cap(flow, topology, header, Vertex::Node(bottom));
-    }
+/// Draws a for cycle's hidden choice as its for-entry, which hands over the
+/// item. The completion leaves the for-end instead.
+pub(super) fn project_for_entry(index: usize, nodes: &mut Vec<Node>, exits: &mut Vec<Exit>) {
+    nodes.push(block_node(index, NodeKind::ForEntry));
+    exits.push(Exit {
+        id: ExitId::of(NodeId::Block(index)),
+        provides: vec![ProducerId::BlockOutput {
+            block: index,
+            output: 0,
+        }],
+    });
 }
 
-/// Turns one for cycle's choice into its for-entry and its iteration tail into
-/// its for-end, dropping the back edge. Junctions it retires are recorded in
-/// `replacements` for one renumbering of the whole topology.
-fn draw_caps(
-    topology: &mut Topology,
-    position: usize,
-    top: NodeId,
-    bottom: NodeId,
-    replacements: &mut BTreeMap<usize, Source>,
+/// Draws a for cycle's hidden continue as its for-end, where every iteration
+/// ends and from which the completed cycle continues with its declared output.
+pub(super) fn project_for_end(
+    flow: &Flow,
+    index: usize,
+    nodes: &mut Vec<Node>,
+    exits: &mut Vec<Exit>,
 ) {
-    let NodeId::Block(next) = top else {
-        unreachable!("a for-entry is a block node")
-    };
-    let header = topology.cycle_boundaries[position].header;
-    let case = |branch| {
-        ExitId::of(NodeId::Case {
-            choice: next,
-            branch,
-        })
-    };
-    let is_case = |node: NodeId| matches!(node, NodeId::Case { choice, .. } if choice == next);
-    for node in &mut topology.nodes {
-        if node.id == top {
-            node.kind = NodeKind::ForEntry;
-        }
-    }
-    topology.nodes.retain(|node| !is_case(node.id));
-    topology.nodes.push(Node {
-        id: bottom,
-        kind: NodeKind::ForEnd,
-    });
-    let item = topology
-        .exits
-        .iter()
-        .find(|exit| exit.id == case(0))
-        .map(|exit| exit.provides.clone())
-        .unwrap_or_default();
-    topology.exits.retain(|exit| !is_case(exit.id.node));
-    for exit in &mut topology.exits {
-        if exit.id == ExitId::of(top) {
-            exit.provides.clone_from(&item);
-        }
-    }
-    let bottom = ExitId::of(bottom);
-    topology.exits.push(Exit {
-        id: bottom,
+    nodes.push(block_node(index, NodeKind::ForEnd));
+    let header = flow.blocks[index]
+        .parent
+        .expect("the hidden continue ends a for body");
+    exits.push(Exit {
+        id: ExitId::of(NodeId::Block(index)),
         provides: vec![ProducerId::BlockOutput {
             block: header,
             output: 0,
         }],
     });
-    // The item leaves the for-entry; running out of items leaves the for-end.
-    let moved = |source| match source {
-        Source::Exit(exit) if exit == case(0) => Source::Exit(ExitId::of(top)),
-        Source::Exit(exit) if exit == case(1) => Source::Exit(bottom),
-        source => source,
-    };
-    for edges in [
-        &mut topology.connections,
-        &mut topology.order,
-        &mut topology.back_edges,
-    ] {
-        edges.retain(|edge| !matches!(edge.destination, Vertex::Node(node) if is_case(node)));
-        for edge in edges.iter_mut() {
-            edge.source = moved(edge.source);
-        }
+}
+
+/// Orders everything in each for body before its for-end.
+pub(super) fn precede_for_ends(flow: &Flow, topology: &mut Topology) {
+    for position in 0..topology.cycle_boundaries.len() {
+        let boundary = &topology.cycle_boundaries[position];
+        let Some(caps) = boundary.caps else {
+            continue;
+        };
+        precede_bottom_cap(flow, topology, boundary.header, Vertex::Node(caps.bottom));
     }
-    if let Some(cycle) = topology
-        .cycles
-        .iter()
-        .position(|cycle| cycle.header == header)
-    {
-        let tail = topology.cycles.remove(cycle).tail;
-        topology
-            .back_edges
-            .retain(|edge| edge.source != Source::Junction(tail));
-        // Several iteration endings still meet on the tail's rail, then enter
-        // the for-end together; a single one enters it directly.
-        let endings = topology
-            .connections
-            .iter()
-            .filter(|edge| edge.destination == Vertex::Junction(tail))
-            .count();
-        if endings > 1 {
-            topology.connections.push(Connection {
-                source: Source::Junction(tail),
-                destination: Vertex::Node(bottom.node),
-            });
-        } else {
-            replacements.insert(tail, Source::Exit(bottom));
-        }
+}
+
+/// Whether an expanded for cycle begins at `block`. Its header draws nothing
+/// of its own: the route arriving there continues at its for-entry.
+pub(crate) fn opens_for_cycle(model: &Analyzed<'_>, block: usize) -> bool {
+    !model.collapse_cycles && model.flow.for_caps(block).is_some()
+}
+
+/// The exit of a for cycle's hidden choice: the item leaves the for-entry, the
+/// completion the for-end.
+pub(super) fn cap_exit(flow: &Flow, block: usize, output: usize) -> ExitId {
+    let header = flow.blocks[block]
+        .parent
+        .expect("the hidden choice opens a for body");
+    let (top, bottom) = flow.for_caps(header).expect("a for cycle draws caps");
+    ExitId::of(NodeId::Block(if output == 0 { top } else { bottom }))
+}
+
+/// The hop a for cycle's exhausted route makes from its for-entry to its
+/// for-end. Nothing is drawn for it, but reduction needs it: a capture that
+/// skips the cycle is redundant with the route through it.
+pub(crate) fn exhausted_hop(model: &Analyzed<'_>, block: usize) -> Option<Connection> {
+    if model.collapse_cycles || !model.flow.takes_next_item(block) {
+        return None;
     }
-    for result in &mut topology.cycle_boundaries[position].results {
-        match *result {
-            Source::Junction(junction) => {
-                replacements.insert(junction, Source::Exit(bottom));
-            }
-            exit @ Source::Exit(_) => *result = moved(exit),
-        }
-    }
+    Some(Connection {
+        source: super::exit(model, block, 0),
+        destination: Vertex::from(super::exit(model, block, 1)),
+    })
 }
 
 /// Everything in the body precedes the for-end, which the completed cycle
@@ -454,6 +398,12 @@ fn replace_junctions(topology: &mut Topology, replacements: &BTreeMap<usize, Sou
         boundary.entry = vertex(boundary.entry);
         for result in &mut boundary.results {
             *result = source(*result);
+        }
+        if let Some(caps) = &mut boundary.caps {
+            caps.rail = caps.rail.and_then(|rail| match ids[rail] {
+                Source::Junction(junction) => Some(junction),
+                Source::Exit(_) => None,
+            });
         }
     }
     for cycle in &mut topology.cycles {

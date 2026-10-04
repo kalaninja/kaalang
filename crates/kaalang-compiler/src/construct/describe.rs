@@ -147,16 +147,15 @@ fn junction_name(
         return format!("{part} of {}", cycle_name(flow, cycle.header));
     }
     // Several iteration endings of a for cycle meet here before its for-end.
-    if let Some(header) = topology
-        .outgoing(Vertex::Junction(junction))
-        .find_map(|edge| match edge.destination {
-            Vertex::Node(NodeId::Block(block)) if flow.ends_iteration(block) => {
-                flow.blocks[block].parent
-            }
-            _ => None,
-        })
-    {
-        return format!("the iteration tail of {}", cycle_name(flow, header));
+    if let Some(boundary) = topology.cycle_boundaries.iter().find(|boundary| {
+        boundary
+            .caps
+            .is_some_and(|caps| caps.rail == Some(junction))
+    }) {
+        return format!(
+            "the iteration tail of {}",
+            cycle_name(flow, boundary.header)
+        );
     }
     let junction = &topology.junctions[junction];
     if junction.is_cycle_result {

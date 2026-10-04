@@ -641,11 +641,12 @@ fn order(
 /// A sole arrival continues the current column. A case may be reached by a
 /// distributor detour; a tail may finish at either end of its arrival rail.
 pub(super) fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
-    for (top, bottom) in topology
+    for caps in topology
         .cycle_boundaries
         .iter()
         .filter_map(|boundary| boundary.caps)
     {
+        let (top, bottom) = (caps.top, caps.bottom);
         let column = |node: NodeId| {
             arrangement
                 .column

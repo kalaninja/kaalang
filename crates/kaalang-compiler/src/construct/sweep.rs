@@ -160,14 +160,16 @@ fn serial_identities(
         }
     }
     // A for cycle closes in the column it opens in.
-    for boundary in &topology.cycle_boundaries {
-        if let Some((top, bottom)) = boundary.caps {
-            unite(
-                parent,
-                index(Vertex::Node(bottom)),
-                index(Vertex::Node(top)),
-            );
-        }
+    for caps in topology
+        .cycle_boundaries
+        .iter()
+        .filter_map(|boundary| boundary.caps)
+    {
+        unite(
+            parent,
+            index(Vertex::Node(caps.bottom)),
+            index(Vertex::Node(caps.top)),
+        );
     }
     // Every serial arrival shares its predecessor's current column.
     for &vertex in &topology.vertices {
