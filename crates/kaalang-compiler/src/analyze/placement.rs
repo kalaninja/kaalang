@@ -227,6 +227,24 @@ pub(super) fn flow(
         .map(|(merge, owners)| Junction::of(flow, ancestry, merge, owners))
         .collect::<Vec<_>>();
     let end = flow.blocks.len() - 1;
+    // The end of a for body has no capture to name its branch: it belongs to
+    // whichever branch arrives, so a selection stays separate there only when
+    // more than one of its branches reaches it. Routes that diverge never do.
+    let mut arriving = BTreeMap::<(usize, usize), BTreeSet<usize>>::new();
+    for execution in executions {
+        for &block in execution
+            .blocks
+            .iter()
+            .filter(|&&block| flow.ends_iteration(block))
+        {
+            for selection in &execution.branches {
+                arriving
+                    .entry((block, selection.block))
+                    .or_default()
+                    .insert(selection.branch);
+            }
+        }
+    }
     let mut offending = None::<(usize, usize)>;
     for execution in executions {
         // Built on the first junction that needs it; most pairs never do.
@@ -240,6 +258,9 @@ pub(super) fn flow(
             {
                 if super::cycle::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
+                    || arriving
+                        .get(&(block, selection.block))
+                        .is_some_and(|branches| branches.len() < 2)
                     || junctions.iter_mut().any(|junction| {
                         junction.closes(execution, &carried, block, *selection, executions)
                     })

@@ -229,6 +229,19 @@ impl Executions {
                 {
                     continue;
                 }
+                // The end of a for body belongs to whichever branch arrives,
+                // as `analyze::placement` explains.
+                if flow.ends_iteration(block) {
+                    let mut arriving = 0;
+                    for branch in 0..flow.blocks[selector].outputs.len() {
+                        let selected = self.selected(selector, branch);
+                        let reaches = self.conditions.and(self.runs[block], selected);
+                        arriving += usize::from(self.has(reaches));
+                    }
+                    if arriving < 2 {
+                        continue;
+                    }
+                }
                 for branch in 0..flow.blocks[selector].outputs.len() {
                     let selection = BranchSelection {
                         block: selector,

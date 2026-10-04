@@ -33,6 +33,7 @@ mod for_on_each_branch;
 mod for_owned_items;
 mod for_reversed_range;
 mod for_stepped_range;
+mod for_with_a_diverging_branch;
 mod for_with_an_endless_body;
 mod for_with_an_inner_question;
 mod for_without_captures;
