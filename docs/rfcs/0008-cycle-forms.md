@@ -1,6 +1,6 @@
 # RFC 0008: Cycle forms
 
-- Status: proposed
+- Status: accepted
 - Language: [RFC 0001: kaalang Language](0001-language.md)
 - Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
 - Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
