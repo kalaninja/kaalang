@@ -529,13 +529,16 @@ pub(crate) fn captured(flow: &Flow, mut captured: impl FnMut(ProducerId) -> bool
             // No fixture reaches the question or choice arm: an uncaptured
             // branch output also leaves its execution without a root return,
             // which the walk reports first. Kept because that is not proven.
-            return Err(Error::new(
-                name.span(),
+            // The hidden choice of a for cycle produces the item the author named.
+            let message = if flow.takes_next_item(block) {
+                "every kaalang for cycle item must have a consumer".to_owned()
+            } else {
                 format!(
                     "every kaalang {} output must have a consumer",
                     crate::parse::noun(declaration.kind)
-                ),
-            ));
+                )
+            };
+            return Err(Error::new(name.span(), message));
         }
     }
     Ok(())
