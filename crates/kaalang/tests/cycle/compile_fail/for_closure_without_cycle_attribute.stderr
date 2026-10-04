@@ -1,0 +1,9 @@
+error: a `for` in a kaalang flow is a cycle and needs `#[cycle("description")]`
+ --> tests/cycle/compile_fail/for_closure_without_cycle_attribute.rs:5:14
+  |
+5 |       |values| for value in values {
+  |  ______________^
+6 | |         #[action("Use the value.")]
+7 | |         |value| drop(value);
+8 | |     };
+  | |_____^

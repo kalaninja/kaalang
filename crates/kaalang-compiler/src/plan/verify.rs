@@ -21,47 +21,45 @@ pub(super) fn plan(
             *count += 1;
         }
     }
-    bodies.iter().enumerate().all(|(block, &count)| {
-        count == 1
-            || (count == 0
-                && (matches!(flow.kind, crate::FlowKind::Preparation)
-                    && flow.blocks[block].transition_target.is_some()
-                    || flow.ends_iteration(block)))
-    }) && executions.iter().all(|execution| {
-        let mut replay = Replay {
-            flow,
-            execution,
-            merges,
-            available: flow
-                .flow_inputs
-                .iter()
-                .enumerate()
-                .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
-                .collect(),
-            ran: BTreeSet::new(),
-            last: None,
-            dependencies: BTreeSet::new(),
-            cycle_indices: Vec::new(),
-        };
-        (match (replay.walk(plan), execution.outcome) {
-            (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
-                found == block_index
-            }
-            (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { cycle_index }) => {
-                found == cycle_index
-            }
-            _ => false,
-        }) && replay
-            .ran
-            .iter()
-            .copied()
-            .eq(execution.blocks.iter().copied())
-            && replay
-                .dependencies
+    bodies
+        .iter()
+        .enumerate()
+        .all(|(block, &count)| count == 1 || (count == 0 && flow.may_never_run(block)))
+        && executions.iter().all(|execution| {
+            let mut replay = Replay {
+                flow,
+                execution,
+                merges,
+                available: flow
+                    .flow_inputs
+                    .iter()
+                    .enumerate()
+                    .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
+                    .collect(),
+                ran: BTreeSet::new(),
+                last: None,
+                dependencies: BTreeSet::new(),
+                cycle_indices: Vec::new(),
+            };
+            (match (replay.walk(plan), execution.outcome) {
+                (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
+                    found == block_index
+                }
+                (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { cycle_index }) => {
+                    found == cycle_index
+                }
+                _ => false,
+            }) && replay
+                .ran
                 .iter()
                 .copied()
-                .eq(execution.dependencies.iter().copied())
-    })
+                .eq(execution.blocks.iter().copied())
+                && replay
+                    .dependencies
+                    .iter()
+                    .copied()
+                    .eq(execution.dependencies.iter().copied())
+        })
 }
 
 /// Every authored block the plan emits, in the order it emits them. The end

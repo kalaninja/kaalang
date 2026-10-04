@@ -110,6 +110,12 @@ pub(super) fn open_iteration(blocks: &mut Vec<Block>, header: usize) -> Result<(
         }
         item => item.clone(),
     };
+    if block_outputs(&item)?.first() == cycle.outputs.first() {
+        return Err(Error::new_spanned(
+            &item,
+            "a kaalang for cycle's item and output need different names",
+        ));
+    }
     let pattern: Pat = parse_quote!((#item, #done));
     let items = Iteration::iterator();
     let value = Ident::new("item", Span::mixed_site());

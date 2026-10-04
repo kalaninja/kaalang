@@ -390,8 +390,8 @@ impl Walk<'_> {
     }
 
     /// Questions and choices each select exactly one output per successor.
-    /// A for cycle that runs out of items skips its body for the export.
-    fn branch(&mut self, block: usize, state: &State) {
+    /// `next` names the block each selected output continues at.
+    fn branch(&mut self, block: usize, state: &State, next: impl Fn(usize) -> usize) {
         for output in 0..self.flow.blocks[block].outputs.len() {
             let mut branch = state.clone();
             branch.branches.insert(BranchSelection {
@@ -399,13 +399,7 @@ impl Walk<'_> {
                 branch: output,
             });
             if self.produce(&mut branch, block, output) {
-                let next = match self.flow.blocks[block].parent {
-                    Some(header) if output == 1 && self.flow.takes_next_item(block) => {
-                        self.flow.exports(header).start
-                    }
-                    _ => block + 1,
-                };
-                self.visit(next, branch);
+                self.visit(next(output), branch);
             }
         }
     }
@@ -494,10 +488,7 @@ fn exported_name(flow: &Flow, consumer: usize) -> &Ident {
 fn reachable(flow: &Flow, executions: &[Execution]) -> Result<()> {
     let end = flow.blocks.len() - 1;
     match (0..end).find(|&block| {
-        if matches!(flow.kind, FlowKind::Preparation)
-            && flow.blocks[block].transition_target.is_some()
-            || flow.ends_iteration(block)
-        {
+        if flow.may_never_run(block) {
             return false;
         }
         !executions
@@ -582,6 +573,8 @@ fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -
         if let ProducerId::BlockOutput { block, output } = dependency.producer
             && !merged_wires.contains(&flow.blocks[block].outputs[output])
             && flow.blocks[block].branch_count() > 0
+            // A for cycle's item is an ordinary body-local wire.
+            && !flow.takes_next_item(block)
         {
             captures
                 .entry(dependency.producer)

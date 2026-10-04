@@ -81,11 +81,8 @@ pub(crate) fn validate(
     if incomplete {
         return Err(crate::analyze::end::missing_return(flow));
     }
-    for (index, block) in flow.blocks[..flow.blocks.len() - 1].iter().enumerate() {
-        if !(executions.has(executions.runs[index])
-            || matches!(flow.kind, FlowKind::Preparation) && block.transition_target.is_some()
-            || flow.ends_iteration(index))
-        {
+    for index in 0..flow.blocks.len() - 1 {
+        if !(executions.has(executions.runs[index]) || flow.may_never_run(index)) {
             return Err(crate::analyze::unreachable(flow, index));
         }
     }
@@ -276,6 +273,8 @@ impl Executions {
         for (&dependency, &when) in &self.dependencies {
             if let ProducerId::BlockOutput { block, output } = dependency.producer
                 && flow.blocks[block].branch_count() > 0
+                // A for cycle's item is an ordinary body-local wire.
+                && !flow.takes_next_item(block)
                 && !merges
                     .iter()
                     .any(|merge| merge.wire == flow.blocks[block].outputs[output])

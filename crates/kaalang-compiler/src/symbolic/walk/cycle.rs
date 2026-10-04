@@ -19,6 +19,7 @@ pub(super) fn visit(
         State {
             live: runs,
             available: outside.available.clone(),
+            resume: Vec::new(),
         },
     );
     if walk.has(body.live) {

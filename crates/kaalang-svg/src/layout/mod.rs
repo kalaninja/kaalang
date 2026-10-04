@@ -17,7 +17,10 @@ use kaalang_compiler::{
 use syn::{ReturnType, Signature, spanned::Spanned};
 
 use self::label::{label_rect, vertical_gaps};
-pub(crate) use self::staged::{StagedScene, layout_staged};
+pub(crate) use self::{
+    cycle::CAP_CHAMFER,
+    staged::{StagedScene, layout_staged},
+};
 use crate::{
     captions::Captions,
     text::{self, RichText, wrap_literal, wrap_text},
@@ -131,6 +134,9 @@ pub(crate) struct CycleRegion {
     pub(crate) caption: Vec<RichText>,
     pub(crate) inputs: String,
     pub(crate) outputs: String,
+    /// Whether the boundary is drawn. A for cycle's caps stand in for it, but
+    /// its region still keeps everything else out of the body.
+    pub(crate) drawn: bool,
 }
 
 impl CycleRegion {
@@ -690,7 +696,7 @@ fn nodes(scene: &Scene) -> Vec<Node> {
             let (width, mut height, lines) =
                 node_dimensions(node.kind, scene.captions.label(node.id));
             if let Some(rows) = scene.stage_rows
-                && matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition)
+                && matches!(node.kind, NodeKind::StageEntry | NodeKind::StageTransition)
             {
                 height = height.max(rows.height);
             }
@@ -778,7 +784,8 @@ impl Scene {
         for (row, own) in height.iter().enumerate() {
             if let Some(stage_rows) = self.stage_rows
                 && self.topology.nodes.iter().any(|node| {
-                    node.kind == NodeKind::Transition && self.rank(Vertex::Node(node.id)) == row
+                    node.kind == NodeKind::StageTransition
+                        && self.rank(Vertex::Node(node.id)) == row
                 })
             {
                 next = next.max(stage_rows.transition_y - own / 2);
@@ -1063,13 +1070,14 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
 fn node_dimensions(kind: NodeKind, label: &RichText) -> (i32, i32, Vec<RichText>) {
     match kind {
         NodeKind::Start | NodeKind::End => capsule_dimensions(label),
-        NodeKind::Action => action::dimensions(label),
+        // A for cycle's caps hold its description like an action.
+        NodeKind::Action | NodeKind::ForEntry | NodeKind::ForEnd => action::dimensions(label),
         NodeKind::Call => call::dimensions(label),
         NodeKind::Cycle => cycle::dimensions(label),
         NodeKind::Question | NodeKind::Select => {
             block_dimensions(label, NODE_WIDTH, BRANCH_LABEL_WIDTH, BRANCH_MIN_HEIGHT)
         }
-        NodeKind::Case | NodeKind::StageEntry | NodeKind::Transition => {
+        NodeKind::Case | NodeKind::StageEntry | NodeKind::StageTransition => {
             choice::case_dimensions(label)
         }
     }

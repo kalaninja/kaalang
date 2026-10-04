@@ -32,10 +32,12 @@ mod sweep;
 mod verify;
 
 /// The sole arrival that keeps an ordinary vertex in its predecessor's
-/// column. A case may be reached by a distributor detour, and an iteration
-/// tail may finish at either end of its incoming rail.
+/// column. A case may be reached by a distributor detour, an iteration
+/// tail may finish at either end of its incoming rail, and a for-end keeps
+/// its for-entry's column instead.
 fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     if matches!(vertex, Vertex::Node(NodeId::Case { .. }))
+        || matches!(vertex, Vertex::Node(node) if topology.for_entry(node).is_some())
         || topology
             .cycles
             .iter()

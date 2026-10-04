@@ -498,11 +498,7 @@ impl Executions {
         let order = crate::plan::verify::emitted(plan);
         if (0..flow.blocks.len() - 1).any(|block| {
             let count = order.iter().filter(|&&found| found == block).count();
-            count != 1
-                && !(count == 0
-                    && (matches!(flow.kind, crate::FlowKind::Preparation)
-                        && flow.blocks[block].transition_target.is_some()
-                        || flow.ends_iteration(block)))
+            count != 1 && !(count == 0 && flow.may_never_run(block))
         }) {
             return false;
         }

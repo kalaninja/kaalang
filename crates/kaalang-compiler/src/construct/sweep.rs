@@ -159,6 +159,16 @@ fn serial_identities(
             );
         }
     }
+    // A for cycle closes in the column it opens in.
+    for boundary in &topology.cycle_boundaries {
+        if let Some((top, bottom)) = boundary.caps {
+            unite(
+                parent,
+                index(Vertex::Node(bottom)),
+                index(Vertex::Node(top)),
+            );
+        }
+    }
     // Every serial arrival shares its predecessor's current column.
     for &vertex in &topology.vertices {
         if let Some(wire) = super::serial_arrival(topology, vertex) {

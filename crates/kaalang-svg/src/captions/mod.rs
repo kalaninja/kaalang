@@ -135,6 +135,16 @@ fn derive_with_parameters(
         let label = match node.id {
             NodeId::Start => RichText::literal(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
+            // The for-end repeats the description of the cycle it closes.
+            NodeId::Block(block) if node.kind == NodeKind::ForEnd => {
+                let header = model.analysis.flow.blocks[block]
+                    .parent
+                    .expect("a for-end closes a for cycle");
+                model.analysis.flow.blocks[header]
+                    .description
+                    .as_deref()
+                    .map_or_else(RichText::default, RichText::markdown)
+            }
             // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
@@ -156,6 +166,18 @@ fn derive_with_parameters(
             NodeId::Block(block) if node.kind == NodeKind::Cycle => {
                 cycle_input_names(model, parameters, block)
             }
+            // The for-entry captures what the for cycle's header does.
+            NodeId::Block(block) if node.kind == NodeKind::ForEntry => {
+                let header = model.analysis.flow.blocks[block]
+                    .parent
+                    .expect("a for-entry opens a for cycle");
+                model.analysis.flow.blocks[header]
+                    .inputs
+                    .iter()
+                    .filter(|input| !input.derived)
+                    .map(captured)
+                    .collect()
+            }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
                 .iter()
@@ -164,7 +186,10 @@ fn derive_with_parameters(
             NodeId::Start | NodeId::Case { .. } => Vec::new(),
         };
         let displayed = if capture.is_empty()
-            && !matches!(node.kind, NodeKind::Start | NodeKind::End | NodeKind::Case)
+            && !matches!(
+                node.kind,
+                NodeKind::Start | NodeKind::End | NodeKind::Case | NodeKind::ForEnd
+            )
             && topology
                 .incoming(Destination::Node(node.id))
                 .next()

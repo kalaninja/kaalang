@@ -9,7 +9,7 @@ pub(super) fn events(topology: &Topology, events: &mut [Vec<usize>]) {
     let transitions = topology
         .nodes
         .iter()
-        .filter(|node| node.kind == NodeKind::Transition)
+        .filter(|node| node.kind == NodeKind::StageTransition)
         .map(|node| super::index_of(topology, Vertex::Node(node.id)))
         .collect::<Vec<_>>();
     if let Some(&first) = transitions.first() {
@@ -24,7 +24,7 @@ pub(super) fn verify(topology: &Topology, arrangement: &Arrangement) -> Result<(
     let transitions = topology
         .nodes
         .iter()
-        .filter(|node| node.kind == NodeKind::Transition)
+        .filter(|node| node.kind == NodeKind::StageTransition)
         .map(|node| Vertex::Node(node.id))
         .collect::<BTreeSet<_>>();
     let Some(first) = transitions.first() else {
@@ -72,7 +72,7 @@ mod tests {
         let transitions = topology
             .nodes
             .iter()
-            .filter(|node| node.kind == NodeKind::Transition)
+            .filter(|node| node.kind == NodeKind::StageTransition)
             .map(|node| Vertex::Node(node.id))
             .collect::<Vec<_>>();
         assert_eq!(transitions.len(), 2);
@@ -119,7 +119,7 @@ mod tests {
             .topology
             .nodes
             .iter()
-            .find(|node| node.kind == NodeKind::Transition)
+            .find(|node| node.kind == NodeKind::StageTransition)
             .unwrap();
         let row = model.arrangement.rank[&Vertex::Node(transition.id)];
         assert!(

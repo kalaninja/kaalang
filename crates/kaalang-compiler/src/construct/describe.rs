@@ -5,7 +5,7 @@
 use proc_macro2::Span;
 
 use crate::{
-    model::{BlockKind, Flow, WireMerge},
+    model::{BlockKind, Flow, FlowKind, WireMerge},
     topology::{ExitId, NodeId, Source, Topology, Vertex},
 };
 
@@ -62,7 +62,10 @@ pub(super) fn vertex(
     vertex: Vertex,
 ) -> String {
     match vertex {
-        Vertex::Node(NodeId::Start) => "the start of the flow".to_owned(),
+        Vertex::Node(NodeId::Start) => match &flow.kind {
+            FlowKind::Stage { entry, .. } => format!("the stage entry `{}`", flow.wire_name(entry)),
+            FlowKind::Plain | FlowKind::Preparation => "the start of the flow".to_owned(),
+        },
         Vertex::Node(NodeId::Block(block)) => block_name(flow, block),
         Vertex::Node(NodeId::Case { choice, branch }) => flow.blocks[choice]
             .case_descriptions
@@ -85,6 +88,27 @@ pub(super) fn cycle_name(flow: &Flow, header: usize) -> String {
 
 fn block_name(flow: &Flow, block: usize) -> String {
     let declaration = &flow.blocks[block];
+    // A for cycle's hidden choice and continue draw as its for-entry and for-end.
+    if let Some(header) = declaration
+        .parent
+        .filter(|_| flow.takes_next_item(block) || flow.ends_iteration(block))
+    {
+        let part = if flow.takes_next_item(block) {
+            "for-entry"
+        } else {
+            "for-end"
+        };
+        return flow.blocks[header].description.as_deref().map_or_else(
+            || format!("the {part} of this cycle"),
+            |text| format!("the {part} `{text}`"),
+        );
+    }
+    if declaration.transition_target.is_some() {
+        return format!(
+            "the stage transition `{}`",
+            flow.wire_name(&declaration.inputs[0].ident)
+        );
+    }
     match (&declaration.description, declaration.kind) {
         (Some(text), _) => format!("`{text}`"),
         (None, BlockKind::Cycle) => cycle_name(flow, block),
@@ -121,6 +145,18 @@ fn junction_name(
             "the entry"
         };
         return format!("{part} of {}", cycle_name(flow, cycle.header));
+    }
+    // Several iteration endings of a for cycle meet here before its for-end.
+    if let Some(header) = topology
+        .outgoing(Vertex::Junction(junction))
+        .find_map(|edge| match edge.destination {
+            Vertex::Node(NodeId::Block(block)) if flow.ends_iteration(block) => {
+                flow.blocks[block].parent
+            }
+            _ => None,
+        })
+    {
+        return format!("the iteration tail of {}", cycle_name(flow, header));
     }
     let junction = &topology.junctions[junction];
     if junction.is_cycle_result {

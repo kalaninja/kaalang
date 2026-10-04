@@ -316,8 +316,7 @@ impl Executions {
 
     pub(crate) fn prefer_left(&mut self, flow: &Flow, header: usize) -> bool {
         let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
-        let Some(first) = (header + 1..end).find(|&block| flow.blocks[block].branch_count() > 0)
-        else {
+        let Some(first) = (header + 1..end).find(|&block| flow.draws_branches(block)) else {
             return true;
         };
         let selected = self.selected(first, flow.blocks[first].branch_count() - 1);

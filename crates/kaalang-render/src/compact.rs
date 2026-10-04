@@ -282,7 +282,7 @@ mod tests {
                 .topology
                 .nodes
                 .iter()
-                .filter(|node| node.kind == NodeKind::Transition)
+                .filter(|node| node.kind == NodeKind::StageTransition)
                 .map(|node| Vertex::Node(node.id))
                 .collect::<Vec<_>>();
             let Some(first) = transitions.first() else {
@@ -326,7 +326,7 @@ mod tests {
             .topology
             .nodes
             .iter()
-            .filter(|node| node.kind == NodeKind::Transition)
+            .filter(|node| node.kind == NodeKind::StageTransition)
             .map(|node| Vertex::Node(node.id))
             .collect::<Vec<_>>();
         assert!(transitions.len() >= 2);

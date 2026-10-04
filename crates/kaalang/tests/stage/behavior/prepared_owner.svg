@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="808" height="822" viewBox="0 0 808 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_owner</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Transition: Use the prepared reference while the guard remains alive.. Transition to stage go. Stage go. Nodes: Stage: Use the prepared reference while the guard remains alive.; Action: Record the visit and measure the text. capturing view, events handing over length; End: usize capturing length. Connections: Stage: Use the prepared reference while the guard remains alive. to Action: Record the visit and measure the text.; Action: Record the visit and measure the text. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="822" viewBox="0 0 808 822" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_owner</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Stage transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Stage transition: Use the prepared reference while the guard remains alive.. Transition to stage go. Stage go. Nodes: Stage: Use the prepared reference while the guard remains alive.; Action: Record the visit and measure the text. capturing view, events handing over length; End: usize capturing length. Connections: Stage: Use the prepared reference while the guard remains alive. to Action: Record the visit and measure the text.; Action: Record the visit and measure the text. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 730 L 232 798 "/>
@@ -8,7 +8,7 @@
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="738" viewBox="0 0 680 738" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for prepared_owner</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Transition: Use the prepared reference while the guard remains alive..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: prepared_owner with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Keep the guard until the flow completes. capturing events handing over _guard; Action: Own the prepared text. capturing nothing handing over owner; Action: Borrow the text and enter the stage. capturing &amp;owner handing over view; Stage transition: Use the prepared reference while the guard remains alive.. Connections: Start: prepared_owner to Action: Keep the guard until the flow completes.; Action: Keep the guard until the flow completes. to Action: Own the prepared text.; Action: Own the prepared text. to Action: Borrow the text and enter the stage.; Action: Borrow the text and enter the stage. to Stage transition: Use the prepared reference while the guard remains alive..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -30,8 +30,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -76,7 +76,7 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Borrow the text and enter the </tspan><tspan x="-124" dy="18">stage.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 656)">
+    <g class="node stage-transition" transform="translate(172 656)">
       <title xml:space="preserve">Use the prepared reference while the guard remains alive.</title>
       <polygon class="node-shape" points="0,-50 120,-32 120,50 -120,50 -120,-32"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Use the prepared reference </tspan><tspan x="0" dy="18">while the guard remains </tspan><tspan x="0" dy="18">alive.</tspan></text>
@@ -108,8 +108,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>

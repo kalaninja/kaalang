@@ -37,8 +37,8 @@ supersedes. Earlier accepted RFC texts remain unchanged.
 - The **iteration header** of a for cycle is its capture list together with the
   item pattern and the expression after `in`.
 - **Item wires** are the wires the item pattern binds for one iteration.
-- The **top cap** and **bottom cap** are the two nodes that enclose an expanded
-  for cycle's body in the diagram.
+- The **for-entry** and the **for-end** are the two caps that enclose an
+  expanded for cycle's body in the diagram.
 
 ## 2. Syntax
 
@@ -283,25 +283,31 @@ Rust.
 An expanded for cycle has no boundary, caption, loop marker, or back edge. Two
 caps enclose its body:
 
-- The **top cap** is a rectangle whose two upper corners are cut at 45°. It
+- The **for-entry** is a rectangle whose two upper corners are cut at 45°. It
   holds the cycle's description, rendered and wrapped like an action's. Its
   receiving label lists the header captures, as an action's does, and its
   hand-over lists the item wires. An `_` item pattern has no hand-over label.
-- The **bottom cap** is a rectangle whose two lower corners are cut at 45°. It
-  holds no text. Every body route that ends the iteration arrives at it, and it
-  needs no separate merge node or iteration tail.
+- The **for-end** is a rectangle whose two lower corners are cut at 45°. It
+  repeats the cycle's description, rendered like the for-entry's, so nested
+  bottom caps each name the for-entry they close. Every body route that ends the
+  iteration arrives at it. Several such routes first meet on one unmarked rail,
+  as repeating routes meet at a loop cycle's iteration tail, and enter the cap
+  together.
 
 Both caps attach their connections like an action: arrivals at the upper edge,
 the continuation at the lower edge. The cycle's continuation leaves the bottom
 cap and carries the declared output's hand-over label when there is one. An
-empty body connects the top cap directly to the bottom cap.
+empty body connects the for-entry directly to the for-end.
 
+The for-end sits in the for-entry's column, so the cycle opens and closes on one
+vertical line; a route that ends the iteration in another column turns into it.
 The body is laid out as an ordinary sequence between the caps. No outer node or
 route passes through the area the body occupies between them, and no body route
-leaves it except through the bottom cap. Outer data captured inside the body
-follows the existing control routes through the top cap, as it follows a loop
-cycle's entry. The repetition is carried by the two caps; no line returns from
-the bottom cap to the top cap.
+leaves it except through the for-end. A body route that never ends its
+iteration, such as one inside an endless loop cycle, still stays above the
+for-end. Outer data captured inside the body follows the existing control routes
+through the for-entry, as it follows a loop cycle's entry. The repetition is
+carried by the two caps; no line returns from the for-end to the for-entry.
 
 A nested loop cycle inside a for body keeps its boundary within the body. A for
 cycle nested in a loop body keeps its caps within that loop's boundary.
@@ -415,8 +421,8 @@ unchanged.
   exhausted, and ends every iteration at the end of its body.
 - **RFC 0007 §5.1:** a for cycle's frame has only repeating and diverging
   routes, and the for cycle completes unconditionally in its containing frame.
-- **RFC 0002 §4:** add the top cap and bottom cap of §6.1 here to the node
-  kinds. They appear only in an expanded for cycle.
+- **RFC 0002 §4:** add the for-entry and for-end of §6.1 here to the node kinds.
+  They appear only in an expanded for cycle.
 - **RFC 0002 §4.8, RFC 0003 §§2–3, and RFC 0007 §6.1:** the boundary, caption,
   entry junction, iteration tail, and back edge describe expanded loop cycles.
   An expanded for cycle uses §6.1 here instead; its collapsed node uses §6.2.
@@ -429,29 +435,29 @@ Concrete compiler and renderer types remain implementation choices.
 
 ## 9. Acceptance scenarios
 
-| Scenario                                                       | Required result                                                                                           |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Loop cycle written with `loop`, with or without gate or output | Accept with RFC 0007's semantics and unchanged diagrams.                                                  |
-| Cycle body written as a brace block of statements              | Reject and name the `loop` and `for` forms.                                                               |
-| Braces around a cycle's `loop` or `for`                        | Accept as the same cycle.                                                                                 |
-| For cycle over a borrowed collection with no declared output   | Run the body once per item; later blocks capturing the changed state run after it.                        |
-| For cycle with one declared output                             | Provide the unit output after the iterator is exhausted.                                                  |
-| For cycle over an empty iterator                               | Run no iteration and complete.                                                                            |
-| `in` expression with ranges and adapters over header captures  | Accept any Rust expression reading only those aliases.                                                    |
-| `in` expression reading an uncaptured wire                     | Reject under the ordinary capture rules.                                                                  |
-| Tuple item pattern                                             | Reject; an action takes the captured item apart.                                                          |
-| `_` item pattern                                               | Bind no item wire.                                                                                        |
-| Nested or reference item pattern                               | Reject.                                                                                                   |
-| Item wire without a consumer                                   | Reject unless its name begins with `_`.                                                                   |
-| Question in the body whose branches merge before its end       | Accept; both routes end the iteration together.                                                           |
-| Branches still separate at the end of the body                 | Reject.                                                                                                   |
-| Structural `continue` or `return` in a for body                | Reject.                                                                                                   |
-| Body produces the for cycle's declared output                  | Reject.                                                                                                   |
-| Two outputs on a for cycle                                     | Reject.                                                                                                   |
-| Labeled `for` cycle                                            | Reject.                                                                                                   |
-| Outer non-`Copy` value moved in the body                       | Let Rust reject the repeated move.                                                                        |
-| Owned items moved into an inner block                          | Accept; each item is a fresh iteration-local wire.                                                        |
-| Two branches each with a for cycle and a same-named output     | Merge the outputs by the ordinary rules.                                                                  |
-| For cycle inside a loop cycle, and loop cycle inside a for     | Keep each cycle's own rules; inner transfers target only their own loop.                                  |
-| Expanded for cycle                                             | Draw the top cap with the description and labels, the body, and the bottom cap; no boundary or back edge. |
-| Collapsed for cycle                                            | Draw the loop-marked cycle node with the derived inputs and one normal exit.                              |
+| Scenario                                                       | Required result                                                                                          |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Loop cycle written with `loop`, with or without gate or output | Accept with RFC 0007's semantics and unchanged diagrams.                                                 |
+| Cycle body written as a brace block of statements              | Reject and name the `loop` and `for` forms.                                                              |
+| Braces around a cycle's `loop` or `for`                        | Accept as the same cycle.                                                                                |
+| For cycle over a borrowed collection with no declared output   | Run the body once per item; later blocks capturing the changed state run after it.                       |
+| For cycle with one declared output                             | Provide the unit output after the iterator is exhausted.                                                 |
+| For cycle over an empty iterator                               | Run no iteration and complete.                                                                           |
+| `in` expression with ranges and adapters over header captures  | Accept any Rust expression reading only those aliases.                                                   |
+| `in` expression reading an uncaptured wire                     | Reject under the ordinary capture rules.                                                                 |
+| Tuple item pattern                                             | Reject; an action takes the captured item apart.                                                         |
+| `_` item pattern                                               | Bind no item wire.                                                                                       |
+| Nested or reference item pattern                               | Reject.                                                                                                  |
+| Item wire without a consumer                                   | Reject unless its name begins with `_`.                                                                  |
+| Question in the body whose branches merge before its end       | Accept; both routes end the iteration together.                                                          |
+| Branches still separate at the end of the body                 | Reject.                                                                                                  |
+| Structural `continue` or `return` in a for body                | Reject.                                                                                                  |
+| Body produces the for cycle's declared output                  | Reject.                                                                                                  |
+| Two outputs on a for cycle                                     | Reject.                                                                                                  |
+| Labeled `for` cycle                                            | Reject.                                                                                                  |
+| Outer non-`Copy` value moved in the body                       | Let Rust reject the repeated move.                                                                       |
+| Owned items moved into an inner block                          | Accept; each item is a fresh iteration-local wire.                                                       |
+| Two branches each with a for cycle and a same-named output     | Merge the outputs by the ordinary rules.                                                                 |
+| For cycle inside a loop cycle, and loop cycle inside a for     | Keep each cycle's own rules; inner transfers target only their own loop.                                 |
+| Expanded for cycle                                             | Draw the for-entry with the description and labels, the body, and the for-end; no boundary or back edge. |
+| Collapsed for cycle                                            | Draw the loop-marked cycle node with the derived inputs and one normal exit.                             |

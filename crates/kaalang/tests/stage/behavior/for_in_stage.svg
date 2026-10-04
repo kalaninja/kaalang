@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1224" height="1206" viewBox="0 0 1224 1206" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for for_in_stage</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: for_in_stage with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; Action: Enter the stage. capturing nothing; Transition: Add every value, then return the total.. Connections: Start: for_in_stage to Action: Start with a total of zero.; Action: Start with a total of zero. to Action: Enter the stage.; Action: Enter the stage. to Transition: Add every value, then return the total.. Transition to stage go. Stage go. Cycles: Add every value. with inputs values, mut total and outputs added. Nodes: Stage: Add every value, then return the total.; Select: Add every value. capturing nothing; Case: Take the next item. handing over value; Case: No item is left. handing over added; Action: Add the value. capturing value, &amp;mut total; End: u32 capturing total. Connections: Stage: Add every value, then return the total. to the entry of the cycle; Select: Add every value. to Case: Take the next item.; Select: Add every value. to Case: No item is left.; Case: Take the next item. to Action: Add the value.; Case: No item is left. to End: u32; Action: Add the value. to the iteration tail of the cycle; the entry of the cycle to Select: Add every value.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="810" height="1048" viewBox="0 0 810 1048" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for for_in_stage</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: for_in_stage with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; Action: Enter the stage. capturing nothing; Stage transition: Add every value, then return the total.. Connections: Start: for_in_stage to Action: Start with a total of zero.; Action: Start with a total of zero. to Action: Enter the stage.; Action: Enter the stage. to Stage transition: Add every value, then return the total.. Transition to stage go. Stage go. Cycles: Add every value. with inputs values, mut total and outputs added. Nodes: Stage: Add every value, then return the total.; For entry: Add every value. capturing values handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add every value. handing over added; End: u32 capturing total. Connections: Stage: Add every value, then return the total. to For entry: Add every value.; For entry: Add every value. to Action: Add the value.; Action: Add the value. to For end: Add every value.; For end: Add every value. to End: u32.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 1114 L 232 1182 "/>
-<path d="M 660 150 L 660 186 "/>
-<path d="M 232 150 L 660 150 "/>
-<path d="M 232 1182 L 24 1182 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 956 L 232 1024 "/>
+<path d="M 613 150 L 613 186 "/>
+<path d="M 232 150 L 613 150 "/>
+<path d="M 232 1024 L 24 1024 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="1122" viewBox="0 0 680 1122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="964" viewBox="0 0 680 964" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for for_in_stage</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: for_in_stage with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; Action: Enter the stage. capturing nothing; Transition: Add every value, then return the total.. Connections: Start: for_in_stage to Action: Start with a total of zero.; Action: Start with a total of zero. to Action: Enter the stage.; Action: Enter the stage. to Transition: Add every value, then return the total..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: for_in_stage with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; Action: Enter the stage. capturing nothing; Stage transition: Add every value, then return the total.. Connections: Start: for_in_stage to Action: Start with a total of zero.; Action: Start with a total of zero. to Action: Enter the stage.; Action: Enter the stage. to Stage transition: Add every value, then return the total..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -30,8 +30,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -41,7 +41,7 @@
     <path class="connection" d="
       M 172 90 L 172 162
       M 172 226 L 172 298
-      M 172 362 L 172 1008
+      M 172 362 L 172 850
     "/>
     <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">values</tspan></text>
     <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut total</tspan></text>
@@ -68,7 +68,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Enter the stage.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 1049)">
+    <g class="node stage-transition" transform="translate(172 891)">
       <title xml:space="preserve">Add every value, then return the total.</title>
       <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add every value, then return </tspan><tspan x="0" dy="18">the total.</tspan></text>
@@ -76,9 +76,9 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="760" height="842" viewBox="0 0 760 842" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="346" height="684" viewBox="0 0 346 684" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for for_in_stage</title>
-  <desc id="kaalang-part-1-description">Cycles: Add every value. with inputs values, mut total and outputs added. Nodes: Stage: Add every value, then return the total.; Select: Add every value. capturing nothing; Case: Take the next item. handing over value; Case: No item is left. handing over added; Action: Add the value. capturing value, &amp;mut total; End: u32 capturing total. Connections: Stage: Add every value, then return the total. to the entry of the cycle; Select: Add every value. to Case: Take the next item.; Select: Add every value. to Case: No item is left.; Case: Take the next item. to Action: Add the value.; Case: No item is left. to End: u32; Action: Add the value. to the iteration tail of the cycle; the entry of the cycle to Select: Add every value.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-part-1-description">Cycles: Add every value. with inputs values, mut total and outputs added. Nodes: Stage: Add every value, then return the total.; For entry: Add every value. capturing values handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add every value. handing over added; End: u32 capturing total. Connections: Stage: Add every value, then return the total. to For entry: Add every value.; For entry: Add every value. to Action: Add the value.; Action: Add the value. to For end: Add every value.; For end: Add every value. to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -100,65 +100,50 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
     </style>
   </defs>
   <g class="cycle-regions">
-    <g>
-      <title xml:space="preserve">Add every value.</title>
-    <rect class="cycle-boundary" x="32" y="151" width="696" height="564" rx="12"/>
-    <text class="cycle-caption" x="716" y="165" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Add every value.</tspan></text>
-    </g>
   </g>
   <g class="connections">
-    <defs><marker id="kaalang-part-1-back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 220 114 L 220 186
-      M 220 330 L 220 402
-      M 348 294 L 580 294 L 580 402
-      M 220 472 L 220 544
-      M 580 472 L 580 752
-      M 220 608 L 220 680
-      M 220 186 L 220 258
+      M 173 114 L 173 186
+      M 173 250 L 173 322
+      M 173 386 L 173 458
+      M 173 522 L 173 594
     "/>
-    <path class="connection" d="
-      M 220 680 L 60 680 L 60 186 L 220 186
-    " marker-end="url(#kaalang-part-1-back-edge-arrow)"/>
-    <text class="connection-label" x="233" y="490" xml:space="preserve"><tspan x="233" dy="0">value</tspan></text>
-    <text class="connection-label" x="593" y="490" xml:space="preserve"><tspan x="593" dy="0">added</tspan></text>
-    <text class="connection-label" x="233" y="247" xml:space="preserve"><tspan x="233" dy="0">()</tspan></text>
-    <text class="connection-label" x="233" y="533" xml:space="preserve"><tspan x="233" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="593" y="741" xml:space="preserve"><tspan x="593" dy="0">total</tspan></text>
+    <text class="connection-label" x="186" y="268" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label" x="186" y="540" xml:space="preserve"><tspan x="186" dy="0">added</tspan></text>
+    <text class="connection-label" x="186" y="175" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label" x="186" y="311" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="186" y="583" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node stage-entry" transform="translate(220 73)">
+    <g class="node stage-entry" transform="translate(173 73)">
       <title xml:space="preserve">Add every value, then return the total.</title>
       <polygon class="node-shape" points="-120,-41 120,-41 120,23 0,41 -120,23"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="0" dy="0">Add every value, then return </tspan><tspan x="0" dy="18">the total.</tspan></text>
     </g>
-    <g class="node select" transform="translate(220 294)">
+    <g class="node for-entry" transform="translate(173 218)">
       <title xml:space="preserve">Add every value.</title>
-      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add every value.</tspan></text>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value.</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 437)">
-      <title xml:space="preserve">Take the next item.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the next item.</tspan></text>
-    </g>
-    <g class="node case" transform="translate(580 437)">
-      <title xml:space="preserve">No item is left.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No item is left.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(220 576)">
+    <g class="node action" transform="translate(173 354)">
       <title xml:space="preserve">Add the value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(580 781)">
+    <g class="node for-end" transform="translate(173 490)">
+      <title xml:space="preserve">Add every value.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 623)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

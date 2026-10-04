@@ -26,18 +26,20 @@ pub(super) fn validate(flow: &Flow, function: &ItemFn) -> Result<()> {
         })
         .collect::<BTreeSet<_>>();
     for block in &flow.blocks {
-        if !matches!(
-            block.kind,
-            BlockKind::Action | BlockKind::Call | BlockKind::Question | BlockKind::Choice
-        ) {
-            continue;
-        }
+        let body = match (block.kind, &block.iteration) {
+            (BlockKind::Action | BlockKind::Call | BlockKind::Question | BlockKind::Choice, _) => {
+                &block.body
+            }
+            // A for cycle's header reads its iterated expression itself.
+            (BlockKind::Cycle, Some(iteration)) => &iteration.items,
+            _ => continue,
+        };
         let uncaptured = parameters
             .iter()
             .filter(|name| !super::captured(&block.inputs, name))
             .cloned()
             .collect();
-        check(&block.body, uncaptured)?;
+        check(body, uncaptured)?;
     }
     Ok(())
 }

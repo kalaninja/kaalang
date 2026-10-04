@@ -25,8 +25,8 @@
 ### Added
 
 - For cycles: `#[cycle("...")] |captures| for item in items { ... }` runs its
-  body once per item of a Rust iterator. See
-  [RFC 0008](docs/rfcs/0008-cycle-forms.md).
+  body once per item of a Rust iterator, drawn between a for-entry and a for-end
+  node. See [RFC 0008](docs/rfcs/0008-cycle-forms.md).
 - Stages: named steps of a state machine whose dispatcher the compiler
   generates. See [RFC 0006](docs/rfcs/0006-stages.md).
 - Formatted descriptions: bold, italic, strikethrough, code, superscript,

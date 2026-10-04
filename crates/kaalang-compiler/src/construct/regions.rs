@@ -11,19 +11,17 @@ use crate::{
 };
 
 /// Every drawn question, choice and collapsed cycle with several outputs, in
-/// authored order.
+/// authored order. A for cycle's for-entry takes the next item without drawing
+/// a branch.
 pub(super) fn branchers(flow: &Flow, topology: &Topology) -> Vec<usize> {
-    flow.blocks
-        .iter()
-        .enumerate()
-        .filter(|(index, block)| {
-            block.branch_count() > 0
+    (0..flow.blocks.len())
+        .filter(|&block| {
+            flow.draws_branches(block)
                 && topology
                     .nodes
                     .iter()
-                    .any(|node| node.id == NodeId::Block(*index))
+                    .any(|node| node.id == NodeId::Block(block))
         })
-        .map(|(block, _)| block)
         .collect()
 }
 

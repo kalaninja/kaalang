@@ -721,6 +721,117 @@ fn the_verifier_rejects_a_case_on_a_different_row() {
 }
 
 #[test]
+fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
+    let model = model(
+        "fn probe(values: &[u32]) -> u32 {
+            #[action(\"Start with a total of zero.\")]
+            let mut total = || 0;
+            #[cycle(\"Add every value.\")]
+            |values| for value in values {
+                #[action(\"Add the value.\")]
+                |value, &mut total| *total += *value;
+            };
+            |total| return total;
+        }",
+    );
+    let (top, bottom) = model.topology.cycle_boundaries[0]
+        .caps
+        .expect("a for cycle draws caps");
+    let mut broken = model.arrangement.clone();
+    *broken.column.get_mut(&Vertex::Node(bottom)).unwrap() += 1;
+    let error = verify::serial_columns(&model.topology, &broken).unwrap_err();
+    assert_eq!(error, format!("{bottom:?} leaves the column of {top:?}"));
+}
+
+#[test]
+fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
+    let model = model(
+        "fn probe(values: &[u32]) -> u32 {
+            #[action(\"Start with a total of zero.\")]
+            let mut total = || 0;
+            #[cycle(\"Add the even values.\")]
+            |values| for value in values {
+                #[question(\"Is the value even?\")]
+                let (even, _counted) = |value| *value % 2 == 0;
+                #[action(\"Add the value.\")]
+                let _counted = |even, value, &mut total| *total += *value;
+            };
+            |total| return total;
+        }",
+    );
+    let name = |vertex| {
+        super::describe::vertex(
+            &model.analysis.flow,
+            &model.analysis.merges,
+            &model.topology,
+            vertex,
+        )
+    };
+    let (entry, end) = model.topology.cycle_boundaries[0]
+        .caps
+        .expect("a for cycle draws caps");
+    assert_eq!(
+        name(Vertex::Node(entry)),
+        "the for-entry `Add the even values.`"
+    );
+    assert_eq!(
+        name(Vertex::Node(end)),
+        "the for-end `Add the even values.`"
+    );
+    let tail = model
+        .topology
+        .incoming(Vertex::Node(end))
+        .find_map(|edge| match edge.source {
+            Source::Junction(junction) => Some(Vertex::Junction(junction)),
+            Source::Exit(_) => None,
+        })
+        .expect("both routes meet before the for-end");
+    assert_eq!(
+        name(tail),
+        "the iteration tail of the cycle `Add the even values.`"
+    );
+}
+
+#[test]
+fn diagnostics_name_a_stage_entry_and_transition() {
+    let model = model(
+        "fn probe(seed: u32) -> u32 {
+            #[action(\"Enter the stage.\")]
+            let go = || {};
+            #[stage(\"Forward the seed.\")]
+            let finish = |go| {
+                #[action(\"Leave.\")]
+                let finish = || ();
+            };
+            #[stage(\"Return the seed.\")]
+            |finish| {
+                |seed| return seed;
+            };
+        }",
+    );
+    let stage = &model.stages[0];
+    let name = |vertex| {
+        super::describe::vertex(
+            &stage.analysis.flow,
+            &stage.analysis.merges,
+            &stage.topology,
+            vertex,
+        )
+    };
+    assert_eq!(name(Vertex::Node(NodeId::Start)), "the stage entry `go`");
+    let transition = stage
+        .topology
+        .nodes
+        .iter()
+        .find(|node| node.kind == crate::topology::NodeKind::StageTransition)
+        .expect("the stage hands over to the next one");
+    assert_eq!(
+        name(Vertex::Node(transition.id)),
+        "the stage transition `finish`"
+    );
+}
+
+#[test]
 fn body_columns_do_not_shrink_when_a_body_vertex_moves_below_the_tail() {
     let model = model(&cycle_routes(&["repeat", "finish"]));
     let cycle = model.topology.cycles[0];

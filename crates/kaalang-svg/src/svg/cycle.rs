@@ -6,8 +6,8 @@ use super::{
     Node, TextAnchor, escape, needs_composed_lines, write_composed_lines, write_label, write_lines,
 };
 use crate::layout::{
-    CYCLE_CAPTION_BASELINE, CYCLE_CAPTION_FONT, CYCLE_CAPTION_LINE_HEIGHT, CYCLE_CAPTION_PADDING_X,
-    CycleRegion, NODE_LABEL_PADDING_X,
+    CAP_CHAMFER, CYCLE_CAPTION_BASELINE, CYCLE_CAPTION_FONT, CYCLE_CAPTION_LINE_HEIGHT,
+    CYCLE_CAPTION_PADDING_X, CycleRegion, NODE_LABEL_PADDING_X,
 };
 
 const NODE_CORNER_RADIUS: i32 = 8;
@@ -90,4 +90,41 @@ pub(super) fn write(svg: &mut String, region: &CycleRegion) {
         );
     }
     emit!(svg, "    </g>");
+}
+
+/// A for-entry: a rectangle whose two upper corners are cut at 45°,
+/// holding the cycle's description like an action's.
+pub(super) fn write_for_entry(svg: &mut String, node: &Node) {
+    let (half_width, half_height) = (node.width / 2, node.height / 2);
+    let (inner, shoulder) = (half_width - CAP_CHAMFER, -half_height + CAP_CHAMFER);
+    emit!(
+        svg,
+        "      <polygon class=\"node-shape\" points=\"-{inner},-{half_height} {inner},-{half_height} {half_width},{shoulder} {half_width},{half_height} -{half_width},{half_height} -{half_width},{shoulder}\"/>"
+    );
+    write_label(
+        svg,
+        node,
+        0,
+        -half_width + NODE_LABEL_PADDING_X,
+        TextAnchor::Start,
+    );
+}
+
+/// A for-end: a rectangle whose two lower corners are cut at
+/// 45°, repeating the cycle's description so each for-end names the for-entry
+/// it closes.
+pub(super) fn write_for_end(svg: &mut String, node: &Node) {
+    let (half_width, half_height) = (node.width / 2, node.height / 2);
+    let (inner, shoulder) = (half_width - CAP_CHAMFER, half_height - CAP_CHAMFER);
+    emit!(
+        svg,
+        "      <polygon class=\"node-shape\" points=\"-{half_width},-{half_height} {half_width},-{half_height} {half_width},{shoulder} {inner},{half_height} -{inner},{half_height} -{half_width},{shoulder}\"/>"
+    );
+    write_label(
+        svg,
+        node,
+        0,
+        -half_width + NODE_LABEL_PADDING_X,
+        TextAnchor::Start,
+    );
 }

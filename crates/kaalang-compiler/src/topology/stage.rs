@@ -8,7 +8,7 @@ pub(super) fn order(topology: &mut Topology) {
     let transitions = topology
         .nodes
         .iter()
-        .filter(|node| node.kind == NodeKind::Transition)
+        .filter(|node| node.kind == NodeKind::StageTransition)
         .map(|node| Vertex::Node(node.id))
         .collect::<BTreeSet<_>>();
     if transitions.is_empty() {

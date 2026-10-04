@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1186" viewBox="0 0 1480 1186" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="706" height="1028" viewBox="0 0 706 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for for_on_each_branch</title>
-  <desc id="kaalang-description">Cycles: Add every value twice. with inputs double, values, mut total and outputs counted; Add every value once. with inputs single, values, mut total and outputs counted. Nodes: Start: for_on_each_branch with parameters values: &amp;[i64]; twice: bool handing over values, twice; Action: Start with a total of zero. capturing nothing handing over mut total; Question: Should every value count twice? capturing twice handing over double / single; Select: Add every value twice. capturing nothing; Case: Take the next item. handing over value; Case: No item is left. handing over counted; Action: Add the value twice. capturing value, &amp;mut total; Select: Add every value once. capturing nothing; Case: Take the next item. handing over value; Case: No item is left. handing over counted; Action: Add the value. capturing value, &amp;mut total; End: i64 capturing total; Merge: counted. Connections: Start: for_on_each_branch to Action: Start with a total of zero.; Action: Start with a total of zero. to Question: Should every value count twice?; Question: Should every value count twice? branch 1 to the entry of the cycle; Question: Should every value count twice? branch 2 to the entry of the cycle; Select: Add every value twice. to Case: Take the next item.; Select: Add every value twice. to Case: No item is left.; Case: Take the next item. to Action: Add the value twice.; Case: No item is left. to the counted merge; Action: Add the value twice. to the iteration tail of the cycle; Select: Add every value once. to Case: Take the next item.; Select: Add every value once. to Case: No item is left.; Case: Take the next item. to Action: Add the value.; Case: No item is left. to the counted merge; Action: Add the value. to the iteration tail of the cycle; the counted merge to End: i64; the entry of the cycle to Select: Add every value twice.; the entry of the cycle to Select: Add every value once.; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Add every value twice. with inputs double, values, mut total and outputs counted; Add every value once. with inputs single, values, mut total and outputs counted. Nodes: Start: for_on_each_branch with parameters values: &amp;[i64]; twice: bool handing over values, twice; Action: Start with a total of zero. capturing nothing handing over mut total; Question: Should every value count twice? capturing twice handing over double / single; For entry: Add every value twice. capturing double, values handing over value; Action: Add the value twice. capturing value, &amp;mut total; For end: Add every value twice. handing over counted; For entry: Add every value once. capturing single, values handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add every value once. handing over counted; End: i64 capturing total; Merge: counted. Connections: Start: for_on_each_branch to Action: Start with a total of zero.; Action: Start with a total of zero. to Question: Should every value count twice?; Question: Should every value count twice? branch 1 to For entry: Add every value twice.; Question: Should every value count twice? branch 2 to For entry: Add every value once.; For entry: Add every value twice. to Action: Add the value twice.; Action: Add the value twice. to For end: Add every value twice.; For end: Add every value twice. to the counted merge; For entry: Add every value once. to Action: Add the value.; Action: Add the value. to For end: Add every value once.; For end: Add every value once. to the counted merge; the counted merge to End: i64.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,128 +22,97 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
-    <g>
-      <title xml:space="preserve">Add every value twice.</title>
-    <rect class="cycle-boundary" x="32" y="415" width="696" height="564" rx="12"/>
-    <text class="cycle-caption" x="716" y="429" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Add every value twice.</tspan></text>
-    </g>
-    <g>
-      <title xml:space="preserve">Add every value once.</title>
-    <rect class="cycle-boundary" x="752" y="415" width="696" height="564" rx="12"/>
-    <text class="cycle-caption" x="1436" y="429" text-anchor="end" xml:space="preserve"><tspan x="1436" dy="0">Add every value once.</tspan></text>
-    </g>
   </g>
   <g class="connections">
-    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 220 94 L 220 170
-      M 220 234 L 220 306
-      M 220 378 L 220 450
-      M 360 342 L 940 342 L 940 450
-      M 220 594 L 220 666
-      M 348 558 L 580 558 L 580 666
-      M 220 736 L 220 808
-      M 580 736 L 580 1020
-      M 220 872 L 220 944
-      M 940 594 L 940 666
-      M 1068 558 L 1300 558 L 1300 666
-      M 940 736 L 940 808
-      M 1300 736 L 1300 1020 L 580 1020
-      M 940 872 L 940 944
-      M 580 1020 L 580 1096
-      M 220 450 L 220 522
-      M 940 450 L 940 522
+      M 173 94 L 173 170
+      M 173 234 L 173 306
+      M 173 378 L 173 450
+      M 313 342 L 533 342 L 533 450
+      M 173 514 L 173 586
+      M 173 650 L 173 722
+      M 173 786 L 173 862
+      M 533 514 L 533 586
+      M 533 650 L 533 722
+      M 533 786 L 533 862 L 173 862
+      M 173 862 L 173 938
     "/>
-    <path class="connection" d="
-      M 940 944 L 780 944 L 780 450 L 940 450
-    " marker-end="url(#back-edge-arrow)"/>
-    <path class="connection" d="
-      M 220 944 L 60 944 L 60 450 L 220 450
-    " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="593" y="1038" xml:space="preserve"><tspan x="593" dy="0">counted</tspan></text>
-    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">values, twice</tspan></text>
-    <text class="connection-label" x="233" y="252" xml:space="preserve"><tspan x="233" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="233" y="396" xml:space="preserve"><tspan x="233" dy="0">double</tspan></text>
-    <text class="connection-label" x="373" y="360" xml:space="preserve"><tspan x="373" dy="0">single</tspan></text>
-    <text class="connection-label" x="233" y="754" xml:space="preserve"><tspan x="233" dy="0">value</tspan></text>
-    <text class="connection-label" x="953" y="754" xml:space="preserve"><tspan x="953" dy="0">value</tspan></text>
-    <text class="connection-label" x="233" y="159" xml:space="preserve"><tspan x="233" dy="0">()</tspan></text>
-    <text class="connection-label" x="233" y="295" xml:space="preserve"><tspan x="233" dy="0">twice</tspan></text>
-    <text class="connection-label" x="233" y="511" xml:space="preserve"><tspan x="233" dy="0">()</tspan></text>
-    <text class="connection-label" x="233" y="797" xml:space="preserve"><tspan x="233" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="953" y="511" xml:space="preserve"><tspan x="953" dy="0">()</tspan></text>
-    <text class="connection-label" x="953" y="797" xml:space="preserve"><tspan x="953" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="593" y="1085" xml:space="preserve"><tspan x="593" dy="0">total</tspan></text>
+    <text class="connection-label" x="186" y="880" xml:space="preserve"><tspan x="186" dy="0">counted</tspan></text>
+    <text class="connection-label" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">values, twice</tspan></text>
+    <text class="connection-label" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="186" y="396" xml:space="preserve"><tspan x="186" dy="0">double</tspan></text>
+    <text class="connection-label" x="326" y="360" xml:space="preserve"><tspan x="326" dy="0">single</tspan></text>
+    <text class="connection-label" x="186" y="532" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label" x="546" y="532" xml:space="preserve"><tspan x="546" dy="0">value</tspan></text>
+    <text class="connection-label" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">twice</tspan></text>
+    <text class="connection-label" x="186" y="439" xml:space="preserve"><tspan x="186" dy="0">double, values</tspan></text>
+    <text class="connection-label" x="186" y="575" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="546" y="439" xml:space="preserve"><tspan x="546" dy="0">single, values</tspan></text>
+    <text class="connection-label" x="546" y="575" xml:space="preserve"><tspan x="546" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="186" y="927" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 360 65 L 456 65"/>
-    <g class="parameter-panel" transform="translate(576 65)">
+    <path class="parameter-link" d="M 313 65 L 409 65"/>
+    <g class="parameter-panel" transform="translate(529 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i64]</tspan><tspan x="-104" dy="18">twice: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(580 1020)">
+    <g class="node merge" transform="translate(173 862)">
       <title xml:space="preserve">the counted merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(220 65)">
+    <g class="node start" transform="translate(173 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_on_each_branch</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 202)">
+    <g class="node action" transform="translate(173 202)">
       <title xml:space="preserve">Start with a total of zero.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
     </g>
-    <g class="node question" transform="translate(220 342)">
+    <g class="node question" transform="translate(173 342)">
       <title xml:space="preserve">Should every value count twice?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Should every value count </tspan><tspan x="0" dy="18">twice?</tspan></text>
     </g>
-    <g class="node select" transform="translate(220 558)">
+    <g class="node for-entry" transform="translate(173 482)">
       <title xml:space="preserve">Add every value twice.</title>
-      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add every value twice.</tspan></text>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value twice.</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 701)">
-      <title xml:space="preserve">Take the next item.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the next item.</tspan></text>
-    </g>
-    <g class="node case" transform="translate(580 701)">
-      <title xml:space="preserve">No item is left.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No item is left.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(220 840)">
+    <g class="node action" transform="translate(173 618)">
       <title xml:space="preserve">Add the value twice.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value twice.</tspan></text>
     </g>
-    <g class="node select" transform="translate(940 558)">
+    <g class="node for-end" transform="translate(173 754)">
+      <title xml:space="preserve">Add every value twice.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value twice.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(533 482)">
       <title xml:space="preserve">Add every value once.</title>
-      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Add every value once.</tspan></text>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value once.</tspan></text>
     </g>
-    <g class="node case" transform="translate(940 701)">
-      <title xml:space="preserve">Take the next item.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Take the next item.</tspan></text>
-    </g>
-    <g class="node case" transform="translate(1300 701)">
-      <title xml:space="preserve">No item is left.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No item is left.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(940 840)">
+    <g class="node action" transform="translate(533 618)">
       <title xml:space="preserve">Add the value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(580 1125)">
+    <g class="node for-end" transform="translate(533 754)">
+      <title xml:space="preserve">Add every value once.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value once.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 967)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i64</tspan></text>
     </g>

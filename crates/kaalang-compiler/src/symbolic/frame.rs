@@ -121,6 +121,11 @@ impl Executions {
                 reaches = self.conditions.or(reaches, when);
             }
         }
+        // A for cycle out of items passes its body by.
+        if let Some(next) = flow.next_item(block) {
+            let exhausted = self.selected(next, 1);
+            reaches = self.conditions.minus(reaches, exhausted);
+        }
         reaches
     }
 

@@ -181,7 +181,10 @@ available after the cycle. In the diagram, `continue` routes meet at the cycle's
 back edge, completing routes leave through the cycle boundary, and `return`
 reaches the flow end. A cycle written `for item in items { ... }` instead runs
 its body once per item of a Rust iterator. It has no `continue` or early exit
-and may declare one output, the signal that its items ran out.
+and may declare one output, the signal that its items ran out. Its diagram has
+no boundary or back edge: a for-entry node holds the description and hands over
+the item, and every iteration ends at a for-end node below it, which repeats the
+description and from which the cycle continues.
 
 ### Putting it together: binary search
 

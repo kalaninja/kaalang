@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1908" height="1000" viewBox="0 0 1908 1000" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_initial_selection</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Transition: Measure shared data on the first route.; Transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Transition: Return the selected value and shared length.. Transition to stage first. Transition to stage finish. Stage first. Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Transition: Return the selected value and shared length.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value and shared length.; Action: Measure the shared data after either initial entry. capturing finish, view handing over result; End: (usize, usize) capturing result. Connections: Stage: Return the selected value and shared length. to Action: Measure the shared data after either initial entry.; Action: Measure the shared data after either initial entry. to End: (usize, usize).</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1908" height="1000" viewBox="0 0 1908 1000" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_initial_selection</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Stage transition: Measure shared data on the first route.; Stage transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Stage transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Stage transition: Return the selected value and shared length.. Transition to stage first. Transition to stage finish. Stage first. Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Stage transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Stage transition: Return the selected value and shared length.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value and shared length.; Action: Measure the shared data after either initial entry. capturing finish, view handing over result; End: (usize, usize) capturing result. Connections: Stage: Return the selected value and shared length. to Action: Measure the shared data after either initial entry.; Action: Measure the shared data after either initial entry. to End: (usize, usize).</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 908 L 232 976 "/>
@@ -11,7 +11,7 @@
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="1064" height="916" viewBox="0 0 1064 916" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for prepared_initial_selection</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Transition: Measure shared data on the first route.; Transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Transition: Return the selected value and shared length..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: prepared_initial_selection with parameters route: u8 handing over route; Action: Keep shared temporary data alive across either initial entry. capturing nothing handing over view; Select: Choose an initial stage or one of two finishing values. capturing route; Case: Visit the first stage.; Case: Finish with the first value. handing over left; Case: Finish with the second value. handing over right; Action: Provide the first finishing value. capturing left; Action: Provide the second finishing value. capturing right; Stage transition: Measure shared data on the first route.; Stage transition: Return the selected value and shared length.; Merge: . Connections: Start: prepared_initial_selection to Action: Keep shared temporary data alive across either initial entry.; Action: Keep shared temporary data alive across either initial entry. to Select: Choose an initial stage or one of two finishing values.; Select: Choose an initial stage or one of two finishing values. to Case: Visit the first stage.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the first value.; Select: Choose an initial stage or one of two finishing values. to Case: Finish with the second value.; Case: Visit the first stage. to Stage transition: Measure shared data on the first route.; Case: Finish with the first value. to Action: Provide the first finishing value.; Case: Finish with the second value. to Action: Provide the second finishing value.; Action: Provide the first finishing value. to a structural junction; Action: Provide the second finishing value. to a structural junction; a structural junction to Stage transition: Return the selected value and shared length..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -33,8 +33,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -110,12 +110,12 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the second finishing value.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 843)">
+    <g class="node stage-transition" transform="translate(172 843)">
       <title xml:space="preserve">Measure shared data on the first route.</title>
       <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Measure shared data on the </tspan><tspan x="0" dy="18">first route.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(532 843)">
+    <g class="node stage-transition" transform="translate(532 843)">
       <title xml:space="preserve">Return the selected value and shared length.</title>
       <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Return the selected value </tspan><tspan x="0" dy="18">and shared length.</tspan></text>
@@ -125,7 +125,7 @@
 </g>
 <g transform="translate(1160 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="786" viewBox="0 0 344 786" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for prepared_initial_selection</title>
-  <desc id="kaalang-part-1-description">Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Transition: Return the selected value and shared length..</desc>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Measure shared data on the first route.; Action: Provide the measured length. capturing view; Stage transition: Return the selected value and shared length.. Connections: Stage: Measure shared data on the first route. to Action: Provide the measured length.; Action: Provide the measured length. to Stage transition: Return the selected value and shared length..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -147,8 +147,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -172,7 +172,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Provide the measured length.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 713)">
+    <g class="node stage-transition" transform="translate(172 713)">
       <title xml:space="preserve">Return the selected value and shared length.</title>
       <polygon class="node-shape" points="0,-41 120,-23 120,41 -120,41 -120,-23"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Return the selected value </tspan><tspan x="0" dy="18">and shared length.</tspan></text>
@@ -204,8 +204,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>

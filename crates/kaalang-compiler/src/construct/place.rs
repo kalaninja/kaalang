@@ -275,6 +275,9 @@ fn preferred(
         let select = columns[&Vertex::Node(NodeId::Block(choice))];
         return select + footprints.offsets[&choice][branch] as i32;
     }
+    if let Some(top) = topology.for_entry(node) {
+        return columns[&Vertex::Node(top)];
+    }
 
     // Branches appear in authored order from left to right, so a branch's
     // own column decides where its successor goes; only a node no branch

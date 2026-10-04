@@ -351,6 +351,22 @@ impl Flow {
         self.blocks[block].kind == BlockKind::Continue && self.next_item(block).is_some()
     }
 
+    /// Whether `block` may run on no route at all: a preparation's transition
+    /// to a stage no route selects, or the end of a for cycle's iteration when
+    /// every route through its body diverges.
+    #[must_use]
+    pub(crate) fn may_never_run(&self, block: usize) -> bool {
+        matches!(self.kind, FlowKind::Preparation) && self.blocks[block].transition_target.is_some()
+            || self.ends_iteration(block)
+    }
+
+    /// Whether `block` draws its branches: a question, a choice or a cycle with
+    /// several outputs, but not the hidden choice a for-entry stands for.
+    #[must_use]
+    pub(crate) fn draws_branches(&self, block: usize) -> bool {
+        self.blocks[block].branch_count() > 0 && !self.takes_next_item(block)
+    }
+
     /// Whether `block` is the hidden choice that opens a for cycle's iterations.
     #[must_use]
     pub(crate) fn takes_next_item(&self, block: usize) -> bool {
@@ -502,6 +518,8 @@ pub struct Execution {
 pub(crate) struct Passes {
     /// Indexed by repeating cycle, then queried block. Non-cycle rows are empty.
     reaching: Vec<Vec<bool>>,
+    /// Per block, the hidden choice of the for cycle whose body holds it.
+    items: Vec<Option<usize>>,
 }
 
 impl Passes {
@@ -509,6 +527,10 @@ impl Passes {
     /// cycle enclosing `block`, or passes `block` before its repetition.
     #[must_use]
     pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
+        // A for cycle out of items passes its body by.
+        if self.items[block].is_some_and(|next| execution.selected(next) == Some(1)) {
+            return false;
+        }
         let ExecutionOutcome::Repeat { cycle_index } = execution.outcome else {
             return true;
         };
@@ -545,7 +567,10 @@ impl Passes {
                 }
             })
             .collect();
-        Self { reaching }
+        let items = (0..flow.blocks.len())
+            .map(|block| flow.next_item(block))
+            .collect();
+        Self { reaching, items }
     }
 }
 

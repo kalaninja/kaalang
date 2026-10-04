@@ -34,6 +34,7 @@ mod for_owned_items;
 mod for_reversed_range;
 mod for_stepped_range;
 mod for_with_an_endless_body;
+mod for_with_an_inner_question;
 mod for_without_captures;
 mod generic_owned_outputs;
 mod inner_cycle_joins_the_tail;

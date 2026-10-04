@@ -13,6 +13,8 @@ use crate::text::{self, RichText};
 
 const VERTICAL_PADDING: i32 = 35;
 const HORIZONTAL_PADDING: i32 = 28;
+/// How far each chamfer of a for cycle's caps cuts into it, at 45°.
+pub(crate) const CAP_CHAMFER: i32 = 16;
 const MARKER_SPACE: i32 = 28;
 const CAPTION_MAX_LINES: usize = 2;
 
@@ -34,13 +36,18 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
         .collect::<Vec<_>>();
     let mut padding = vec![0; scene.arrangement.ranks];
     for (boundary, &row) in scene.topology.cycle_boundaries.iter().zip(&last_rows) {
+        if boundary.caps.is_some() {
+            continue;
+        }
         let layers = scene
             .topology
             .cycle_boundaries
             .iter()
             .zip(&last_rows)
             .filter(|(outer, last)| {
-                **last == row && (outer.header..outer.end).contains(&boundary.header)
+                outer.caps.is_none()
+                    && **last == row
+                    && (outer.header..outer.end).contains(&boundary.header)
             })
             .count();
         padding[row] = padding[row].max((layers as i32 - 1) * VERTICAL_PADDING);
@@ -121,20 +128,28 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
         {
             points.extend(back.points.iter().copied());
         }
+        // An undrawn boundary needs no room for its dashed line or caption,
+        // only enough to keep its own routes strictly inside.
+        let drawn = boundary.caps.is_none();
+        let (horizontal, vertical) = if drawn {
+            (HORIZONTAL_PADDING, VERTICAL_PADDING)
+        } else {
+            (1, 1)
+        };
         let left = boxes
             .iter()
             .map(|bounds| bounds.0)
             .chain(points.iter().map(|point| point.x))
             .min()
             .unwrap_or(MARGIN)
-            - HORIZONTAL_PADDING;
+            - horizontal;
         let right = boxes
             .iter()
             .map(|bounds| bounds.2)
             .chain(points.iter().map(|point| point.x))
             .max()
             .unwrap_or(left + NODE_WIDTH)
-            + HORIZONTAL_PADDING;
+            + horizontal;
         let entry = point(boundary.entry).unwrap_or(Point {
             x: i32::midpoint(left, right),
             y: MARGIN,
@@ -143,8 +158,8 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
         // Keep the horizontal entry and result rails inside the rectangle.
         // Putting either junction on its edge makes the dashed boundary and
         // the connection share a visible run.
-        let top = (entry.y - VERTICAL_PADDING)
-            .min(boxes.iter().map(|bounds| bounds.1).min().unwrap_or(entry.y));
+        let top =
+            (entry.y - vertical).min(boxes.iter().map(|bounds| bounds.1).min().unwrap_or(entry.y));
         let caption_left = scene
             .connections
             .iter()
@@ -170,7 +185,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
             .chain(points.iter().map(|point| point.y))
             .max()
             .unwrap_or(entry.y);
-        let bottom = (body_bottom + VERTICAL_PADDING).max(
+        let bottom = (body_bottom + vertical).max(
             boxes
                 .iter()
                 .map(|bounds| bounds.3)
@@ -185,12 +200,17 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
                 right,
                 bottom,
                 description: description.as_ref().to_owned(),
-                caption: caption(
-                    description,
-                    right - caption_left - 2 * CYCLE_CAPTION_PADDING_X,
-                ),
+                caption: if drawn {
+                    caption(
+                        description,
+                        right - caption_left - 2 * CYCLE_CAPTION_PADDING_X,
+                    )
+                } else {
+                    Vec::new()
+                },
                 inputs: scene.captions.cycle_inputs(boundary.header).to_owned(),
                 outputs: scene.captions.cycle_outputs(boundary.header),
+                drawn,
             },
         ));
     }

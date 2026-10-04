@@ -13,8 +13,8 @@ fn loop_inside_for(values: &[u32]) -> u32 {
 
             #[cycle("Count the value down to zero.")]
             let _zero = loop {
-                #[question("Is anything left?")]
-                let (more, _zero) = |&left| *left > 0;
+                #[question("Has the value been counted down?")]
+                let (_zero, more) = |&left| *left == 0;
 
                 #[action("Count one down.")]
                 let counted = |more, &mut left, &mut total| {

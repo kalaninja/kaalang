@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="770" viewBox="0 0 1188 770" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for drop_before_visit</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: drop_before_visit with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Begin the first visit. capturing nothing; Transition: Own a local value.. Connections: Start: drop_before_visit to Action: Begin the first visit.; Action: Begin the first visit. to Transition: Own a local value.. Transition to stage first. Stage first. Nodes: Stage: Own a local value.; Action: Create a stage local owner. capturing events handing over _local; Action: Continue to the second stage. capturing nothing; Transition: Observe the next visit.. Connections: Stage: Own a local value. to Action: Create a stage local owner.; Action: Create a stage local owner. to Action: Continue to the second stage.; Action: Continue to the second stage. to Transition: Observe the next visit.. Transition to stage second. Stage second. Nodes: Stage: Observe the next visit.; Action: Record entry after the local was dropped. capturing events; End: () capturing nothing. Connections: Stage: Observe the next visit. to Action: Record entry after the local was dropped.; Action: Record entry after the local was dropped. to End: ().</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="770" viewBox="0 0 1188 770" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for drop_before_visit</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: drop_before_visit with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Begin the first visit. capturing nothing; Stage transition: Own a local value.. Connections: Start: drop_before_visit to Action: Begin the first visit.; Action: Begin the first visit. to Stage transition: Own a local value.. Transition to stage first. Stage first. Nodes: Stage: Own a local value.; Action: Create a stage local owner. capturing events handing over _local; Action: Continue to the second stage. capturing nothing; Stage transition: Observe the next visit.. Connections: Stage: Own a local value. to Action: Create a stage local owner.; Action: Create a stage local owner. to Action: Continue to the second stage.; Action: Continue to the second stage. to Stage transition: Observe the next visit.. Transition to stage second. Stage second. Nodes: Stage: Observe the next visit.; Action: Record entry after the local was dropped. capturing events; End: () capturing nothing. Connections: Stage: Observe the next visit. to Action: Record entry after the local was dropped.; Action: Record entry after the local was dropped. to End: ().</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 678 L 232 746 "/>
@@ -10,7 +10,7 @@
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="686" viewBox="0 0 680 686" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for drop_before_visit</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: drop_before_visit with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Begin the first visit. capturing nothing; Transition: Own a local value.. Connections: Start: drop_before_visit to Action: Begin the first visit.; Action: Begin the first visit. to Transition: Own a local value..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: drop_before_visit with parameters events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events; Action: Begin the first visit. capturing nothing; Stage transition: Own a local value.. Connections: Start: drop_before_visit to Action: Begin the first visit.; Action: Begin the first visit. to Stage transition: Own a local value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -32,8 +32,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -62,7 +62,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Begin the first visit.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 619)">
+    <g class="node stage-transition" transform="translate(172 619)">
       <title xml:space="preserve">Own a local value.</title>
       <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
       <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Own a local value.</tspan></text>
@@ -72,7 +72,7 @@
 </g>
 <g transform="translate(440 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for drop_before_visit</title>
-  <desc id="kaalang-part-1-description">Nodes: Stage: Own a local value.; Action: Create a stage local owner. capturing events handing over _local; Action: Continue to the second stage. capturing nothing; Transition: Observe the next visit.. Connections: Stage: Own a local value. to Action: Create a stage local owner.; Action: Create a stage local owner. to Action: Continue to the second stage.; Action: Continue to the second stage. to Transition: Observe the next visit..</desc>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Own a local value.; Action: Create a stage local owner. capturing events handing over _local; Action: Continue to the second stage. capturing nothing; Stage transition: Observe the next visit.. Connections: Stage: Own a local value. to Action: Create a stage local owner.; Action: Create a stage local owner. to Action: Continue to the second stage.; Action: Continue to the second stage. to Stage transition: Observe the next visit..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -94,8 +94,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -127,7 +127,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to the second stage.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 481)">
+    <g class="node stage-transition" transform="translate(172 481)">
       <title xml:space="preserve">Observe the next visit.</title>
       <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
       <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Observe the next visit.</tspan></text>
@@ -159,8 +159,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>

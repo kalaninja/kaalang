@@ -70,7 +70,12 @@ pub enum NodeKind {
     Select,
     Case,
     End,
-    Transition,
+    StageTransition,
+    /// The for-entry of an expanded for cycle, which takes its next item.
+    ForEntry,
+    /// The for-end of an expanded for cycle, where each iteration ends and
+    /// from which the completed cycle continues.
+    ForEnd,
 }
 
 /// One outgoing attachment point. A question is the only node with more than one
@@ -195,6 +200,15 @@ impl Topology {
     #[must_use]
     pub fn body_vertices(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
         crate::construct::cycle::body_vertices(flow, self, header)
+    }
+
+    /// The for-entry of the for cycle a for-end closes, in its column.
+    #[must_use]
+    pub fn for_entry(&self, bottom: NodeId) -> Option<NodeId> {
+        self.cycle_boundaries
+            .iter()
+            .find_map(|boundary| boundary.caps.filter(|caps| caps.1 == bottom))
+            .map(|(top, _)| top)
     }
 
     /// The node one id addresses.
@@ -338,7 +352,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
             BlockKind::Question => question::project(index, block, &mut nodes, &mut exits),
             BlockKind::Choice => choice::project(index, block, &mut nodes, &mut exits),
             BlockKind::Return if block.transition_target.is_some() && model.executions.iter().any(|execution| execution.participates(index)) => {
-                nodes.push(block_node(index, NodeKind::Transition));
+                nodes.push(block_node(index, NodeKind::StageTransition));
             }
             BlockKind::End
                 if model.executions.iter().any(|execution| {
@@ -433,6 +447,7 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     if !model.collapse_cycles {
         cycle::order_boundaries(&mut topology);
         cycle::coalesce_boundaries(&mut topology);
+        cycle::cap_for_cycles(model.flow, &mut topology);
     }
     end::order(&mut topology);
     stage::order(&mut topology);
@@ -1080,6 +1095,9 @@ pub struct CycleBoundary {
     /// that supplies it, including its branch. Empty when the cycle never
     /// completes.
     pub results: Vec<Source>,
+    /// A for cycle's for-entry and for-end, which stand in for the boundary. It
+    /// stays undrawn while still keeping everything else out of the body.
+    pub caps: Option<(NodeId, NodeId)>,
 }
 
 impl CycleBoundary {
@@ -1135,6 +1153,7 @@ fn boundaries(model: &Analyzed<'_>, count: &mut usize) -> Vec<CycleBoundary> {
                     .expect("a cycle owns a body"),
                 entry: Vertex::Junction(entry),
                 results,
+                caps: None,
             }
         })
         .collect()

@@ -206,7 +206,11 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
                 let body = structural_expression(&body);
                 if matches!(
                     body,
-                    Expr::Loop(_) | Expr::Break(_) | Expr::Return(_) | Expr::Continue(_)
+                    Expr::Loop(_)
+                        | Expr::ForLoop(_)
+                        | Expr::Break(_)
+                        | Expr::Return(_)
+                        | Expr::Continue(_)
                 ) {
                     inputs = captures;
                     normalized = Some(body.clone());
@@ -251,7 +255,7 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
         // Every kaalang block statement ends the same way, so no shape has to
         // be read twice to know where it stops. A `let` gets its semicolon
         // from Rust; every other spelling is checked here, except a bare
-        // `loop`: its braces end it, and rustfmt removes the semicolon.
+        // `loop` or `for`: its braces end it, and rustfmt removes the semicolon.
         if matches!(statement, Stmt::Expr(expression, None) if !matches!(expression, Expr::Loop(_) | Expr::ForLoop(_)))
         {
             return Err(Error::new_spanned(

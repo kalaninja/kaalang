@@ -70,7 +70,9 @@ pub(crate) fn layout_staged(
                 .topology
                 .nodes
                 .iter()
-                .filter(|node| matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition))
+                .filter(|node| {
+                    matches!(node.kind, NodeKind::StageEntry | NodeKind::StageTransition)
+                })
                 .map(|node| super::node_dimensions(node.kind, captions.label(node.id)).1)
         })
         .max()
@@ -114,7 +116,7 @@ pub(crate) fn layout_staged(
                     .topology
                     .nodes
                     .iter()
-                    .filter(|node| node.kind == NodeKind::Transition)
+                    .filter(|node| node.kind == NodeKind::StageTransition)
                     .map(|node| scene.node(node.id).y)
                     .max()
                     .unwrap_or(scene.height + RAIL_GAP + height / 2)
@@ -126,7 +128,7 @@ pub(crate) fn layout_staged(
             .topology
             .nodes
             .iter()
-            .any(|node| node.kind == NodeKind::Transition)
+            .any(|node| node.kind == NodeKind::StageTransition)
         {
             let parameters = if index == 0 { parameters } else { &[] };
             *scene = layout_with_stage_rows(
@@ -308,7 +310,7 @@ fn compose(
             connections.push([point(x, top), point(x, part.y + entry.y - entry.height / 2)]);
         }
         for node in &scene.topology.nodes {
-            if node.kind == NodeKind::Transition {
+            if node.kind == NodeKind::StageTransition {
                 let node = scene.node(node.id);
                 let x = part.x + node.x;
                 last_transition = Some(last_transition.unwrap_or(x).max(x));
@@ -461,7 +463,7 @@ mod tests {
                         .topology
                         .nodes
                         .iter()
-                        .any(|node| node.kind == NodeKind::Transition))
+                        .any(|node| node.kind == NodeKind::StageTransition))
                 );
                 let svg = crate::svg::serialize_staged(&diagram, &model.analysis, "example");
                 assert!(svg.contains(&format!(
@@ -604,7 +606,7 @@ mod tests {
                                 x,
                                 y: y - node.height / 2
                             }));
-                    } else if kind == NodeKind::Transition {
+                    } else if kind == NodeKind::StageTransition {
                         transitions.insert(y);
                         assert!(diagram.connections.iter().any(|line| line[0]
                             == Point {
@@ -694,7 +696,7 @@ mod tests {
         let transition = preparation
             .nodes
             .iter()
-            .find(|node| preparation.topology.node(node.id).kind == NodeKind::Transition)
+            .find(|node| preparation.topology.node(node.id).kind == NodeKind::StageTransition)
             .unwrap();
         assert!(second.y + end.y + end.height / 2 < first.y + transition.y);
         assert_eq!(super::super::correspondence(terminal), None);

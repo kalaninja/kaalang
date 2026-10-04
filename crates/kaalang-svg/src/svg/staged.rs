@@ -76,7 +76,7 @@ fn staged_description(scene: &StagedScene, root: &Analysis) -> String {
             &root.stages[part - 1].analysis.flow
         };
         for node in &local.topology.nodes {
-            if node.kind != NodeKind::Transition {
+            if node.kind != NodeKind::StageTransition {
                 continue;
             }
             let NodeId::Block(block) = node.id else {

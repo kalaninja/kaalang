@@ -8,7 +8,15 @@ use super::{State, Walk};
 use crate::model::{Block, BlockKind, BranchSelection, Execution};
 
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: &State) {
-    walk.branch(block, state);
+    // A for cycle out of items passes its body by, up to its export.
+    let exhausted = walk.flow.blocks[block]
+        .parent
+        .filter(|_| walk.flow.takes_next_item(block))
+        .map(|header| walk.flow.exports(header).start);
+    walk.branch(block, state, |case| match exhausted {
+        Some(export) if case == 1 => export,
+        _ => block + 1,
+    });
 }
 
 /// Each execution's route through `choice`, with its case, or `None` for an
