@@ -115,7 +115,7 @@ pub(super) fn flow(
 
 /// What the comparisons found for one merge: the selectors that choose between
 /// its producers, and the blocks each selector decides.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Default)]
 struct Completion {
     owners: BTreeSet<usize>,
     decided: BTreeMap<usize, BTreeSet<usize>>,
@@ -499,11 +499,9 @@ mod tests {
     use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
-    use super::{Completion, collect, completion, completion_at, context};
+    use super::{collect, completion, completion_at};
     use crate::{
-        Execution, Flow, ProducerId, WireMerge,
-        analyze::{comparison, only_difference},
-        build,
+        Execution, Flow, ProducerId, WireMerge, analyze::only_difference, build,
         tests::message as error,
     };
 
@@ -808,9 +806,9 @@ mod tests {
         );
     }
 
-    /// The pairwise algorithm the index replaced, kept as the comparison
-    /// baseline. Written the way it was, not through `record_difference`, so a
-    /// mistake in either helper shows up as a disagreement.
+    /// An independent pairwise scan, kept as the completion baseline. Written
+    /// apart from `record_difference`, so a mistake in either shows up as a
+    /// disagreement.
     fn reference(
         flow: &Flow,
         executions: &[Execution],
@@ -866,9 +864,8 @@ mod tests {
         (before, groups)
     }
 
-    /// Checks one flow three ways: what `completion` decides against the
-    /// reference, the index against the pairwise scan on the same executions
-    /// whatever their number, and that no merge waits for the implicit end.
+    /// Checks that `completion` decides what the reference does, and that no
+    /// merge waits for the implicit end.
     fn agrees(name: &str, function: &ItemFn) {
         let parts = if let Some(part) = crate::analyze::walked(function) {
             vec![part]
@@ -899,85 +896,11 @@ mod tests {
                     "{name}: the `{wire}` merge waits for the implicit end"
                 );
             }
-
-            let (producing, context) = context(&flow, &executions, &merges);
-            let mut pairwise = vec![Completion::default(); merges.len()];
-            comparison::pairwise(&producing, &context, |merge, selector, first, second| {
-                pairwise[merge].compare(
-                    selector,
-                    producing[first],
-                    producing[second],
-                    context[merge][first] != context[merge][second],
-                    end,
-                );
-            });
-            let mut indexed = vec![Completion::default(); merges.len()];
-            comparison::compatible(&producing, &context, |merge, selector, first, second| {
-                indexed[merge].compare(
-                    selector,
-                    producing[first],
-                    producing[second],
-                    context[merge][first] != context[merge][second],
-                    end,
-                );
-            });
-            assert_eq!(
-                pairwise, indexed,
-                "{name}: the index and the pairwise scan disagree"
-            );
         }
-    }
-
-    /// The opening of a flow over `parameters` whose first block is a choice
-    /// of `cases` cases on `value`, handing out `case_0` onwards.
-    fn choice_source(parameters: &str, cases: usize) -> String {
-        use std::fmt::Write as _;
-
-        let mut source = format!("fn valid({parameters}) -> usize {{\n");
-        let _ = writeln!(source, "    #[choice(\"Which case?\")]");
-        for case in 0..cases {
-            let _ = writeln!(source, "    #[case(\"Case {case}.\")]");
-        }
-        let outputs = (0..cases)
-            .map(|case| format!("case_{case}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let arms = (0..cases)
-            .map(|case| {
-                if case + 1 == cases {
-                    "_ => ()".to_owned()
-                } else {
-                    format!("{case} => ()")
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(", ");
-        let _ = writeln!(
-            source,
-            "    let ({outputs}) = |value| match value {{ {arms} }};"
-        );
-        source
-    }
-
-    /// A choice with one case per execution: the count is exactly `cases`, so
-    /// this walks the boundary between the two comparison strategies, and every
-    /// case is one producer of the same merge.
-    fn wide_choice(cases: usize) -> ItemFn {
-        use std::fmt::Write as _;
-
-        let mut source = choice_source("value: usize", cases);
-        for case in 0..cases {
-            let _ = writeln!(
-                source,
-                "    #[action(\"Build {case}.\")] let built = |case_{case}| {case}usize;"
-            );
-        }
-        source.push_str("    |built| return built;\n}\n");
-        syn::parse_str(&source).expect("the generated flow parses")
     }
 
     #[test]
-    fn the_index_agrees_with_the_pairwise_reference_over_the_fixture_corpus() {
+    fn completion_agrees_with_the_reference_over_the_fixture_corpus() {
         use kaalang_testing::corpus::{self, Suite};
 
         let corpus = corpus::corpus(Suite::All);
@@ -988,22 +911,7 @@ mod tests {
     }
 
     #[test]
-    fn the_index_agrees_on_either_side_of_the_pairwise_bound() {
-        for cases in [
-            comparison::PAIRWISE_EXECUTIONS - 1,
-            comparison::PAIRWISE_EXECUTIONS,
-            comparison::PAIRWISE_EXECUTIONS + 1,
-        ] {
-            let function = wide_choice(cases);
-            let (_, executions) =
-                crate::analyze::walked(&function).expect("the generated flow resolves");
-            assert_eq!(executions.len(), cases, "one execution per case");
-            agrees(&format!("a choice of {cases} cases"), &function);
-        }
-    }
-
-    #[test]
-    fn the_index_agrees_on_independent_nested_and_partial_merges() {
+    fn completion_agrees_on_independent_nested_and_partial_merges() {
         let shapes: [(&str, ItemFn); 4] = [
             (
                 "two merges with independent contexts",
@@ -1076,51 +984,6 @@ mod tests {
         }
     }
 
-    /// Every execution runs a different set of selectors, which is the case the
-    /// index groups worst: one group per execution and a pair of groups for
-    /// every pair of them.
-    #[test]
-    fn the_index_agrees_when_every_execution_runs_its_own_selectors() {
-        use std::fmt::Write as _;
-
-        // One more execution than the pairwise bound, so `completion` takes
-        // the index path on its own, and each of them runs a different set of
-        // selectors: one group per execution, paired with every other.
-        let depth = comparison::PAIRWISE_EXECUTIONS;
-        let mut source = String::from("fn valid(seed: usize) -> usize {\n");
-        for level in 0..depth {
-            let input = if level == 0 {
-                "seed".to_owned()
-            } else {
-                format!("deeper_{}", level - 1)
-            };
-            let _ = writeln!(source, "    #[question(\"Go past {level}?\")]");
-            let _ = writeln!(
-                source,
-                "    let (deeper_{level}, stop_{level}) = |{input}| {input} > {level};"
-            );
-            let _ = writeln!(
-                source,
-                "    #[action(\"Stop at {level}.\")] let value = |stop_{level}| {level}usize;"
-            );
-        }
-        let _ = writeln!(
-            source,
-            "    #[action(\"Run to the end.\")] let value = |deeper_{}| {depth}usize;",
-            depth - 1
-        );
-        source.push_str("    |value| return value;\n}\n");
-        let function = syn::parse_str::<ItemFn>(&source).expect("the generated flow parses");
-        let (_, executions) =
-            crate::analyze::walked(&function).expect("the generated flow resolves");
-        assert_eq!(
-            executions.len(),
-            depth + 1,
-            "one execution per stopping point, and one running past them all"
-        );
-        agrees("one selector set per execution", &function);
-    }
-
     /// A flow whose outputs are all distinct has no merge to order. Cycles reach
     /// several executions without repeating a name, which is the shape that
     /// would otherwise pay for pairs no merge ever reads: 87 of the 191 corpus
@@ -1137,124 +1000,5 @@ mod tests {
             completion_at(&flow, &executions, &mut merges).is_empty(),
             "a flow without merges owns no branches"
         );
-    }
-
-    /// Past the pairwise bound in executions, but only two of them produce the
-    /// one merge. The strategy follows what the merges actually read, so this
-    /// stays one comparison rather than an index over every execution.
-    #[test]
-    fn a_merge_two_executions_reach_is_compared_once() {
-        use std::fmt::Write as _;
-
-        let cases = comparison::PAIRWISE_EXECUTIONS;
-        let mut source = choice_source("value: usize, pick: bool, result: usize", cases);
-        for case in 0..cases - 1 {
-            let _ = writeln!(
-                source,
-                "    #[action(\"Work {case}.\")] let _done_{case} = |case_{case}| ();"
-            );
-        }
-        let last = cases - 1;
-        let _ = writeln!(
-            source,
-            "    #[question(\"Which value?\")] let (yes, no) = |case_{last}, pick| {{ pick }};"
-        );
-        let _ = writeln!(
-            source,
-            "    #[action(\"Yes value.\")] let picked = |yes| {{ 1usize }};"
-        );
-        let _ = writeln!(
-            source,
-            "    #[action(\"No value.\")] let picked = |no| {{ 2usize }};"
-        );
-        let _ = writeln!(
-            source,
-            "    #[action(\"Use the picked value.\")] let _used = |picked| {{ () }};"
-        );
-        source.push_str("    |result| return result;\n}\n");
-
-        let function = syn::parse_str::<ItemFn>(&source).expect("the generated flow parses");
-        let (flow, executions) =
-            crate::analyze::walked(&function).expect("the generated flow resolves");
-        assert!(
-            executions.len() > comparison::PAIRWISE_EXECUTIONS,
-            "the choice reaches past the pairwise bound"
-        );
-        let merges = collect(&flow);
-        assert_eq!(merges.len(), 1, "only the question's branches merge");
-        let (producing, _) = context(&flow, &executions, &merges);
-        assert_eq!(producing.len(), 2, "only two executions produce that merge");
-        agrees("a merge two executions reach", &function);
-    }
-
-    /// Two private chains under a shared prefix: the executions of one chain
-    /// form one group and the other chain's another, large enough and sharing
-    /// few enough selectors that the pair of groups is worth indexing. Nothing
-    /// else here reaches the crossing case, where a comparison must join the
-    /// two sides rather than stay inside one group.
-    fn split_chains(prefix: usize, private: usize) -> ItemFn {
-        use std::fmt::Write as _;
-
-        let mut source = String::from("fn valid(seed: usize, top: bool) -> usize {\n");
-        let mut wire = "seed".to_owned();
-        for level in 0..prefix {
-            let _ = writeln!(source, "    #[question(\"Shared {level}?\")]");
-            let _ = writeln!(
-                source,
-                "    let (shared_yes_{level}, shared_no_{level}) = |{wire}| {wire} > {level};"
-            );
-            let _ = writeln!(
-                source,
-                "    #[action(\"Shared yes {level}.\")] let shared_{level} = |shared_yes_{level}| {level}usize;"
-            );
-            let _ = writeln!(
-                source,
-                "    #[action(\"Shared no {level}.\")] let shared_{level} = |shared_no_{level}| {level}usize + 1;"
-            );
-            wire = format!("shared_{level}");
-        }
-        let _ = writeln!(source, "    #[question(\"Which side?\")]");
-        let _ = writeln!(source, "    let (left, right) = |{wire}, top| {{ top }};");
-        for side in ["left", "right"] {
-            let _ = writeln!(
-                source,
-                "    #[action(\"Enter {side}.\")] let {side}_0 = |{side}| 0usize;"
-            );
-            for level in 0..private {
-                let _ = writeln!(source, "    #[question(\"{side} {level}?\")]");
-                let _ = writeln!(
-                    source,
-                    "    let ({side}_yes_{level}, {side}_no_{level}) = |{side}_{level}| {side}_{level} > {level};"
-                );
-                let next = level + 1;
-                let _ = writeln!(
-                    source,
-                    "    #[action(\"{side} yes {level}.\")] let {side}_{next} = |{side}_yes_{level}| {level}usize;"
-                );
-                let _ = writeln!(
-                    source,
-                    "    #[action(\"{side} no {level}.\")] let {side}_{next} = |{side}_no_{level}| {level}usize + 1;"
-                );
-            }
-            let _ = writeln!(
-                source,
-                "    #[action(\"Finish {side}.\")] let value = |{side}_{private}| {side}_{private};"
-            );
-        }
-        source.push_str("    |value| return value;\n}\n");
-        syn::parse_str(&source).expect("the generated flow parses")
-    }
-
-    /// The index is only worth building where it wins, so the group pairs of a
-    /// small flow take their own pairs instead and leave it unexercised. These
-    /// two reach it: one group holding every execution of a flow that branches
-    /// seven times, and two groups a shared prefix splits apart.
-    #[test]
-    fn the_index_agrees_where_it_is_the_cheaper_strategy() {
-        agrees(
-            "seven branching levels",
-            &kaalang_testing::probes::flow(&kaalang_testing::probes::branching(7)),
-        );
-        agrees("two chains under a shared prefix", &split_chains(2, 4));
     }
 }
