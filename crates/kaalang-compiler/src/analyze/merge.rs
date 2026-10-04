@@ -340,9 +340,10 @@ pub(crate) fn validate_order(
     for (index, merge) in merges.iter().enumerate() {
         let node = flow.blocks.len() + index;
         for &producer in &merge.producers {
-            if let ProducerId::BlockOutput { block, .. } = producer {
-                successors[block].insert(node);
-            }
+            let ProducerId::BlockOutput { block, .. } = producer else {
+                unreachable!("a wire merge combines block outputs")
+            };
+            successors[block].insert(node);
         }
         for &block in &merge.before {
             successors[block].insert(node);

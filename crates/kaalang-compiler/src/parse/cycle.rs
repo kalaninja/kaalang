@@ -6,12 +6,12 @@ use syn::{Error, Expr, ExprBlock, ExprBreak, Pat, Result, parse_quote, parse_quo
 
 use super::{
     BlockSyntax, block_outputs, decorated_body, description, forward, reject_control_transfers,
-    structural_block, structural_expression, ungrouped,
+    structural_block, structural_expression,
 };
 use crate::model::{Block, BlockKind, Iteration, UNNAMED};
 
 pub(super) fn parse(mut syntax: BlockSyntax<'_>) -> Result<Block> {
-    let iteration = match ungrouped(structural_expression(&syntax.body)).clone() {
+    let iteration = match structural_expression(&syntax.body).clone() {
         Expr::Loop(body) => {
             if body.label.is_some() || !body.attrs.is_empty() {
                 return Err(decorated_body(body));

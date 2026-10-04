@@ -282,9 +282,14 @@ pub(crate) fn ungrouped(mut expression: &Expr) -> &Expr {
     expression
 }
 
-/// Braces around a single structural expression do not change its meaning.
+/// Braces and macro groups around a single structural expression do not
+/// change its meaning.
 fn structural_expression(mut expression: &Expr) -> &Expr {
-    while let Expr::Block(block) = expression {
+    loop {
+        expression = ungrouped(expression);
+        let Expr::Block(block) = expression else {
+            break;
+        };
         if !block.attrs.is_empty() || block.label.is_some() {
             break;
         }
