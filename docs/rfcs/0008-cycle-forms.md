@@ -27,7 +27,7 @@ diagram needs no back edge.
 
 This RFC defines syntax, execution, validation, Rust lowering, and the visual
 representation of both forms. Section 8 identifies the earlier provisions it
-supersedes. Earlier accepted RFC texts remain unchanged.
+supersedes. Earlier released RFC texts remain unchanged.
 
 ### 1.1 Terms
 
@@ -119,9 +119,10 @@ item_pattern := output_binding | "_"
 ```
 
 `block_statement` keeps RFC 0007's alternatives; section 4 states which of them
-a for cycle's body excludes. Neither form takes a label or body-level
-attributes. A `loop` or `for` statement without `#[cycle]`, and a `while` in any
-position outside a computational body, remain invalid.
+a for cycle's body excludes. The trailing `";"` follows RFC 0007 §3.1's
+statement terminator rules. Neither form takes a label or body-level attributes.
+A `loop` or `for` statement without `#[cycle]`, and a `while` in any position
+outside a computational body, remain invalid.
 
 ## 3. Execution of a for cycle
 
@@ -131,10 +132,11 @@ The header captures participate like an action's: they gate the cycle's entry
 under the ordinary branch rules, and they move, copy, or borrow their wires
 once, before the first iteration. Unlike a loop cycle's gate, they are real
 captures with Rust value operations. The `in` expression is evaluated once over
-those aliases and iterated through `IntoIterator`. The aliases end once the
-iterator is built. A value capture moves or copies its wire into the `in`
-expression, so iterating a collection by reference needs a borrowing capture, as
-in `|&values| for value in values.iter()`. A borrowing capture keeps its wire
+those aliases and iterated through `IntoIterator`. The aliases end with the
+scope that evaluates the expression, before iteration. A value capture moves or
+copies its wire into the `in` expression. Iterating a collection by reference
+therefore needs a borrowing capture, as in
+`|&values| for value in values.iter()`. A borrowing capture keeps its wire
 borrowed for as long as the iterator holds the borrow.
 
 Each iteration binds the item pattern to the next item. Item wires are
@@ -208,14 +210,19 @@ cycle's body is rejected when its braces hold anything other than its `loop`.
 
 A loop cycle lowers as RFC 0007 §5.2 describes; the keyword changes nothing.
 
-A for cycle lowers to a native Rust loop over an iterator, the way Rust lowers
-its own `for`. Its header captures bind as an action's capture aliases do, in
-authored order, inside a scope that evaluates the `in` expression and ends
-before the loop, so the body never sees the aliases. `IntoIterator` turns the
-value of that scope into the iterator. Each iteration first takes the next item.
-With one, it binds the item wire and runs the lowered body, which ends by
-repeating the loop. Without one, it leaves the loop with the cycle's `()`
-output.
+A for cycle lowers through `IntoIterator::into_iter` and `Iterator::next`, as
+Rust lowers its own `for`. Its header captures bind as an action's capture
+aliases do, in authored order, inside a scope that evaluates the `in` expression
+and ends before the loop, so the body never sees the aliases. Without captures,
+the expression needs no inner scope. An outer `match` on
+`IntoIterator::into_iter` retains its scrutinee's temporaries through the loop.
+The capture scope still follows Rust's ordinary lifetime rules: an iterator
+cannot escape it while borrowing an owner created inside it.
+
+Each iteration calls `Iterator::next` explicitly, so an iterator's inherent
+`next` method cannot change its behavior. With an item, it binds the item wire
+and runs the lowered body, which ends by repeating the loop. Without one, it
+leaves the loop with the cycle's `()` output.
 
 For example:
 
@@ -240,13 +247,12 @@ Illustrative Rust, omitting unit control-wire bindings and lint allowances:
 ```rust
 fn sum(wire_values: &[i64]) -> i64 {
     let mut wire_total = 0;
-    let wire_added = {
-        let mut items = IntoIterator::into_iter({
-            let values = wire_values;
-            values
-        });
-        'cycle: loop {
-            match items.next() {
+    let wire_added = match ::core::iter::IntoIterator::into_iter({
+        let values = wire_values;
+        values
+    }) {
+        mut items => 'cycle: loop {
+            match ::core::iter::Iterator::next(&mut items) {
                 Some(wire_value) => {
                     let value = wire_value;
                     let total = &mut wire_total;
@@ -397,7 +403,7 @@ consumer.
 
 ## 8. Changes to earlier RFCs
 
-This RFC supersedes the provisions below. Earlier accepted RFC texts remain
+This RFC supersedes the provisions below. Earlier released RFC texts remain
 unchanged.
 
 - **RFC 0001 §§3, 4.5 and 8; RFC 0007 §§2.2 and 3:** a cycle body is a Rust
@@ -439,6 +445,8 @@ Concrete compiler and renderer types remain implementation choices.
 | For cycle with one declared output                                    | Provide the unit output after the iterator is exhausted.                                                 |
 | For cycle over an empty iterator                                      | Run no iteration and complete.                                                                           |
 | `in` expression with ranges and adapters over header captures         | Accept any Rust expression reading only those aliases.                                                   |
+| Iterator with an inherent `next` method                               | Call `Iterator::next`, preserving the iterator's trait behavior.                                         |
+| `in` expression borrowing a temporary, without header captures        | Keep the temporary alive through the loop, as native Rust `for` does.                                    |
 | `in` expression reading an uncaptured wire                            | Reject under the ordinary capture rules.                                                                 |
 | Tuple item pattern                                                    | Reject; an action takes the captured item apart.                                                         |
 | `_` item pattern                                                      | Bind no item wire.                                                                                       |

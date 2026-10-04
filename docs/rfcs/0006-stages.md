@@ -1086,7 +1086,7 @@ lowering in §6.2.
 ## 9. Changes to earlier RFCs
 
 This RFC supersedes the provisions below for flows declaring stages. Earlier
-accepted RFC texts remain unchanged. Ordinary flow and cycle rules continue to
+released RFC texts remain unchanged. Ordinary flow and cycle rules continue to
 apply within preparation and each stage unless explicitly changed here.
 
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A
