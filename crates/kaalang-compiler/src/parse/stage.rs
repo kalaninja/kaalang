@@ -329,12 +329,6 @@ fn declaration(statement: &Stmt) -> Result<Declaration> {
     let Expr::Block(body) = body else {
         unreachable!("stage body is braced")
     };
-    if matches!(statement, Stmt::Expr(_, None)) {
-        return Err(Error::new_spanned(
-            statement,
-            "a kaalang stage requires a trailing semicolon",
-        ));
-    }
     Ok(Declaration {
         description,
         entry: entry.ident.clone(),

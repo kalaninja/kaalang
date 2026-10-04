@@ -238,20 +238,8 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             }
             _ => parse_block(statement)?,
         };
-        // Every kaalang block statement ends the same way, so no shape has to
-        // be read twice to know where it stops. A `let` gets its semicolon
-        // from Rust; every other spelling is checked here, except a bare
-        // `loop` or `for`: its braces end it, and rustfmt removes the semicolon.
-        if matches!(statement, Stmt::Expr(expression, None) if !matches!(expression, Expr::Loop(_) | Expr::ForLoop(_)))
-        {
-            return Err(Error::new_spanned(
-                statement,
-                format!(
-                    "a kaalang {} requires a trailing semicolon",
-                    noun(block.kind)
-                ),
-            ));
-        }
+        // A trailing semicolon means nothing to kaalang; Rust decides where a
+        // statement needs one.
         block.parent = parent;
         let index = blocks.len();
         blocks.push(block);

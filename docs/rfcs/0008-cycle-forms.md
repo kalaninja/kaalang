@@ -69,10 +69,6 @@ may enclose a `match`, `return`, or `continue`: `|gate| { loop { ... } }` is
 `|gate| loop { ... }`. A brace block that holds the body's statements directly,
 the form before this RFC, is invalid.
 
-A cycle written with neither `let` nor a capture list may omit its trailing
-semicolon. Its braces already end the statement, and rustfmt removes the
-semicolon after a bare `loop` or `for`.
-
 ### 2.2 For cycles
 
 A for cycle writes a Rust `for` loop as its body:
@@ -122,11 +118,10 @@ for_output := output_binding | "(" ")" | "(" output_binding "," ")"
 item_pattern := output_binding | "_"
 ```
 
-The final `";"` is optional when the statement has neither `let` nor a capture
-list, as §2.1 explains. `block_statement` keeps RFC 0007's alternatives; section
-4 states which of them a for cycle's body excludes. Neither form takes a label
-or body-level attributes. A `loop` or `for` statement without `#[cycle]`, and a
-`while` in any position outside a computational body, remain invalid.
+`block_statement` keeps RFC 0007's alternatives; section 4 states which of them
+a for cycle's body excludes. Neither form takes a label or body-level
+attributes. A `loop` or `for` statement without `#[cycle]`, and a `while` in any
+position outside a computational body, remain invalid.
 
 ## 3. Execution of a for cycle
 

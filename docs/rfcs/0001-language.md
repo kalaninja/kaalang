@@ -139,7 +139,9 @@ directly. For example, `#[action("Log.")] { log(); };` is shorthand for
 `#[action("Log.")] || { log(); };`. This is the computational block counterpart
 of writing `break;` or `return;` without an empty capture list.
 
-Every block statement ends with a semicolon, including the last statement.
+A block statement's trailing semicolon is Rust's: kaalang reads a statement with
+or without it wherever Rust accepts both spellings, and gives the semicolon no
+meaning.
 
 A call with no captures may omit the empty capture list and write its
 application directly, with or without outputs: `#[call] record();` or
@@ -1074,8 +1076,9 @@ input_list := input ("," input)* ","?
 input := "mut"? identifier | "&" "mut"? identifier
 ```
 
-Every block statement ends with a semicolon. Outputs within one declaration are
-distinct. An expression statement without `let` and a declaration with the
+The `";"` ending each statement production is Rust's terminator, optional
+wherever Rust allows a statement without it (§3). Outputs within one declaration
+are distinct. An expression statement without `let` and a declaration with the
 pattern `()` both declare none for an action, call, or cycle, and a
 `call_statement` without a capture list declares no inputs. Every identifier in
 a `call_argument_list` names one of that block's captured aliases; a capture
