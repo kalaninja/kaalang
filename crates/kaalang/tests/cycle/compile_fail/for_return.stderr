@@ -1,0 +1,5 @@
+error: a structural return is allowed only in the root kaalang sequence
+ --> tests/cycle/compile_fail/for_return.rs:7:17
+  |
+7 |         |value| return *value;
+  |                 ^^^^^^^^^^^^^
