@@ -5,9 +5,9 @@ use std::borrow::Cow;
 use proc_macro2::{Ident, Span};
 use quote::ToTokens;
 use syn::{
-    Attribute, Error, Expr, ExprAsync, ExprBlock, ExprClosure, ExprForLoop, ExprReturn, ExprTry,
-    FnArg, Item, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind, Result,
-    ReturnType, Stmt, Type,
+    Attribute, Error, Expr, ExprAsync, ExprBlock, ExprClosure, ExprForLoop, ExprLoop, ExprReturn,
+    ExprTry, FnArg, Item, ItemFn, LitStr, MacroDelimiter, Meta, Pat, Receiver, ReceiverKind,
+    Result, ReturnType, Stmt, Type,
     ext::IdentExt,
     parse_quote_spanned,
     spanned::Spanned,
@@ -30,12 +30,6 @@ mod stage;
 
 /// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
-    if let Some(asyncness) = &function.sig.asyncness {
-        return Err(Error::new(
-            asyncness.span(),
-            "kaalang does not support async flows",
-        ));
-    }
     let flow = Flow {
         flow_inputs: flow_inputs(function)?,
         blocks: blocks(function)?,
@@ -221,23 +215,15 @@ fn statements(statements: &[Stmt], parent: Option<usize>, blocks: &mut Vec<Block
             None
         };
         let mut block = match expression {
-            // Only a cycle is written as a `loop`.
-            Some(Expr::Loop(expression))
-                if !expression
-                    .attrs
-                    .iter()
-                    .any(|attribute| attribute.path().is_ident("cycle")) =>
+            // Only a cycle is written as a `loop` or `for`.
+            Some(
+                expression @ (Expr::Loop(ExprLoop { attrs, .. })
+                | Expr::ForLoop(ExprForLoop { attrs, .. })),
+            ) if !attrs
+                .iter()
+                .any(|attribute| attribute.path().is_ident("cycle")) =>
             {
-                return Err(cycle::structural_loop(expression));
-            }
-            // Only a cycle is written as a `for`.
-            Some(Expr::ForLoop(expression))
-                if !expression
-                    .attrs
-                    .iter()
-                    .any(|attribute| attribute.path().is_ident("cycle")) =>
-            {
-                return Err(cycle::structural_for(expression));
+                return Err(cycle::structural_cycle(expression));
             }
             Some(Expr::Break(expression)) => return Err(cycle::structural_break(expression)),
             Some(Expr::Return(expression)) => return_block::parse(expression, inputs, parent)?,
@@ -340,6 +326,14 @@ fn structural_block(kind: BlockKind, span: Span, inputs: Vec<Input>) -> Block {
         transition_target: None,
         iteration: None,
     }
+}
+
+/// A structural block that passes `alias` on unchanged.
+fn forward(kind: BlockKind, alias: &Ident) -> Block {
+    let span = alias.span();
+    let mut block = structural_block(kind, span, vec![input(alias.clone(), false, false)]);
+    block.body = parse_quote_spanned!(span=> #alias);
+    block
 }
 
 /// Parses one statement and hands it to its kind's parser.
@@ -517,15 +511,12 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
             parse_quote_spanned!(closure.inputs_end.span()=> ()),
             Some(Cow::Borrowed(closure)),
         )),
-        Stmt::Expr(Expr::Block(block), _) => {
-            Ok((&block.attrs, parse_quote_spanned!(block.span()=> ()), None))
-        }
-        Stmt::Expr(Expr::Loop(body), _) => {
-            Ok((&body.attrs, parse_quote_spanned!(body.span()=> ()), None))
-        }
-        Stmt::Expr(Expr::ForLoop(body), _) => {
-            Ok((&body.attrs, parse_quote_spanned!(body.span()=> ()), None))
-        }
+        Stmt::Expr(
+            body @ (Expr::Block(ExprBlock { attrs, .. })
+            | Expr::Loop(ExprLoop { attrs, .. })
+            | Expr::ForLoop(ExprForLoop { attrs, .. })),
+            _,
+        ) => Ok((attrs, parse_quote_spanned!(body.span()=> ()), None)),
         // A call's body is one application, so it needs no braces to delimit
         // it. The attributes decide: an unattributed application is ordinary
         // Rust, which a flow body does not accept, and it must keep reporting
@@ -566,17 +557,14 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             return Ok(Expr::Block(body));
         }
         // Only a statement declaring a cycle gets here as a `loop` or `for`.
-        Stmt::Expr(Expr::Loop(body), _) => {
+        Stmt::Expr(body @ (Expr::Loop(_) | Expr::ForLoop(_)), _) => {
             let mut body = body.clone();
-            body.attrs
-                .retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
-            return Ok(Expr::Loop(body));
-        }
-        Stmt::Expr(Expr::ForLoop(body), _) => {
-            let mut body = body.clone();
-            body.attrs
-                .retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
-            return Ok(Expr::ForLoop(body));
+            if let Expr::Loop(ExprLoop { attrs, .. }) | Expr::ForLoop(ExprForLoop { attrs, .. }) =
+                &mut body
+            {
+                attrs.retain(|attribute| matches!(attribute.style, syn::AttrStyle::Inner(_)));
+            }
+            return Ok(body);
         }
         // A statement carries its attributes on its expression, and the kind
         // attribute was classified before this ran.

@@ -49,16 +49,8 @@ pub(super) fn plan(
                     found == cycle_index
                 }
                 _ => false,
-            }) && replay
-                .ran
-                .iter()
-                .copied()
-                .eq(execution.blocks.iter().copied())
-                && replay
-                    .dependencies
-                    .iter()
-                    .copied()
-                    .eq(execution.dependencies.iter().copied())
+            }) && replay.ran.iter().eq(&execution.blocks)
+                && replay.dependencies.iter().eq(&execution.dependencies)
         })
 }
 
@@ -284,7 +276,9 @@ mod tests {
             model.analysis.executions[0].outcome,
             ExecutionOutcome::Return { block_index: 1 }
         );
-        model.analysis.executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        let mut executions = model.analysis.executions.to_vec();
+        executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        model.analysis.executions = crate::Executions::enumerated(executions);
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
@@ -571,7 +565,7 @@ mod tests {
             function.block.stmts[1] = selection;
             let model = crate::build(&function).expect("the setup is prepared above the selection");
             assert_eq!(model.analysis.flow.blocks[1].inputs.len(), 1);
-            for execution in &model.analysis.executions {
+            for execution in model.analysis.executions.iter() {
                 assert_eq!(
                     execution.blocks,
                     [

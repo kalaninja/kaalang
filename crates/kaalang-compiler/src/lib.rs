@@ -1,6 +1,6 @@
 //! Parses and validates kaalang flows into the semantic model.
 
-use syn::{ItemFn, Result};
+use syn::{Error, ItemFn, Result};
 
 pub(crate) use self::choice::{choice_match, is_todo_body};
 pub use self::{
@@ -133,6 +133,12 @@ fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
 /// Returns the first syntax, wire, execution, or convergence error at its
 /// source span.
 pub fn analyze(function: &ItemFn) -> Result<Analysis> {
+    if let Some(asyncness) = &function.sig.asyncness {
+        return Err(Error::new(
+            asyncness.span,
+            "kaalang does not support async flows",
+        ));
+    }
     if let Some(parsed) = parse::staged(function)? {
         return stage::analyze(function, parsed);
     }
@@ -289,38 +295,20 @@ mod tests {
 
     #[test]
     fn cycle_examples_have_one_verified_body_per_authored_block() {
-        for (name, source) in [
-            (
-                "count_to",
-                include_str!("../../kaalang/tests/cycle/behavior/count_to.rs"),
-            ),
-            (
-                "binary_search",
+        for function in [
+            fixture!("cycle/behavior", "count_to"),
+            fixture(
                 include_str!("../../kaalang/tests/gallery/binary_search/mod.rs"),
+                "binary_search",
             ),
-            (
-                "nested_search",
-                include_str!("../../kaalang/tests/cycle/behavior/nested_search.rs"),
-            ),
-            (
-                "empty_cycle",
-                include_str!("../../kaalang/tests/cycle/behavior/empty_cycle.rs"),
-            ),
-            (
-                "repeat_until_done",
-                include_str!("../../kaalang/tests/cycle/behavior/repeat_until_done.rs"),
-            ),
-            (
-                "nested_cycles",
-                include_str!("../../kaalang/tests/cycle/behavior/nested_cycles.rs"),
-            ),
-            (
-                "nested_unconditional_cycles",
-                include_str!("../../kaalang/tests/cycle/behavior/nested_unconditional_cycles.rs"),
-            ),
+            fixture!("cycle/behavior", "nested_search"),
+            fixture!("cycle/behavior", "empty_cycle"),
+            fixture!("cycle/behavior", "repeat_until_done"),
+            fixture!("cycle/behavior", "nested_cycles"),
+            fixture!("cycle/behavior", "nested_unconditional_cycles"),
         ] {
-            let model =
-                build(&fixture(source, name)).unwrap_or_else(|error| panic!("{name}: {error}"));
+            let name = &function.sig.ident;
+            let model = build(&function).unwrap_or_else(|error| panic!("{name}: {error}"));
             for block in 0..model.analysis.flow.blocks.len() {
                 assert_eq!(count_block(&model, block), 1, "{name}: block {block}");
             }
@@ -380,11 +368,8 @@ mod tests {
                 if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
-        let model = build(&fixture(
-            include_str!("../../kaalang/tests/cycle/behavior/repeat_until_done.rs"),
-            "repeat_until_done",
-        ))
-        .expect("the cycle may either repeat or finish");
+        let model = build(&fixture!("cycle/behavior", "repeat_until_done"))
+            .expect("the cycle may either repeat or finish");
         assert_eq!(
             model
                 .analysis
@@ -598,24 +583,7 @@ mod tests {
     /// branches have merged, so both bodies are still emitted once.
     #[test]
     fn successive_questions_share_every_body() {
-        let function: ItemFn = parse_quote! {
-            fn route(left: bool, right: bool) -> u8 {
-                #[question("Choose the right value")]
-                let (x, y) = |right| { right };
-                #[action("Build the first right value")]
-                let value = |x| { 10 };
-                #[action("Build the second right value")]
-                let value = |y| { 20 };
-                #[question("Choose the left path")]
-                let (a, b) = |left| { left };
-                #[action("Use the left path")]
-                let result = |a, value| { value + 1 };
-                #[action("Use the other left path")]
-                let result = |b, value| { value + 2 };
-                |result| return result;
-            }
-        };
-
+        let function = fixture!("wire/behavior", "independent_questions");
         let model = build(&function).expect("the merged value precedes the second question");
         assert_eq!(model.analysis.executions.len(), 4);
         assert!(matches!(
@@ -759,20 +727,6 @@ mod tests {
                 if matches!(next.as_ref(), ExecutionPlan::Yield { wires, .. } if wires == &["result"])
         ));
         assert_eq!(count_block(&model, 8), 1);
-    }
-
-    /// A branch output is an ordinary wire, but it stays branch-local: reading
-    /// it again below its own merge is rejected like any other branch-local
-    /// value, and not by a rule of its own.
-    #[test]
-    fn rejects_a_branch_output_read_after_convergence() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/branch_output_after_convergence.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            "this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge"
-        );
     }
 
     /// The second question opens its own branches while the first question's
@@ -920,26 +874,6 @@ mod tests {
     }
 
     #[test]
-    fn nested_branches_cannot_separate_a_merge() {
-        for source in [
-            include_str!(
-                "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
-            ),
-            include_str!(
-                "../../kaalang/tests/wire/compile_fail/nested_choice_passes_a_question_join.rs"
-            ),
-            include_str!(
-                "../../kaalang/tests/wire/compile_fail/terminal_branch_separates_a_merge.rs"
-            ),
-        ] {
-            assert_eq!(
-                message(&fixture(source, "invalid")),
-                "branches reaching the `shared` wire merge must be adjacent, including nested branches"
-            );
-        }
-    }
-
-    #[test]
     fn a_partial_continuation_may_feed_a_wider_merge() {
         build(&fixture!(
             "wire/behavior",
@@ -953,19 +887,6 @@ mod tests {
         .replace("let (join, skip)", "let (skip, join)");
         build(&fixture(&source, "invalid"))
             .expect("an adjacent partial continuation may feed the wider ready merge");
-    }
-
-    /// Two selections can only decide one block while both are open, which the
-    /// branch rule rejects at the second one.
-    #[test]
-    fn rejects_a_second_selection_inside_open_branches() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/independent_questions_decide_one_block.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            branch_placement("question", "Left enabled?")
-        );
     }
 
     #[test]
@@ -1171,11 +1092,8 @@ mod tests {
     /// a selection in its body converges inside the body or not at all.
     #[test]
     fn a_body_selection_converges_only_inside_its_cycle() {
-        let model = build(&fixture(
-            include_str!("../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
-            "alternative_outputs",
-        ))
-        .expect("the flow is valid");
+        let model =
+            build(&fixture!("cycle/behavior", "alternative_outputs")).expect("the flow is valid");
         let end = model.analysis.flow.blocks[0]
             .cycle_end
             .expect("the flow opens with its cycle");
@@ -1187,27 +1105,6 @@ mod tests {
                 );
             }
         }
-    }
-
-    #[test]
-    fn rejects_crossing_convergence_groups() {
-        let source =
-            include_str!("../../kaalang/tests/wire/compile_fail/overlapping_convergence_groups.rs");
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            "kaalang choice convergence groups must be disjoint or nested"
-        );
-    }
-
-    #[test]
-    fn rejects_branch_local_work_after_its_merge() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/block_after_convergence_in_one_branch.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            "this kaalang block must finish before the `selected` wire merge, but it waits for a value from after that merge"
-        );
     }
 
     /// The question belongs to the wider group, so it is outside the partial
@@ -1246,20 +1143,6 @@ mod tests {
         assert_groups(
             &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
             &[group(0, &[0, 1], &[4, 5, 6]), group(3, &[0, 1], &[6])],
-        );
-    }
-
-    /// The note is produced in two branches, so it merges, and the block that
-    /// captures it is itself branch-local. A nested question does not change
-    /// that: the local value still needs a name of its own.
-    #[test]
-    fn rejects_a_nested_branch_local_capture_of_a_merged_wire() {
-        let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/nested_local_capture_of_a_merged_wire.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            "a kaalang wire with alternative producers merges before every capture; a branch-local value needs its own name"
         );
     }
 }

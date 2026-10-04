@@ -375,16 +375,6 @@ impl Flow {
             .is_some_and(|header| self.blocks[header].iteration.is_some() && block == header + 1)
     }
 
-    /// The innermost cycle whose repeat reaches `block`: the block itself for a
-    /// cycle, otherwise the cycle directly containing it.
-    #[must_use]
-    pub(crate) fn level(&self, block: usize) -> Option<usize> {
-        match self.blocks[block].kind {
-            BlockKind::Cycle => Some(block),
-            _ => self.blocks[block].parent,
-        }
-    }
-
     /// The repeat relation depends on where two blocks sit, not on which
     /// execution repeats. [`Passes::of`] computes it once per cycle and block.
     pub(crate) fn repeat_reaches(
@@ -393,9 +383,7 @@ impl Flow {
         block: usize,
         together: impl FnOnce(usize, usize) -> bool,
     ) -> bool {
-        if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
-            .any(|header| header == cycle_index)
-        {
+        if block == cycle_index || self.enclosing(block).any(|header| header == cycle_index) {
             return true;
         }
         let sequence = std::iter::successors(Some(self.blocks[block].parent), |&sequence| {

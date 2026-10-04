@@ -1,7 +1,2 @@
-//! Produces a call's outputs in source order.
-
-use super::{State, Walk};
-
-pub(super) fn visit(walk: &mut Walk<'_>, block: usize, state: State) {
-    walk.sequence(block, state);
-}
+//! Produces a call's outputs in source order, as an action does.
+pub(super) use super::action::visit;

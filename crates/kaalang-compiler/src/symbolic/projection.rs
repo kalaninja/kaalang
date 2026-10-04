@@ -320,13 +320,7 @@ impl Executions {
             return true;
         };
         let selected = self.selected(first, flow.blocks[first].branch_count() - 1);
-        let repeated = self
-            .outcomes
-            .get(&crate::ExecutionOutcome::Repeat {
-                cycle_index: header,
-            })
-            .copied()
-            .unwrap_or(NEVER);
+        let repeated = self.repeats(header);
         let left = self.conditions.minus(repeated, selected);
         self.has(left)
     }

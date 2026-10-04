@@ -53,6 +53,7 @@ pub(super) fn routes(
 }
 
 /// One convergence group of a choice, seen per route.
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Group {
     /// The cases whose routes take this group.
     pub(super) cases: Vec<usize>,

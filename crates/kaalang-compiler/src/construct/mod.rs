@@ -45,9 +45,7 @@ fn serial_arrival(topology: &Topology, vertex: Vertex) -> Option<&Connection> {
     {
         return None;
     }
-    let mut incoming = topology.incoming(vertex);
-    let arrival = incoming.next()?;
-    incoming.next().is_none().then_some(arrival)
+    crate::topology::sole(topology.incoming(vertex))
 }
 
 /// The index of one vertex in `Topology::vertices`.
@@ -575,7 +573,7 @@ fn assemble(topology: &Topology, placement: place::Placement, plan: &route::Plan
         .enumerate()
         .map(|(index, wire)| Route {
             departure: route::departure_column(&placement, wire.source, wire.destination),
-            arrival: placement.column(wire.destination),
+            arrival: placement.column[&wire.destination],
             runs: plan.crossings[index]
                 .iter()
                 .filter(|(_, crossing)| crossing.sideways())

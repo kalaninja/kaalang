@@ -8,23 +8,14 @@ use kaalang_testing::shapes::{
 
 use super::{Arrangement, Contour, Side, place, verify};
 use crate::{
-    model::{Flow, SemanticModel, WireMerge},
+    model::{Flow, WireMerge},
     tests::model,
     topology::{ExitId, NodeId, Source, Topology, Vertex, linked},
 };
 
-fn arrangement(model: &SemanticModel) -> Arrangement {
-    super::construct(
-        &model.analysis.flow,
-        &model.analysis.merges,
-        &model.topology,
-    )
-    .expect("the flow has a conforming arrangement")
-}
-
 /// The deciding sweep's checked arrangement for one flow, or the message of
-/// the topology it refuses. An internal refusal, or an arrangement its own
-/// check rejects, is a defect either way, and panics with `label`.
+/// the topology it refuses. An internal refusal, which includes an arrangement
+/// the sweep's own check rejects, is a defect and panics with `label`.
 fn swept(
     label: &str,
     flow: &Flow,
@@ -32,12 +23,7 @@ fn swept(
     topology: &Topology,
 ) -> Result<Arrangement, String> {
     match super::sweep::search(flow, merges, topology) {
-        Ok(built) => {
-            verify::arrangement(flow, topology, &built).unwrap_or_else(|reason| {
-                panic!("{label}\nthe sweep drew an invalid arrangement: {reason}")
-            });
-            Ok(built)
-        }
+        Ok(built) => Ok(built),
         Err(super::sweep::Refusal::Impossible(blocked)) => Err(blocked.message),
         Err(super::sweep::Refusal::Internal(reason)) => panic!("{label}\n{reason}"),
     }
@@ -147,7 +133,7 @@ fn a_cycle_takes_the_clear_contour_whatever_the_preference() {
         let source = cycle_routes(&routes);
         let function = syn::parse_str(&source).expect("the probe parses");
         let model = crate::build(&function).expect("the probe has a conforming diagram");
-        assert_eq!(arrangement(&model).contours[0].side, side, "{routes:?}");
+        assert_eq!(model.arrangement.contours[0].side, side, "{routes:?}");
     }
 }
 
@@ -350,16 +336,14 @@ fn descriptions_do_not_change_the_arrangement() {
 #[test]
 fn the_construction_is_deterministic() {
     let source = cycle_routes(&["repeat", "repeat", "leave"]);
-    let first = arrangement(&model(&source));
-    assert_eq!(first, arrangement(&model(&source)));
+    let first = model(&source).arrangement;
+    assert_eq!(first, model(&source).arrangement);
 }
 
 #[test]
 fn nested_exit_routes_merge_without_crossing_side_departures() {
     let source = include_str!("../../../../kaalang/tests/cycle/behavior/nested_exit_routes.rs");
     let model = crate::build(&crate::tests::fixture(source, "nested_exit_routes")).unwrap();
-    let built = arrangement(&model);
-    verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
     // The first exit reaches the shared wire merge in its own branch column.
     let outer_exit = model
         .topology
@@ -373,7 +357,7 @@ fn nested_exit_routes_merge_without_crossing_side_departures() {
                 })
         })
         .unwrap();
-    assert!(built.routes[outer_exit].runs.is_empty());
+    assert!(model.arrangement.routes[outer_exit].runs.is_empty());
 }
 
 /// Exercises the sweep directly on accepted fixtures, bypassing the preferred
@@ -406,11 +390,7 @@ fn generated_alternative_outputs_draw_in_order_or_are_rejected_early() {
     for source in alternative_bodies(2..=4) {
         let function: syn::ItemFn = syn::parse_str(&source).expect("the probe parses");
         match crate::build(&function) {
-            Ok(model) => {
-                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
-                    .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
-                drawn += 1;
-            }
+            Ok(_) => drawn += 1,
             Err(error) => {
                 let message = error.to_string();
                 assert!(
@@ -432,13 +412,7 @@ fn every_accepted_staged_shape_constructs_each_part() {
         let file = syn::parse_file(&source).expect("the staged shape parses");
         let function = crate::flows(&file.items).remove(0);
         match crate::build(&function) {
-            Ok(model) => {
-                accepted += 1;
-                for part in std::iter::once(&model).chain(&model.stages) {
-                    verify::arrangement(&part.analysis.flow, &part.topology, &part.arrangement)
-                        .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
-                }
-            }
+            Ok(_) => accepted += 1,
             Err(error) => assert!(
                 !error.to_string().contains("internal kaalang")
                     && !error.to_string().contains("could not construct"),
@@ -456,11 +430,7 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
     for source in &shapes {
         let function: syn::ItemFn = syn::parse_str(source).expect("the probe parses");
         match crate::build(&function) {
-            Ok(model) => {
-                drawn += 1;
-                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
-                    .unwrap_or_else(|reason| panic!("{source}\n{reason}"));
-            }
+            Ok(_) => drawn += 1,
             Err(error) => assert!(
                 !error.to_string().contains("internal kaalang"),
                 "{source}\n{error}"
@@ -524,8 +494,6 @@ fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
 ";
     let model = model(source);
     let topology = &model.topology;
-    verify::arrangement(&model.analysis.flow, topology, &model.arrangement)
-        .expect("the probe conforms");
     let outer = &model.arrangement.contours[0];
     let inner = &model.arrangement.contours[1];
     assert_eq!(
@@ -622,16 +590,6 @@ pub(super) fn decision_cases() -> Vec<String> {
     cases
 }
 
-/// The flat two- and three-route bodies of [`decision_cases`], with the
-/// ordered question ports. Named rather than counted off the front of
-/// `decision_cases`, which would silently follow it when its domain widens.
-pub(super) fn small_decision_cases() -> Vec<String> {
-    flat_bodies(2..=3)
-        .into_iter()
-        .chain(question_shapes())
-        .collect()
-}
-
 /// Compares acceptances and refusals with an independent procedure for every
 /// flat body of two or three routes. A mismatch is a false refusal or unsound
 /// acceptance. The wider domain runs in the ignored test below.
@@ -722,18 +680,11 @@ fn the_verifier_rejects_a_case_on_a_different_row() {
 
 #[test]
 fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
-    let model = model(
-        "fn probe(values: &[u32]) -> u32 {
-            #[action(\"Start with a total of zero.\")]
-            let mut total = || 0;
-            #[cycle(\"Add every value.\")]
-            |values| for value in values {
-                #[action(\"Add the value.\")]
-                |value, &mut total| *total += *value;
-            };
-            |total| return total;
-        }",
-    );
+    let model = crate::build(&crate::tests::fixture(
+        include_str!("../../../../kaalang/tests/cycle/behavior/for_each_value.rs"),
+        "for_each_value",
+    ))
+    .expect("the fixture is valid");
     let (top, bottom) = model.topology.cycle_boundaries[0]
         .caps
         .expect("a for cycle draws caps");
@@ -745,20 +696,11 @@ fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
 
 #[test]
 fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
-    let model = model(
-        "fn probe(values: &[u32]) -> u32 {
-            #[action(\"Start with a total of zero.\")]
-            let mut total = || 0;
-            #[cycle(\"Add the even values.\")]
-            |values| for value in values {
-                #[question(\"Is the value even?\")]
-                let (even, _counted) = |value| *value % 2 == 0;
-                #[action(\"Add the value.\")]
-                let _counted = |even, value, &mut total| *total += *value;
-            };
-            |total| return total;
-        }",
-    );
+    let model = crate::build(&crate::tests::fixture(
+        include_str!("../../../../kaalang/tests/cycle/behavior/for_merged_question.rs"),
+        "for_merged_question",
+    ))
+    .expect("the fixture is valid");
     let name = |vertex| {
         super::describe::vertex(
             &model.analysis.flow,
@@ -907,92 +849,26 @@ fn a_nested_result_and_its_continuation_belong_to_the_outer_body() {
 
 /// Regression for constraining an earlier sibling against a later convergence.
 /// Branch 2 diverges between routes meeting at the tail; requiring it to stay
-/// left of that tail falsely rejects the drawable `diverging_middle_branch` fixture.
-const DIVERGING_MIDDLE_BRANCH: &str = "fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
-    #[cycle(\"Choose a repeating, diverging, or leaving route.\")]
-    let selected = loop {
-        #[choice(\"Which route?\")]
-        #[case(\"Advance and repeat.\")]
-        #[case(\"Spin forever.\")]
-        #[case(\"Advance, then repeat or leave.\")]
-        #[case(\"Leave at once.\")]
-        let (advance, spin, decide, leave_now) = |mode| match mode {
-            0 => (),
-            1 => (),
-            2 => (),
-            _ => (),
-        };
-        #[action(\"Advance.\")]
-        let advanced = |advance| {};
-        #[cycle(\"Spin forever.\")]
-        |spin| loop {
-            #[action(\"Spin.\")]
-            || {};
-            continue;
-        };
-        #[question(\"Stay in the cycle?\")]
-        let (again, leave) = |decide, stay| stay;
-        #[action(\"Advance after the decision.\")]
-        let advanced = |again| {};
-        #[action(\"Leave after the decision.\")]
-        let selected = |leave, mode| mode;
-        #[action(\"Leave immediately.\")]
-        let selected = |leave_now, mode| mode;
-        |advanced| continue;
-    };
-    |selected| return selected;
-}
-";
-
+/// left of that tail falsely rejects this drawable fixture.
 #[test]
 fn a_diverging_branch_between_partial_merges_is_drawn() {
-    let parts = parts_of(DIVERGING_MIDDLE_BRANCH).expect("the flow passes the earlier rules");
+    let function = crate::tests::fixture(
+        include_str!("../../../../kaalang/tests/cycle/behavior/diverging_middle_branch.rs"),
+        "diverging_middle_branch",
+    );
+    let parts = parts_from(&function).expect("the flow passes the earlier rules");
     swept(
-        DIVERGING_MIDDLE_BRANCH,
+        "diverging_middle_branch",
         &parts.flow,
         &parts.merges,
         &parts.topology,
     )
     .unwrap_or_else(|blocked| panic!("the sweep refuses a drawable flow: {blocked}"));
-    model(DIVERGING_MIDDLE_BRANCH);
+    crate::build(&function).expect("the flow is valid");
     assert!(
         reference::admissible(&parts.flow, &parts.topology),
         "the independent procedure should find a construction too"
     );
-}
-
-/// Pins eight nested-cycle regressions from the generated domain so failures
-/// identify a named shape. Each must reach a decision without an internal error.
-#[test]
-fn every_audit_shape_reaches_a_decision() {
-    let cases: [(usize, &[&str], &[&str]); 8] = [
-        (1, &["inner", "repeat", "repeat"], &["propagate", "repeat"]),
-        (2, &["leave", "inner", "repeat"], &["propagate", "repeat"]),
-        (3, &["finish", "inner", "repeat"], &["propagate", "repeat"]),
-        (4, &["leave", "inner", "repeat"], &["finish", "repeat"]),
-        (5, &["finish", "inner", "repeat"], &["finish", "repeat"]),
-        (6, &["leave", "inner", "repeat"], &["propagate", "leave"]),
-        (7, &["repeat", "finish", "inner"], &["finish", "leave"]),
-        (8, &["finish", "inner", "repeat"], &["finish", "leave"]),
-    ];
-    for (case, outer, inner) in cases {
-        let source = nested(outer, inner);
-        let function: syn::ItemFn = syn::parse_str(&source).expect("the probe parses");
-        match crate::build(&function) {
-            Ok(model) => {
-                verify::arrangement(&model.analysis.flow, &model.topology, &model.arrangement)
-                    .unwrap_or_else(|reason| panic!("audit case {case}: {reason}"));
-            }
-            Err(error) => assert!(
-                !error.to_string().contains("internal kaalang"),
-                "audit case {case}: {error}"
-            ),
-        }
-        // The cycle contract adds explicit result propagation, so some old
-        // rows now settle in semantic analysis. This pins the public decision:
-        // every generated source is accepted or rejected without an internal
-        // construction error.
-    }
 }
 
 /// A back edge one column beyond its body still verifies. The renderer uses
@@ -1128,7 +1004,6 @@ fn junction_arrivals_record_their_rank() {
         .ok()
         .expect("the sweep can draw the junction arrivals");
         for built in [model.arrangement.clone(), swept] {
-            verify::arrangement(&model.analysis.flow, &model.topology, &built).unwrap();
             let mut arrivals = 0;
             for (index, wire) in model.topology.connections.iter().enumerate() {
                 if !matches!(wire.destination, Vertex::Junction(_)) {

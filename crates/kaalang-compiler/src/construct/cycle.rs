@@ -11,7 +11,7 @@ use super::{
 use crate::{
     geometry::{Point, compatible},
     model::{Flow, WireMerge},
-    topology::{Destination, NodeId, Source, Topology, Vertex},
+    topology::{Destination, Source, Topology, Vertex},
 };
 
 /// Body columns, independent of ranks: vertices below the tail still count.
@@ -22,93 +22,11 @@ pub(super) fn body_columns(
     arrangement: &Arrangement,
     header: usize,
 ) -> BTreeSet<i32> {
-    body_vertices(flow, topology, header)
+    topology
+        .body_vertices(flow, header)
         .into_iter()
         .map(|vertex| arrangement.column[&vertex])
         .collect()
-}
-
-/// The vertices one cycle's body draws: its own blocks and their cases,
-/// together with its entry and tail and those of the cycles nested in it.
-pub(crate) fn body_vertices(flow: &Flow, topology: &Topology, header: usize) -> BTreeSet<Vertex> {
-    let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
-    let body = header + 1..end;
-    let results = topology
-        .cycle_boundaries
-        .iter()
-        .find(|boundary| boundary.header == header)
-        .map(|boundary| boundary.results.as_slice())
-        .unwrap_or_default();
-    let mut vertices = BTreeSet::new();
-    for node in &topology.nodes {
-        let block = match node.id {
-            NodeId::Block(block) => block,
-            NodeId::Case { choice, .. } => choice,
-            NodeId::Start => continue,
-        };
-        if body.contains(&block) {
-            vertices.insert(Vertex::Node(node.id));
-        }
-    }
-    for cycle in &topology.cycles {
-        if cycle.header == header || body.contains(&cycle.header) {
-            vertices.insert(Vertex::Junction(cycle.entry));
-            vertices.insert(Vertex::Junction(cycle.tail));
-        }
-    }
-    for boundary in &topology.cycle_boundaries {
-        if boundary.header == header {
-            vertices.insert(boundary.entry);
-            vertices.extend(
-                boundary
-                    .results
-                    .iter()
-                    .map(|&result| Vertex::from(result))
-                    .filter(|result| {
-                        matches!(result, Vertex::Junction(junction)
-                            if !topology.junctions[*junction].merges.is_empty())
-                    }),
-            );
-        } else if body.contains(&boundary.header) {
-            vertices.insert(boundary.entry);
-            vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
-        }
-    }
-    // A wire merge or an export inside the body draws a junction and no node, so
-    // the blocks alone miss it. Everything reaching such a junction comes from
-    // the body, and a chain of them needs more than one pass.
-    let mut settled = false;
-    while !settled {
-        settled = true;
-        for junction in 0..topology.junctions.len() {
-            let vertex = Vertex::Junction(junction);
-            if vertices.contains(&vertex) {
-                continue;
-            }
-            // Cycle interfaces and tails belong to their own lexical cycle.
-            // Those of this body were inserted above; reaching an enclosing
-            // boundary or a following cycle does not make that continuation
-            // part of the body.
-            if topology
-                .cycles
-                .iter()
-                .any(|cycle| junction == cycle.entry || junction == cycle.tail)
-                || topology.junctions[junction].is_cycle_result
-            {
-                continue;
-            }
-            let mut arrivals = topology.incoming(vertex).peekable();
-            if arrivals.peek().is_some()
-                && arrivals.all(|edge| {
-                    !results.contains(&edge.source) && vertices.contains(&Vertex::from(edge.source))
-                })
-            {
-                vertices.insert(vertex);
-                settled = false;
-            }
-        }
-    }
-    vertices
 }
 
 /// Nested back-edge positions, including their lanes. The enclosing contour
@@ -296,7 +214,7 @@ fn routed_columns(
     header: usize,
     body: &BTreeSet<i32>,
 ) -> BTreeSet<i32> {
-    let vertices = body_vertices(flow, topology, header);
+    let vertices = topology.body_vertices(flow, header);
     let mut columns = body.clone();
     for (connection, route) in topology.connections.iter().zip(&arrangement.routes) {
         if vertices.contains(&Vertex::from(connection.source))

@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
     Analyzed, Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology,
-    Vertex, block_node, branch_exits, destination, represented, sequential_exit,
+    Vertex, block_node, branch_exits, destination, represented, sequential_exit, sole,
 };
 use crate::model::{Block, ExecutionOutcome, Flow, ProducerId};
 
@@ -120,57 +120,40 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
 /// A sole side exit may reach an enclosing tail beside the completed body.
 /// An absent back edge or convergence must not reserve an empty row.
 pub(super) fn coalesce_boundaries(topology: &mut Topology) {
+    // A junction whose sole arrival is a merge, or an exit where `exits` allows
+    // one, may become that source when the source feeds nothing else.
+    let view: &Topology = topology;
+    let reuse = |junction, exits: bool| {
+        let source = sole(view.incoming(Destination::Junction(junction)))?.source;
+        let reusable = match source {
+            Source::Junction(merge) => !view.junctions[merge].merges.is_empty(),
+            Source::Exit(_) => exits,
+        };
+        (reusable
+            && view
+                .outgoing(source.into())
+                .filter(|edge| edge.source == source)
+                .count()
+                == 1)
+            .then_some((junction, source))
+    };
     // The repeating routes of a cycle merge before its one continue; when that
     // merge feeds nothing else, it is the iteration tail.
-    let tails = topology
+    let tails = view
         .cycles
         .iter()
-        .filter_map(|cycle| {
-            let mut incoming = topology.incoming(Destination::Junction(cycle.tail));
-            let source = incoming.next()?.source;
-            if incoming.next().is_some() {
-                return None;
-            }
-            let Source::Junction(merge) = source else {
-                return None;
-            };
-            (!topology.junctions[merge].merges.is_empty()
-                && topology
-                    .outgoing(source.into())
-                    .filter(|edge| edge.source == source)
-                    .count()
-                    == 1)
-                .then_some((cycle.tail, source))
-        })
+        .filter_map(|cycle| reuse(cycle.tail, false))
         .collect::<Vec<_>>();
-    let view: &Topology = topology;
+    // Several results keep their own junctions, which construction orders by
+    // output; one may still reuse the merge feeding it.
     let mut replacements = view
         .cycle_boundaries
         .iter()
         .flat_map(|boundary| {
-            // Several results keep their own junctions, which construction
-            // orders by output; one may still reuse the merge feeding it.
-            let several = boundary.results.len() > 1;
-            boundary.result_junctions().filter_map(move |result| {
-                let mut incoming = view.incoming(Destination::Junction(result));
-                let source = incoming.next()?.source;
-                if incoming.next().is_some() {
-                    return None;
-                }
-                match source {
-                    Source::Junction(junction) if view.junctions[junction].merges.is_empty() => {
-                        return None;
-                    }
-                    Source::Exit(_) if several => return None,
-                    _ => {}
-                }
-                (view
-                    .outgoing(source.into())
-                    .filter(|edge| edge.source == source)
-                    .count()
-                    == 1)
-                    .then_some((result, source))
-            })
+            let exits = boundary.results.len() < 2;
+            boundary
+                .result_junctions()
+                .filter_map(move |result| reuse(result, exits))
         })
         .collect::<BTreeMap<_, _>>();
     for &merge in replacements.values() {
@@ -186,14 +169,12 @@ pub(super) fn coalesce_boundaries(topology: &mut Topology) {
         {
             continue;
         }
-        let mut outgoing = topology.outgoing(boundary.entry);
-        let Some(Vertex::Node(NodeId::Block(block))) = outgoing.next().map(|edge| edge.destination)
+        let Some(Vertex::Node(NodeId::Block(block))) =
+            sole(topology.outgoing(boundary.entry)).map(|edge| edge.destination)
         else {
             continue;
         };
-        let node = Vertex::Node(NodeId::Block(block));
-        if outgoing.next().is_none()
-            && topology.incoming(node).count() == 1
+        if topology.single_arrival(NodeId::Block(block))
             && (boundary.header + 1..boundary.end).contains(&block)
             && !topology.cycle_boundaries.iter().any(|nested| {
                 nested.header > boundary.header && (nested.header + 1..nested.end).contains(&block)
@@ -258,11 +239,8 @@ pub(super) fn cap_for_cycles(flow: &Flow, topology: &mut Topology) {
             let Vertex::Junction(entry) = topology.cycle_boundaries[position].entry else {
                 return None;
             };
-            let mut outgoing = topology.outgoing(Vertex::Junction(entry));
-            let only = outgoing.next()?.destination;
-            (only == Vertex::Node(top)
-                && outgoing.next().is_none()
-                && topology.incoming(Vertex::Node(top)).count() == 1)
+            let only = sole(topology.outgoing(Vertex::Junction(entry)))?.destination;
+            (only == Vertex::Node(top) && topology.single_arrival(top))
                 .then_some((entry, Source::Exit(ExitId::of(top))))
         })
         .collect::<BTreeMap<_, _>>();
@@ -397,21 +375,10 @@ fn precede_bottom_cap(flow: &Flow, topology: &mut Topology, header: usize, botto
         .collect::<BTreeSet<_>>();
     let sinks = body
         .into_iter()
-        .filter(|&vertex| vertex != bottom && !departing.contains(&vertex))
-        .collect::<Vec<_>>();
-    topology
-        .order
-        .extend(sinks.into_iter().map(|vertex| Connection {
-            source: match vertex {
-                Vertex::Node(node) => Source::Exit(ExitId::of(node)),
-                Vertex::Junction(junction) => Source::Junction(junction),
-            },
-            destination: bottom,
-        }));
+        .filter(|&vertex| vertex != bottom && !departing.contains(&vertex));
+    super::order_before(&mut topology.order, sinks, [bottom]);
     let connections = &topology.connections;
     topology.order.retain(|edge| !connections.contains(edge));
-    topology.order.sort_unstable();
-    topology.order.dedup();
 }
 
 /// Remove the redundant junctions and carry their identities through every

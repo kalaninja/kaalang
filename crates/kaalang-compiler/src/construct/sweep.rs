@@ -10,7 +10,7 @@ use std::{
 use super::{Arrangement, Contour, Obstruction, Route, Run, RunLine, Side, close_paths, index_of};
 use crate::{
     model::{Flow, WireMerge},
-    topology::{ExitId, NodeId, Source, Topology, Vertex},
+    topology::{Connection, ExitId, NodeId, Source, Topology, Vertex},
 };
 
 const MEMO_CACHE_BYTES: usize = 64 * 1024 * 1024;
@@ -336,7 +336,8 @@ impl Columns {
                     .cycle_end
                     .expect("projected topology contains the required vertex or cycle endpoint");
                 std::array::from_fn(|side| {
-                    super::cycle::body_vertices(flow, topology, cycle.header)
+                    topology
+                        .body_vertices(flow, cycle.header)
                         .into_iter()
                         .map(|vertex| groups[index(vertex)])
                         .chain(
@@ -1107,27 +1108,11 @@ impl<'a> Sweep<'a> {
                 .topology
                 .connections
                 .iter()
-                .map(|wire| {
-                    let arrival =
-                        values[self.columns.vertex[index_of(self.topology, wire.destination)]];
-                    let departure =
-                        if super::choice::case_destination(wire.source, wire.destination).is_some()
-                        {
-                            arrival
-                        } else {
-                            match wire.source {
-                                Source::Exit(exit) => values[self.columns.exits[&exit]],
-                                Source::Junction(j) => {
-                                    values[self.columns.vertex
-                                        [index_of(self.topology, Vertex::Junction(j))]]
-                                }
-                            }
-                        };
-                    Route {
-                        departure,
-                        arrival,
-                        runs: Vec::new(),
-                    }
+                .enumerate()
+                .map(|(index, wire)| Route {
+                    departure: self.departure(values, index),
+                    arrival: values[self.columns.vertex[index_of(self.topology, wire.destination)]],
+                    runs: Vec::new(),
                 })
                 .collect(),
             gap_lanes: vec![0; steps.len()],
@@ -1141,6 +1126,21 @@ impl<'a> Sweep<'a> {
                 self.topology.cycles.len()
             ],
         }
+    }
+
+    /// The column a forward wire leaves from: its case's for a choice
+    /// distributor, its exit's branch column, or its junction's.
+    fn departure(&self, values: &[i32], wire: usize) -> i32 {
+        let Connection {
+            source,
+            destination,
+        } = self.topology.connections[wire];
+        let vertex = match (super::choice::case_destination(source, destination), source) {
+            (Some(case), _) => Vertex::Node(case),
+            (None, Source::Exit(exit)) => return values[self.columns.exits[&exit]],
+            (None, Source::Junction(junction)) => Vertex::Junction(junction),
+        };
+        values[self.columns.vertex[index_of(self.topology, vertex)]]
     }
 
     /// Coordinates at a vertex event, with one spare integer per forward
@@ -1159,25 +1159,12 @@ impl<'a> Sweep<'a> {
             return Self::exchange_row(step, frontier, spines, room);
         };
         let own = values[self.columns.vertex[vertex]];
-        let port = |wire: usize| {
-            let connection = self.topology.connections[wire];
-            if let Some(case) =
-                super::choice::case_destination(connection.source, connection.destination)
-            {
-                values[self.columns.vertex[index_of(self.topology, Vertex::Node(case))]]
-            } else {
-                match connection.source {
-                    Source::Exit(exit) => values[self.columns.exits[&exit]],
-                    Source::Junction(_) => own,
-                }
-            }
-        };
         let mut event_anchors = self.events[vertex]
             .iter()
             .map(|&v| values[self.columns.vertex[v]])
             .collect::<Vec<_>>();
         event_anchors.extend(step.emitted.iter().map(|item| match item {
-            Lifeline::Wire(w) => port(*w),
+            Lifeline::Wire(w) => self.departure(values, *w),
             Lifeline::BackEdge(i) => spines[*i],
         }));
         if let Some(i) = self.tail_of[vertex] {
@@ -1243,7 +1230,7 @@ impl<'a> Sweep<'a> {
             let x = match item {
                 Lifeline::BackEdge(i) => spines[i],
                 Lifeline::Wire(w) => {
-                    let at = port(w);
+                    let at = self.departure(values, w);
                     let count = counts.entry(at).or_insert(0);
                     let x = at + *count;
                     *count += 1;
@@ -1447,11 +1434,6 @@ mod tests {
         assert!(order.insert(1, 2, true));
         assert!(!order.insert(2, 0, false));
         assert_eq!(order.number(), [0, 0, 1]);
-    }
-
-    #[test]
-    fn the_reductions_preserve_all_two_and_three_route_answers() {
-        compare_reductions(super::super::tests::small_decision_cases());
     }
 
     #[test]

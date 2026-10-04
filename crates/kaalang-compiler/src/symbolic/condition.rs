@@ -250,64 +250,50 @@ impl Conditions {
         result
     }
 
+    /// Rebuilds `id` bottom-up: `build` replaces each node, given its variable
+    /// and its rebuilt children.
+    fn rebuild(
+        &mut self,
+        id: Condition,
+        cache: &mut HashMap<Condition, Condition>,
+        build: &impl Fn(&mut Self, usize, Vec<Condition>) -> Condition,
+    ) -> Condition {
+        if id < 2 {
+            return id;
+        }
+        if let Some(&result) = cache.get(&id) {
+            return result;
+        }
+        let node = self.nodes[id - 2].clone();
+        let children = node
+            .children
+            .into_iter()
+            .map(|child| self.rebuild(child, cache, build))
+            .collect();
+        let result = build(self, node.variable, children);
+        cache.insert(id, result);
+        result
+    }
+
     /// Projects away every selection not in `retained`.
     pub(super) fn project(&mut self, condition: Condition, retained: &[usize]) -> Condition {
-        fn visit(
-            c: &mut Conditions,
-            id: Condition,
-            retained: &[usize],
-            cache: &mut HashMap<Condition, Condition>,
-        ) -> Condition {
-            if id < 2 {
-                return id;
-            }
-            if let Some(&result) = cache.get(&id) {
-                return result;
-            }
-            let node = c.nodes[id - 2].clone();
-            let children: Vec<_> = node
-                .children
-                .into_iter()
-                .map(|child| visit(c, child, retained, cache))
-                .collect();
-            let result = if retained.contains(&node.variable) {
-                c.node(node.variable, children)
+        self.rebuild(condition, &mut HashMap::new(), &|c, variable, children| {
+            if retained.contains(&variable) {
+                c.node(variable, children)
             } else {
                 children
                     .into_iter()
                     .fold(NEVER, |sum, child| c.or(sum, child))
-            };
-            cache.insert(id, result);
-            result
-        }
-        visit(self, condition, retained, &mut HashMap::new())
+            }
+        })
     }
 
     /// Moves a single-execution predicate to the adjacent variables of its partner.
     pub(super) fn partner(&mut self, condition: Condition) -> Condition {
-        fn visit(
-            c: &mut Conditions,
-            id: Condition,
-            cache: &mut HashMap<Condition, Condition>,
-        ) -> Condition {
-            if id < 2 {
-                return id;
-            }
-            if let Some(&result) = cache.get(&id) {
-                return result;
-            }
-            let node = c.nodes[id - 2].clone();
-            debug_assert_eq!(node.variable % 2, 0);
-            let children = node
-                .children
-                .into_iter()
-                .map(|child| visit(c, child, cache))
-                .collect();
-            let result = c.node(node.variable + 1, children);
-            cache.insert(id, result);
-            result
-        }
-        visit(self, condition, &mut HashMap::new())
+        self.rebuild(condition, &mut HashMap::new(), &|c, variable, children| {
+            debug_assert_eq!(variable % 2, 0);
+            c.node(variable + 1, children)
+        })
     }
 
     pub(super) fn matches(&self, mut condition: Condition, assignment: &[usize]) -> bool {

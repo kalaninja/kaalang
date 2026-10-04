@@ -261,29 +261,10 @@ mod tests {
 
     #[test]
     fn resolves_a_self_transition_and_terminal_stage() {
-        let function: ItemFn = parse_quote! {
-            fn count_to(limit: usize) -> usize {
-                #[action("Initialize the counter.")]
-                let mut counter = || 0usize;
-
-                #[action("Begin counting.")]
-                let count = || ();
-
-                #[stage("Count to the limit.")]
-                let (count, finish) = |count| {
-                    #[question("Done?")]
-                    let (finish, again) = |counter, limit| counter >= limit;
-
-                    #[action("Increment and repeat.")]
-                    let count = |again, &mut counter| { *counter += 1; };
-                };
-
-                #[stage("Return the count.")]
-                |finish| {
-                    |counter| return counter;
-                };
-            }
-        };
+        let function = crate::tests::fixture(
+            include_str!("../../kaalang/tests/stage/behavior/count_to.rs"),
+            "count_to",
+        );
         let analysis = crate::analyze(&function).expect("staged flow analyzes");
         assert_eq!(analysis.stages.len(), 2);
         assert_eq!(analysis.stages[0].entry, "count");

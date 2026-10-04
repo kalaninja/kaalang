@@ -304,15 +304,4 @@ mod tests {
         function.block.stmts.swap(3, 4);
         crate::build(&function).expect("common work may follow the completed merge");
     }
-
-    #[test]
-    fn common_work_cannot_join_disjoint_partial_groups() {
-        let source = include_str!(
-            "../../../kaalang/tests/wire/compile_fail/common_work_after_disjoint_merges.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            branch_placement("choice", "Which source?")
-        );
-    }
 }

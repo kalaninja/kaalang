@@ -36,18 +36,7 @@ pub(super) fn flow(
             successors[block].insert(dependency.capture.block);
         }
     }
-    for ((index, merge), owners) in merges.iter().enumerate().zip(owners) {
-        let node = blocks + index;
-        for &producer in &merge.producers {
-            let ProducerId::BlockOutput { block, .. } = producer else {
-                unreachable!("a wire merge combines block outputs")
-            };
-            successors[block].insert(node);
-        }
-        successors[node].extend(&merge.after);
-        for &block in &merge.before {
-            successors[block].insert(node);
-        }
+    for (merge, owners) in merges.iter().zip(owners) {
         // A merge compares the selections its producers' frame sees.
         let seen = frames.view(frames.of_merge(merge));
         for (owner, branches) in owners {
@@ -88,14 +77,9 @@ pub(super) fn flow(
     }
 
     for (block, groups) in groups.iter().enumerate() {
-        if matches!(
-            flow.blocks[block].kind,
-            BlockKind::Choice | BlockKind::Cycle
-        ) {
-            super::choice::validate_groups(&flow.blocks[block], groups)?;
-        }
+        super::choice::validate_groups(&flow.blocks[block], groups)?;
     }
-    validate_order(flow, &merges, &successors)?;
+    validate_order(flow, &merges, successors)?;
     for merge in &merges {
         let executions = frames.view(frames.of_merge(merge));
         let producers = executions
@@ -328,25 +312,43 @@ fn validate_adjacency(
             .iter()
             .any(|&index| producers[index].is_none())
     {
-        let wire = flow.wire_name(&merge.wire);
-        return Err(Error::new(
-            merge.wire.span(),
-            format!(
-                "branches reaching the `{wire}` wire merge must be adjacent, including nested branches"
-            ),
-        ));
+        return Err(gap(flow, merge));
     }
     Ok(())
 }
 
+/// Branches reaching the merge of `merge` leave a gap between its producers.
+pub(crate) fn gap(flow: &Flow, merge: &WireMerge) -> Error {
+    let wire = flow.wire_name(&merge.wire);
+    Error::new(
+        merge.wire.span(),
+        format!(
+            "branches reaching the `{wire}` wire merge must be adjacent, including nested branches"
+        ),
+    )
+}
+
 /// Checks the combined capture and merge order before any consumer can use it
 /// for lowering or drawing, and that source order already closes each merge's
-/// branch-local work above the blocks capturing the merged wire.
+/// branch-local work above the blocks capturing the merged wire. `successors`
+/// holds the capture edges, with one more node per merge for its own edges.
 pub(crate) fn validate_order(
     flow: &Flow,
     merges: &[WireMerge],
-    successors: &[BTreeSet<usize>],
+    mut successors: Vec<BTreeSet<usize>>,
 ) -> Result<()> {
+    for (index, merge) in merges.iter().enumerate() {
+        let node = flow.blocks.len() + index;
+        for &producer in &merge.producers {
+            if let ProducerId::BlockOutput { block, .. } = producer {
+                successors[block].insert(node);
+            }
+        }
+        for &block in &merge.before {
+            successors[block].insert(node);
+        }
+        successors[node].extend(&merge.after);
+    }
     // A block that both waits for a merge and must finish before it names the
     // merged wire for a value that never left its own branch. Such a block
     // always closes a cycle too, so this pass runs first: it names the mistake
@@ -359,7 +361,7 @@ pub(crate) fn validate_order(
     }
     for (index, merge) in merges.iter().enumerate() {
         let merge_node = flow.blocks.len() + index;
-        if let Some(block) = reachable(successors, merge_node)
+        if let Some(block) = reachable(&successors, merge_node)
             .into_iter()
             .find(|&node| successors[node].contains(&merge_node))
         {
@@ -537,13 +539,10 @@ mod tests {
             before: vec![0],
             after: vec![0],
         };
-        let merge_node = flow.blocks.len();
-        let mut successors = vec![BTreeSet::new(); merge_node + 1];
-        successors[0].insert(merge_node);
-        successors[merge_node].insert(0);
+        let successors = vec![BTreeSet::new(); flow.blocks.len() + 1];
 
         assert_eq!(
-            super::validate_order(&flow, &[merge], &successors)
+            super::validate_order(&flow, &[merge], successors)
                 .unwrap_err()
                 .to_string(),
             "this kaalang stage transition exports `go` before the `shared` wire merge finishes, but it waits for a value from after that merge"

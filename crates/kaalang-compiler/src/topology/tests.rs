@@ -67,6 +67,7 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
     assert_eq!(topology.nodes.len(), 1);
     assert_eq!(topology.nodes[0].id, NodeId::Start);
     assert_eq!(topology.junctions.len(), 2);
+    assert!(topology.cycle_boundaries[0].results.is_empty());
     assert_eq!(
         topology.connections,
         [
@@ -123,29 +124,6 @@ fn a_collapsed_cycle_omits_its_internal_choice_connections() {
             .iter()
             .all(|node| !matches!(node.kind, NodeKind::Select | NodeKind::Case))
     );
-}
-
-#[test]
-fn a_capture_free_continue_redirects_without_a_structural_junction() {
-    let topology = drawn(
-        r#"
-        fn example() -> ! {
-            #[cycle("Repeat immediately.")]
-            loop {
-                continue;
-            };
-        }
-        "#,
-    );
-    let boundary = &topology.cycle_boundaries[0];
-    let tail = topology.cycles[0].tail;
-
-    assert!(boundary.results.is_empty());
-    assert_eq!(topology.junctions.len(), 2);
-    assert!(topology.connections.contains(&Connection {
-        source: Source::Junction(boundary.entry_junction()),
-        destination: Destination::Junction(tail),
-    }));
 }
 
 #[test]

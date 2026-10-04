@@ -286,11 +286,7 @@ pub(crate) fn flow(flow: &Flow, plan: &ExecutionPlan, bindings: &Bindings) -> To
         }
         ExecutionPlan::Yield { wires, join } => join::yield_to(bindings, wires, *join),
     };
-    if bindings.initial_dispatch.is_some() {
-        stage::prepare(bindings, plan, body)
-    } else {
-        body
-    }
+    stage::prepare(bindings, plan, body)
 }
 
 /// Binds each branch output from its own labeled block around `dispatch`,

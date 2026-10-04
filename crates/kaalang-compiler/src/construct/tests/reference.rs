@@ -818,11 +818,12 @@ impl<'a> Reference<'a> {
     fn outside(&self, i: usize, side: Side, next: &mut Inequalities) {
         let cycle = self.topology.cycles[i];
         let end = self.flow.blocks[cycle.header].cycle_end.unwrap();
-        let mut body =
-            crate::construct::cycle::body_vertices(self.flow, self.topology, cycle.header)
-                .into_iter()
-                .map(|v| self.vertices[&v])
-                .collect::<Vec<_>>();
+        let mut body = self
+            .topology
+            .body_vertices(self.flow, cycle.header)
+            .into_iter()
+            .map(|v| self.vertices[&v])
+            .collect::<Vec<_>>();
         body.extend(
             self.topology
                 .cycles

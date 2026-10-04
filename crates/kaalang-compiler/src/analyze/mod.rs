@@ -60,7 +60,14 @@ pub(crate) fn flow(flow: &Flow, check_usage: bool) -> Result<FlowResult> {
     }
     reachable(flow, &executions)?;
     if check_usage {
-        captured(flow, &executions)?;
+        captured(flow, |producer| {
+            executions.iter().any(|execution| {
+                execution
+                    .dependencies
+                    .iter()
+                    .any(|dependency| dependency.producer == producer)
+            })
+        })?;
     }
     branch_outputs(flow, &executions, &merges)?;
     let captures = executions
@@ -408,13 +415,7 @@ impl Walk<'_> {
     fn produce(&mut self, state: &mut State, block: usize, output: usize) -> bool {
         let name = &self.flow.blocks[block].outputs[output];
         if state.available.contains_key(name) {
-            self.report(
-                (block, output),
-                Error::new(
-                    name.span(),
-                    "a kaalang wire must not be produced more than once in one execution",
-                ),
-            );
+            self.report((block, output), produced_twice(name));
             return false;
         }
         state
@@ -436,15 +437,7 @@ impl Walk<'_> {
             return false;
         };
         // The route falls off at the body's end, after every block inside it.
-        let message = if self.flow.blocks[header].outputs.is_empty() {
-            "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"
-        } else {
-            "a route through this kaalang cycle reaches the end of its body without a declared output; produce one of its outputs or repeat it with `continue`"
-        };
-        self.report(
-            (index - 1, usize::MAX),
-            Error::new(self.flow.blocks[header].span, message),
-        );
+        self.report((index - 1, usize::MAX), cycle::open_body(self.flow, header));
         true
     }
 
@@ -512,17 +505,9 @@ pub(crate) fn unreachable(flow: &Flow, block: usize) -> Error {
     Error::new(flow.blocks[block].span, message)
 }
 
-/// Requires a capture in some execution for each producer not prefixed with `_`.
-fn captured(flow: &Flow, executions: &[Execution]) -> Result<()> {
-    let captured = |producer: ProducerId| {
-        executions.iter().any(|execution| {
-            execution
-                .dependencies
-                .iter()
-                .any(|dependency| dependency.producer == producer)
-        })
-    };
-
+/// Requires a capture for each producer not prefixed with `_`, as `captured`
+/// reports it.
+pub(crate) fn captured(flow: &Flow, mut captured: impl FnMut(ProducerId) -> bool) -> Result<()> {
     for (index, input) in flow.flow_inputs.iter().enumerate() {
         if matches!(flow.kind, FlowKind::Stage { .. }) {
             continue;
@@ -611,6 +596,14 @@ fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -
         ));
     }
     Ok(())
+}
+
+/// An execution produced the wire `name` a second time.
+pub(crate) fn produced_twice(name: &Ident) -> Error {
+    Error::new(
+        name.span(),
+        "a kaalang wire must not be produced more than once in one execution",
+    )
 }
 
 /// A leading underscore permits a producer to have no consumer.

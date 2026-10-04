@@ -77,10 +77,9 @@ threshold is the implementation constant `ENUMERATED_HISTORY_LIMIT`.
 
 [`Executions`](../crates/kaalang-compiler/src/executions.rs) hides the storage
 choice. `len()` counts without materializing summaries. Access through its `Vec`
-interface enumerates and caches the complete list; mutable access replaces the
-conditional storage with that list. Explicit enumeration can still be
-exponential. The ordinary implementation also serves as the reference for
-[`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
+interface enumerates and caches the complete list. Explicit enumeration can
+still be exponential. The ordinary implementation also serves as the reference
+for [`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
 
 ## Staged flows
 

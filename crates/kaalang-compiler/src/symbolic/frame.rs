@@ -135,11 +135,7 @@ impl Executions {
             for &producer in &merge.producers {
                 if let ProducerId::BlockOutput { block, .. } = producer {
                     let context = self.reaching(flow, block);
-                    let repeated = self
-                        .outcomes
-                        .get(&ExecutionOutcome::Repeat { cycle_index: block })
-                        .copied()
-                        .unwrap_or(NEVER);
+                    let repeated = self.repeats(block);
                     let context = self.conditions.minus(context, repeated);
                     result = self.conditions.or(result, context);
                 }

@@ -3,16 +3,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use proc_macro2::{Ident, Span};
-use syn::{
-    Error, Expr, FnArg, ItemFn, Pat, Result, Stmt, ext::IdentExt, parse_quote_spanned,
-    spanned::Spanned,
-};
+use syn::{Error, Expr, FnArg, ItemFn, Pat, Result, Stmt, ext::IdentExt, spanned::Spanned};
 
 use super::{
     block_closure, block_outputs, block_statement, body_captures, description, end, flow_inputs,
-    statements, structural_block, ungrouped,
+    forward, statements, ungrouped,
 };
-use crate::model::{Block, BlockKind, Flow, FlowKind, Input};
+use crate::model::{Block, BlockKind, Flow, FlowKind};
 
 pub(crate) struct ParsedStaged {
     pub(crate) preparation: Flow,
@@ -48,14 +45,8 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
     let Some(first) = function.block.stmts.iter().position(is_stage) else {
         return Ok(None);
     };
-    if let Some(asyncness) = &function.sig.asyncness {
-        return Err(Error::new(
-            asyncness.span(),
-            "kaalang does not support async flows",
-        ));
-    }
     let mut declared = Vec::new();
-    let mut names = BTreeSet::new();
+    let mut targets = BTreeMap::new();
     let mut descriptions = BTreeSet::new();
     for statement in &function.block.stmts[first..] {
         if !is_stage(statement) {
@@ -65,7 +56,8 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
             ));
         }
         let stage = declaration(statement)?;
-        if !names.insert(stage.entry.unraw().to_string()) {
+        let entry = stage.entry.unraw().to_string();
+        if targets.insert(entry, declared.len()).is_some() {
             return Err(Error::new(
                 stage.entry.span(),
                 "duplicate kaalang stage entry",
@@ -79,11 +71,6 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
         }
         declared.push(stage);
     }
-    let targets = declared
-        .iter()
-        .enumerate()
-        .map(|(index, stage)| (stage.entry.unraw().to_string(), index))
-        .collect::<BTreeMap<_, _>>();
 
     let mut preparation = Vec::new();
     statements(&function.block.stmts[..first], None, &mut preparation)?;
@@ -111,7 +98,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
         .collect::<BTreeSet<_>>();
     let common = direct
         .iter()
-        .filter(|name| !names.contains(&name.unraw().to_string()))
+        .filter(|name| !targets.contains_key(&name.unraw().to_string()))
         .cloned()
         .collect::<Vec<_>>();
     for (target, stage) in declared.iter().enumerate() {
@@ -143,7 +130,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
                         })
                 })
                 .unwrap_or_else(|| stage.entry.clone());
-            preparation.push(transition(&stage.entry, &alias, target));
+            preparation.push(transition(&alias, target));
         }
     }
     preparation.push(end::block(function));
@@ -158,7 +145,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
     let mut stages = Vec::new();
     for declaration in declared {
         for output in &declaration.outputs {
-            if !names.contains(&output.unraw().to_string()) {
+            if !targets.contains_key(&output.unraw().to_string()) {
                 return Err(Error::new(
                     output.span(),
                     format!("kaalang stage output `{output}` has no matching stage entry"),
@@ -204,11 +191,7 @@ pub(crate) fn staged(function: &ItemFn) -> Result<Option<ParsedStaged>> {
                     ));
                 }
                 let target = targets[&name.unraw().to_string()];
-                blocks.push(transition(
-                    name,
-                    &declaration.output_bindings[output],
-                    target,
-                ));
+                blocks.push(transition(&declaration.output_bindings[output], target));
             }
         }
         blocks.push(end::block(function));
@@ -268,29 +251,14 @@ struct Declaration {
 #[allow(clippy::too_many_lines)] // Keeps the header's syntax checks beside its parsed fields.
 fn declaration(statement: &Stmt) -> Result<Declaration> {
     let (attrs, pattern, closure) = block_statement(statement)?;
-    let kind = attrs
-        .iter()
-        .find(|attr| attr.path().is_ident("stage"))
-        .ok_or_else(|| {
-            Error::new_spanned(
-                statement,
-                "a kaalang stage needs `#[stage(\"description\")]`",
-            )
-        })?;
-    if attrs
-        .iter()
-        .filter(|attr| attr.path().is_ident("stage"))
-        .count()
-        != 1
-        || attrs
-            .iter()
-            .any(|attr| !attr.path().is_ident("stage") && !attr.path().is_ident("doc"))
-    {
+    // `is_stage` found a `#[stage]` among these, so a sole kind is that one.
+    let mut kinds = attrs.iter().filter(|attr| !attr.path().is_ident("doc"));
+    let (Some(kind), None) = (kinds.next(), kinds.next()) else {
         return Err(Error::new_spanned(
             statement,
             "a kaalang stage declares exactly one kind",
         ));
-    }
+    };
     let description = description(kind, "kaalang stage")?;
     let Some(closure) = closure else {
         return Err(Error::new_spanned(
@@ -378,20 +346,8 @@ fn declaration(statement: &Stmt) -> Result<Declaration> {
     })
 }
 
-fn transition(name: &Ident, alias: &Ident, target: usize) -> Block {
-    let span = alias.span();
-    let mut block = structural_block(
-        BlockKind::Return,
-        span,
-        vec![Input {
-            borrowed: false,
-            mutable: false,
-            ident: name.clone(),
-            alias: alias.clone(),
-            derived: false,
-        }],
-    );
-    block.body = parse_quote_spanned!(span=> #alias);
+fn transition(alias: &Ident, target: usize) -> Block {
+    let mut block = forward(BlockKind::Return, alias);
     block.transition_target = Some(target);
     block
 }

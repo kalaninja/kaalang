@@ -8,7 +8,6 @@ use syn::{Error, Result};
 use super::{
     Executions,
     condition::{ALWAYS, Condition, Conditions, NEVER},
-    stage,
 };
 use crate::{BlockKind, CaptureDependency, CaptureId, ExecutionOutcome, Flow, ProducerId};
 
@@ -104,6 +103,47 @@ impl Walk<'_> {
             })
     }
 
+    /// A transition boundary selects at most one stage signal, and each common
+    /// outer wire it carries is available on every route reaching it.
+    fn transition(&mut self, index: usize, state: &State) -> Result<()> {
+        let flow = self.flow;
+        let block = &flow.blocks[index];
+        if block.transition_target.is_none() {
+            return Ok(());
+        }
+        let context = self
+            .executions
+            .conditions
+            .and(self.executions.domain, state.live);
+        let mut previous = NEVER;
+        for candidate in flow
+            .blocks
+            .iter()
+            .filter(|candidate| candidate.transition_target.is_some())
+        {
+            let selected = self.present(&state.available, &candidate.inputs[0].ident);
+            let c = &mut self.executions.conditions;
+            let both = c.and(previous, selected);
+            if c.and(context, both) != NEVER {
+                return Err(Error::new(
+                    candidate.span,
+                    "a kaalang transition boundary selects more than one stage signal",
+                ));
+            }
+            previous = c.or(previous, selected);
+        }
+        for input in block.inputs.iter().skip(1) {
+            let provided = self.present(&state.available, &input.ident);
+            if self.executions.conditions.minus(context, provided) != NEVER {
+                return Err(Error::new(
+                    input.alias.span(),
+                    "a common outer wire used by a kaalang stage must be available on every preparation route",
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn has(&mut self, when: Condition) -> bool {
         self.executions.has(when)
     }
@@ -131,13 +171,7 @@ impl Walk<'_> {
         let previous = self.present(available, name);
         let duplicate = self.executions.conditions.and(previous, when);
         if self.has(duplicate) {
-            self.report(
-                (block, output),
-                Error::new(
-                    name.span(),
-                    "a kaalang wire must not be produced more than once in one execution",
-                ),
-            );
+            self.report((block, output), crate::analyze::produced_twice(name));
             when = self.executions.conditions.minus(when, duplicate);
         }
         let producer = ProducerId::BlockOutput { block, output };
@@ -207,14 +241,7 @@ impl Walk<'_> {
             for (_, when) in state.resume.extract_if(.., |(at, _)| *at == block) {
                 state.live = self.executions.conditions.or(state.live, when);
             }
-            if let Err(error) = stage::transition(
-                &mut self.executions.conditions,
-                self.flow,
-                block,
-                self.executions.domain,
-                state.live,
-                &state.available,
-            ) {
+            if let Err(error) = self.transition(block, &state) {
                 self.report((block, 0), error);
                 state.live = NEVER;
             }

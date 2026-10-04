@@ -17,16 +17,8 @@ pub(super) struct Placement {
 }
 
 impl Placement {
-    pub(super) fn row(&self, vertex: Vertex) -> usize {
-        self.rank[&vertex]
-    }
-
-    pub(super) fn column(&self, vertex: Vertex) -> i32 {
-        self.column[&vertex]
-    }
-
     pub(super) fn exit_column(&self, exit: ExitId) -> i32 {
-        self.column(Vertex::Node(exit.node)) + self.footprints.offset(exit)
+        self.column[&Vertex::Node(exit.node)] + self.footprints.offset(exit)
     }
 }
 

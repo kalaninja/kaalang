@@ -86,7 +86,6 @@ mod tests {
             Err(super::super::sweep::Refusal::Impossible(reason)) => panic!("{}", reason.message),
         };
         for arrangement in [&stage.arrangement, &swept] {
-            super::super::verify::arrangement(&stage.analysis.flow, topology, arrangement).unwrap();
             assert_eq!(
                 arrangement.rank[&transitions[0]],
                 arrangement.rank[&transitions[1]]

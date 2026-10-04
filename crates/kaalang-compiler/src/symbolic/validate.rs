@@ -318,8 +318,8 @@ impl Executions {
         owner: usize,
         context: Condition,
         frames: &Frames,
-        frame: Option<usize>,
     ) -> Condition {
+        let frame = frames.frame(owner);
         let mut routes = NEVER;
         for branch in 0..flow.blocks[owner].outputs.len() {
             let selection = BranchSelection {
@@ -377,15 +377,14 @@ impl Executions {
         owner: usize,
         groups: &[(Vec<usize>, Condition, Condition)],
         frames: &Frames,
-        frame: Option<usize>,
     ) -> Result<()> {
         let recorded: Vec<_> = groups
             .iter()
-            .map(|(_, context, _)| self.routes(flow, ancestry, owner, *context, frames, frame))
+            .map(|(_, context, _)| self.routes(flow, ancestry, owner, *context, frames))
             .collect();
         let reaching: Vec<_> = groups
             .iter()
-            .map(|(_, _, context)| self.routes(flow, ancestry, owner, *context, frames, frame))
+            .map(|(_, _, context)| self.routes(flow, ancestry, owner, *context, frames))
             .collect();
         let (noun, members) = if flow.blocks[owner].kind == BlockKind::Cycle {
             ("cycle", "outputs")
@@ -464,17 +463,7 @@ impl Executions {
             }
         }
         let mut groups = vec![Vec::new(); flow.blocks.len()];
-        for ((index, merge), owners) in merges.iter().enumerate().zip(owners) {
-            let node = flow.blocks.len() + index;
-            for &producer in &merge.producers {
-                if let ProducerId::BlockOutput { block, .. } = producer {
-                    successors[block].insert(node);
-                }
-            }
-            for &before in &merge.before {
-                successors[before].insert(node);
-            }
-            successors[node].extend(&merge.after);
+        for (merge, owners) in merges.iter().zip(owners) {
             let provided = self.merged(merge);
             for (owner, branches) in owners {
                 if matches!(
@@ -487,14 +476,9 @@ impl Executions {
             }
         }
         for (owner, groups) in groups.iter().enumerate() {
-            if matches!(
-                flow.blocks[owner].kind,
-                BlockKind::Choice | BlockKind::Cycle
-            ) {
-                self.groups(flow, ancestry, owner, groups, frames, frames.frame(owner))?;
-            }
+            self.groups(flow, ancestry, owner, groups, frames)?;
         }
-        crate::analyze::merge::validate_order(flow, merges, &successors)?;
+        crate::analyze::merge::validate_order(flow, merges, successors)?;
         for merge in merges {
             let present = self.merged(merge);
             let context = self.merge_reaching(flow, merge);
@@ -507,13 +491,7 @@ impl Executions {
             let relations = frames.in_frame(frames.of_merge(merge));
             let selectors = self.outcome_selectors(&outcomes, relations, context);
             if self.ordered(&outcomes, &selectors).gap_outputs.is_some() {
-                let wire = flow.wire_name(&merge.wire);
-                return Err(Error::new(
-                    merge.wire.span(),
-                    format!(
-                        "branches reaching the `{wire}` wire merge must be adjacent, including nested branches"
-                    ),
-                ));
+                return Err(crate::analyze::merge::gap(flow, merge));
             }
         }
         Ok(())
@@ -578,14 +556,7 @@ impl Executions {
                 flow.blocks[owner].kind,
                 BlockKind::Choice | BlockKind::Cycle
             ) {
-                self.groups(
-                    flow,
-                    ancestry,
-                    owner,
-                    &continued,
-                    frames,
-                    frames.frame(owner),
-                )?;
+                self.groups(flow, ancestry, owner, &continued, frames)?;
             }
             recorded.extend(
                 groups

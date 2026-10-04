@@ -192,14 +192,94 @@ pub(crate) fn linked(pairs: &[(usize, usize)]) -> Topology {
 }
 
 impl Topology {
-    /// Vertices drawn inside the cycle body beginning at `header`.
+    /// Vertices drawn inside the cycle body beginning at `header`: its own
+    /// blocks and their cases, together with its entry and tail and those of the
+    /// cycles nested in it.
     ///
     /// # Panics
     ///
     /// Panics if `header` is not a cycle header in the corresponding flow.
     #[must_use]
     pub fn body_vertices(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
-        crate::construct::cycle::body_vertices(flow, self, header)
+        let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
+        let body = header + 1..end;
+        let results = self
+            .cycle_boundaries
+            .iter()
+            .find(|boundary| boundary.header == header)
+            .map(|boundary| boundary.results.as_slice())
+            .unwrap_or_default();
+        let mut vertices = BTreeSet::new();
+        for node in &self.nodes {
+            let block = match node.id {
+                NodeId::Block(block) => block,
+                NodeId::Case { choice, .. } => choice,
+                NodeId::Start => continue,
+            };
+            if body.contains(&block) {
+                vertices.insert(Vertex::Node(node.id));
+            }
+        }
+        for cycle in &self.cycles {
+            if cycle.header == header || body.contains(&cycle.header) {
+                vertices.insert(Vertex::Junction(cycle.entry));
+                vertices.insert(Vertex::Junction(cycle.tail));
+            }
+        }
+        for boundary in &self.cycle_boundaries {
+            if boundary.header == header {
+                vertices.insert(boundary.entry);
+                vertices.extend(
+                    boundary
+                        .results
+                        .iter()
+                        .map(|&result| Vertex::from(result))
+                        .filter(|result| {
+                            matches!(result, Vertex::Junction(junction)
+                                if !self.junctions[*junction].merges.is_empty())
+                        }),
+                );
+            } else if body.contains(&boundary.header) {
+                vertices.insert(boundary.entry);
+                vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
+            }
+        }
+        // A wire merge or an export inside the body draws a junction and no node, so
+        // the blocks alone miss it. Everything reaching such a junction comes from
+        // the body, and a chain of them needs more than one pass.
+        let mut settled = false;
+        while !settled {
+            settled = true;
+            for junction in 0..self.junctions.len() {
+                let vertex = Vertex::Junction(junction);
+                if vertices.contains(&vertex) {
+                    continue;
+                }
+                // Cycle interfaces and tails belong to their own lexical cycle.
+                // Those of this body were inserted above; reaching an enclosing
+                // boundary or a following cycle does not make that continuation
+                // part of the body.
+                if self
+                    .cycles
+                    .iter()
+                    .any(|cycle| junction == cycle.entry || junction == cycle.tail)
+                    || self.junctions[junction].is_cycle_result
+                {
+                    continue;
+                }
+                let mut arrivals = self.incoming(vertex).peekable();
+                if arrivals.peek().is_some()
+                    && arrivals.all(|edge| {
+                        !results.contains(&edge.source)
+                            && vertices.contains(&Vertex::from(edge.source))
+                    })
+                {
+                    vertices.insert(vertex);
+                    settled = false;
+                }
+            }
+        }
+        vertices
     }
 
     /// The for-entry of the for cycle a for-end closes, in its column.
@@ -371,15 +451,12 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
 
     let merges = merges(model);
     let mut count = merges.len();
-    let cycle_boundaries = if model.collapse_cycles {
-        Vec::new()
+    let (cycle_boundaries, cycles) = if model.collapse_cycles {
+        (Vec::new(), Vec::new())
     } else {
-        boundaries(model, &mut count)
-    };
-    let cycles = if model.collapse_cycles {
-        Vec::new()
-    } else {
-        cycles(model, &cycle_boundaries, &mut count)
+        let found = boundaries(model, &mut count);
+        let cycles = cycles(model, &found, &mut count);
+        (found, cycles)
     };
     let structural = model
         .flow
@@ -440,11 +517,10 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
             topology.junctions[result].is_cycle_result = true;
         }
     }
+    // A collapsed projection has no cycles, so nothing below has work there.
     if !model.collapse_cycles {
         cycle::order_exits(model, &structural, &mut topology);
-    }
-    close_cycles(&mut topology);
-    if !model.collapse_cycles {
+        close_cycles(&mut topology);
         cycle::order_boundaries(&mut topology);
         cycle::coalesce_boundaries(&mut topology);
         cycle::cap_for_cycles(model.flow, &mut topology);
@@ -550,6 +626,37 @@ fn branch_exits(
             output: branch,
         }],
     })
+}
+
+/// The only item of `items`, when there is exactly one.
+pub(crate) fn sole<T>(mut items: impl Iterator<Item = T>) -> Option<T> {
+    let first = items.next()?;
+    items.next().is_none().then_some(first)
+}
+
+/// Orders each of `sinks` before every one of `targets`, then normalizes the
+/// order. Placement-only edges use `ExitId::of` even for nodes without that
+/// exit: readers inspect only the source vertex, and these edges are never drawn.
+fn order_before(
+    order: &mut Vec<Connection>,
+    sinks: impl IntoIterator<Item = Vertex>,
+    targets: impl IntoIterator<Item = Vertex>,
+) {
+    let sources = sinks
+        .into_iter()
+        .map(|vertex| match vertex {
+            Vertex::Node(node) => Source::Exit(ExitId::of(node)),
+            Vertex::Junction(junction) => Source::Junction(junction),
+        })
+        .collect::<Vec<_>>();
+    for destination in targets {
+        order.extend(sources.iter().map(|&source| Connection {
+            source,
+            destination,
+        }));
+    }
+    order.sort_unstable();
+    order.dedup();
 }
 
 /// A nonbranching exit handing over every output in declaration order.
@@ -712,19 +819,13 @@ fn connections(
                     merge
                         .after
                         .iter()
-                        .filter(|&&block| represented(model, structural, block))
-                        .filter_map(|&block| {
-                            (execution.participates(block)
-                                || (model.flow.blocks[block].kind == BlockKind::End
-                                    && matches!(
-                                        execution.outcome,
-                                        ExecutionOutcome::Return { block_index }
-                                            if model.flow.blocks[block_index].transition_target.is_none()
-                                    )))
-                            .then_some(Connection {
-                                source: Source::Junction(junction),
-                                destination: destination(structural, block),
-                            })
+                        .filter(|&&block| {
+                            represented(model, structural, block)
+                                && visits(model.flow, execution, block)
+                        })
+                        .map(|&block| Connection {
+                            source: Source::Junction(junction),
+                            destination: destination(structural, block),
                         }),
                 );
                 direct.extend(
@@ -758,6 +859,15 @@ fn connections(
     union.into_iter().collect()
 }
 
+/// Whether `execution` runs `block`, counting the end when it returns from
+/// the flow rather than through a stage transition.
+fn visits(flow: &Flow, execution: &Execution, block: usize) -> bool {
+    execution.participates(block)
+        || (flow.blocks[block].kind == BlockKind::End
+            && matches!(execution.outcome, ExecutionOutcome::Return { block_index }
+                if flow.blocks[block_index].transition_target.is_none()))
+}
+
 /// Serial route before capture edges are added. Completed branch-local work
 /// continues through its merge junction; bypassing it would create a parallel
 /// route that no lane order can separate.
@@ -776,12 +886,7 @@ fn serial_connections(
     let mut steps = order
         .iter()
         .copied()
-        .filter(|&block| {
-            execution.participates(block)
-                || (model.flow.blocks[block].kind == BlockKind::End
-                    && matches!(execution.outcome, ExecutionOutcome::Return { block_index }
-                        if model.flow.blocks[block_index].transition_target.is_none()))
-        })
+        .filter(|&block| visits(model.flow, execution, block))
         .peekable();
     while let Some(block) = steps.next() {
         let transfer = if model.collapse_cycles {

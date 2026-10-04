@@ -83,20 +83,13 @@ pub(super) fn flow(
                     .filter(|(execution, _)| frames.passes().reaches(execution, block))
                     .map(|&(_, route)| route)
                     .collect::<BTreeMap<_, _>>();
-                continued.insert((
-                    branches.iter().copied().collect::<Vec<_>>(),
+                continued.insert(super::choice::Group {
+                    cases: branches.iter().copied().collect(),
                     routes,
                     reaching,
-                ));
+                });
             }
-            let continued = continued
-                .into_iter()
-                .map(|(cases, routes, reaching)| super::choice::Group {
-                    cases,
-                    routes,
-                    reaching,
-                })
-                .collect::<Vec<_>>();
+            let continued = continued.into_iter().collect::<Vec<_>>();
             super::choice::validate_groups(declaration, &continued)?;
         }
         for (branches, shared) in groups {

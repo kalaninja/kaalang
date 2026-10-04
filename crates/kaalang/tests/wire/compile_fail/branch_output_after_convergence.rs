@@ -1,5 +1,8 @@
 use kaalang::kaalang;
 
+// A branch output is an ordinary wire, but it stays branch-local: reading it
+// again below its own merge is rejected like any other branch-local value, and
+// not by a rule of its own.
 #[kaalang]
 fn invalid(condition: bool) -> u32 {
     #[question("Which way?")]

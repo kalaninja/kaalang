@@ -653,27 +653,18 @@ pub(super) fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> 
         let Some(wire) = super::serial_arrival(topology, vertex) else {
             continue;
         };
-        let column = match wire.source {
-            Source::Exit(exit) => {
-                let source = Vertex::Node(exit.node);
-                let Some(&column) = arrangement.column.get(&source) else {
-                    return Err(format!("{source:?} has no column"));
-                };
-                let Some(&offset) = arrangement.exit_offset.get(&exit) else {
-                    return Err(format!("{exit:?} has no branch column"));
-                };
-                column
-                    .checked_add(offset)
-                    .ok_or_else(|| format!("{exit:?} has an overflowing branch column"))?
-            }
-            Source::Junction(junction) => {
-                let source = Vertex::Junction(junction);
-                let Some(&column) = arrangement.column.get(&source) else {
-                    return Err(format!("{source:?} has no column"));
-                };
-                column
-            }
+        let source = Vertex::from(wire.source);
+        let Some(mut column) = arrangement.column.get(&source).copied() else {
+            return Err(format!("{source:?} has no column"));
         };
+        if let Source::Exit(exit) = wire.source {
+            let Some(&offset) = arrangement.exit_offset.get(&exit) else {
+                return Err(format!("{exit:?} has no branch column"));
+            };
+            column = column
+                .checked_add(offset)
+                .ok_or_else(|| format!("{exit:?} has an overflowing branch column"))?;
+        }
         let Some(&placed) = arrangement.column.get(&vertex) else {
             return Err(format!("{vertex:?} has no column"));
         };
@@ -1008,12 +999,6 @@ mod tests {
             .max()
             .expect("the group draws something");
 
-        branch_columns(
-            &model.analysis.flow,
-            &model.arrangement,
-            &Shape::of(&model.analysis.flow, &model.topology),
-        )
-        .unwrap();
         let mut broken = model.arrangement.clone();
         for vertex in outside {
             broken.column.insert(vertex, inside);
@@ -1104,12 +1089,6 @@ mod tests {
         ] {
             let model = crate::build(&crate::tests::fixture(source, name)).unwrap();
             let valid = model.arrangement.clone();
-            branch_columns(
-                &model.analysis.flow,
-                &valid,
-                &Shape::of(&model.analysis.flow, &model.topology),
-            )
-            .unwrap();
             for entry in entries {
                 let mut moved = valid.clone();
                 *moved

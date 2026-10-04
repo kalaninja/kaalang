@@ -2,16 +2,13 @@
 //! outputs, or a for cycle with its header captures, item and completion.
 
 use proc_macro2::{Ident, Span};
-use syn::{
-    Error, Expr, ExprBlock, ExprBreak, ExprForLoop, ExprLoop, Pat, Result, parse_quote,
-    parse_quote_spanned,
-};
+use syn::{Error, Expr, ExprBlock, ExprBreak, Pat, Result, parse_quote, parse_quote_spanned};
 
 use super::{
-    BlockSyntax, block_outputs, decorated_body, description, reject_control_transfers,
+    BlockSyntax, block_outputs, decorated_body, description, forward, reject_control_transfers,
     structural_block, structural_expression, ungrouped,
 };
-use crate::model::{Block, BlockKind, Input, Iteration, UNNAMED};
+use crate::model::{Block, BlockKind, Iteration, UNNAMED};
 
 pub(super) fn parse(mut syntax: BlockSyntax<'_>) -> Result<Block> {
     let iteration = match ungrouped(structural_expression(&syntax.body)).clone() {
@@ -186,21 +183,7 @@ pub(super) fn exports(blocks: &mut Vec<Block>, header: usize) -> Result<()> {
     let cycle = &blocks[header];
     let consumers = (0..cycle.outputs.len())
         .map(|position| {
-            let ident = cycle.outputs[position].clone();
-            let alias = cycle.output_binding(position).ident.clone();
-            let span = alias.span();
-            let mut consumer = structural_block(
-                BlockKind::Export,
-                span,
-                vec![Input {
-                    borrowed: false,
-                    mutable: false,
-                    ident,
-                    alias: alias.clone(),
-                    derived: false,
-                }],
-            );
-            consumer.body = parse_quote_spanned!(span=> #alias);
+            let mut consumer = forward(BlockKind::Export, &cycle.output_binding(position).ident);
             consumer.parent = Some(header);
             consumer.export_target = Some(header);
             consumer
@@ -218,16 +201,14 @@ pub(super) fn structural_break(expression: &ExprBreak) -> Error {
     )
 }
 
-pub(super) fn structural_for(expression: &ExprForLoop) -> Error {
+/// A `loop` or `for` that declares no cycle.
+pub(super) fn structural_cycle(expression: &Expr) -> Error {
+    let keyword = match expression {
+        Expr::Loop(_) => "loop",
+        _ => "for",
+    };
     Error::new_spanned(
         expression,
-        "a `for` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`",
-    )
-}
-
-pub(super) fn structural_loop(expression: &ExprLoop) -> Error {
-    Error::new_spanned(
-        expression,
-        "a `loop` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`",
+        format!("a `{keyword}` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`"),
     )
 }

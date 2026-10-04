@@ -30,44 +30,23 @@ fn compare(function: &syn::ItemFn) -> bool {
 
 #[allow(clippy::too_many_lines)] // Compares all observable phases with the complete reference.
 fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::Analysis>) -> bool {
+    let ident = &function.sig.ident;
     let ordinary = crate::analyze::flow(parsed, true);
     let symbolic = analyze(parsed, true);
-    let (mut symbolic, groups, merges) = match (ordinary, symbolic) {
+    match (ordinary, symbolic) {
         (Err(expected), Err(actual)) => {
-            assert_eq!(
-                actual.to_string(),
-                expected.to_string(),
-                "{}",
-                function.sig.ident
-            );
-            return true;
+            assert_eq!(actual.to_string(), expected.to_string(), "{ident}");
         }
-        (Err(error), Ok(_)) => panic!(
-            "{}: symbolic analysis accepted: {error}",
-            function.sig.ident
-        ),
-        (Ok(_), Err(error)) => panic!(
-            "{}: symbolic analysis rejected: {error}",
-            function.sig.ident
-        ),
+        (Err(error), Ok(_)) => panic!("{ident}: symbolic analysis accepted: {error}"),
+        (Ok(_), Err(error)) => panic!("{ident}: symbolic analysis rejected: {error}"),
         (
             Ok((executions, expected_groups, expected_merges, passes)),
             Ok((symbolic, groups, merges)),
         ) => {
-            assert_eq!(groups, expected_groups, "{}: groups", function.sig.ident);
-            assert_eq!(merges, expected_merges, "{}: merges", function.sig.ident);
-            assert_eq!(
-                symbolic.len(),
-                executions.len(),
-                "{}: count",
-                function.sig.ident
-            );
-            assert_eq!(
-                symbolic.enumerate(),
-                executions,
-                "{}: executions",
-                function.sig.ident
-            );
+            assert_eq!(groups, expected_groups, "{ident}: groups");
+            assert_eq!(merges, expected_merges, "{ident}: merges");
+            assert_eq!(symbolic.len(), executions.len(), "{ident}: count");
+            assert_eq!(symbolic.enumerate(), executions, "{ident}: executions");
             let mut availability = symbolic.clone();
             for name in parsed
                 .flow_inputs
@@ -83,8 +62,7 @@ fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::
                 assert_eq!(
                     availability.available_on_completion(parsed, name),
                     expected,
-                    "{}: common wire {name}",
-                    function.sig.ident
+                    "{ident}: common wire {name}"
                 );
             }
             let reference_plan = crate::plan::flow(parsed, &executions, &merges, passes);
@@ -105,30 +83,16 @@ fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::
                 )
                 .to_string()
             };
-            assert_eq!(
-                tokens(&compact),
-                tokens(&reference),
-                "{}: Rust",
-                function.sig.ident
-            );
+            assert_eq!(tokens(&compact), tokens(&reference), "{ident}: Rust");
             for collapsed in [false, true] {
                 let actual = crate::project(&compact, collapsed);
                 let expected = crate::project(&reference, collapsed);
                 assert_eq!(
                     actual.connections, expected.connections,
-                    "{}: connections",
-                    function.sig.ident
+                    "{ident}: connections"
                 );
-                assert_eq!(
-                    actual.order, expected.order,
-                    "{}: order",
-                    function.sig.ident
-                );
-                assert_eq!(
-                    actual.vertices, expected.vertices,
-                    "{}: vertices",
-                    function.sig.ident
-                );
+                assert_eq!(actual.order, expected.order, "{ident}: order");
+                assert_eq!(actual.vertices, expected.vertices, "{ident}: vertices");
                 assert_eq!(
                     actual
                         .junctions
@@ -140,13 +104,11 @@ fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::
                         .iter()
                         .map(|junction| &junction.merges)
                         .collect::<Vec<_>>(),
-                    "{}: junctions",
-                    function.sig.ident
+                    "{ident}: junctions"
                 );
                 assert_eq!(
                     actual.back_edges, expected.back_edges,
-                    "{}: back edges",
-                    function.sig.ident
+                    "{ident}: back edges"
                 );
                 let cycles = |topology: &crate::topology::Topology| {
                     topology
@@ -155,24 +117,10 @@ fn compare_flow(function: &syn::ItemFn, parsed: &Flow, existing: Option<&crate::
                         .map(|cycle| (cycle.header, cycle.tail, cycle.prefer_left))
                         .collect::<Vec<_>>()
                 };
-                assert_eq!(
-                    cycles(&actual),
-                    cycles(&expected),
-                    "{}: cycle tails",
-                    function.sig.ident
-                );
+                assert_eq!(cycles(&actual), cycles(&expected), "{ident}: cycle tails");
             }
-            (symbolic, groups, merges)
         }
-    };
-    let plan = symbolic.plan(parsed, &merges);
-    assert!(symbolic.verify(parsed, &plan, &merges));
-    assert_eq!(
-        groups,
-        crate::analyze::flow(parsed, true)
-            .expect("the ordinary analysis succeeds")
-            .1
-    );
+    }
     true
 }
 

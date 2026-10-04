@@ -69,7 +69,7 @@ pub(super) fn plan(
     let taken = topology
         .vertices
         .iter()
-        .map(|&vertex| (placement.row(vertex), placement.column(vertex)))
+        .map(|&vertex| (placement.rank[&vertex], placement.column[&vertex]))
         .collect::<BTreeSet<_>>();
 
     let spans = topology
@@ -83,12 +83,12 @@ pub(super) fn plan(
             // A descent through an intermediate rank needs a column free of
             // nodes there. Try the arrival column, then the departure column,
             // before allocating a separate column for an actual obstacle.
-            let top = placement.row(source);
-            let bottom = placement.row(destination);
+            let top = placement.rank[&source];
+            let bottom = placement.rank[&destination];
             let free_of_nodes =
                 |column| (top + 1..bottom).all(|row| !taken.contains(&(row, column)));
             let start = departure_column(placement, wire.source, wire.destination);
-            let end = placement.column(destination);
+            let end = placement.column[&destination];
             let waypoint = match shape {
                 Shape::Aside => None,
                 // Producer branches keep separate descents until the merge rail.
@@ -202,9 +202,8 @@ fn own_columns(
         let inside = shapes[index] != Shape::Aside;
         let lanes = if inside { &mut claimed } else { &mut aside };
         let mut lane = if inside {
-            placement
-                .column(Vertex::from(topology.connections[index].source))
-                .min(placement.column(topology.connections[index].destination))
+            placement.column[&Vertex::from(topology.connections[index].source)]
+                .min(placement.column[&topology.connections[index].destination])
         } else {
             0
         };
@@ -471,12 +470,12 @@ pub(super) fn departure_column(
     destination: Destination,
 ) -> i32 {
     if let Some(case) = super::choice::case_destination(source, destination) {
-        return placement.column(Vertex::Node(case));
+        return placement.column[&Vertex::Node(case)];
     }
     if let (Source::Exit(exit), Destination::Junction(junction)) = (source, destination) {
-        let merge = placement.column(Vertex::Junction(junction));
+        let merge = placement.column[&Vertex::Junction(junction)];
         if exit.branch.is_some_and(|branch| branch > 0)
-            && placement.column(Vertex::Node(exit.node)) < merge
+            && placement.column[&Vertex::Node(exit.node)] < merge
             && merge < placement.exit_column(exit)
         {
             return merge;
@@ -485,7 +484,7 @@ pub(super) fn departure_column(
 
     match source {
         Source::Exit(exit) => placement.exit_column(exit),
-        Source::Junction(junction) => placement.column(Vertex::Junction(junction)),
+        Source::Junction(junction) => placement.column[&Vertex::Junction(junction)],
     }
 }
 
