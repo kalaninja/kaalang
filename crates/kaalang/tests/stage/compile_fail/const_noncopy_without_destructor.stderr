@@ -13,7 +13,10 @@ note: required by a bound in `const_noncopy_without_destructor::__kaalang_copy_e
  --> tests/stage/compile_fail/const_noncopy_without_destructor.rs:6:43
   |
 5 | #[kaalang]
-  | ---------- required by a bound in this function
+  | ----------
+  | |
+  | required by a bound in this function
+  | in this attribute macro expansion
 6 | const fn const_noncopy_without_destructor(go: NonCopy) -> u8 {
   |                                           ^^ required by this bound in `__kaalang_copy_entry`
   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)

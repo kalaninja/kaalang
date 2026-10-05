@@ -141,7 +141,8 @@ pub(super) fn open_iteration(
     next.outputs = block_outputs(&pattern)?;
     next.unnamed_outputs = unnamed_outputs;
     next.output_pattern = pattern;
-    next.body = parse_quote_spanned! {span=> {
+    // The macro's edition lets `::core` resolve in a 2015 crate as well.
+    next.body = parse_quote_spanned! {Span::mixed_site().located_at(span)=> {
         match ::core::iter::Iterator::next(&mut #items) {
             ::core::option::Option::Some(#taken) => #produced,
             ::core::option::Option::None => (),

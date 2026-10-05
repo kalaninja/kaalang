@@ -17,6 +17,9 @@ fn variant(index: usize, count: usize, value: TokenStream2, span: Span) -> Token
     if count == 1 {
         return value;
     }
+    // `::core` takes the macro's edition: under the user's span, a 2015 crate
+    // would read it as a crate-root module.
+    let span = Span::mixed_site().located_at(span);
     let left = count.div_ceil(2);
     if index < left {
         let value = variant(index, left, value, span);
@@ -30,10 +33,11 @@ fn variant(index: usize, count: usize, value: TokenStream2, span: Span) -> Token
 fn copy_value(value: &TokenStream2, span: Span) -> TokenStream2 {
     let input = Ident::new("__kaalang_entry_value", Span::mixed_site().located_at(span));
     let check = Ident::new("__kaalang_copy_entry", Span::mixed_site());
+    let copy = quote_spanned!(Span::mixed_site().located_at(span)=> ::core::marker::Copy);
     quote_spanned!(span=> {
         let #input = #value;
         {
-            const fn #check<T: ::core::marker::Copy>(value: T) -> T { value }
+            const fn #check<T: #copy>(value: T) -> T { value }
             #check(#input)
         }
     })

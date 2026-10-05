@@ -31,9 +31,13 @@ pub(super) fn emit(
         if !captures.is_empty() {
             items = quote_spanned!(block.span=> { #captures #items });
         }
+        // `::core` takes the macro's edition: under the user's span, a 2015
+        // crate would read it as a crate-root module.
+        let into_iter = quote_spanned!(Span::mixed_site().located_at(block.span)=>
+            ::core::iter::IntoIterator::into_iter);
         // A match preserves the scrutinee's temporaries throughout the loop.
         looped = quote_spanned! {block.span=>
-            match ::core::iter::IntoIterator::into_iter(#items) {
+            match #into_iter(#items) {
                 mut #iterator => { #looped },
             }
         };

@@ -14,7 +14,10 @@ note: required by a bound in `const_outgoing_signal::__kaalang_copy_entry`
  --> tests/stage/compile_fail/const_outgoing_signal.rs:6:9
   |
 3 | #[kaalang]
-  | ---------- required by a bound in this function
+  | ----------
+  | |
+  | required by a bound in this function
+  | in this attribute macro expansion
 ...
 6 |     let finish = |go| {
   |         ^^^^^^ required by this bound in `__kaalang_copy_entry`

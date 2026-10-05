@@ -10,6 +10,9 @@ error[E0308]: mismatched types
 help: the type constructed contains `String` due to the type of the argument passed
  --> tests/stage/compile_fail/mismatched_entry_type.rs:6:10
   |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+...
 6 |     let (go, done) = |go| {
   |          ^^ this argument influences the type of `Ok`
 note: tuple variant defined here
@@ -17,3 +20,4 @@ note: tuple variant defined here
   |
   |     Ok(#[stable(feature = "rust1", since = "1.0.0")] T),
   |     ^^
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
