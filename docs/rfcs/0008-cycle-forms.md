@@ -17,7 +17,7 @@ the pattern before seeing the work done for each item.
 
 This RFC names the two forms a cycle can take. A **loop cycle** is the cycle of
 RFC 0007, now spelled with Rust's `loop` keyword. A **for cycle** runs its body
-once per item of a Rust iterator, with no structural transfers inside it. It is
+once per item of a Rust iterator, with no structural transfers of its own. It is
 drawn between two caps instead of inside a boundary.
 
 The for cycle is deliberately compact. It cannot stop early, export a value, or
@@ -34,8 +34,6 @@ supersedes. Earlier released RFC texts remain unchanged.
 - A **loop cycle** is a cycle whose body is a Rust `loop` block. RFC 0007 §2
   defines its gate, scope, outputs, and `continue`.
 - A **for cycle** is a cycle whose body is a Rust `for` loop.
-- The **iteration header** of a for cycle is its capture list together with the
-  item pattern and the expression after `in`.
 - **Item wires** are the wires the item pattern binds for one iteration.
 - The **for-entry** and the **for-end** are the two caps that enclose an
   expanded for cycle's body in the diagram.
@@ -62,12 +60,12 @@ let finish = |start| loop {
 };
 ```
 
-The shorthands of RFC 0007 §3 carry over. `let finish = loop { ... };` is
-`let finish = || loop { ... };`, and a cycle with neither gate nor outputs may
-write `#[cycle("...")] loop { ... };`. Braces may enclose the `loop`, as they
-may enclose a `match`, `return`, or `continue`: `|gate| { loop { ... } }` is
-`|gate| loop { ... }`. A brace block that holds the body's statements directly,
-the form before this RFC, is invalid.
+The shorthands of RFC 0001 §3 and RFC 0007 §3 carry over.
+`let finish = loop { ... };` is `let finish = || loop { ... };`, and a cycle
+with neither gate nor outputs may write `#[cycle("...")] loop { ... };`. Braces
+may enclose the `loop`, as they may enclose a `match`, `return`, or `continue`:
+`|gate| { loop { ... } }` is `|gate| loop { ... }`. A brace block that holds the
+body's statements directly, the form before this RFC, is invalid.
 
 ### 2.2 For cycles
 
@@ -154,12 +152,12 @@ The header aliases are not visible to inner blocks; an inner capture of the same
 outer wire reaches its original storage, and Rust checks it against the borrow
 or move the header made.
 
-Every route through the body ends at the end of the body, where the iteration
-ends and the next item begins. A route may instead diverge in a nested loop
-cycle. Branches inside the body converge before its end, as the repeating routes
-of a loop cycle converge before its `continue`: a branch with no work of its own
-merges with the others through a same-named wire. Branch-local and body-local
-owners drop when the iteration ends.
+Every route through the body either reaches its end, where the iteration ends
+and the next item begins, or diverges in a nested loop cycle. Branches inside
+the body converge before its end, as the repeating routes of a loop cycle
+converge before its `continue`: a branch with no work of its own merges with the
+others through a same-named wire. Branch-local and body-local owners drop when
+the iteration ends.
 
 Questions, choices, actions, calls, and nested cycles of either form follow
 their ordinary rules inside the body. A nested loop cycle's `continue` and
@@ -192,9 +190,10 @@ A for cycle is rejected when:
 - its body contains a structural `continue` or `return` of its own;
 - a block in its body produces a wire named after the cycle's declared output;
 - it declares more than one output;
-- its `in` expression reads a wire it does not capture, under the ordinary
-  computational-body rules of RFC 0001 §3;
+- its `in` expression reads a wire it does not capture or transfers control out
+  of itself, under the computational-body rules of RFC 0001 §§3 and 6;
 - its item pattern is anything other than one binding or `_`;
+- its item binding has the same name as its declared output;
 - its body ends an iteration while the branches of a selection inside it are
   still separate;
 - it carries a label;
@@ -290,15 +289,15 @@ caps enclose its body:
   hand-over lists the item wires. An `_` item pattern has no hand-over label.
 - The **for-end** is a rectangle whose two lower corners are cut at 45°. It
   repeats the cycle's description, rendered like the for-entry's, so nested
-  bottom caps each name the for-entry they close. Every body route that ends the
+  for-ends each name the for-entry they close. Every body route that ends the
   iteration arrives at it. Several such routes first meet on one unmarked rail,
   as repeating routes meet at a loop cycle's iteration tail, and enter the cap
   together.
 
 Both caps attach their connections like an action: arrivals at the upper edge,
-the continuation at the lower edge. The cycle's continuation leaves the bottom
-cap and carries the declared output's hand-over label when there is one. An
-empty body connects the for-entry directly to the for-end.
+the continuation at the lower edge. The cycle's continuation leaves the for-end
+and carries the declared output's hand-over label when there is one. An empty
+body connects the for-entry directly to the for-end.
 
 The for-end sits in the for-entry's column, so the cycle opens and closes on one
 vertical line; a route that ends the iteration in another column turns into it.
@@ -428,6 +427,9 @@ unchanged.
 - **RFC 0002 §4.8, RFC 0003 §§2–3, and RFC 0007 §6.1:** the boundary, caption,
   entry junction, iteration tail, and back edge describe expanded loop cycles.
   An expanded for cycle uses §6.1 here instead; its collapsed node uses §6.2.
+- **RFC 0002 §6 and RFC 0007 §6.2:** an expanded for cycle labels its header
+  captures at the for-entry and hands over its output at the for-end instead of
+  a result junction.
 - **RFC 0004 §7 and RFC 0007 §5.2:** a for cycle lowers as §5 here.
 - **RFC 0006:** for cycles may appear in preparation and stage bodies under the
   same rules; a for cycle's declared output can be a stage transition like any

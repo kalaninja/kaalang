@@ -80,7 +80,9 @@ digits. Single tildes delimit subscripts; double tildes delimit strikethrough.
 
 A quoted line drops its `>` marker and displays its contents in italic between
 typographic quotation marks. Formatting inside the quote remains active. A quote
-occupies the authored line; a multi-line quote repeats `>` on each line.
+occupies the authored line; a multi-line quote repeats `>` on each line. A `>`
+after at most three spaces starts a quote, and that indentation stays outside
+the quotation marks.
 
 Formula delimiters disappear. Parse the contents as TeX math and render them as
 STIX Two Math glyph outlines. `$x^2$` therefore uses mathematical glyphs and
@@ -88,7 +90,9 @@ placement rather than the superscript text effect. `$$...$$` selects display
 math layout, but it remains inside the description's current display line; it
 does not create a document-level block. A formula is one wrapping unit. If its
 TeX is invalid or unsupported, display the complete source including dollar
-delimiters literally.
+delimiters literally. Dollar signs pair only when the braces between them
+balance; an unpaired `$` is ordinary text, and the rest of the line is
+interpreted normally.
 
 ### 3.1 Delimiters and combinations
 
@@ -265,8 +269,9 @@ characters introduced by numeric references, before serializing it.
 Keep the original decoded descriptions for nonempty-description checks,
 diagnostics, arrangement checks, and Rust lowering. Formatting applies only to
 presentation and introduces no new compiler error. A formula that cannot be
-parsed or laid out, uses unsupported features, or requires unavailable glyphs
-remains literal as defined in §3, rather than causing a renderer error.
+parsed or laid out, has no positive width, has a size whose exact fraction needs
+a denominator above 2^32, uses unsupported features, or requires unavailable
+glyphs remains literal as defined in §3, rather than causing a renderer error.
 
 Interpret each authored line into styled spans for text, code, formulas, and the
 three paired style tags. Track active effects across balanced delimiters and
@@ -309,6 +314,9 @@ provisions only within the scope of description formatting:
 - [RFC 0003 §3](0003-svg-renderer.md#3-svg-output): besides expanded cycle
   captions, a label may shorten a formula wider than its wrapping width, as
   defined in §4 of this RFC.
+- [RFC 0003 §4](0003-svg-renderer.md#4-library-interface):
+  `InvalidLabelCharacter` also reports a character that a description's
+  character reference decodes to.
 
 The requirement for nonempty Rust description strings in
 [RFC 0001 §3](0001-language.md#3-block-statements) and all other provisions of

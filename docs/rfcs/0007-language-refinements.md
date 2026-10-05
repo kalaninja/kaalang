@@ -688,10 +688,10 @@ full height, including a case's triangular tip.
 
 ### 6.4 Oversized formulas
 
-A formula whose absolute ascent plus absolute descent exceeds the renderer's
-height limit stays literal, including its dollar delimiters. Use the unscaled
-math layout in em for this check. This extends RFC 0005's literal fallback rules
-to valid formulas whose height would make a label unreadable.
+A formula whose absolute ascent plus absolute descent exceeds 12 em stays
+literal, including its dollar delimiters. Use the unscaled math layout in em for
+this check. This extends RFC 0005's literal fallback rules to valid formulas
+whose height would make a label unreadable.
 
 ## 7. Changes to earlier RFCs
 
@@ -724,10 +724,10 @@ declares stages. Earlier released RFC texts remain unchanged.
 - **RFC 0001 §§5–7:** cycle bodies inherit outer data and create fresh local
   scopes per iteration. Multiple outputs participate as alternative branches.
   Ordinary producer order, ownership, local merges, and convergence rules apply.
-- **RFC 0002 §§2–4 and 4.9:** breaks no longer exist. Each declared output's
-  routes reach its own result junction as in §6.2 here, which limits §4.9's
-  reuse of a merge or body exit as the result. A collapsed cycle has one exit
-  per output as in §6.1 here, rather than one non-branching exit.
+- **RFC 0002 §§2–4, including §4.9:** breaks no longer exist. Each declared
+  output's routes reach its own result junction as in §6.2 here, which limits
+  RFC 0002 §4.9's reuse of a merge or body exit as the result. A collapsed cycle
+  has one exit per output as in §6.1 here, rather than one non-branching exit.
 - **RFC 0002 §4.8 and RFC 0003 §3:** an expanded cycle shows its boundary
   without a loop marker; only the collapsed cycle node carries it.
 - **RFC 0002 §§4.8 and 6–8:** cycles have one result exit per declared

@@ -1091,8 +1091,8 @@ apply within preparation and each stage unless explicitly changed here.
 
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A
   stage has one entry and declared alternative outputs, which require `Copy`
-  only in a `const fn`. A terminal stage contains the flow's sole return and
-  declares no outputs and must be declared last; a wholly diverging stage also
+  only in a `const fn`. A terminal stage contains the flow's sole return,
+  declares no outputs, and must be declared last; a wholly diverging stage also
   declares none. Entry values are visible to inner captures as immutable wires,
   and stage output bindings reject `mut`. A declared local self-transition
   output may shadow only its own stage entry, with the distinct producer
