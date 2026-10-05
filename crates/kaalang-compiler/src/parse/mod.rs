@@ -550,6 +550,20 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
         {
             Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None))
         }
+        // A closure statement written the same way.
+        Stmt::Expr(Expr::Group(group), _)
+            if !group.attrs.is_empty()
+                && matches!(ungrouped(&group.expr), Expr::Closure(closure) if closure.attrs.is_empty()) =>
+        {
+            let Expr::Closure(closure) = ungrouped(&group.expr) else {
+                unreachable!("the guard matched a closure")
+            };
+            Ok((
+                &group.attrs,
+                parse_quote_spanned!(closure.inputs_end.span()=> ()),
+                Some(Cow::Borrowed(closure)),
+            ))
+        }
         _ => Err(Error::new_spanned(
             statement,
             "a kaalang flow body may contain only attributed block statements",

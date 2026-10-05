@@ -1,5 +1,6 @@
 mod anonymous_case_values;
 mod borrowed_case_input;
+mod choice_body_from_a_macro;
 mod choice_scope_ends_before_continuation;
 mod diverging_case;
 mod run_choice;

@@ -19,7 +19,7 @@ pub fn is_todo_body(body: &Expr) -> bool {
 
 /// Reports whether an expression is an argument-free `todo!()` call.
 pub(crate) fn is_todo_macro(expression: &Expr) -> bool {
-    let Expr::Macro(expression) = expression else {
+    let Expr::Macro(expression) = crate::parse::ungrouped(expression) else {
         return false;
     };
     expression.attrs.is_empty()
@@ -27,7 +27,8 @@ pub(crate) fn is_todo_macro(expression: &Expr) -> bool {
         && expression.mac.tokens.is_empty()
 }
 
-/// Extracts the only expression from a plain, unlabeled block.
+/// Extracts the only expression from a plain, unlabeled block, looking through
+/// the invisible group a body written by another macro arrives in.
 fn single_body_expression(body: &Expr) -> Option<&Expr> {
     let Expr::Block(block) = body else {
         return None;
@@ -38,5 +39,5 @@ fn single_body_expression(body: &Expr) -> Option<&Expr> {
     let [Stmt::Expr(expression, None)] = block.block.stmts.as_slice() else {
         return None;
     };
-    Some(expression)
+    Some(crate::parse::ungrouped(expression))
 }
