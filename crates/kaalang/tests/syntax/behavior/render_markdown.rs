@@ -95,7 +95,10 @@ fn render_markdown(section: u8, condition: bool) {
     let colors = |indented| indented;
 
     #[action(r"$\color{not-a-color}x$")]
-    let empty_tags = |colors| colors;
+    let carriage_returns = |colors| colors;
+
+    #[action("**Two\r\rparagraphs** stay literal.\n**One\rparagraph** keeps its style.")]
+    let empty_tags = |carriage_returns| carriage_returns;
 
     #[action("<u></u>\n<mark></mark>\n<color name=\"red\"></color>")]
     let tested = |empty_tags| empty_tags;

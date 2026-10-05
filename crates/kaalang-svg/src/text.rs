@@ -611,6 +611,15 @@ fn parse_line(line: &str, formulas: bool, output: &mut RichText) {
 }
 
 fn paragraph(events: &[(Event<'_>, Range<usize>)]) -> Option<(usize, usize, Range<usize>, bool)> {
+    // A bare `\r` ends a CommonMark line, so one description line can hold
+    // several paragraphs; like any other structure, it then stays literal.
+    let paragraphs = events
+        .iter()
+        .filter(|(event, _)| matches!(event, Event::Start(Tag::Paragraph)))
+        .count();
+    if paragraphs != 1 {
+        return None;
+    }
     match events {
         [
             (Event::Start(Tag::Paragraph), range),
@@ -1724,6 +1733,7 @@ mod tests {
             "    indented **code**",
             "# **heading**",
             "<div>**warning**</div>",
+            "**One**\r\r**two**",
         ] {
             assert_eq!(RichText::markdown(source).as_ref(), source, "{source}");
         }
