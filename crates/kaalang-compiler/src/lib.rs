@@ -120,9 +120,20 @@ pub fn flows(items: &[syn::Item]) -> Vec<ItemFn> {
 }
 
 fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
-    attributes
-        .iter()
-        .any(|attribute| attribute.path().is_ident("kaalang"))
+    attributes.iter().any(is_flow_attribute)
+}
+
+/// Whether `attribute` is kaalang's own, written `#[kaalang]` or through its
+/// crate path as `#[kaalang::kaalang]`. Another crate's `kaalang` is not.
+#[must_use]
+pub fn is_flow_attribute(attribute: &syn::Attribute) -> bool {
+    let path = attribute.path();
+    path.is_ident("kaalang")
+        || path.segments.len() == 2
+            && path
+                .segments
+                .iter()
+                .all(|segment| segment.ident == "kaalang")
 }
 
 /// Parses and validates a flow and builds its lowering plan, without checking

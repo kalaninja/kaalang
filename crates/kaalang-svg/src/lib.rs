@@ -215,7 +215,7 @@ fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
     if let Some(attribute) = function
         .attrs
         .iter()
-        .filter(|attribute| attribute.path().is_ident("kaalang"))
+        .filter(|attribute| kaalang_compiler::is_flow_attribute(attribute))
         .find(|attribute| match &attribute.meta {
             Meta::Path(_) => false,
             Meta::List(arguments) => !arguments.tokens.is_empty(),
@@ -380,18 +380,30 @@ mod tests {
     }
 
     #[test]
-    fn reports_kaalang_arguments_as_an_invalid_flow() {
-        let source = "#[kaalang(unexpected)]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+    fn finds_a_flow_marked_through_the_crate_path() {
+        let source = "#[kaalang::kaalang]\nfn qualified(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
-        assert_eq!(
-            render_source(source, "invalid"),
-            Err(RenderError::InvalidFlow {
-                name: "invalid".into(),
-                line: 1,
-                column: 1,
-                message: "#[kaalang] does not accept arguments".into(),
-            })
-        );
+        assert_eq!(flow_names(source), Ok(vec!["qualified".to_owned()]));
+        assert!(render_source(source, "qualified").is_ok());
+    }
+
+    #[test]
+    fn reports_kaalang_arguments_as_an_invalid_flow() {
+        for attribute in ["kaalang", "kaalang::kaalang"] {
+            let source = format!(
+                "#[{attribute}(unexpected)]\nfn invalid(input: u8) -> u8 {{\n    #[action(\"Return the input\")]\n    let end = |input| {{ input }};\n    |end| return end;\n}}\n"
+            );
+
+            assert_eq!(
+                render_source(&source, "invalid"),
+                Err(RenderError::InvalidFlow {
+                    name: "invalid".into(),
+                    line: 1,
+                    column: 1,
+                    message: "#[kaalang] does not accept arguments".into(),
+                })
+            );
+        }
     }
 
     #[test]
