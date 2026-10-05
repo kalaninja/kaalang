@@ -175,6 +175,47 @@ fn symbolic_analysis_matches_all_generated_combinations() {
     assert!(compare(&flow(&data_branching(12))));
 }
 
+/// Compares both paths on every flow in `sources`. Most generated shapes are
+/// one bare function; a few are whole fixture files.
+fn compare_generated(sources: &[String]) {
+    let functions = sources
+        .iter()
+        .flat_map(|source| match syn::parse_str::<syn::ItemFn>(source) {
+            Ok(function) => vec![function],
+            Err(_) => crate::flows(&syn::parse_file(source).expect("the shape parses").items),
+        })
+        .collect::<Vec<_>>();
+    let compared = functions
+        .iter()
+        .filter(|function| compare(function))
+        .count();
+    assert_eq!(
+        compared,
+        functions.len(),
+        "every generated shape reaches analysis"
+    );
+}
+
+#[test]
+fn symbolic_analysis_matches_the_generated_variants() {
+    use kaalang_testing::shapes;
+
+    let mut sources = shapes::bypassed_cycles();
+    sources.extend(shapes::question_shapes());
+    sources.extend(shapes::alternative_bodies(2..=4));
+    sources.extend(shapes::staged_shapes());
+    sources.push(shapes::FOUR_LANES.to_owned());
+    compare_generated(&sources);
+}
+
+/// The bulk of the generated cycle shapes, excluded from default runs due to
+/// its cost.
+#[test]
+#[ignore = "exhaustive; run it with `just rust test-exhaustive`"]
+fn symbolic_analysis_matches_every_generated_cycle_shape() {
+    compare_generated(&kaalang_testing::shapes::cycle_shapes());
+}
+
 #[test]
 fn arbitrary_branch_work_and_captures_preserve_rejection_priority() {
     let function = flow(&branching_with_work(4));

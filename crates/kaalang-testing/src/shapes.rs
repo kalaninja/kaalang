@@ -180,6 +180,72 @@ fn alternative(routes: &[&str]) -> String {
     )
 }
 
+/// A question that either bypasses a gated cycle of two or three outputs or
+/// enters it. The bypass merges with every nonempty subset of the outputs, in
+/// both question orders, with and without a repeating case after the exits.
+/// The outputs left out meet that merge at the return.
+#[must_use]
+pub fn bypassed_cycles() -> Vec<String> {
+    let mut shapes = Vec::new();
+    for outputs in 2..=3 {
+        for joined in 1..1usize << outputs {
+            for bypass_first in [true, false] {
+                for repeats in [false, true] {
+                    shapes.push(bypassed_cycle(outputs, joined, bypass_first, repeats));
+                }
+            }
+        }
+    }
+    shapes
+}
+
+/// One [`bypassed_cycles`] shape; bit `k` of `joined` merges output `k`.
+fn bypassed_cycle(outputs: usize, joined: usize, bypass_first: bool, repeats: bool) -> String {
+    let question = if bypass_first {
+        "let (bypass, enter) = |flag| flag;"
+    } else {
+        "let (enter, bypass) = |flag| !flag;"
+    };
+    let mut routes = vec!["exit"; outputs];
+    if repeats {
+        routes.push("repeat");
+    }
+    let selection = selection(&routes, "out_");
+    let transfer = if repeats {
+        format!("\n        |out_{outputs}| continue;")
+    } else {
+        String::new()
+    };
+    let declared = (0..outputs)
+        .map(|output| format!("out_{output}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let (merged, kept): (Vec<_>, Vec<_>) =
+        (0..outputs).partition(|output| joined & (1 << output) != 0);
+    let merged = merged
+        .iter()
+        .map(|output| {
+            format!(
+                "    #[action(\"Join output {output}.\")]\n    let joined = |out_{output}| {output}u8;\n"
+            )
+        })
+        .collect::<Vec<_>>()
+        .concat();
+    let kept = kept
+        .iter()
+        .map(|output| {
+            format!(
+                "    #[action(\"Keep output {output}.\")]\n    let result = |out_{output}| {}u8;\n",
+                output + 10
+            )
+        })
+        .collect::<Vec<_>>()
+        .concat();
+    format!(
+        "fn probe(flag: bool, mode: u8) -> u8 {{\n    #[question(\"Bypass the cycle?\")]\n    {question}\n    #[cycle(\"Select an output.\")]\n    let ({declared}) = |enter| loop {{\n{selection}{transfer}\n    }};\n    #[action(\"Bypass.\")]\n    let joined = |bypass| 100u8;\n{merged}    #[action(\"Use the joined value.\")]\n    let result = |joined| joined + 1;\n{kept}    |result| return result;\n}}\n"
+    )
+}
+
 /// The choice that opens a cycle body, naming its outcomes `<prefix><index>`.
 fn selection(routes: &[&str], prefix: &str) -> String {
     let cases = routes

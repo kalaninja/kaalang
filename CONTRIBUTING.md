@@ -127,11 +127,12 @@ One comparison is too slow for that baseline and sits behind `#[ignore]`:
 just rust test-exhaustive
 ```
 
-It takes about half a minute and compares the construction with the independent
-procedure over the whole declared domain. Run it before committing a change to
-`construct/`, to the shapes in `kaalang-testing`, or to any rule those answers
-rest on. Nothing else runs it, and it is the only check that reaches the nested
-cycle shapes in bulk.
+It takes about half a minute. It compares the construction with the independent
+procedure over the whole declared domain, and the two analysis paths over every
+generated cycle shape. Run it before committing a change to `construct/`, to
+`analyze/` or `symbolic/`, to the shapes in `kaalang-testing`, or to any rule
+those answers rest on. Nothing else runs it, and it is the only check that
+reaches the nested cycle shapes in bulk.
 
 Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
 flow it declares, with that flow's diagram beside it. The diagrams redraw
