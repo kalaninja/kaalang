@@ -1,5 +1,6 @@
-//! Parses a described cycle: a loop with its optional entry gate and declared
-//! outputs, or a for cycle with its header captures, item and completion.
+//! Parses a described cycle: a loop cycle with its optional entry gate and
+//! declared outputs, or a for cycle with its header captures, item and
+//! completion.
 
 use std::collections::BTreeSet;
 
@@ -225,7 +226,7 @@ pub(super) fn exports(blocks: &mut Vec<Block>, header: usize) -> Result<()> {
 pub(super) fn structural_break(expression: &ExprBreak) -> Error {
     Error::new_spanned(
         expression,
-        "a kaalang cycle has no structural `break`; it completes when a route reaches the end of its body with one of its declared outputs",
+        "a kaalang cycle has no structural `break`; a loop cycle completes when a route reaches the end of its body with one of its declared outputs, and a for cycle when its items run out",
     )
 }
 

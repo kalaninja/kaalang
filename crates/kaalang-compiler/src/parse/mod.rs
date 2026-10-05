@@ -257,7 +257,7 @@ fn statements(
             Some(Expr::While(expression)) => {
                 return Err(Error::new_spanned(
                     expression,
-                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")]` block with a question and `continue`",
+                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")] loop` with a question and `continue`",
                 ));
             }
             _ => parse_block(statement)?,
