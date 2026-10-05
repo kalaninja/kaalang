@@ -193,7 +193,7 @@ pub(super) fn contours(
                 connection: culprit,
                 span: flow.blocks[header].span,
                 message: format!(
-                    "the iteration back edge of {} cannot climb the {side} of its body: {blocked}. Reorder the branches so the routes that repeat the body sit at one edge",
+                    "the iteration back edge of {} cannot climb the {side} side of its body: {blocked}; reorder the branches so the routes that repeat the body sit at one edge",
                     super::describe::cycle_name(flow, header)
                 ),
             }
