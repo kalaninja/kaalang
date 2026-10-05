@@ -140,10 +140,19 @@ themselves during `cargo test`, so a renderer or model change arrives as a diff
 over them. `just rust svg` redraws them and shows that diff. Read it before
 committing: nothing else checks that the new diagrams still make sense.
 
+Gallery examples may group related flows in one source file and share a test.
+Each flow still gets its own `<flow>.svg` beside that file.
+
+Hand-written stress fixtures live in
+`crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
+diagrams. They exercise heavy combinations of language features and receive the
+stress-fixture tier of the corpus budgets.
+
 ### Packaging a release
 
-Set the version in the root `Cargo.toml` and date its section in `CHANGELOG.md`.
-Then verify the publishable workspace packages together:
+Set the version in the root `Cargo.toml`, in `[workspace.package]` and in each
+path crate's entry in `[workspace.dependencies]`, and date its section in
+`CHANGELOG.md`. Then verify the publishable workspace packages together:
 
 ```sh
 just release package
@@ -174,14 +183,6 @@ After publishing, tag the released commit and push the tag:
 git tag -a v<version> -m "kaalang <version>"
 git push origin v<version>
 ```
-
-Gallery examples may group related flows in one source file and share a test.
-Each flow still gets its own `<flow>.svg` beside that file.
-
-Hand-written stress fixtures live in
-`crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
-diagrams. They exercise heavy combinations of language features and receive the
-stress-fixture tier of the corpus budgets.
 
 ## Performance budgets
 
