@@ -166,10 +166,10 @@ mod tests {
 
     #[test]
     fn a_converged_selection_does_not_split_cycle_exit_routes() {
-        let source = include_str!("../../../kaalang/tests/cycle/behavior/multiple_exits.rs")
-            .replace(
-                "    let selected = {",
-                r#"    let selected = {
+        let fixture = include_str!("../../../kaalang/tests/cycle/behavior/multiple_exits.rs");
+        let source = fixture.replace(
+            "    let result = loop {",
+            r#"    let result = loop {
         #[question("Prepare this iteration?")]
         let (left, right) = |mode| mode == 0;
 
@@ -182,7 +182,11 @@ mod tests {
         #[action("Finish the shared preparation.")]
         |ready| {};
 "#,
-            );
+        );
+        assert_ne!(
+            source, fixture,
+            "the fixture still opens its cycle this way"
+        );
         crate::build(&crate::tests::fixture(&source, "multiple_exits"))
             .expect("completed branches do not duplicate the following exit routes");
     }
