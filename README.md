@@ -170,13 +170,13 @@ named stages:
 | `choice`   | Select one output per visit from the cases of a Rust `match`.                |
 | `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
 | `stage`    | Group blocks into a named step selected by an incoming signal.               |
-| `continue` | Start the next iteration of the directly containing cycle.                   |
+| `continue` | Start the next iteration of the directly containing loop cycle.              |
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
 declare their branch outputs. A cycle's `loop { ... }` body contains kaalang
-blocks. A route through it can repeat at its one `continue`, complete with one
-declared output, or diverge in a nested cycle. A completed output becomes
+blocks. A route through it can repeat at its `continue`, complete with one of
+its declared outputs, or diverge in a nested cycle. A completed output becomes
 available after the cycle. In the diagram, `continue` routes meet at the cycle's
 back edge, completing routes leave through the cycle boundary, and `return`
 reaches the flow end. A cycle written `for item in items { ... }` instead runs

@@ -4,21 +4,33 @@
 
 ### Breaking
 
-- Cycles no longer complete with a structural `break` or repeat at the end of
-  their body, and the body is written as `loop { ... }` instead of a bare brace
-  block. A cycle declares named outputs, each produced by a same-named wire in
-  its body, and repeats only through an explicit `continue`. Its header names at
-  most one plain gate wire instead of a capture list, and inner blocks capture
-  outer wires directly. See [RFC 0007](docs/rfcs/0007-language-refinements.md)
-  and [RFC 0008](docs/rfcs/0008-cycle-forms.md).
+- Existing cycles are loop cycles. A loop cycle no longer completes with a
+  structural `break` or repeats at the end of its body, and the body is written
+  as `loop { ... }` instead of a bare brace block. It declares named outputs,
+  each produced by a same-named wire in its body, and repeats only through an
+  explicit `continue`. Its header names at most one plain gate wire instead of a
+  capture list, and inner blocks capture outer wires directly. A tuple of
+  outputs now declares alternative exits, one completing per route, instead of
+  simultaneous results: declare one tuple-valued output and destructure it after
+  the cycle. See [RFC 0007](docs/rfcs/0007-language-refinements.md) and
+  [RFC 0008](docs/rfcs/0008-cycle-forms.md).
 - A block body can no longer read or assign a flow parameter it does not
   capture. 0.1.0 accepted this by mistake.
 - The `--collapse-loops` option and `RenderOptions::collapse_loops` are renamed
   `--collapse-cycles` and `collapse_cycles`.
 - Descriptions are interpreted as restricted Markdown, so existing `*`, `_`,
-  `` ` ``, `~`, `^`, `$`, and supported tags render as formatting. Escape a
-  marker with a backslash to keep it literal. See
-  [RFC 0005](docs/rfcs/0005-markdown.md).
+  `` ` ``, `~`, `^`, `$`, supported tags, a leading `> `, backslash escapes, and
+  `&...;` character references render as notation. Escape a marker with a
+  backslash to keep it literal. See [RFC 0005](docs/rfcs/0005-markdown.md).
+- In SVG output, a collapsed cycle node has the `cycle` class instead of `loop`,
+  and the back-edge arrow marker is `back-edge-arrow` instead of `loop-arrow`.
+- The public types of `kaalang-compiler` follow the cycle terminology and the
+  new cycle forms, for example `BlockKind::Cycle`, `ExecutionPlan::Cycle`,
+  `topology::Cycle`, and `ExecutionOutcome::Repeat { cycle_index }`;
+  loop-specific items such as `ProducerId::CycleInput`, `Execution::repeats`,
+  and `SemanticModel::body_vertices` are removed. In `kaalang-render`,
+  `ArrangementVerifier::may_rise_beside` and `body_vertices` are no longer
+  public.
 
 ### Added
 
@@ -36,6 +48,11 @@
   conditions instead of enumerating every history.
 - `cargo kaalang --help` and `cargo kaalang --version`.
 - The README is the `kaalang` crate documentation on docs.rs.
+
+### Changed
+
+- Nodes on the same row share the height of the tallest one, so a diagram of an
+  unchanged 0.1.0 source can differ by a few pixels.
 
 ### Fixed
 

@@ -163,7 +163,7 @@ owners drop when the iteration ends.
 
 Questions, choices, actions, calls, and nested cycles of either form follow
 their ordinary rules inside the body. A nested loop cycle's `continue` and
-outputs belong to that loop; a nested for cycle completes before the enclosing
+outputs belong to that cycle; a nested for cycle completes before the enclosing
 body continues.
 
 ### 3.3 Completion
@@ -311,7 +311,7 @@ through the for-entry, as it follows a loop cycle's entry. The repetition is
 carried by the two caps; no line returns from the for-end to the for-entry.
 
 A nested loop cycle inside a for body keeps its boundary within the body. A for
-cycle nested in a loop body keeps its caps within that loop's boundary.
+cycle nested in a loop cycle's body keeps its caps within that cycle's boundary.
 
 ### 6.2 Collapsed for cycle
 
@@ -406,9 +406,10 @@ consumer.
 This RFC supersedes the provisions below. Earlier released RFC texts remain
 unchanged.
 
-- **RFC 0001 §§3, 4.5 and 8; RFC 0007 §§2.2 and 3:** a cycle body is a Rust
-  `loop` or `for` loop rather than a bare brace block, with the grammar in §2.3
-  here. The bare-body and `let`-without-captures shorthands apply to both forms.
+- **RFC 0001 §§3, 4.5 and 8; RFC 0006 §§5, 8.3 and 8.5; RFC 0007 §§1.1, 2 and
+  3:** a cycle body is a Rust `loop` or `for` loop rather than a bare brace
+  block, with the grammar in §2.3 here. The bare-body and `let`-without-captures
+  shorthands apply to both forms.
 - **RFC 0001 §3:** output patterns still exclude wildcards; only a for cycle's
   item pattern admits `_`.
 - **RFC 0001 §4:** a cycle repeats a nested sequence either until it exports an

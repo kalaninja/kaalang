@@ -148,7 +148,8 @@ Then verify the publishable workspace packages together:
 just release package
 ```
 
-Preview the complete publication without uploading:
+Commit the version and the changelog date; the publishing recipes refuse an
+uncommitted tree. Preview the complete publication without uploading:
 
 ```sh
 just release publish-dry-run
