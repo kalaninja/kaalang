@@ -1,0 +1,5 @@
+error: a kaalang block body must not use the `?` operator
+ --> tests/cycle/compile_fail/for_items_transfer.rs:6:27
+  |
+6 |     |values| for value in values.first()? {
+  |                           ^^^^^^^^^^^^^^^

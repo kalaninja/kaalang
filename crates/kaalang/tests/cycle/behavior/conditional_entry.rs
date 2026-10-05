@@ -9,7 +9,7 @@ fn conditional_entry(enabled: bool, limit: usize) -> usize {
     let mut count = |run| 0;
 
     #[cycle("Count to the limit when selected.")]
-    let end = |count| {
+    let end = |count| loop {
         #[question("Has the counter reached the limit?")]
         let (done, again) = |&count, &limit| *count >= *limit;
 

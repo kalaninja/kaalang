@@ -6,12 +6,12 @@ fn nested_cycles(limit: usize) -> usize {
     let mut outer = || 0;
 
     #[cycle("Advance the outer counter to the limit.")]
-    let done = {
+    let done = loop {
         #[action("Initialize the iteration counter.")]
         let mut inner = || 0;
 
         #[cycle("Advance the inner counter to the outer counter.")]
-        let leave_1 = {
+        let leave_1 = loop {
             #[question("Is the iteration counter below the outer counter?")]
             #[yes("YES")]
             #[no("NO")]

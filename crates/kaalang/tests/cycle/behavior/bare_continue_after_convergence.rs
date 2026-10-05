@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn bare_continue_after_convergence(flag: bool) -> ! {
     #[cycle("Repeat after both branches converge.")]
-    {
+    loop {
         #[question("Take the first route?")]
         let (first, second) = |flag| flag;
 
@@ -17,7 +17,7 @@ fn bare_continue_after_convergence(flag: bool) -> ! {
         |ready| {};
 
         continue;
-    };
+    }
 }
 
 #[test]

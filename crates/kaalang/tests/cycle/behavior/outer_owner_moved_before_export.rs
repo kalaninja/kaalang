@@ -15,7 +15,7 @@ fn outer_owner_moved_before_export(entry: Entry, mut log: Rc<RefCell<Vec<usize>>
     let mut count = || 0;
 
     #[cycle("Count three entries.")]
-    let final_count = {
+    let final_count = loop {
         #[question("Has the counter reached three?")]
         let (done, again) = |&count| *count == 3;
 

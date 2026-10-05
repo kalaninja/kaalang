@@ -1,0 +1,5 @@
+error[E0425]: cannot find value `values` in this scope
+  --> tests/cycle/compile_fail/for_body_reads_header_alias.rs:12:25
+   |
+12 |             || assert!(!values.is_empty());
+   |                         ^^^^^^ not found in this scope

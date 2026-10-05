@@ -1,0 +1,5 @@
+error: the body of a kaalang for cycle cannot produce its output `done`; the cycle provides it once its items run out
+ --> tests/cycle/compile_fail/for_produces_its_output.rs:8:13
+  |
+8 |         let done = |value| drop(value);
+  |             ^^^^

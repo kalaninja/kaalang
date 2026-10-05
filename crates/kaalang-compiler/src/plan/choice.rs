@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 
 use crate::model::{Branch, ExecutionPlan, Join};
 
-pub(super) fn dispatch(index: usize, branches: Vec<Branch>, joins: Vec<Join>) -> ExecutionPlan {
+pub(crate) fn dispatch(index: usize, branches: Vec<Branch>, joins: Vec<Join>) -> ExecutionPlan {
     ExecutionPlan::Choice {
         index,
         branches,

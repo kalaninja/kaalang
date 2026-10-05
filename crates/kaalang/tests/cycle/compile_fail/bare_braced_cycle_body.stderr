@@ -1,0 +1,7 @@
+error: a kaalang cycle body is a `loop { ... }` or `for ... in ... { ... }` block
+ --> tests/cycle/compile_fail/bare_braced_cycle_body.rs:6:5
+  |
+6 | /     {
+7 | |         continue;
+8 | |     };
+  | |_____^

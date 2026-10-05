@@ -78,13 +78,13 @@ branch, merge, and cycle rules. Every preparation route that reaches the stage
 section must supply exactly one entry signal.
 
 A declaration has exactly one `#[stage("description")]` attribute containing a
-nonempty Rust string literal, a header `|entry|` with one plain identifier, a
-braced kaalang sequence, and a trailing semicolon. Stage descriptions must be
-distinct within a flow, comparing decoded Rust string values before Markdown
-interpretation; raw and ordinary literals with the same value collide. A stage
-with completing transitions declares its possible outputs before the header, for
-example `let (count, finish) = |count| { ... };`. These are alternative outputs:
-a completed visit provides exactly one. A terminal stage or a stage whose every
+nonempty Rust string literal, a header `|entry|` with one plain identifier, and
+a braced kaalang sequence. Stage descriptions must be distinct within a flow,
+comparing decoded Rust string values before Markdown interpretation; raw and
+ordinary literals with the same value collide. A stage with completing
+transitions declares its possible outputs before the header, for example
+`let (count, finish) = |count| { ... };`. These are alternative outputs: a
+completed visit provides exactly one. A terminal stage or a stage whose every
 route diverges omits the output declaration or uses `let ()`.
 
 The header receives the stage's entry signal and activates its whole body. Its
@@ -1086,7 +1086,7 @@ lowering in §6.2.
 ## 9. Changes to earlier RFCs
 
 This RFC supersedes the provisions below for flows declaring stages. Earlier
-accepted RFC texts remain unchanged. Ordinary flow and cycle rules continue to
+released RFC texts remain unchanged. Ordinary flow and cycle rules continue to
 apply within preparation and each stage unless explicitly changed here.
 
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A

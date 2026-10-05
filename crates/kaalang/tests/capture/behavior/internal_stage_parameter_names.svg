@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="834" height="785" viewBox="0 0 834 785" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for internal_stage_parameter_names</title><desc id="kaalang-description">The flow starts directly at stage first. Transitions return to the stage entry rail. Nodes: Start: internal_stage_parameter_names with parameters first: u32; __kaalang_wire_0: u32; r#__kaalang_wire_0_: u32 handing over __kaalang_wire_0, __kaalang_wire_0_. Stage first. Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Transition: Keep the inputs.. Transition to stage next. Stage next. Nodes: Stage: Keep the inputs.; Action: Collect the values. capturing next, __kaalang_wire_0, __kaalang_wire_0_ handing over result; End: (u32, u32, u32) capturing result. Connections: Stage: Keep the inputs. to Action: Collect the values.; Action: Collect the values. to End: (u32, u32, u32).</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="785" viewBox="0 0 834 785" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for internal_stage_parameter_names</title><desc id="kaalang-description">The flow starts directly at stage first. Transitions return to the stage entry rail. Nodes: Start: internal_stage_parameter_names with parameters first: u32; __kaalang_wire_0: u32; r#__kaalang_wire_0_: u32 handing over __kaalang_wire_0, __kaalang_wire_0_. Stage first. Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Stage transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Stage transition: Keep the inputs.. Transition to stage next. Stage next. Nodes: Stage: Keep the inputs.; Action: Collect the values. capturing next, __kaalang_wire_0, __kaalang_wire_0_ handing over result; End: (u32, u32, u32) capturing result. Connections: Stage: Keep the inputs. to Action: Collect the values.; Action: Collect the values. to End: (u32, u32, u32).</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 127 L 232 176 "/>
@@ -56,7 +56,7 @@
 </g>
 <g transform="translate(60 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="545" viewBox="0 0 344 545" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for internal_stage_parameter_names</title>
-  <desc id="kaalang-part-1-description">Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Transition: Keep the inputs..</desc>
+  <desc id="kaalang-part-1-description">Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Stage transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Stage transition: Keep the inputs..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -78,8 +78,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>
@@ -103,7 +103,7 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Forward.</tspan></text>
     </g>
-    <g class="node transition" transform="translate(172 478)">
+    <g class="node stage-transition" transform="translate(172 478)">
       <title xml:space="preserve">Keep the inputs.</title>
       <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
       <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Keep the inputs.</tspan></text>
@@ -135,8 +135,8 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-      .stage-entry .node-shape, .transition .node-shape { fill: #f5f3ff; }
-      .stage-entry .label, .transition .label { font-weight: 600; }
+      .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
+      .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
     </style>
   </defs>

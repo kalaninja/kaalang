@@ -1,0 +1,18 @@
+error[E0382]: use of moved value
+ --> tests/cycle/compile_fail/for_moves_an_outer_value.rs:8:17
+  |
+3 | #[kaalang]
+  | ---------- in this attribute macro expansion
+4 | fn invalid(values: Vec<u32>, name: String) {
+  |                              ---- move occurs because value has type `String`, which does not implement the `Copy` trait
+5 |     #[cycle("Visit every value.")]
+  |     - inside of this loop
+...
+8 |         |value, name| drop((value, name));
+  |                 ^^^^ value moved here, in previous iteration of loop
+  |
+  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+  |
+8 |         |value, name.clone()| drop((value, name));
+  |                     ++++++++

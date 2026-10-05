@@ -9,7 +9,7 @@ fn invalid(take: bool) {
     let go = |yes| ();
 
     #[cycle("Stay on the other branch.")]
-    |no| {
+    |no| loop {
         continue;
     };
 

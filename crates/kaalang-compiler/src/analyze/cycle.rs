@@ -3,7 +3,7 @@
 use syn::{Error, Result};
 
 use super::{State, Walk, frame::Frames};
-use crate::model::{ExecutionOutcome, Flow};
+use crate::model::{Block, ExecutionOutcome, Flow};
 
 /// The body inherits every outer wire; completion drops its locals again.
 pub(super) fn visit(walk: &mut Walk<'_>, block: usize, mut state: State) {
@@ -65,14 +65,7 @@ pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {
                 .iter()
                 .find_map(|&index| outcomes[index])
                 .expect("an output follows the repeat");
-            return Err(Error::new(
-                cycle.span,
-                format!(
-                    "a route repeating this kaalang cycle lies between routes exporting `{}` and `{}`; move the repeating routes to one edge of the body",
-                    cycle.output_binding(before).ident,
-                    cycle.output_binding(after).ident
-                ),
-            ));
+            return Err(repeat_between(cycle, before, after));
         }
         // `drawn_first` leaves to the left of `drawn_later` yet is declared after it.
         if let Some((drawn_first, drawn_later)) = outputs
@@ -80,17 +73,45 @@ pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {
             .map(|pair| (pair[0], pair[1]))
             .find(|(first, later)| first > later)
         {
-            return Err(Error::new(
-                cycle.output_binding(drawn_first).ident.span(),
-                format!(
-                    "the routes exporting `{}` leave this kaalang cycle to the left of those exporting `{}`; declare its outputs in the order their routes leave it",
-                    cycle.output_binding(drawn_first).ident,
-                    cycle.output_binding(drawn_later).ident
-                ),
-            ));
+            return Err(out_of_order(cycle, drawn_first, drawn_later));
         }
     }
     Ok(())
+}
+
+/// A repeating route lies between the routes exporting `before` and `after`.
+pub(crate) fn repeat_between(cycle: &Block, before: usize, after: usize) -> Error {
+    Error::new(
+        cycle.span,
+        format!(
+            "a route repeating this kaalang cycle lies between routes exporting `{}` and `{}`; move the repeating routes to one edge of the body",
+            cycle.output_binding(before).ident,
+            cycle.output_binding(after).ident
+        ),
+    )
+}
+
+/// The routes exporting `first` leave to the left of those exporting `later`.
+pub(crate) fn out_of_order(cycle: &Block, first: usize, later: usize) -> Error {
+    Error::new(
+        cycle.output_binding(first).ident.span(),
+        format!(
+            "the routes exporting `{}` leave this kaalang cycle to the left of those exporting `{}`; declare its outputs in the order their routes leave it",
+            cycle.output_binding(first).ident,
+            cycle.output_binding(later).ident
+        ),
+    )
+}
+
+/// A route reaches the end of the body of the cycle at `header` without
+/// `continue` or a declared output.
+pub(crate) fn open_body(flow: &Flow, header: usize) -> Error {
+    let message = if flow.blocks[header].outputs.is_empty() {
+        "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"
+    } else {
+        "a route through this kaalang cycle reaches the end of its body without a declared output; produce one of its outputs or repeat it with `continue`"
+    };
+    Error::new(flow.blocks[header].span, message)
 }
 
 #[cfg(test)]
@@ -118,9 +139,9 @@ mod tests {
             #[kaalang]
             fn invalid(mut mode: u8) -> u8 {
                 #[cycle("Select an exit from a nested cycle.")]
-                let selected = {
+                let selected = loop {
                     #[cycle("Advance at most once.")]
-                    let selected = {
+                    let selected = loop {
                         #[question("Exit immediately?")]
                         let (done, check) = |mode| mode == 0;
 

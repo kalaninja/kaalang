@@ -25,7 +25,7 @@ fn separated_convergence_before_an_endless_cycle(value: u8) -> ! {
     let ready = |skip| ();
 
     #[cycle("Serve forever.")]
-    |ready| {
+    |ready| loop {
         continue;
     };
 }

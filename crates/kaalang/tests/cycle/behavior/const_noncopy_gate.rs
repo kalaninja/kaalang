@@ -5,7 +5,7 @@ struct Gate(u8);
 #[kaalang]
 const fn const_noncopy_gate(gate: Gate) -> u8 {
     #[cycle("Read an owned gate without moving it.")]
-    let result = |gate| {
+    let result = |gate| loop {
         #[action("Borrow the original gate.")]
         let result = |&gate| gate.0;
     };

@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn prepared_cycle(seed: u32) -> u32 {
     #[cycle("Produce shared data.")]
-    let mut shared = {
+    let mut shared = loop {
         #[action("Compute the result.")]
         let shared = |seed| seed + 1;
     };

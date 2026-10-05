@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn borrowed_result(text: &str) -> &str {
     #[cycle("Expose a borrowed outer wire.")]
-    let result = |text| {
+    let result = |text| loop {
         #[action("Borrow the text.")]
         let result = |text| text;
     };

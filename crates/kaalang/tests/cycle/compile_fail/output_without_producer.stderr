@@ -1,5 +1,5 @@
 error: a declared kaalang cycle output needs a producer named `right` in the cycle body
  --> tests/cycle/compile_fail/output_without_producer.rs:6:16
   |
-6 |     let (left, right) = |value| {
+6 |     let (left, right) = |value| loop {
   |                ^^^^^

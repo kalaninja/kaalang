@@ -18,7 +18,7 @@ fn invalid(take: bool, first: bool) -> u8 {
     let go = |shared| ();
 
     #[cycle("Stay on the other branch.")]
-    |no| {
+    |no| loop {
         continue;
     };
 

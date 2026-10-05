@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="681" height="796" viewBox="0 0 681 796" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_iterator_trait</title>
+  <desc id="kaalang-description">Cycles: Visit every iterator item. with inputs remaining, mut visits and outputs (). Nodes: Start: for_iterator_trait with parameters remaining: u32 handing over remaining; Action: Start with no visits. capturing nothing handing over mut visits; For entry: Visit every iterator item. capturing remaining; Action: Count the visit. capturing &amp;mut visits; For end: Visit every iterator item.; End: u32 capturing visits. Connections: Start: for_iterator_trait to Action: Start with no visits.; Action: Start with no visits. to For entry: Visit every iterator item.; For entry: Visit every iterator item. to Action: Count the visit.; Action: Count the visit. to For end: Visit every iterator item.; For end: Visit every iterator item. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 173 90 L 173 162
+      M 173 226 L 173 298
+      M 173 362 L 173 434
+      M 173 498 L 173 570
+      M 173 634 L 173 706
+    "/>
+    <text class="connection-label" x="186" y="108" xml:space="preserve"><tspan x="186" dy="0">remaining</tspan></text>
+    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut visits</tspan></text>
+    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">remaining</tspan></text>
+    <text class="connection-label" x="186" y="423" xml:space="preserve"><tspan x="186" dy="0">&amp;mut visits</tspan></text>
+    <text class="connection-label" x="186" y="695" xml:space="preserve"><tspan x="186" dy="0">visits</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 313 61 L 409 61"/>
+    <g class="parameter-panel" transform="translate(529 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">remaining: u32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(173 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_iterator_trait</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 194)">
+      <title xml:space="preserve">Start with no visits.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with no visits.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(173 330)">
+      <title xml:space="preserve">Visit every iterator item.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Visit every iterator item.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 466)">
+      <title xml:space="preserve">Count the visit.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count the visit.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(173 602)">
+      <title xml:space="preserve">Visit every iterator item.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Visit every iterator item.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 735)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

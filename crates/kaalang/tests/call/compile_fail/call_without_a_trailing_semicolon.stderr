@@ -1,6 +1,0 @@
-error: a kaalang call requires a trailing semicolon
-  --> tests/call/compile_fail/call_without_a_trailing_semicolon.rs:17:9
-   |
-17 | /         #[call]
-18 | |         record()
-   | |________________^

@@ -4,6 +4,40 @@
 
 use std::ops::RangeInclusive;
 
+/// Four cycles nested one inside the next, whose back edges climb the same side
+/// in four lanes. The outermost takes lane 3, which no fixture reaches.
+pub const FOUR_LANES: &str = r#"#[kaalang]
+fn deep(mut step: usize) -> usize {
+    #[cycle("Repeat the first cycle.")]
+    let leave_0 = |step| loop {
+        #[question("Leave the first?")]
+        let (stay_0, leave_0) = |&step| *step > 0;
+        #[cycle("Repeat the second cycle.")]
+        let leave_1 = |stay_0| loop {
+            #[question("Leave the second?")]
+            let (stay_1, leave_1) = |&step| *step > 1;
+            #[cycle("Repeat the third cycle.")]
+            let leave_2 = |stay_1| loop {
+                #[question("Leave the third?")]
+                let (stay_2, leave_2) = |&step| *step > 2;
+                #[cycle("Repeat the fourth cycle.")]
+                let leave_3 = |stay_2| loop {
+                    #[question("Leave the fourth?")]
+                    let (stay_3, leave_3) = |&step| *step > 3;
+                    #[action("Advance at the deepest level.")]
+                    |stay_3, &mut step| *step += 1;
+                    |stay_3| continue;
+                };
+                |leave_3| continue;
+            };
+            |leave_2| continue;
+        };
+        |leave_1| continue;
+    };
+    |leave_0, step| return step;
+}
+"#;
+
 /// The outcomes a flat cycle body selects between.
 const ROUTES: [&str; 3] = ["repeat", "leave", "finish"];
 
@@ -100,7 +134,7 @@ fn cycle_flow(
         ("", "")
     };
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
     )
 }
 
@@ -142,7 +176,7 @@ fn alternative(routes: &[&str]) -> String {
     };
     let selection = selection(routes, "case_");
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
     )
 }
 
@@ -224,15 +258,15 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
             )
         } else if inner_completes {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         } else {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         }
     };
@@ -378,7 +412,7 @@ pub fn staged_shapes() -> Vec<String> {
                 #[action("Finish from second.")]
                 let finish = |done, current| current;
                 #[cycle("Diverge in second.")]
-                |diverge| { continue; };
+                |diverge| loop { continue; };
             };
 
             #[stage("Return.")]
@@ -396,13 +430,13 @@ pub fn staged_shapes() -> Vec<String> {
         shape("first", "", read),
         shape(
             "seed",
-            "#[cycle(\"Prepare without a gate.\")] let first = { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
+            "#[cycle(\"Prepare without a gate.\")] let first = loop { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
             read,
         ),
         shape(
             "first",
             "",
-            "#[cycle(\"Read or repeat.\")] let current = |first| { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
+            "#[cycle(\"Read or repeat.\")] let current = |first| loop { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
         ),
         include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
             .to_owned(),

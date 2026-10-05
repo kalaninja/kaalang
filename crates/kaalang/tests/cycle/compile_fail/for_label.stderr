@@ -1,0 +1,9 @@
+error: kaalang block bodies do not support attributes or labels
+ --> tests/cycle/compile_fail/for_label.rs:6:14
+  |
+6 |       |values| 'values: for value in values {
+  |  ______________^
+7 | |         #[action("Use the value.")]
+8 | |         |value| drop(value);
+9 | |     };
+  | |_____^

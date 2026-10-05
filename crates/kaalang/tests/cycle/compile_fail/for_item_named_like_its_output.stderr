@@ -1,0 +1,5 @@
+error: a kaalang for cycle's item and output need different names
+ --> tests/cycle/compile_fail/for_item_named_like_its_output.rs:6:30
+  |
+6 |     let value = |values| for value in values {
+  |                              ^^^^^

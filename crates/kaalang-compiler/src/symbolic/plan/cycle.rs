@@ -29,12 +29,7 @@ pub(super) fn lower(
         from: 0,
     });
     let body = builder.lower(context, done, &inside_forbidden, &inside_scopes);
-    let completing = builder.flow.exports(header).fold(NEVER, |sum, consumer| {
-        builder
-            .executions
-            .conditions
-            .or(sum, builder.executions.runs[consumer])
-    });
+    let completing = builder.executions.any_run(builder.flow.exports(header));
     let completing = builder.executions.conditions.and(context, completing);
     let mut emitted = body.emitted;
     emitted.insert(header);

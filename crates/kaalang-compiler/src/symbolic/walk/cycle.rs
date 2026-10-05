@@ -1,7 +1,5 @@
 //! Conditional completion restores the cycle's outer data scope.
 
-use syn::Error;
-
 use super::{Condition, NEVER, State, Walk};
 
 pub(super) fn visit(
@@ -19,18 +17,12 @@ pub(super) fn visit(
         State {
             live: runs,
             available: outside.available.clone(),
+            resume: Vec::new(),
         },
     );
     if walk.has(body.live) {
-        let message = if walk.flow.blocks[header].outputs.is_empty() {
-            "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"
-        } else {
-            "a route through this kaalang cycle reaches the end of its body without a declared output; produce one of its outputs or repeat it with `continue`"
-        };
-        walk.report(
-            (end - 1, usize::MAX),
-            Error::new(walk.flow.blocks[header].span, message),
-        );
+        let error = crate::analyze::cycle::open_body(walk.flow, header);
+        walk.report((end - 1, usize::MAX), error);
     }
     let mut completed = NEVER;
     for (output, consumer) in walk.flow.exports(header).enumerate() {
@@ -42,15 +34,9 @@ pub(super) fn visit(
     if walk.flow.blocks[header].branch_count() > 0 {
         for (output, consumer) in walk.flow.exports(header).enumerate() {
             let selected = walk.executions.selected(header, output);
-            let agrees = walk
-                .executions
-                .conditions
-                .xor(selected, walk.exports[consumer]);
-            let allowed = walk.executions.conditions.not(agrees);
-            walk.executions.domain = walk
-                .executions
-                .conditions
-                .and(walk.executions.domain, allowed);
+            let c = &mut walk.executions.conditions;
+            let differs = c.xor(selected, walk.exports[consumer]);
+            walk.executions.domain = c.minus(walk.executions.domain, differs);
         }
     }
     let skipped = walk.executions.conditions.minus(outside.live, runs);

@@ -154,7 +154,7 @@ fn prefix_table(pattern: &[u8]) -> Vec<usize> {
         |pattern| (vec![0usize; pattern.len()], 1usize, 0usize);
 
     #[cycle("Find how much of the pattern's beginning repeats at each ending.")]
-    let finished = {
+    let finished = loop {
         #[question("Have all pattern bytes been processed?")]
         #[yes("YES")]
         #[no("NO")]
@@ -164,7 +164,7 @@ fn prefix_table(pattern: &[u8]) -> Vec<usize> {
         let byte = |next, pattern, position| pattern[position];
 
         #[cycle("Extend the matched beginning or try a shorter one.")]
-        let settled = |byte| {
+        let settled = |byte| loop {
             #[question("Does this byte match the next byte of the pattern's beginning?")]
             #[no("NO")]
             #[yes("YES")]

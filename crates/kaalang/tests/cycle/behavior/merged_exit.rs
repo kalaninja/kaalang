@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn merged_exit(stop: bool, mut remaining: usize) -> usize {
     #[cycle("Count down until either stopping condition is met.")]
-    let leave = {
+    let leave = loop {
         #[question("Stop immediately?")]
         let (leave, check) = |stop| stop;
 

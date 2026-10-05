@@ -15,7 +15,7 @@ const CYCLE_SOURCE: &str = r#"
 #[kaalang]
 fn route(request: u8) -> u8 {
     #[cycle("Use the request.")]
-    let response = |request| {
+    let response = |request| loop {
         #[action("Copy the request.")]
         let response = |request| request;
     };

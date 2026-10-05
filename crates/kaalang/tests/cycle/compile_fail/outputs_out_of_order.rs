@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut items: Vec<String>) -> Option<String> {
     #[cycle("Find a nonempty item.")]
-    let (exhausted, found) = {
+    let (exhausted, found) = loop {
         #[choice("Is another item available?")]
         #[case("Inspect the item.")]
         #[case("The collection is exhausted.")]

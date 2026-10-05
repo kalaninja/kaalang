@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn separated_cycle_convergence_before_an_endless_cycle(value: u8) -> ! {
     #[cycle("Settle once.")]
-    let settled = {
+    let settled = loop {
         #[choice("Select a branch.")]
         #[case("Take the first branch.")]
         #[case("Skip the first merge.")]
@@ -28,7 +28,7 @@ fn separated_cycle_convergence_before_an_endless_cycle(value: u8) -> ! {
     };
 
     #[cycle("Serve forever.")]
-    |settled| {
+    |settled| loop {
         continue;
     };
 }

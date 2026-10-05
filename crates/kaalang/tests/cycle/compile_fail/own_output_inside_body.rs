@@ -9,7 +9,7 @@ fn invalid(flag: bool) -> u32 {
     let value = |first| 1;
 
     #[cycle("Read the value this cycle produces.")]
-    let value = |second| {
+    let value = |second| loop {
         #[action("Read the value.")]
         let value = |value| value + 1;
     };

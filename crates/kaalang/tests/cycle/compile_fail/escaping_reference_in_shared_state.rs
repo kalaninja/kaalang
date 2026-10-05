@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn escaping_reference_in_shared_state<'a>(mut slot: &'a mut Option<&'a u8>) {
     #[cycle("Store a departing local in shared state.")]
-    let finished = {
+    let finished = loop {
         #[action("Create a local owner.")]
         let local = || 7u8;
 

@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `limit` before using it
+ --> tests/cycle/compile_fail/for_reads_an_uncaptured_wire.rs:6:51
+  |
+6 |     |values| for value in values.into_iter().take(limit) {
+  |                                                   ^^^^^

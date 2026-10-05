@@ -7,7 +7,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn while_loop(mut a: u64, mut b: u64) -> u64 {
     #[cycle("Reduce the pair to its greatest common divisor.")]
-    let divisor = {
+    let divisor = loop {
         #[question("Is the second number zero?")]
         #[yes("YES")]
         #[no("NO")]

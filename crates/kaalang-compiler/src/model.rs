@@ -81,6 +81,8 @@ pub struct Block {
     /// The ordered authored case descriptions of a choice.
     pub case_descriptions: Vec<String>,
     pub outputs: Vec<Ident>,
+    /// Positions of compiler-only outputs, omitted from captions and stage inputs.
+    pub unnamed_outputs: Vec<usize>,
     /// The validated identifier or flat tuple pattern declaring the outputs.
     /// Each binding preserves its authored mutability. An outputless block uses `()`.
     pub output_pattern: Pat,
@@ -99,6 +101,24 @@ pub struct Block {
     pub export_target: Option<usize>,
     /// Destination of a synthetic stage transition, absent on authored returns.
     pub transition_target: Option<usize>,
+    /// What a for cycle iterates. A loop cycle and every other block have none.
+    pub iteration: Option<Iteration>,
+}
+
+/// The header of a for cycle after its capture list.
+#[derive(Clone)]
+pub struct Iteration {
+    /// The authored item binding, or `_`.
+    pub item: Pat,
+    /// The expression the cycle iterates, evaluated once over its header captures.
+    pub items: Expr,
+}
+
+impl Iteration {
+    /// The hygienic iterator a for cycle takes its items from.
+    pub(crate) fn iterator() -> Ident {
+        Ident::new("__kaalang_items", Span::mixed_site())
+    }
 }
 
 impl Block {
@@ -303,14 +323,64 @@ impl Flow {
         consumer - self.exports(header).start
     }
 
-    /// The innermost cycle whose repeat reaches `block`: the block itself for a
-    /// cycle, otherwise the cycle directly containing it.
+    /// The hidden choice that opens every iteration of a for cycle, when
+    /// `block` runs inside one: it takes the next item, or exports the
+    /// cycle's completion once none is left. Every other block of the body,
+    /// apart from that export, belongs to its first case.
     #[must_use]
-    pub(crate) fn level(&self, block: usize) -> Option<usize> {
-        match self.blocks[block].kind {
-            BlockKind::Cycle => Some(block),
-            _ => self.blocks[block].parent,
-        }
+    pub(crate) fn next_item(&self, block: usize) -> Option<usize> {
+        let header = self.blocks[block].parent?;
+        self.blocks[header].iteration.as_ref()?;
+        let next = header + 1;
+        (block != next && self.blocks[block].kind != BlockKind::Export).then_some(next)
+    }
+
+    /// The for cycles that must have an item to reach `block`, including
+    /// enclosing bodies. A cycle's own choice and export need only outer items.
+    pub(crate) fn required_items(&self, block: usize) -> impl Iterator<Item = usize> + '_ {
+        std::iter::once(block)
+            .chain(self.enclosing(block))
+            .filter_map(|block| self.next_item(block))
+    }
+
+    /// Whether `block` is the hidden `continue` that ends a for cycle's
+    /// iteration. It runs on every route with an item that does not diverge,
+    /// so it may run on none.
+    #[must_use]
+    pub(crate) fn ends_iteration(&self, block: usize) -> bool {
+        self.blocks[block].kind == BlockKind::Continue && self.next_item(block).is_some()
+    }
+
+    /// Whether `block` may run on no route at all: a preparation's transition
+    /// to a stage no route selects, or the end of a for cycle's iteration when
+    /// every route through its body diverges.
+    #[must_use]
+    pub(crate) fn may_never_run(&self, block: usize) -> bool {
+        matches!(self.kind, FlowKind::Preparation) && self.blocks[block].transition_target.is_some()
+            || self.ends_iteration(block)
+    }
+
+    /// Whether `block` draws its branches: a question, a choice or a cycle with
+    /// several outputs, but not the hidden choice a for-entry stands for.
+    #[must_use]
+    pub(crate) fn draws_branches(&self, block: usize) -> bool {
+        self.blocks[block].branch_count() > 0 && !self.takes_next_item(block)
+    }
+
+    /// Whether `block` is the hidden choice that opens a for cycle's iterations.
+    #[must_use]
+    pub(crate) fn takes_next_item(&self, block: usize) -> bool {
+        self.blocks[block]
+            .parent
+            .is_some_and(|header| self.blocks[header].iteration.is_some() && block == header + 1)
+    }
+
+    /// The hidden choice and continue a for cycle at `header` draws as its
+    /// for-entry and for-end.
+    #[must_use]
+    pub(crate) fn for_caps(&self, header: usize) -> Option<(usize, usize)> {
+        self.blocks[header].iteration.as_ref()?;
+        Some((header + 1, self.exports(header).start - 1))
     }
 
     /// The repeat relation depends on where two blocks sit, not on which
@@ -321,9 +391,7 @@ impl Flow {
         block: usize,
         together: impl FnOnce(usize, usize) -> bool,
     ) -> bool {
-        if std::iter::successors(self.level(block), |&header| self.blocks[header].parent)
-            .any(|header| header == cycle_index)
-        {
+        if block == cycle_index || self.enclosing(block).any(|header| header == cycle_index) {
             return true;
         }
         let sequence = std::iter::successors(Some(self.blocks[block].parent), |&sequence| {
@@ -386,6 +454,15 @@ impl Flow {
             .span
     }
 
+    /// The wire one producer occurrence provides.
+    #[must_use]
+    pub fn wire(&self, producer: ProducerId) -> &Ident {
+        match producer {
+            ProducerId::FlowInput(index) => &self.flow_inputs[index],
+            ProducerId::BlockOutput { block, output } => &self.blocks[block].outputs[output],
+        }
+    }
+
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
     pub(crate) fn wire_name(&self, wire: &Ident) -> String {
@@ -446,6 +523,8 @@ pub struct Execution {
 pub(crate) struct Passes {
     /// Indexed by repeating cycle, then queried block. Non-cycle rows are empty.
     reaching: Vec<Vec<bool>>,
+    /// Per block, the hidden choices of the for cycles whose items it needs.
+    items: Vec<Vec<usize>>,
 }
 
 impl Passes {
@@ -453,6 +532,13 @@ impl Passes {
     /// cycle enclosing `block`, or passes `block` before its repetition.
     #[must_use]
     pub(crate) fn reaches(&self, execution: &Execution, block: usize) -> bool {
+        // A for cycle out of items passes its body by.
+        if self.items[block]
+            .iter()
+            .any(|&next| execution.selected(next) == Some(1))
+        {
+            return false;
+        }
         let ExecutionOutcome::Repeat { cycle_index } = execution.outcome else {
             return true;
         };
@@ -489,7 +575,10 @@ impl Passes {
                 }
             })
             .collect();
-        Self { reaching }
+        let items = (0..flow.blocks.len())
+            .map(|block| flow.required_items(block).collect())
+            .collect();
+        Self { reaching, items }
     }
 }
 

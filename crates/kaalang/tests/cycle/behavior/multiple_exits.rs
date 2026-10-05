@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn multiple_exits(mut mode: u8) -> u8 {
     #[cycle("Select an exit after zero or one advances.")]
-    let result = {
+    let result = loop {
         #[choice("Exit or advance?")]
         #[case("Exit immediately.")]
         #[case("Exit after advancing.")]

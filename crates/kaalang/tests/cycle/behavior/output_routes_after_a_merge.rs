@@ -14,7 +14,7 @@ fn output_routes_after_a_merge(double: bool, mode: u8) -> u32 {
     let factor = |once| 1;
 
     #[cycle("Grade the mode.")]
-    let (pass, fail) = {
+    let (pass, fail) = loop {
         #[choice("Which grade?")]
         #[case("Top marks.")]
         #[case("Enough marks.")]

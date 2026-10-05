@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="682" height="1068" viewBox="0 0 682 1068" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for nested_for_cycles</title>
+  <desc id="kaalang-description">Cycles: Add every row. with inputs rows, mut total and outputs (); Add every value of the row. with inputs row, mut total and outputs (). Nodes: Start: nested_for_cycles with parameters rows: &amp;[Vec&lt;u32&gt;] handing over rows; Action: Start with a total of zero. capturing nothing handing over mut total; For entry: Add every row. capturing rows handing over row; For entry: Add every value of the row. capturing row handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add every value of the row.; For end: Add every row.; End: u32 capturing total. Connections: Start: nested_for_cycles to Action: Start with a total of zero.; Action: Start with a total of zero. to For entry: Add every row.; For entry: Add every row. to For entry: Add every value of the row.; For entry: Add every value of the row. to Action: Add the value.; Action: Add the value. to For end: Add every value of the row.; For end: Add every value of the row. to For end: Add every row.; For end: Add every row. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 174 90 L 174 162
+      M 174 226 L 174 298
+      M 174 362 L 174 434
+      M 174 498 L 174 570
+      M 174 634 L 174 706
+      M 174 770 L 174 842
+      M 174 906 L 174 978
+    "/>
+    <text class="connection-label" x="187" y="423" xml:space="preserve"><tspan x="187" dy="0">row</tspan></text>
+    <text class="connection-label" x="187" y="108" xml:space="preserve"><tspan x="187" dy="0">rows</tspan></text>
+    <text class="connection-label" x="187" y="244" xml:space="preserve"><tspan x="187" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="187" y="516" xml:space="preserve"><tspan x="187" dy="0">value</tspan></text>
+    <text class="connection-label" x="187" y="151" xml:space="preserve"><tspan x="187" dy="0">()</tspan></text>
+    <text class="connection-label" x="187" y="287" xml:space="preserve"><tspan x="187" dy="0">rows</tspan></text>
+    <text class="connection-label" x="187" y="559" xml:space="preserve"><tspan x="187" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="187" y="967" xml:space="preserve"><tspan x="187" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 314 61 L 410 61"/>
+    <g class="parameter-panel" transform="translate(530 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">rows: &amp;[Vec&lt;u32&gt;]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(174 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_for_cycles</tspan></text>
+    </g>
+    <g class="node action" transform="translate(174 194)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(174 330)">
+      <title xml:space="preserve">Add every row.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every row.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(174 466)">
+      <title xml:space="preserve">Add every value of the row.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value of the row.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(174 602)">
+      <title xml:space="preserve">Add the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(174 738)">
+      <title xml:space="preserve">Add every value of the row.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every value of the row.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(174 874)">
+      <title xml:space="preserve">Add every row.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add every row.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(174 1007)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

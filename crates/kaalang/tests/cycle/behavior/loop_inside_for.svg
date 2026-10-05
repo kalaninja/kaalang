@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="822" height="1220" viewBox="0 0 822 1220" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for loop_inside_for</title>
+  <desc id="kaalang-description">Cycles: Count down every value. with inputs values, mut total and outputs (); Count the value down to zero. with inputs mut left, mut total and outputs _zero. Nodes: Start: loop_inside_for with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; For entry: Count down every value. capturing values handing over value; Action: Start counting at the value. capturing value handing over mut left; Question: Has the value been counted down? capturing &amp;left handing over _zero / more; Action: Count one down. capturing more, &amp;mut left, &amp;mut total handing over counted; For end: Count down every value.; End: u32 capturing total. Connections: Start: loop_inside_for to Action: Start with a total of zero.; Action: Start with a total of zero. to For entry: Count down every value.; For entry: Count down every value. to Action: Start counting at the value.; Action: Start counting at the value. to the entry of the cycle; Question: Has the value been counted down? branch 1 to For end: Count down every value.; Question: Has the value been counted down? branch 2 to Action: Count one down.; Action: Count one down. to the iteration tail of the cycle; For end: Count down every value. to End: u32; the entry of the cycle to Question: Has the value been counted down?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Count the value down to zero.</title>
+    <rect class="cycle-boundary" x="33" y="535" width="756" height="422" rx="12"/>
+    <text class="cycle-caption" x="777" y="549" text-anchor="end" xml:space="preserve"><tspan x="777" dy="0">Count the value down to zero.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 201 90 L 201 162
+      M 201 226 L 201 298
+      M 201 362 L 201 434
+      M 201 498 L 201 570
+      M 201 714 L 201 994
+      M 341 678 L 561 678 L 561 786
+      M 561 850 L 561 922
+      M 201 1058 L 201 1130
+      M 201 570 L 201 642
+    "/>
+    <path class="connection" d="
+      M 561 922 L 761 922 L 761 570 L 201 570
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label" x="214" y="423" xml:space="preserve"><tspan x="214" dy="0">value</tspan></text>
+    <text class="connection-label" x="214" y="108" xml:space="preserve"><tspan x="214" dy="0">values</tspan></text>
+    <text class="connection-label" x="214" y="244" xml:space="preserve"><tspan x="214" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="214" y="516" xml:space="preserve"><tspan x="214" dy="0">mut left</tspan></text>
+    <text class="connection-label" x="214" y="732" xml:space="preserve"><tspan x="214" dy="0">_zero</tspan></text>
+    <text class="connection-label" x="354" y="696" xml:space="preserve"><tspan x="354" dy="0">more</tspan></text>
+    <text class="connection-label" x="574" y="868" xml:space="preserve"><tspan x="574" dy="0">counted</tspan></text>
+    <text class="connection-label" x="214" y="151" xml:space="preserve"><tspan x="214" dy="0">()</tspan></text>
+    <text class="connection-label" x="214" y="287" xml:space="preserve"><tspan x="214" dy="0">values</tspan></text>
+    <text class="connection-label" x="214" y="631" xml:space="preserve"><tspan x="214" dy="0">&amp;left</tspan></text>
+    <text class="connection-label" x="574" y="775" xml:space="preserve"><tspan x="574" dy="0">more, &amp;mut left, &amp;mut total</tspan></text>
+    <text class="connection-label" x="214" y="1119" xml:space="preserve"><tspan x="214" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 341 61 L 437 61"/>
+    <g class="parameter-panel" transform="translate(557 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(201 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">loop_inside_for</tspan></text>
+    </g>
+    <g class="node action" transform="translate(201 194)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(201 330)">
+      <title xml:space="preserve">Count down every value.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down every value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(201 466)">
+      <title xml:space="preserve">Start counting at the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start counting at the value.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(201 678)">
+      <title xml:space="preserve">Has the value been counted down?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the value been counted </tspan><tspan x="0" dy="18">down?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(561 818)">
+      <title xml:space="preserve">Count one down.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count one down.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(201 1026)">
+      <title xml:space="preserve">Count down every value.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down every value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(201 1159)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

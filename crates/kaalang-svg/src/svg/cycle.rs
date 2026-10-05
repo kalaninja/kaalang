@@ -3,11 +3,12 @@
 use std::fmt::Write;
 
 use super::{
-    Node, TextAnchor, escape, needs_composed_lines, write_composed_lines, write_label, write_lines,
+    Node, TextAnchor, needs_composed_lines, write_composed_lines, write_lines, write_start_label,
+    write_title,
 };
 use crate::layout::{
-    CYCLE_CAPTION_BASELINE, CYCLE_CAPTION_FONT, CYCLE_CAPTION_LINE_HEIGHT, CYCLE_CAPTION_PADDING_X,
-    CycleRegion, NODE_LABEL_PADDING_X,
+    CAP_CHAMFER, CYCLE_CAPTION_BASELINE, CYCLE_CAPTION_FONT, CYCLE_CAPTION_LINE_HEIGHT,
+    CYCLE_CAPTION_PADDING_X, CycleRegion,
 };
 
 const NODE_CORNER_RADIUS: i32 = 8;
@@ -24,13 +25,7 @@ pub(super) fn write_node(svg: &mut String, node: &Node) {
         node.width,
         node.height
     );
-    write_label(
-        svg,
-        node,
-        0,
-        -half_width + NODE_LABEL_PADDING_X,
-        TextAnchor::Start,
-    );
+    write_start_label(svg, node);
     emit!(
         svg,
         "      <text class=\"loop-marker\" x=\"{}\" y=\"{MARKER_BASELINE}\" aria-hidden=\"true\">↻</text>",
@@ -42,11 +37,7 @@ pub(super) fn write(svg: &mut String, region: &CycleRegion) {
     let width = region.right - region.left;
     let height = region.bottom - region.top;
     emit!(svg, "    <g>");
-    emit!(
-        svg,
-        "      <title xml:space=\"preserve\">{}</title>",
-        escape(&region.description)
-    );
+    write_title(svg, &region.description);
     emit!(
         svg,
         "    <rect class=\"cycle-boundary\" x=\"{}\" y=\"{}\" width=\"{width}\" height=\"{height}\" rx=\"{BOUNDARY_CORNER_RADIUS}\"/>",
@@ -90,4 +81,22 @@ pub(super) fn write(svg: &mut String, region: &CycleRegion) {
         );
     }
     emit!(svg, "    </g>");
+}
+
+/// A for-entry cuts its two upper corners at 45° and a for-end its two lower
+/// ones. Both hold the cycle's description like an action's, so each for-end
+/// names the for-entry it closes.
+pub(super) fn write_cap(svg: &mut String, node: &Node, entry: bool) {
+    let (half_width, half_height) = (node.width / 2, node.height / 2);
+    let inner = half_width - CAP_CHAMFER;
+    let (top, bottom, shoulder) = if entry {
+        (inner, half_width, CAP_CHAMFER - half_height)
+    } else {
+        (half_width, inner, half_height - CAP_CHAMFER)
+    };
+    emit!(
+        svg,
+        "      <polygon class=\"node-shape\" points=\"-{top},-{half_height} {top},-{half_height} {half_width},{shoulder} {bottom},{half_height} -{bottom},{half_height} -{half_width},{shoulder}\"/>"
+    );
+    write_start_label(svg, node);
 }

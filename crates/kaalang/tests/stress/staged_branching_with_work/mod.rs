@@ -188,7 +188,7 @@ fn staged_branching_with_work(
         };
 
         #[cycle("Repeat before working.")]
-        let (left, right) = |reset| {
+        let (left, right) = |reset| loop {
             #[question("Repeat?")]
             let (again, work) = |&remaining| remaining.get() > 0;
             #[action("Count the repeat.")]

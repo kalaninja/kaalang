@@ -73,15 +73,13 @@ unfolding iterations or visits. Validation, plan verification, and connection
 reduction query the whole domain; concrete witnesses supply only union facts.
 The algorithm is specified in
 [RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis); its
-thresholds are the implementation constants `ENUMERATED_HISTORY_LIMIT` and
-`PAIRWISE_EXECUTIONS`.
+threshold is the implementation constant `ENUMERATED_HISTORY_LIMIT`.
 
 [`Executions`](../crates/kaalang-compiler/src/executions.rs) hides the storage
 choice. `len()` counts without materializing summaries. Access through its `Vec`
-interface enumerates and caches the complete list; mutable access replaces the
-conditional storage with that list. Explicit enumeration can still be
-exponential. The ordinary implementation also serves as the reference for
-[`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
+interface enumerates and caches the complete list. Explicit enumeration can
+still be exponential. The ordinary implementation also serves as the reference
+for [`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
 
 ## Staged flows
 

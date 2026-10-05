@@ -198,7 +198,7 @@ mod tests {
         let mut flow = crate::parse::flow(&parse_quote! {
             fn probe(a: u32, b: u32, go: bool) {
                 #[cycle("Run the outer cycle.")]
-                |go| {
+                |go| loop {
                     #[action("Use b and the gate.")]
                     |b, go| {};
 
@@ -206,7 +206,7 @@ mod tests {
                     let local = || 1;
 
                     #[cycle("Run the inner cycle.")]
-                    {
+                    loop {
                         #[action("Use a, b and the local.")]
                         |&a, &mut b, local| {};
 

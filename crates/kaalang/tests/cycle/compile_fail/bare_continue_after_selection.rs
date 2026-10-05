@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) {
     #[cycle("Repeat without choosing the repeating branch.")]
-    {
+    loop {
         #[question("Leave now?")]
         let (_stay, _again) = |flag| flag;
 

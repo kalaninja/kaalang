@@ -30,6 +30,15 @@ fn occurrence(
     selections
 }
 
+/// The case of a for cycle's hidden choice that every block of its body runs
+/// in, apart from the choice itself and the export it skips to.
+pub(crate) fn item_case(flow: &Flow, block: usize) -> Option<BranchSelection> {
+    flow.next_item(block).map(|next| BranchSelection {
+        block: next,
+        branch: 0,
+    })
+}
+
 /// The selections each block inherits by capture. A block belongs to a branch
 /// when it captures the branch output itself or a wire produced inside that
 /// branch; a wire with alternative producers carries only what all of them
@@ -49,6 +58,7 @@ pub(crate) fn ancestry(flow: &Flow) -> Vec<BTreeSet<BranchSelection>> {
         if let Some(parent) = declaration.parent {
             inherited.extend(blocks[parent].iter().copied());
         }
+        inherited.extend(item_case(flow, index));
         for (output, name) in declaration.outputs.iter().enumerate() {
             let occurrence = occurrence(flow, &inherited, index, output);
             // Alternative producers meet before every capture, so the merged
@@ -79,6 +89,7 @@ fn carried_in(flow: &Flow, execution: &Execution) -> Vec<BTreeSet<BranchSelectio
             .parent
             .map(|parent| carried[parent].clone())
             .unwrap_or_default();
+        selections.extend(item_case(flow, block));
         for &(producer, output) in &captured[block] {
             selections.extend(occurrence(flow, &carried[producer], producer, output));
         }
@@ -216,6 +227,24 @@ pub(super) fn flow(
         .map(|(merge, owners)| Junction::of(flow, ancestry, merge, owners))
         .collect::<Vec<_>>();
     let end = flow.blocks.len() - 1;
+    // The end of a for body has no capture to name its branch: it belongs to
+    // whichever branch arrives, so a selection stays separate there only when
+    // more than one of its branches reaches it. Routes that diverge never do.
+    let mut arriving = BTreeMap::<(usize, usize), BTreeSet<usize>>::new();
+    for execution in executions {
+        for &block in execution
+            .blocks
+            .iter()
+            .filter(|&&block| flow.ends_iteration(block))
+        {
+            for selection in &execution.branches {
+                arriving
+                    .entry((block, selection.block))
+                    .or_default()
+                    .insert(selection.branch);
+            }
+        }
+    }
     let mut offending = None::<(usize, usize)>;
     for execution in executions {
         // Built on the first junction that needs it; most pairs never do.
@@ -229,6 +258,9 @@ pub(super) fn flow(
             {
                 if super::cycle::closed_before(flow, selection.block, block)
                     || ancestry[block].contains(selection)
+                    || arriving
+                        .get(&(block, selection.block))
+                        .is_some_and(|branches| branches.len() < 2)
                     || junctions.iter_mut().any(|junction| {
                         junction.closes(execution, &carried, block, *selection, executions)
                     })
@@ -259,6 +291,10 @@ pub(crate) fn violation(flow: &Flow, block: usize, selection: usize) -> Error {
         format!(
             "this kaalang stage transition exports `{signal}` while the branches of the {kind} `{described}` are still separate; merge those branches before the transition"
         )
+    } else if flow.ends_iteration(block) {
+        format!(
+            "this kaalang for cycle ends an iteration while the branches of the {kind} `{described}` are still separate; merge those branches before the end of its body"
+        )
     } else if flow.blocks[block].kind == BlockKind::Export {
         format!(
             "this kaalang cycle exports `{}` while the branches of the {kind} `{described}` are still separate; merge those branches before the end of its body",
@@ -288,16 +324,5 @@ mod tests {
         );
         function.block.stmts.swap(3, 4);
         crate::build(&function).expect("common work may follow the completed merge");
-    }
-
-    #[test]
-    fn common_work_cannot_join_disjoint_partial_groups() {
-        let source = include_str!(
-            "../../../kaalang/tests/wire/compile_fail/common_work_after_disjoint_merges.rs"
-        );
-        assert_eq!(
-            message(&fixture(source, "invalid")),
-            branch_placement("choice", "Which source?")
-        );
     }
 }

@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut count: u8) -> u8 {
     #[cycle("Settle the count.")]
-    let (large, stopped) = {
+    let (large, stopped) = loop {
         #[question("Is the count large?")]
         let (big, small) = |&count| *count >= 10;
 
@@ -11,7 +11,7 @@ fn invalid(mut count: u8) -> u8 {
         let large = |big, &count| *count;
 
         #[cycle("Step the small count.")]
-        let (up, stop) = |small| {
+        let (up, stop) = |small| loop {
             #[question("Has it reached three?")]
             let (stop, up) = |&count| *count == 3;
         };

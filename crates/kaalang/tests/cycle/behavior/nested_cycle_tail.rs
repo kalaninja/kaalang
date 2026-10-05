@@ -3,14 +3,14 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_cycle_tail(mut count: usize, limit: usize) -> usize {
     #[cycle("Count to the limit through an inner cycle.")]
-    let leave_1 = {
+    let leave_1 = loop {
         #[question("Is another counting pass needed?")]
         #[no("NO")]
         #[yes("YES")]
         let (leave_1, iterate_1) = |&count, &limit| *count < *limit;
 
         #[cycle("Increment until the current pass is complete.")]
-        let leave_2 = |iterate_1| {
+        let leave_2 = |iterate_1| loop {
             #[question("Is the count below the limit?")]
             #[yes("YES")]
             #[no("NO")]

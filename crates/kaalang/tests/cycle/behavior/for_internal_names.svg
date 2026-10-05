@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="681" height="796" viewBox="0 0 681 796" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_internal_names</title>
+  <desc id="kaalang-description">Cycles: Complete one iteration without naming its item or output. with inputs () and outputs (). Nodes: Start: for_internal_names with parameters __kaalang_unnamed_done_0: u32; __kaalang_unnamed_item_0: u32; __kaalang_items: u32 handing over __kaalang_unnamed_done_0, __kaalang_unnamed_item_0, __kaalang_items; For entry: Complete one iteration without naming its item or output. capturing nothing; For end: Complete one iteration without naming its item or output.; Action: Add the authored values. capturing __kaalang_unnamed_done_0, __kaalang_unnamed_item_0, __kaalang_items handing over __kaalang_unnamed_done_0_; End: u32 capturing __kaalang_unnamed_done_0_. Connections: Start: for_internal_names to For entry: Complete one iteration without naming its item or output.; For entry: Complete one iteration without naming its item or output. to For end: Complete one iteration without naming its item or output.; For end: Complete one iteration without naming its item or output. to Action: Add the authored values.; Action: Add the authored values. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 173 121 L 173 259
+      M 173 325 L 173 397
+      M 173 463 L 173 570
+      M 173 634 L 173 706
+    "/>
+    <text class="connection-label" x="186" y="695" xml:space="preserve"><tspan x="186" dy="0">__kaalang_unnamed_done_0_</tspan></text>
+    <text class="connection-label" x="186" y="139" xml:space="preserve"><tspan x="186" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="186" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="186" dy="14">__kaalang_items</tspan></text>
+    <text class="connection-label" x="186" y="248" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="531" xml:space="preserve"><tspan x="186" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="186" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="186" dy="14">__kaalang_items</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 313 92 L 409 92"/>
+    <g class="parameter-panel" transform="translate(529 92)">
+      <rect class="node-shape" x="-120" y="-60" width="240" height="120"/>
+      <text class="label" x="-104" y="-30" xml:space="preserve"><tspan x="-104" dy="0">__kaalang_unnamed_done_0: </tspan><tspan x="-104" dy="18">u32</tspan><tspan x="-104" dy="18">__kaalang_unnamed_item_0: </tspan><tspan x="-104" dy="18">u32</tspan><tspan x="-104" dy="18">__kaalang_items: u32</tspan></text>
+    </g>
+    <g class="node start" transform="translate(173 92)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_internal_names</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(173 292)">
+      <title xml:space="preserve">Complete one iteration without naming its item or output.</title>
+      <polygon class="node-shape" points="-124,-33 124,-33 140,-17 140,33 -140,33 -140,-17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Complete one iteration without </tspan><tspan x="-124" dy="18">naming its item or output.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(173 430)">
+      <title xml:space="preserve">Complete one iteration without naming its item or output.</title>
+      <polygon class="node-shape" points="-140,-33 140,-33 140,17 124,33 -124,33 -140,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Complete one iteration without </tspan><tspan x="-124" dy="18">naming its item or output.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 602)">
+      <title xml:space="preserve">Add the authored values.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the authored values.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 735)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

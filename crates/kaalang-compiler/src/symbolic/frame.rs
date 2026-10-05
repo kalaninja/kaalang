@@ -121,6 +121,11 @@ impl Executions {
                 reaches = self.conditions.or(reaches, when);
             }
         }
+        // A for cycle out of items passes its body by.
+        for next in flow.required_items(block) {
+            let exhausted = self.selected(next, 1);
+            reaches = self.conditions.minus(reaches, exhausted);
+        }
         reaches
     }
 
@@ -130,11 +135,7 @@ impl Executions {
             for &producer in &merge.producers {
                 if let ProducerId::BlockOutput { block, .. } = producer {
                     let context = self.reaching(flow, block);
-                    let repeated = self
-                        .outcomes
-                        .get(&ExecutionOutcome::Repeat { cycle_index: block })
-                        .copied()
-                        .unwrap_or(NEVER);
+                    let repeated = self.repeats(block);
                     let context = self.conditions.minus(context, repeated);
                     result = self.conditions.or(result, context);
                 }

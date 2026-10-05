@@ -23,16 +23,11 @@ pub(super) struct StageRows {
 
 pub(crate) struct StagedScene {
     pub(crate) direct_entry: Option<usize>,
-    pub(crate) parts: Vec<(Scene, PartPlacement)>,
+    pub(crate) parts: Vec<(Scene, Point)>,
     pub(crate) connections: Vec<[Point; 2]>,
     pub(crate) return_route: Option<[Point; 4]>,
     pub(crate) width: i32,
     pub(crate) height: i32,
-}
-
-pub(crate) struct PartPlacement {
-    pub(crate) x: i32,
-    pub(crate) y: i32,
 }
 
 #[allow(clippy::too_many_lines)] // Measures each part, reserves the entry rail, then aligns transitions.
@@ -70,36 +65,28 @@ pub(crate) fn layout_staged(
                 .topology
                 .nodes
                 .iter()
-                .filter(|node| matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition))
+                .filter(|node| {
+                    matches!(node.kind, NodeKind::StageEntry | NodeKind::StageTransition)
+                })
                 .map(|node| super::node_dimensions(node.kind, captions.label(node.id)).1)
         })
         .max()
         .expect("a staged flow has an entry");
-    let rows = StageRows {
-        height,
-        transition_y: 0,
-        first_body_y: 0,
+    let lay_out = |part: usize, transition_y, first_body_y| {
+        let parameters = if part == 0 { parameters } else { &[] };
+        let rows = StageRows {
+            height,
+            transition_y,
+            first_body_y,
+        };
+        layout_with_stage_rows(models[part], &captions[part], parameters, Some(rows))
     };
-    let mut parts = models
-        .iter()
-        .zip(&captions)
-        .enumerate()
-        .map(|(part, (model, captions))| {
-            let parameters = if part == 0 { parameters } else { &[] };
-            layout_with_stage_rows(model, captions, parameters, Some(rows))
-        })
+    let mut parts = (0..models.len())
+        .map(|part| lay_out(part, 0, 0))
         .collect::<Result<Vec<_>, _>>()?;
     let first_body_y = first_body_y(&parts, direct_entry);
     if first_body_y > 0 {
-        parts[0] = layout_with_stage_rows(
-            models[0],
-            &captions[0],
-            parameters,
-            Some(StageRows {
-                first_body_y,
-                ..rows
-            }),
-        )?;
+        parts[0] = lay_out(0, 0, first_body_y)?;
     }
     if direct_entry.is_some() {
         keep_header(&mut parts[0]);
@@ -110,35 +97,17 @@ pub(crate) fn layout_staged(
         .zip(&placements)
         .map(|(scene, part)| {
             part.y
-                + scene
-                    .topology
-                    .nodes
-                    .iter()
-                    .filter(|node| node.kind == NodeKind::Transition)
-                    .map(|node| scene.node(node.id).y)
+                + transitions(scene)
+                    .map(|node| node.y)
                     .max()
                     .unwrap_or(scene.height + RAIL_GAP + height / 2)
         })
         .max()
         .unwrap_or(0);
     for (index, scene) in parts.iter_mut().enumerate() {
-        if scene
-            .topology
-            .nodes
-            .iter()
-            .any(|node| node.kind == NodeKind::Transition)
-        {
-            let parameters = if index == 0 { parameters } else { &[] };
-            *scene = layout_with_stage_rows(
-                models[index],
-                &captions[index],
-                parameters,
-                Some(StageRows {
-                    height,
-                    transition_y: transition_y - placements[index].y,
-                    first_body_y: if index == 0 { first_body_y } else { 0 },
-                }),
-            )?;
+        if transitions(scene).next().is_some() {
+            let first_body_y = if index == 0 { first_body_y } else { 0 };
+            *scene = lay_out(index, transition_y - placements[index].y, first_body_y)?;
         }
     }
     let placements = place(&parts, direct_entry);
@@ -155,17 +124,10 @@ fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
     }
     let scene = &parts[0];
     let placements = place(parts, direct_entry);
-    let line = [
-        Point {
-            x: MARGIN - placements[0].x,
-            y: rail_y(scene),
-        },
-        Point {
-            x: placements[parts.len() - 1].x + parts[parts.len() - 1].node(NodeId::Start).x
-                - placements[0].x,
-            y: rail_y(scene),
-        },
-    ];
+    let rail = rail_y(scene);
+    let last = parts.len() - 1;
+    let from = MARGIN - placements[0].x;
+    let to = placements[last].x + parts[last].node(NodeId::Start).x - placements[0].x;
     let bounds = scene
         .nodes
         .iter()
@@ -185,12 +147,12 @@ fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
         let next = bounds
             .iter()
             .filter(|&&(left, top, right, bottom)| {
-                left < line[1].x
-                    && right > line[0].x
-                    && top + shift < line[0].y + CONNECTION_LABEL_HALO
-                    && bottom + shift > line[0].y
+                left < to
+                    && right > from
+                    && top + shift < rail + CONNECTION_LABEL_HALO
+                    && bottom + shift > rail
             })
-            .map(|&(_, top, _, _)| rail_y(scene) + CONNECTION_LABEL_HALO - top)
+            .map(|&(_, top, _, _)| rail + CONNECTION_LABEL_HALO - top)
             .max()
             .unwrap_or(shift);
         if next <= shift {
@@ -202,6 +164,16 @@ fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
         return 0;
     }
     scene.rows(&super::vertical_gaps(scene)).top[1] + shift
+}
+
+/// The stage transitions one part draws.
+fn transitions(scene: &Scene) -> impl Iterator<Item = &super::Node> {
+    scene
+        .topology
+        .nodes
+        .iter()
+        .filter(|node| node.kind == NodeKind::StageTransition)
+        .map(|node| scene.node(node.id))
 }
 
 fn rail_y(scene: &Scene) -> i32 {
@@ -273,11 +245,7 @@ fn verify(diagram: &StagedScene) -> Result<(), String> {
     Ok(())
 }
 
-fn compose(
-    parts: Vec<Scene>,
-    placements: Vec<PartPlacement>,
-    direct_entry: Option<usize>,
-) -> StagedScene {
+fn compose(parts: Vec<Scene>, placements: Vec<Point>, direct_entry: Option<usize>) -> StagedScene {
     let first = usize::from(direct_entry.is_some());
     let first_x = placements[first].x + parts[first].node(NodeId::Start).x;
     let top = placements[1].y + Scene::bounds(parts[1].node(NodeId::Start)).1 - RAIL_GAP;
@@ -307,16 +275,13 @@ fn compose(
             let x = part.x + entry.x;
             connections.push([point(x, top), point(x, part.y + entry.y - entry.height / 2)]);
         }
-        for node in &scene.topology.nodes {
-            if node.kind == NodeKind::Transition {
-                let node = scene.node(node.id);
-                let x = part.x + node.x;
-                last_transition = Some(last_transition.unwrap_or(x).max(x));
-                connections.push([
-                    point(x, part.y + node.y + node.height / 2),
-                    point(x, bottom),
-                ]);
-            }
+        for node in transitions(scene) {
+            let x = part.x + node.x;
+            last_transition = Some(last_transition.unwrap_or(x).max(x));
+            connections.push([
+                point(x, part.y + node.y + node.height / 2),
+                point(x, bottom),
+            ]);
         }
     }
     if first_x != rail_right {
@@ -347,13 +312,13 @@ fn compose(
     }
 }
 
-fn place(parts: &[Scene], direct_entry: Option<usize>) -> Vec<PartPlacement> {
+fn place(parts: &[Scene], direct_entry: Option<usize>) -> Vec<Point> {
     let mut placements = Vec::with_capacity(parts.len());
     let mut x = MARGIN + RAIL_GAP;
     let start = parts[0].node(NodeId::Start);
     let stage_y = MARGIN + rail_y(&parts[0]) + RAIL_GAP;
     for (part, scene) in parts.iter().enumerate() {
-        placements.push(PartPlacement {
+        placements.push(Point {
             x,
             y: if part == 0 {
                 MARGIN
@@ -384,6 +349,19 @@ mod tests {
         layout_staged(&model, name, &[], return_type).unwrap()
     }
 
+    /// The first flow of `source` as `render_source` lays it out: every part
+    /// compacted, with its parameter captions.
+    fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Vec<String>) {
+        let file = syn::parse_file(source).unwrap();
+        let function = kaalang_compiler::flows(&file.items).remove(0);
+        let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
+        kaalang_render::compact_arrangement(&mut model);
+        for stage in &mut model.stages {
+            kaalang_render::compact_arrangement(stage);
+        }
+        (model, super::super::parameter_text(source, &function.sig))
+    }
+
     #[test]
     #[allow(clippy::too_many_lines)] // Checks several direct-entry layouts against the same geometry.
     fn direct_inputs_share_the_first_stage_column() {
@@ -409,28 +387,10 @@ mod tests {
                         };
                     }
                 "#,
-            r#"
-                    #[kaalang]
-                    fn example(go: ()) -> ! {
-                        #[stage("Enter the repeating stage.")]
-                        let repeat = |go| {
-                            #[action("Select the repeating stage.")]
-                            let repeat = |go| {};
-                        };
-                        #[stage("Repeat forever.")]
-                        |repeat| { #[cycle("Repeat.")] { continue; }; };
-                    }
-                "#,
+            include_str!("../../../kaalang/tests/stage/behavior/transition_to_diverging_stage.rs"),
         ] {
-            let file = syn::parse_file(source).unwrap();
-            let function = kaalang_compiler::flows(&file.items).remove(0);
-            let parameters = super::super::parameter_text(source, &function.sig);
             for collapsed in [false, true] {
-                let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
-                kaalang_render::compact_arrangement(&mut model);
-                for stage in &mut model.stages {
-                    kaalang_render::compact_arrangement(stage);
-                }
+                let (model, parameters) = compacted(source, collapsed);
                 let diagram = layout_staged(&model, "example", &parameters, "u8").unwrap();
                 assert_eq!(diagram.direct_entry, Some(0));
                 assert_eq!(diagram.parts[1].1.x, MARGIN + RAIL_GAP);
@@ -457,11 +417,9 @@ mod tests {
                 }
                 assert_eq!(
                     diagram.return_route.is_some(),
-                    diagram.parts[1..].iter().any(|(part, _)| part
-                        .topology
-                        .nodes
+                    diagram.parts[1..]
                         .iter()
-                        .any(|node| node.kind == NodeKind::Transition))
+                        .any(|(part, _)| transitions(part).next().is_some())
                 );
                 let svg = crate::svg::serialize_staged(&diagram, &model.analysis, "example");
                 assert!(svg.contains(&format!(
@@ -475,14 +433,7 @@ mod tests {
     #[test]
     fn stage_rail_clears_multiline_start_handovers() {
         let source = include_str!("../../../kaalang/tests/stage/behavior/sum_inputs.rs");
-        let file = syn::parse_file(source).unwrap();
-        let function = kaalang_compiler::flows(&file.items).remove(0);
-        let mut model = kaalang_compiler::build(&function).unwrap();
-        kaalang_render::compact_arrangement(&mut model);
-        for stage in &mut model.stages {
-            kaalang_render::compact_arrangement(stage);
-        }
-        let parameters = super::super::parameter_text(source, &function.sig);
+        let (model, parameters) = compacted(source, false);
         let diagram = layout_staged(&model, "sum_inputs", &parameters, "u32").unwrap();
         let (preparation, placement) = &diagram.parts[0];
         let rail_y = diagram.return_route.as_ref().unwrap()[3].y;
@@ -567,21 +518,10 @@ mod tests {
     #[test]
     fn staged_diagram_aligns_entries_and_transitions_and_connects_the_outer_contour() {
         let source = include_str!("../../../kaalang/tests/gallery/kmp_search/mod.rs");
-        let file = syn::parse_file(source).unwrap();
-        let function = kaalang_compiler::flows(&file.items).remove(0);
         for collapsed in [false, true] {
-            let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
-            kaalang_render::compact_arrangement(&mut model);
-            for stage in &mut model.stages {
-                kaalang_render::compact_arrangement(stage);
-            }
-            let diagram = layout_staged(
-                &model,
-                "kmp_search",
-                &["text: &[u8]".to_owned(), "pattern: &[u8]".to_owned()],
-                "Option<usize>",
-            )
-            .unwrap();
+            let (model, parameters) = compacted(source, collapsed);
+            let diagram =
+                layout_staged(&model, "kmp_search", &parameters, "Option<usize>").unwrap();
             let return_route = diagram.return_route.as_ref().unwrap();
             let mut entries = BTreeSet::new();
             let mut transitions = BTreeSet::new();
@@ -604,7 +544,7 @@ mod tests {
                                 x,
                                 y: y - node.height / 2
                             }));
-                    } else if kind == NodeKind::Transition {
+                    } else if kind == NodeKind::StageTransition {
                         transitions.insert(y);
                         assert!(diagram.connections.iter().any(|line| line[0]
                             == Point {
@@ -683,19 +623,8 @@ mod tests {
         let (terminal, second) = &staged.parts[1];
         assert!(second.x > first.x + preparation.width);
         assert!(staged.return_route.is_some());
-        let end_id = terminal
-            .topology
-            .nodes
-            .iter()
-            .find(|node| node.kind == NodeKind::End)
-            .unwrap()
-            .id;
-        let end = terminal.node(end_id);
-        let transition = preparation
-            .nodes
-            .iter()
-            .find(|node| preparation.topology.node(node.id).kind == NodeKind::Transition)
-            .unwrap();
+        let end = terminal.node(super::super::tests::end_node(terminal));
+        let transition = transitions(preparation).next().unwrap();
         assert!(second.y + end.y + end.height / 2 < first.y + transition.y);
         assert_eq!(super::super::correspondence(terminal), None);
     }

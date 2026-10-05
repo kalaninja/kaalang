@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="344" height="664" viewBox="0 0 344 664" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_temporary_values</title>
+  <desc id="kaalang-description">Nodes: Start: for_temporary_values; Action: Start with a total of zero. capturing nothing handing over mut total; Cycle: Add values borrowed from a temporary owner. capturing mut total; Action: Finish after releasing the temporary owner. capturing nothing; End: u32 capturing total. Connections: Start: for_temporary_values to Action: Start with a total of zero.; Action: Start with a total of zero. to Cycle: Add values borrowed from a temporary owner.; Cycle: Add values borrowed from a temporary owner. to Action: Finish after releasing the temporary owner.; Action: Finish after releasing the temporary owner. to End: u32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 172 364 L 172 436
+      M 172 502 L 172 574
+    "/>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label" x="185" y="563" xml:space="preserve"><tspan x="185" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_temporary_values</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 194)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node cycle" transform="translate(172 331)">
+      <title xml:space="preserve">Add values borrowed from a temporary owner.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add values borrowed from a </tspan><tspan x="-124" dy="18">temporary owner.</tspan></text>
+      <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
+    </g>
+    <g class="node action" transform="translate(172 469)">
+      <title xml:space="preserve">Finish after releasing the temporary owner.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish after releasing the </tspan><tspan x="-124" dy="18">temporary owner.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 603)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

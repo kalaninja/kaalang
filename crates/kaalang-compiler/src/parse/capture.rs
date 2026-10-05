@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 
 use proc_macro2::Ident;
 use syn::{
-    Error, Expr, FnArg, Item, ItemFn, Local, Pat, PatIdent, Result, Stmt, UseTree,
+    Error, Expr, Item, ItemFn, Local, Pat, PatIdent, Result, Stmt, UseTree,
     ext::IdentExt,
     visit::{self, Visit},
 };
@@ -13,31 +13,29 @@ use syn::{
 use crate::{BlockKind, Flow};
 
 pub(super) fn validate(flow: &Flow, function: &ItemFn) -> Result<()> {
-    let parameters = function
-        .sig
-        .inputs
-        .iter()
-        .filter_map(|input| match input {
-            FnArg::Typed(input) => match input.pat.as_ref() {
-                Pat::Ident(binding) => Some(binding.ident.unraw()),
-                _ => None,
-            },
-            FnArg::Receiver(_) => None,
-        })
+    // The receiver is never hidden: its wire is the receiver itself.
+    let parameters = super::flow_inputs(function)?
+        .into_iter()
+        .filter(|name| name != "self")
         .collect::<BTreeSet<_>>();
-    for block in &flow.blocks {
-        if !matches!(
-            block.kind,
-            BlockKind::Action | BlockKind::Call | BlockKind::Question | BlockKind::Choice
-        ) {
+    for (index, block) in flow.blocks.iter().enumerate() {
+        if flow.takes_next_item(index) {
             continue;
         }
+        let body = match (block.kind, &block.iteration) {
+            (BlockKind::Action | BlockKind::Call | BlockKind::Question | BlockKind::Choice, _) => {
+                &block.body
+            }
+            // A for cycle's header reads its iterated expression itself.
+            (BlockKind::Cycle, Some(iteration)) => &iteration.items,
+            _ => continue,
+        };
         let uncaptured = parameters
             .iter()
             .filter(|name| !super::captured(&block.inputs, name))
             .cloned()
             .collect();
-        check(&block.body, uncaptured)?;
+        check(body, uncaptured)?;
     }
     Ok(())
 }

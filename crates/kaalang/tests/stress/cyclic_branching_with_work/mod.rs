@@ -12,7 +12,7 @@ fn cyclic_branching_with_work(
     remaining: &Cell<usize>,
 ) -> usize {
     #[cycle("Repeat before working.")]
-    let (left, right) = || {
+    let (left, right) = || loop {
         #[question("Repeat?")]
         let (again, work) = |&remaining| remaining.get() > 0;
         #[action("Count the repeat.")]

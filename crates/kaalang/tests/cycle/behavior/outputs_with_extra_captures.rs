@@ -6,7 +6,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn outputs_with_extra_captures(mut state: u8, bonus: u8) -> u8 {
     #[cycle("Settle on a colour.")]
-    let (red, green, blue) = {
+    let (red, green, blue) = loop {
         #[choice("Which colour is it?")]
         #[case("Red.")]
         #[case("Green.")]

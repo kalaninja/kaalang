@@ -1,9 +1,6 @@
 //! Lazy materialization of the complete structural execution summaries.
 
-use std::{
-    ops::{Deref, DerefMut},
-    sync::OnceLock,
-};
+use std::{ops::Deref, sync::OnceLock};
 
 use crate::Execution;
 
@@ -116,32 +113,6 @@ impl Deref for Executions {
     }
 }
 
-impl DerefMut for Executions {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        if let Storage::Symbolic {
-            conditions,
-            complete,
-            ..
-        } = &mut self.storage
-        {
-            let executions = complete.take().unwrap_or_else(|| conditions.enumerate());
-            self.storage = Storage::Enumerated(executions);
-        }
-        let Storage::Enumerated(executions) = &mut self.storage else {
-            unreachable!()
-        };
-        executions
-    }
-}
-
-impl<'a> IntoIterator for &'a Executions {
-    type Item = &'a Execution;
-    type IntoIter = std::slice::Iter<'a, Execution>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -159,15 +130,6 @@ mod tests {
         assert!(
             matches!(&analysis.executions.storage, Storage::Symbolic { complete, .. } if complete.get().is_none())
         );
-        for materialized in [false, true] {
-            let mut edited = analysis.executions.clone();
-            if materialized {
-                assert_eq!(edited.as_slice().len(), 72);
-            }
-            edited.pop();
-            assert_eq!(edited.len(), 71);
-            assert!(edited.symbolic().is_none());
-        }
         assert_eq!(analysis.executions.as_slice().len(), 72);
     }
 

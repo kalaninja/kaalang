@@ -13,6 +13,32 @@ fn read(source: &str) -> (SemanticModel, Captions) {
     (model, captions)
 }
 
+#[test]
+fn internal_looking_names_keep_their_for_cycle_labels() {
+    let (model, captions) = read(
+        r#"
+        fn example() {
+            #[cycle("Visit every item.")]
+            let __kaalang_unnamed_done = for __kaalang_unnamed_item in 0..3 {
+                #[action("Use the item.")]
+                |__kaalang_unnamed_item| drop(__kaalang_unnamed_item);
+            };
+            |__kaalang_unnamed_done| return;
+        }
+        "#,
+    );
+    assert_eq!(captions.cycle_outputs(0), "__kaalang_unnamed_done");
+    let caps = model.topology.cycle_boundaries[0].caps.unwrap();
+    assert_eq!(
+        captions.handover(ExitId::of(caps.top)),
+        ["__kaalang_unnamed_item"]
+    );
+    assert_eq!(
+        captions.handover(ExitId::of(caps.bottom)),
+        ["__kaalang_unnamed_done"]
+    );
+}
+
 /// One flow of an authored fixture file. The start and return type only caption
 /// start and end, which no test here reads.
 fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
@@ -32,7 +58,7 @@ fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability
             #[stage("Finish.")]
             |entry| {
                 #[cycle("Adjust shared storage.")]
-                let done = |entry| {
+                let done = |entry| loop {
                     #[action("Increment both values.")]
                     let done = |&mut parameter, &mut prepared| {
                         *parameter += 1;
@@ -68,7 +94,7 @@ fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability
 
 #[test]
 fn labels_belong_to_exits_and_nodes_including_unused_names() {
-    let (_, captions) = read(
+    let (model, captions) = read(
         r#"
         fn example(r#type: u8, _spare: u8, _: u8) -> u8 {
             #[choice("Pick a case.")]
@@ -109,10 +135,13 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
         // The distributor is the fan-out this projection actually produces:
         // both displayed lists are empty and therefore equal, but the hand-over rules
         // still keep the two ends apart because the exit has two connections.
-        assert!(!captions.shares_label(&Connection {
-            source: Source::Exit(distributor),
-            destination: Destination::Node(case),
-        }));
+        assert!(!captions.shares_label(
+            &model.topology,
+            &Connection {
+                source: Source::Exit(distributor),
+                destination: Destination::Node(case),
+            }
+        ));
     }
     assert_eq!(captions.label(NodeId::Block(0)).as_ref(), "Pick a case.");
     assert_eq!(captions.label(NodeId::Start).as_ref(), "example");
@@ -200,7 +229,7 @@ fn a_tuple_return_shares_the_producers_ordered_wire_label() {
     let [connection] = model.topology.connections.as_slice() else {
         panic!("the zero-computation flow connects start directly to end");
     };
-    assert!(captions.shares_label(connection));
+    assert!(captions.shares_label(&model.topology, connection));
 }
 
 #[test]
@@ -214,7 +243,7 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
         ("mut first, second", "mut first, second", true),
         ("mut first, second", "first, second", false),
     ] {
-        let (_, captions) = read(&format!(
+        let (model, captions) = read(&format!(
             r#"
             fn example() -> u8 {{
                 #[action("Prepare two values.")]
@@ -237,10 +266,13 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
             capture.split(", ").collect::<Vec<_>>()
         );
         assert_eq!(
-            captions.shares_label(&Connection {
-                source: Source::Exit(ExitId::of(NodeId::Block(0))),
-                destination: Destination::Node(NodeId::Block(1)),
-            }),
+            captions.shares_label(
+                &model.topology,
+                &Connection {
+                    source: Source::Exit(ExitId::of(NodeId::Block(0))),
+                    destination: Destination::Node(NodeId::Block(1)),
+                }
+            ),
             shared
         );
     }
@@ -284,27 +316,15 @@ fn mutable_alternatives_keep_the_same_label_across_block_kinds_and_the_merge() {
 
 #[test]
 fn a_question_branch_description_replaces_its_output_label() {
-    let (_, captions) = read(
-        r#"
-        fn example(condition: bool) -> u8 {
-            #[question("Ready?")]
-            #[yes("Go ahead.")]
-            #[no]
-            let (yes, no) = |condition| { condition };
-            #[action("Finish now.")]
-            let end = |yes| { 1 };
-            #[action("Finish later.")]
-            let end = |no| { 2 };
-
-            |end| return end;
-        }
-    "#,
-    );
-    let yes = ExitId {
+    let source = include_str!("../../../kaalang/tests/question/behavior/run_question.rs")
+        .replace(r#"#[no("The condition is false.")]"#, "#[no]")
+        .replace("The condition is true.", "Go ahead.");
+    let (_, captions) = fixture(&source, "run_question");
+    let no = ExitId {
         node: NodeId::Block(0),
         branch: Some(0),
     };
-    let no = ExitId {
+    let yes = ExitId {
         node: NodeId::Block(0),
         branch: Some(1),
     };

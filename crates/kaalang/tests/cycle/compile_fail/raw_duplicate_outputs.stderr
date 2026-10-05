@@ -1,5 +1,5 @@
 error: a kaalang cycle declares each output once
  --> tests/cycle/compile_fail/raw_duplicate_outputs.rs:6:17
   |
-6 |     let (found, r#found) = {
+6 |     let (found, r#found) = loop {
   |                 ^^^^^^^

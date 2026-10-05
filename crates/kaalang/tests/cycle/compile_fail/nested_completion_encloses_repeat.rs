@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut mode: u8) -> u8 {
     #[cycle("Run the outer cycle.")]
-    let selected = |mode| {
+    let selected = |mode| loop {
         #[cycle("Put a repeating route between completions.")]
-        let selected = {
+        let selected = loop {
             #[choice("Leave or advance?")]
             #[case("Leave immediately.")]
             #[case("Advance once.")]

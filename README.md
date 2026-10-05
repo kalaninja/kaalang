@@ -174,11 +174,17 @@ named stages:
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
-declare their branch outputs. A cycle contains kaalang blocks. A route through
-it can repeat at its one `continue`, complete with one declared output, or
-diverge in a nested cycle. A completed output becomes available after the cycle.
-In the diagram, `continue` routes meet at the cycle's back edge, completing
-routes leave through the cycle boundary, and `return` reaches the flow end.
+declare their branch outputs. A cycle's `loop { ... }` body contains kaalang
+blocks. A route through it can repeat at its one `continue`, complete with one
+declared output, or diverge in a nested cycle. A completed output becomes
+available after the cycle. In the diagram, `continue` routes meet at the cycle's
+back edge, completing routes leave through the cycle boundary, and `return`
+reaches the flow end. A cycle written `for item in items { ... }` instead runs
+its body once per item of a Rust iterator. It has no `continue` or early exit
+and may declare one output, the signal that its items ran out. Its diagram has
+no boundary or back edge: a for-entry node holds the description and hands over
+the item, and every iteration ends at a for-end node below it, which repeats the
+description and from which the cycle continues.
 
 ### Putting it together: binary search
 
@@ -197,7 +203,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
     let (mut left, mut right) = |values| (0, values.len());
 
     #[cycle("🔍 Narrow the range until the target is found or ruled out.")]
-    let result = {
+    let result = loop {
         #[question("Are any values left in the search range?")]
         #[yes("YES")]
         #[no("NO")]
@@ -325,7 +331,7 @@ pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
         };
 
         #[cycle("Group the other values around the pivot.")]
-        let classified = {
+        let classified = loop {
             #[question("Are any values unclassified?")]
             #[yes("YES")]
             #[no("NO")]

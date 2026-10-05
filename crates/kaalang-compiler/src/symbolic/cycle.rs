@@ -1,9 +1,9 @@
 //! The authored ordering of completing and repeating routes through a cycle.
 
-use syn::{Error, Result};
+use syn::Result;
 
 use super::{Executions, condition::NEVER, frame::Frames};
-use crate::{ExecutionOutcome, Flow};
+use crate::Flow;
 
 pub(super) fn output_order(
     executions: &mut Executions,
@@ -19,13 +19,7 @@ pub(super) fn output_order(
     headers.sort_by_key(|&header| flow.blocks[header].cycle_end);
     for header in headers {
         let cycle = &flow.blocks[header];
-        let repeat = executions
-            .outcomes
-            .get(&ExecutionOutcome::Repeat {
-                cycle_index: header,
-            })
-            .copied()
-            .unwrap_or(NEVER);
+        let repeat = executions.repeats(header);
         let repeat = executions.conditions.and(executions.domain, repeat);
         let mut outcomes = vec![repeat];
         for consumer in flow.exports(header) {
@@ -42,24 +36,10 @@ pub(super) fn output_order(
             executions.outcome_selectors(&outcomes, frames.in_frame(Some(header)), context);
         let ordered = executions.ordered(&outcomes, &selectors);
         if let Some((before, after)) = ordered.gap_outputs {
-            return Err(Error::new(
-                cycle.span,
-                format!(
-                    "a route repeating this kaalang cycle lies between routes exporting `{}` and `{}`; move the repeating routes to one edge of the body",
-                    cycle.output_binding(before).ident,
-                    cycle.output_binding(after).ident
-                ),
-            ));
+            return Err(crate::analyze::cycle::repeat_between(cycle, before, after));
         }
         if let Some((first, later)) = ordered.descent {
-            return Err(Error::new(
-                cycle.output_binding(first).ident.span(),
-                format!(
-                    "the routes exporting `{}` leave this kaalang cycle to the left of those exporting `{}`; declare its outputs in the order their routes leave it",
-                    cycle.output_binding(first).ident,
-                    cycle.output_binding(later).ident
-                ),
-            ));
+            return Err(crate::analyze::cycle::out_of_order(cycle, first, later));
         }
     }
     Ok(())

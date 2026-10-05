@@ -13,7 +13,7 @@ enum Light {
 #[kaalang]
 fn endless(mut showing: Light) -> ! {
     #[cycle("🚦 Keep changing the traffic light.")]
-    {
+    loop {
         #[choice("Which light is on now?")]
         #[case("🔴 Red.")]
         #[case("🟡 Amber.")]
@@ -34,5 +34,5 @@ fn endless(mut showing: Light) -> ! {
         let changed = |green, &mut showing| *showing = Light::Amber;
 
         |changed| continue;
-    };
+    }
 }

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="958" viewBox="0 0 760 958" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="681" height="802" viewBox="0 0 681 802" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for for_each</title>
-  <desc id="kaalang-description">Cycles: Add the list&apos;s values to the total one by one. with inputs mut cursor, mut total and outputs done. Nodes: Start: for_each with parameters values: &amp;[i32] handing over values; Action: 🧮 Start before the first value with a total of zero. capturing values handing over mut cursor, mut total; Select: What comes next in the list? capturing &amp;mut cursor; Case: Another value. handing over value; Case: The end of the list. handing over done; Action: ➕ Add this value to the running total. capturing value, &amp;mut total; End: i64 capturing total. Connections: Start: for_each to Action: 🧮 Start before the first value with a total of zero.; Action: 🧮 Start before the first value with a total of zero. to the entry of the cycle; Select: What comes next in the list? to Case: Another value.; Select: What comes next in the list? to Case: The end of the list.; Case: Another value. to Action: ➕ Add this value to the running total.; Case: The end of the list. to End: i64; Action: ➕ Add this value to the running total. to the iteration tail of the cycle; the entry of the cycle to Select: What comes next in the list?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Add the list&apos;s values to the total one by one. with inputs values, mut total and outputs done. Nodes: Start: for_each with parameters values: &amp;[i32] handing over values; Action: 🧮 Start with a total of zero. capturing nothing handing over mut total; For entry: Add the list&apos;s values to the total one by one. capturing values handing over value; Action: ➕ Add this value to the running total. capturing value, &amp;mut total; For end: Add the list&apos;s values to the total one by one. handing over done; End: i64 capturing total. Connections: Start: for_each to Action: 🧮 Start with a total of zero.; Action: 🧮 Start with a total of zero. to For entry: Add the list&apos;s values to the total one by one.; For entry: Add the list&apos;s values to the total one by one. to Action: ➕ Add this value to the running total.; Action: ➕ Add this value to the running total. to For end: Add the list&apos;s values to the total one by one.; For end: Add the list&apos;s values to the total one by one. to End: i64.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,75 +22,61 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
-    <g>
-      <title xml:space="preserve">Add the list&apos;s values to the total one by one.</title>
-    <rect class="cycle-boundary" x="32" y="265" width="696" height="566" rx="12"/>
-    <text class="cycle-caption" x="716" y="279" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Add the list&apos;s values to the total one by one.</tspan></text>
-    </g>
   </g>
   <g class="connections">
-    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 220 90 L 220 162
-      M 220 228 L 220 300
-      M 220 444 L 220 516
-      M 348 408 L 580 408 L 580 516
-      M 220 586 L 220 658
-      M 580 586 L 580 868
-      M 220 724 L 220 796
-      M 220 300 L 220 372
+      M 173 90 L 173 162
+      M 173 226 L 173 298
+      M 173 364 L 173 436
+      M 173 502 L 173 574
+      M 173 640 L 173 712
     "/>
-    <path class="connection" d="
-      M 220 796 L 60 796 L 60 300 L 220 300
-    " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="233" y="151" xml:space="preserve"><tspan x="233" dy="0">values</tspan></text>
-    <text class="connection-label" x="233" y="246" xml:space="preserve"><tspan x="233" dy="0">mut cursor, mut total</tspan></text>
-    <text class="connection-label" x="233" y="604" xml:space="preserve"><tspan x="233" dy="0">value</tspan></text>
-    <text class="connection-label" x="593" y="604" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
-    <text class="connection-label" x="233" y="361" xml:space="preserve"><tspan x="233" dy="0">&amp;mut cursor</tspan></text>
-    <text class="connection-label" x="233" y="647" xml:space="preserve"><tspan x="233" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="593" y="857" xml:space="preserve"><tspan x="593" dy="0">total</tspan></text>
+    <text class="connection-label" x="186" y="108" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label" x="186" y="382" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label" x="186" y="658" xml:space="preserve"><tspan x="186" dy="0">done</tspan></text>
+    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label" x="186" y="425" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label" x="186" y="701" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 360 61 L 456 61"/>
-    <g class="parameter-panel" transform="translate(576 61)">
+    <path class="parameter-link" d="M 313 61 L 409 61"/>
+    <g class="parameter-panel" transform="translate(529 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i32]</tspan></text>
     </g>
-    <g class="node start" transform="translate(220 61)">
+    <g class="node start" transform="translate(173 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_each</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 195)">
-      <title xml:space="preserve">🧮 Start before the first value with a total of zero.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🧮 Start before the first value </tspan><tspan x="-124" dy="18">with a total of zero.</tspan></text>
+    <g class="node action" transform="translate(173 194)">
+      <title xml:space="preserve">🧮 Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">🧮 Start with a total of zero.</tspan></text>
     </g>
-    <g class="node select" transform="translate(220 408)">
-      <title xml:space="preserve">What comes next in the list?</title>
-      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">What comes next in the </tspan><tspan x="0" dy="18">list?</tspan></text>
+    <g class="node for-entry" transform="translate(173 331)">
+      <title xml:space="preserve">Add the list&apos;s values to the total one by one.</title>
+      <polygon class="node-shape" points="-124,-33 124,-33 140,-17 140,33 -140,33 -140,-17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add the list&apos;s values to the total </tspan><tspan x="-124" dy="18">one by one.</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 551)">
-      <title xml:space="preserve">Another value.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Another value.</tspan></text>
-    </g>
-    <g class="node case" transform="translate(580 551)">
-      <title xml:space="preserve">The end of the list.</title>
-      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The end of the list.</tspan></text>
-    </g>
-    <g class="node action" transform="translate(220 691)">
+    <g class="node action" transform="translate(173 469)">
       <title xml:space="preserve">➕ Add this value to the running total.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">➕ Add this value to the running </tspan><tspan x="-124" dy="18">total.</tspan></text>
     </g>
-    <g class="node end" transform="translate(580 897)">
+    <g class="node for-end" transform="translate(173 607)">
+      <title xml:space="preserve">Add the list&apos;s values to the total one by one.</title>
+      <polygon class="node-shape" points="-140,-33 140,-33 140,17 124,33 -124,33 -140,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add the list&apos;s values to the total </tspan><tspan x="-124" dy="18">one by one.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 741)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i64</tspan></text>
     </g>

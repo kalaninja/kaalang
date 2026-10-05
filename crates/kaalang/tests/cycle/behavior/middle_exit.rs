@@ -6,7 +6,7 @@ fn middle_exit(limit: usize) -> Vec<usize> {
     let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
     #[cycle("Record iterations through the requested limit.")]
-    let done = {
+    let done = loop {
         #[action("Record the start of the iteration.")]
         |&initial_count, &mut initial_log| initial_log.push(*initial_count);
 

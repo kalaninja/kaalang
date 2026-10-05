@@ -110,15 +110,15 @@ pub(super) fn prepare(
     plan: &ExecutionPlan,
     body: TokenStream2,
 ) -> TokenStream2 {
+    let Some((boundary, dispatcher)) = &bindings.initial_dispatch else {
+        return body;
+    };
     let index = match plan {
         ExecutionPlan::Question { index, .. }
         | ExecutionPlan::Choice { index, .. }
         | ExecutionPlan::Cycle { index, .. }
         | ExecutionPlan::Return { index } => *index,
         _ => return body,
-    };
-    let Some((boundary, dispatcher)) = &bindings.initial_dispatch else {
-        return body;
     };
     if index != *boundary {
         return body;

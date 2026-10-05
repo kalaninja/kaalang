@@ -14,11 +14,11 @@ use crate::model::{
     ProducerId, WireMerge,
 };
 
-mod choice;
+pub(crate) mod choice;
 mod continue_block;
 mod cycle;
 mod export;
-mod question;
+pub(crate) mod question;
 mod return_block;
 pub(crate) mod verify;
 
@@ -56,7 +56,7 @@ pub(crate) fn flow(
     ExecutionPlan::End {
         index: end,
         body: Box::new(lowered.plan),
-        gates: builder.gates(),
+        gates: gates(merges, &builder.classes),
     }
 }
 
@@ -67,7 +67,7 @@ pub(crate) fn flow(
 struct Unstructured;
 
 /// The branches whose executions share a set of blocks, with those blocks.
-type Group = (Vec<usize>, BTreeSet<usize>);
+pub(crate) type Group = (Vec<usize>, BTreeSet<usize>);
 
 struct Builder<'a> {
     flow: &'a Flow,
@@ -94,13 +94,50 @@ struct Lowered<'e> {
 
 /// An enclosing selection or cycle, with the blocks its joins or normal exit run.
 #[derive(Clone)]
-struct Scope {
-    block: usize,
-    groups: Vec<BTreeSet<usize>>,
+pub(crate) struct Scope {
+    pub(crate) block: usize,
+    pub(crate) groups: Vec<BTreeSet<usize>>,
     /// The first join a yield from here may target. A branch may enter any of
     /// them; a join's own continuation may only hand on to a later one, which
     /// keeps the chain of nested joins acyclic.
-    from: usize,
+    pub(crate) from: usize,
+}
+
+/// The innermost enclosing join that holds a block of `waiting`.
+pub(crate) fn join_target(scopes: &[Scope], waiting: &BTreeSet<usize>) -> JoinTarget {
+    scopes
+        .iter()
+        .rev()
+        .find_map(|scope| {
+            scope
+                .groups
+                .iter()
+                .enumerate()
+                .skip(scope.from)
+                .find(|(_, group)| !group.is_disjoint(waiting))
+                .map(|(join, _)| JoinTarget {
+                    block: scope.block,
+                    join,
+                })
+        })
+        .expect("every shared block belongs to a join of an enclosing scope")
+}
+
+/// Logical names produced more than once that no single binding unifies.
+/// Rust would otherwise never compare the types of such alternatives.
+pub(crate) fn gates(merges: &[WireMerge], classes: &[BTreeSet<ProducerId>]) -> Vec<Ident> {
+    merges
+        .iter()
+        .filter(|merge| {
+            !classes.iter().any(|class| {
+                merge
+                    .producers
+                    .iter()
+                    .all(|producer| class.contains(producer))
+            })
+        })
+        .map(|merge| merge.wire.clone())
+        .collect()
 }
 
 /// A block is settled once its producers and the participating branch-local
@@ -218,22 +255,7 @@ impl Builder<'_> {
         {
             return Err(Unstructured);
         }
-        let join = scopes
-            .iter()
-            .rev()
-            .find_map(|scope| {
-                scope
-                    .groups
-                    .iter()
-                    .enumerate()
-                    .skip(scope.from)
-                    .find(|(_, group)| !group.is_disjoint(&waiting))
-                    .map(|(join, _)| JoinTarget {
-                        block: scope.block,
-                        join,
-                    })
-            })
-            .expect("every shared block belongs to a join of an enclosing scope");
+        let join = join_target(scopes, &waiting);
         // Every wire available here, spelled by its own producer so a type
         // error names the authored occurrence. The join keeps the ones it
         // carries.
@@ -574,23 +596,6 @@ impl Builder<'_> {
         flow_inputs
             .chain(outputs)
             .map(|(name, producer)| (name.clone(), producer))
-            .collect()
-    }
-
-    /// Logical names produced more than once that no single binding unifies.
-    /// Rust would otherwise never compare the types of such alternatives.
-    fn gates(&self) -> Vec<Ident> {
-        self.merges
-            .iter()
-            .filter(|merge| {
-                !self.classes.iter().any(|class| {
-                    merge
-                        .producers
-                        .iter()
-                        .all(|producer| class.contains(producer))
-                })
-            })
-            .map(|merge| merge.wire.clone())
             .collect()
     }
 }

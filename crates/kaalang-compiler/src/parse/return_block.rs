@@ -45,7 +45,6 @@ fn validate(value: &Expr, inputs: &[Input]) -> Result<()> {
             validate(&parenthesized.expr, inputs)
         }
         Expr::Group(group) if group.attrs.is_empty() => validate(&group.expr, inputs),
-        Expr::Tuple(tuple) if tuple.attrs.is_empty() && tuple.elems.is_empty() => Ok(()),
         Expr::Tuple(tuple) if tuple.attrs.is_empty() => tuple
             .elems
             .iter()

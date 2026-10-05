@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(flag: bool) -> &'static str {
     #[cycle("Try to return a borrowed local.")]
-    let borrowed = |flag| {
+    let borrowed = |flag| loop {
         #[question("Transfer a local value?")]
         let (done, again) = |flag| flag;
 

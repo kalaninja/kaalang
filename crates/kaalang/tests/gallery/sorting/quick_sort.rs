@@ -28,7 +28,7 @@ pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
         };
 
         #[cycle("Group the other values around the pivot.")]
-        let classified = {
+        let classified = loop {
             #[question("Are any values unclassified?")]
             #[yes("YES")]
             #[no("NO")]

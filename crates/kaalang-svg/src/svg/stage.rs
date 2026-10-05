@@ -29,7 +29,7 @@ pub(super) fn write_marker(svg: &mut String, node: &Node, kind: NodeKind) {
             svg,
             "      <polygon class=\"stage-marker\" points=\"0,{tip} -{half_width},{base} {half_width},{base}\"/>"
         ),
-        NodeKind::Transition => emit!(
+        NodeKind::StageTransition => emit!(
             svg,
             "      <polygon class=\"stage-marker\" points=\"0,-{tip} -{half_width},-{base} {half_width},-{base}\"/>"
         ),

@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut items: Vec<String>) -> Option<String> {
     #[cycle("Take the next item.")]
-    let taken = {
+    let taken = loop {
         #[action("Take an item.")]
         let taken = |&mut items| items.pop();
 

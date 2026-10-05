@@ -2,9 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use super::{
-    Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology, Vertex, block_node,
-};
+use super::{Destination, Node, NodeId, NodeKind, Topology, Vertex, block_node};
 use crate::model::{BlockKind, Flow};
 
 /// End has no exits and no description of its own: its caption is the flow's
@@ -22,8 +20,6 @@ pub(super) fn destination(flow: &Flow) -> Destination {
 }
 
 /// Orders every other sink before end, thereby covering the whole DAG.
-/// Placement-only edges use `ExitId::of` even for nodes without that exit:
-/// readers inspect only the source vertex, and these edges are never drawn.
 pub(super) fn order(topology: &mut Topology) {
     let Some(end) = topology
         .nodes
@@ -39,20 +35,10 @@ pub(super) fn order(topology: &mut Topology) {
         .chain(&topology.order)
         .map(|edge| Vertex::from(edge.source))
         .collect::<BTreeSet<_>>();
-    topology.order.extend(
-        topology
-            .vertices
-            .iter()
-            .copied()
-            .filter(|vertex| *vertex != end && !predecessors.contains(vertex))
-            .map(|vertex| Connection {
-                source: match vertex {
-                    Vertex::Node(node) => Source::Exit(ExitId::of(node)),
-                    Vertex::Junction(junction) => Source::Junction(junction),
-                },
-                destination: end,
-            }),
-    );
-    topology.order.sort_unstable();
-    topology.order.dedup();
+    let sinks = topology
+        .vertices
+        .iter()
+        .copied()
+        .filter(|vertex| *vertex != end && !predecessors.contains(vertex));
+    super::order_before(&mut topology.order, sinks, [end]);
 }

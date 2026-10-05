@@ -1,0 +1,5 @@
+error: this kaalang for cycle ends an iteration while the branches of the question `Is the value even?` are still separate; merge those branches before the end of its body
+ --> tests/cycle/compile_fail/for_unmerged_branches.rs:8:5
+  |
+8 |     #[cycle("Add the even values.")]
+  |     ^

@@ -1,0 +1,5 @@
+error: a kaalang block body that reads `self` must capture the receiver
+  --> tests/method/compile_fail/for_items_read_self_without_a_capture.rs:11:25
+   |
+11 |         || for value in self.values.iter() {
+   |                         ^^^^

@@ -5,7 +5,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn output_decides_a_later_question(mut values: Vec<i32>) -> i32 {
     #[cycle("Take the next positive value.")]
-    let (positive, empty) = {
+    let (positive, empty) = loop {
         #[choice("Is another value waiting?")]
         #[case("Check the value.")]
         #[case("The values ran out.")]

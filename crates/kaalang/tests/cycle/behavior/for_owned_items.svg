@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="681" height="932" viewBox="0 0 681 932" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_owned_items</title>
+  <desc id="kaalang-description">Cycles: Greet every name. with inputs names, mut greetings and outputs (). Nodes: Start: for_owned_items with parameters names: Vec&lt;String&gt; handing over names; Action: Start with no greetings. capturing nothing handing over mut greetings; For entry: Greet every name. capturing names handing over mut name; Action: Turn the name into a greeting. capturing mut name handing over greeting; Action: Keep the greeting. capturing greeting, &amp;mut greetings; For end: Greet every name.; End: Vec&lt;String&gt; capturing greetings. Connections: Start: for_owned_items to Action: Start with no greetings.; Action: Start with no greetings. to For entry: Greet every name.; For entry: Greet every name. to Action: Turn the name into a greeting.; Action: Turn the name into a greeting. to Action: Keep the greeting.; Action: Keep the greeting. to For end: Greet every name.; For end: Greet every name. to End: Vec&lt;String&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 173 90 L 173 162
+      M 173 226 L 173 298
+      M 173 362 L 173 434
+      M 173 498 L 173 570
+      M 173 634 L 173 706
+      M 173 770 L 173 842
+    "/>
+    <text class="connection-label" x="186" y="423" xml:space="preserve"><tspan x="186" dy="0">mut name</tspan></text>
+    <text class="connection-label" x="186" y="108" xml:space="preserve"><tspan x="186" dy="0">names</tspan></text>
+    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut greetings</tspan></text>
+    <text class="connection-label" x="186" y="516" xml:space="preserve"><tspan x="186" dy="0">greeting</tspan></text>
+    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">names</tspan></text>
+    <text class="connection-label" x="186" y="559" xml:space="preserve"><tspan x="186" dy="0">greeting, &amp;mut greetings</tspan></text>
+    <text class="connection-label" x="186" y="831" xml:space="preserve"><tspan x="186" dy="0">greetings</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 313 61 L 409 61"/>
+    <g class="parameter-panel" transform="translate(529 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">names: Vec&lt;String&gt;</tspan></text>
+    </g>
+    <g class="node start" transform="translate(173 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_owned_items</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 194)">
+      <title xml:space="preserve">Start with no greetings.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with no greetings.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(173 330)">
+      <title xml:space="preserve">Greet every name.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Greet every name.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 466)">
+      <title xml:space="preserve">Turn the name into a greeting.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Turn the name into a greeting.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 602)">
+      <title xml:space="preserve">Keep the greeting.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the greeting.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(173 738)">
+      <title xml:space="preserve">Greet every name.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Greet every name.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 871)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;String&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

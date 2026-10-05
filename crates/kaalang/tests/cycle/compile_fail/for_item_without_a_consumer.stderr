@@ -1,0 +1,5 @@
+error: every kaalang for cycle item must have a consumer
+ --> tests/cycle/compile_fail/for_item_without_a_consumer.rs:9:18
+  |
+9 |     |values| for value in values {
+  |                  ^^^^^

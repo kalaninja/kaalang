@@ -21,46 +21,37 @@ pub(super) fn plan(
             *count += 1;
         }
     }
-    bodies.iter().enumerate().all(|(block, &count)| {
-        count == 1
-            || (count == 0
-                && matches!(flow.kind, crate::FlowKind::Preparation)
-                && flow.blocks[block].transition_target.is_some())
-    }) && executions.iter().all(|execution| {
-        let mut replay = Replay {
-            flow,
-            execution,
-            merges,
-            available: flow
-                .flow_inputs
-                .iter()
-                .enumerate()
-                .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
-                .collect(),
-            ran: BTreeSet::new(),
-            last: None,
-            dependencies: BTreeSet::new(),
-            cycle_indices: Vec::new(),
-        };
-        (match (replay.walk(plan), execution.outcome) {
-            (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
-                found == block_index
-            }
-            (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { cycle_index }) => {
-                found == cycle_index
-            }
-            _ => false,
-        }) && replay
-            .ran
-            .iter()
-            .copied()
-            .eq(execution.blocks.iter().copied())
-            && replay
-                .dependencies
-                .iter()
-                .copied()
-                .eq(execution.dependencies.iter().copied())
-    })
+    bodies
+        .iter()
+        .enumerate()
+        .all(|(block, &count)| count == 1 || (count == 0 && flow.may_never_run(block)))
+        && executions.iter().all(|execution| {
+            let mut replay = Replay {
+                flow,
+                execution,
+                merges,
+                available: flow
+                    .flow_inputs
+                    .iter()
+                    .enumerate()
+                    .map(|(index, name)| (name.clone(), ProducerId::FlowInput(index)))
+                    .collect(),
+                ran: BTreeSet::new(),
+                last: None,
+                dependencies: BTreeSet::new(),
+                cycle_indices: Vec::new(),
+            };
+            (match (replay.walk(plan), execution.outcome) {
+                (Some(Exit::Return(found)), ExecutionOutcome::Return { block_index }) => {
+                    found == block_index
+                }
+                (Some(Exit::Repeat(found)), ExecutionOutcome::Repeat { cycle_index }) => {
+                    found == cycle_index
+                }
+                _ => false,
+            }) && replay.ran.iter().eq(&execution.blocks)
+                && replay.dependencies.iter().eq(&execution.dependencies)
+        })
 }
 
 /// Every authored block the plan emits, in the order it emits them. The end
@@ -241,9 +232,9 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn sequential() {
                 #[cycle("Leave the first cycle.")]
-                let first = { #[action("Finish the first cycle.")] let first = || (); };
+                let first = loop { #[action("Finish the first cycle.")] let first = || (); };
                 #[cycle("Leave the second cycle.")]
-                let second = |first| { #[action("Finish the second cycle.")] let second = || (); };
+                let second = |first| loop { #[action("Finish the second cycle.")] let second = || (); };
                 #[action("Finish.")]
                 let end = |second| {};
 
@@ -285,7 +276,9 @@ mod tests {
             model.analysis.executions[0].outcome,
             ExecutionOutcome::Return { block_index: 1 }
         );
-        model.analysis.executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        let mut executions = model.analysis.executions.to_vec();
+        executions[0].outcome = ExecutionOutcome::Return { block_index: 0 };
+        model.analysis.executions = crate::Executions::enumerated(executions);
         assert!(!replays(&model, &model.analysis.execution_plan));
     }
 
@@ -294,7 +287,7 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
                 #[cycle("Count to three.")]
-                let done = {
+                let done = loop {
                     #[question("Finished?")]
                     let (done, again) = |count| count == 3;
                     #[action("Advance.")]
@@ -350,9 +343,9 @@ mod tests {
         let mut model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Repeat the outer cycle.")]
-                |flag| {
+                |flag| loop {
                     #[cycle("Repeat the inner cycle.")]
-                    let leave_1 = |flag| {
+                    let leave_1 = |flag| loop {
                         #[question("Repeat?")]
                         let (iterate_1, leave_1) = |flag| flag;
                         |iterate_1| continue;
@@ -396,11 +389,11 @@ mod tests {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
                 #[cycle("Choose whether to finish.")]
-                let leave_2 = |flag| {
+                let leave_2 = |flag| loop {
                     #[question("Enter the cycle?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     #[cycle("Repeat forever.")]
-                    |iterate_2| {
+                    |iterate_2| loop {
                         continue;
                     };
                 };
@@ -572,7 +565,7 @@ mod tests {
             function.block.stmts[1] = selection;
             let model = crate::build(&function).expect("the setup is prepared above the selection");
             assert_eq!(model.analysis.flow.blocks[1].inputs.len(), 1);
-            for execution in &model.analysis.executions {
+            for execution in model.analysis.executions.iter() {
                 assert_eq!(
                     execution.blocks,
                     [

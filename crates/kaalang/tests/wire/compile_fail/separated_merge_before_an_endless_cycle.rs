@@ -21,7 +21,7 @@ fn separated_merge_before_an_endless_cycle(outer: bool, inner: bool) -> ! {
     let ready = |skip| ();
 
     #[cycle("Serve forever.")]
-    |ready| {
+    |ready| loop {
         continue;
     };
 }

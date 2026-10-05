@@ -3,13 +3,13 @@ use kaalang::kaalang;
 #[kaalang]
 fn result_shapes(value: usize) -> (usize, usize, usize, usize) {
     #[cycle("Produce a named unit result.")]
-    let ready = || {
+    let ready = || loop {
         #[action("Get ready.")]
         let ready = || {};
     };
 
     #[cycle("Produce a mutable scalar result.")]
-    let mut adjusted = |value| {
+    let mut adjusted = |value| loop {
         #[action("Copy the value.")]
         let adjusted = |value| value;
     };
@@ -18,13 +18,13 @@ fn result_shapes(value: usize) -> (usize, usize, usize, usize) {
     |ready, &mut adjusted| *adjusted += 1;
 
     #[cycle("Declare a singleton output, which does not destructure.")]
-    let (single,) = |value| {
+    let (single,) = |value| loop {
         #[action("Copy the value again.")]
         let single = |value| value;
     };
 
     #[cycle("Hand over a tuple-valued output whole.")]
-    let pair = |single| {
+    let pair = |single| loop {
         #[action("Build two results.")]
         let pair = |single| (single, single + 1);
     };

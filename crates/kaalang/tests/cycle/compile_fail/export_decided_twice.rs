@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn invalid(mut count: u8) -> u8 {
     #[cycle("Settle the count.")]
-    let (found, other) = {
+    let (found, other) = loop {
         #[question("Is the count even?")]
         let (even, odd) = |&count| *count % 2 == 0;
 

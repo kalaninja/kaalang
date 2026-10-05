@@ -1,5 +1,9 @@
 use kaalang_svg::{RenderError, RenderOptions, render_source, render_source_with_options};
 
+const COLLAPSED: RenderOptions = RenderOptions {
+    collapse_cycles: true,
+};
+
 /// One flow carrying every label case at once, with a distinct wire name for
 /// each so a duplicate in the description is detectable by counting.
 const SOURCE: &str = r#"
@@ -34,23 +38,7 @@ const SOURCE: &str = r#"
     }
 "#;
 
-const CYCLE_SOURCE: &str = r#"
-    #[kaalang]
-    fn count_to(mut count: usize, limit: usize) -> usize {
-        #[cycle("Count to the limit.")]
-        let done = {
-            #[question("Has the counter reached the limit?")]
-            let (done, again) = |&count, &limit| *count == *limit;
-
-            #[action("Increment the counter.")]
-            |again, &mut count| *count += 1;
-
-            |again| continue;
-        };
-
-        |done, count| return count;
-    }
-"#;
+const CYCLE_SOURCE: &str = include_str!("../../kaalang/tests/cycle/behavior/count_to.rs");
 
 #[test]
 fn renders_an_accessible_standalone_svg() {
@@ -231,14 +219,8 @@ fn clips_a_wide_formula_without_losing_its_accessible_text() {
         .nth(1)
         .unwrap();
     assert!(node.contains("width=\"280\""));
-    let math = svg
-        .lines()
-        .find(|line| line.contains(r#"<svg class="md-math""#))
-        .unwrap();
-    let ellipsis = svg
-        .lines()
-        .find(|line| line.contains("md-math-ellipsis"))
-        .unwrap();
+    let math = first_line(&svg, r#"<svg class="md-math""#);
+    let ellipsis = first_line(&svg, "md-math-ellipsis");
     assert!(ellipsis.contains(">…</text>"));
     assert!(
         (attribute(math, "x") + attribute(math, "width") - attribute(ellipsis, "x")).abs() < 0.001
@@ -246,10 +228,7 @@ fn clips_a_wide_formula_without_losing_its_accessible_text() {
     assert!((attribute(math, "width") + attribute(ellipsis, "textLength") - 248.0).abs() < 0.001);
     assert!((formula_scale(math) - 14.0).abs() < 0.01);
     let view_box = view_box(math);
-    let underline = svg
-        .lines()
-        .find(|line| line.contains("<line x1=\"0\""))
-        .unwrap();
+    let underline = first_line(&svg, "<line x1=\"0\"");
     assert!(attribute(underline, "y1") + 0.5 / formula_scale(math) < view_box[1] + view_box[3]);
 }
 
@@ -356,16 +335,10 @@ fn a_single_highlighted_grapheme_uses_its_measured_advance() {
         }
     "#;
     let svg = render_source(source, "measured").unwrap();
-    let run = svg.lines().find(|line| line.contains(">W</text>")).unwrap();
+    let run = first_line(&svg, ">W</text>");
     assert!(run.contains(r#"lengthAdjust="spacingAndGlyphs""#));
-    let box_line = svg
-        .lines()
-        .find(|line| line.contains(r#"<rect class="md-highlight-box""#))
-        .unwrap();
-    let formula = svg
-        .lines()
-        .find(|line| line.contains(r#"<svg class="md-math""#))
-        .unwrap();
+    let box_line = first_line(&svg, r#"<rect class="md-highlight-box""#);
+    let formula = first_line(&svg, r#"<svg class="md-math""#);
     assert!((attribute(run, "textLength") - attribute(box_line, "width")).abs() < 0.001);
     assert!(
         (attribute(formula, "x") - attribute(box_line, "x") - attribute(box_line, "width")).abs()
@@ -387,8 +360,8 @@ fn width_only_formula_advances_text_without_an_empty_svg() {
     assert!(svg.contains(r#"<title xml:space="preserve">a\,b</title>"#));
     assert!(!svg.contains(r#"<svg class="md-math""#));
     assert!(svg.contains(r#"<line class="md-math""#));
-    let a = svg.lines().find(|line| line.contains(">a</text>")).unwrap();
-    let b = svg.lines().find(|line| line.contains(">b</text>")).unwrap();
+    let a = first_line(&svg, ">a</text>");
+    let b = first_line(&svg, ">b</text>");
     let gap = attribute(b, "x") - attribute(a, "x") - attribute(a, "textLength");
     assert!((gap - 3.0).abs() < 0.001);
 }
@@ -403,7 +376,7 @@ fn a_formula_above_the_label_height_limit_stays_literal() {
     assert!(describe(&svg).contains(formula));
     assert!(!svg.contains("<svg class=\"md-math"));
     let action = svg.split_once(r#"class="node action""#).unwrap().1;
-    let shape = action.lines().find(|line| line.contains("<rect ")).unwrap();
+    let shape = first_line(action, "<rect ");
     assert!(attribute(shape, "height") < 100.0);
 }
 
@@ -417,6 +390,13 @@ fn quoted<'a>(line: &'a str, name: &str) -> &'a str {
         .and_then(|(_, value)| value.split_once('"'))
         .expect("the line carries the attribute")
         .0
+}
+
+/// The first line of `svg` that contains `needle`.
+fn first_line<'a>(svg: &'a str, needle: &str) -> &'a str {
+    svg.lines()
+        .find(|line| line.contains(needle))
+        .expect("the SVG has the line")
 }
 
 fn attribute(line: &str, name: &str) -> f64 {
@@ -449,18 +429,8 @@ fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
         assert!((formula_scale(math) - 12.0).abs() < 0.01);
     }
 
-    let collapsed = render_source_with_options(
-        &source,
-        "count_to",
-        RenderOptions {
-            collapse_cycles: true,
-        },
-    )
-    .unwrap();
-    let math = collapsed
-        .lines()
-        .find(|line| line.contains(r#"<svg class="md-math""#))
-        .unwrap();
+    let collapsed = render_source_with_options(&source, "count_to", COLLAPSED).unwrap();
+    let math = first_line(&collapsed, r#"<svg class="md-math""#);
     assert!(math.contains("style=\"overflow: hidden\""));
     assert!((formula_scale(math) - 14.0).abs() < 0.01);
 }
@@ -554,10 +524,7 @@ fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
             ),
         ] {
             let svg = render_source(&source, name).unwrap();
-            let math = svg
-                .lines()
-                .find(|line| line.contains("<svg class=\"md-math"))
-                .unwrap();
+            let math = first_line(&svg, "<svg class=\"md-math");
             assert!(math.contains("stroke=\"none\""), "{name}: {math}");
             if let Some(ellipsis) = svg.lines().find(|line| line.contains("md-math-ellipsis")) {
                 assert!(ellipsis.contains("stroke=\"none\""), "{name}: {ellipsis}");
@@ -569,14 +536,8 @@ fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
 #[test]
 fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     let expanded = render_source(CYCLE_SOURCE, "count_to").expect("the cycle expands");
-    let collapsed = render_source_with_options(
-        CYCLE_SOURCE,
-        "count_to",
-        RenderOptions {
-            collapse_cycles: true,
-        },
-    )
-    .expect("the cycle collapses");
+    let collapsed = render_source_with_options(CYCLE_SOURCE, "count_to", COLLAPSED)
+        .expect("the cycle collapses");
 
     assert!(expanded.contains(r#"class="cycle-boundary""#));
     assert!(!expanded.contains(r#"class="node cycle""#));
@@ -591,12 +552,12 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     assert!(collapsed.contains("Count to the limit."));
     assert!(collapsed.contains("Cycle: Count to the limit."));
     assert!(collapsed.contains(">mut count, limit</tspan>"));
-    assert!(collapsed.contains(">done</tspan>"));
+    assert!(collapsed.contains(">leave_1</tspan>"));
     assert!(collapsed.contains(
         ".action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }"
     ));
 
-    let invalid = CYCLE_SOURCE.replace("|again| continue;", "|again, count| return count;");
+    let invalid = CYCLE_SOURCE.replace("|iterate_1| continue;", "|iterate_1, count| return count;");
     for collapse_cycles in [false, true] {
         assert!(matches!(
             render_source_with_options(&invalid, "count_to", RenderOptions { collapse_cycles }),
@@ -633,7 +594,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
                 fn example(_choose: bool) -> u8 {{
                     {preparation}
                     #[cycle("Use the values.")]
-                    let done = {{
+                    let done = loop {{
                         #[action("Add to the first value.")]
                         let done = |second, &mut first| {{
                             *first += second;
@@ -643,14 +604,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
                     |done| return done;
                 }}"#
             );
-            let svg = render_source_with_options(
-                &source,
-                "example",
-                RenderOptions {
-                    collapse_cycles: true,
-                },
-            )
-            .unwrap();
+            let svg = render_source_with_options(&source, "example", COLLAPSED).unwrap();
             assert_eq!(
                 svg.lines()
                     .filter(|line| line.contains(r#"class="connection-label""#))
@@ -676,10 +630,7 @@ fn expanded_cycles_keep_shortened_descriptions_in_their_tooltips() {
         .replace('<', "&lt;")
         .replace('>', "&gt;");
     assert!(svg.contains(&format!("<title xml:space=\"preserve\">{escaped}</title>")));
-    let caption = svg
-        .lines()
-        .find(|line| line.contains("<text class=\"cycle-caption\""))
-        .unwrap();
+    let caption = first_line(&svg, "<text class=\"cycle-caption\"");
     assert!(caption.contains("xml:space=\"preserve\""));
     assert!(caption.contains("…</tspan>"));
     assert_eq!(caption.matches("<tspan").count(), 2);

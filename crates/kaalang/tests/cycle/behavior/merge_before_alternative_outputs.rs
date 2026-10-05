@@ -14,7 +14,7 @@ fn merge_before_alternative_outputs(fast: bool, mut count: u32) -> u32 {
     let step = |slow| 1;
 
     #[cycle("Count past five.")]
-    let (even, odd) = {
+    let (even, odd) = loop {
         #[question("Past five?")]
         let (past, again) = |&count| *count > 5;
 

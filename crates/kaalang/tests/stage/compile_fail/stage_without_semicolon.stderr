@@ -1,8 +1,0 @@
-error: a kaalang stage requires a trailing semicolon
- --> tests/stage/compile_fail/stage_without_semicolon.rs:5:5
-  |
-5 | /     #[stage("Finish.")]
-6 | |     |go| {
-7 | |         return;
-8 | |     }
-  | |_____^

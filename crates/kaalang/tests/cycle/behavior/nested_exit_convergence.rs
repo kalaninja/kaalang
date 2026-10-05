@@ -3,9 +3,9 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_exit_convergence(mut count: usize) -> usize {
     #[cycle("Count down to zero.")]
-    let done = {
+    let done = loop {
         #[cycle("Converge the inner stopping routes.")]
-        let inner_done = {
+        let inner_done = loop {
             #[choice("Leave the inner cycle?")]
             #[case("Leave at zero.")]
             #[case("Leave at one.")]

@@ -64,28 +64,13 @@ const ARROW_MIDPOINT: i32 = ARROW_SIZE / 2;
 const BACK_EDGE_ARROW_TIP_INSET: i32 = 1;
 const BACK_EDGE_ARROW_REF_X: i32 = ARROW_SIZE - BACK_EDGE_ARROW_TIP_INSET;
 
-pub(crate) fn serialize(scene: &Scene, flow_name: &str) -> String {
-    serialize_with_ids(scene, flow_name, None)
-}
-
 #[allow(clippy::too_many_lines)] // The node and route groups write one complete local SVG.
-fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> String {
+pub(crate) fn serialize(scene: &Scene, flow_name: &str, part: Option<usize>) -> String {
     let mut svg = String::new();
-    let (title_id, description_id, back_edge_arrow_id) = part.map_or_else(
-        || {
-            (
-                "kaalang-title".to_owned(),
-                "kaalang-description".to_owned(),
-                "back-edge-arrow".to_owned(),
-            )
-        },
-        |part| {
-            (
-                format!("kaalang-part-{part}-title"),
-                format!("kaalang-part-{part}-description"),
-                format!("kaalang-part-{part}-back-edge-arrow"),
-            )
-        },
+    let part_id = part.map_or_else(String::new, |part| format!("part-{part}-"));
+    let back_edge_arrow_id = part.map_or_else(
+        || "back-edge-arrow".to_owned(),
+        |_| format!("kaalang-{part_id}back-edge-arrow"),
     );
     let markdown_styles = markdown_styles(scene);
     let background = if part.is_none() {
@@ -93,21 +78,24 @@ fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> St
     } else {
         ""
     };
-    let stage_styles = if scene
-        .topology
-        .nodes
-        .iter()
-        .any(|node| matches!(node.kind, NodeKind::StageEntry | NodeKind::Transition))
-    {
+    let has = |kind: NodeKind| scene.topology.nodes.iter().any(|node| node.kind == kind);
+    let stage_styles = if has(NodeKind::StageEntry) || has(NodeKind::StageTransition) {
         format!(
-            "      .stage-entry .node-shape, .transition .node-shape {{ fill: #f5f3ff; }}\n      .stage-entry .label, .transition .label {{ font-weight: {FONT_WEIGHT_SEMIBOLD}; }}\n      .stage-marker {{ fill: currentColor; }}\n"
+            "      .stage-entry .node-shape, .stage-transition .node-shape {{ fill: #f5f3ff; }}\n      .stage-entry .label, .stage-transition .label {{ font-weight: {FONT_WEIGHT_SEMIBOLD}; }}\n      .stage-marker {{ fill: currentColor; }}\n"
+        )
+    } else {
+        String::new()
+    };
+    let cap_styles = if has(NodeKind::ForEntry) {
+        format!(
+            "      .for-entry .node-shape, .for-end .node-shape {{ fill: #f0fdf4; }}\n      .for-entry .label, .for-end .label {{ font-weight: {FONT_WEIGHT_MEDIUM}; text-anchor: start; }}\n"
         )
     } else {
         String::new()
     };
     emit!(
         svg,
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="{title_id}" aria-describedby="{description_id}">"#,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="kaalang-{part_id}title" aria-describedby="kaalang-{part_id}description">"#,
         scene.width,
         scene.height,
         scene.width,
@@ -115,12 +103,12 @@ fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> St
     );
     emit!(
         svg,
-        "  <title id=\"{title_id}\">kaalang diagram for {}</title>",
+        "  <title id=\"kaalang-{part_id}title\">kaalang diagram for {}</title>",
         escape(flow_name)
     );
     emit!(
         svg,
-        "  <desc id=\"{description_id}\">{}</desc>",
+        "  <desc id=\"kaalang-{part_id}description\">{}</desc>",
         escape(&describe(scene))
     );
     emit_inline!(
@@ -146,12 +134,12 @@ fn serialize_with_ids(scene: &Scene, flow_name: &str, part: Option<usize>) -> St
       .parameter-panel .label {{ font-weight: {FONT_WEIGHT_REGULAR}; text-anchor: start; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: {CYCLE_STROKE_WIDTH}; stroke-dasharray: {CYCLE_DASH_LENGTH} {CYCLE_DASH_GAP}; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: {FONT_WEIGHT_SEMIBOLD}; paint-order: stroke; stroke: #ffffff; stroke-width: {CYCLE_CAPTION_HALO}px; }}
-{markdown_styles}{stage_styles}    </style>
+{markdown_styles}{stage_styles}{cap_styles}    </style>
   </defs>
 {background}  <g class="cycle-regions">
 "#
     );
-    for region in &scene.cycle_regions {
+    for region in scene.cycle_regions.iter().filter(|region| region.drawn) {
         cycle::write(&mut svg, region);
     }
     svg.push_str("  </g>\n  <g class=\"connections\">\n");
@@ -306,11 +294,7 @@ fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
         point.x,
         point.y
     );
-    emit!(
-        svg,
-        "      <title xml:space=\"preserve\">{}</title>",
-        escape(&merge_name(scene, junction))
-    );
+    write_title(svg, &merge_name(scene, junction));
     emit!(
         svg,
         "      <circle class=\"node-shape\" r=\"{MERGE_RADIUS}\" style=\"fill: currentColor\"/>"
@@ -502,16 +486,8 @@ fn write_formula(
     let height = &ascent + &formula.descent(font_size, style);
     let top = &Dim::from_i64(i64::from(baseline)) - &ascent;
     let top_padding = i32::from(formula.is_clipped()) * FORMULA_CLIP_PADDING;
-    let bottom_padding = if formula.is_clipped() {
-        FORMULA_CLIP_PADDING
-            + if style.underline {
-                FORMULA_UNDERLINE_PADDING
-            } else {
-                0
-            }
-    } else {
-        0
-    };
+    let bottom_padding = top_padding
+        + i32::from(formula.is_clipped() && style.underline) * FORMULA_UNDERLINE_PADDING;
     let mut class = style.color.map_or_else(
         || "md-math".to_owned(),
         |color| format!("md-math {}", color.class()),
@@ -748,18 +724,12 @@ fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterP
         parameters.height
     );
     let first_y = NODE_LABEL_PADDING_Y - parameters.lines.len() as i32 * LINE_HEIGHT / 2;
+    let x = NODE_LABEL_PADDING_X - parameters.width / 2;
     emit_inline!(
         svg,
-        "      <text class=\"label\" x=\"{}\" y=\"{first_y}\" xml:space=\"preserve\">",
-        NODE_LABEL_PADDING_X - parameters.width / 2
+        "      <text class=\"label\" x=\"{x}\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
-    write_lines(
-        svg,
-        &parameters.lines,
-        NODE_LABEL_PADDING_X - parameters.width / 2,
-        LABEL_FONT,
-        LINE_HEIGHT,
-    );
+    write_lines(svg, &parameters.lines, x, LABEL_FONT, LINE_HEIGHT);
     svg.push_str("    </g>\n");
 }
 
@@ -864,7 +834,9 @@ fn node_name(scene: &Scene, id: NodeId) -> String {
         NodeKind::Select => choice::select_name(label),
         NodeKind::Case => choice::case_name(label),
         NodeKind::End => format!("End: {label}"),
-        NodeKind::Transition => format!("Transition: {label}"),
+        NodeKind::StageTransition => format!("Stage transition: {label}"),
+        NodeKind::ForEntry => format!("For entry: {label}"),
+        NodeKind::ForEnd => format!("For end: {label}"),
     }
 }
 
@@ -892,7 +864,9 @@ fn write_node(svg: &mut String, scene: &Scene, node: &Node) {
         NodeKind::Question => question::write(svg, node),
         NodeKind::Select => choice::write_select(svg, node),
         NodeKind::Case | NodeKind::StageEntry => choice::write_case(svg, node),
-        NodeKind::Transition => stage::write_transition(svg, node),
+        NodeKind::StageTransition => stage::write_transition(svg, node),
+        NodeKind::ForEntry => cycle::write_cap(svg, node, true),
+        NodeKind::ForEnd => cycle::write_cap(svg, node, false),
     }
     if scene.captions.back_marker(node.id) {
         stage::write_marker(svg, node, projected.kind);
@@ -905,13 +879,16 @@ fn write_capsule(svg: &mut String, node: &Node) {
     let half_height = node.height / 2;
     emit!(
         svg,
-        "      <rect class=\"node-shape\" x=\"-{}\" y=\"-{}\" width=\"{}\" height=\"{}\" rx=\"{}\"/>",
-        half_width,
-        half_height,
+        "      <rect class=\"node-shape\" x=\"-{half_width}\" y=\"-{half_height}\" width=\"{}\" height=\"{}\" rx=\"{half_height}\"/>",
         node.width,
-        node.height,
-        half_height
+        node.height
     );
+}
+
+/// Draws a node's caption from its left padding, as rectangular nodes do.
+fn write_start_label(svg: &mut String, node: &Node) {
+    let x = NODE_LABEL_PADDING_X - node.width / 2;
+    write_label(svg, node, 0, x, TextAnchor::Start);
 }
 
 fn write_title(svg: &mut String, label: &str) {
@@ -961,7 +938,9 @@ const fn node_class(kind: NodeKind) -> &'static str {
         NodeKind::Select => "select",
         NodeKind::Case => "case",
         NodeKind::End => "end",
-        NodeKind::Transition => "transition",
+        NodeKind::StageTransition => "stage-transition",
+        NodeKind::ForEntry => "for-entry",
+        NodeKind::ForEnd => "for-end",
     }
 }
 

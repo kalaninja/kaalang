@@ -29,6 +29,12 @@ pub(super) fn parse(
             "a kaalang continue requires an enclosing cycle",
         ));
     };
+    if preceding[target].iteration.is_some() {
+        return Err(Error::new(
+            expression.span(),
+            "a kaalang for cycle has no `continue`; every route through its body ends the iteration at the end of the body",
+        ));
+    }
     if preceding
         .iter()
         .any(|block| block.kind == BlockKind::Continue && block.parent == Some(target))
@@ -49,7 +55,7 @@ pub(super) fn parse(
 mod tests {
     fn second_continue(transfer: &str) {
         let source =
-            format!("fn example() {{ #[cycle(\"Repeat.\")] {{ {transfer} {transfer} }}; }}");
+            format!("fn example() {{ #[cycle(\"Repeat.\")] loop {{ {transfer} {transfer} }}; }}");
         let error = crate::parse::flow(&syn::parse_str(&source).unwrap())
             .err()
             .expect("a second structural continue is rejected before reachability");
@@ -79,9 +85,9 @@ mod tests {
         let function = syn::parse_quote! {
             fn example() {
                 #[cycle("Repeat the outer cycle.")]
-                {
+                loop {
                     #[cycle("Repeat the inner cycle.")]
-                    {
+                    loop {
                         continue;
                     };
                     continue;
@@ -96,7 +102,7 @@ mod tests {
         let function = syn::parse_quote! {
             fn example() {
                 #[cycle("Repeat.")]
-                {
+                loop {
                     #[action("Use native Rust control flow.")]
                     {
                         for _ in 0..2 {

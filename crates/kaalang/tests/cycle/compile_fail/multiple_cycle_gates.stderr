@@ -1,5 +1,5 @@
 error: a kaalang cycle header names at most one gate
  --> tests/cycle/compile_fail/multiple_cycle_gates.rs:6:13
   |
-6 |     |first, second| {};
+6 |     |first, second| loop {};
   |             ^^^^^^

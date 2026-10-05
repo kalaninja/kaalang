@@ -116,17 +116,8 @@ impl Executions {
                 .iter()
                 .position(|group| group.iter().any(|&merge| model.merges[merge].wire == *wire))
         };
-        let mut order = Vec::new();
-        crate::plan::serial_order(model.execution_plan, &mut order);
-        order.retain(|&block| {
-            crate::topology::represented(model, structural, block)
-                || (!model.collapse_cycles
-                    && matches!(
-                        flow.blocks[block].kind,
-                        BlockKind::Export | BlockKind::Continue
-                    )
-                    && !structural.contains_key(&block))
-        });
+        let order = crate::topology::serial_blocks(model, structural);
+        let mut hops = BTreeSet::new();
         let mut previous = BTreeMap::from([(Source::Exit(ExitId::of(NodeId::Start)), ALWAYS)]);
         for (position, &block) in order.iter().enumerate() {
             let participates = runs(self, block);
@@ -137,17 +128,25 @@ impl Executions {
                 Some(junction) if !structural.contains_key(&block) => {
                     Destination::Junction(junction)
                 }
-                _ => crate::topology::destination(structural, block),
+                _ => crate::topology::destination(model, structural, block),
             };
             for (&source, &when) in &previous {
                 let edge = self.conditions.and(when, participates);
                 add(self, source, destination, edge);
             }
-            if block == end || flow.blocks[block].transition_target.is_some() {
+            if block == end
+                || flow.blocks[block].transition_target.is_some()
+                || crate::topology::opens_for_cycle(model, block)
+            {
                 continue;
             }
             for when in previous.values_mut() {
                 *when = self.conditions.minus(*when, participates);
+            }
+            if let Some(hop) = crate::topology::exhausted_hop(model, block) {
+                let exhausted = self.produced(ProducerId::BlockOutput { block, output: 1 });
+                add(self, hop.source, hop.destination, exhausted);
+                hops.insert(hop);
             }
             if let Some(junction) = transfer {
                 let entry = previous.entry(Source::Junction(junction)).or_insert(NEVER);
@@ -200,7 +199,7 @@ impl Executions {
             let entered = crate::topology::entered(model, &dependency);
             let source = entered.map_or_else(
                 || crate::topology::source(model, dependency.producer, boundaries),
-                |header| Source::Junction(structural[&header]),
+                |header| crate::topology::entry_source(structural, header),
             );
             let consumer = if returns {
                 Destination::Node(NodeId::Block(
@@ -211,7 +210,7 @@ impl Executions {
                     },
                 ))
             } else {
-                crate::topology::destination(structural, capture.block)
+                crate::topology::destination(model, structural, capture.block)
             };
             let wire = &flow.blocks[capture.block].inputs[capture.input].ident;
             if let Some(junction) = junction_of(wire).filter(|_| entered.is_none()) {
@@ -238,7 +237,7 @@ impl Executions {
                         add(
                             self,
                             Source::Junction(junction),
-                            crate::topology::destination(structural, after),
+                            crate::topology::destination(model, structural, after),
                             when,
                         );
                     }
@@ -258,6 +257,7 @@ impl Executions {
         for &block in &self.selectors.clone() {
             if flow.blocks[block].kind == BlockKind::Choice
                 && crate::topology::represented_block(model, block)
+                && !flow.takes_next_item(block)
             {
                 for branch in 0..flow.blocks[block].outputs.len() {
                     add(
@@ -276,6 +276,9 @@ impl Executions {
             }
         }
         self.reduce(&edges, vertices)
+            .into_iter()
+            .filter(|edge| !hops.contains(edge))
+            .collect()
     }
 
     pub(crate) fn order_exits(
@@ -298,16 +301,8 @@ impl Executions {
                 }
                 let adjacent = self.conditions.and(next_when, self.runs[next]);
                 if self.has(adjacent) {
-                    for cycle in topology
-                        .cycles
-                        .iter()
-                        .filter(|cycle| (target..end).contains(&cycle.header))
-                    {
-                        topology.order.push(Connection {
-                            source: Source::Junction(cycle.tail),
-                            destination: crate::topology::destination(structural, next),
-                        });
-                    }
+                    let destination = crate::topology::destination(model, structural, next);
+                    topology.order_iteration_ends(target..end, destination);
                 }
                 next_when = self.conditions.minus(next_when, self.runs[next]);
             }
@@ -316,18 +311,11 @@ impl Executions {
 
     pub(crate) fn prefer_left(&mut self, flow: &Flow, header: usize) -> bool {
         let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
-        let Some(first) = (header + 1..end).find(|&block| flow.blocks[block].branch_count() > 0)
-        else {
+        let Some(first) = (header + 1..end).find(|&block| flow.draws_branches(block)) else {
             return true;
         };
         let selected = self.selected(first, flow.blocks[first].branch_count() - 1);
-        let repeated = self
-            .outcomes
-            .get(&crate::ExecutionOutcome::Repeat {
-                cycle_index: header,
-            })
-            .copied()
-            .unwrap_or(NEVER);
+        let repeated = self.repeats(header);
         let left = self.conditions.minus(repeated, selected);
         self.has(left)
     }

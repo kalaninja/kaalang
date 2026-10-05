@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `scale` before using it
+  --> tests/cycle/compile_fail/for_items_read_an_uncaptured_parameter.rs:13:46
+   |
+13 |     |&values| for value in values.iter().map(scale) {
+   |                                              ^^^^^

@@ -3,12 +3,12 @@ use kaalang::kaalang;
 #[kaalang]
 fn nested_unconditional_cycles(limit: usize) -> usize {
     #[cycle("Run the nested counter.")]
-    let result = |limit| {
+    let result = |limit| loop {
         #[action("Initialize the counter.")]
         let mut count = || 0;
 
         #[cycle("Count to the limit.")]
-        let done = {
+        let done = loop {
             #[question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 

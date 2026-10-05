@@ -1,0 +1,5 @@
+error: a kaalang for cycle names its item with one binding or `_`
+ --> tests/cycle/compile_fail/for_reference_item.rs:6:18
+  |
+6 |     |values| for &value in values {
+  |                  ^^^^^^

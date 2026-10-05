@@ -11,6 +11,7 @@ use super::{
 use crate::{
     BlockKind, Branch, ExecutionOutcome, ExecutionPlan, Flow, Join, JoinTarget, ProducerId,
     WireMerge,
+    plan::{Group, Scope},
 };
 
 mod cycle;
@@ -28,15 +29,6 @@ struct Lowered {
     emitted: BTreeSet<usize>,
 }
 
-#[derive(Clone)]
-struct Scope {
-    block: usize,
-    groups: Vec<BTreeSet<usize>>,
-    from: usize,
-}
-
-type Group = (Vec<usize>, BTreeSet<usize>);
-
 impl Executions {
     pub(crate) fn plan(&mut self, flow: &Flow, merges: &[WireMerge]) -> ExecutionPlan {
         let domain = self.domain;
@@ -51,22 +43,10 @@ impl Executions {
             lowered.yielding, NEVER,
             "every execution has a final outcome"
         );
-        let gates = merges
-            .iter()
-            .filter(|merge| {
-                !builder.classes.iter().any(|class| {
-                    merge
-                        .producers
-                        .iter()
-                        .all(|producer| class.contains(producer))
-                })
-            })
-            .map(|merge| merge.wire.clone())
-            .collect();
         let plan = ExecutionPlan::End {
             index: flow.blocks.len() - 1,
             body: Box::new(lowered.plan),
-            gates,
+            gates: crate::plan::gates(merges, &builder.classes),
         };
         assert!(
             self.verify(flow, &plan, merges),
@@ -203,31 +183,12 @@ impl Builder<'_> {
                 && self.intersects(context, self.executions.runs[block])),
             "all pending computation belongs to a join"
         );
-        let waiting_when = waiting.iter().fold(NEVER, |sum, &block| {
-            self.executions
-                .conditions
-                .or(sum, self.executions.runs[block])
-        });
+        let waiting_when = self.executions.any_run(waiting.iter().copied());
         assert!(
             self.covers(context, waiting_when),
             "every execution reaches its join"
         );
-        let join = scopes
-            .iter()
-            .rev()
-            .find_map(|scope| {
-                scope
-                    .groups
-                    .iter()
-                    .enumerate()
-                    .skip(scope.from)
-                    .find(|(_, group)| !group.is_disjoint(&waiting))
-                    .map(|(join, _)| JoinTarget {
-                        block: scope.block,
-                        join,
-                    })
-            })
-            .expect("a shared block belongs to an enclosing join");
+        let join = crate::plan::join_target(scopes, &waiting);
         let assignment = self
             .executions
             .conditions
@@ -353,11 +314,7 @@ impl Builder<'_> {
                     .conditions
                     .or(sum, branches[branch].yielding)
             });
-            let runs = blocks.iter().fold(NEVER, |sum, &block| {
-                self.executions
-                    .conditions
-                    .or(sum, self.executions.runs[block])
-            });
+            let runs = self.executions.any_run(blocks.iter().copied());
             let context = self.executions.conditions.and(candidates, runs);
             let wires = self.join_wires(context, &joined, done);
             let target = JoinTarget { block, join };
@@ -381,11 +338,7 @@ impl Builder<'_> {
             let next = self.lower(context, &joined, &inner_forbidden, &inner_scopes);
             emitted.extend(&next.emitted);
             joined.extend(&next.emitted);
-            let stays = later.iter().fold(NEVER, |sum, &block| {
-                self.executions
-                    .conditions
-                    .or(sum, self.executions.runs[block])
-            });
+            let stays = self.executions.any_run(later.iter().copied());
             let leaves = self.executions.conditions.minus(next.yielding, stays);
             yielding = self.executions.conditions.or(yielding, leaves);
             joins.push(Join {
@@ -394,11 +347,7 @@ impl Builder<'_> {
                 next: Box::new(next.plan),
             });
         }
-        let runs_shared = shared.iter().fold(NEVER, |sum, &block| {
-            self.executions
-                .conditions
-                .or(sum, self.executions.runs[block])
-        });
+        let runs_shared = self.executions.any_run(shared.iter().copied());
         for branch in &branches {
             let leaves = self
                 .executions
@@ -412,17 +361,9 @@ impl Builder<'_> {
             .map(|branch| Box::new(branch.plan))
             .collect();
         let plan = if self.flow.blocks[block].kind == BlockKind::Question {
-            ExecutionPlan::Question {
-                index: block,
-                branches,
-                joins,
-            }
+            crate::plan::question::dispatch(block, branches, joins)
         } else {
-            ExecutionPlan::Choice {
-                index: block,
-                branches,
-                joins,
-            }
+            crate::plan::choice::dispatch(block, branches, joins)
         };
         Lowered {
             plan,
@@ -498,10 +439,7 @@ impl Executions {
         let order = crate::plan::verify::emitted(plan);
         if (0..flow.blocks.len() - 1).any(|block| {
             let count = order.iter().filter(|&&found| found == block).count();
-            count != 1
-                && !(count == 0
-                    && matches!(flow.kind, crate::FlowKind::Preparation)
-                    && flow.blocks[block].transition_target.is_some())
+            count != 1 && !(count == 0 && flow.may_never_run(block))
         }) {
             return false;
         }
@@ -581,18 +519,11 @@ impl Replay<'_> {
         }
     }
 
-    fn name(&self, producer: ProducerId) -> &Ident {
-        match producer {
-            ProducerId::FlowInput(index) => &self.flow.flow_inputs[index],
-            ProducerId::BlockOutput { block, output } => &self.flow.blocks[block].outputs[output],
-        }
-    }
-
     fn present(&mut self, name: &Ident) -> Condition {
         let producers: Vec<_> = self
             .available
             .iter()
-            .filter(|(producer, _)| self.name(**producer) == name)
+            .filter(|(producer, _)| self.flow.wire(**producer) == name)
             .map(|(_, &when)| when)
             .collect();
         producers
@@ -752,7 +683,7 @@ impl Replay<'_> {
             .collect();
         let outside: BTreeSet<_> = possible
             .into_iter()
-            .map(|producer| self.name(producer).clone())
+            .map(|producer| self.flow.wire(producer).clone())
             .collect();
         if branches.len() != self.flow.blocks[*index].outputs.len() {
             self.valid = false;
@@ -783,7 +714,7 @@ impl Replay<'_> {
                 self.requires(yielded, transferred);
             }
             for producer in self.available.keys().copied().collect::<Vec<_>>() {
-                let name = self.name(producer);
+                let name = self.flow.wire(producer);
                 if !outside.contains(name) && !continuation.wires.contains(name) {
                     let bound = self.available[&producer];
                     let retained = self.executions.conditions.minus(bound, yielded);

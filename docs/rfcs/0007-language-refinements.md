@@ -16,17 +16,18 @@ cycle-header data aliases, structural `break`, and implicit repetition with an
 optional entry gate, inherited outer data, named alternative outputs, and an
 explicit structural `continue`.
 
-It also permits block initializers with no capture list, refines which routes
-decide and converge at a block, and specifies the corresponding diagram rules.
-These changes apply throughout the language, including preparation and stage
-bodies introduced by [RFC 0006](0006-stages.md).
+It also permits block initializers with no capture list, follows Rust's optional
+statement terminators, refines which routes decide and converge at a block, and
+specifies the corresponding diagram rules. These changes apply throughout the
+language, including preparation and stage bodies introduced by
+[RFC 0006](0006-stages.md).
 
 It also corrects parameter isolation during Rust lowering to enforce the
 existing explicit capture rules.
 
 This RFC defines syntax, execution, validation, Rust lowering, and the affected
 visual representation. Section 7 identifies the earlier provisions it
-supersedes. Earlier accepted RFC texts remain unchanged.
+supersedes. Earlier released RFC texts remain unchanged.
 
 ### 1.1 Terms
 
@@ -287,6 +288,14 @@ action_statement :=
      | "{" rust_statement* "}") ";"
 ```
 
+### 3.1 Statement terminators
+
+A block statement's trailing semicolon is Rust's: kaalang reads a statement with
+or without it wherever Rust accepts both spellings, and gives the semicolon no
+meaning. This applies to all block kinds, including stages and structural
+transfers. The `";"` ending each statement production in this RFC and RFC 0001
+is Rust's terminator, optional wherever Rust allows a statement without it.
+
 ## 4. Branch participation and convergence
 
 ### 4.1 Deciding selections
@@ -354,42 +363,20 @@ or those that repeat before reaching the block or boundary being checked. A
 running block always participates in its own context. Compare the selections
 visible in that context's cycle frame.
 
-For large execution sets, group executions by the selectors they run. For each
-pair of groups and each shared selector, sort by all other shared selections.
-Equal projections contain exactly the candidate pairs for that selector. Within
-each context, compare representatives taking different branches so that every
-connected component of candidate pairs stays connected. With two distinct
-groups, compare only across the groups. Keep up to two representatives with
-different branches on each side; every member connects to each representative on
-the other side whose branch differs. Within one group, two representatives with
-different branches suffice to connect every member.
-
-This preserves the answers needed by all three checks. Equality of producers,
-participation, or observed outcomes propagates along a connected component, so
-any difference within it appears on at least one retained comparison. Likewise,
-the union of differing block sets along connecting paths contains every block
-that any omitted comparison could add to merge completion. Select
-representatives only after excluding executions outside the context; an excluded
-execution must not connect otherwise disconnected candidates. Use the ordinary
-pairwise scan for small sets or group pairs where indexing costs more.
-
-This reduces redundant comparisons without weakening validation. The explicit
-execution list can still grow exponentially, and many distinct selector sets can
-still require pairwise group comparisons.
-
-Finite local flows also admit an exact representation by execution conditions.
-Give every question, choice, or cycle with alternative outputs one selection
-variable with its declared outcomes and an additional inactive outcome. Store
-Boolean conditions as an ordered, reduced decision graph: a node selects one
-variable, its outgoing edges select that variable's outcomes, equal suffixes
-share a node, and a node with identical successors disappears. This
-representation imposes no restriction on the number of inputs, captures,
-actions, calls, or choice cases, or on which earlier wires a block captures.
-Small flows may retain the ordinary enumeration when it costs less. Count the
-finite domain with a capped decision-graph query before choosing that strategy;
-the product of declared alternatives can greatly overestimate a cycle's actual
-histories. The count does not list them and does not overflow on a large domain.
-When the product is already within the enumeration limit, no count is needed.
+The explicit execution list can grow exponentially. Finite local flows also
+admit an exact representation by execution conditions. Give every question,
+choice, or cycle with alternative outputs one selection variable with its
+declared outcomes and an additional inactive outcome. Store Boolean conditions
+as an ordered, reduced decision graph: a node selects one variable, its outgoing
+edges select that variable's outcomes, equal suffixes share a node, and a node
+with identical successors disappears. This representation imposes no restriction
+on the number of inputs, captures, actions, calls, or choice cases, or on which
+earlier wires a block captures. Small flows may retain the ordinary enumeration
+when it costs less. Count the finite domain with a capped decision-graph query
+before choosing that strategy; the product of declared alternatives can greatly
+overestimate a cycle's actual histories. The count does not list them and does
+not overflow on a large domain. When the product is already within the
+enumeration limit, no count is needed.
 
 Walk source order once per finite cycle frame. A block runs where execution
 continues in its frame and all its captures are available. Each producer
@@ -709,7 +696,7 @@ to valid formulas whose height would make a label unreadable.
 ## 7. Changes to earlier RFCs
 
 This RFC supersedes the provisions below in every flow, whether or not it
-declares stages. Earlier accepted RFC texts remain unchanged.
+declares stages. Earlier released RFC texts remain unchanged.
 
 - **RFC 0001 §§4.5–4.6 and §8:** replace the cycle's complete data-capture
   header with an optional single gate and inherited outer data scope. The gate
@@ -727,6 +714,9 @@ declares stages. Earlier accepted RFC texts remain unchanged.
   0001 §4.6 gave break, now for return alone.
 - **RFC 0001 §3 and §8:** permit a block initializer without an empty capture
   list, with the grammar and closure-valued initializer rules in §3 here.
+- **RFC 0001 §3 and §8:** replace the mandatory trailing semicolon with Rust's
+  statement terminator rules, as in §3.1 here, including the `";"` endings in
+  the grammar. Stage declarations follow the same rule.
 - **RFC 0001 §7:** compare convergence groups by route, including nested
   selections and routes that repeat before reaching the group, as in §4.2 here.
 - **RFC 0001 §2:** count a selection as deciding a block only through executions
@@ -866,6 +856,7 @@ These scenarios define required language behavior and visual representation.
 | Cycle-local producer named after its own declared output while an outer wire of that name is visible | Accept; inside the body the name refers only to the local wire.                                                     |
 | Capture of a cycle's own declared output before its local producer                                   | Reject; the outer wire of that name is not visible inside the body.                                                 |
 | Block initializer with outputs and no capture list                                                   | Treat `let output = body;` as `let output = \|\| body;` and apply the block kind's own rules.                       |
+| Block statement without a trailing semicolon                                                         | Accept wherever Rust allows that statement without its terminator.                                                  |
 | Singleton cycle output pattern                                                                       | Treat (found,) and found as the same single output, transferring its whole value.                                   |
 | Inner capture of a cycle gate                                                                        | Keep the original outer wire available; create no persistent header alias.                                          |
 | Bare continue after an open selection                                                                | Reject missing branch ancestry; the repeating branch must capture its gate.                                         |

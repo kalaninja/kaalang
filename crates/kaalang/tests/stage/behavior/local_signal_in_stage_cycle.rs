@@ -5,7 +5,7 @@ fn local_signal_in_stage_cycle(go: ()) -> u8 {
     #[stage("Keep a local signal in a cycle.")]
     let next = |go| {
         #[cycle("Produce a local value.")]
-        let local = |go| {
+        let local = |go| loop {
             #[action("Use a name reserved for a later stage.")]
             let finish = |go| {};
 

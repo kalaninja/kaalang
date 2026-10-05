@@ -6,12 +6,12 @@ fn trailing_inner_cycle() -> usize {
     let (mut outer, mut inner) = || (0, 0);
 
     #[cycle("Repeat outer iterations until the inner cycle finishes.")]
-    let result = {
+    let result = loop {
         #[action("Enter the outer iteration.")]
         |&mut outer| *outer += 1;
 
         #[cycle("Advance the inner counter or request another outer pass.")]
-        let inner_result = {
+        let inner_result = loop {
             #[question("Is the inner counter below three?")]
             #[no("NO")]
             #[yes("YES")]

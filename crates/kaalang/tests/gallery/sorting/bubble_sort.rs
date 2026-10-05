@@ -9,7 +9,7 @@ fn bubble_sort(mut values: &mut [i32]) {
     let mut unsorted = |&values| values.len();
 
     #[cycle("🫧 Move larger values to the right.")]
-    let sorted = {
+    let sorted = loop {
         #[question("Are at least two values left to sort?")]
         #[yes("YES")]
         #[no("NO")]
@@ -19,7 +19,7 @@ fn bubble_sort(mut values: &mut [i32]) {
         let (mut index, mut last_swap) = |pass| (1, 0);
 
         #[cycle("Put each adjacent pair in order, from left to right.")]
-        let compared = |index| {
+        let compared = |index| loop {
             #[question("Is there another pair in this pass?")]
             #[yes("YES")]
             #[no("NO")]

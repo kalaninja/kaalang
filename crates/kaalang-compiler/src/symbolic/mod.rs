@@ -2,13 +2,13 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use syn::{Error, Result, ext::IdentExt};
+use syn::{Error, Result};
 
 use self::condition::{Condition, Conditions, NEVER};
 pub(crate) use self::walk::flow as histories;
 use crate::{
     BranchSelection, CaptureDependency, CaptureId, ConvergenceGroup, Execution, ExecutionOutcome,
-    Flow, FlowKind, ProducerId, WireMerge,
+    Flow, ProducerId, WireMerge,
 };
 
 mod condition;
@@ -81,10 +81,8 @@ pub(crate) fn validate(
     if incomplete {
         return Err(crate::analyze::end::missing_return(flow));
     }
-    for (index, block) in flow.blocks[..flow.blocks.len() - 1].iter().enumerate() {
-        if !(executions.has(executions.runs[index])
-            || matches!(flow.kind, FlowKind::Preparation) && block.transition_target.is_some())
-        {
+    for index in 0..flow.blocks.len() - 1 {
+        if !(executions.has(executions.runs[index]) || flow.may_never_run(index)) {
             return Err(crate::analyze::unreachable(flow, index));
         }
     }
@@ -103,26 +101,17 @@ pub(crate) fn validate(
 
 impl Executions {
     pub(crate) fn compact(&mut self) {
-        let mut roots: Vec<_> = std::iter::once(&self.domain)
-            .chain(&self.runs)
-            .chain(&self.selected_runs)
-            .chain(self.produced.values())
-            .chain(self.dependencies.values())
-            .chain(self.outcomes.values())
-            .copied()
-            .collect();
-        self.conditions.retain(&mut roots);
-        let mut roots = roots.into_iter();
-        self.domain = roots.next().expect("the domain was retained");
-        for condition in self
-            .runs
-            .iter_mut()
-            .chain(self.selected_runs.iter_mut())
+        let slots: Vec<_> = std::iter::once(&mut self.domain)
+            .chain(&mut self.runs)
+            .chain(&mut self.selected_runs)
             .chain(self.produced.values_mut())
             .chain(self.dependencies.values_mut())
             .chain(self.outcomes.values_mut())
-        {
-            *condition = roots.next().expect("every stored predicate was retained");
+            .collect();
+        let mut roots: Vec<_> = slots.iter().map(|slot| **slot).collect();
+        self.conditions.retain(&mut roots);
+        for (slot, root) in slots.into_iter().zip(roots) {
+            *slot = root;
         }
     }
 
@@ -132,6 +121,18 @@ impl Executions {
 
     fn produced(&self, producer: ProducerId) -> Condition {
         self.produced.get(&producer).copied().unwrap_or(NEVER)
+    }
+
+    fn repeats(&self, cycle_index: usize) -> Condition {
+        let repeat = ExecutionOutcome::Repeat { cycle_index };
+        self.outcomes.get(&repeat).copied().unwrap_or(NEVER)
+    }
+
+    /// Where any of `blocks` runs.
+    fn any_run(&mut self, blocks: impl IntoIterator<Item = usize>) -> Condition {
+        blocks.into_iter().fold(NEVER, |sum, block| {
+            self.conditions.or(sum, self.runs[block])
+        })
     }
 
     fn selected(&mut self, block: usize, branch: usize) -> Condition {
@@ -226,48 +227,9 @@ impl Executions {
             let entry = consumed.entry(dependency.producer).or_insert(NEVER);
             *entry = self.conditions.or(*entry, when);
         }
-        for (index, input) in flow.flow_inputs.iter().enumerate() {
-            if !matches!(flow.kind, FlowKind::Stage { .. })
-                && !input.unraw().to_string().starts_with('_')
-                && !self.has(
-                    consumed
-                        .get(&ProducerId::FlowInput(index))
-                        .copied()
-                        .unwrap_or(NEVER),
-                )
-            {
-                return Err(Error::new(
-                    input.span(),
-                    "every kaalang flow input must have a consumer",
-                ));
-            }
-        }
-        for (block, declaration) in flow.blocks.iter().enumerate() {
-            for (output, name) in declaration.outputs.iter().enumerate() {
-                if !declaration
-                    .output_binding(output)
-                    .ident
-                    .unraw()
-                    .to_string()
-                    .starts_with('_')
-                    && !self.has(
-                        consumed
-                            .get(&ProducerId::BlockOutput { block, output })
-                            .copied()
-                            .unwrap_or(NEVER),
-                    )
-                {
-                    return Err(Error::new(
-                        name.span(),
-                        format!(
-                            "every kaalang {} output must have a consumer",
-                            crate::parse::noun(declaration.kind)
-                        ),
-                    ));
-                }
-            }
-        }
-        Ok(())
+        crate::analyze::captured(flow, |producer| {
+            self.has(consumed.get(&producer).copied().unwrap_or(NEVER))
+        })
     }
 
     fn branch_outputs(&mut self, flow: &Flow, merges: &[WireMerge]) -> Result<()> {
@@ -275,6 +237,8 @@ impl Executions {
         for (&dependency, &when) in &self.dependencies {
             if let ProducerId::BlockOutput { block, output } = dependency.producer
                 && flow.blocks[block].branch_count() > 0
+                // A for cycle's item is an ordinary body-local wire.
+                && !flow.takes_next_item(block)
                 && !merges
                     .iter()
                     .any(|merge| merge.wire == flow.blocks[block].outputs[output])

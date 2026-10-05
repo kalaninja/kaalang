@@ -3,7 +3,7 @@ use kaalang::kaalang;
 #[kaalang]
 fn empty_output_pattern() -> ! {
     #[cycle("Repeat with an explicit empty output pattern.")]
-    let () = {
+    let () = loop {
         continue;
     };
 }
