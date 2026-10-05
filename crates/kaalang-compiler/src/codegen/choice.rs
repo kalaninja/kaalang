@@ -94,8 +94,12 @@ pub(crate) fn emit(
         &input_bindings(&block.inputs, bindings),
         |case, arm_value| {
             let label = &labels[case];
+            // An arm such as `_ => unreachable!()` may diverge, which leaves
+            // the generated `break` unreachable.
             quote!({
+                #[allow(clippy::diverging_sub_expression)]
                 let #value = #arm_value;
+                #[allow(unreachable_code)]
                 break #label #value;
             })
         },
