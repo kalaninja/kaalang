@@ -35,6 +35,7 @@ fn attributes(statement: &Stmt) -> Option<&[syn::Attribute]> {
         Stmt::Local(local) => Some(&local.attrs),
         Stmt::Expr(Expr::Closure(closure), _) => Some(&closure.attrs),
         Stmt::Expr(Expr::Block(block), _) => Some(&block.attrs),
+        Stmt::Expr(Expr::Group(group), _) => Some(&group.attrs),
         _ => None,
     }
 }
@@ -280,11 +281,12 @@ fn declaration(statement: &Stmt) -> Result<Declaration> {
     };
     let original = match statement {
         Stmt::Local(local) => local.init.as_ref().map(|init| ungrouped(&init.expr)),
-        Stmt::Expr(expression, _) => Some(ungrouped(expression)),
+        Stmt::Expr(Expr::Group(group), _) => Some(ungrouped(&group.expr)),
+        Stmt::Expr(expression, _) => Some(expression),
         _ => None,
     };
     if !matches!(original, Some(Expr::Closure(_)))
-        || !matches!(closure.body.as_ref(), Expr::Block(_))
+        || !matches!(ungrouped(&closure.body), Expr::Block(_))
     {
         return Err(Error::new_spanned(
             statement,

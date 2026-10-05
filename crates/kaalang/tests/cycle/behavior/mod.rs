@@ -25,6 +25,7 @@ mod end_below_nested_back_edges;
 mod endless_effect;
 mod extra_step_before_the_tail;
 mod first_value;
+mod for_cycle_from_a_macro;
 mod for_done_signal;
 mod for_each_value;
 mod for_ignored_item;

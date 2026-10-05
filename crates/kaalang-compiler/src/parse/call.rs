@@ -27,7 +27,7 @@ pub(crate) fn parse(mut syntax: BlockSyntax<'_>) -> Result<Block> {
     }
     // Braces delimit a sequence, and a call body is always one application.
     if let Some(closure) = syntax.closure
-        && matches!(closure.body.as_ref(), Expr::Block(_))
+        && matches!(ungrouped(&closure.body), Expr::Block(_))
     {
         return Err(braced(&closure.body));
     }

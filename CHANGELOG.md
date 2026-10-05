@@ -60,8 +60,8 @@
 ### Fixed
 
 - `cargo kaalang` finds flows marked `#[kaalang::kaalang]`.
-- A choice body or a zero-output action statement written through a
-  `macro_rules!` fragment is accepted.
+- Blocks, cycles, and stages written through `macro_rules!` fragments parse like
+  directly written ones.
 - A choice arm that diverges, such as `_ => unreachable!()`, no longer makes the
   generated code warn.
 - Generated code no longer silences the user's own lints inside cycles, and it

@@ -1,3 +1,4 @@
+mod block_from_a_macro;
 mod braced_output_without_captures;
 mod closure_initializer_from_a_macro;
 mod destructure_singleton_tuple;

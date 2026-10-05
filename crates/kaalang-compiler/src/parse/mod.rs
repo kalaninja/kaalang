@@ -297,10 +297,11 @@ pub(crate) fn noun(kind: BlockKind) -> &'static str {
     }
 }
 
-/// Peels the invisible group a `macro_rules!` substitution arrives in, so a
-/// flow another macro wrote is read the way its author spelled it.
+/// Peels invisible macro groups without discarding authored attributes.
 pub(crate) fn ungrouped(mut expression: &Expr) -> &Expr {
-    while let Expr::Group(group) = expression {
+    while let Expr::Group(group) = expression
+        && group.attrs.is_empty()
+    {
         expression = &group.expr;
     }
     expression
@@ -543,10 +544,17 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
         Stmt::Expr(Expr::Call(call), _) if !call.attrs.is_empty() => {
             Ok((&call.attrs, parse_quote_spanned!(call.span()=> ()), None))
         }
-        // The same statement written by another macro, where the substitution
-        // carries the attributes and the application sits inside it.
+        // A statement written by another macro carries its attributes on the
+        // substitution rather than on the body inside it.
         Stmt::Expr(Expr::Group(group), _)
-            if !group.attrs.is_empty() && matches!(ungrouped(&group.expr), Expr::Call(_)) =>
+            if !group.attrs.is_empty()
+                && matches!(
+                    ungrouped(&group.expr),
+                    Expr::Block(ExprBlock { attrs, .. })
+                        | Expr::Loop(ExprLoop { attrs, .. })
+                        | Expr::ForLoop(ExprForLoop { attrs, .. })
+                        | Expr::Call(syn::ExprCall { attrs, .. }) if attrs.is_empty()
+                ) =>
         {
             Ok((&group.attrs, parse_quote_spanned!(group.span()=> ()), None))
         }
@@ -572,8 +580,15 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
 }
 
 fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
-    let application = match statement {
-        Stmt::Expr(Expr::Block(block), _) => {
+    let Stmt::Expr(expression, _) = statement else {
+        unreachable!("a missing closure denotes an expression statement")
+    };
+    let expression = match expression {
+        Expr::Group(group) => ungrouped(&group.expr),
+        expression => expression,
+    };
+    let application = match expression {
+        Expr::Block(block) => {
             if block.label.is_some()
                 || block
                     .attrs
@@ -589,8 +604,11 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
             }
             return Ok(Expr::Block(body));
         }
-        // Only a statement declaring a cycle gets here as a `loop` or `for`.
-        Stmt::Expr(body @ (Expr::Loop(_) | Expr::ForLoop(_)), _) => {
+        // Macro groups must obey the same restriction as directly written cycles.
+        body @ (Expr::Loop(_) | Expr::ForLoop(_)) => {
+            if kind != BlockKind::Cycle {
+                return Err(cycle::structural_cycle(body));
+            }
             let mut body = body.clone();
             if let Expr::Loop(ExprLoop { attrs, .. }) | Expr::ForLoop(ExprForLoop { attrs, .. }) =
                 &mut body
@@ -601,10 +619,7 @@ fn bare_block_body(statement: &Stmt, kind: BlockKind) -> Result<Expr> {
         }
         // A statement carries its attributes on its expression, and the kind
         // attribute was classified before this ran.
-        Stmt::Expr(expression, _) if matches!(ungrouped(expression), Expr::Call(_)) => {
-            let Expr::Call(call) = ungrouped(expression) else {
-                unreachable!("the guard matched an application")
-            };
+        Expr::Call(call) => {
             let mut application = call.clone();
             application.attrs.clear();
             application
@@ -709,7 +724,8 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
         ));
     }
 
-    let body = match closure.body.as_ref() {
+    let body = match ungrouped(&closure.body) {
+        Expr::Group(group) => return Err(decorated_body(group)),
         Expr::Block(block) if !block.attrs.is_empty() || block.label.is_some() => {
             return Err(decorated_body(block));
         }
@@ -1097,6 +1113,90 @@ mod tests {
 
         let model = flow(&function).expect("expression bodies are accepted");
         assert!(matches!(model.blocks[0].body, syn::Expr::Block(_)));
+    }
+
+    #[test]
+    fn macro_groups_preserve_body_restrictions() {
+        use proc_macro2::{Delimiter, Group};
+        use quote::quote;
+
+        for (attribute, body, diagnostic) in [
+            (
+                quote!(#[action("Run the body.")]),
+                quote!('label: {}),
+                "kaalang block bodies do not support attributes or labels",
+            ),
+            (
+                quote!(#[action("Run the body.")]),
+                quote!(
+                    {
+                        #![allow(unused)]
+                    }
+                ),
+                "kaalang block bodies do not support attributes or labels",
+            ),
+            (
+                quote!(#[cycle("Repeat the body.")]),
+                quote!('label: loop {}),
+                "kaalang block bodies do not support attributes or labels",
+            ),
+            (
+                quote!(#[call]),
+                quote!({ ping() }),
+                "a kaalang call body is one application and takes no braces or attributes of its own; that work belongs in an action",
+            ),
+        ] {
+            let body = Group::new(Delimiter::None, body);
+            let function = parse_quote! {
+                fn invalid() {
+                    #attribute
+                    let output = || #body;
+                }
+            };
+            assert_eq!(error(&function), diagnostic);
+        }
+
+        let body = Group::new(Delimiter::None, quote!({}));
+        let function = parse_quote! {
+            fn invalid() {
+                #[action("Run the body.")]
+                let output = || #[allow(unused)] #body;
+            }
+        };
+        assert_eq!(
+            error(&function),
+            "kaalang block bodies do not support attributes or labels"
+        );
+    }
+
+    #[test]
+    fn macro_groups_do_not_turn_bare_cycles_into_other_blocks() {
+        use proc_macro2::{Delimiter, Group};
+        use quote::quote;
+
+        for attribute in [
+            quote!(#[call]),
+            quote!(#[action("Run the body.")]),
+            quote!(#[question("Run the body?")]),
+            quote!(#[choice("Select the body.")]),
+        ] {
+            for (body, keyword) in [(quote!(loop {}), "loop"), (quote!(for _ in 0..1 {}), "for")] {
+                let body = Group::new(Delimiter::None, body);
+                let function = parse_quote! {
+                    fn invalid() {
+                        #attribute
+                        #body;
+                        return;
+                    }
+                };
+                assert_eq!(
+                    error(&function),
+                    format!(
+                        "a `{keyword}` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`"
+                    )
+                );
+            }
+        }
     }
 
     #[test]

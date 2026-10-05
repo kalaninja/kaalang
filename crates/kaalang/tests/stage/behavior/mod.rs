@@ -35,6 +35,7 @@ mod singleton_output;
 mod spin;
 mod stage_branch_drops;
 mod stage_cycle_alternative_outputs;
+mod stage_from_a_macro;
 mod stage_owned_receiver;
 mod stage_shared_receiver;
 mod state_machine;
