@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, ext::IdentExt, token::Mut};
 
-use crate::{Analysis, Block, Branch, ExecutionPlan, Flow, Input};
+use crate::{Analysis, Block, BlockKind, Branch, ExecutionPlan, Flow, Input};
 
 mod parameters;
 #[cfg(test)]
@@ -214,8 +214,11 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
     let block = &flow.blocks[index];
     let captures = input_bindings(&block.inputs, bindings);
     let value = transfer_value(&block.body);
+    // A hidden export forwards a declared output, which may be named `_like_this`.
+    let allow = (block.kind == BlockKind::Export)
+        .then(|| quote!(#[allow(clippy::used_underscore_binding)]));
     quote_spanned! {block.span=>
-        #[allow(unused_mut)]
+        #allow
         {
             #captures
             #exit #value;
@@ -383,7 +386,6 @@ pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
     let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
     // Lower in place to preserve `Self`, enclosing generics, and receiver scope.
     *function.block = syn::parse2(quote!({
-        #[allow(clippy::used_underscore_binding)]
         {
             #parameters
             #body

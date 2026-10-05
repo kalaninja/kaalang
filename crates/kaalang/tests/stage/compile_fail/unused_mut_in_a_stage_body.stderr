@@ -1,0 +1,13 @@
+error: variable does not need to be mutable
+  --> tests/stage/compile_fail/unused_mut_in_a_stage_body.rs:11:17
+   |
+11 |             let mut value = 1;
+   |                 ----^^^^^
+   |                 |
+   |                 help: remove this `mut`
+   |
+note: the lint level is defined here
+  --> tests/stage/compile_fail/unused_mut_in_a_stage_body.rs:1:9
+   |
+ 1 | #![deny(unused_mut)]
+   |         ^^^^^^^^^^

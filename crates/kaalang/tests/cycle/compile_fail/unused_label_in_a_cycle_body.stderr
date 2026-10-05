@@ -1,0 +1,11 @@
+error: unused label
+  --> tests/cycle/compile_fail/unused_label_in_a_cycle_body.rs:11:13
+   |
+11 |             'taken: {
+   |             ^^^^^^
+   |
+note: the lint level is defined here
+  --> tests/cycle/compile_fail/unused_label_in_a_cycle_body.rs:1:9
+   |
+ 1 | #![deny(unused_labels)]
+   |         ^^^^^^^^^^^^^

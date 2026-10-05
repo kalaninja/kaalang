@@ -7,6 +7,7 @@ mod digital_root;
 mod drop_before_visit;
 mod for_in_preparation_and_stage;
 mod for_in_stage;
+mod forbid_unused_mut;
 mod forward;
 mod interior_mutability_in_stage;
 mod is_even;

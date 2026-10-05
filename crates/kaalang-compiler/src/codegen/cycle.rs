@@ -21,7 +21,6 @@ pub(super) fn emit(
     let body = super::flow(flow, body, bindings);
     let label = loop_label(index, block.span);
     let mut looped = quote_spanned! {block.span=>
-        #[allow(unused_labels, clippy::never_loop)]
         #label: loop { #body }
     };
     if let Some(iteration) = &block.iteration {

@@ -173,6 +173,9 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
             &stage_analysis.analysis.execution_plan,
             &bindings,
         );
+        // Never targeted: inside a labeled block Rust rejects an unlabeled
+        // `break` or `continue`, so one that a macro in the stage body expands
+        // to cannot leave the dispatcher.
         let arm_label = Lifetime::new("'__kaalang_stage_body", Span::mixed_site());
         quote!(#pattern => #arm_label: { #body })
     });
@@ -185,7 +188,6 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
     prepared.initial_dispatch = Some((boundary, dispatcher));
     let preparation = super::flow(&analysis.flow, &analysis.execution_plan, &prepared);
     *function.block = syn::parse2(quote!({
-        #[allow(clippy::used_underscore_binding, unused_labels, unused_mut)]
         {
             #prologue
             #preparation
