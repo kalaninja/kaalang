@@ -155,8 +155,11 @@ each backslash and escape each quote, as in `"$\\sqrt{x}$"`, or use a raw string
 such as `r#"<color name="red">…</color>"#`. Formatting changes only the diagram;
 the generated Rust is the same. A marker without its pair stays literal, and a
 backslash before a marker keeps it literal: `\\*` in an ordinary string, `\*` in
-a raw one.
-[One diagram shows every effect](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markdown.svg).
+a raw one. Diagrams show
+[the text effects](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markdown.svg),
+[formulas](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_formulas.svg),
+and
+[literal fallbacks](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markup_fallbacks.svg).
 
 ## Block kinds
 

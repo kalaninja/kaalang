@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1502" viewBox="0 0 680 1502" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for render_markup_fallbacks</title>
+  <desc id="kaalang-description">Nodes: Start: render_markup_fallbacks with parameters condition: bool handing over condition; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing condition handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
+&lt;b&gt;foo&lt;/b&gt; after capturing crossing handing over overlapping; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; capturing overlapping handing over noncanonical; Action: &lt;B&gt;warning&lt;/b&gt;
+&lt;u&gt;foo&lt;/u &gt; capturing noncanonical handing over enclosing; Action: &lt;b&gt;foo&lt;/b&gt; capturing enclosing handing over indented; Action:    “quote  ” capturing indented handing over colors; Action: $\color{not-a-color}x$ capturing colors handing over carriage_returns; Action: **Two&#13;&#13;paragraphs** stay literal.
+One&#13;paragraph keeps its style. capturing carriage_returns handing over empty_tags; Action: &lt;u&gt;&lt;/u&gt;
+&lt;mark&gt;&lt;/mark&gt;
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; End: () capturing nothing. Connections: Start: render_markup_fallbacks to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
+&lt;b&gt;foo&lt;/b&gt; after; Action: &lt;b&gt;foo&lt;/b&gt; after
+&lt;b&gt;foo&lt;/b&gt; after to Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; to Action: &lt;B&gt;warning&lt;/b&gt;
+&lt;u&gt;foo&lt;/u &gt;; Action: &lt;B&gt;warning&lt;/b&gt;
+&lt;u&gt;foo&lt;/u &gt; to Action: &lt;b&gt;foo&lt;/b&gt;; Action: &lt;b&gt;foo&lt;/b&gt; to Action:    “quote  ”; Action:    “quote  ” to Action: $\color{not-a-color}x$; Action: $\color{not-a-color}x$ to Action: **Two&#13;&#13;paragraphs** stay literal.
+One&#13;paragraph keeps its style.; Action: **Two&#13;&#13;paragraphs** stay literal.
+One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
+&lt;mark&gt;&lt;/mark&gt;
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt;; Action: &lt;u&gt;&lt;/u&gt;
+&lt;mark&gt;&lt;/mark&gt;
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; to End: ().</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 90 L 172 162
+      M 172 226 L 172 298
+      M 172 364 L 172 436
+      M 172 500 L 172 572
+      M 172 638 L 172 710
+      M 172 774 L 172 846
+      M 172 910 L 172 982
+      M 172 1046 L 172 1118
+      M 172 1184 L 172 1256
+      M 172 1340 L 172 1412
+    "/>
+    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">crossing</tspan></text>
+    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">overlapping</tspan></text>
+    <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">noncanonical</tspan></text>
+    <text class="connection-label" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">enclosing</tspan></text>
+    <text class="connection-label" x="185" y="835" xml:space="preserve"><tspan x="185" dy="0">indented</tspan></text>
+    <text class="connection-label" x="185" y="971" xml:space="preserve"><tspan x="185" dy="0">colors</tspan></text>
+    <text class="connection-label" x="185" y="1107" xml:space="preserve"><tspan x="185" dy="0">carriage_returns</tspan></text>
+    <text class="connection-label" x="185" y="1245" xml:space="preserve"><tspan x="185" dy="0">empty_tags</tspan></text>
+    <text class="connection-label" x="185" y="1358" xml:space="preserve"><tspan x="185" dy="0">tested</tspan></text>
+    <text class="connection-label" x="185" y="1401" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 61 L 408 61"/>
+    <g class="parameter-panel" transform="translate(528 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
+    </g>
+    <g class="node start" transform="translate(172 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">render_markup_fallbacks</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 194)">
+      <title xml:space="preserve">&lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">&lt;b&gt;<tspan class="md-bold">warning</tspan>&lt;/b&gt; &lt;b&gt;<tspan class="md-underline">x</tspan>&lt;/b&gt; <tspan class="md-bold">outside</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 331)">
+      <title xml:space="preserve">&lt;b&gt;foo&lt;/b&gt; after
+&lt;b&gt;foo&lt;/b&gt; after</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0"><tspan class="md-bold">&lt;b&gt;foo</tspan>&lt;/b&gt; after</tspan><tspan x="-124" dy="18">&lt;b&gt;<tspan class="md-bold">foo&lt;/b&gt; after</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 468)">
+      <title xml:space="preserve">&lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <g class="label">
+        <rect class="md-highlight-box" x="-44.48" y="-6" width="8.232" height="15"/>
+        <text x="-124" y="6" text-anchor="start" textLength="79.52" lengthAdjust="spacing" xml:space="preserve">&lt;b&gt;&lt;i&gt;x&lt;/b&gt;</text>
+        <text style="stroke: none" x="-44.48" y="6" text-anchor="start" textLength="8.232" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="md-bold">y</tspan></text>
+        <text x="-36.248" y="6" text-anchor="start" textLength="24.64" lengthAdjust="spacing" xml:space="preserve">&lt;/i&gt;</text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 605)">
+      <title xml:space="preserve">&lt;B&gt;warning&lt;/b&gt;
+&lt;u&gt;foo&lt;/u &gt;</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">&lt;B&gt;<tspan class="md-bold">warning</tspan>&lt;/b&gt;</tspan><tspan x="-124" dy="18">&lt;u&gt;<tspan class="md-bold">foo</tspan>&lt;/u &gt;</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 742)">
+      <title xml:space="preserve">&lt;b&gt;foo&lt;/b&gt;</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0"><tspan class="md-italic">&lt;b&gt;foo&lt;/b&gt;</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 878)">
+      <title xml:space="preserve">   “quote  ”</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">   <tspan class="md-quote">“</tspan><tspan class="md-bold md-quote">quote</tspan><tspan class="md-quote">  ”</tspan></tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1014)">
+      <title xml:space="preserve">$\color{not-a-color}x$</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">$\color{not-a-color}x$</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1151)">
+      <title xml:space="preserve">**Two&#13;&#13;paragraphs** stay literal.
+One&#13;paragraph keeps its style.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">**Two&#13;&#13;paragraphs** stay literal.</tspan><tspan x="-124" dy="18"><tspan class="md-bold">One&#13;paragraph</tspan> keeps its style.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1298)">
+      <title xml:space="preserve">&lt;u&gt;&lt;/u&gt;
+&lt;mark&gt;&lt;/mark&gt;
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt;</title>
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
+      <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">&lt;u&gt;&lt;/u&gt;</tspan><tspan x="-124" dy="18">&lt;mark&gt;&lt;/mark&gt;</tspan><tspan x="-124" dy="18">&lt;color name=&quot;red&quot;&gt;&lt;/color&gt;</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1441)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+    </g>
+  </g>
+</svg>
