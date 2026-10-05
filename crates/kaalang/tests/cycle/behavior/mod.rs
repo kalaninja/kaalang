@@ -39,6 +39,7 @@ mod for_owned_items;
 mod for_reversed_range;
 mod for_stepped_range;
 mod for_temporary_values;
+mod for_wildcard_drops_each_item;
 mod for_with_a_diverging_branch;
 mod for_with_an_endless_body;
 mod for_with_an_inner_question;

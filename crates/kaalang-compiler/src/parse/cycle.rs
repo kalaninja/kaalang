@@ -108,14 +108,21 @@ pub(super) fn open_iteration(
     // The authored spelling keeps `r#`, so an output named after a keyword binds.
     let done = cycle.output_binding(0).ident.clone();
     let mut unnamed_outputs = cycle.unnamed_outputs.iter().map(|_| 1).collect::<Vec<_>>();
-    let item = match &cycle.iteration.as_ref().expect("a for cycle").item {
-        Pat::Wild(_) => {
-            let item = unnamed(&format!("item_{header}"), span, names);
-            unnamed_outputs.push(0);
-            parse_quote!(#item)
-        }
-        item => item.clone(),
-    };
+    let value = Ident::new("__kaalang_item", Span::mixed_site());
+    // `_` binds no item wire, so each item drops at once, as in Rust's `for _`.
+    let (item, taken, produced): (Pat, Pat, Expr) =
+        match &cycle.iteration.as_ref().expect("a for cycle").item {
+            Pat::Wild(wild) => {
+                let item = unnamed(&format!("item_{header}"), span, names);
+                unnamed_outputs.push(0);
+                (
+                    parse_quote!(#item),
+                    Pat::Wild(wild.clone()),
+                    parse_quote!(()),
+                )
+            }
+            item => (item.clone(), parse_quote!(#value), parse_quote!(#value)),
+        };
     if block_outputs(&item)?.first() == cycle.outputs.first() {
         return Err(Error::new_spanned(
             &item,
@@ -124,7 +131,6 @@ pub(super) fn open_iteration(
     }
     let pattern: Pat = parse_quote!((#item, #done));
     let items = Iteration::iterator();
-    let value = Ident::new("__kaalang_item", Span::mixed_site());
     let mut next = structural_block(BlockKind::Choice, span, Vec::new());
     next.description.clone_from(&cycle.description);
     next.case_descriptions = vec![
@@ -136,7 +142,7 @@ pub(super) fn open_iteration(
     next.output_pattern = pattern;
     next.body = parse_quote_spanned! {span=> {
         match ::core::iter::Iterator::next(&mut #items) {
-            ::core::option::Option::Some(#value) => #value,
+            ::core::option::Option::Some(#taken) => #produced,
             ::core::option::Option::None => (),
         }
     }};

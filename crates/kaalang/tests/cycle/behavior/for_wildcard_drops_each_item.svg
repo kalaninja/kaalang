@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="681" height="806" viewBox="0 0 681 806" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_wildcard_drops_each_item</title>
+  <desc id="kaalang-description">Cycles: Visit each item without binding it. with inputs items, dropped, mut seen and outputs (). Nodes: Start: for_wildcard_drops_each_item with parameters items: Vec&lt;Item&lt;&apos;_&gt;&gt;; dropped: &amp;Cell&lt;usize&gt; handing over items, dropped; Action: Start with no observations. capturing nothing handing over mut seen; For entry: Visit each item without binding it. capturing items; Action: Record how many items have been dropped so far. capturing dropped, &amp;mut seen; For end: Visit each item without binding it.; End: Vec&lt;usize&gt; capturing seen. Connections: Start: for_wildcard_drops_each_item to Action: Start with no observations.; Action: Start with no observations. to For entry: Visit each item without binding it.; For entry: Visit each item without binding it. to Action: Record how many items have been dropped so far.; Action: Record how many items have been dropped so far. to For end: Visit each item without binding it.; For end: Visit each item without binding it. to End: Vec&lt;usize&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 173 94 L 173 170
+      M 173 234 L 173 306
+      M 173 370 L 173 442
+      M 173 508 L 173 580
+      M 173 644 L 173 716
+    "/>
+    <text class="connection-label" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">items, dropped</tspan></text>
+    <text class="connection-label" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut seen</tspan></text>
+    <text class="connection-label" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">items</tspan></text>
+    <text class="connection-label" x="186" y="431" xml:space="preserve"><tspan x="186" dy="0">dropped, &amp;mut seen</tspan></text>
+    <text class="connection-label" x="186" y="705" xml:space="preserve"><tspan x="186" dy="0">seen</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 313 65 L 409 65"/>
+    <g class="parameter-panel" transform="translate(529 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">items: Vec&lt;Item&lt;&apos;_&gt;&gt;</tspan><tspan x="-104" dy="18">dropped: &amp;Cell&lt;usize&gt;</tspan></text>
+    </g>
+    <g class="node start" transform="translate(173 65)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_wildcard_drops_each_item</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 202)">
+      <title xml:space="preserve">Start with no observations.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with no observations.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(173 338)">
+      <title xml:space="preserve">Visit each item without binding it.</title>
+      <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Visit each item without binding it.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(173 475)">
+      <title xml:space="preserve">Record how many items have been dropped so far.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record how many items have been </tspan><tspan x="-124" dy="18">dropped so far.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(173 612)">
+      <title xml:space="preserve">Visit each item without binding it.</title>
+      <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Visit each item without binding it.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(173 745)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
+    </g>
+  </g>
+</svg>
