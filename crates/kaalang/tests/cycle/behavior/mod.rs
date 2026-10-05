@@ -4,6 +4,7 @@ mod bare_continue_after_convergence;
 mod borrowed_result;
 mod braced_continue;
 mod braced_continue_with_semicolon;
+mod bypass_merges_with_outputs;
 mod captureless_closure;
 mod collect_steps;
 mod condition_effects;

@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1832" height="1628" viewBox="0 0 1832 1628" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for bypass_merges_with_outputs</title>
+  <desc id="kaalang-description">Cycles: Query the source until it answers or the retries run out. with inputs query, response, mut retries and outputs found or missing or gave_up. Nodes: Start: bypass_merges_with_outputs with parameters cached: bool; response: u8; mut retries: u8 handing over cached, response, mut retries; Question: Is the record cached? capturing cached handing over hit_cache / query; Select: What did the source answer? capturing response; Case: The record. handing over found; Case: No such record. handing over missing; Case: A busy signal. handing over busy; Question: Have the retries run out? capturing busy, &amp;retries handing over gave_up / retry; Action: Spend one retry. capturing retry, &amp;mut retries handing over spent; Action: Use the cached record. capturing hit_cache handing over record; Action: Use the fetched record. capturing found handing over record; Action: Use an empty record. capturing missing handing over record; Action: Format the record. capturing record handing over answer; Action: Report that the source gave up. capturing gave_up handing over answer; End: u8 capturing answer; Merge: record; Merge: answer. Connections: Start: bypass_merges_with_outputs to Question: Is the record cached?; Question: Is the record cached? branch 1 to Action: Use the cached record.; Question: Is the record cached? branch 2 to the entry of the cycle; Select: What did the source answer? to Case: The record.; Select: What did the source answer? to Case: No such record.; Select: What did the source answer? to Case: A busy signal.; Case: The record. to the found result of the cycle; Case: No such record. to the missing result of the cycle; Case: A busy signal. to Question: Have the retries run out?; Question: Have the retries run out? branch 1 to the gave_up result of the cycle; Question: Have the retries run out? branch 2 to Action: Spend one retry.; Action: Spend one retry. to the iteration tail of the cycle; Action: Use the cached record. to the record merge; Action: Use the fetched record. to the record merge; Action: Use an empty record. to the record merge; Action: Format the record. to the answer merge; Action: Report that the source gave up. to the answer merge; the record merge to Action: Format the record.; the answer merge to End: u8; the entry of the cycle to Select: What did the source answer?; the found result of the cycle to Action: Use the fetched record.; the missing result of the cycle to Action: Use an empty record.; the gave_up result of the cycle to Action: Report that the source gave up.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Query the source until it answers or the retries run out.</title>
+    <rect class="cycle-boundary" x="364" y="329" width="1436" height="740" rx="12"/>
+    <text class="cycle-caption" x="1788" y="343" text-anchor="end" xml:space="preserve"><tspan x="1788" dy="0">Query the source until it answers or the retries run out.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 172 103 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 532 224 L 532 364
+      M 532 540 L 532 612
+      M 660 504 L 892 504 L 892 612
+      M 660 504 L 1252 504 L 1252 612
+      M 532 682 L 532 1034
+      M 892 682 L 892 1034
+      M 1252 682 L 1252 754
+      M 1252 826 L 1252 1034
+      M 1392 790 L 1612 790 L 1612 898
+      M 1612 962 L 1612 1034
+      M 172 396 L 172 1246
+      M 532 1170 L 532 1246 L 172 1246
+      M 892 1170 L 892 1246 L 172 1246
+      M 172 1386 L 172 1462
+      M 1252 1170 L 1252 1462 L 172 1462
+      M 172 1246 L 172 1322
+      M 172 1462 L 172 1538
+      M 532 364 L 532 468
+      M 532 1034 L 532 1106
+      M 892 1034 L 892 1106
+      M 1252 1034 L 1252 1106
+    "/>
+    <path class="connection" d="
+      M 1612 1034 L 1772 1034 L 1772 364 L 532 364
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label" x="185" y="1264" xml:space="preserve"><tspan x="185" dy="0">record</tspan></text>
+    <text class="connection-label" x="185" y="1480" xml:space="preserve"><tspan x="185" dy="0">answer</tspan></text>
+    <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">hit_cache</tspan></text>
+    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">cached, response, mut retries</tspan></text>
+    <text class="connection-label" x="325" y="242" xml:space="preserve"><tspan x="325" dy="0">query</tspan></text>
+    <text class="connection-label" x="545" y="700" xml:space="preserve"><tspan x="545" dy="0">found</tspan></text>
+    <text class="connection-label" x="905" y="700" xml:space="preserve"><tspan x="905" dy="0">missing</tspan></text>
+    <text class="connection-label" x="1265" y="700" xml:space="preserve"><tspan x="1265" dy="0">busy</tspan></text>
+    <text class="connection-label" x="1265" y="844" xml:space="preserve"><tspan x="1265" dy="0">gave_up</tspan></text>
+    <text class="connection-label" x="1405" y="808" xml:space="preserve"><tspan x="1405" dy="0">retry</tspan></text>
+    <text class="connection-label" x="1625" y="980" xml:space="preserve"><tspan x="1625" dy="0">spent</tspan></text>
+    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">cached</tspan></text>
+    <text class="connection-label" x="545" y="457" xml:space="preserve"><tspan x="545" dy="0">response</tspan></text>
+    <text class="connection-label" x="1265" y="743" xml:space="preserve"><tspan x="1265" dy="0">busy, &amp;retries</tspan></text>
+    <text class="connection-label" x="1625" y="887" xml:space="preserve"><tspan x="1625" dy="0">retry, &amp;mut retries</tspan></text>
+    <text class="connection-label" x="545" y="1095" xml:space="preserve"><tspan x="545" dy="0">found</tspan></text>
+    <text class="connection-label" x="905" y="1095" xml:space="preserve"><tspan x="905" dy="0">missing</tspan></text>
+    <text class="connection-label" x="1265" y="1095" xml:space="preserve"><tspan x="1265" dy="0">gave_up</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
+      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
+      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">cached: bool</tspan><tspan x="-104" dy="18">response: u8</tspan><tspan x="-104" dy="18">mut retries: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 1246)">
+      <title xml:space="preserve">the record merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 1462)">
+      <title xml:space="preserve">the answer merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bypass_merges_with_outputs</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 224)">
+      <title xml:space="preserve">Is the record cached?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the record cached?</tspan></text>
+    </g>
+    <g class="node select" transform="translate(532 504)">
+      <title xml:space="preserve">What did the source answer?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">What did the source </tspan><tspan x="0" dy="18">answer?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 647)">
+      <title xml:space="preserve">The record.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The record.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 647)">
+      <title xml:space="preserve">No such record.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">No such record.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(1252 647)">
+      <title xml:space="preserve">A busy signal.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A busy signal.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(1252 790)">
+      <title xml:space="preserve">Have the retries run out?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Have the retries run out?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1612 930)">
+      <title xml:space="preserve">Spend one retry.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Spend one retry.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 364)">
+      <title xml:space="preserve">Use the cached record.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the cached record.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 1138)">
+      <title xml:space="preserve">Use the fetched record.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the fetched record.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 1138)">
+      <title xml:space="preserve">Use an empty record.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use an empty record.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1354)">
+      <title xml:space="preserve">Format the record.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Format the record.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(1252 1138)">
+      <title xml:space="preserve">Report that the source gave up.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report that the source gave up.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1567)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

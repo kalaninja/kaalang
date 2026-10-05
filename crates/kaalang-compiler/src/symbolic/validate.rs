@@ -46,10 +46,14 @@ impl Executions {
                         continue;
                     }
                     let owner = self.selectors[position];
+                    // Only routes that run the owner take one of its branches;
+                    // elsewhere a cycle's variable still holds its inactive value.
+                    let runs = self.runs[owner];
                     let branches = (0..self.conditions.widths[position * 2]
                         - usize::from(flow.blocks[owner].kind != BlockKind::Cycle))
                         .filter(|&branch| {
                             let selected = self.selected(owner, branch);
+                            let selected = self.conditions.and(selected, runs);
                             let produces = self.conditions.and(present, selected);
                             self.has(produces)
                         })
