@@ -141,50 +141,53 @@ Captures express how an action accesses a wire:
 Descriptions accept a small inline notation, so a label can stress a condition,
 name a piece of code, or show a formula:
 
-| Write                                                       | Shows                                                                           |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `**bold**`, `*italic*`, `~~struck~~`                        | Bold, italic, strikethrough                                                     |
-| `` `code` ``                                                | Inline code                                                                     |
-| `x^2^`, `H~2~O`                                             | Superscript, subscript                                                          |
-| `> quote` at the start of a line                            | A quoted line                                                                   |
-| `$\sqrt{x}$`, `$$\sum_i x_i$$`                              | A TeX formula                                                                   |
-| `<u>…</u>`, `<mark>…</mark>`, `<color name="red">…</color>` | Underline, highlight, palette color (`red`, `green`, `blue`, `purple`, `muted`) |
+| Write                                                            | Shows                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `**bold**` or `__bold__`, `*italic*` or `_italic_`, `~~struck~~` | Bold, italic, strikethrough                                                     |
+| `` `code` ``                                                     | Inline code                                                                     |
+| `x^2^`, `H~2~O`                                                  | Superscript, subscript                                                          |
+| `> quote` at the start of a line                                 | A quoted line                                                                   |
+| `$\sqrt{x}$`, `$$\sum_i x_i$$`                                   | Inline TeX formula; `$$…$$` uses display layout                                 |
+| `<u>…</u>`, `<mark>…</mark>`, `<color name="red">…</color>`      | Underline, highlight, palette color (`red`, `green`, `blue`, `purple`, `muted`) |
 
-Formatting changes only the diagram; the generated Rust is the same. A marker
-without its pair stays literal, and a backslash keeps one literal: `\\*` in an
-ordinary string, `\*` in a raw one. Descriptions written for kaalang 0.1.0 that
-contain these markers now render formatted.
+The Write column shows the description text. In an ordinary Rust string, double
+each backslash and escape each quote, as in `"$\\sqrt{x}$"`, or use a raw string
+such as `r#"<color name="red">…</color>"#`. Formatting changes only the diagram;
+the generated Rust is the same. A marker without its pair stays literal, and a
+backslash before a marker keeps it literal: `\\*` in an ordinary string, `\*` in
+a raw one.
 [One diagram shows every effect](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markdown.svg).
 
 ## Block kinds
 
-`FizzBuzz` uses `choice` and `action`. The other kinds let a flow ask a yes/no
-question, call an existing function, repeat a sequence, or organize work into
-named stages:
+`FizzBuzz` uses `choice`, `action`, and `return`. The other kinds let a flow ask
+a yes/no question, call an existing function, repeat a sequence, or organize
+work into named stages:
 
 | Kind       | Role in a flow                                                               |
 | ---------- | ---------------------------------------------------------------------------- |
 | `action`   | Perform a computation or effect with a Rust expression.                      |
-| `call`     | Call one named Rust function. Its name supplies the description if omitted.  |
+| `call`     | Call one named Rust function. Its path supplies the description if omitted.  |
 | `question` | Select one of two branch outputs using a boolean expression.                 |
-| `choice`   | Select one output per visit from the cases of a Rust `match`.                |
+| `choice`   | Select one output from the cases of a Rust `match`.                          |
 | `cycle`    | Repeat a nested kaalang sequence whose blocks capture the surrounding wires. |
 | `stage`    | Group blocks into a named step selected by an incoming signal.               |
 | `continue` | Start the next iteration of the directly containing loop cycle.              |
 | `return`   | Complete the root flow and hand back its result.                             |
 
 Actions, calls, and cycles can have no outputs. Questions and choices always
-declare their branch outputs. A cycle's `loop { ... }` body contains kaalang
-blocks. A route through it can repeat at its `continue`, complete with one of
-its declared outputs, or diverge in a nested cycle. A completed output becomes
-available after the cycle. In the diagram, `continue` routes meet at the cycle's
-back edge, completing routes leave through the cycle boundary, and `return`
-reaches the flow end. A cycle written `for item in items { ... }` instead runs
-its body once per item of a Rust iterator. It has no `continue` or early exit
-and may declare one output, the signal that its items ran out. Its diagram has
-no boundary or back edge: a for-entry node holds the description and hands over
-the item, and every iteration ends at a for-end node below it, which repeats the
-description and from which the cycle continues.
+declare their branch outputs. A cycle takes one of two forms. A **loop cycle**'s
+`loop { ... }` body contains kaalang blocks. A route through it can repeat at
+its `continue`, complete with one of its declared outputs, or diverge in a
+nested cycle. A completed output becomes available after the cycle. In the
+diagram, `continue` routes meet at the cycle's back edge, and completing routes
+leave through the cycle boundary. A **for cycle**, written
+`|items| for item in items { ... }`, instead runs its body once per item of a
+Rust iterator. It has no `continue` or early exit and may declare one output,
+the signal that its items ran out. Its diagram has no boundary or back edge: a
+for-entry node holds the description and hands over the item, and every
+iteration ends at a for-end node below it, which repeats the description and
+from which the flow continues once the items run out.
 
 ### Putting it together: binary search
 
@@ -279,7 +282,10 @@ with stages for comparison, advancement, and prefix fallback.
 ## Stages
 
 Stages make the steps of a state machine explicit. The compiler generates the
-dispatch loop, and the diagram labels transitions between stages.
+dispatch loop, and the diagram labels transitions between stages. A stage's
+header names the signal that enters it. A stage moves to another by producing
+that stage's signal as one of its declared outputs, and the stage that holds
+`return` comes last.
 
 This empty state machine only follows `First → Second → Finish`. With stages:
 
