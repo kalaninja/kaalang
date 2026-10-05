@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - unreleased
+
+### Fixed
+
+- A branch that could not descend in its merge column no longer takes a step
+  sideways right below its brancher; it leaves in the column it descends.
+
 ## 0.2.0 - 2026-10-05
 
 ### Breaking

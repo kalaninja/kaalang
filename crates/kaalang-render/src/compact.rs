@@ -2,7 +2,7 @@
 
 use kaalang_compiler::{
     Arrangement, Run, RunLine, SemanticModel, Side,
-    topology::{Topology, Vertex},
+    topology::{Source, Topology, Vertex},
 };
 
 use crate::ArrangementVerifier;
@@ -22,6 +22,9 @@ pub fn compact_arrangement(model: &mut SemanticModel) {
             .routes
             .iter()
             .any(|route| route.runs.len() > 2)
+        && steps_below(&model.topology, &model.arrangement)
+            .next()
+            .is_none()
     {
         return;
     }
@@ -33,6 +36,7 @@ fn arrangement(verifier: &ArrangementVerifier<'_>, topology: &Topology, built: &
     loop {
         let mut changed = contours(verifier, topology, built);
         changed |= shortcuts(verifier, built);
+        changed |= departures(verifier, topology, built);
         changed |= lanes(verifier, built);
         changed |= columns(verifier, built);
         changed |= lift(verifier, topology, built);
@@ -125,6 +129,47 @@ fn shortcuts(verifier: &ArrangementVerifier<'_>, built: &mut Arrangement) -> boo
                 }
             }
         }
+    }
+    changed
+}
+
+/// The routes whose first run turns, right below the brancher, into the column
+/// their branch owns. Construction starts such a route at the merge column;
+/// that jog is a bend the route does not need.
+fn steps_below<'a>(
+    topology: &'a Topology,
+    built: &'a Arrangement,
+) -> impl Iterator<Item = usize> + 'a {
+    topology
+        .connections
+        .iter()
+        .enumerate()
+        .filter_map(|(index, wire)| {
+            let Source::Exit(exit) = wire.source else {
+                return None;
+            };
+            let first = built.routes[index].runs.first()?;
+            let RunLine::Lane { gap, .. } = first.line else {
+                return None;
+            };
+            (gap == built.rank[&Vertex::Node(exit.node)] && first.exit == built.exit_column(exit))
+                .then_some(index)
+        })
+}
+
+/// Leave a branch in the column its route turned into right below the
+/// brancher, so the route departs straight into its descent.
+fn departures(
+    verifier: &ArrangementVerifier<'_>,
+    topology: &Topology,
+    built: &mut Arrangement,
+) -> bool {
+    let mut changed = false;
+    for index in steps_below(topology, built).collect::<Vec<_>>() {
+        let mut candidate = built.clone();
+        let route = &mut candidate.routes[index];
+        route.departure = route.runs.remove(0).exit;
+        changed = keep(verifier, built, candidate) || changed;
     }
     changed
 }
@@ -405,6 +450,31 @@ mod tests {
                 "{name}: every completion still waits out the body it leaves"
             );
         }
+    }
+
+    #[test]
+    fn a_branch_that_stepped_sideways_below_its_brancher_departs_straight() {
+        let function = fixture!("wire/behavior", "early_branch_rejoins_below_a_side_branch");
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let stepping = steps_below(&model.topology, &model.arrangement).collect::<Vec<_>>();
+        assert!(
+            !stepping.is_empty(),
+            "the fixture constructs a stepping departure"
+        );
+        let runs = stepping
+            .iter()
+            .map(|&index| model.arrangement.routes[index].runs.len())
+            .collect::<Vec<_>>();
+        compact_arrangement(&mut model);
+        for (&index, &before) in stepping.iter().zip(&runs) {
+            let Source::Exit(exit) = model.topology.connections[index].source else {
+                unreachable!("only exits step below their brancher");
+            };
+            let route = &model.arrangement.routes[index];
+            assert_eq!(route.departure, model.arrangement.exit_column(exit));
+            assert!(route.runs.len() < before, "the step is gone");
+        }
+        assert_eq!(steps_below(&model.topology, &model.arrangement).count(), 0);
     }
 
     #[test]

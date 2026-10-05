@@ -17,6 +17,7 @@ mod convergence_after_a_terminal_case;
 mod convergence_before_a_terminal_case;
 mod disjoint_and_nested_groups;
 mod drop_a_branch_guard;
+mod early_branch_rejoins_below_a_side_branch;
 mod effect_before_a_nested_terminal_branch;
 mod effect_then_common;
 mod independent_entry_blocks;

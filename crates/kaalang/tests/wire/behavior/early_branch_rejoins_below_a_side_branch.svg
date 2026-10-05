@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="924" height="1126" viewBox="0 0 924 1126" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for early_branch_rejoins_below_a_side_branch</title>
+  <desc id="kaalang-description">Nodes: Start: early_branch_rejoins_below_a_side_branch with parameters value: u8 handing over value; Question: Is the value too large? capturing value handing over large / kept described as branch 1: YES / branch 2: NO; Question: Is the large value even? capturing large, value handing over even / odd described as branch 1: YES / branch 2: NO; Action: Halve the even value. capturing even, value handing over halved; Action: Drop the odd value&apos;s last bit, then halve it. capturing odd, value handing over halved; Question: Is the halved value small enough? capturing halved handing over shrunk / kept described as branch 1: YES / branch 2: NO; Action: Use the halved value. capturing shrunk, halved handing over end; Action: Use the value as it is. capturing kept, value handing over end; End: u8 capturing end; Merge: kept; Merge: halved; Merge: end. Connections: Start: early_branch_rejoins_below_a_side_branch to Question: Is the value too large?; Question: Is the value too large? branch 1 to Question: Is the large value even?; Question: Is the value too large? branch 2 to the kept merge; Question: Is the large value even? branch 1 to Action: Halve the even value.; Question: Is the large value even? branch 2 to Action: Drop the odd value&apos;s last bit, then halve it.; Action: Halve the even value. to the halved merge; Action: Drop the odd value&apos;s last bit, then halve it. to the halved merge; Question: Is the halved value small enough? branch 1 to Action: Use the halved value.; Question: Is the halved value small enough? branch 2 to the kept merge; Action: Use the halved value. to the end merge; Action: Use the value as it is. to the end merge; the kept merge to Action: Use the value as it is.; the halved merge to Question: Is the halved value small enough?; the end merge to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 892 206 L 892 712 L 532 712
+      M 172 386 L 172 458
+      M 312 350 L 532 350 L 532 458
+      M 172 524 L 172 600
+      M 532 524 L 532 600 L 172 600
+      M 172 748 L 172 820
+      M 312 712 L 532 712
+      M 172 884 L 172 960
+      M 532 884 L 532 960 L 172 960
+      M 532 712 L 532 820
+      M 172 600 L 172 676
+      M 172 960 L 172 1036
+    "/>
+    <text class="connection-label" x="545" y="730" xml:space="preserve"><tspan x="545" dy="0">kept</tspan></text>
+    <text class="connection-label" x="185" y="618" xml:space="preserve"><tspan x="185" dy="0">halved</tspan></text>
+    <text class="connection-label" x="185" y="978" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="262" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="194" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="406" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="338" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="185" y="768" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="325" y="700" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
+    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">large, value</tspan></text>
+    <text class="connection-label" x="185" y="447" xml:space="preserve"><tspan x="185" dy="0">even, value</tspan></text>
+    <text class="connection-label" x="545" y="447" xml:space="preserve"><tspan x="545" dy="0">odd, value</tspan></text>
+    <text class="connection-label" x="185" y="809" xml:space="preserve"><tspan x="185" dy="0">shrunk, halved</tspan></text>
+    <text class="connection-label" x="545" y="809" xml:space="preserve"><tspan x="545" dy="0">kept, value</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(532 712)">
+      <title xml:space="preserve">the kept merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 600)">
+      <title xml:space="preserve">the halved merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 960)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">early_branch_rejoins_below_a_side</tspan><tspan x="0" dy="18">_branch</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 206)">
+      <title xml:space="preserve">Is the value too large?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the value too large?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 350)">
+      <title xml:space="preserve">Is the large value even?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the large value even?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 491)">
+      <title xml:space="preserve">Halve the even value.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Halve the even value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 491)">
+      <title xml:space="preserve">Drop the odd value&apos;s last bit, then halve it.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Drop the odd value&apos;s last bit, then </tspan><tspan x="-124" dy="18">halve it.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 712)">
+      <title xml:space="preserve">Is the halved value small enough?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the halved value small </tspan><tspan x="0" dy="18">enough?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 852)">
+      <title xml:space="preserve">Use the halved value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the halved value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 852)">
+      <title xml:space="preserve">Use the value as it is.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the value as it is.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1065)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>
