@@ -832,8 +832,8 @@ impl Scene {
                 || self
                     .arrangement
                     .exit_offset
-                    .iter()
-                    .any(|(exit, offset)| self.column(Vertex::Node(exit.node)) + offset == at)
+                    .keys()
+                    .any(|&exit| self.arrangement.exit_column(exit) == at)
         };
         let half = |at| if content(at) { NODE_WIDTH / 2 } else { 0 };
         let base = if !self.narrow || !self.arrangement.back_routes.is_empty() {

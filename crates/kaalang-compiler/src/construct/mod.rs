@@ -123,6 +123,13 @@ pub struct Arrangement {
 }
 
 impl Arrangement {
+    /// The default branch column the exit owns: the node's column plus the
+    /// exit's offset.
+    #[must_use]
+    pub fn exit_column(&self, exit: ExitId) -> i32 {
+        self.column[&Vertex::Node(exit.node)] + self.exit_offset[&exit]
+    }
+
     /// Every corridor: each connection's route, then each recorded back edge's.
     pub fn all_routes(&self) -> impl Iterator<Item = &Route> {
         self.routes.iter().chain(self.back_routes.values())

@@ -13,8 +13,8 @@ pub(super) fn arrangement(built: &mut Arrangement) {
         .chain(
             built
                 .exit_offset
-                .iter()
-                .map(|(exit, offset)| built.column[&Vertex::Node(exit.node)] + offset),
+                .keys()
+                .map(|&exit| built.exit_column(exit)),
         )
         .chain(built.all_routes().flat_map(|route| {
             [route.departure, route.arrival]

@@ -504,8 +504,7 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
         }
         let owned = match wire.source {
             Source::Exit(exit) => {
-                let own =
-                    arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[&exit];
+                let own = arrangement.exit_column(exit);
                 if let Some(case) = super::choice::case_destination(wire.source, wire.destination) {
                     route.departure == arrangement.column[&Vertex::Node(case)]
                 } else {
@@ -721,9 +720,7 @@ fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Resu
             let entry = *entry;
             let column = approaches
                 .iter()
-                .map(|exit| {
-                    arrangement.column[&Vertex::Node(exit.node)] + arrangement.exit_offset[exit]
-                })
+                .map(|&exit| arrangement.exit_column(exit))
                 .min()
                 .ok_or_else(|| {
                     format!("continuation entry {entry:?} has no first-branch approach")
