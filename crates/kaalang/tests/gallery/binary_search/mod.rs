@@ -19,7 +19,7 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
         #[action("🚫 Report that the target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Select the middle value of this range.")]
+        #[action(r"📍 Select the middle value, $$\mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor$$.")]
         let (mid, value) = |iterate, values, left, right| {
             let mid = left + (right - left) / 2;
             (mid, values[mid])
@@ -65,7 +65,7 @@ fn binary_search_swapped(values: &[i32], target: i32) -> Option<usize> {
         #[action("🚫 Report that the target is absent.")]
         let result = |leave| None;
 
-        #[action("📍 Select the middle value of this range.")]
+        #[action(r"📍 Select the middle value, $$\mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor$$.")]
         let (mid, value) = |iterate, values, left, right| {
             let mid = left + (right - left) / 2;
             (mid, values[mid])

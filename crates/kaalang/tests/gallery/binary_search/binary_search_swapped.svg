@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="1256" viewBox="0 0 1520 1256" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="1273" viewBox="0 0 1520 1273" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for binary_search_swapped</title>
-  <desc id="kaalang-description">Cycles: 🔍 Narrow the range until the target is found or ruled out. with inputs mut left, mut right, values, target and outputs result. Nodes: Start: binary_search_swapped with parameters values: &amp;[i32]; target: i32 handing over values, target; Action: 📏 Start with the entire sorted list. capturing values handing over mut left, mut right; Question: Are any values left in the search range? capturing left, right handing over leave / iterate described as branch 1: NO / branch 2: YES; Action: 🚫 Report that the target is absent. capturing leave handing over result; Action: 📍 Select the middle value of this range. capturing iterate, values, left, right handing over mid, value; Select: How does this value compare with the target? capturing value, target; Case: Equal to the target. handing over equal; Case: Less than the target. handing over less; Case: Greater than the target. handing over greater; Action: 🎯 Report the position of this matching value. capturing equal, mid handing over result; Action: ➡️ Discard this value and everything to its left. capturing less, mid, &amp;mut left handing over stepped; Action: ⬅️ Discard this value and everything to its right. capturing greater, mid, &amp;mut right handing over stepped; End: Option&lt;usize&gt; capturing result; Merge: result; Merge: stepped. Connections: Start: binary_search_swapped to Action: 📏 Start with the entire sorted list.; Action: 📏 Start with the entire sorted list. to the entry of the cycle; Question: Are any values left in the search range? branch 1 to Action: 🚫 Report that the target is absent.; Question: Are any values left in the search range? branch 2 to Action: 📍 Select the middle value of this range.; Action: 🚫 Report that the target is absent. to the result merge at the cycle result; Action: 📍 Select the middle value of this range. to Select: How does this value compare with the target?; Select: How does this value compare with the target? to Case: Equal to the target.; Select: How does this value compare with the target? to Case: Less than the target.; Select: How does this value compare with the target? to Case: Greater than the target.; Case: Equal to the target. to Action: 🎯 Report the position of this matching value.; Case: Less than the target. to Action: ➡️ Discard this value and everything to its left.; Case: Greater than the target. to Action: ⬅️ Discard this value and everything to its right.; Action: 🎯 Report the position of this matching value. to the result merge at the cycle result; Action: ➡️ Discard this value and everything to its left. to the stepped merge at the iteration tail of the cycle; Action: ⬅️ Discard this value and everything to its right. to the stepped merge at the iteration tail of the cycle; the result merge at the cycle result to End: Option&lt;usize&gt;; the entry of the cycle to Question: Are any values left in the search range?; Repeat from the stepped merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: 🔍 Narrow the range until the target is found or ruled out. with inputs mut left, mut right, values, target and outputs result. Nodes: Start: binary_search_swapped with parameters values: &amp;[i32]; target: i32 handing over values, target; Action: 📏 Start with the entire sorted list. capturing values handing over mut left, mut right; Question: Are any values left in the search range? capturing left, right handing over leave / iterate described as branch 1: NO / branch 2: YES; Action: 🚫 Report that the target is absent. capturing leave handing over result; Action: 📍 Select the middle value, \mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor. capturing iterate, values, left, right handing over mid, value; Select: How does this value compare with the target? capturing value, target; Case: Equal to the target. handing over equal; Case: Less than the target. handing over less; Case: Greater than the target. handing over greater; Action: 🎯 Report the position of this matching value. capturing equal, mid handing over result; Action: ➡️ Discard this value and everything to its left. capturing less, mid, &amp;mut left handing over stepped; Action: ⬅️ Discard this value and everything to its right. capturing greater, mid, &amp;mut right handing over stepped; End: Option&lt;usize&gt; capturing result; Merge: result; Merge: stepped. Connections: Start: binary_search_swapped to Action: 📏 Start with the entire sorted list.; Action: 📏 Start with the entire sorted list. to the entry of the cycle; Question: Are any values left in the search range? branch 1 to Action: 🚫 Report that the target is absent.; Question: Are any values left in the search range? branch 2 to Action: 📍 Select the middle value, \mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor.; Action: 🚫 Report that the target is absent. to the result merge at the cycle result; Action: 📍 Select the middle value, \mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor. to Select: How does this value compare with the target?; Select: How does this value compare with the target? to Case: Equal to the target.; Select: How does this value compare with the target? to Case: Less than the target.; Select: How does this value compare with the target? to Case: Greater than the target.; Case: Equal to the target. to Action: 🎯 Report the position of this matching value.; Case: Less than the target. to Action: ➡️ Discard this value and everything to its left.; Case: Greater than the target. to Action: ⬅️ Discard this value and everything to its right.; Action: 🎯 Report the position of this matching value. to the result merge at the cycle result; Action: ➡️ Discard this value and everything to its left. to the stepped merge at the iteration tail of the cycle; Action: ⬅️ Discard this value and everything to its right. to the stepped merge at the iteration tail of the cycle; the result merge at the cycle result to End: Option&lt;usize&gt;; the entry of the cycle to Question: Are any values left in the search range?; Repeat from the stepped merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -22,13 +22,34 @@
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">🔍 Narrow the range until the target is found or ruled out.</title>
-    <rect class="cycle-boundary" x="32" y="273" width="1456" height="852" rx="12"/>
+    <rect class="cycle-boundary" x="32" y="273" width="1456" height="869" rx="12"/>
     <text class="cycle-caption" x="1476" y="287" text-anchor="end" xml:space="preserve"><tspan x="1476" dy="0">🔍 Narrow the range until the target is found or ruled out.</tspan></text>
     </g>
   </g>
@@ -39,40 +60,40 @@
       M 200 236 L 200 308
       M 200 452 L 200 524
       M 340 416 L 560 416 L 560 524
-      M 200 590 L 200 1090
-      M 560 590 L 560 662
-      M 560 734 L 560 806
-      M 688 698 L 920 698 L 920 806
-      M 688 698 L 1280 698 L 1280 806
-      M 560 876 L 560 948
-      M 920 876 L 920 948
-      M 1280 876 L 1280 948
-      M 560 1014 L 560 1090 L 200 1090
-      M 920 1014 L 920 1090 L 1280 1090
-      M 1280 1014 L 1280 1090
-      M 200 1090 L 200 1166
+      M 200 606 L 200 1107
+      M 560 606 L 560 679
+      M 560 751 L 560 823
+      M 688 715 L 920 715 L 920 823
+      M 688 715 L 1280 715 L 1280 823
+      M 560 893 L 560 965
+      M 920 893 L 920 965
+      M 1280 893 L 1280 965
+      M 560 1031 L 560 1107 L 200 1107
+      M 920 1031 L 920 1107 L 1280 1107
+      M 1280 1031 L 1280 1107
+      M 200 1107 L 200 1183
       M 200 308 L 200 380
     "/>
     <path class="connection" d="
-      M 1280 1090 L 1460 1090 L 1460 308 L 200 308
+      M 1280 1107 L 1460 1107 L 1460 308 L 200 308
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="213" y="1108" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label" x="1293" y="1108" xml:space="preserve"><tspan x="1293" dy="0">stepped</tspan></text>
+    <text class="connection-label" x="213" y="1125" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label" x="1293" y="1125" xml:space="preserve"><tspan x="1293" dy="0">stepped</tspan></text>
     <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">values, target</tspan></text>
     <text class="connection-label" x="213" y="254" xml:space="preserve"><tspan x="213" dy="0">mut left, mut right</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="472" xml:space="preserve"><tspan x="213" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="353" y="404" xml:space="preserve"><tspan x="353" dy="0">YES</tspan></text>
-    <text class="connection-label" x="573" y="608" xml:space="preserve"><tspan x="573" dy="0">mid, value</tspan></text>
-    <text class="connection-label" x="573" y="894" xml:space="preserve"><tspan x="573" dy="0">equal</tspan></text>
-    <text class="connection-label" x="933" y="894" xml:space="preserve"><tspan x="933" dy="0">less</tspan></text>
-    <text class="connection-label" x="1293" y="894" xml:space="preserve"><tspan x="1293" dy="0">greater</tspan></text>
+    <text class="connection-label" x="573" y="624" xml:space="preserve"><tspan x="573" dy="0">mid, value</tspan></text>
+    <text class="connection-label" x="573" y="911" xml:space="preserve"><tspan x="573" dy="0">equal</tspan></text>
+    <text class="connection-label" x="933" y="911" xml:space="preserve"><tspan x="933" dy="0">less</tspan></text>
+    <text class="connection-label" x="1293" y="911" xml:space="preserve"><tspan x="1293" dy="0">greater</tspan></text>
     <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">values</tspan></text>
     <text class="connection-label" x="213" y="369" xml:space="preserve"><tspan x="213" dy="0">left, right</tspan></text>
     <text class="connection-label" x="573" y="513" xml:space="preserve"><tspan x="573" dy="0">iterate, values, left, right</tspan></text>
-    <text class="connection-label" x="573" y="651" xml:space="preserve"><tspan x="573" dy="0">value, target</tspan></text>
-    <text class="connection-label" x="573" y="937" xml:space="preserve"><tspan x="573" dy="0">equal, mid</tspan></text>
-    <text class="connection-label" x="933" y="937" xml:space="preserve"><tspan x="933" dy="0">less, mid, &amp;mut left</tspan></text>
-    <text class="connection-label" x="1293" y="937" xml:space="preserve"><tspan x="1293" dy="0">greater, mid, &amp;mut right</tspan></text>
+    <text class="connection-label" x="573" y="668" xml:space="preserve"><tspan x="573" dy="0">value, target</tspan></text>
+    <text class="connection-label" x="573" y="954" xml:space="preserve"><tspan x="573" dy="0">equal, mid</tspan></text>
+    <text class="connection-label" x="933" y="954" xml:space="preserve"><tspan x="933" dy="0">less, mid, &amp;mut left</tspan></text>
+    <text class="connection-label" x="1293" y="954" xml:space="preserve"><tspan x="1293" dy="0">greater, mid, &amp;mut right</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
@@ -80,11 +101,11 @@
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i32]</tspan><tspan x="-104" dy="18">target: i32</tspan></text>
     </g>
-    <g class="node merge" transform="translate(200 1090)">
+    <g class="node merge" transform="translate(200 1107)">
       <title xml:space="preserve">the result merge at the cycle result</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(1280 1090)">
+    <g class="node merge" transform="translate(1280 1107)">
       <title xml:space="preserve">the stepped merge at the iteration tail of the cycle</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
@@ -102,52 +123,83 @@
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Are any values left in the </tspan><tspan x="0" dy="18">search range?</tspan></text>
     </g>
-    <g class="node action" transform="translate(200 557)">
+    <g class="node action" transform="translate(200 565)">
       <title xml:space="preserve">🚫 Report that the target is absent.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <rect class="node-shape" x="-140" y="-41" width="280" height="83"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🚫 Report that the target is </tspan><tspan x="-124" dy="18">absent.</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 557)">
-      <title xml:space="preserve">📍 Select the middle value of this range.</title>
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">📍 Select the middle value of this </tspan><tspan x="-124" dy="18">range.</tspan></text>
+    <g class="node action" transform="translate(560 565)">
+      <title xml:space="preserve">📍 Select the middle value, \mathrm{mid} = \mathrm{left} + \left\lfloor \frac{\mathrm{right} - \mathrm{left}}{2} \right\rfloor.</title>
+      <rect class="node-shape" x="-140" y="-41" width="280" height="83"/>
+      <g class="label">
+        <text x="-124" y="-11" text-anchor="start" textLength="190.68" lengthAdjust="spacing" xml:space="preserve">📍 Select the middle value, </text>
+        <svg class="md-math" x="-124" y="-4.46" width="153.4042" height="30.835" viewBox="0 0 10.9574 2.2025" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 185.0 357.0 C 214.0 384.0 258.0 421.0 310.0 421.0 C 356.0 421.0 390.0 399.0 390.0 314.0 L 390.0 116.0 C 390.0 46.0 384.0 29.0 313.0 29.0 L 313.0 0.0 L 550.0 0.0 L 550.0 29.0 C 478.0 29.0 473.0 47.0 473.0 116.0 L 473.0 359.0 C 506.0 387.0 547.0 421.0 588.0 421.0 C 635.0 421.0 674.0 399.0 674.0 308.0 L 674.0 116.0 C 674.0 55.0 671.0 29.0 603.0 29.0 L 603.0 0.0 L 829.0 0.0 L 829.0 29.0 C 760.0 29.0 757.0 53.0 757.0 116.0 L 757.0 320.0 C 757.0 441.0 706.0 485.0 628.0 485.0 C 575.0 485.0 524.0 456.0 469.0 402.0 L 465.0 402.0 C 445.0 450.0 411.0 485.0 354.0 485.0 C 286.0 485.0 240.0 448.0 186.0 401.0 L 182.0 401.0 L 182.0 482.0 L 158.0 482.0 L 33.0 453.0 L 33.0 424.0 C 33.0 424.0 45.0 426.0 60.0 426.0 C 88.0 426.0 102.0 417.0 102.0 381.0 L 102.0 101.0 C 102.0 41.0 95.0 29.0 32.0 29.0 L 32.0 0.0 L 260.0 0.0 L 260.0 29.0 C 198.0 29.0 185.0 41.0 185.0 97.0 Z" transform="translate(0.0 1.39) scale(0.001 -0.001)"/>
+<path d="M 257.0 28.0 C 190.0 28.0 185.0 43.0 185.0 101.0 L 185.0 482.0 L 159.0 482.0 L 33.0 454.0 L 33.0 425.0 C 33.0 425.0 44.0 427.0 58.0 427.0 C 87.0 427.0 102.0 423.0 102.0 380.0 L 102.0 101.0 C 102.0 44.0 99.0 28.0 32.0 28.0 L 32.0 0.0 L 257.0 0.0 Z M 145.0 673.0 C 110.0 673.0 88.0 647.0 88.0 617.0 C 88.0 586.0 111.0 560.0 145.0 560.0 C 180.0 560.0 202.0 586.0 202.0 617.0 C 202.0 647.0 180.0 673.0 145.0 673.0 Z" transform="translate(0.852 1.39) scale(0.001 -0.001)"/>
+<path d="M 514.0 18.0 L 514.0 45.0 L 493.0 45.0 C 456.0 45.0 443.0 55.0 443.0 107.0 L 443.0 706.0 L 416.0 706.0 L 290.0 671.0 L 290.0 643.0 C 290.0 643.0 307.0 645.0 316.0 645.0 C 355.0 645.0 360.0 636.0 360.0 592.0 L 360.0 461.0 C 329.0 478.0 296.0 485.0 263.0 485.0 C 137.0 485.0 33.0 384.0 33.0 219.0 C 33.0 91.0 91.0 -8.0 204.0 -8.0 C 270.0 -8.0 321.0 30.0 359.0 64.0 L 363.0 64.0 L 363.0 -5.0 L 386.0 -5.0 Z M 360.0 101.0 C 325.0 77.0 298.0 64.0 251.0 64.0 C 166.0 64.0 120.0 120.0 120.0 258.0 C 120.0 384.0 177.0 445.0 261.0 445.0 C 323.0 445.0 352.0 406.0 360.0 365.0 Z" transform="translate(1.137 1.39) scale(0.001 -0.001)"/>
+<path d="M 658.0 327.0 L 658.0 395.0 L 62.0 395.0 L 62.0 327.0 Z M 658.0 123.0 L 658.0 190.0 L 62.0 190.0 L 62.0 123.0 Z" transform="translate(1.953777777777777777777777 1.39) scale(0.001 -0.001)"/>
+<path d="M 260.0 29.0 C 188.0 29.0 183.0 43.0 183.0 101.0 L 183.0 706.0 L 158.0 706.0 L 26.0 671.0 L 26.0 644.0 C 26.0 644.0 41.0 646.0 58.0 646.0 C 83.0 646.0 100.0 644.0 100.0 603.0 L 100.0 101.0 C 100.0 45.0 96.0 29.0 30.0 29.0 L 30.0 0.0 L 260.0 0.0 Z" transform="translate(2.951555555555555555555555 1.39) scale(0.001 -0.001)"/>
+<path d="M 415.0 143.0 C 383.0 101.0 352.0 65.0 271.0 65.0 C 191.0 65.0 115.0 128.0 115.0 266.0 L 431.0 266.0 C 426.0 406.0 354.0 485.0 245.0 485.0 C 128.0 485.0 34.0 405.0 34.0 238.0 C 34.0 77.0 127.0 -10.0 247.0 -10.0 C 350.0 -10.0 398.0 53.0 434.0 129.0 Z M 114.0 303.0 C 122.0 396.0 162.0 445.0 230.0 445.0 C 301.0 445.0 334.0 377.0 337.0 303.0 Z" transform="translate(3.234555555555555555555555 1.39) scale(0.001 -0.001)"/>
+<path d="M 26.0 468.0 L 26.0 426.0 L 102.0 426.0 L 102.0 119.0 C 102.0 41.0 91.0 29.0 18.0 29.0 L 18.0 0.0 L 287.0 0.0 L 287.0 29.0 C 204.0 29.0 185.0 41.0 185.0 119.0 L 185.0 426.0 L 307.0 426.0 L 307.0 468.0 L 185.0 468.0 L 185.0 562.0 C 185.0 646.0 196.0 676.0 233.0 676.0 C 283.0 676.0 288.0 600.0 338.0 600.0 C 361.0 600.0 379.0 614.0 379.0 643.0 C 379.0 688.0 332.0 713.0 267.0 713.0 C 197.0 713.0 161.0 686.0 134.0 640.0 C 108.0 594.0 102.0 549.0 102.0 468.0 Z" transform="translate(3.698555555555555555555555 1.39) scale(0.001 -0.001)"/>
+<path d="M 293.0 90.0 C 268.0 62.0 255.0 49.0 223.0 49.0 C 184.0 49.0 175.0 73.0 175.0 144.0 L 175.0 426.0 L 288.0 426.0 L 288.0 468.0 L 175.0 468.0 L 176.0 610.0 L 150.0 610.0 C 114.0 525.0 84.0 478.0 37.0 449.0 L 37.0 426.0 L 92.0 426.0 L 92.0 116.0 C 92.0 26.0 121.0 -10.0 188.0 -10.0 C 252.0 -10.0 273.0 20.0 312.0 74.0 Z" transform="translate(4.005555555555555555555555 1.39) scale(0.001 -0.001)"/>
+<path d="M 658.0 225.0 L 658.0 293.0 L 396.0 293.0 L 396.0 558.0 L 324.0 558.0 L 324.0 293.0 L 62.0 293.0 L 62.0 225.0 L 324.0 225.0 L 324.0 -40.0 L 396.0 -40.0 L 396.0 225.0 Z" transform="translate(4.542777777777777777777777 1.39) scale(0.001 -0.001)"/>
+<path d="M 204.0 -757.0 L 204.0 1342.0 L 111.0 1342.0 L 111.0 -799.0 L 385.0 -799.0 L 385.0 -757.0 Z" transform="translate(5.485 1.4035) scale(0.001 -0.001)"/>
+<path d="M 183.0 482.0 L 159.0 482.0 L 35.0 452.0 L 35.0 424.0 C 35.0 424.0 46.0 426.0 66.0 426.0 C 102.0 426.0 102.0 408.0 102.0 372.0 L 102.0 97.0 C 102.0 41.0 95.0 29.0 29.0 29.0 L 29.0 0.0 L 279.0 0.0 L 279.0 29.0 C 204.0 29.0 185.0 39.0 185.0 102.0 L 185.0 330.0 C 209.0 370.0 241.0 412.0 264.0 412.0 C 276.0 412.0 296.0 378.0 329.0 378.0 C 351.0 378.0 373.0 394.0 373.0 432.0 C 373.0 466.0 354.0 488.0 315.0 488.0 C 267.0 488.0 237.0 453.0 186.0 379.0 L 183.0 379.0 Z" transform="translate(5.934 0.713) scale(0.001 -0.001)"/>
+<path d="M 257.0 28.0 C 190.0 28.0 185.0 43.0 185.0 101.0 L 185.0 482.0 L 159.0 482.0 L 33.0 454.0 L 33.0 425.0 C 33.0 425.0 44.0 427.0 58.0 427.0 C 87.0 427.0 102.0 423.0 102.0 380.0 L 102.0 101.0 C 102.0 44.0 99.0 28.0 32.0 28.0 L 32.0 0.0 L 257.0 0.0 Z M 145.0 673.0 C 110.0 673.0 88.0 647.0 88.0 617.0 C 88.0 586.0 111.0 560.0 145.0 560.0 C 180.0 560.0 202.0 586.0 202.0 617.0 C 202.0 647.0 180.0 673.0 145.0 673.0 Z" transform="translate(6.314 0.713) scale(0.001 -0.001)"/>
+<path d="M 128.0 184.0 C 81.0 148.0 46.0 106.0 46.0 70.0 C 46.0 42.0 68.0 15.0 102.0 -2.0 L 102.0 -6.0 C 48.0 -58.0 21.0 -92.0 21.0 -125.0 C 21.0 -180.0 60.0 -235.0 191.0 -235.0 C 317.0 -235.0 465.0 -189.0 465.0 -55.0 C 465.0 60.0 369.0 64.0 243.0 64.0 C 151.0 64.0 125.0 74.0 125.0 104.0 C 125.0 121.0 141.0 157.0 151.0 171.0 C 177.0 162.0 205.0 156.0 237.0 156.0 C 342.0 156.0 414.0 215.0 414.0 308.0 C 414.0 358.0 392.0 391.0 378.0 411.0 L 378.0 416.0 L 472.0 413.0 L 472.0 467.0 L 343.0 460.0 C 343.0 460.0 298.0 485.0 232.0 485.0 C 126.0 485.0 51.0 422.0 51.0 322.0 C 51.0 257.0 80.0 214.0 128.0 186.0 Z M 127.0 -10.0 C 141.0 -10.0 160.0 -11.0 240.0 -12.0 C 243.0 -12.0 246.0 -12.0 249.0 -12.0 C 316.0 -13.0 414.0 -14.0 414.0 -83.0 C 414.0 -126.0 367.0 -178.0 249.0 -178.0 C 147.0 -178.0 99.0 -149.0 99.0 -91.0 C 99.0 -70.0 106.0 -47.0 127.0 -10.0 Z M 225.0 449.0 C 289.0 449.0 325.0 395.0 325.0 314.0 C 325.0 219.0 288.0 191.0 238.0 191.0 C 173.0 191.0 139.0 240.0 139.0 326.0 C 139.0 410.0 173.0 449.0 225.0 449.0 Z" transform="translate(6.599 0.713) scale(0.001 -0.001)"/>
+<path d="M 183.0 359.0 C 232.0 404.0 268.0 421.0 307.0 421.0 C 388.0 421.0 399.0 352.0 399.0 270.0 L 399.0 97.0 C 399.0 49.0 395.0 29.0 326.0 29.0 L 326.0 0.0 L 556.0 0.0 L 556.0 29.0 C 493.0 29.0 482.0 48.0 482.0 101.0 L 482.0 300.0 C 482.0 382.0 463.0 485.0 348.0 485.0 C 295.0 485.0 249.0 462.0 186.0 403.0 L 183.0 403.0 L 183.0 706.0 L 156.0 706.0 L 22.0 671.0 L 22.0 643.0 C 22.0 643.0 35.0 645.0 51.0 645.0 C 78.0 645.0 100.0 640.0 100.0 605.0 L 100.0 93.0 C 100.0 37.0 82.0 29.0 30.0 29.0 L 30.0 0.0 L 257.0 0.0 L 257.0 29.0 C 188.0 29.0 183.0 45.0 183.0 97.0 Z" transform="translate(7.083 0.713) scale(0.001 -0.001)"/>
+<path d="M 293.0 90.0 C 268.0 62.0 255.0 49.0 223.0 49.0 C 184.0 49.0 175.0 73.0 175.0 144.0 L 175.0 426.0 L 288.0 426.0 L 288.0 468.0 L 175.0 468.0 L 176.0 610.0 L 150.0 610.0 C 114.0 525.0 84.0 478.0 37.0 449.0 L 37.0 426.0 L 92.0 426.0 L 92.0 116.0 C 92.0 26.0 121.0 -10.0 188.0 -10.0 C 252.0 -10.0 273.0 20.0 312.0 74.0 Z" transform="translate(7.66 0.713) scale(0.001 -0.001)"/>
+<path d="M 658.0 225.0 L 658.0 293.0 L 62.0 293.0 L 62.0 225.0 Z" transform="translate(8.197222222222222222222222 0.713) scale(0.001 -0.001)"/>
+<path d="M 260.0 29.0 C 188.0 29.0 183.0 43.0 183.0 101.0 L 183.0 706.0 L 158.0 706.0 L 26.0 671.0 L 26.0 644.0 C 26.0 644.0 41.0 646.0 58.0 646.0 C 83.0 646.0 100.0 644.0 100.0 603.0 L 100.0 101.0 C 100.0 45.0 96.0 29.0 30.0 29.0 L 30.0 0.0 L 260.0 0.0 Z" transform="translate(9.139444444444444444444444 0.713) scale(0.001 -0.001)"/>
+<path d="M 415.0 143.0 C 383.0 101.0 352.0 65.0 271.0 65.0 C 191.0 65.0 115.0 128.0 115.0 266.0 L 431.0 266.0 C 426.0 406.0 354.0 485.0 245.0 485.0 C 128.0 485.0 34.0 405.0 34.0 238.0 C 34.0 77.0 127.0 -10.0 247.0 -10.0 C 350.0 -10.0 398.0 53.0 434.0 129.0 Z M 114.0 303.0 C 122.0 396.0 162.0 445.0 230.0 445.0 C 301.0 445.0 334.0 377.0 337.0 303.0 Z" transform="translate(9.422444444444444444444444 0.713) scale(0.001 -0.001)"/>
+<path d="M 26.0 468.0 L 26.0 426.0 L 102.0 426.0 L 102.0 119.0 C 102.0 41.0 91.0 29.0 18.0 29.0 L 18.0 0.0 L 287.0 0.0 L 287.0 29.0 C 204.0 29.0 185.0 41.0 185.0 119.0 L 185.0 426.0 L 307.0 426.0 L 307.0 468.0 L 185.0 468.0 L 185.0 562.0 C 185.0 646.0 196.0 676.0 233.0 676.0 C 283.0 676.0 288.0 600.0 338.0 600.0 C 361.0 600.0 379.0 614.0 379.0 643.0 C 379.0 688.0 332.0 713.0 267.0 713.0 C 197.0 713.0 161.0 686.0 134.0 640.0 C 108.0 594.0 102.0 549.0 102.0 468.0 Z" transform="translate(9.886444444444444444444444 0.713) scale(0.001 -0.001)"/>
+<path d="M 293.0 90.0 C 268.0 62.0 255.0 49.0 223.0 49.0 C 184.0 49.0 175.0 73.0 175.0 144.0 L 175.0 426.0 L 288.0 426.0 L 288.0 468.0 L 175.0 468.0 L 176.0 610.0 L 150.0 610.0 C 114.0 525.0 84.0 478.0 37.0 449.0 L 37.0 426.0 L 92.0 426.0 L 92.0 116.0 C 92.0 26.0 121.0 -10.0 188.0 -10.0 C 252.0 -10.0 273.0 20.0 312.0 74.0 Z" transform="translate(10.193444444444444444444444 0.713) scale(0.001 -0.001)"/>
+<rect x="5.934" y="1.098" width="4.574444444444444444444444" height="0.068"/>
+<path d="M 464.0 160.0 L 435.0 160.0 C 412.0 100.0 399.0 79.0 346.0 79.0 L 207.0 79.0 L 137.0 76.0 L 137.0 81.0 L 269.0 206.0 C 375.0 313.0 432.0 382.0 432.0 471.0 C 432.0 576.0 353.0 644.0 240.0 644.0 C 143.0 644.0 75.0 588.0 44.0 491.0 L 68.0 481.0 C 105.0 556.0 149.0 579.0 214.0 579.0 C 291.0 579.0 339.0 531.0 339.0 456.0 C 339.0 351.0 289.0 288.0 190.0 186.0 L 38.0 34.0 L 38.0 0.0 L 432.0 0.0 Z" transform="translate(7.973722222222222222222222 2.03) scale(0.001 -0.001)"/>
+<path d="M 64.0 -757.0 L 64.0 -799.0 L 338.0 -799.0 L 338.0 1342.0 L 245.0 1342.0 L 245.0 -757.0 Z" transform="translate(10.508444444444444444444444 1.4035) scale(0.001 -0.001)"/>
+</g>
+        </svg>
+        <text x="30" y="15" text-anchor="start" textLength="4.48" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.</text>
+      </g>
     </g>
-    <g class="node select" transform="translate(560 698)">
+    <g class="node select" transform="translate(560 715)">
       <title xml:space="preserve">How does this value compare with the target?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">How does this value </tspan><tspan x="0" dy="18">compare with the target?</tspan></text>
     </g>
-    <g class="node case" transform="translate(560 841)">
+    <g class="node case" transform="translate(560 858)">
       <title xml:space="preserve">Equal to the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Equal to the target.</tspan></text>
     </g>
-    <g class="node case" transform="translate(920 841)">
+    <g class="node case" transform="translate(920 858)">
       <title xml:space="preserve">Less than the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Less than the target.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1280 841)">
+    <g class="node case" transform="translate(1280 858)">
       <title xml:space="preserve">Greater than the target.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Greater than the target.</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 981)">
+    <g class="node action" transform="translate(560 998)">
       <title xml:space="preserve">🎯 Report the position of this matching value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🎯 Report the position of this </tspan><tspan x="-124" dy="18">matching value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(920 981)">
+    <g class="node action" transform="translate(920 998)">
       <title xml:space="preserve">➡️ Discard this value and everything to its left.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">➡️ Discard this value and </tspan><tspan x="-124" dy="18">everything to its left.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1280 981)">
+    <g class="node action" transform="translate(1280 998)">
       <title xml:space="preserve">⬅️ Discard this value and everything to its right.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⬅️ Discard this value and </tspan><tspan x="-124" dy="18">everything to its right.</tspan></text>
     </g>
-    <g class="node end" transform="translate(200 1195)">
+    <g class="node end" transform="translate(200 1212)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;usize&gt;</tspan></text>
     </g>
