@@ -149,50 +149,41 @@ fn agrees_with_direct_search_for_all_short_binary_inputs() {
 
 #[kaalang]
 fn prefix_table(pattern: &[u8]) -> Vec<usize> {
-    #[action("Set all prefix lengths to zero; start at the second pattern byte.")]
-    let (mut prefix, mut position, mut matched) =
-        |pattern| (vec![0usize; pattern.len()], 1usize, 0usize);
+    #[action("Set all prefix lengths to zero; no pattern beginning is matched yet.")]
+    let (mut prefix, mut matched) = |pattern| (vec![0usize; pattern.len()], 0usize);
 
     #[cycle("Find how much of the pattern's beginning repeats at each ending.")]
-    let finished = loop {
-        #[question("Have all pattern bytes been processed?")]
-        #[yes("YES")]
-        #[no("NO")]
-        let (finished, next) = |position, pattern| position >= pattern.len();
+    let finished = |pattern| {
+        for position in 1..pattern.len() {
+            #[action("Read the pattern byte at this position.")]
+            let byte = |position, pattern| pattern[position];
 
-        #[action("Read the pattern byte at this position.")]
-        let byte = |next, pattern, position| pattern[position];
+            #[cycle("Extend the matched beginning or try a shorter one.")]
+            let settled = |byte| loop {
+                #[question("Does this byte match the next byte of the pattern's beginning?")]
+                #[yes("YES")]
+                #[no("NO")]
+                let (extend, mismatch) = |byte, pattern, matched| byte == pattern[matched];
 
-        #[cycle("Extend the matched beginning or try a shorter one.")]
-        let settled = |byte| loop {
-            #[question("Does this byte match the next byte of the pattern's beginning?")]
-            #[no("NO")]
-            #[yes("YES")]
-            let (mismatch, extend) = |byte, pattern, matched| byte == pattern[matched];
+                #[action("Include this byte in the matched beginning.")]
+                let settled = |extend, &mut matched| *matched += 1;
 
-            #[action("Include this byte in the matched beginning.")]
-            let settled = |extend, &mut matched| *matched += 1;
+                #[question("Is there a matched beginning to shorten?")]
+                #[no("NO")]
+                #[yes("YES")]
+                let (settled, shrink) = |mismatch, matched| matched > 0;
 
-            #[question("Is there a matched beginning to shorten?")]
-            #[yes("YES")]
-            #[no("NO")]
-            let (shrink, settled) = |mismatch, matched| matched > 0;
+                #[action("Use the table to keep the next shorter matching beginning.")]
+                |shrink, &prefix, &mut matched| {
+                    *matched = prefix[*matched - 1];
+                };
 
-            #[action("Use the table to keep the next shorter matching beginning.")]
-            |shrink, &prefix, &mut matched| {
-                *matched = prefix[*matched - 1];
+                |shrink| continue;
             };
 
-            |shrink| continue;
-        };
-
-        #[action("Save the matched length for this byte; move to the next pattern byte.")]
-        |settled, &mut prefix, &mut position, matched| {
-            prefix[*position] = matched;
-            *position += 1;
-        };
-
-        |settled| continue;
+            #[action("Save the matched length for this byte.")]
+            |settled, &mut prefix, position, matched| prefix[position] = matched;
+        }
     };
 
     |finished, prefix| return prefix;

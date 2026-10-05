@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="553" viewBox="0 0 680 553" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for prefix_table</title>
-  <desc id="kaalang-description">Nodes: Start: prefix_table with parameters pattern: &amp;[u8] handing over pattern; Action: Set all prefix lengths to zero; start at the second pattern byte. capturing pattern handing over mut prefix, mut position, mut matched; Cycle: Find how much of the pattern&apos;s beginning repeats at each ending. capturing mut position, pattern, mut matched, mut prefix handing over finished; End: Vec&lt;usize&gt; capturing prefix. Connections: Start: prefix_table to Action: Set all prefix lengths to zero; start at the second pattern byte.; Action: Set all prefix lengths to zero; start at the second pattern byte. to Cycle: Find how much of the pattern&apos;s beginning repeats at each ending.; Cycle: Find how much of the pattern&apos;s beginning repeats at each ending. to End: Vec&lt;usize&gt;.</desc>
+  <desc id="kaalang-description">Nodes: Start: prefix_table with parameters pattern: &amp;[u8] handing over pattern; Action: Set all prefix lengths to zero; no pattern beginning is matched yet. capturing pattern handing over mut prefix, mut matched; Cycle: Find how much of the pattern&apos;s beginning repeats at each ending. capturing pattern, mut matched, mut prefix handing over finished; End: Vec&lt;usize&gt; capturing prefix. Connections: Start: prefix_table to Action: Set all prefix lengths to zero; no pattern beginning is matched yet.; Action: Set all prefix lengths to zero; no pattern beginning is matched yet. to Cycle: Find how much of the pattern&apos;s beginning repeats at each ending.; Cycle: Find how much of the pattern&apos;s beginning repeats at each ending. to End: Vec&lt;usize&gt;.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -34,9 +34,9 @@
       M 172 391 L 172 463
     "/>
     <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">pattern</tspan></text>
-    <text class="connection-label" x="185" y="246" xml:space="preserve"><tspan x="185" dy="0">mut prefix, mut position, mut </tspan><tspan x="185" dy="14">matched</tspan></text>
+    <text class="connection-label" x="185" y="246" xml:space="preserve"><tspan x="185" dy="0">mut prefix, mut matched</tspan></text>
     <text class="connection-label" x="185" y="409" xml:space="preserve"><tspan x="185" dy="0">finished</tspan></text>
-    <text class="connection-label" x="185" y="282" xml:space="preserve"><tspan x="185" dy="0">mut position, pattern, mut </tspan><tspan x="185" dy="14">matched, mut prefix</tspan></text>
+    <text class="connection-label" x="185" y="282" xml:space="preserve"><tspan x="185" dy="0">pattern, mut matched, mut </tspan><tspan x="185" dy="14">prefix</tspan></text>
     <text class="connection-label" x="185" y="452" xml:space="preserve"><tspan x="185" dy="0">prefix</tspan></text>
   </g>
   <g class="nodes">
@@ -50,9 +50,9 @@
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prefix_table</tspan></text>
     </g>
     <g class="node action" transform="translate(172 195)">
-      <title xml:space="preserve">Set all prefix lengths to zero; start at the second pattern byte.</title>
+      <title xml:space="preserve">Set all prefix lengths to zero; no pattern beginning is matched yet.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Set all prefix lengths to zero; </tspan><tspan x="-124" dy="18">start at the second pattern byte.</tspan></text>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Set all prefix lengths to zero; no </tspan><tspan x="-124" dy="18">pattern beginning is matched yet.</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 349)">
       <title xml:space="preserve">Find how much of the pattern&apos;s beginning repeats at each ending.</title>

@@ -15,34 +15,26 @@ fn bubble_sort(mut values: &mut [i32]) {
         #[no("NO")]
         let (pass, sorted) = |unsorted| unsorted > 1;
 
-        #[action("⏮️ Start at the first pair; no swaps have been made.")]
-        let (mut index, mut last_swap) = |pass| (1, 0);
+        #[action("⏮️ Begin the pass with no swaps recorded.")]
+        let mut last_swap = |pass| 0;
 
         #[cycle("Put each adjacent pair in order, from left to right.")]
-        let compared = |index| loop {
-            #[question("Is there another pair in this pass?")]
-            #[yes("YES")]
-            #[no("NO")]
-            let (select, compared) = |index, unsorted| index < unsorted;
+        let compared = |pass, unsorted| {
+            for index in 1..unsorted {
+                #[action("Select the two values in this adjacent pair.")]
+                let (left, right) = |index, &values| (values[index - 1], values[index]);
 
-            #[action("Select the two values in the next adjacent pair.")]
-            let (left, right) = |select, &values, index| (values[index - 1], values[index]);
+                #[question("Is the left value greater than the right?")]
+                #[yes("YES")]
+                #[no("NO")]
+                let (greater, _ordered) = |left, right| left > right;
 
-            #[question("Is the left value greater than the right?")]
-            #[yes("YES")]
-            #[no("NO")]
-            let (greater, stepped) = |left, right| left > right;
-
-            #[action("🔀 Swap the values; remember where this swap happened.")]
-            let stepped = |greater, &mut values, index, &mut last_swap| {
-                values.swap(index - 1, index);
-                *last_swap = index;
-            };
-
-            #[action("⏭️ Move on to the next pair.")]
-            |stepped, &mut index| *index += 1;
-
-            |stepped| continue;
+                #[action("🔀 Swap the values; remember where this swap happened.")]
+                let _ordered = |greater, &mut values, index, &mut last_swap| {
+                    values.swap(index - 1, index);
+                    *last_swap = index;
+                };
+            }
         };
 
         #[question("Did this pass swap any values?")]

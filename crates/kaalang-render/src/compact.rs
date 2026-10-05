@@ -415,7 +415,7 @@ mod tests {
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for function in [
-            fixture!("gallery/sorting", "bubble_sort"),
+            fixture!("cycle/behavior", "nested_side_returns"),
             fixture!("cycle/behavior", "collect_steps"),
         ] {
             let name = &function.sig.ident;

@@ -122,8 +122,8 @@ fn the_public_verifier_rejects_a_crossed_corridor() {
 #[test]
 fn a_lifted_completion_is_a_renderer_exception_not_a_construction_result() {
     let mut model = fixture(
-        include_str!("../../kaalang/tests/gallery/sorting/bubble_sort.rs"),
-        "bubble_sort",
+        include_str!("../../kaalang/tests/cycle/behavior/collect_steps.rs"),
+        "collect_steps",
     );
     kaalang_render::compact_arrangement(&mut model);
 
