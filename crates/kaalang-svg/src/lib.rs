@@ -1,4 +1,6 @@
 //! Renders validated kaalang flows as standalone SVG diagrams.
+//!
+//! It serves `cargo kaalang`, and its API may change in any minor release.
 
 use std::{error::Error, fmt, rc::Rc};
 
@@ -169,8 +171,9 @@ pub fn render_source_with_options(
     ))
 }
 
-/// Names every `#[kaalang]` function in a UTF-8 Rust source file, free or
-/// associated, in source order.
+/// Names every top-level `#[kaalang]` function in a UTF-8 Rust source file,
+/// free or associated, in source order and with duplicates. Inline modules are
+/// not searched.
 ///
 /// # Errors
 ///

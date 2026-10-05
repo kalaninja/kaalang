@@ -69,12 +69,14 @@ pub enum BlockKind {
     End,
 }
 
-/// One kaalang block: an authored statement, a cycle's boundary consumer, or
-/// the implicit end block.
+/// One kaalang block: an authored statement, the implicit end block, or a block
+/// the parser adds: a cycle's boundary consumer, a for cycle's hidden choice and
+/// `continue`, or a stage transition.
 #[derive(Clone)]
 pub struct Block {
     pub kind: BlockKind,
-    /// The exact authored description, absent for transfers and end.
+    /// The exact authored description, absent for transfers, end, and a
+    /// `#[call]` without one.
     pub description: Option<String>,
     /// A question's two answers, paired with its outputs.
     pub question_branches: Vec<QuestionBranch>,
@@ -87,8 +89,8 @@ pub struct Block {
     /// Each binding preserves its authored mutability. An outputless block uses `()`.
     pub output_pattern: Pat,
     pub output_span: Span,
-    /// The authored captures, in order. A cycle's are its optional gate, then
-    /// its derived inputs.
+    /// The authored captures, in order. A loop cycle's are its optional gate and
+    /// a for cycle's its header captures, then its derived inputs.
     pub inputs: Vec<Input>,
     /// The authored body normalized to a plain block expression.
     pub body: Expr,
@@ -245,9 +247,9 @@ pub struct Input {
     pub ident: Ident,
     /// The authored spelling, which keeps `r#` so a keyword-named wire binds.
     pub alias: Ident,
-    /// An outer wire a cycle's body captures, recorded on the cycle itself so
-    /// the dependency enters through the cycle. It binds
-    /// nothing and does not decide whether the cycle runs.
+    /// An outer wire recorded on a cycle, which its body captures, or on a stage
+    /// transition, which carries it, so the dependency enters there. It binds
+    /// nothing and does not decide whether the block runs.
     pub derived: bool,
 }
 
@@ -499,7 +501,8 @@ pub struct CaptureDependency {
     pub capture: CaptureId,
 }
 
-/// The output a question or choice selected in one execution.
+/// The output a question, choice, or cycle with several outputs selected in one
+/// execution.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BranchSelection {
     pub block: usize,
@@ -606,12 +609,13 @@ impl Execution {
     }
 }
 
-/// A dependency-derived shared continuation of one question or choice.
+/// A dependency-derived shared continuation of one question, choice, or cycle
+/// with several outputs.
 /// This projection does not prescribe the scopes or joins used by lowering.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConvergenceGroup {
     pub branching_block: usize,
-    /// Question-output or choice-case positions, in authored order.
+    /// Positions of the branching block's outputs, in authored order.
     pub branches: Vec<usize>,
     /// The shared continuation: the authored blocks whose branch set is
     /// exactly `branches`, in authored order. The end block never belongs.
@@ -648,9 +652,11 @@ pub enum ExecutionPlan {
     },
     /// A boundary consumer exporting one declared output of an active cycle.
     Export { index: usize, target: usize },
-    /// An authored completion of the root flow.
+    /// A completion of the root flow, or a stage transition when its block has a
+    /// `transition_target`.
     Return { index: usize },
-    /// An authored repetition of the directly containing cycle.
+    /// A repetition of the directly containing cycle, including the hidden one
+    /// that ends each iteration of a for cycle.
     Continue { index: usize },
     Action {
         index: usize,
@@ -685,8 +691,8 @@ pub enum ExecutionPlan {
     Yield { wires: Vec<Ident>, join: JoinTarget },
 }
 
-/// The join a yield enters: an enclosing question or choice and the position
-/// of the join among that block's joins.
+/// The join a yield enters: an enclosing question, choice, or cycle with several
+/// outputs, and the position of the join among that block's joins.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct JoinTarget {
     pub block: usize,

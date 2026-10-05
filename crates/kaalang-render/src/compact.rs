@@ -7,7 +7,9 @@ use kaalang_compiler::{
 
 use crate::ArrangementVerifier;
 
-/// Verifies each normalized replacement; failure preserves the existing witness.
+/// Compacts `model.arrangement` in place, keeping each normalized replacement
+/// only after the verifier accepts it, so a failure preserves the existing
+/// witness. Each of `model.stages` needs its own call.
 /// Terminates as ranks rise, then contours approach their bodies and coordinates,
 /// lanes, and runs disappear.
 ///

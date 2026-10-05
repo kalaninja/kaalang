@@ -1,6 +1,6 @@
 [package]
 name = "kaalang-macros"
-description = "Procedural macros for kaalang"
+description = "The procedural macro behind the kaalang crate"
 documentation = "https://docs.rs/kaalang-macros"
 version.workspace = true
 edition.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "kaalang-render"
-description = "Structural layout for kaalang diagrams"
+description = "Cycle-boundary checks and arrangement compaction for kaalang renderers"
 documentation = "https://docs.rs/kaalang-render"
 version.workspace = true
 edition.workspace = true

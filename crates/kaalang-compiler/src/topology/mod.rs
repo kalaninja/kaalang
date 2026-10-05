@@ -79,9 +79,10 @@ pub enum NodeKind {
     ForEnd,
 }
 
-/// One outgoing attachment point. A question is the only node with more than one
-/// exit, so `branch` names the output an exit carries there; every other exit
-/// leaves it unset, a select's distributor and a case's own exit included.
+/// One outgoing attachment point. A question, or a collapsed cycle with several
+/// outputs, has one exit per branch, so `branch` names the output that exit
+/// carries; every other exit leaves it unset, a select's distributor and a
+/// case's own exit included.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ExitId {
     pub node: NodeId,
@@ -135,7 +136,7 @@ pub struct Exit {
 /// the merge feeding its output; other structural junctions merge no wires.
 #[derive(Clone, Default)]
 pub struct Junction {
-    /// The `SemanticModel::merges` entries that meet here, in model order.
+    /// The `Analysis::merges` entries that meet here, in model order.
     pub merges: Vec<usize>,
     pub is_cycle_entry: bool,
     pub is_cycle_result: bool,
@@ -157,8 +158,8 @@ pub struct Topology {
     pub back_edges: Vec<Connection>,
     /// The visible input and result boundaries of expanded cycles.
     pub cycle_boundaries: Vec<CycleBoundary>,
-    /// Repeating cycles only, in header order, so an enclosing cycle comes
-    /// before those nested in it.
+    /// Repeating loop cycles only, in header order, so an enclosing cycle comes
+    /// before those nested in it. A for cycle has no back edge and is not listed.
     pub cycles: Vec<Cycle>,
     /// Connection positions by destination and by source, so a neighbour
     /// lookup is an index rather than a scan of every connection.
@@ -1270,7 +1271,8 @@ pub(crate) fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source 
     })
 }
 
-/// Repeating cycle with entry and tail junctions and a preferred back-edge side.
+/// Repeating loop cycle with entry and tail junctions and a preferred back-edge
+/// side.
 #[derive(Clone, Copy)]
 pub struct Cycle {
     pub header: usize,

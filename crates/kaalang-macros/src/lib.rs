@@ -1,10 +1,15 @@
 //! kaalang procedural macro entry point; compilation lives in `kaalang-compiler`.
+//!
+//! Use the attribute through the [`kaalang`](https://docs.rs/kaalang) crate,
+//! which re-exports it.
 
 use proc_macro::{Span, TokenStream};
 use quote::ToTokens;
 use syn::{Error, ItemFn, parse_macro_input};
 
-/// Parses and lowers an ordinary Rust function containing a kaalang flow.
+/// Turns a function written as a kaalang flow into ordinary Rust, after checking
+/// that the flow has a diagram. The [`kaalang`](https://docs.rs/kaalang) crate
+/// documentation describes the block syntax.
 #[proc_macro_attribute]
 pub fn kaalang(attributes: TokenStream, item: TokenStream) -> TokenStream {
     if !attributes.is_empty() {

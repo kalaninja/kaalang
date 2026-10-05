@@ -1,4 +1,8 @@
-//! Parses and validates kaalang flows into the semantic model.
+//! Parses and validates kaalang flows, decides their diagram arrangement, and
+//! lowers them to Rust.
+//!
+//! It serves the `kaalang` macro and the renderers, and its API may change in
+//! any minor release.
 
 use syn::{Error, ItemFn, Result};
 
