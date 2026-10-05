@@ -11,6 +11,9 @@ use unicode_segmentation::UnicodeSegmentation;
 
 /// Larger formulas stay literal to keep diagram labels readable.
 const MAX_FORMULA_HEIGHT_EM: i64 = 12;
+/// Formula sizes are exact ratios that later scaling multiplies further, so a
+/// larger denominator could overflow into NaN. Real formulas stay below 10^5.
+const MAX_FORMULA_DENOMINATOR: i128 = 1 << 32;
 
 // Rational em scales shared with the SVG text styles and formula decorations.
 pub(crate) const SCRIPT_FONT_SCALE: (i32, i32) = (3, 4);
@@ -98,6 +101,16 @@ impl Formula {
             MathStyle::Text
         };
         let layout = layout(&ast, font, style).ok()?;
+        if [&layout.width, &layout.height, &layout.depth]
+            .into_iter()
+            .any(|dimension| {
+                dimension
+                    .as_ratio()
+                    .is_none_or(|(_, denominator)| denominator > MAX_FORMULA_DENOMINATOR)
+            })
+        {
+            return None;
+        }
         if layout.width <= Dim::zero() || &layout.height + &layout.depth < Dim::zero() {
             return None;
         }
@@ -1481,6 +1494,18 @@ mod tests {
         assert_eq!(text_width(&lines[0], LABEL_FONT), NODE_LABEL_WIDTH);
         assert!(text_width(&long, LABEL_FONT) > NODE_LABEL_WIDTH);
         assert!(lines[0].spans()[0].formula.as_ref().unwrap().is_clipped());
+    }
+
+    #[test]
+    fn math_whose_exact_sizes_could_overflow_falls_back_to_source() {
+        let tiny = format!(r"$\hspace{{1em}}\rule{{0em}}{{0.{}1em}}$", "0".repeat(37));
+        for source in [tiny.clone(), format!("*{tiny}*"), format!("^{tiny}^")] {
+            let text = RichText::markdown(&source);
+            assert!(
+                text.spans().iter().all(|span| span.formula.is_none()),
+                "{source}"
+            );
+        }
     }
 
     #[test]
