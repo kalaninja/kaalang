@@ -83,8 +83,8 @@ For syntax or semantic changes:
 3. Add a new RFC or update a proposed RFC together with the implementation;
    never edit an accepted RFC.
 4. Add behavior and compile-fail coverage as appropriate.
-5. Check terminology across documentation, Rust documentation, diagnostics,
-   identifiers, and test names.
+5. Check terminology against `GLOSSARY.md` across documentation, Rust
+   documentation, diagnostics, identifiers, and test names.
 
 ## Validation
 

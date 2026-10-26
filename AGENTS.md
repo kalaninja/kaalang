@@ -14,6 +14,8 @@ tests, commit messages, and pull request content.
   design decisions. Read the relevant RFCs before conceptual or syntax changes.
 - `docs/architecture.md` maps the compiler and renderer steps to their modules.
   Read it before changing how the crates divide the work.
+- `GLOSSARY.md` names the terms the RFCs, crates, diagnostics, and tests share.
+  Read it before naming a new concept.
 - `crates/kaalang-compiler/` parses and resolves flows into the shared validated
   semantic model, decides the diagram, exposes its common arrangement checks,
   and lowers the verified plan to Rust.

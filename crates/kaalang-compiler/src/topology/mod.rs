@@ -153,7 +153,9 @@ pub struct Topology {
     /// Every node and junction, in authored order, as the connections address
     /// them. Sorted, so a lookup is a binary search.
     pub vertices: Vec<Vertex>,
-    /// Placement precedence after an iteration and before end, never drawn as execution.
+    /// Placement-only precedence, never drawn as execution: iteration ends before
+    /// what follows them, a cycle body before its result or for-end, and every
+    /// sink before end and each stage transition.
     pub order: Vec<Connection>,
     pub back_edges: Vec<Connection>,
     /// The visible input and result boundaries of expanded cycles.
