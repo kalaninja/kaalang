@@ -37,12 +37,6 @@ document rejected programs and their diagnostics.
 
 ## Code organization
 
-### Module layout
-
-Use the classic directory layout for non-root Rust modules with children: put
-the parent in `name/mod.rs` and its children in `name/*.rs`. Reserve `name.rs`
-for leaf modules; crate roots remain `lib.rs` or `main.rs`.
-
 ### Block kind modules
 
 Put behavior that is specific to one block kind in a module named for that kind
