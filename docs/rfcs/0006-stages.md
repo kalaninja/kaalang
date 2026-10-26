@@ -1055,12 +1055,6 @@ fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
 }
 ```
 
-[Executable search and tests](../../crates/kaalang/tests/gallery/kmp_search/mod.rs)
-and
-[prefix-table diagram](../../crates/kaalang/tests/gallery/kmp_search/prefix_table.svg).
-
-[![KMP search staged flow](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)](../../crates/kaalang/tests/gallery/kmp_search/kmp_search.svg)
-
 The `compare` and `retry` entries carry unit signals. `step` carries the new
 matched length: comparison supplies `matched + 1`, while fallback at zero
 supplies `0` to skip an unmatched text byte. `finish` carries `Option<usize>`.
