@@ -446,10 +446,10 @@ cargo install --path crates/kaalang-cli
 From a repository checkout, draw the `FizzBuzz` example:
 
 ```sh
-cargo kaalang diagram crates/kaalang/tests/gallery/fizzbuzz/mod.rs --flow fizzbuzz -o fizzbuzz.svg
+cargo kaalang diagram --flow fizzbuzz::fizzbuzz -o fizzbuzz.svg
 ```
 
-Open `fizzbuzz.svg` in a browser. Replace the source path and flow name to
+Open `fizzbuzz.svg` in a browser. Replace the flow's path from its crate root to
 render another example; add `--collapse-cycles` for the compact cycle view shown
 above. The output is a standalone SVG with no external rendering tools required.
 

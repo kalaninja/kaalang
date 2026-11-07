@@ -29,9 +29,9 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// No exact `#[kaalang]` function has the requested name.
+    /// No exact `#[kaalang]` function has the requested path.
     FlowNotFound(String),
-    /// More than one exact `#[kaalang]` function has the requested name.
+    /// More than one exact `#[kaalang]` function has the requested path.
     AmbiguousFlow(String),
     /// The selected function is not a valid kaalang flow.
     InvalidFlow {
@@ -75,7 +75,7 @@ impl fmt::Display for RenderError {
             }
             Self::AmbiguousFlow(name) => write!(
                 formatter,
-                "multiple `#[kaalang]` functions are named `{name}`"
+                "multiple `#[kaalang]` functions have the path `{name}`"
             ),
             Self::InvalidFlow {
                 name,
@@ -106,19 +106,20 @@ impl fmt::Display for RenderError {
 impl Error for RenderError {}
 
 /// Renders one exact `#[kaalang]` function from a UTF-8 Rust source file.
+/// `flow_path` is its path within the file, as [`flow_names`] lists it.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust,
 /// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
-/// `flow_name` does not name exactly one `#[kaalang]` function,
+/// `flow_path` does not name exactly one `#[kaalang]` function,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
 /// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
 /// character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
 /// arrangement cannot route every connection or place every label.
-pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderError> {
-    render_source_with_options(source, flow_name, RenderOptions::default())
+pub fn render_source(source: &str, flow_path: &str) -> Result<String, RenderError> {
+    render_source_with_options(source, flow_path, RenderOptions::default())
 }
 
 /// Renders one flow using the requested presentation options.
@@ -128,14 +129,14 @@ pub fn render_source(source: &str, flow_name: &str) -> Result<String, RenderErro
 /// Returns the same errors as [`render_source`].
 pub fn render_source_with_options(
     source: &str,
-    flow_name: &str,
+    flow_path: &str,
     options: RenderOptions,
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let parser_source = parser_source(source, &file);
-    let function = select_flow(&file.items, flow_name)?;
+    let function = select_flow(&file.items, flow_path)?;
     let mut model = kaalang_compiler::build_with_options(&function, options.collapse_cycles)
-        .map_err(|error| invalid_flow(flow_name, &error))?;
+        .map_err(|error| invalid_flow(flow_path, &error))?;
     kaalang_render::compact_arrangement(&mut model);
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
@@ -145,7 +146,7 @@ pub fn render_source_with_options(
     let return_type = layout::return_text(parser_source, &function.sig.output);
     validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
     let unroutable = |reason| RenderError::UnroutableTopology {
-        name: flow_name.to_owned(),
+        name: flow_path.to_owned(),
         reason,
     };
     if !model.stages.is_empty() {
@@ -156,7 +157,7 @@ pub fn render_source_with_options(
         }
         let scene =
             layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
-        return Ok(svg::serialize_staged(&scene, &model.analysis, flow_name));
+        return Ok(svg::serialize_staged(&scene, &model.analysis));
     }
     // Each formula is laid out once, here rather than per layout attempt.
     // Validation above has already parsed the same descriptions, without their
@@ -171,17 +172,17 @@ pub fn render_source_with_options(
     ))
 }
 
-/// Names every top-level `#[kaalang]` function in a UTF-8 Rust source file,
-/// free or associated, in source order and with duplicates. Inline modules are
-/// not searched.
+/// Lists the path within a UTF-8 Rust source file of every `#[kaalang]`
+/// function, free or associated, in source order and with duplicates: `route`,
+/// `review::route` inside an inline module, or `Report::approve`.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust.
 pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
     Ok(kaalang_compiler::flows(&parse_file(source)?.items)
-        .iter()
-        .map(|function| function.sig.ident.to_string())
+        .into_iter()
+        .map(|(path, _)| path)
         .collect())
 }
 
@@ -205,15 +206,15 @@ fn parser_source<'a>(source: &'a str, file: &File) -> &'a str {
         .map_or(source, |shebang| &source[shebang.len()..])
 }
 
-fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
+fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
     let mut matches = kaalang_compiler::flows(items)
         .into_iter()
-        .filter(|function| function.sig.ident == flow_name);
-    let Some(function) = matches.next() else {
-        return Err(RenderError::FlowNotFound(flow_name.to_owned()));
+        .filter(|(path, _)| path == flow_path);
+    let Some((_, function)) = matches.next() else {
+        return Err(RenderError::FlowNotFound(flow_path.to_owned()));
     };
     if matches.next().is_some() {
-        return Err(RenderError::AmbiguousFlow(flow_name.to_owned()));
+        return Err(RenderError::AmbiguousFlow(flow_path.to_owned()));
     }
     if let Some(attribute) = function
         .attrs
@@ -226,7 +227,7 @@ fn select_flow(items: &[Item], flow_name: &str) -> Result<ItemFn, RenderError> {
         })
     {
         return Err(invalid_flow(
-            flow_name,
+            flow_path,
             &syn::Error::new_spanned(attribute, "#[kaalang] does not accept arguments"),
         ));
     }
@@ -338,24 +339,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn requires_an_exact_top_level_kaalang_attribute() {
-        let source = r"
-            #[other::kaalang]
-            fn nested_attribute(input: u8) -> u8 {}
-
-            mod inner {
-                #[kaalang]
-                fn nested(input: u8) -> u8 {}
-            }
-        ";
+    fn requires_an_exact_kaalang_attribute() {
+        let source = "#[other::kaalang]\nfn nested_attribute(input: u8) -> u8 {}\n";
 
         assert_eq!(
             render_source(source, "nested_attribute"),
             Err(RenderError::FlowNotFound("nested_attribute".into()))
-        );
-        assert_eq!(
-            render_source(source, "nested"),
-            Err(RenderError::FlowNotFound("nested".into()))
         );
     }
 
@@ -388,6 +377,24 @@ mod tests {
 
         assert_eq!(flow_names(source), Ok(vec!["qualified".to_owned()]));
         assert!(render_source(source, "qualified").is_ok());
+    }
+
+    #[test]
+    fn flows_are_selected_by_their_path_within_the_file() {
+        let flow = "fn copy(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let source = format!(
+            "mod review {{ #[kaalang] {flow} }}\nstruct Report;\nimpl Report {{ #[kaalang] {flow} }}\ntrait Review {{ #[kaalang] {flow} }}\n"
+        );
+
+        let paths = ["review::copy", "Report::copy", "Review::copy"];
+        assert_eq!(flow_names(&source), Ok(paths.map(str::to_owned).to_vec()));
+        for path in paths {
+            assert!(render_source(&source, path).is_ok(), "{path}");
+        }
+        assert_eq!(
+            render_source(&source, "copy"),
+            Err(RenderError::FlowNotFound("copy".into()))
+        );
     }
 
     #[test]

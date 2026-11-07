@@ -14,7 +14,7 @@ This is an implementation map. The language and algorithm contracts live in
 | [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust.                                |
 | [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                |
 | [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, and serialize standalone SVG.                                               |
-| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read source, call the SVG entry point, and write the completed diagram.                                                                         |
+| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Find the selected flow in the cargo workspace, call the SVG entry point, and write the completed diagram.                                       |
 | [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness. This crate is unpublished and used only by tests. |
 
 ```mermaid
@@ -135,5 +135,5 @@ recorded rows, columns, and corridors remain its structural input.
 
 The SVG entry point is
 [`render_source_with_options`](../crates/kaalang-svg/src/lib.rs): parse the Rust
-file, select one flow, build the model, compact it, validate labels, lay it out,
-verify it, and serialize it.
+file, select one flow by its path within the file, build the model, compact it,
+validate labels, lay it out, verify it, and serialize it.

@@ -31,7 +31,15 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 );
             }
             let source = fs::read_to_string(fixture).unwrap();
-            let names = kaalang_svg::flow_names(&source).unwrap();
+            let flows = kaalang_svg::flow_names(&source).unwrap();
+            // A method's diagram is named after the method, without its impl.
+            let names: Vec<&str> = flows
+                .iter()
+                .map(|path| {
+                    let name = path.rsplit("::").next().unwrap();
+                    name.strip_prefix("r#").unwrap_or(name)
+                })
+                .collect();
             // A `mod.rs` that only lists the fixtures beside it draws nothing.
             if names.is_empty() {
                 continue;
@@ -48,7 +56,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 };
                 if gallery {
                     assert_eq!(
-                        names.first().map(String::as_str),
+                        names.first().copied(),
                         Some(expected),
                         "{}",
                         fixture.display()
@@ -58,14 +66,14 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 }
             }
 
-            for flow in names {
+            for (flow, name) in flows.iter().zip(names) {
                 let mut expanded = None;
                 for (suffix, collapse_cycles) in std::iter::once(("", false))
                     .chain(source.contains("#[cycle(").then_some(("_collapsed", true)))
                 {
                     let svg = kaalang_svg::render_source_with_options(
                         &source,
-                        &flow,
+                        flow,
                         kaalang_svg::RenderOptions { collapse_cycles },
                     )
                     .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
@@ -79,7 +87,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                     if collapse_cycles && expanded.as_ref() == Some(&svg) {
                         continue;
                     }
-                    let diagram = directory.join(format!("{flow}{suffix}.svg"));
+                    let diagram = directory.join(format!("{name}{suffix}.svg"));
                     assert!(
                         !current.contains(&diagram),
                         "multiple fixtures draw {}",

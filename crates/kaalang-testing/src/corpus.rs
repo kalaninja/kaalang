@@ -52,7 +52,7 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
                 .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             kaalang_compiler::flows(&file.items)
                 .into_iter()
-                .map(|function| (function.sig.ident.to_string(), function, is_stress(path)))
+                .map(|(_, function)| (function.sig.ident.to_string(), function, is_stress(path)))
         })
         .collect();
     flows.sort_by(|a, b| a.0.cmp(&b.0));
@@ -69,8 +69,9 @@ pub fn flow_named(source: &str, name: &str) -> ItemFn {
     let file = syn::parse_file(source).expect("the fixture parses");
     kaalang_compiler::flows(&file.items)
         .into_iter()
-        .find(|function| function.sig.ident == name)
+        .find(|(path, _)| path == name)
         .expect("the fixture declares the flow")
+        .1
 }
 
 fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {

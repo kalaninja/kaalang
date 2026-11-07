@@ -12,14 +12,15 @@ use crate::layout::{Point, StagedScene};
 
 const RETURN_ARROW_SIZE: i32 = 8;
 
-pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: &str) -> String {
+pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis) -> String {
+    let flow_name = root.name.to_string();
     let mut svg = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\" role=\"img\" aria-labelledby=\"kaalang-title\" aria-describedby=\"kaalang-description\"><title id=\"kaalang-title\">kaalang diagram for {}</title><desc id=\"kaalang-description\">{}</desc><rect width=\"100%\" height=\"100%\" fill=\"white\"/>\n",
         scene.width,
         scene.height,
         scene.width,
         scene.height,
-        escape(flow_name),
+        escape(&flow_name),
         escape(&staged_description(scene, root)),
     );
     emit_inline!(
@@ -35,7 +36,7 @@ pub(crate) fn serialize_staged(scene: &StagedScene, root: &Analysis, flow_name: 
     svg.push_str("</g>\n");
     for (part, (local, placement)) in scene.parts.iter().enumerate() {
         let (x, y) = (placement.x, placement.y);
-        let nested = serialize(local, flow_name, Some(part));
+        let nested = serialize(local, &flow_name, Some(part));
         let _ = writeln!(svg, "<g transform=\"translate({x} {y})\">{nested}</g>");
     }
     svg.push_str("</svg>\n");

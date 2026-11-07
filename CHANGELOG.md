@@ -1,6 +1,19 @@
 # Changelog
 
-## 0.2.1 - unreleased
+## 0.3.0 - unreleased
+
+### Breaking
+
+- `cargo kaalang diagram` selects a flow by its Rust path from the crate root,
+  as `--flow review::Report::approve`, instead of a source file and a bare name.
+  It searches every crate of the cargo workspace, and `-p` names the package
+  when the path exists in several. The default output is named after the last
+  path segment. See [RFC 0009](docs/rfcs/0009-types.md).
+- `kaalang-svg`'s `render_source` and `render_source_with_options` select a flow
+  by its path within the file, and `flow_names` lists those paths, including
+  flows in inline modules. A method's path starts with its type or trait.
+- `kaalang-compiler`'s `flows` returns each flow with its path within the file
+  and descends into inline modules.
 
 ### Fixed
 

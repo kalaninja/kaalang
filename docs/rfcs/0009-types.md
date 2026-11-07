@@ -285,26 +285,29 @@ cargo kaalang diagram [-p <package>] --type <item> [-o <path>]
 The item is the declaration's Rust path from its crate root: `model::Member`, or
 `review::Report::approve` for a method. The command runs inside a cargo
 workspace and searches every member crate, for the item and for incoming types.
-When the path exists in several crates, `-p` names the package to take it from.
-A package's library and binary crates are separate crates; a path declared in
-both of them cannot be selected. Exactly one of `--flow` and `--type` is given.
-`--collapse-cycles` applies to flows and is rejected with `--type`. Without
-`-o`, the command writes `./<name>.svg` from the last path segment, or
-`./<name>_collapsed.svg` with `--collapse-cycles`. A path that names no
-`#[kaalang]` declaration of the requested kind is a failure; one that matches
-several without `-p` is a failure that lists them with their packages. The
-command creates or replaces the output only after the selected declaration and,
-for a type, its incoming types are validated and the diagram rendered. On
-success it prints the output path; on failure it writes a diagnostic to stderr
-and exits with a nonzero status.
+When the path exists in several packages, `-p` names the package to take it
+from. Each target of a package (its library, binaries, tests, examples, and
+benches) is a separate crate; a path declared in more than one of them cannot be
+selected. Exactly one of `--flow` and `--type` is given. `--collapse-cycles`
+applies to flows and is rejected with `--type`. Without `-o`, the command writes
+`./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
+`--collapse-cycles`. A path that names no `#[kaalang]` declaration of the
+requested kind is a failure; one that matches several without `-p` is a failure
+that lists them with their packages. The command creates or replaces the output
+only after the selected declaration and, for a type, its incoming types are
+validated and the diagram rendered. On success it prints the output path; on
+failure it writes a diagnostic to stderr and exits with a nonzero status.
 
 This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
 of §4 under which the renderer selects one function by its unqualified name and
 does not descend into inline modules, §5, which selects a flow by source file
 and name, and the part of §6 under which the renderer does not search an entire
-crate or resolve external modules. Conditional compilation and macro-expanded
-source remain outside the renderer's scope: declarations under `cfg` are read as
-written.
+crate or resolve external modules. The renderer instead selects a flow by its
+path within the file: the enclosing inline modules, then the function's name. A
+method's path starts with the last segment of its `impl` block's self type, and
+a trait's default method starts with the trait's name. Conditional compilation
+and macro-expanded source remain outside the renderer's scope: declarations
+under `cfg` are read as written.
 
 ## 7. Validation and acceptance scenarios
 
@@ -340,8 +343,9 @@ Acceptance scenarios:
 | Multiple fields referring to the focus                 | Draw the incoming type once and retain the separate relationships. |
 | An unannotated container or a large array              | Keep one field cell, with no element expansion.                    |
 | Focus view                                             | Draw incoming types above it and omit target cards below.          |
-| The item path declared in two crates                   | Fail listing both packages; `-p` selects one.                      |
-| Incoming types from two crates                         | Order the focus type's crate first, then by package name.          |
+| The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                      |
+| The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                          |
+| Incoming types from two crates                         | Order the focus type's crate first, then by package and target.    |
 
 ## 8. Compatibility and exclusions
 

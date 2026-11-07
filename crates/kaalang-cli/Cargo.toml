@@ -11,9 +11,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cargo_metadata = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 kaalang-svg = { workspace = true }
 same-file = { workspace = true }
+syn = { workspace = true }
 
 [[bin]]
 name = "cargo-kaalang"

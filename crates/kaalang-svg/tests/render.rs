@@ -137,7 +137,7 @@ fn stage_signals_are_unlabeled_through_producers_and_merges() {
 #[test]
 fn staged_outer_wires_use_capture_labels_without_data_panels() {
     let source = include_str!("../../kaalang/tests/stage/behavior/add_through_stages.rs");
-    let svg = render_source(source, "add_through_stages").unwrap();
+    let svg = render_source(source, "Counter::add_through_stages").unwrap();
     assert!(!svg.contains("stage-data-panel"));
     assert!(svg.contains("capturing &amp;mut self"));
 }

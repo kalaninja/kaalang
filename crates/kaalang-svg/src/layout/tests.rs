@@ -1532,8 +1532,7 @@ fn every_accepted_staged_shape_renders_in_both_views() {
     let mut rendered = 0;
     for source in kaalang_testing::shapes::staged_shapes() {
         let file = crate::parse_file(&source).expect("the staged shape parses");
-        let function = kaalang_compiler::flows(&file.items).remove(0);
-        let name = function.sig.ident.to_string();
+        let (name, function) = kaalang_compiler::flows(&file.items).remove(0);
         if kaalang_compiler::build(&function).is_err() {
             continue;
         }

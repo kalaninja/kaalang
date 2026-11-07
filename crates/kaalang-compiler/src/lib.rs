@@ -82,45 +82,80 @@ fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticM
     })
 }
 
-/// Collects `#[kaalang]` functions and methods from these items.
-/// Includes trait methods with default bodies; does not recurse into modules.
+/// Collects `#[kaalang]` functions and methods from these items, in source
+/// order, each with its path among them: `route`, `review::route`, or
+/// `Report::approve`. Searches inline modules and trait methods with default
+/// bodies.
 #[must_use]
-pub fn flows(items: &[syn::Item]) -> Vec<ItemFn> {
-    items
-        .iter()
-        .flat_map(|item| match item {
-            syn::Item::Fn(function) if declares_a_flow(&function.attrs) => vec![function.clone()],
-            syn::Item::Impl(block) => block
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    syn::ImplItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: method.vis.clone(),
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.block.clone()),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            syn::Item::Trait(declaration) => declaration
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    syn::TraitItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: syn::Visibility::Inherited,
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.default.clone()?),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            _ => Vec::new(),
-        })
-        .collect()
+pub fn flows(items: &[syn::Item]) -> Vec<(String, ItemFn)> {
+    let mut flows = Vec::new();
+    collect_flows(items, "", &mut flows);
+    flows
+}
+
+fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<(String, ItemFn)>) {
+    for item in items {
+        match item {
+            syn::Item::Fn(function) if declares_a_flow(&function.attrs) => {
+                flows.push((format!("{prefix}{}", function.sig.ident), function.clone()));
+            }
+            syn::Item::Mod(module) => {
+                if let Some((_, items)) = &module.content {
+                    collect_flows(items, &format!("{prefix}{}::", module.ident), flows);
+                }
+            }
+            syn::Item::Impl(block) => {
+                // shortcut: a method's path starts at its impl block's module, not its type's, and an inherent and a trait method of one name share it; upgrade when an IDE engine or a resolver supplies the self type's path.
+                let owner = impl_owner(&block.self_ty);
+                for item in &block.items {
+                    if let syn::ImplItem::Fn(method) = item
+                        && declares_a_flow(&method.attrs)
+                    {
+                        let function = ItemFn {
+                            attrs: method.attrs.clone(),
+                            vis: method.vis.clone(),
+                            modifiers: method.modifiers.clone(),
+                            sig: method.sig.clone(),
+                            block: Box::new(method.block.clone()),
+                        };
+                        flows.push((format!("{prefix}{owner}::{}", method.sig.ident), function));
+                    }
+                }
+            }
+            syn::Item::Trait(declaration) => {
+                for item in &declaration.items {
+                    if let syn::TraitItem::Fn(method) = item
+                        && declares_a_flow(&method.attrs)
+                        && let Some(body) = &method.default
+                    {
+                        let function = ItemFn {
+                            attrs: method.attrs.clone(),
+                            vis: syn::Visibility::Inherited,
+                            modifiers: method.modifiers.clone(),
+                            sig: method.sig.clone(),
+                            block: Box::new(body.clone()),
+                        };
+                        let path = format!("{prefix}{}::{}", declaration.ident, method.sig.ident);
+                        flows.push((path, function));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// The name that qualifies an impl's methods: the last segment of its self type.
+fn impl_owner(self_type: &syn::Type) -> String {
+    if let syn::Type::Path(syn::TypePath {
+        qself: None, path, ..
+    }) = self_type
+        && let Some(segment) = path.segments.last()
+    {
+        return segment.ident.to_string();
+    }
+    // shortcut: a non-path self type (`&T`, a tuple) is named by its token text; upgrade when someone renders such a flow.
+    quote::ToTokens::to_token_stream(self_type).to_string()
 }
 
 fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {

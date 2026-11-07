@@ -353,7 +353,7 @@ mod tests {
     /// compacted, with its parameter captions.
     fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Vec<String>) {
         let file = syn::parse_file(source).unwrap();
-        let function = kaalang_compiler::flows(&file.items).remove(0);
+        let (_, function) = kaalang_compiler::flows(&file.items).remove(0);
         let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
         kaalang_render::compact_arrangement(&mut model);
         for stage in &mut model.stages {
@@ -421,7 +421,7 @@ mod tests {
                         .iter()
                         .any(|(part, _)| transitions(part).next().is_some())
                 );
-                let svg = crate::svg::serialize_staged(&diagram, &model.analysis, "example");
+                let svg = crate::svg::serialize_staged(&diagram, &model.analysis);
                 assert!(svg.contains(&format!(
                     "The flow starts directly at stage {}.",
                     model.analysis.stages[0].entry_alias
@@ -459,7 +459,7 @@ mod tests {
             ),
         ] {
             let file = syn::parse_file(source).unwrap();
-            let function = kaalang_compiler::flows(&file.items).remove(0);
+            let (_, function) = kaalang_compiler::flows(&file.items).remove(0);
             let model = kaalang_compiler::build(&function).unwrap();
             let parameters = super::super::parameter_text(source, &function.sig);
             let diagram = layout_staged(&model, name, &parameters, "u32").unwrap();
