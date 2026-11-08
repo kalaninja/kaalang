@@ -1,0 +1,5 @@
+error: a type alias takes one `refer` annotation
+ --> tests/types/compile_fail/repeated_alias_refer.rs:8:1
+  |
+8 | #[refer(Member, "The second member.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

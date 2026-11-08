@@ -1,0 +1,5 @@
+error: a type takes one `#[kaalang]` attribute
+ --> tests/types/compile_fail/duplicate_kaalang.rs:4:1
+  |
+4 | #[kaalang("The same member again.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

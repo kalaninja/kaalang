@@ -219,7 +219,7 @@ fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
     if let Some(attribute) = function
         .attrs
         .iter()
-        .filter(|attribute| kaalang_compiler::is_flow_attribute(attribute))
+        .filter(|attribute| kaalang_compiler::is_kaalang_attribute(attribute))
         .find(|attribute| match &attribute.meta {
             Meta::Path(_) => false,
             Meta::List(arguments) => !arguments.tokens.is_empty(),
@@ -228,7 +228,10 @@ fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
     {
         return Err(invalid_flow(
             flow_path,
-            &syn::Error::new_spanned(attribute, "#[kaalang] does not accept arguments"),
+            &syn::Error::new_spanned(
+                attribute,
+                "#[kaalang] on a function does not accept arguments",
+            ),
         ));
     }
 
@@ -410,7 +413,7 @@ mod tests {
                     name: "invalid".into(),
                     line: 1,
                     column: 1,
-                    message: "#[kaalang] does not accept arguments".into(),
+                    message: "#[kaalang] on a function does not accept arguments".into(),
                 })
             );
         }

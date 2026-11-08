@@ -1,0 +1,5 @@
+error: a relationship is written `#[refer(Target, "description")]`
+ --> tests/types/compile_fail/refer_without_description.rs:8:5
+  |
+8 |     #[refer(Member)]
+  |     ^^^^^^^^^^^^^^^^

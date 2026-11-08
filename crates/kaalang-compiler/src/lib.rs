@@ -1,5 +1,5 @@
-//! Parses and validates kaalang flows, decides their diagram arrangement, and
-//! lowers them to Rust.
+//! Parses and validates kaalang flows and annotated types, decides flow
+//! diagram arrangements, and lowers flows to Rust.
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
 //! any minor release.
@@ -19,6 +19,10 @@ pub use self::{
         Iteration, Join, JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis,
         WireMerge,
     },
+    types::{
+        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
+        type_declaration,
+    },
 };
 
 mod analyze;
@@ -35,6 +39,7 @@ mod scope;
 mod stage;
 mod symbolic;
 pub mod topology;
+mod types;
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///
@@ -159,13 +164,13 @@ fn impl_owner(self_type: &syn::Type) -> String {
 }
 
 fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
-    attributes.iter().any(is_flow_attribute)
+    attributes.iter().any(is_kaalang_attribute)
 }
 
 /// Whether `attribute` is kaalang's own, written `#[kaalang]` or through its
 /// crate path as `#[kaalang::kaalang]`. Another crate's `kaalang` is not.
 #[must_use]
-pub fn is_flow_attribute(attribute: &syn::Attribute) -> bool {
+pub fn is_kaalang_attribute(attribute: &syn::Attribute) -> bool {
     let path = attribute.path();
     path.is_ident("kaalang")
         || path.segments.len() == 2

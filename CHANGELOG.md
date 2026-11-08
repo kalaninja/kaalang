@@ -14,6 +14,15 @@
   flows in inline modules. A method's path starts with its type or trait.
 - `kaalang-compiler`'s `flows` returns each flow with its path within the file
   and descends into inline modules.
+- `kaalang-compiler`'s `is_flow_attribute` is renamed `is_kaalang_attribute`.
+
+### Added
+
+- `#[kaalang]` marks structs, enums, unions, and type aliases as annotated
+  types, with an optional description. Fields take `value` or `refer`
+  annotations, enum variants take `case`, and an alias may carry its own
+  `refer`. Rust resolves each `refer` target as the field's module sees it. See
+  [RFC 0009](docs/rfcs/0009-types.md).
 
 ### Fixed
 

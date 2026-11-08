@@ -1,0 +1,5 @@
+error: #[kaalang] applies to functions, structs, enums, unions, and type aliases
+ --> tests/types/compile_fail/unsupported_form.rs:4:1
+  |
+4 | trait Named {}
+  | ^^^^^^^^^^^^^^

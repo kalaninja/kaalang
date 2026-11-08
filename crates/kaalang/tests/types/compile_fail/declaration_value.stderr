@@ -1,0 +1,5 @@
+error: `value` describes a field; a type takes its description from `#[kaalang("description")]`
+ --> tests/types/compile_fail/declaration_value.rs:4:1
+  |
+4 | #[value("A member.")]
+  | ^^^^^^^^^^^^^^^^^^^^^

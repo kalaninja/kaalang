@@ -1,0 +1,5 @@
+error: expected non-macro attribute, found attribute macro `kaalang`
+ --> tests/types/compile_fail/kaalang_on_field.rs:5:7
+  |
+5 |     #[kaalang("The display name.")]
+  |       ^^^^^^^ not a non-macro attribute

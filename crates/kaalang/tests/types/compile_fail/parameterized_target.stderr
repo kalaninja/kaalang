@@ -1,0 +1,5 @@
+error: a relationship target is written without parameters
+ --> tests/types/compile_fail/parameterized_target.rs:8:23
+  |
+8 |     #[refer(Attachment<u8>, "The uploaded content.")]
+  |                       ^^^^
